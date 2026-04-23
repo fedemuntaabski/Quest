@@ -4,7 +4,6 @@ class_name HUDController
 
 @onready var timer_label: Label = $Control/TimerLabel
 @onready var stats_container: VBoxContainer = $Control/MarginContainer/HBoxContainer/VBoxContainer
-@onready var mejoras_button: Button = $Control/MarginContainer/HBoxContainer/MejorasButton
 
 # References to stat labels
 @onready var label_hp: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_HP/LabelHP
@@ -16,16 +15,29 @@ class_name HUDController
 var card_slots: Array = []
 
 func _ready():
+	_ensure_tab_input_action()
+
 	# Main2d drives the room timer; HUD only renders values.
 	if timer_label:
 		timer_label.text = "Time: 02:00"
 		timer_label.modulate = Color(1, 1, 1, 1)
 	if stats_container:
-		stats_container.visible = true
-	if mejoras_button:
-		mejoras_button.visible = true
+		stats_container.visible = false
 	
 	print("HUDController initialized - Minimal 2D HUD ready")
+
+func _process(_delta: float) -> void:
+	if stats_container:
+		stats_container.visible = Input.is_action_pressed("tab")
+
+func _ensure_tab_input_action() -> void:
+	if InputMap.has_action("tab"):
+		return
+
+	InputMap.add_action("tab")
+	var tab_event := InputEventKey.new()
+	tab_event.keycode = KEY_TAB
+	InputMap.action_add_event("tab", tab_event)
 
 # Update stat display
 func update_stats(character_stats: CharacterStats) -> void:

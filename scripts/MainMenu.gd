@@ -18,7 +18,6 @@ const RESOLUTION_PRESETS := [
 @onready var hover_volume_slider: HSlider = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow/HoverVolumeSlider
 @onready var hover_volume_value_label: Label = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow/HoverVolumeValueLabel
 @onready var res_selector: OptionButton = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ResSelector
-@onready var fullscreen_toggle: CheckButton = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/FullscreenToggle
 @onready var save_button: Button = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/SaveButton
 @onready var back_button: Button = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/BackButton
 @onready var unsaved_changes_dialog: ConfirmationDialog = $UnsavedChangesDialog
@@ -48,7 +47,7 @@ func _ready() -> void:
 func _setup_content_scaling() -> void:
 	var root_window: Window = get_tree().root
 	root_window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-	root_window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	root_window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 
 func _populate_resolution_selector() -> void:
 	res_selector.clear()
@@ -62,7 +61,6 @@ func _connect_menu_signals() -> void:
 		exit_button,
 		save_button,
 		back_button,
-		fullscreen_toggle,
 		res_selector
 	]
 
@@ -98,8 +96,6 @@ func _connect_menu_signals() -> void:
 
 	if not res_selector.item_selected.is_connected(_on_res_selector_item_selected):
 		res_selector.item_selected.connect(_on_res_selector_item_selected)
-	if not fullscreen_toggle.toggled.is_connected(_on_fullscreen_toggled):
-		fullscreen_toggle.toggled.connect(_on_fullscreen_toggled)
 
 func _on_any_button_pressed() -> void:
 	if click_sound and click_sound.stream:
@@ -190,14 +186,6 @@ func _flash_save_button() -> void:
 	await get_tree().create_timer(0.5).timeout
 	save_button.modulate = previous_modulate
 
-func _on_fullscreen_toggled(enabled: bool) -> void:
-	if enabled:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
-	else:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		_on_res_selector_item_selected(res_selector.selected)
-	_mark_unsaved_changes()
-
 func _on_res_selector_item_selected(index: int) -> void:
 	var safe_index := clampi(index, 0, RESOLUTION_PRESETS.size() - 1)
 	var target_size: Vector2i = RESOLUTION_PRESETS[safe_index]["size"]
@@ -225,7 +213,6 @@ func _sync_selector_with_current_resolution() -> void:
 func save_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value(SETTINGS_SECTION, "resolution_index", res_selector.selected)
-	cfg.set_value(SETTINGS_SECTION, "fullscreen", fullscreen_toggle.button_pressed)
 	cfg.set_value(SETTINGS_SECTION, "click_volume", click_volume_slider.value)
 	cfg.set_value(SETTINGS_SECTION, "hover_volume", hover_volume_slider.value)
 	var save_error := cfg.save(SETTINGS_PATH)
@@ -240,10 +227,6 @@ func load_settings() -> void:
 
 	var saved_index := int(cfg.get_value(SETTINGS_SECTION, "resolution_index", res_selector.selected))
 	_on_res_selector_item_selected(saved_index)
-
-	var fullscreen_enabled := bool(cfg.get_value(SETTINGS_SECTION, "fullscreen", false))
-	fullscreen_toggle.button_pressed = fullscreen_enabled
-	_on_fullscreen_toggled(fullscreen_enabled)
 
 	var saved_click_volume := float(cfg.get_value(SETTINGS_SECTION, "click_volume", click_volume_slider.value))
 	click_volume_slider.value = clampf(saved_click_volume, 0.001, 2.0)

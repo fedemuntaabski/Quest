@@ -64,17 +64,14 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Dexterity: +0"
 
-[node name="MejorasButton" type="Button" parent="Control/MarginContainer/HBoxContainer" unique_id=172341209]
-custom_minimum_size = Vector2(170, 52)
-layout_mode = 2
-text = "Mejoras"
-
 [node name="TimerLabel" type="Label" parent="Control" unique_id=405452174]
 layout_mode = 0
-offset_left = 1708.0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -140.0
 offset_top = 16.0
-offset_right = 1888.0
+offset_right = 140.0
 offset_bottom = 56.0
 theme_override_font_sizes/font_size = 30
 text = "Time: 02:00"
-horizontal_alignment = 2
+horizontal_alignment = 1
