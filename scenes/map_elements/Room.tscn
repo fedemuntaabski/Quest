@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/texture/enviorment/ground_texture1.png" id="1_ground"]
+
+[node name="Room" type="Node2D"]
+
+[node name="Floor" type="Sprite2D" parent="."]
+z_index = -2
+texture = ExtResource("1_ground")
+region_enabled = true
+region_rect = Rect2(0, 0, 128, 128)
+texture_repeat = 1

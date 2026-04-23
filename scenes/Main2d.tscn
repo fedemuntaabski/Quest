@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://u03qppfja2kb"]
+
+[ext_resource type="PackedScene" uid="uid://b1q61p4edk0o2" path="res://scenes/Player.tscn" id="1_qunv1"]
+[ext_resource type="PackedScene" uid="uid://dgcx23erhb3v1" path="res://scenes/MapManager.tscn" id="2_srb6u"]
+[ext_resource type="PackedScene" uid="uid://b5v43ol8idshh" path="res://scenes/HUD.tscn" id="3_hud"]
+
+[node name="Main2d" type="Node2D" unique_id=719008083]
+
+[node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=1224423481]
+color = Color(0, 0, 0, 1)
+
+[node name="MapManager" parent="." unique_id=145395336 instance=ExtResource("2_srb6u")]
+
+[node name="Player" parent="MapManager" unique_id=1924339904 instance=ExtResource("1_qunv1")]
+position = Vector2(0, 0)
+
+[node name="HUD" parent="." unique_id=712781322 instance=ExtResource("3_hud")]

@@ -1,0 +1,96 @@
+# Carpeta de configuración interna del editor (cache, importados, etc.)
+.godot/
+
+# Archivos generados por importación (NO versionar)
+.import/
+*.import
+
+# Archivos de exportación temporales
+export.cfg
+export_presets.cfg
+
+# =========================
+# BUILDS / EXPORTS
+# =========================
+
+# Builds de exportación
+/android/
+/ios/
+/html/
+/windows/
+/linux/
+/macos/
+
+# Archivos exportados
+*.apk
+*.aab
+*.ipa
+*.exe
+*.zip
+*.tar.gz
+
+# =========================
+# CACHE / TEMP
+# =========================
+
+# Cachés del sistema
+.cache/
+tmp/
+temp/
+
+# Archivos temporales del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# LOGS
+# =========================
+
+*.log
+
+# =========================
+# IDEs / EDITORES
+# =========================
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains (IntelliJ, Rider, etc.)
+.idea/
+
+# Archivos de workspace
+*.code-workspace
+
+# =========================
+# LENGUAJES / TOOLS EXTRA
+# =========================
+
+# Mono / C#
+.mono/
+*.csproj
+*.sln
+*.user
+*.dll
+*.exe
+*.mdb
+*.pdb
+
+# =========================
+# TEST / DEBUG
+# =========================
+
+# Dumps / debugging
+*.stackdump
+
+# =========================
+# OTROS
+# =========================
+
+# Backups
+*~
+*.bak
+*.tmp
+
+# Archivos de usuario (config local)
+*.local

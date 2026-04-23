@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://dgcx23erhb3v1"]
+
+[ext_resource type="Script" uid="uid://ccocps372s1vb" path="res://scripts/MapManager.gd" id="1_map_script"]
+[ext_resource type="Script" path="res://scripts/DungeonGenerator.gd" id="2_dungeon_script"]
+
+[node name="MapManager" type="Node2D" unique_id=145395336]
+script = ExtResource("1_map_script")
+
+[node name="DungeonGenerator" type="Node2D" parent="."]
+script = ExtResource("2_dungeon_script")

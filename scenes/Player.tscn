@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://b1q61p4edk0o2"]
+
+[ext_resource type="Script" uid="uid://caehere1tktuv" path="res://scripts/PlayerMovement.gd" id="1_player_script"]
+[ext_resource type="Script" uid="uid://cpv8hap2ivh1u" path="res://scripts/CharacterStats.gd" id="3_stats_script"]
+[ext_resource type="Texture2D" uid="uid://damegbhsywx4q" path="res://icon.svg" id="4_player_texture"]
+[ext_resource type="Texture2D" uid="uid://dbodd0p4420l" path="res://assets/ui/vision_scope.svg" id="5_scope_texture"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6xq8m"]
+radius = 0.5
+height = 1.8
+
+[node name="Player" type="CharacterBody2D" unique_id=1924339904]
+scale = Vector2(2, 2)
+script = ExtResource("1_player_script")
+metadata/character_class = "Bounty Hunter"
+metadata/era = "14th Century"
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=748991375]
+modulate = Color(0.5, 0.3, 0.2, 1)
+texture = ExtResource("4_player_texture")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=157155305]
+shape = SubResource("CapsuleShape2D_6xq8m")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1422355037]
+zoom = Vector2(1.8, 1.8)
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=638103579]
+energy = 1.2
+texture = ExtResource("5_scope_texture")
+texture_scale = 2.0
+
+[node name="Stats" type="Node" parent="." unique_id=775582042]
+script = ExtResource("3_stats_script")

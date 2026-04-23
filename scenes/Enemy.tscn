@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3 uid="uid://b7yguhd58c6y1"]
+
+[ext_resource type="Script" path="res://scripts/CharacterStats.gd" id="1_stats"]
+[ext_resource type="Texture2D" path="res://icon.svg" id="2_enemy_texture"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_enemy"]
+height = 1.8
+radius = 0.5
+
+[node name="Enemy" type="CharacterBody2D"]
+metadata/character_class = "Goblin"
+metadata/era = "14th Century"
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_enemy_texture")
+modulate = Color(0.8, 0.2, 0.2, 1.0)
+scale = Vector2(1.0, 1.8)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_enemy")
+
+[node name="Stats" type="Node" parent="."]
+script = ExtResource("1_stats")
+current_hp = 8
+max_hp = 8
+strength_modifier = 0
+magic_modifier = 0
+dexterity_modifier = 0
+character_name = "Goblin"
+character_class = "Goblin"

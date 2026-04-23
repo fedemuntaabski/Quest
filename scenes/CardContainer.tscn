@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://b2qmp3n0wly87"]
+
+[ext_resource type="Script" uid="uid://bojnivea3veb8" path="res://scripts/CardContainer.gd" id="1_container_script"]
+
+[node name="CardContainer" type="HBoxContainer" unique_id=959850240]
+custom_minimum_size = Vector2(500, 200)
+offset_left = -250.0
+offset_top = -220.0
+offset_right = 250.0
+offset_bottom = -20.0
+alignment = 1
+script = ExtResource("1_container_script")
+
+[node name="CardSlot1" type="PanelContainer" parent="." unique_id=291373208]
+custom_minimum_size = Vector2(150, 200)
+layout_mode = 2
+
+[node name="CardSlot1_Label" type="Label" parent="CardSlot1" unique_id=1452862910]
+layout_mode = 2
+text = "Slot 1
+Empty"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CardSlot2" type="PanelContainer" parent="." unique_id=773267504]
+custom_minimum_size = Vector2(150, 200)
+layout_mode = 2
+
+[node name="CardSlot2_Label" type="Label" parent="CardSlot2" unique_id=22090912]
+layout_mode = 2
+text = "Slot 2
+Empty"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CardSlot3" type="PanelContainer" parent="." unique_id=1901882651]
+custom_minimum_size = Vector2(150, 200)
+layout_mode = 2
+
+[node name="CardSlot3_Label" type="Label" parent="CardSlot3" unique_id=977992743]
+layout_mode = 2
+text = "Slot 3
+Empty"
+horizontal_alignment = 1
+vertical_alignment = 1

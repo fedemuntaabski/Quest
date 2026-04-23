@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://b5v43ol8idshh"]
+
+[ext_resource type="Script" uid="uid://e6aoqrf7guh7" path="res://scripts/HUDController.gd" id="1_hud_script"]
+
+[node name="HUD" type="CanvasLayer" unique_id=729961790]
+layer = 2
+script = ExtResource("1_hud_script")
+
+[node name="Control" type="Control" parent="." unique_id=1840515114]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="Control" unique_id=1415032945]
+layout_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/MarginContainer" unique_id=16085052]
+custom_minimum_size = Vector2(200, 140)
+layout_mode = 2
+
+[node name="HBoxContainer_HP" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer" unique_id=1581858995]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="LabelHP" type="Label" parent="Control/MarginContainer/VBoxContainer/HBoxContainer_HP" unique_id=1859836433]
+custom_minimum_size = Vector2(260, 46)
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "HP: 10/10"
+
+[node name="HSeparator" type="HSeparator" parent="Control/MarginContainer/VBoxContainer" unique_id=1689967631]
+layout_mode = 2
+
+[node name="HBoxContainer_Strength" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer" unique_id=1676587056]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="LabelStrength" type="Label" parent="Control/MarginContainer/VBoxContainer/HBoxContainer_Strength" unique_id=1818296356]
+custom_minimum_size = Vector2(260, 46)
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "Strength: +0"
+
+[node name="HBoxContainer_Magic" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer" unique_id=1967426573]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="LabelMagic" type="Label" parent="Control/MarginContainer/VBoxContainer/HBoxContainer_Magic" unique_id=93396923]
+custom_minimum_size = Vector2(260, 46)
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "Magic: +0"
+
+[node name="HBoxContainer_Dexterity" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer" unique_id=121873463]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="LabelDexterity" type="Label" parent="Control/MarginContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=1581397644]
+custom_minimum_size = Vector2(260, 46)
+layout_mode = 2
+theme_override_font_sizes/font_size = 34
+text = "Dexterity: +0"
+
+[node name="TimerLabel" type="Label" parent="Control" unique_id=405452174]
+layout_mode = 0
+offset_left = 92.0
+offset_right = 180.0
+offset_bottom = 23.0
+text = "Time: 05:00"
+horizontal_alignment = 2
