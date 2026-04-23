@@ -10,12 +10,13 @@ radius = 0.5
 height = 1.8
 
 [node name="Player" type="CharacterBody2D" unique_id=1924339904]
-scale = Vector2(2, 2)
+scale = Vector2(1, 1)
 script = ExtResource("1_player_script")
 metadata/character_class = "Bounty Hunter"
 metadata/era = "14th Century"
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=748991375]
+scale = Vector2(0.38, 0.38)
 modulate = Color(0.5, 0.3, 0.2, 1)
 texture = ExtResource("4_player_texture")
 

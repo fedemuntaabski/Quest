@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 class_name PlayerMovement
 
-@export var SPEED: float = 234.0
+@export var SPEED: float = 360.0
 
 func _physics_process(_delta: float) -> void:
 	# Top-down movement using project input actions (WASD).

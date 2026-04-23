@@ -3,44 +3,29 @@ extends CanvasLayer
 class_name HUDController
 
 @onready var timer_label: Label = $Control/TimerLabel
-@onready var stats_container: VBoxContainer = $Control/MarginContainer/VBoxContainer
+@onready var stats_container: VBoxContainer = $Control/MarginContainer/HBoxContainer/VBoxContainer
+@onready var mejoras_button: Button = $Control/MarginContainer/HBoxContainer/MejorasButton
 
 # References to stat labels
-@onready var label_hp: Label = $Control/MarginContainer/VBoxContainer/HBoxContainer_HP/LabelHP
-@onready var label_strength: Label = $Control/MarginContainer/VBoxContainer/HBoxContainer_Strength/LabelStrength
-@onready var label_magic: Label = $Control/MarginContainer/VBoxContainer/HBoxContainer_Magic/LabelMagic
-@onready var label_dexterity: Label = $Control/MarginContainer/VBoxContainer/HBoxContainer_Dexterity/LabelDexterity
+@onready var label_hp: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_HP/LabelHP
+@onready var label_strength: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Strength/LabelStrength
+@onready var label_magic: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Magic/LabelMagic
+@onready var label_dexterity: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity/LabelDexterity
 
 # Card slots UI references
 var card_slots: Array = []
 
-# Instance timer
-var instance_time: float = 0.0
-var instance_duration: float = 300.0  # 5 minutes
-
 func _ready():
-	# Initialize timer display
+	# Main2d drives the room timer; HUD only renders values.
 	if timer_label:
-		timer_label.text = "Time: 05:00"
+		timer_label.text = "Time: 02:00"
+		timer_label.modulate = Color(1, 1, 1, 1)
 	if stats_container:
-		stats_container.visible = false
+		stats_container.visible = true
+	if mejoras_button:
+		mejoras_button.visible = true
 	
 	print("HUDController initialized - Minimal 2D HUD ready")
-
-func _process(delta: float):
-	if stats_container:
-		stats_container.visible = Input.is_action_pressed("ui_focus_next")
-
-	# Update timer
-	instance_time += delta
-	var remaining_time = max(0.0, instance_duration - instance_time)
-	var minutes = int(floor(remaining_time / 60.0))
-	var seconds = int(remaining_time) % 60
-	timer_label.text = "Time: %02d:%02d" % [minutes, seconds]
-	
-	# Check if time is up
-	if remaining_time <= 0:
-		_on_instance_time_expired()
 
 # Update stat display
 func update_stats(character_stats: CharacterStats) -> void:
@@ -79,8 +64,17 @@ func _on_instance_time_expired() -> void:
 
 # Reset timer for new instance
 func reset_instance_timer() -> void:
-	instance_time = 0.0
-	timer_label.text = "Time: 00:00"
+	update_room_timer(120.0, 120.0, Color(1, 1, 1, 1))
+
+func update_room_timer(remaining_seconds: float, _total_seconds: float, timer_color: Color) -> void:
+	if not timer_label:
+		return
+
+	var clamped_remaining := maxf(0.0, remaining_seconds)
+	var minutes := int(floor(clamped_remaining / 60.0))
+	var seconds := int(clamped_remaining) % 60
+	timer_label.text = "Time: %02d:%02d" % [minutes, seconds]
+	timer_label.modulate = timer_color
 
 # Add a card to the container (disabled for 2D prototype)
 func add_card_to_container(_card_data: Dictionary) -> bool:

@@ -13,57 +13,68 @@ anchors_preset = 0
 [node name="MarginContainer" type="MarginContainer" parent="Control" unique_id=1415032945]
 layout_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Control/MarginContainer" unique_id=16085052]
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/MarginContainer" unique_id=871130441]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/MarginContainer/HBoxContainer" unique_id=16085052]
 custom_minimum_size = Vector2(200, 140)
 layout_mode = 2
 
-[node name="HBoxContainer_HP" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer" unique_id=1581858995]
+[node name="HBoxContainer_HP" type="HBoxContainer" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=1581858995]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelHP" type="Label" parent="Control/MarginContainer/VBoxContainer/HBoxContainer_HP" unique_id=1859836433]
+[node name="LabelHP" type="Label" parent="Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_HP" unique_id=1859836433]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "HP: 10/10"
 
-[node name="HSeparator" type="HSeparator" parent="Control/MarginContainer/VBoxContainer" unique_id=1689967631]
+[node name="HSeparator" type="HSeparator" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=1689967631]
 layout_mode = 2
 
-[node name="HBoxContainer_Strength" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer" unique_id=1676587056]
+[node name="HBoxContainer_Strength" type="HBoxContainer" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=1676587056]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelStrength" type="Label" parent="Control/MarginContainer/VBoxContainer/HBoxContainer_Strength" unique_id=1818296356]
+[node name="LabelStrength" type="Label" parent="Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Strength" unique_id=1818296356]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Strength: +0"
 
-[node name="HBoxContainer_Magic" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer" unique_id=1967426573]
+[node name="HBoxContainer_Magic" type="HBoxContainer" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=1967426573]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelMagic" type="Label" parent="Control/MarginContainer/VBoxContainer/HBoxContainer_Magic" unique_id=93396923]
+[node name="LabelMagic" type="Label" parent="Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Magic" unique_id=93396923]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Magic: +0"
 
-[node name="HBoxContainer_Dexterity" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer" unique_id=121873463]
+[node name="HBoxContainer_Dexterity" type="HBoxContainer" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=121873463]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelDexterity" type="Label" parent="Control/MarginContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=1581397644]
+[node name="LabelDexterity" type="Label" parent="Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=1581397644]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
 theme_override_font_sizes/font_size = 34
 text = "Dexterity: +0"
 
+[node name="MejorasButton" type="Button" parent="Control/MarginContainer/HBoxContainer" unique_id=172341209]
+custom_minimum_size = Vector2(170, 52)
+layout_mode = 2
+text = "Mejoras"
+
 [node name="TimerLabel" type="Label" parent="Control" unique_id=405452174]
 layout_mode = 0
-offset_left = 92.0
-offset_right = 180.0
-offset_bottom = 23.0
-text = "Time: 05:00"
+offset_left = 1708.0
+offset_top = 16.0
+offset_right = 1888.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 30
+text = "Time: 02:00"
 horizontal_alignment = 2

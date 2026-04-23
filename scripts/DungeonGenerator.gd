@@ -11,9 +11,9 @@ const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
 @export var grid_width: int = 52
 @export var grid_height: int = 36
 @export var tile_size: float = 64.0
-@export var room_count: int = 10
-@export var room_min_size: Vector2i = Vector2i(4, 4)
-@export var room_max_size: Vector2i = Vector2i(8, 7)
+@export var room_count: int = 7
+@export var room_min_size: Vector2i = Vector2i(6, 5)
+@export var room_max_size: Vector2i = Vector2i(16, 12)
 @export var room_padding: int = 1
 @export var room_light_energy: float = 1.2
 @export var room_light_transition_seconds: float = 0.45
@@ -57,9 +57,8 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 		-(float(grid_height) * 0.5 * tile_size)
 	)
 
-	_generate_rooms()
-	if room_infos.is_empty():
-		push_error("DungeonGenerator: Failed to generate any room.")
+	if not _generate_rooms():
+		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
 		return
 
 	_connect_rooms_with_corridors()
@@ -178,31 +177,63 @@ func _clear_generated_content() -> void:
 	fog_of_war.clear()
 	visited_fog.clear()
 
-func _generate_rooms() -> void:
-	var attempts := room_count * 30
-	while room_infos.size() < room_count and attempts > 0:
-		attempts -= 1
+func _generate_rooms() -> bool:
+	const LAYOUT_RETRIES := 32
 
-		var room_size := Vector2i(
-			randi_range(room_min_size.x, room_max_size.x),
-			randi_range(room_min_size.y, room_max_size.y)
-		)
+	for _retry in range(LAYOUT_RETRIES):
+		_clear_generated_content()
+		floor_cells.clear()
+		wall_cells.clear()
+		wall_nodes.clear()
+		room_infos.clear()
 
-		var max_x := grid_width - room_size.x - room_padding - 1
-		var max_y := grid_height - room_size.y - room_padding - 1
-		if max_x <= room_padding or max_y <= room_padding:
-			continue
+		var attempts := room_count * 90
+		while room_infos.size() < room_count and attempts > 0:
+			attempts -= 1
 
-		var room_pos := Vector2i(
-			randi_range(room_padding, max_x),
-			randi_range(room_padding, max_y)
-		)
-		var room_rect := Rect2i(room_pos, room_size)
+			var room_size := _roll_room_size()
 
-		if _room_overlaps_existing(room_rect):
-			continue
+			var max_x := grid_width - room_size.x - room_padding - 1
+			var max_y := grid_height - room_size.y - room_padding - 1
+			if max_x <= room_padding or max_y <= room_padding:
+				continue
 
-		_register_room(room_rect)
+			var room_pos := Vector2i(
+				randi_range(room_padding, max_x),
+				randi_range(room_padding, max_y)
+			)
+			var room_rect := Rect2i(room_pos, room_size)
+
+			if _room_overlaps_existing(room_rect):
+				continue
+
+			_register_room(room_rect)
+
+		if room_infos.size() == room_count:
+			return true
+
+	return false
+
+func _roll_room_size() -> Vector2i:
+	var width := randi_range(room_min_size.x, room_max_size.x)
+	var height := randi_range(room_min_size.y, room_max_size.y)
+
+	var short_width_max := mini(room_max_size.x, room_min_size.x + 2)
+	var short_height_max := mini(room_max_size.y, room_min_size.y + 2)
+	var long_width_min := maxi(room_min_size.x, room_max_size.x - 4)
+	var long_height_min := maxi(room_min_size.y, room_max_size.y - 4)
+
+	var shape_roll := randf()
+	if shape_roll < 0.34:
+		# Wide chamber / horizontal corridor feel.
+		width = randi_range(long_width_min, room_max_size.x)
+		height = randi_range(room_min_size.y, short_height_max)
+	elif shape_roll < 0.68:
+		# Tall chamber / vertical corridor feel.
+		width = randi_range(room_min_size.x, short_width_max)
+		height = randi_range(long_height_min, room_max_size.y)
+
+	return Vector2i(width, height)
 
 func _room_overlaps_existing(candidate: Rect2i) -> bool:
 	var expanded := candidate.grow(room_padding)
