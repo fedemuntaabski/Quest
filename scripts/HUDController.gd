@@ -24,6 +24,12 @@ func _ready():
 	if stats_container:
 		stats_container.visible = false
 	
+	var player_stats_autoload = get_node_or_null("/root/PlayerStats")
+	if player_stats_autoload and not player_stats_autoload.stats_changed.is_connected(update_stats):
+		player_stats_autoload.stats_changed.connect(update_stats)
+		if player_stats_autoload.stats:
+			update_stats(player_stats_autoload.stats)
+	
 	print("HUDController initialized - Minimal 2D HUD ready")
 
 func _process(_delta: float) -> void:

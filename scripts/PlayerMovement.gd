@@ -24,6 +24,13 @@ func _ready() -> void:
 	add_to_group("player")
 	if camera:
 		_shake_origin = camera.offset
+	
+	# Register stats with the autoload so UI can subscribe
+	var stats_node := get_node_or_null("Stats") as CharacterStats
+	if stats_node:
+		var player_stats_autoload = get_node_or_null("/root/PlayerStats")
+		if player_stats_autoload and player_stats_autoload.has_method("register"):
+			player_stats_autoload.register(stats_node)
 
 # ─────────────────────────────────────────────────────────────────────────────
 func _physics_process(delta: float) -> void:

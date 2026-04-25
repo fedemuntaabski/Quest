@@ -3,6 +3,7 @@ extends Node2D
 class_name DungeonGenerator
 
 signal room_changed(room_id: int)
+signal room_cleared(room_id: int)
 
 const FLOOR_TEXTURE_PATH := "res://assets/texture/enviorment/ground_texture1.png"
 const WALL_TEXTURE_PATH := "res://assets/ui/white_2x2.svg"
@@ -40,6 +41,9 @@ var wall_nodes: Dictionary = {}
 var room_infos: Array[Dictionary] = []
 var active_room_id: int = -1
 
+## Tracks how many enemies are still alive per room_id.
+var _room_enemy_counts: Dictionary = {}
+
 var _enemy_scene: PackedScene = null
 var _spawned_player: CharacterBody2D = null
 
@@ -55,6 +59,7 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	wall_cells.clear()
 	wall_nodes.clear()
 	room_infos.clear()
+	_room_enemy_counts.clear()
 	active_room_id = -1
 
 	grid_origin = Vector2(
@@ -553,6 +558,13 @@ func _spawn_enemies() -> void:
 			enemy.player_torch = captured_torch
 		, CONNECT_ONE_SHOT)
 
+		# Track alive count and connect death signal
+		_room_enemy_counts[room_id] = _room_enemy_counts.get(room_id, 0) + 1
+		var captured_room_id := room_id
+		enemy.enemy_defeated.connect(func(e: EnemyAI) -> void:
+			_on_enemy_defeated(e, captured_room_id)
+		, CONNECT_ONE_SHOT)
+
 		enemies_root.add_child(enemy)
 		print("DungeonGenerator: Spawned enemy in room %d at cell %v" % [room_id, spawn_cell])
 
@@ -595,3 +607,19 @@ func _get_random_floor_cell_in_room(room_info: Dictionary, avoid_center: bool) -
 		return Vector2i(-1, -1)
 
 	return candidates[randi() % candidates.size()]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Called when an enemy's enemy_defeated signal fires.
+# Decrements the room's alive counter; emits room_cleared when it hits zero.
+func _on_enemy_defeated(_enemy: EnemyAI, room_id: int) -> void:
+	if not _room_enemy_counts.has(room_id):
+		return
+
+	_room_enemy_counts[room_id] = _room_enemy_counts[room_id] - 1
+	var remaining: int = _room_enemy_counts[room_id]
+	print("DungeonGenerator: Room %d has %d enemies remaining." % [room_id, remaining])
+
+	if remaining <= 0:
+		_room_enemy_counts.erase(room_id)
+		print("DungeonGenerator: Room %d CLEARED — emitting room_cleared." % room_id)
+		emit_signal("room_cleared", room_id)

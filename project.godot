@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 Mousebrain="*res://scripts/mousebrain.gd"
 GameManager="*res://scripts/GlobalData.gd"
 TurnManager="*res://scripts/TurnManager.gd"
+PlayerStats="*res://scripts/PlayerStats.gd"
 
 [display]
 

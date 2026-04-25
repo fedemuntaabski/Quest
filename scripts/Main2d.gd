@@ -15,8 +15,16 @@ var visited_rooms: Array[int] = []
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	if dungeon_generator and not dungeon_generator.room_changed.is_connected(_on_room_changed):
-		dungeon_generator.room_changed.connect(_on_room_changed)
+	if dungeon_generator:
+		if not dungeon_generator.room_changed.is_connected(_on_room_changed):
+			dungeon_generator.room_changed.connect(_on_room_changed)
+		if not dungeon_generator.room_cleared.is_connected(_on_room_cleared):
+			dungeon_generator.room_cleared.connect(_on_room_cleared)
+
+	var upgrade_menu := get_node_or_null("UpgradeMenu")
+	if upgrade_menu and not upgrade_menu.upgrade_chosen.is_connected(_on_upgrade_chosen):
+		upgrade_menu.upgrade_chosen.connect(_on_upgrade_chosen)
+
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
 
@@ -44,6 +52,16 @@ func _on_room_changed(room_id: int) -> void:
 		visited_rooms.append(room_id)
 		_reset_room_timer()
 	_update_timer_ui()
+
+func _on_room_cleared(room_id: int) -> void:
+	var upgrade_menu := get_node_or_null("UpgradeMenu")
+	if upgrade_menu and upgrade_menu.has_method("show_menu"):
+		upgrade_menu.show_menu(room_id)
+
+func _on_upgrade_chosen(_upgrade: Dictionary) -> void:
+	var player_stats_autoload = get_node_or_null("/root/PlayerStats")
+	if hud and player_stats_autoload and player_stats_autoload.stats:
+		hud.update_stats(player_stats_autoload.stats)
 
 func _set_paused_state(paused_value: bool) -> void:
 	if pause_menu:

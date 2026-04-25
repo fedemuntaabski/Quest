@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://b5v43ol8idshh" path="res://scenes/HUD.tscn" id="3_hud"]
 [ext_resource type="Script" path="res://scripts/Main2d.gd" id="4_main2d_script"]
 [ext_resource type="PackedScene" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
+[ext_resource type="PackedScene" path="res://scenes/UpgradeMenu.tscn" id="6_upgrade_menu"]
 
 [node name="Main2d" type="Node2D" unique_id=719008083]
 script = ExtResource("4_main2d_script")
@@ -20,3 +21,5 @@ position = Vector2(0, 0)
 [node name="HUD" parent="." unique_id=712781322 instance=ExtResource("3_hud")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("5_pause_menu")]
+
+[node name="UpgradeMenu" parent="." instance=ExtResource("6_upgrade_menu")]
