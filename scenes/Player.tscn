@@ -33,8 +33,9 @@ zoom = Vector2(1.8, 1.8)
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=638103579]
 energy = 1.2
+shadow_enabled = true
 texture = ExtResource("5_scope_texture")
-texture_scale = 2.0
+texture_scale = 4.0
 
 [node name="AttackArea" type="Area2D" parent="." unique_id=222000001]
 collision_layer = 0

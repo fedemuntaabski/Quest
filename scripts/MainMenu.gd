@@ -9,6 +9,7 @@ const RESOLUTION_PRESETS := [
 ]
 
 @onready var center_container: CenterContainer = $CenterContainer
+@onready var main_vbox: VBoxContainer = $CenterContainer/VBoxContainer
 @onready var start_button: Button = $CenterContainer/VBoxContainer/StartButton
 @onready var options_button: Button = $CenterContainer/VBoxContainer/OptionsButton
 @onready var exit_button: Button = $CenterContainer/VBoxContainer/ExitMargin/ExitButton
@@ -27,6 +28,8 @@ const RESOLUTION_PRESETS := [
 var has_unsaved_changes: bool = false
 var suppress_change_tracking: bool = false
 
+var slot_vbox: VBoxContainer = null
+
 func _ready() -> void:
 	_setup_content_scaling()
 	_populate_resolution_selector()
@@ -43,6 +46,59 @@ func _ready() -> void:
 	_update_click_volume_label(click_volume_slider.value)
 	_update_hover_volume_label(hover_volume_slider.value)
 	has_unsaved_changes = false
+	
+	_build_slot_selection_ui()
+
+func _build_slot_selection_ui() -> void:
+	slot_vbox = VBoxContainer.new()
+	slot_vbox.custom_minimum_size = Vector2(560, 560)
+	slot_vbox.add_theme_constant_override("separation", 36)
+	slot_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	slot_vbox.visible = false
+	center_container.add_child(slot_vbox)
+	
+	var title = Label.new()
+	title.text = "SELECT SLOT"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 42)
+	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.62, 1))
+	slot_vbox.add_child(title)
+	
+	for i in range(1, 4):
+		var btn = Button.new()
+		btn.custom_minimum_size = Vector2(400, 100)
+		btn.text = "SLOT %d" % i
+		if SaveManager.has_save(i):
+			btn.text += " (SAVED)"
+		else:
+			btn.text += " (EMPTY)"
+		
+		btn.add_theme_font_size_override("font_size", 34)
+		# Copy styles from start button
+		btn.add_theme_stylebox_override("normal", start_button.get_theme_stylebox("normal"))
+		btn.add_theme_stylebox_override("pressed", start_button.get_theme_stylebox("pressed"))
+		btn.add_theme_stylebox_override("hover", start_button.get_theme_stylebox("hover"))
+		btn.add_theme_color_override("font_color", Color(0.95, 0.78, 0.42, 1))
+		
+		btn.pressed.connect(_on_slot_selected.bind(i))
+		btn.mouse_entered.connect(_on_any_button_mouse_entered)
+		slot_vbox.add_child(btn)
+	
+	var back_btn = Button.new()
+	back_btn.custom_minimum_size = Vector2(400, 100)
+	back_btn.text = "BACK"
+	back_btn.add_theme_font_size_override("font_size", 34)
+	back_btn.add_theme_stylebox_override("normal", start_button.get_theme_stylebox("normal"))
+	back_btn.add_theme_stylebox_override("pressed", start_button.get_theme_stylebox("pressed"))
+	back_btn.add_theme_stylebox_override("hover", start_button.get_theme_stylebox("hover"))
+	back_btn.add_theme_color_override("font_color", Color(0.95, 0.78, 0.42, 1))
+	back_btn.pressed.connect(_on_slot_back_pressed)
+	back_btn.mouse_entered.connect(_on_any_button_mouse_entered)
+	
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_top", 50)
+	margin.add_child(back_btn)
+	slot_vbox.add_child(margin)
 
 func _setup_content_scaling() -> void:
 	var root_window: Window = get_tree().root
@@ -239,6 +295,23 @@ func load_settings() -> void:
 	_update_hover_volume_label(hover_volume_slider.value)
 
 func on_start_button_pressed() -> void:
+	if click_sound and click_sound.stream:
+		click_sound.play()
+	main_vbox.visible = false
+	slot_vbox.visible = true
+
+func _on_slot_back_pressed() -> void:
+	if click_sound and click_sound.stream:
+		click_sound.play()
+	slot_vbox.visible = false
+	main_vbox.visible = true
+
+func _on_slot_selected(slot_id: int) -> void:
+	if click_sound and click_sound.stream:
+		click_sound.play()
+	
+	SaveManager.load_game(slot_id)
+	
 	await get_tree().create_timer(0.15).timeout
 	get_tree().change_scene_to_file("res://scenes/Main2d.tscn")
 

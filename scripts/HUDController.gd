@@ -14,6 +14,8 @@ class_name HUDController
 # Card slots UI references
 var card_slots: Array = []
 
+var active_upgrades_vbox: VBoxContainer = null
+
 func _ready():
 	_ensure_tab_input_action()
 
@@ -24,6 +26,8 @@ func _ready():
 	if stats_container:
 		stats_container.visible = false
 	
+	_build_active_upgrades_ui()
+	
 	var player_stats_autoload = get_node_or_null("/root/PlayerStats")
 	if player_stats_autoload and not player_stats_autoload.stats_changed.is_connected(update_stats):
 		player_stats_autoload.stats_changed.connect(update_stats)
@@ -31,6 +35,25 @@ func _ready():
 			update_stats(player_stats_autoload.stats)
 	
 	print("HUDController initialized - Minimal 2D HUD ready")
+
+func _build_active_upgrades_ui() -> void:
+	if not stats_container:
+		return
+	
+	var sep = HSeparator.new()
+	stats_container.add_child(sep)
+	
+	var title = Label.new()
+	title.text = "Active Upgrades"
+	title.add_theme_font_size_override("font_size", 24)
+	stats_container.add_child(title)
+	
+	var scroll = ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(300, 200)
+	stats_container.add_child(scroll)
+	
+	active_upgrades_vbox = VBoxContainer.new()
+	scroll.add_child(active_upgrades_vbox)
 
 func _process(_delta: float) -> void:
 	if stats_container:
@@ -55,6 +78,38 @@ func update_stats(character_stats: CharacterStats) -> void:
 	label_strength.text = "Strength: +%d" % character_stats.strength_modifier
 	label_magic.text = "Magic: +%d" % character_stats.magic_modifier
 	label_dexterity.text = "Dexterity: +%d" % character_stats.dexterity_modifier
+	
+	_refresh_active_upgrades_list()
+
+func _refresh_active_upgrades_list() -> void:
+	if not active_upgrades_vbox:
+		return
+	
+	# Clear existing
+	for child in active_upgrades_vbox.get_children():
+		child.queue_free()
+	
+	var player_stats = get_node_or_null("/root/PlayerStats")
+	if not player_stats:
+		return
+	
+	var upgrades: Array = player_stats.active_upgrades
+	if upgrades.is_empty():
+		var lbl = Label.new()
+		lbl.text = "No upgrades yet."
+		lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+		active_upgrades_vbox.add_child(lbl)
+		return
+		
+	for upg in upgrades:
+		var lbl = Label.new()
+		lbl.text = "- %s (+%d %s)" % [
+			upg.get("card_name", "???"),
+			upg.get("value_change", 0),
+			_get_stat_short(upg.get("stat_affected", ""))
+		]
+		lbl.add_theme_font_size_override("font_size", 18)
+		active_upgrades_vbox.add_child(lbl)
 
 # Signal handler for card changes (disabled for 2D prototype)
 func _on_cards_changed(_cards: Array) -> void:

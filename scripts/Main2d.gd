@@ -12,6 +12,8 @@ var room_timer_remaining: float = ROOM_TIMER_SECONDS
 var timer_expired_logged: bool = false
 var visited_rooms: Array[int] = []
 
+var tutorial_layer: Node = null
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
@@ -20,6 +22,15 @@ func _ready() -> void:
 			dungeon_generator.room_changed.connect(_on_room_changed)
 		if not dungeon_generator.room_cleared.is_connected(_on_room_cleared):
 			dungeon_generator.room_cleared.connect(_on_room_cleared)
+			
+	var save_mgr = get_node_or_null("/root/SaveManager")
+	if save_mgr and save_mgr.first_time_player:
+		var tut_scene = load("res://scenes/TutorialLayer.tscn")
+		if tut_scene:
+			tutorial_layer = tut_scene.instantiate()
+			add_child(tutorial_layer)
+			if dungeon_generator and tutorial_layer.has_method("_on_room_cleared"):
+				dungeon_generator.room_cleared.connect(tutorial_layer._on_room_cleared)
 
 	var upgrade_menu := get_node_or_null("UpgradeMenu")
 	if upgrade_menu and not upgrade_menu.upgrade_chosen.is_connected(_on_upgrade_chosen):
@@ -54,7 +65,8 @@ func _on_room_changed(room_id: int) -> void:
 	_update_timer_ui()
 
 func _on_room_cleared(room_id: int) -> void:
-	var upgrade_menu := get_node_or_null("UpgradeMenu")
+	var upgrade_menu := get_node_or_null("UpgradeMenu")	
+	
 	if upgrade_menu and upgrade_menu.has_method("show_menu"):
 		upgrade_menu.show_menu(room_id)
 

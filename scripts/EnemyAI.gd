@@ -34,6 +34,7 @@ var _nav_timer: float = 0.0
 var _dead: bool = false
 var _original_modulate: Color = Color.WHITE
 var facing_direction: Vector2 = Vector2.RIGHT   # track which way enemy faces
+var _patrol_timer: float = 0.0
 
 # ── Torch detection radius (world-space) ─────────────────────────────────────
 # PointLight2D energy/texture_scale translates to roughly this world-unit radius
@@ -77,12 +78,32 @@ func _physics_process(delta: float) -> void:
 	# Sync health bar
 	_sync_health_bar()
 
-# ── IDLE ──────────────────────────────────────────────────────────────────────
-func _process_idle(_delta: float) -> void:
-	velocity = Vector2.ZERO
-	move_and_slide()
+# ── IDLE / PATROL ─────────────────────────────────────────────────────────────
+func _process_idle(delta: float) -> void:
 	if _should_chase():
 		_enter_state(State.CHASE)
+		return
+		
+	_patrol_timer -= delta
+	if _patrol_timer <= 0.0:
+		_patrol_timer = randf_range(2.0, 5.0)
+		# Pick a random patrol point nearby
+		var random_offset = Vector2(randf_range(-150.0, 150.0), randf_range(-150.0, 150.0))
+		nav_agent.target_position = global_position + random_offset
+
+	if nav_agent.is_navigation_finished():
+		velocity = Vector2.ZERO
+	else:
+		var next_pos: Vector2 = nav_agent.get_next_path_position()
+		var direction: Vector2 = (next_pos - global_position)
+		if direction.length_squared() > 1.0:
+			direction = direction.normalized()
+			facing_direction = direction
+			velocity = direction * (move_speed * 0.4) # Walk slower when patrolling
+		else:
+			velocity = Vector2.ZERO
+
+	move_and_slide()
 
 # ── CHASE ─────────────────────────────────────────────────────────────────────
 func _process_chase(delta: float) -> void:
@@ -182,9 +203,20 @@ func _do_attack() -> void:
 	var player_stats: CharacterStats = player.get_node_or_null("Stats") as CharacterStats
 	if player_stats == null:
 		return
-	player_stats.take_damage(attack_damage)
-	print("EnemyAI [%s] attacks player for %d dmg. Player HP: %d/%d" % [
-		name, attack_damage, player_stats.current_hp, player_stats.max_hp])
+		
+	# Lunge animation (Tween)
+	var original_pos = sprite.position
+	var attack_dir = (player.global_position - global_position).normalized()
+	
+	var t = create_tween()
+	t.tween_property(sprite, "position", original_pos + attack_dir * 20.0, 0.1).set_trans(Tween.TRANS_SINE)
+	t.tween_callback(func():
+		if not _dead:
+			player_stats.take_damage(attack_damage)
+			print("EnemyAI [%s] lunges and attacks player for %d dmg. Player HP: %d/%d" % [
+				name, attack_damage, player_stats.current_hp, player_stats.max_hp])
+	)
+	t.tween_property(sprite, "position", original_pos, 0.2).set_trans(Tween.TRANS_QUAD)
 
 # ─────────────────────────────────────────────────────────────────────────────
 ## Called externally (from PlayerMovement) when this enemy is hit

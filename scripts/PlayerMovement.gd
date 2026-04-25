@@ -12,6 +12,7 @@ class_name PlayerMovement
 # ── Node refs ─────────────────────────────────────────────────────────────────
 @onready var camera: Camera2D = $Camera2D
 @onready var attack_area: Area2D = $AttackArea
+@onready var point_light: PointLight2D = $PointLight2D
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
 var facing_direction: Vector2 = Vector2.RIGHT
@@ -29,8 +30,24 @@ func _ready() -> void:
 	var stats_node := get_node_or_null("Stats") as CharacterStats
 	if stats_node:
 		var player_stats_autoload = get_node_or_null("/root/PlayerStats")
-		if player_stats_autoload and player_stats_autoload.has_method("register"):
-			player_stats_autoload.register(stats_node)
+		if player_stats_autoload:
+			if player_stats_autoload.has_method("register"):
+				player_stats_autoload.register(stats_node)
+			if not player_stats_autoload.stats_changed.is_connected(_on_stats_changed):
+				player_stats_autoload.stats_changed.connect(_on_stats_changed)
+
+func _on_stats_changed(_stats: CharacterStats) -> void:
+	var player_stats_autoload = get_node_or_null("/root/PlayerStats")
+	if not player_stats_autoload or not point_light:
+		return
+	
+	var reach_count = 0
+	for upg in player_stats_autoload.active_upgrades:
+		if upg.get("special", "") == "arcane_reach":
+			reach_count += 1
+			
+	# Arcane reach expands vision
+	point_light.texture_scale = 4.0 + (reach_count * 1.5)
 
 # ─────────────────────────────────────────────────────────────────────────────
 func _physics_process(delta: float) -> void:
@@ -89,6 +106,19 @@ func _try_attack() -> void:
 
 	if hit_any:
 		_trigger_screen_shake()
+		
+		# Vampiric Strike logic
+		var player_stats_autoload = get_node_or_null("/root/PlayerStats")
+		if player_stats_autoload:
+			var heal_amount = 0
+			for upg in player_stats_autoload.active_upgrades:
+				if upg.get("special", "") == "vampiric":
+					heal_amount += 1
+			if heal_amount > 0:
+				var stats_node := get_node_or_null("Stats") as CharacterStats
+				if stats_node:
+					stats_node.current_hp = mini(stats_node.current_hp + heal_amount, stats_node.max_hp)
+					player_stats_autoload.stats_changed.emit(stats_node)
 
 # ── Backstab detection ────────────────────────────────────────────────────────
 # Returns true when player is behind the enemy (approaching from its rear)

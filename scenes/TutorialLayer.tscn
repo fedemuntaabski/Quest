@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://b1b1c1d1e1f1a"]
+
+[ext_resource type="Script" uid="uid://c7t7t7t7t7t7t" path="res://scripts/TutorialLayer.gd" id="1_tut_script"]
+
+[node name="TutorialLayer" type="CanvasLayer" unique_id=987654321]
+script = ExtResource("1_tut_script")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=123456789]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -120.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0, 0, 0, 1)
+
+[node name="Label" type="Label" parent="." unique_id=987654320]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -120.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(1, 0.9, 0.6, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
+text = ""

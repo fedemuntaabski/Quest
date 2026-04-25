@@ -21,6 +21,7 @@ Mousebrain="*res://scripts/mousebrain.gd"
 GameManager="*res://scripts/GlobalData.gd"
 TurnManager="*res://scripts/TurnManager.gd"
 PlayerStats="*res://scripts/PlayerStats.gd"
+SaveManager="*res://scripts/SaveManager.gd"
 
 [display]
 

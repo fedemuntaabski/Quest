@@ -426,6 +426,16 @@ func _spawn_wall(cell: Vector2i) -> void:
 	rectangle.size = Vector2(tile_size, tile_size)
 	collision_shape.shape = rectangle
 	wall.add_child(collision_shape)
+	
+	var occluder = LightOccluder2D.new()
+	var occ_polygon = OccluderPolygon2D.new()
+	var hs = tile_size / 2.0
+	occ_polygon.polygon = PackedVector2Array([
+		Vector2(-hs, -hs), Vector2(hs, -hs),
+		Vector2(hs, hs), Vector2(-hs, hs)
+	])
+	occluder.occluder = occ_polygon
+	wall.add_child(occluder)
 
 	walls_root.add_child(wall)
 	wall_nodes[cell] = wall
