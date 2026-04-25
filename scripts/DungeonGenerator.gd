@@ -7,6 +7,7 @@ signal room_changed(room_id: int)
 const FLOOR_TEXTURE_PATH := "res://assets/texture/enviorment/ground_texture1.png"
 const WALL_TEXTURE_PATH := "res://assets/ui/white_2x2.svg"
 const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
+const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 
 @export var grid_width: int = 52
 @export var grid_height: int = 36
@@ -28,6 +29,7 @@ var rooms_root: Node2D
 var walls_root: Node2D
 var room_detectors_root: Node2D
 var room_lights_root: Node2D
+var enemies_root: Node2D
 var fog_of_war: TileMapLayer
 var visited_fog: TileMapLayer
 
@@ -37,6 +39,9 @@ var wall_cells: Dictionary = {}
 var wall_nodes: Dictionary = {}
 var room_infos: Array[Dictionary] = []
 var active_room_id: int = -1
+
+var _enemy_scene: PackedScene = null
+var _spawned_player: CharacterBody2D = null
 
 func _ready() -> void:
 	_ensure_runtime_nodes()
@@ -66,7 +71,11 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	_build_fog_layers()
 
 	if player:
+		_spawned_player = player
 		place_player_in_start_room(player)
+
+	# Spawn enemies after layout is fully built
+	_spawn_enemies()
 
 	_set_active_room(int(room_infos[0]["id"]), false)
 
@@ -146,6 +155,7 @@ func _ensure_runtime_nodes() -> void:
 	walls_root = _ensure_node2d("Walls")
 	room_detectors_root = _ensure_node2d("RoomDetectors")
 	room_lights_root = _ensure_node2d("RoomLights")
+	enemies_root = _ensure_node2d("Enemies")
 	fog_of_war = _ensure_tile_map_layer("FogOfWar")
 	visited_fog = _ensure_tile_map_layer("VisitedFog")
 
@@ -170,7 +180,7 @@ func _ensure_tile_map_layer(node_name: String) -> TileMapLayer:
 	return created
 
 func _clear_generated_content() -> void:
-	for parent in [floors_root, corridors_root, rooms_root, walls_root, room_detectors_root, room_lights_root]:
+	for parent in [floors_root, corridors_root, rooms_root, walls_root, room_detectors_root, room_lights_root, enemies_root]:
 		for child in parent.get_children():
 			child.queue_free()
 
@@ -505,3 +515,83 @@ func _tween_room_lights(animate: bool) -> void:
 			room_light.energy = target_energy
 		else:
 			tween.tween_property(room_light, "energy", target_energy, tween_duration)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Enemy spawning
+# ─────────────────────────────────────────────────────────────────────────────
+func _spawn_enemies() -> void:
+	if _enemy_scene == null:
+		_enemy_scene = load(ENEMY_SCENE_PATH) as PackedScene
+	if _enemy_scene == null:
+		push_error("DungeonGenerator: Could not load Enemy scene at '%s'" % ENEMY_SCENE_PATH)
+		return
+
+	# Cache player torch reference once
+	var player_torch: PointLight2D = null
+	if _spawned_player:
+		player_torch = _spawned_player.get_node_or_null("PointLight2D") as PointLight2D
+
+	for room_info in room_infos:
+		var room_id: int = room_info["id"]
+		var spawn_cell := _get_random_floor_cell_in_room(room_info, room_id == 0)
+		if spawn_cell == Vector2i(-1, -1):
+			push_warning("DungeonGenerator: No valid spawn cell in room %d, skipping enemy." % room_id)
+			continue
+
+		var enemy := _enemy_scene.instantiate() as EnemyAI
+		if enemy == null:
+			continue
+
+		enemy.name = "Enemy_%d" % room_id
+		enemy.position = grid_to_world_coords(spawn_cell)
+
+		# Wire up player reference after the node enters the tree
+		var captured_player := _spawned_player
+		var captured_torch := player_torch
+		enemy.ready.connect(func() -> void:
+			enemy.player = captured_player
+			enemy.player_torch = captured_torch
+		, CONNECT_ONE_SHOT)
+
+		enemies_root.add_child(enemy)
+		print("DungeonGenerator: Spawned enemy in room %d at cell %v" % [room_id, spawn_cell])
+
+func _get_random_floor_cell_in_room(room_info: Dictionary, avoid_center: bool) -> Vector2i:
+	var room_cells: Array = room_info["floor_cells"]
+	var center_cell: Vector2i = room_info["center_cell"]
+
+	# Build candidate list: walkable, not a wall, not adjacent to a wall, and not center if needed
+	var candidates: Array[Vector2i] = []
+	var avoid_radius: int = 1 if avoid_center else 0
+
+	for raw_cell in room_cells:
+		var cell: Vector2i = raw_cell
+		if wall_cells.has(cell):
+			continue
+		# Skip cells too close to center when avoiding player spawn
+		if avoid_radius > 0:
+			var dx: int = absi(cell.x - center_cell.x)
+			var dy: int = absi(cell.y - center_cell.y)
+			if dx <= avoid_radius and dy <= avoid_radius:
+				continue
+		# Skip cells adjacent to a wall
+		var near_wall := false
+		for dir in [Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1)]:
+			if wall_cells.has(cell + dir):
+				near_wall = true
+				break
+		if near_wall:
+			continue
+		candidates.append(cell)
+
+	if candidates.is_empty():
+		# Fallback: any non-wall floor cell in the room
+		for raw_cell in room_cells:
+			var cell: Vector2i = raw_cell
+			if not wall_cells.has(cell):
+				candidates.append(cell)
+
+	if candidates.is_empty():
+		return Vector2i(-1, -1)
+
+	return candidates[randi() % candidates.size()]

@@ -8,3 +8,5 @@ script = ExtResource("1_map_script")
 
 [node name="DungeonGenerator" type="Node2D" parent="."]
 script = ExtResource("2_dungeon_script")
+
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="."]

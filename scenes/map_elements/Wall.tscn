@@ -1,18 +1,16 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://dr3ees6s0pjvf"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/white_2x2.svg" id="1_wall_texture"]
+[ext_resource type="Texture2D" uid="uid://di0guiahvqgdb" path="res://assets/ui/white_2x2.svg" id="1_wall_texture"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
 size = Vector2(128, 128)
 
-[node name="Wall" type="StaticBody2D"]
-collision_layer = 1
-collision_mask = 1
+[node name="Wall" type="StaticBody2D" unique_id=89046300]
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=545501376]
 modulate = Color(0.2, 0.18, 0.16, 1)
-texture = ExtResource("1_wall_texture")
 scale = Vector2(64, 64)
+texture = ExtResource("1_wall_texture")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=815603976]
 shape = SubResource("RectangleShape2D_wall")

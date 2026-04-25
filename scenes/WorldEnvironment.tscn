@@ -1,5 +1,4 @@
 [gd_scene format=3 uid="uid://bh5jm2wh3ot5"]
 
-[node name="WorldEnvironment" type="CanvasLayer"]
+[node name="WorldEnvironment" type="CanvasLayer" unique_id=1913558907]
 layer = -1
-
