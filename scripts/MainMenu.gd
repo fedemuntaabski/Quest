@@ -49,13 +49,22 @@ func _ready() -> void:
 	
 	_build_slot_selection_ui()
 
+var slot_selection_root: HBoxContainer = null
+var hover_panel: PanelContainer = null
+var hover_label: Label = null
+
 func _build_slot_selection_ui() -> void:
+	slot_selection_root = HBoxContainer.new()
+	slot_selection_root.custom_minimum_size = Vector2(900, 560)
+	slot_selection_root.alignment = BoxContainer.ALIGNMENT_CENTER
+	slot_selection_root.visible = false
+	center_container.add_child(slot_selection_root)
+	
 	slot_vbox = VBoxContainer.new()
 	slot_vbox.custom_minimum_size = Vector2(560, 560)
 	slot_vbox.add_theme_constant_override("separation", 36)
 	slot_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	slot_vbox.visible = false
-	center_container.add_child(slot_vbox)
+	slot_selection_root.add_child(slot_vbox)
 	
 	var title = Label.new()
 	title.text = "SELECT SLOT"
@@ -81,7 +90,8 @@ func _build_slot_selection_ui() -> void:
 		btn.add_theme_color_override("font_color", Color(0.95, 0.78, 0.42, 1))
 		
 		btn.pressed.connect(_on_slot_selected.bind(i))
-		btn.mouse_entered.connect(_on_any_button_mouse_entered)
+		btn.mouse_entered.connect(_on_slot_hovered.bind(i))
+		btn.mouse_exited.connect(_on_slot_unhovered)
 		slot_vbox.add_child(btn)
 	
 	var back_btn = Button.new()
@@ -99,6 +109,61 @@ func _build_slot_selection_ui() -> void:
 	margin.add_theme_constant_override("margin_top", 50)
 	margin.add_child(back_btn)
 	slot_vbox.add_child(margin)
+
+	var right_margin = MarginContainer.new()
+	right_margin.add_theme_constant_override("margin_left", 60)
+	slot_selection_root.add_child(right_margin)
+	
+	hover_panel = PanelContainer.new()
+	hover_panel.custom_minimum_size = Vector2(300, 400)
+	hover_panel.visible = false
+	right_margin.add_child(hover_panel)
+	
+	var panel_margin = MarginContainer.new()
+	panel_margin.add_theme_constant_override("margin_left", 20)
+	panel_margin.add_theme_constant_override("margin_top", 20)
+	panel_margin.add_theme_constant_override("margin_right", 20)
+	panel_margin.add_theme_constant_override("margin_bottom", 20)
+	hover_panel.add_child(panel_margin)
+	
+	var panel_vbox = VBoxContainer.new()
+	panel_margin.add_child(panel_vbox)
+	
+	hover_label = Label.new()
+	hover_label.text = "..."
+	hover_label.add_theme_font_size_override("font_size", 24)
+	hover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	panel_vbox.add_child(hover_label)
+
+func _on_slot_hovered(slot_id: int) -> void:
+	_on_any_button_mouse_entered()
+	if not SaveManager.has_save(slot_id):
+		hover_panel.visible = false
+		return
+		
+	hover_panel.visible = true
+	var cfg = ConfigFile.new()
+	var err = cfg.load(SaveManager.get_save_path(slot_id))
+	if err == OK:
+		var gold = cfg.get_value("save_data", "gold", 0)
+		var contracts = cfg.get_value("save_data", "contracts_completed", 0)
+		var s_str = cfg.get_value("save_data", "base_str", 0)
+		var s_mag = cfg.get_value("save_data", "base_mag", 0)
+		var s_dex = cfg.get_value("save_data", "base_dex", 0)
+		
+		var max_stat_val = s_str
+		var max_stat_name = "Fuerza"
+		if s_mag > max_stat_val:
+			max_stat_val = s_mag
+			max_stat_name = "Magia"
+		if s_dex > max_stat_val:
+			max_stat_val = s_dex
+			max_stat_name = "Destreza"
+			
+		hover_label.text = "Slot %d Data:\n\nOro: %d\nContratos: %d\nStat Principal: %s (+%d)" % [slot_id, gold, contracts, max_stat_name, max_stat_val]
+
+func _on_slot_unhovered() -> void:
+	hover_panel.visible = false
 
 func _setup_content_scaling() -> void:
 	var root_window: Window = get_tree().root
@@ -298,12 +363,12 @@ func on_start_button_pressed() -> void:
 	if click_sound and click_sound.stream:
 		click_sound.play()
 	main_vbox.visible = false
-	slot_vbox.visible = true
+	slot_selection_root.visible = true
 
 func _on_slot_back_pressed() -> void:
 	if click_sound and click_sound.stream:
 		click_sound.play()
-	slot_vbox.visible = false
+	slot_selection_root.visible = false
 	main_vbox.visible = true
 
 func _on_slot_selected(slot_id: int) -> void:

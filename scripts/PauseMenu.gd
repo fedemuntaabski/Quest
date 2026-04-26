@@ -11,9 +11,12 @@ const RESOLUTION_PRESETS := [
 	{"label": "1280x720", "size": Vector2i(1280, 720)}
 ]
 
+const UPGRADE_COST: int = 50
+
 @onready var pause_panel: Panel = $CenterContainer/PausePanel
 @onready var continue_button: Button = $CenterContainer/PausePanel/PauseVBox/ContinueButton
 @onready var options_button: Button = $CenterContainer/PausePanel/PauseVBox/OptionsButton
+@onready var store_button: Button = $CenterContainer/PausePanel/PauseVBox/StoreButton
 @onready var exit_button: Button = $CenterContainer/PausePanel/PauseVBox/ExitButton
 
 @onready var options_panel: Panel = $OptionsPanel
@@ -24,6 +27,14 @@ const RESOLUTION_PRESETS := [
 @onready var res_selector: OptionButton = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ResSelector
 @onready var save_button: Button = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/SaveButton
 @onready var back_button: Button = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/BackButton
+
+@onready var store_panel: Panel = $StorePanel
+@onready var gold_label: Label = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/GoldLabel
+@onready var upg_hp_btn: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeHPButton
+@onready var upg_str_btn: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeSTRButton
+@onready var upg_mag_btn: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeMAGButton
+@onready var upg_dex_btn: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeDEXButton
+@onready var store_back_button: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/StoreBackButton
 
 var suppress_change_tracking: bool = false
 var has_unsaved_changes: bool = false
@@ -42,17 +53,20 @@ func _ready() -> void:
 	_update_click_volume_label(click_volume_slider.value)
 	_update_hover_volume_label(hover_volume_slider.value)
 	_set_options_panel_visible(false)
+	_set_store_panel_visible(false)
 	_set_pause_panel_visible(true)
 
 func open_menu() -> void:
 	visible = true
 	_set_options_panel_visible(false)
+	_set_store_panel_visible(false)
 	_set_pause_panel_visible(true)
 
 func close_menu() -> void:
 	visible = false
 	has_unsaved_changes = false
 	_set_options_panel_visible(false)
+	_set_store_panel_visible(false)
 	_set_pause_panel_visible(true)
 
 func _set_pause_panel_visible(visible_value: bool) -> void:
@@ -60,6 +74,21 @@ func _set_pause_panel_visible(visible_value: bool) -> void:
 
 func _set_options_panel_visible(visible_value: bool) -> void:
 	options_panel.visible = visible_value
+
+func _set_store_panel_visible(visible_value: bool) -> void:
+	store_panel.visible = visible_value
+	if visible_value:
+		_update_store_ui()
+
+func _update_store_ui() -> void:
+	var save_mgr = get_node_or_null("/root/SaveManager")
+	if save_mgr:
+		gold_label.text = "Oro: %d" % save_mgr.gold
+		var can_afford = save_mgr.gold >= UPGRADE_COST
+		upg_hp_btn.disabled = not can_afford
+		upg_str_btn.disabled = not can_afford
+		upg_mag_btn.disabled = not can_afford
+		upg_dex_btn.disabled = not can_afford
 
 func _populate_resolution_selector() -> void:
 	res_selector.clear()
@@ -78,6 +107,20 @@ func _connect_signals() -> void:
 	if not save_button.pressed.is_connected(_on_save_button_pressed):
 		save_button.pressed.connect(_on_save_button_pressed)
 
+	if not store_button.pressed.is_connected(_on_store_button_pressed):
+		store_button.pressed.connect(_on_store_button_pressed)
+	if not store_back_button.pressed.is_connected(_on_store_back_button_pressed):
+		store_back_button.pressed.connect(_on_store_back_button_pressed)
+		
+	if not upg_hp_btn.pressed.is_connected(_on_upgrade_pressed.bind("hp")):
+		upg_hp_btn.pressed.connect(_on_upgrade_pressed.bind("hp"))
+	if not upg_str_btn.pressed.is_connected(_on_upgrade_pressed.bind("str")):
+		upg_str_btn.pressed.connect(_on_upgrade_pressed.bind("str"))
+	if not upg_mag_btn.pressed.is_connected(_on_upgrade_pressed.bind("mag")):
+		upg_mag_btn.pressed.connect(_on_upgrade_pressed.bind("mag"))
+	if not upg_dex_btn.pressed.is_connected(_on_upgrade_pressed.bind("dex")):
+		upg_dex_btn.pressed.connect(_on_upgrade_pressed.bind("dex"))
+
 	if not click_volume_slider.value_changed.is_connected(_on_click_volume_slider_value_changed):
 		click_volume_slider.value_changed.connect(_on_click_volume_slider_value_changed)
 	if not hover_volume_slider.value_changed.is_connected(_on_hover_volume_slider_value_changed):
@@ -91,7 +134,44 @@ func _on_continue_button_pressed() -> void:
 
 func _on_options_button_pressed() -> void:
 	_set_pause_panel_visible(false)
+	_set_store_panel_visible(false)
 	_set_options_panel_visible(true)
+
+func _on_store_button_pressed() -> void:
+	_set_pause_panel_visible(false)
+	_set_options_panel_visible(false)
+	_set_store_panel_visible(true)
+
+func _on_store_back_button_pressed() -> void:
+	_set_store_panel_visible(false)
+	_set_pause_panel_visible(true)
+
+func _on_upgrade_pressed(stat_id: String) -> void:
+	var save_mgr = get_node_or_null("/root/SaveManager")
+	var player_stats = get_node_or_null("/root/PlayerStats")
+	
+	if save_mgr and player_stats and save_mgr.gold >= UPGRADE_COST:
+		save_mgr.gold -= UPGRADE_COST
+		match stat_id:
+			"hp":
+				player_stats.base_hp += 1
+				if player_stats.stats:
+					player_stats.stats.max_hp += 1
+					player_stats.stats.current_hp += 1
+			"str":
+				player_stats.base_str += 1
+				if player_stats.stats: player_stats.stats.strength_modifier += 1
+			"mag":
+				player_stats.base_mag += 1
+				if player_stats.stats: player_stats.stats.magic_modifier += 1
+			"dex":
+				player_stats.base_dex += 1
+				if player_stats.stats: player_stats.stats.dexterity_modifier += 1
+				
+		save_mgr.save_game()
+		if player_stats.stats:
+			player_stats.stats_changed.emit(player_stats.stats)
+		_update_store_ui()
 
 func _on_exit_button_pressed() -> void:
 	get_tree().paused = false

@@ -11,6 +11,7 @@ extends Node
 ##   PlayerStats.stats_changed.connect(...)    ← subscribe from HUDController
 
 signal stats_changed(stats: CharacterStats)
+signal player_died
 
 ## The live CharacterStats node that belongs to the player.
 var stats: CharacterStats = null
@@ -35,6 +36,9 @@ func register(player_stats: CharacterStats) -> void:
 		return
 	stats = player_stats
 	
+	if not stats.died.is_connected(_on_stats_died):
+		stats.died.connect(_on_stats_died)
+	
 	# Apply loaded base stats
 	stats.max_hp = base_hp
 	stats.current_hp = base_hp
@@ -48,6 +52,9 @@ func register(player_stats: CharacterStats) -> void:
 	
 	print("PlayerStats: registered stats for '%s' (Loaded %d upgrades)" % [stats.character_name, active_upgrades.size()])
 	stats_changed.emit(stats)
+
+func _on_stats_died() -> void:
+	player_died.emit()
 
 # ─────────────────────────────────────────────────────────────────────────────
 ## Apply an upgrade dictionary produced by UpgradeMenu.

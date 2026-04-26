@@ -4,6 +4,8 @@ class_name DungeonGenerator
 
 signal room_changed(room_id: int)
 signal room_cleared(room_id: int)
+signal enemy_defeated_global
+
 
 const FLOOR_TEXTURE_PATH := "res://assets/texture/enviorment/ground_texture1.png"
 const WALL_TEXTURE_PATH := "res://assets/ui/white_2x2.svg"
@@ -622,6 +624,7 @@ func _get_random_floor_cell_in_room(room_info: Dictionary, avoid_center: bool) -
 # Called when an enemy's enemy_defeated signal fires.
 # Decrements the room's alive counter; emits room_cleared when it hits zero.
 func _on_enemy_defeated(_enemy: EnemyAI, room_id: int) -> void:
+	enemy_defeated_global.emit()
 	if not _room_enemy_counts.has(room_id):
 		return
 

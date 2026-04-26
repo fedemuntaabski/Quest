@@ -4,6 +4,7 @@ class_name HUDController
 
 @onready var timer_label: Label = $Control/TimerLabel
 @onready var stats_container: VBoxContainer = $Control/MarginContainer/HBoxContainer/VBoxContainer
+@onready var hbox_container: HBoxContainer = $Control/MarginContainer/HBoxContainer
 
 # References to stat labels
 @onready var label_hp: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_HP/LabelHP
@@ -14,6 +15,7 @@ class_name HUDController
 # Card slots UI references
 var card_slots: Array = []
 
+var cards_column: VBoxContainer = null
 var active_upgrades_vbox: VBoxContainer = null
 
 func _ready():
@@ -23,8 +25,8 @@ func _ready():
 	if timer_label:
 		timer_label.text = "Time: 02:00"
 		timer_label.modulate = Color(1, 1, 1, 1)
-	if stats_container:
-		stats_container.visible = false
+	if hbox_container:
+		hbox_container.visible = false
 	
 	_build_active_upgrades_ui()
 	
@@ -37,27 +39,33 @@ func _ready():
 	print("HUDController initialized - Minimal 2D HUD ready")
 
 func _build_active_upgrades_ui() -> void:
-	if not stats_container:
+	if not hbox_container:
 		return
 	
-	var sep = HSeparator.new()
-	stats_container.add_child(sep)
+	var sep = VSeparator.new()
+	hbox_container.add_child(sep)
+	
+	cards_column = VBoxContainer.new()
+	cards_column.custom_minimum_size = Vector2(300, 200)
+	hbox_container.add_child(cards_column)
 	
 	var title = Label.new()
-	title.text = "Active Upgrades"
+	title.text = "Equipped Skill Cards"
 	title.add_theme_font_size_override("font_size", 24)
-	stats_container.add_child(title)
+	cards_column.add_child(title)
 	
 	var scroll = ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(300, 200)
-	stats_container.add_child(scroll)
+	scroll.custom_minimum_size = Vector2(350, 250)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	cards_column.add_child(scroll)
 	
 	active_upgrades_vbox = VBoxContainer.new()
+	active_upgrades_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(active_upgrades_vbox)
 
 func _process(_delta: float) -> void:
-	if stats_container:
-		stats_container.visible = Input.is_action_pressed("tab")
+	if hbox_container:
+		hbox_container.visible = Input.is_action_pressed("tab")
 
 func _ensure_tab_input_action() -> void:
 	if InputMap.has_action("tab"):
@@ -73,11 +81,22 @@ func update_stats(character_stats: CharacterStats) -> void:
 	"""Update HUD stat display from CharacterStats"""
 	if not character_stats:
 		return
+		
+	var player_stats = get_node_or_null("/root/PlayerStats")
+	var b_hp = player_stats.base_hp if player_stats else 10
+	var b_str = player_stats.base_str if player_stats else 0
+	var b_mag = player_stats.base_mag if player_stats else 0
+	var b_dex = player_stats.base_dex if player_stats else 0
 	
-	label_hp.text = "HP: %d/%d" % [character_stats.current_hp, character_stats.max_hp]
-	label_strength.text = "Strength: +%d" % character_stats.strength_modifier
-	label_magic.text = "Magic: +%d" % character_stats.magic_modifier
-	label_dexterity.text = "Dexterity: +%d" % character_stats.dexterity_modifier
+	var r_hp = character_stats.max_hp - b_hp
+	var r_str = character_stats.strength_modifier - b_str
+	var r_mag = character_stats.magic_modifier - b_mag
+	var r_dex = character_stats.dexterity_modifier - b_dex
+	
+	label_hp.text = "HP: %d/%d (%d+%d)" % [character_stats.current_hp, character_stats.max_hp, b_hp, r_hp]
+	label_strength.text = "STR: %d + %d" % [b_str, r_str]
+	label_magic.text = "MAG: %d + %d" % [b_mag, r_mag]
+	label_dexterity.text = "DEX: %d + %d" % [b_dex, r_dex]
 	
 	_refresh_active_upgrades_list()
 
@@ -96,20 +115,36 @@ func _refresh_active_upgrades_list() -> void:
 	var upgrades: Array = player_stats.active_upgrades
 	if upgrades.is_empty():
 		var lbl = Label.new()
-		lbl.text = "No upgrades yet."
+		lbl.text = "No cards equipped."
 		lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 		active_upgrades_vbox.add_child(lbl)
 		return
 		
+	var count = 0
 	for upg in upgrades:
-		var lbl = Label.new()
-		lbl.text = "- %s (+%d %s)" % [
-			upg.get("card_name", "???"),
+		if count >= 3: break # Display max 3 skill cards
+		
+		var card_panel = PanelContainer.new()
+		var card_vbox = VBoxContainer.new()
+		card_panel.add_child(card_vbox)
+		
+		var title = Label.new()
+		title.text = str(upg.get("card_name", "???"))
+		title.add_theme_font_size_override("font_size", 20)
+		title.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2))
+		card_vbox.add_child(title)
+		
+		var desc = Label.new()
+		desc.text = "Grants +%d to %s" % [
 			upg.get("value_change", 0),
 			_get_stat_short(upg.get("stat_affected", ""))
 		]
-		lbl.add_theme_font_size_override("font_size", 18)
-		active_upgrades_vbox.add_child(lbl)
+		desc.add_theme_font_size_override("font_size", 16)
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		card_vbox.add_child(desc)
+		
+		active_upgrades_vbox.add_child(card_panel)
+		count += 1
 
 # Signal handler for card changes (disabled for 2D prototype)
 func _on_cards_changed(_cards: Array) -> void:
@@ -128,7 +163,7 @@ func _get_stat_short(stat: String) -> String:
 		GameManager.HP:
 			return "HP"
 		_:
-			return "???"
+			return stat.to_upper()
 
 # Called when instance time expires
 func _on_instance_time_expired() -> void:
