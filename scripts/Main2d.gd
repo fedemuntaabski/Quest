@@ -8,7 +8,9 @@ const CRITICAL_SECONDS: float = 15.0
 @onready var hud: HUDController = $HUD
 @onready var pause_menu: Node = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
-@onready var return_button: Button = $DeathOverlay/ReturnButton
+@onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
+@onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
+@onready var death_gold_label: Label = $DeathOverlay/CenterContainer/VBoxContainer/GoldLabel
 
 var room_timer_remaining: float = ROOM_TIMER_SECONDS
 var timer_expired_logged: bool = false
@@ -48,8 +50,10 @@ func _ready() -> void:
 	if player_stats_autoload and not player_stats_autoload.player_died.is_connected(_on_player_died):
 		player_stats_autoload.player_died.connect(_on_player_died)
 
-	if return_button and not return_button.pressed.is_connected(_on_return_pressed):
-		return_button.pressed.connect(_on_return_pressed)
+	if retry_button and not retry_button.pressed.is_connected(_on_retry_pressed):
+		retry_button.pressed.connect(_on_retry_pressed)
+	if exit_button and not exit_button.pressed.is_connected(_on_return_pressed):
+		exit_button.pressed.connect(_on_return_pressed)
 
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
@@ -78,6 +82,10 @@ func _on_room_changed(room_id: int) -> void:
 		visited_rooms.append(room_id)
 		_reset_room_timer()
 	_update_timer_ui()
+	if hud:
+		hud.update_current_room(room_id)
+		if dungeon_generator:
+			hud.update_enemies_remaining(dungeon_generator._room_enemy_counts.get(room_id, 0))
 
 func _on_room_cleared(room_id: int) -> void:
 	rooms_cleared += 1
@@ -88,12 +96,17 @@ func _on_room_cleared(room_id: int) -> void:
 
 func _on_enemy_defeated() -> void:
 	enemies_killed += 1
+	if hud and dungeon_generator:
+		hud.update_enemies_remaining(dungeon_generator._room_enemy_counts.get(dungeon_generator.active_room_id, 0))
 
 func _on_player_died() -> void:
 	if _is_dead: return
 	_is_dead = true
 	get_tree().paused = true
 	var gold_reward = (enemies_killed * 10) + (rooms_cleared * 50)
+	
+	if death_gold_label:
+		death_gold_label.text = "Oro ganado: %d" % gold_reward
 	
 	var save_mgr = get_node_or_null("/root/SaveManager")
 	if save_mgr:
@@ -110,6 +123,10 @@ func _on_player_died() -> void:
 func _on_return_pressed() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+
+func _on_retry_pressed() -> void:
+	get_tree().paused = false
+	get_tree().reload_current_scene()
 
 func _on_upgrade_chosen(_upgrade: Dictionary) -> void:
 	var player_stats_autoload = get_node_or_null("/root/PlayerStats")

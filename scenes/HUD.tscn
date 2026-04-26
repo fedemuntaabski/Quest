@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://b5v43ol8idshh"]
 
 [ext_resource type="Script" uid="uid://e6aoqrf7guh7" path="res://scripts/HUDController.gd" id="1_hud_script"]
+[ext_resource type="Texture2D" uid="uid://bxvwr7ujssclm" path="res://assets/ui/menuoption.png" id="2_menu_option"]
+[ext_resource type="FontFile" uid="uid://gotbtg1vwt7q" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
 
 [node name="HUD" type="CanvasLayer" unique_id=729961790]
 layer = 2
@@ -10,57 +12,112 @@ script = ExtResource("1_hud_script")
 layout_mode = 3
 anchors_preset = 0
 
-[node name="MarginContainer" type="MarginContainer" parent="Control" unique_id=1415032945]
+[node name="TabUIPanel" type="NinePatchRect" parent="Control" unique_id=987654321]
+visible = false
 layout_mode = 0
+offset_left = 60.0
+offset_top = 80.0
+offset_right = 660.0
+offset_bottom = 480.0
+texture = ExtResource("2_menu_option")
+patch_margin_left = 32
+patch_margin_top = 32
+patch_margin_right = 32
+patch_margin_bottom = 32
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Control/MarginContainer" unique_id=871130441]
+[node name="MarginContainer" type="MarginContainer" parent="Control/TabUIPanel" unique_id=1415032945]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBoxContainer_Main" type="VBoxContainer" parent="Control/TabUIPanel/MarginContainer" unique_id=234567890]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TopInfoRow" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main" unique_id=345678901]
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="CurrentRoomLabel" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/TopInfoRow" unique_id=456789012]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 28
+text = "Room: 1"
+
+[node name="EnemiesLabel" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/TopInfoRow" unique_id=567890123]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.3, 0.3, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 28
+text = "Enemies: 0"
+
+[node name="HSeparator_Top" type="HSeparator" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main" unique_id=678901234]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main" unique_id=871130441]
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Control/MarginContainer/HBoxContainer" unique_id=16085052]
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer" unique_id=16085052]
 custom_minimum_size = Vector2(200, 140)
 layout_mode = 2
 
-[node name="HBoxContainer_HP" type="HBoxContainer" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=1581858995]
+[node name="HBoxContainer_HP" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer" unique_id=1581858995]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelHP" type="Label" parent="Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_HP" unique_id=1859836433]
+[node name="LabelHP" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_HP" unique_id=1859836433]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
+tooltip_text = "Health Points (HP)\nDetermines how much damage you can take before dying."
+mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "HP: 10/10"
 
-[node name="HSeparator" type="HSeparator" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=1689967631]
+[node name="HSeparator" type="HSeparator" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer" unique_id=1689967631]
 layout_mode = 2
 
-[node name="HBoxContainer_Strength" type="HBoxContainer" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=1676587056]
+[node name="HBoxContainer_Strength" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer" unique_id=1676587056]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelStrength" type="Label" parent="Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Strength" unique_id=1818296356]
+[node name="LabelStrength" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_Strength" unique_id=1818296356]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
+tooltip_text = "Strength (STR)\nIncreases physical damage dealt to enemies."
+mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Strength: +0"
 
-[node name="HBoxContainer_Magic" type="HBoxContainer" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=1967426573]
+[node name="HBoxContainer_Magic" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer" unique_id=1967426573]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelMagic" type="Label" parent="Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Magic" unique_id=93396923]
+[node name="LabelMagic" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_Magic" unique_id=93396923]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
+tooltip_text = "Magic (MAG)\nIncreases spell damage and elemental effects."
+mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Magic: +0"
 
-[node name="HBoxContainer_Dexterity" type="HBoxContainer" parent="Control/MarginContainer/HBoxContainer/VBoxContainer" unique_id=121873463]
+[node name="HBoxContainer_Dexterity" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer" unique_id=121873463]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelDexterity" type="Label" parent="Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=1581397644]
+[node name="LabelDexterity" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=1581397644]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
+tooltip_text = "Dexterity (DEX)\nIncreases critical strike chance and evasion."
+mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Dexterity: +0"
 

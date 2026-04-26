@@ -74,6 +74,11 @@ func _build_slot_selection_ui() -> void:
 	slot_vbox.add_child(title)
 	
 	for i in range(1, 4):
+		var row = HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", 16)
+		slot_vbox.add_child(row)
+		
 		var btn = Button.new()
 		btn.custom_minimum_size = Vector2(400, 100)
 		btn.text = "SLOT %d" % i
@@ -83,7 +88,6 @@ func _build_slot_selection_ui() -> void:
 			btn.text += " (EMPTY)"
 		
 		btn.add_theme_font_size_override("font_size", 34)
-		# Copy styles from start button
 		btn.add_theme_stylebox_override("normal", start_button.get_theme_stylebox("normal"))
 		btn.add_theme_stylebox_override("pressed", start_button.get_theme_stylebox("pressed"))
 		btn.add_theme_stylebox_override("hover", start_button.get_theme_stylebox("hover"))
@@ -92,7 +96,25 @@ func _build_slot_selection_ui() -> void:
 		btn.pressed.connect(_on_slot_selected.bind(i))
 		btn.mouse_entered.connect(_on_slot_hovered.bind(i))
 		btn.mouse_exited.connect(_on_slot_unhovered)
-		slot_vbox.add_child(btn)
+		row.add_child(btn)
+		
+		var del_btn = Button.new()
+		del_btn.custom_minimum_size = Vector2(80, 100)
+		del_btn.text = "X"
+		del_btn.add_theme_font_size_override("font_size", 34)
+		del_btn.add_theme_color_override("font_color", Color(0.95, 0.2, 0.2, 1))
+		del_btn.add_theme_color_override("font_hover_color", Color(1, 0.4, 0.4, 1))
+		del_btn.add_theme_stylebox_override("normal", start_button.get_theme_stylebox("normal"))
+		del_btn.add_theme_stylebox_override("pressed", start_button.get_theme_stylebox("pressed"))
+		del_btn.add_theme_stylebox_override("hover", start_button.get_theme_stylebox("hover"))
+		del_btn.pressed.connect(_on_slot_deleted.bind(i))
+		del_btn.mouse_entered.connect(_on_any_button_mouse_entered)
+		
+		if not SaveManager.has_save(i):
+			del_btn.disabled = true
+			del_btn.modulate.a = 0.5
+			
+		row.add_child(del_btn)
 	
 	var back_btn = Button.new()
 	back_btn.custom_minimum_size = Vector2(400, 100)
@@ -135,6 +157,17 @@ func _build_slot_selection_ui() -> void:
 	hover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel_vbox.add_child(hover_label)
 
+func _on_slot_deleted(slot_id: int) -> void:
+	if click_sound and click_sound.stream:
+		click_sound.play()
+	SaveManager.delete_save(slot_id)
+	
+	# Refresh UI
+	for child in slot_selection_root.get_children():
+		child.queue_free()
+	_build_slot_selection_ui()
+	slot_selection_root.visible = true
+
 func _on_slot_hovered(slot_id: int) -> void:
 	_on_any_button_mouse_entered()
 	if not SaveManager.has_save(slot_id):
@@ -160,7 +193,7 @@ func _on_slot_hovered(slot_id: int) -> void:
 			max_stat_val = s_dex
 			max_stat_name = "Destreza"
 			
-		hover_label.text = "Slot %d Data:\n\nOro: %d\nContratos: %d\nStat Principal: %s (+%d)" % [slot_id, gold, contracts, max_stat_name, max_stat_val]
+		hover_label.text = "Slot %d Data:\n\nTotal Gold: %d\nContract Stage: %d\nHighest Stat: %s (+%d)" % [slot_id, gold, contracts, max_stat_name, max_stat_val]
 
 func _on_slot_unhovered() -> void:
 	hover_panel.visible = false

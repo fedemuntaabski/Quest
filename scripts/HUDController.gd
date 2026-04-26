@@ -3,14 +3,18 @@ extends CanvasLayer
 class_name HUDController
 
 @onready var timer_label: Label = $Control/TimerLabel
-@onready var stats_container: VBoxContainer = $Control/MarginContainer/HBoxContainer/VBoxContainer
-@onready var hbox_container: HBoxContainer = $Control/MarginContainer/HBoxContainer
+@onready var stats_container: VBoxContainer = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer
+@onready var hbox_container: HBoxContainer = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer
+@onready var tab_ui_panel: NinePatchRect = $Control/TabUIPanel
 
 # References to stat labels
-@onready var label_hp: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_HP/LabelHP
-@onready var label_strength: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Strength/LabelStrength
-@onready var label_magic: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Magic/LabelMagic
-@onready var label_dexterity: Label = $Control/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity/LabelDexterity
+@onready var label_hp: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_HP/LabelHP
+@onready var label_strength: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_Strength/LabelStrength
+@onready var label_magic: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_Magic/LabelMagic
+@onready var label_dexterity: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity/LabelDexterity
+
+@onready var current_room_label: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/TopInfoRow/CurrentRoomLabel
+@onready var enemies_label: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/TopInfoRow/EnemiesLabel
 
 # Card slots UI references
 var card_slots: Array = []
@@ -25,8 +29,8 @@ func _ready():
 	if timer_label:
 		timer_label.text = "Time: 02:00"
 		timer_label.modulate = Color(1, 1, 1, 1)
-	if hbox_container:
-		hbox_container.visible = false
+	if tab_ui_panel:
+		tab_ui_panel.visible = false
 	
 	_build_active_upgrades_ui()
 	
@@ -64,8 +68,8 @@ func _build_active_upgrades_ui() -> void:
 	scroll.add_child(active_upgrades_vbox)
 
 func _process(_delta: float) -> void:
-	if hbox_container:
-		hbox_container.visible = Input.is_action_pressed("tab")
+	if tab_ui_panel:
+		tab_ui_panel.visible = Input.is_action_pressed("tab")
 
 func _ensure_tab_input_action() -> void:
 	if InputMap.has_action("tab"):
@@ -75,6 +79,14 @@ func _ensure_tab_input_action() -> void:
 	var tab_event := InputEventKey.new()
 	tab_event.keycode = KEY_TAB
 	InputMap.action_add_event("tab", tab_event)
+
+func update_current_room(room_id: int) -> void:
+	if current_room_label:
+		current_room_label.text = "Room: %d" % room_id
+
+func update_enemies_remaining(count: int) -> void:
+	if enemies_label:
+		enemies_label.text = "Enemies: %d" % count
 
 # Update stat display
 func update_stats(character_stats: CharacterStats) -> void:

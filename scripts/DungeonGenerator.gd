@@ -19,7 +19,7 @@ const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 @export var room_min_size: Vector2i = Vector2i(6, 5)
 @export var room_max_size: Vector2i = Vector2i(16, 12)
 @export var room_padding: int = 1
-@export var room_light_energy: float = 1.2
+@export var room_light_energy: float = 2.0
 @export var room_light_transition_seconds: float = 0.45
 
 var floor_texture: Texture2D = preload(FLOOR_TEXTURE_PATH)
@@ -303,8 +303,8 @@ func _create_room_light(room_rect: Rect2i, center_cell: Vector2i) -> PointLight2
 	room_light.texture = light_texture
 	room_light.position = grid_to_world_coords(center_cell)
 	room_light.energy = 0.0
-	room_light.texture_scale = maxf(1.1, float(max(room_rect.size.x, room_rect.size.y)) * 0.18)
-	room_light.color = Color(1.0, 0.92, 0.78, 1.0)
+	room_light.texture_scale = maxf(1.8, float(max(room_rect.size.x, room_rect.size.y)) * 0.25)
+	room_light.color = Color(0.9, 0.95, 1.0, 1.0) # slightly cooler light
 	return room_light
 
 func _create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
@@ -561,6 +561,8 @@ func _spawn_enemies() -> void:
 
 		enemy.name = "Enemy_%d" % room_id
 		enemy.position = grid_to_world_coords(spawn_cell)
+		enemy.my_room_id = room_id
+		enemy.dungeon_generator = self
 
 		# Wire up player reference after the node enters the tree
 		var captured_player := _spawned_player

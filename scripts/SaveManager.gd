@@ -79,3 +79,14 @@ func load_game(slot: int = current_slot) -> void:
 func has_save(slot: int) -> bool:
 	var file = FileAccess.open(get_save_path(slot), FileAccess.READ)
 	return file != null
+
+func delete_save(slot: int) -> void:
+	var path = get_save_path(slot)
+	if FileAccess.file_exists(path):
+		var err = DirAccess.remove_absolute(path)
+		if err == OK:
+			print("SaveManager: Deleted save in slot %d." % slot)
+		else:
+			push_error("SaveManager: Failed to delete save in slot %d (Error code: %d)." % [slot, err])
+	else:
+		print("SaveManager: No save found to delete in slot %d." % slot)

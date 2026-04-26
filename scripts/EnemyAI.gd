@@ -6,7 +6,7 @@ class_name EnemyAI
 signal enemy_defeated(enemy: EnemyAI)
 
 # ── State machine ────────────────────────────────────────────────────────────
-enum State { IDLE, CHASE, ATTACK }
+enum State { IDLE, DETECTION, ATTACK }
 var state: State = State.IDLE
 
 # ── Exports ──────────────────────────────────────────────────────────────────
@@ -35,6 +35,10 @@ var _dead: bool = false
 var _original_modulate: Color = Color.WHITE
 var facing_direction: Vector2 = Vector2.RIGHT   # track which way enemy faces
 var _patrol_timer: float = 0.0
+
+var my_room_id: int = -1
+var dungeon_generator = null
+var _is_winding_up: bool = false
 
 # ── Torch detection radius (world-space) ─────────────────────────────────────
 # PointLight2D energy/texture_scale translates to roughly this world-unit radius
@@ -70,8 +74,8 @@ func _physics_process(delta: float) -> void:
 	match state:
 		State.IDLE:
 			_process_idle(delta)
-		State.CHASE:
-			_process_chase(delta)
+		State.DETECTION:
+			_process_detection(delta)
 		State.ATTACK:
 			_process_attack(delta)
 
@@ -80,8 +84,8 @@ func _physics_process(delta: float) -> void:
 
 # ── IDLE / PATROL ─────────────────────────────────────────────────────────────
 func _process_idle(delta: float) -> void:
-	if _should_chase():
-		_enter_state(State.CHASE)
+	if _should_detect():
+		_enter_state(State.DETECTION)
 		return
 		
 	_patrol_timer -= delta
@@ -105,9 +109,9 @@ func _process_idle(delta: float) -> void:
 
 	move_and_slide()
 
-# ── CHASE ─────────────────────────────────────────────────────────────────────
-func _process_chase(delta: float) -> void:
-	if not _should_chase():
+# ── DETECTION ─────────────────────────────────────────────────────────────────
+func _process_detection(delta: float) -> void:
+	if not _should_detect():
 		_enter_state(State.IDLE)
 		return
 
@@ -143,32 +147,51 @@ func _process_attack(_delta: float) -> void:
 	velocity = Vector2.ZERO
 	move_and_slide()
 
-	if not is_player_in_attack:
-		if _should_chase():
-			_enter_state(State.CHASE)
+	if not is_player_in_attack and not _is_winding_up:
+		if _should_detect():
+			_enter_state(State.DETECTION)
 		else:
 			_enter_state(State.IDLE)
 		return
 
-	if _attack_timer <= 0.0:
-		_do_attack()
+	if _attack_timer <= 0.0 and not _is_winding_up:
+		_start_attack_windup()
+
+func _start_attack_windup() -> void:
+	if _dead:
+		return
+	_is_winding_up = true
+	var current_modulate = sprite.modulate
+	sprite.modulate = Color(2.0, 0.2, 0.2, 1.0)
+	var t = create_tween()
+	t.tween_property(sprite, "modulate", current_modulate, 0.35)
+	t.tween_callback(func():
+		if not _dead and is_player_in_attack:
+			_do_attack()
+		_is_winding_up = false
 		_attack_timer = attack_cooldown
+	)
 
 # ─────────────────────────────────────────────────────────────────────────────
 func _enter_state(new_state: State) -> void:
 	state = new_state
 	match new_state:
-		State.CHASE:
+		State.DETECTION:
 			if health_bar:
 				health_bar.visible = true
 		State.IDLE:
 			velocity = Vector2.ZERO
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Stealth check: should enemy enter/remain in CHASE?
-func _should_chase() -> bool:
+# Stealth check: should enemy enter/remain in DETECTION?
+func _should_detect() -> bool:
 	if player == null:
 		return false
+
+	# If the player is in the same room, we auto-detect
+	if dungeon_generator != null and my_room_id != -1:
+		if dungeon_generator.active_room_id == my_room_id:
+			return true
 
 	# Hearing range — always triggers regardless of torch
 	var dist: float = global_position.distance_to(player.global_position)
@@ -241,9 +264,9 @@ func receive_hit(damage: int, is_backstab: bool) -> void:
 	# Flash white
 	_flash_hit()
 
-	# Aggro: switch to CHASE/ATTACK immediately
+	# Aggro: switch to DETECTION/ATTACK immediately
 	if state == State.IDLE:
-		_enter_state(State.CHASE)
+		_enter_state(State.DETECTION)
 
 	# Death check
 	if stats and not stats.is_alive():
@@ -294,7 +317,7 @@ func _on_detection_body_exited(body: Node2D) -> void:
 func _on_attack_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") or body.name == "Player":
 		is_player_in_attack = true
-		if state == State.CHASE:
+		if state == State.DETECTION:
 			_enter_state(State.ATTACK)
 
 func _on_attack_body_exited(body: Node2D) -> void:
