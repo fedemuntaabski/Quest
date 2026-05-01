@@ -2,31 +2,45 @@ extends Node2D
 
 class_name DungeonGenerator
 
+@export var floor_tileset: TileSet = preload("res://assets/texture/enviorment/dungeon_tileset.tres")
+
 signal room_changed(room_id: int)
 signal room_cleared(room_id: int)
 signal enemy_defeated_global
 
 
-const FLOOR_TEXTURE_PATH := "res://assets/texture/enviorment/ground_texture1.png"
+# --- CONFIGURACIÓN DE TILES (Atlas 16x16) ---
+const TILE_MAIN_FLOOR := Vector2i(5, 10)
+const TILE_VARIATIONS := [Vector2i(3,10), Vector2i(10, 8), Vector2i(7, 10), Vector2i(1, 10), Vector2i(2, 10)]
+const TILE_EDGE_TOP := Vector2i(5, 9)    
+const TILE_EDGE_TOP_RIGHT := Vector2i(6, 9)    
+const TILE_EDGE_TOP_LEFT := Vector2i(4, 9)   
+const TILE_EDGE_BOTTOM := Vector2i(5, 11)
+const TILE_EDGE_BOTTOM_RIGHT := Vector2i(6, 11)
+const TILE_EDGE_BOTTOM_LEFT := Vector2i(4, 11)
+const TILE_EDGE_LEFT := Vector2i(4, 10)
+const TILE_EDGE_RIGHT := Vector2i(6, 10)
+
+# --- RUTAS DE ASSETS RESTANTES ---
 const WALL_TEXTURE_PATH := "res://assets/ui/white_2x2.svg"
 const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
 const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 
 @export var grid_width: int = 52
 @export var grid_height: int = 36
-@export var tile_size: float = 64.0
-@export var room_count: int = 7
+@export var tile_size: float = 16.0
+@export var room_count: int = 8
 @export var room_min_size: Vector2i = Vector2i(6, 5)
 @export var room_max_size: Vector2i = Vector2i(16, 12)
 @export var room_padding: int = 1
 @export var room_light_energy: float = 2.0
 @export var room_light_transition_seconds: float = 0.45
 
-var floor_texture: Texture2D = preload(FLOOR_TEXTURE_PATH)
+
 var wall_texture: Texture2D = preload(WALL_TEXTURE_PATH)
 var light_texture: Texture2D = preload(LIGHT_TEXTURE_PATH)
 
-var floors_root: Node2D
+var floors_layer: TileMapLayer # Cambiado de Node2D a TileMapLayer
 var corridors_root: Node2D
 var rooms_root: Node2D
 var walls_root: Node2D
@@ -43,14 +57,84 @@ var wall_nodes: Dictionary = {}
 var room_infos: Array[Dictionary] = []
 var active_room_id: int = -1
 
-## Tracks how many enemies are still alive per room_id.
 var _room_enemy_counts: Dictionary = {}
-
 var _enemy_scene: PackedScene = null
 var _spawned_player: CharacterBody2D = null
 
 func _ready() -> void:
 	_ensure_runtime_nodes()
+
+
+
+## Función auxiliar para pintar con lógica de bordes y aleatoriedad
+func _paint_floor_with_logic(cell: Vector2i) -> void:
+	var atlas_coords = TILE_MAIN_FLOOR
+	
+	# 1. Comprobar Esquinas (Prioridad máxima)
+	if wall_cells.has(cell + Vector2i.UP) and wall_cells.has(cell + Vector2i.LEFT):
+		atlas_coords = TILE_EDGE_TOP_LEFT
+	elif wall_cells.has(cell + Vector2i.UP) and wall_cells.has(cell + Vector2i.RIGHT):
+		atlas_coords = TILE_EDGE_TOP_RIGHT
+	elif wall_cells.has(cell + Vector2i.DOWN) and wall_cells.has(cell + Vector2i.LEFT):
+		atlas_coords = TILE_EDGE_BOTTOM_LEFT
+	elif wall_cells.has(cell + Vector2i.DOWN) and wall_cells.has(cell + Vector2i.RIGHT):
+		atlas_coords = TILE_EDGE_BOTTOM_RIGHT
+	
+	# 2. Comprobar Bordes Rectos
+	elif wall_cells.has(cell + Vector2i.UP):
+		atlas_coords = TILE_EDGE_TOP
+	elif wall_cells.has(cell + Vector2i.DOWN):
+		atlas_coords = TILE_EDGE_BOTTOM
+	elif wall_cells.has(cell + Vector2i.LEFT):
+		atlas_coords = TILE_EDGE_LEFT
+	elif wall_cells.has(cell + Vector2i.RIGHT):
+		atlas_coords = TILE_EDGE_RIGHT
+	
+	# 3. Piso central (con variaciones aleatorias)
+	else:
+		if randf() < 0.2: # 20% de probabilidad de detalle
+			atlas_coords = TILE_VARIATIONS.pick_random()
+		else:
+			atlas_coords = TILE_MAIN_FLOOR
+
+	# Pintamos en el TileMapLayer usando el ID 0 de la fuente (Dungeon tileset)
+	floors_layer.set_cell(cell, 0, atlas_coords)
+
+func _ensure_runtime_nodes() -> void:
+	if not floors_layer:
+		floors_layer = TileMapLayer.new()
+		floors_layer.name = "FloorsLayer"
+		floors_layer.tile_set = floor_tileset
+		tile_size = floor_tileset.tile_size.x
+		floors_layer.z_index = -2
+		floors_layer.position = grid_origin
+		add_child(floors_layer)
+
+	# --- ROOTS ---
+	corridors_root = _ensure_node("Corridors")
+	rooms_root = _ensure_node("Rooms")
+	walls_root = _ensure_node("Walls")
+	room_detectors_root = _ensure_node("RoomDetectors")
+	room_lights_root = _ensure_node("RoomLights")
+	enemies_root = _ensure_node("Enemies")
+
+	# --- FOG ---
+	fog_of_war = _ensure_tile_map_layer("FogOfWar")
+	visited_fog = _ensure_tile_map_layer("VisitedFog")
+
+func _ensure_node(node_name: String) -> Node2D:
+	var existing := get_node_or_null(node_name) as Node2D
+	if existing:
+		return existing
+
+	var node := Node2D.new()
+	node.name = node_name
+	add_child(node)
+	return node
+
+func _repaint_all_floors() -> void:
+	for cell in floor_cells.keys():
+		_paint_floor_with_logic(cell)
 
 func generate_dungeon(player: CharacterBody2D = null) -> void:
 	randomize()
@@ -68,6 +152,9 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 		-(float(grid_width) * 0.5 * tile_size),
 		-(float(grid_height) * 0.5 * tile_size)
 	)
+	floors_layer.position = grid_origin
+	fog_of_war.position = grid_origin
+	visited_fog.position = grid_origin
 
 	if not _generate_rooms():
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
@@ -75,7 +162,11 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 
 	_connect_rooms_with_corridors()
 	_generate_walls_from_floor()
+	_repaint_all_floors()
 	_build_fog_layers()
+	print("Grid origin:", grid_origin)
+	print("TileMap pos:", floors_layer.position)
+	print("Tile size:", tile_size)
 
 	if player:
 		_spawned_player = player
@@ -84,7 +175,8 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	# Spawn enemies after layout is fully built
 	_spawn_enemies()
 
-	_set_active_room(int(room_infos[0]["id"]), false)
+	if not room_infos.is_empty():
+		_set_active_room(int(room_infos[0]["id"]), false)
 
 func place_player_in_start_room(player: CharacterBody2D) -> void:
 	if room_infos.is_empty() or player == null:
@@ -104,16 +196,27 @@ func is_cell_walkable(world_position: Vector2) -> bool:
 
 func set_wall_at_world(world_position: Vector2) -> void:
 	var cell := world_to_grid_coords(world_position)
+
+	if not is_within_bounds(cell):
+		return
+
 	if wall_cells.has(cell):
 		return
+
 	wall_cells[cell] = true
 	_spawn_wall(cell)
 
 func clear_cell_at_world(world_position: Vector2) -> void:
 	var cell := world_to_grid_coords(world_position)
+
+	if not is_within_bounds(cell):
+		return
+
 	if not wall_cells.has(cell):
 		return
+
 	wall_cells.erase(cell)
+
 	if wall_nodes.has(cell):
 		var wall_node := wall_nodes[cell] as Node
 		if wall_node:
@@ -131,21 +234,19 @@ func grid_to_world_coords(grid_pos: Vector2i) -> Vector2:
 	return grid_origin + (Vector2(grid_pos) + Vector2(0.5, 0.5)) * tile_size
 
 func get_adjacent_walkable_cells(world_position: Vector2) -> Array:
-	var walkable_cells: Array = []
-	var origin_grid := world_to_grid_coords(world_position)
-	var directions: Array[Vector2i] = [
-		Vector2i(1, 0),
-		Vector2i(-1, 0),
-		Vector2i(0, 1),
-		Vector2i(0, -1)
-	]
+	var result: Array = []
+	var origin := world_to_grid_coords(world_position)
 
-	for direction in directions:
-		var next_grid: Vector2i = origin_grid + direction
-		if is_within_bounds(next_grid) and floor_cells.has(next_grid) and not wall_cells.has(next_grid):
-			walkable_cells.append(grid_to_world_coords(next_grid))
+	for dir in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]:
+		var next: Vector2i = origin + dir
 
-	return walkable_cells
+		if not is_within_bounds(next):
+			continue
+
+		if floor_cells.has(next) and not wall_cells.has(next):
+			result.append(grid_to_world_coords(next))
+
+	return result
 
 func is_within_bounds(grid_pos: Vector2i) -> bool:
 	return (
@@ -154,27 +255,6 @@ func is_within_bounds(grid_pos: Vector2i) -> bool:
 		and grid_pos.y >= 0
 		and grid_pos.y < grid_height
 	)
-
-func _ensure_runtime_nodes() -> void:
-	floors_root = _ensure_node2d("Floors")
-	corridors_root = _ensure_node2d("Corridors")
-	rooms_root = _ensure_node2d("Rooms")
-	walls_root = _ensure_node2d("Walls")
-	room_detectors_root = _ensure_node2d("RoomDetectors")
-	room_lights_root = _ensure_node2d("RoomLights")
-	enemies_root = _ensure_node2d("Enemies")
-	fog_of_war = _ensure_tile_map_layer("FogOfWar")
-	visited_fog = _ensure_tile_map_layer("VisitedFog")
-
-func _ensure_node2d(node_name: String) -> Node2D:
-	var existing := get_node_or_null(node_name) as Node2D
-	if existing:
-		return existing
-
-	var created := Node2D.new()
-	created.name = node_name
-	add_child(created)
-	return created
 
 func _ensure_tile_map_layer(node_name: String) -> TileMapLayer:
 	var existing := get_node_or_null(node_name) as TileMapLayer
@@ -187,9 +267,12 @@ func _ensure_tile_map_layer(node_name: String) -> TileMapLayer:
 	return created
 
 func _clear_generated_content() -> void:
-	for parent in [floors_root, corridors_root, rooms_root, walls_root, room_detectors_root, room_lights_root, enemies_root]:
+	for parent in [corridors_root, rooms_root, walls_root, room_detectors_root, room_lights_root, enemies_root]:
 		for child in parent.get_children():
 			child.queue_free()
+
+	if floors_layer:
+		floors_layer.clear() # <-- CLAVE
 
 	fog_of_war.clear()
 	visited_fog.clear()
@@ -273,7 +356,6 @@ func _register_room(room_rect: Rect2i) -> void:
 			var cell := Vector2i(x, y)
 			floor_cells[cell] = true
 			room_cells.append(cell)
-			_spawn_floor_tile(cell, room_root)
 
 	var center_cell := Vector2i(
 		room_rect.position.x + int(room_rect.size.x * 0.5),
@@ -330,18 +412,6 @@ func _create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
 
 	return area
 
-func _spawn_floor_tile(cell: Vector2i, parent: Node2D) -> void:
-	var floor_sprite := Sprite2D.new()
-	floor_sprite.name = "Floor_%d_%d" % [cell.x, cell.y]
-	floor_sprite.texture = floor_texture
-	floor_sprite.centered = true
-	floor_sprite.position = grid_to_world_coords(cell)
-	floor_sprite.region_enabled = true
-	floor_sprite.region_rect = Rect2(Vector2(cell) * tile_size, Vector2(tile_size, tile_size))
-	floor_sprite.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	floor_sprite.z_index = -2
-	parent.add_child(floor_sprite)
-
 func _connect_rooms_with_corridors() -> void:
 	if room_infos.size() <= 1:
 		return
@@ -386,7 +456,10 @@ func _add_corridor_cell(cell: Vector2i) -> void:
 		return
 
 	floor_cells[cell] = true
-	_spawn_floor_tile(cell, corridors_root)
+
+func _paint_all_floors() -> void:
+	for cell in floor_cells.keys():
+		_paint_floor_with_logic(cell)
 
 func _generate_walls_from_floor() -> void:
 	var directions: Array[Vector2i] = [
@@ -454,6 +527,7 @@ func _build_fog_layers() -> void:
 	for floor_cell in floor_cells.keys():
 		var cell: Vector2i = floor_cell
 		fog_of_war.set_cell(cell, 0, Vector2i.ZERO, 0)
+	
 
 func _configure_fog_layer(layer: TileMapLayer, tint: Color) -> void:
 	layer.modulate = tint
@@ -512,6 +586,7 @@ func _update_fog_for_room_state() -> void:
 				fog_of_war.erase_cell(room_cell)
 			else:
 				fog_of_war.set_cell(room_cell, 0, Vector2i.ZERO, 0)
+				
 
 			if is_visited and not is_active:
 				visited_fog.set_cell(room_cell, 0, Vector2i.ZERO, 0)
@@ -638,3 +713,6 @@ func _on_enemy_defeated(_enemy: EnemyAI, room_id: int) -> void:
 		_room_enemy_counts.erase(room_id)
 		print("DungeonGenerator: Room %d CLEARED — emitting room_cleared." % room_id)
 		emit_signal("room_cleared", room_id)
+	
+	
+

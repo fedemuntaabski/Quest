@@ -1,12 +1,12 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://dtlfcga63cd0v"]
 
-[ext_resource type="Texture2D" path="res://assets/texture/enviorment/ground_texture1.png" id="1_ground"]
+[ext_resource type="Texture2D" uid="uid://djtq3wesstsdg" path="res://assets/texture/enviorment/ground_texture1.png" id="1_ground"]
 
-[node name="Room" type="Node2D"]
+[node name="Room" type="Node2D" unique_id=214279242]
 
-[node name="Floor" type="Sprite2D" parent="."]
+[node name="Floor" type="Sprite2D" parent="." unique_id=1109624188]
 z_index = -2
+texture_repeat = 1
 texture = ExtResource("1_ground")
 region_enabled = true
 region_rect = Rect2(0, 0, 128, 128)
-texture_repeat = 1

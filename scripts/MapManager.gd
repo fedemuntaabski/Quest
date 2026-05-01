@@ -14,9 +14,14 @@ func _ready() -> void:
 		return
 
 	var player := get_node_or_null("Player") as CharacterBody2D
+
 	dungeon_generator.generate_dungeon(player)
 
-	# Bake navigation polygon from floor cells after dungeon is generated
+	# Asegurar que el dungeon terminó de generarse
+	if dungeon_generator.floor_cells.is_empty():
+		push_warning("MapManager: Dungeon generation failed or empty.")
+		return
+
 	_bake_navigation_region()
 
 # ── Navigation baking ─────────────────────────────────────────────────────────
@@ -32,31 +37,36 @@ func _bake_navigation_region() -> void:
 	if floor_cells.is_empty():
 		return
 
-	# Build a NavigationPolygon by adding one rectangle outline per floor cell.
-	# This is a simple but reliable approach: each passable tile becomes a polygon.
 	var nav_poly := NavigationPolygon.new()
-	var nav_mesh := NavigationMeshSourceGeometryData2D.new()
+
+	# Ajuste fino para evitar problemas de bordes
+	var inset: float = 2.0
+	var half: float = tile_size * 0.5
 
 	for raw_cell in floor_cells.keys():
 		var cell: Vector2i = raw_cell
+
+		# Seguridad extra (aunque no debería pasar)
 		if wall_cells.has(cell):
 			continue
 
 		var world_pos: Vector2 = dungeon_generator.grid_to_world_coords(cell)
-		var half: float = tile_size * 0.5
-		# Inset slightly to avoid edge-touching issues
-		var inset: float = 2.0
 
 		var verts := PackedVector2Array([
-			Vector2(world_pos.x - half + inset, world_pos.y - half + inset),
-			Vector2(world_pos.x + half - inset, world_pos.y - half + inset),
-			Vector2(world_pos.x + half - inset, world_pos.y + half - inset),
-			Vector2(world_pos.x - half + inset, world_pos.y + half - inset),
+			world_pos + Vector2(-half + inset, -half + inset),
+			world_pos + Vector2(half - inset, -half + inset),
+			world_pos + Vector2(half - inset, half - inset),
+			world_pos + Vector2(-half + inset, half - inset),
 		])
+
 		nav_poly.add_outline(verts)
 
 	nav_poly.make_polygons_from_outlines()
+
+	# Limpiar y asignar
+	nav_region.navigation_polygon = null
 	nav_region.navigation_polygon = nav_poly
+
 	print("MapManager: NavigationRegion2D baked with %d floor cells." % floor_cells.size())
 
 # ── Passability checks ────────────────────────────────────────────────────────

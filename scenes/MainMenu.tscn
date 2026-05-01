@@ -2,11 +2,11 @@
 
 [ext_resource type="Script" uid="uid://83bq6t8fg0tc" path="res://scripts/MainMenu.gd" id="1_mainmenu_script"]
 [ext_resource type="Texture2D" uid="uid://dnmltyygw5pje" path="res://assets/ui/mainbackground.png" id="2_main_background"]
-[ext_resource type="FontFile" uid="uid://ee2o6xh1m63t" path="res://assets/fonts/mainfont.ttf" id="3_title_font"]
-[ext_resource type="FontFile" uid="uid://gotbtg1vwt7q" path="res://assets/fonts/secundaryfont.ttf" id="4_ui_font"]
+[ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="3_title_font"]
+[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="4_ui_font"]
 [ext_resource type="AudioStream" uid="uid://bn3f47isu51op" path="res://assets/audio/click.mp3" id="5_click_audio"]
 [ext_resource type="AudioStream" uid="uid://bawlbtgbjti0q" path="res://assets/audio/hover.mp3" id="6_hover_audio"]
-[ext_resource type="Texture2D" uid="uid://bxvwr7ujssclm" path="res://assets/ui/menuoption.png" id="7_options_bg"]
+[ext_resource type="Texture2D" uid="uid://0nc7hiqggiu8" path="res://assets/ui/menuoption.png" id="7_options_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
 content_margin_left = 16.0
