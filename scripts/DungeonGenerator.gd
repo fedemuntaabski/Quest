@@ -2,6 +2,7 @@ extends Node2D
 
 class_name DungeonGenerator
 
+
 @export var floor_tileset: TileSet = preload("res://assets/texture/enviorment/dungeon_tileset.tres")
 
 signal room_changed(room_id: int)
@@ -26,15 +27,17 @@ const WALL_TEXTURE_PATH := "res://assets/ui/white_2x2.svg"
 const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
 const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 
-@export var grid_width: int = 52
-@export var grid_height: int = 36
+@export var grid_width: int = 90
+@export var grid_height: int = 70
 @export var tile_size: float = 16.0
 @export var room_count: int = 8
-@export var room_min_size: Vector2i = Vector2i(6, 5)
-@export var room_max_size: Vector2i = Vector2i(16, 12)
-@export var room_padding: int = 1
+@export var room_min_size: Vector2i = Vector2i(10, 8)
+@export var room_max_size: Vector2i = Vector2i(20, 14)
+@export var room_padding: int = 4
+
 @export var room_light_energy: float = 2.0
 @export var room_light_transition_seconds: float = 0.45
+
 
 
 var wall_texture: Texture2D = preload(WALL_TEXTURE_PATH)
@@ -436,17 +439,17 @@ func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> void:
 
 	if randf() < 0.5:
 		while current.x != to_cell.x:
-			current.x += signi(to_cell.x - current.x)
+			current.x += signi(to_cell.x - current.x) 
 			_add_corridor_cell(current)
 		while current.y != to_cell.y:
-			current.y += signi(to_cell.y - current.y)
+			current.y += signi(to_cell.y - current.y) 
 			_add_corridor_cell(current)
 	else:
 		while current.y != to_cell.y:
-			current.y += signi(to_cell.y - current.y)
+			current.y += signi(to_cell.y - current.y) 
 			_add_corridor_cell(current)
 		while current.x != to_cell.x:
-			current.x += signi(to_cell.x - current.x)
+			current.x += signi(to_cell.x - current.x) 
 			_add_corridor_cell(current)
 
 func _add_corridor_cell(cell: Vector2i) -> void:
@@ -553,7 +556,59 @@ func _on_room_body_entered(body: Node2D, room_id: int) -> void:
 		return
 	_set_active_room(room_id, true)
 
+func _update_camera_for_room(room_id: int, animate: bool) -> void:
+	if _spawned_player == null:
+		return
+
+	var camera := _spawned_player.get_node_or_null("Camera2D") as Camera2D
+	if camera == null:
+		return
+
+	var room_info = room_infos[room_id]
+	var room_rect: Rect2i = room_info["rect"]
+
+	# Centro real de la sala
+	var center_cell: Vector2i = room_info["center_cell"]
+	var target_pos: Vector2 = grid_to_world_coords(center_cell)
+
+	# 📦 tamaño real en mundo
+	var room_size_px = Vector2(room_rect.size) * tile_size
+
+	# 📷 viewport visible (aprox)
+	var viewport_size = get_viewport().get_visible_rect().size
+
+	# 🔍 cálculo de zoom automático para encajar sala completa
+	var zoom_x = viewport_size.x / room_size_px.x
+	var zoom_y = viewport_size.y / room_size_px.y
+	var base_zoom = (zoom_x + zoom_y) * 0.5
+
+	# usamos el más restrictivo para que ENTRE ENTERA
+	var margin_factor := 0.7  # más chico = más alejado (más aire alrededor)
+
+
+
+	# 🛑 clamp para evitar zoom exagerado
+	var target_zoom_value = clamp(base_zoom * margin_factor, 0.6, 2.5)
+
+	var zoom_vec = Vector2(target_zoom_value, target_zoom_value)
+
+	var tween := create_tween()
+
+	# 🔥 “cinematic feel”
+	tween.set_trans(Tween.TRANS_CUBIC)
+	tween.set_ease(Tween.EASE_IN_OUT)
+
+	# micro delay para sensación de corte de sala
+	tween.tween_interval(0.08)
+	
+	tween.set_parallel(true)
+
+	# movimiento suave + zoom desacoplado
+	tween.tween_property(camera, "global_position", target_pos, 0.35)
+	tween.tween_property(camera, "zoom", zoom_vec, 0.35)
+
 func _set_active_room(room_id: int, animate: bool) -> void:
+	
 	if room_id < 0 or room_id >= room_infos.size():
 		return
 
@@ -573,6 +628,8 @@ func _set_active_room(room_id: int, animate: bool) -> void:
 	_update_fog_for_room_state()
 	_tween_room_lights(animate)
 	emit_signal("room_changed", active_room_id)
+	_update_camera_for_room(room_id, animate)
+	
 
 func _update_fog_for_room_state() -> void:
 	for room_info in room_infos:
@@ -715,4 +772,3 @@ func _on_enemy_defeated(_enemy: EnemyAI, room_id: int) -> void:
 		emit_signal("room_cleared", room_id)
 	
 	
-

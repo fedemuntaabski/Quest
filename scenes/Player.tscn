@@ -29,7 +29,7 @@ texture = ExtResource("4_player_texture")
 shape = SubResource("CapsuleShape2D_6xq8m")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1422355037]
-zoom = Vector2(1.8, 1.8)
+zoom = Vector2(1.0, 1.0)
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=638103579]
 energy = 1.2
