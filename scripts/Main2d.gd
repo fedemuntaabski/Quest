@@ -26,6 +26,8 @@ const CRITICAL_SECONDS: float = 15.0
 @onready var debug_button: Button = $DebugLayer/DebugButton
 @onready var debug_cards_button: Button = $CanvasLayer_debug_cartas/Button
 
+@onready var map_manager: MapManager = $MapManager
+
 
 
 # ─────────────────────────────────────────────
@@ -61,6 +63,8 @@ func _ready() -> void:
 func _on_debug_pressed() -> void:
 	if card_container:
 		card_container.debug_print_container()
+
+
 
 # ─────────────────────────────────────────────
 # SIGNALS
@@ -159,11 +163,16 @@ func _load_tutorial_if_needed() -> void:
 # LOOP
 # ─────────────────────────────────────────────
 func _process(delta: float) -> void:
+	var mouse_pos := get_global_mouse_position()
+	map_manager.update_hover(mouse_pos)
+	
 	if get_tree().paused:
 		return
 
 	room_timer_remaining = maxf(0.0, room_timer_remaining - delta)
 	_update_timer_ui()
+
+
 
 	if room_timer_remaining <= 0.0 and not timer_expired_logged:
 		timer_expired_logged = true

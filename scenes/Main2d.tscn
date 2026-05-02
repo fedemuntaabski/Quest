@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://pgyrfcm2yqbw" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
 [ext_resource type="PackedScene" uid="uid://cycf6x7lmqjgg" path="res://scenes/UpgradeMenu.tscn" id="6_upgrade_menu"]
 [ext_resource type="Script" uid="uid://cordgv67shmue" path="res://scripts/DebugCardMenu.gd" id="7_kwxng"]
+[ext_resource type="PackedScene" uid="uid://dvfida6qamh5y" path="res://scenes/TileOverlay.tscn" id="8_dcq30"]
 
 [node name="Main2d" type="Node2D" unique_id=719008083]
 script = ExtResource("4_main2d_script")
@@ -94,3 +95,7 @@ process_mode = 3
 layer = 958
 visible = false
 script = ExtResource("7_kwxng")
+
+[node name="TileOverlay" parent="." unique_id=1858402419 instance=ExtResource("8_dcq30")]
+process_mode = 3
+z_index = 4096
