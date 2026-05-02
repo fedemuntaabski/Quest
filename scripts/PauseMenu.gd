@@ -1,244 +1,226 @@
 extends CanvasLayer
-
 class_name PauseMenu
+
+const UPGRADES = {
+	"hp": ["base_hp", "max_hp"],
+	"str": ["base_str", "strength_modifier"],
+	"mag": ["base_mag", "magic_modifier"],
+	"dex": ["base_dex", "dexterity_modifier"]
+}
 
 const SETTINGS_PATH := "user://settings.cfg"
 const SETTINGS_SECTION := "options"
 const MAIN_MENU_SCENE := "res://scenes/MainMenu.tscn"
-const RESOLUTION_PRESETS := [
-	{"label": "1920x1080", "size": Vector2i(1920, 1080)},
-	{"label": "1600x900", "size": Vector2i(1600, 900)},
-	{"label": "1280x720", "size": Vector2i(1280, 720)}
+
+const RESOLUTION_PRESETS = [
+	["1920x1080", Vector2i(1920, 1080)],
+	["1600x900", Vector2i(1600, 900)],
+	["1280x720", Vector2i(1280, 720)]
 ]
 
-const UPGRADE_COST: int = 50
+const UPGRADE_COST := 50
 
-@onready var pause_panel: Panel = $CenterContainer/PausePanel
-@onready var continue_button: Button = $CenterContainer/PausePanel/PauseVBox/ContinueButton
-@onready var options_button: Button = $CenterContainer/PausePanel/PauseVBox/OptionsButton
-@onready var store_button: Button = $CenterContainer/PausePanel/PauseVBox/StoreButton
-@onready var exit_button: Button = $CenterContainer/PausePanel/PauseVBox/ExitButton
+@export var save_mgr: SaveManager
+@export var player_stats: PlayerStats
 
-@onready var options_panel: Panel = $OptionsPanel
-@onready var click_volume_slider: HSlider = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow/ClickVolumeSlider
-@onready var click_volume_value_label: Label = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow/ClickVolumeValueLabel
-@onready var hover_volume_slider: HSlider = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow/HoverVolumeSlider
-@onready var hover_volume_value_label: Label = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow/HoverVolumeValueLabel
-@onready var res_selector: OptionButton = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ResSelector
-@onready var save_button: Button = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/SaveButton
-@onready var back_button: Button = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/BackButton
+@onready var pause_panel = $CenterContainer/PausePanel
+@onready var options_panel = $OptionsPanel
+@onready var store_panel = $StorePanel
 
-@onready var store_panel: Panel = $StorePanel
-@onready var gold_label: Label = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/GoldLabel
-@onready var upg_hp_btn: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeHPButton
-@onready var upg_str_btn: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeSTRButton
-@onready var upg_mag_btn: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeMAGButton
-@onready var upg_dex_btn: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeDEXButton
-@onready var store_back_button: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/StoreBackButton
+@onready var click_sfx: AudioStreamPlayer = $UIAudio/ClickSound
+@onready var hover_sfx: AudioStreamPlayer = $UIAudio/HoverSound
 
-var suppress_change_tracking: bool = false
-var has_unsaved_changes: bool = false
+@onready var panels = [pause_panel, options_panel, store_panel]
+
+@onready var continue_button = $CenterContainer/PausePanel/PauseVBox/ContinueButton
+@onready var options_button = $CenterContainer/PausePanel/PauseVBox/OptionsButton
+@onready var store_button = $CenterContainer/PausePanel/PauseVBox/StoreButton
+@onready var exit_button = $CenterContainer/PausePanel/PauseVBox/ExitButton
+
+@onready var sliders = [
+	$OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow/ClickVolumeSlider,
+	$OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow/HoverVolumeSlider
+]
+
+@onready var labels = [
+	$OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow/ClickVolumeValueLabel,
+	$OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow/HoverVolumeValueLabel
+]
+
+@onready var res_selector = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ResSelector
+
+@onready var gold_label = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/GoldLabel
+
+@onready var upgrade_buttons = [
+	$StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeHPButton,
+	$StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeSTRButton,
+	$StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeMAGButton,
+	$StorePanel/StoreCenterContainer/StoreCard/StoreVBox/UpgradeDEXButton
+]
+
+var is_open := false
+
+# ---------------- INIT ----------------
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process_unhandled_input(true)
+
 	visible = false
+	is_open = false
 
-	_populate_resolution_selector()
-	_connect_signals()
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-	suppress_change_tracking = true
+	click_sfx.stream = load("res://assets/audio/click.mp3")
+	hover_sfx.stream = load("res://assets/audio/hover.mp3")
+
+	_fill_res()
+	_connect()
+
 	load_settings()
-	suppress_change_tracking = false
+	_update_volume()
+	_set_panel(0)
 
-	_update_click_volume_label(click_volume_slider.value)
-	_update_hover_volume_label(hover_volume_slider.value)
-	_set_options_panel_visible(false)
-	_set_store_panel_visible(false)
-	_set_pause_panel_visible(true)
+# ---------------- OPEN / CLOSE ----------------
 
-func open_menu() -> void:
+func open_menu():
+	is_open = true
 	visible = true
-	_set_options_panel_visible(false)
-	_set_store_panel_visible(false)
-	_set_pause_panel_visible(true)
+	get_tree().paused = true
+	_set_panel(0)
 
-func close_menu() -> void:
+func close_menu():
+	is_open = false
 	visible = false
-	has_unsaved_changes = false
-	_set_options_panel_visible(false)
-	_set_store_panel_visible(false)
-	_set_pause_panel_visible(true)
+	get_tree().paused = false
 
-func _set_pause_panel_visible(visible_value: bool) -> void:
-	pause_panel.visible = visible_value
+func toggle_menu():
+	if is_open:
+		close_menu()
+	else:
+		open_menu()
 
-func _set_options_panel_visible(visible_value: bool) -> void:
-	options_panel.visible = visible_value
+# ---------------- INPUT (FIX REAL) ----------------
 
-func _set_store_panel_visible(visible_value: bool) -> void:
-	store_panel.visible = visible_value
-	if visible_value:
-		_update_store_ui()
+func _unhandled_input(event):
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.is_action_pressed("ui_cancel"):
+			toggle_menu()
 
-func _update_store_ui() -> void:
-	var save_mgr = get_node_or_null("/root/SaveManager")
-	if save_mgr:
-		gold_label.text = "Oro: %d" % save_mgr.gold
-		var can_afford = save_mgr.gold >= UPGRADE_COST
-		upg_hp_btn.disabled = not can_afford
-		upg_str_btn.disabled = not can_afford
-		upg_mag_btn.disabled = not can_afford
-		upg_dex_btn.disabled = not can_afford
+# ---------------- UI ----------------
 
-func _populate_resolution_selector() -> void:
+func _set_panel(i):
+	for p in panels:
+		p.visible = false
+	panels[i].visible = true
+
+# ---------------- CONNECT ----------------
+
+func _connect():
+	continue_button.pressed.connect(func(): _play_click(); close_menu())
+	options_button.pressed.connect(func(): _play_click(); _set_panel(1))
+	store_button.pressed.connect(func(): _play_click(); _set_panel(2); _update_store())
+	exit_button.pressed.connect(func(): _play_click(); _exit())
+
+	var all_buttons = [
+		continue_button,
+		options_button,
+		store_button,
+		exit_button
+	]
+
+	for b in all_buttons:
+		b.mouse_entered.connect(_play_hover)
+
+	var stats = ["hp", "str", "mag", "dex"]
+
+	for i in upgrade_buttons.size():
+		var stat = stats[i]
+		upgrade_buttons[i].pressed.connect(func():
+			_play_click()
+			_on_upgrade_pressed(stat)
+		)
+
+	for i in sliders.size():
+		sliders[i].value_changed.connect(func(v): _update_label(i, v))
+
+	res_selector.item_selected.connect(_res)
+
+# ---------------- AUDIO ----------------
+
+func _play_click():
+	if click_sfx:
+		click_sfx.play()
+
+func _play_hover():
+	if hover_sfx:
+		hover_sfx.play()
+
+# ---------------- STORE ----------------
+
+func _update_store():
+	if not save_mgr:
+		return
+
+	gold_label.text = "Oro: %d" % save_mgr.gold
+
+	var ok = save_mgr.gold >= UPGRADE_COST
+	for b in upgrade_buttons:
+		b.disabled = not ok
+
+# ---------------- RES ----------------
+
+func _fill_res():
 	res_selector.clear()
-	for preset in RESOLUTION_PRESETS:
-		res_selector.add_item(preset["label"])
+	for r in RESOLUTION_PRESETS:
+		res_selector.add_item(r[0])
 
-func _connect_signals() -> void:
-	if not continue_button.pressed.is_connected(_on_continue_button_pressed):
-		continue_button.pressed.connect(_on_continue_button_pressed)
-	if not options_button.pressed.is_connected(_on_options_button_pressed):
-		options_button.pressed.connect(_on_options_button_pressed)
-	if not exit_button.pressed.is_connected(_on_exit_button_pressed):
-		exit_button.pressed.connect(_on_exit_button_pressed)
-	if not back_button.pressed.is_connected(_on_back_button_pressed):
-		back_button.pressed.connect(_on_back_button_pressed)
-	if not save_button.pressed.is_connected(_on_save_button_pressed):
-		save_button.pressed.connect(_on_save_button_pressed)
+func _res(i):
+	var r = RESOLUTION_PRESETS[i][1]
+	DisplayServer.window_set_size(r)
+	get_tree().root.content_scale_size = r
 
-	if not store_button.pressed.is_connected(_on_store_button_pressed):
-		store_button.pressed.connect(_on_store_button_pressed)
-	if not store_back_button.pressed.is_connected(_on_store_back_button_pressed):
-		store_back_button.pressed.connect(_on_store_back_button_pressed)
-		
-	if not upg_hp_btn.pressed.is_connected(_on_upgrade_pressed.bind("hp")):
-		upg_hp_btn.pressed.connect(_on_upgrade_pressed.bind("hp"))
-	if not upg_str_btn.pressed.is_connected(_on_upgrade_pressed.bind("str")):
-		upg_str_btn.pressed.connect(_on_upgrade_pressed.bind("str"))
-	if not upg_mag_btn.pressed.is_connected(_on_upgrade_pressed.bind("mag")):
-		upg_mag_btn.pressed.connect(_on_upgrade_pressed.bind("mag"))
-	if not upg_dex_btn.pressed.is_connected(_on_upgrade_pressed.bind("dex")):
-		upg_dex_btn.pressed.connect(_on_upgrade_pressed.bind("dex"))
+# ---------------- LABELS ----------------
 
-	if not click_volume_slider.value_changed.is_connected(_on_click_volume_slider_value_changed):
-		click_volume_slider.value_changed.connect(_on_click_volume_slider_value_changed)
-	if not hover_volume_slider.value_changed.is_connected(_on_hover_volume_slider_value_changed):
-		hover_volume_slider.value_changed.connect(_on_hover_volume_slider_value_changed)
-	if not res_selector.item_selected.is_connected(_on_res_selector_item_selected):
-		res_selector.item_selected.connect(_on_res_selector_item_selected)
+func _update_label(i, v):
+	labels[i].text = "%d%%" % int(v * 100)
 
-func _on_continue_button_pressed() -> void:
-	get_tree().paused = false
-	close_menu()
+func _update_volume():
+	for i in sliders.size():
+		_update_label(i, sliders[i].value)
 
-func _on_options_button_pressed() -> void:
-	_set_pause_panel_visible(false)
-	_set_store_panel_visible(false)
-	_set_options_panel_visible(true)
+# ---------------- ACTIONS ----------------
 
-func _on_store_button_pressed() -> void:
-	_set_pause_panel_visible(false)
-	_set_options_panel_visible(false)
-	_set_store_panel_visible(true)
-
-func _on_store_back_button_pressed() -> void:
-	_set_store_panel_visible(false)
-	_set_pause_panel_visible(true)
-
-func _on_upgrade_pressed(stat_id: String) -> void:
-	var save_mgr = get_node_or_null("/root/SaveManager")
-	var player_stats = get_node_or_null("/root/PlayerStats")
-	
-	if save_mgr and player_stats and save_mgr.gold >= UPGRADE_COST:
-		save_mgr.gold -= UPGRADE_COST
-		match stat_id:
-			"hp":
-				player_stats.base_hp += 1
-				if player_stats.stats:
-					player_stats.stats.max_hp += 1
-					player_stats.stats.current_hp += 1
-			"str":
-				player_stats.base_str += 1
-				if player_stats.stats: player_stats.stats.strength_modifier += 1
-			"mag":
-				player_stats.base_mag += 1
-				if player_stats.stats: player_stats.stats.magic_modifier += 1
-			"dex":
-				player_stats.base_dex += 1
-				if player_stats.stats: player_stats.stats.dexterity_modifier += 1
-				
-		save_mgr.save_game()
-		if player_stats.stats:
-			player_stats.stats_changed.emit(player_stats.stats)
-		_update_store_ui()
-
-func _on_exit_button_pressed() -> void:
-	get_tree().paused = false
-	close_menu()
+func _exit():
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
 
-func _on_back_button_pressed() -> void:
-	has_unsaved_changes = false
-	_set_options_panel_visible(false)
-	_set_pause_panel_visible(true)
-
-func _on_save_button_pressed() -> void:
-	save_settings()
-	has_unsaved_changes = false
-
-func _on_click_volume_slider_value_changed(value: float) -> void:
-	_update_click_volume_label(value)
-	_mark_unsaved_changes()
-
-func _on_hover_volume_slider_value_changed(value: float) -> void:
-	_update_hover_volume_label(value)
-	_mark_unsaved_changes()
-
-func _update_click_volume_label(value: float) -> void:
-	var percentage := int(round(value * 100.0))
-	click_volume_value_label.text = "%d%%" % percentage
-
-func _update_hover_volume_label(value: float) -> void:
-	var percentage := int(round(value * 100.0))
-	hover_volume_value_label.text = "%d%%" % percentage
-
-func _mark_unsaved_changes() -> void:
-	if suppress_change_tracking:
+func _on_upgrade_pressed(stat):
+	if not save_mgr or not player_stats:
 		return
-	has_unsaved_changes = true
-
-func _on_res_selector_item_selected(index: int) -> void:
-	var safe_index := clampi(index, 0, RESOLUTION_PRESETS.size() - 1)
-	var target_size: Vector2i = RESOLUTION_PRESETS[safe_index]["size"]
-	DisplayServer.window_set_size(target_size)
-	get_tree().root.content_scale_size = target_size
-	if res_selector.selected != safe_index:
-		res_selector.select(safe_index)
-	_mark_unsaved_changes()
-
-func save_settings() -> void:
-	var cfg := ConfigFile.new()
-	cfg.set_value(SETTINGS_SECTION, "resolution_index", res_selector.selected)
-	cfg.set_value(SETTINGS_SECTION, "click_volume", click_volume_slider.value)
-	cfg.set_value(SETTINGS_SECTION, "hover_volume", hover_volume_slider.value)
-	var save_error := cfg.save(SETTINGS_PATH)
-	if save_error != OK:
-		push_warning("PauseMenu: Failed to save settings (%s)" % save_error)
-
-func load_settings() -> void:
-	var cfg := ConfigFile.new()
-	var load_error := cfg.load(SETTINGS_PATH)
-	if load_error != OK:
+	if save_mgr.gold < UPGRADE_COST:
 		return
 
-	var saved_index := int(cfg.get_value(SETTINGS_SECTION, "resolution_index", res_selector.selected))
-	_on_res_selector_item_selected(saved_index)
+	var u = UPGRADES.get(stat)
+	if not u:
+		return
 
-	var saved_click_volume := float(cfg.get_value(SETTINGS_SECTION, "click_volume", click_volume_slider.value))
-	click_volume_slider.value = clampf(saved_click_volume, 0.001, 2.0)
-	_update_click_volume_label(click_volume_slider.value)
+	save_mgr.gold -= UPGRADE_COST
 
-	var saved_hover_volume := float(cfg.get_value(SETTINGS_SECTION, "hover_volume", hover_volume_slider.value))
-	hover_volume_slider.value = clampf(saved_hover_volume, 0.001, 2.0)
-	_update_hover_volume_label(hover_volume_slider.value)
+	player_stats.set(u[0], player_stats.get(u[0]) + 1)
+
+	if player_stats.stats:
+		player_stats.stats.set(u[1], player_stats.stats.get(u[1]) + 1)
+
+	save_mgr.save_game()
+	_update_store()
+
+# ---------------- SETTINGS ----------------
+
+func load_settings():
+	var cfg = ConfigFile.new()
+	if cfg.load(SETTINGS_PATH) != OK:
+		return
+
+	res_selector.select(cfg.get_value(SETTINGS_SECTION, "resolution_index", 0))
+	sliders[0].value = cfg.get_value(SETTINGS_SECTION, "click_volume", 1.0)
+	sliders[1].value = cfg.get_value(SETTINGS_SECTION, "hover_volume", 1.0)

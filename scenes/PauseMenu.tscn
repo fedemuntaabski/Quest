@@ -1,12 +1,18 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://pgyrfcm2yqbw"]
 
-[ext_resource type="Script" path="res://scripts/PauseMenu.gd" id="1_pause_script"]
-[ext_resource type="FontFile" uid="uid://ee2o6xh1m63t" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
-[ext_resource type="FontFile" uid="uid://gotbtg1vwt7q" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
-[ext_resource type="Texture2D" uid="uid://bxvwr7ujssclm" path="res://assets/ui/menuoption.png" id="4_options_bg"]
+[ext_resource type="Script" uid="uid://bgkmd8ru5ou3m" path="res://scripts/PauseMenu.gd" id="1_pause_script"]
+[ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
+[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+[ext_resource type="Texture2D" uid="uid://0nc7hiqggiu8" path="res://assets/ui/menuoption.png" id="4_options_bg"]
 
 [sub_resource type="Shader" id="Shader_pause_blur"]
-code = "shader_type canvas_item;\nuniform sampler2D SCREEN_TEXTURE : hint_screen_texture, filter_linear_mipmap;\n\nvoid fragment() {\n\tCOLOR = textureLod(SCREEN_TEXTURE, SCREEN_UV, 2.5);\n}\n"
+code = "shader_type canvas_item;
+uniform sampler2D SCREEN_TEXTURE : hint_screen_texture, filter_linear_mipmap;
+
+void fragment() {
+	COLOR = textureLod(SCREEN_TEXTURE, SCREEN_UV, 2.5);
+}
+"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pause_blur"]
 shader = SubResource("Shader_pause_blur")
@@ -87,6 +93,22 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_exit"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.4, 0.08, 0.08, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.25, 0.25, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_save"]
 content_margin_left = 16.0
 content_margin_top = 12.0
@@ -119,41 +141,23 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_exit"]
-content_margin_left = 16.0
-content_margin_top = 12.0
-content_margin_right = 16.0
-content_margin_bottom = 12.0
-bg_color = Color(0.4, 0.08, 0.08, 0.95)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.95, 0.25, 0.25, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
-[node name="PauseMenu" type="CanvasLayer"]
-visible = false
-layer = 20
+[node name="PauseMenu" type="CanvasLayer" unique_id=1562215036]
 process_mode = 2
+layer = 20
+visible = false
 script = ExtResource("1_pause_script")
 
-[node name="BlurRect" type="ColorRect" parent="."]
-layout_mode = 1
+[node name="BlurRect" type="ColorRect" parent="." unique_id=94673652]
+material = SubResource("ShaderMaterial_pause_blur")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-material = SubResource("ShaderMaterial_pause_blur")
 color = Color(1, 1, 1, 0.8)
 
-[node name="DimRect" type="ColorRect" parent="."]
-layout_mode = 1
+[node name="DimRect" type="ColorRect" parent="." unique_id=460011677]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -162,22 +166,20 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0.45)
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
-layout_mode = 1
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1151278473]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PausePanel" type="Panel" parent="CenterContainer"]
+[node name="PausePanel" type="Panel" parent="CenterContainer" unique_id=1211186564]
 custom_minimum_size = Vector2(560, 460)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="PauseVBox" type="VBoxContainer" parent="CenterContainer/PausePanel"]
+[node name="PauseVBox" type="VBoxContainer" parent="CenterContainer/PausePanel" unique_id=376339731]
 layout_mode = 0
-anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -190,7 +192,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 20
 
-[node name="PauseTitle" type="Label" parent="CenterContainer/PausePanel/PauseVBox"]
+[node name="PauseTitle" type="Label" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1523502179]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
@@ -201,7 +203,7 @@ theme_override_font_sizes/font_size = 56
 text = "PAUSA"
 horizontal_alignment = 1
 
-[node name="ContinueButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox"]
+[node name="ContinueButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=348695478]
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -216,7 +218,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "CONTINUAR"
 
-[node name="OptionsButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox"]
+[node name="OptionsButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1136326752]
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -231,7 +233,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "OPCIONES"
 
-[node name="StoreButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox"]
+[node name="StoreButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1906562401]
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -246,7 +248,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "TIENDA"
 
-[node name="ExitButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox"]
+[node name="ExitButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=462390056]
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.85, 1)
@@ -261,8 +263,15 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "SALIR"
 
-[node name="OptionsPanel" type="Panel" parent="."]
+[node name="OptionsPanel" type="Panel" parent="." unique_id=1981781400]
 visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="OptionsCenterContainer" type="CenterContainer" parent="OptionsPanel" unique_id=1404443742]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -270,20 +279,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="OptionsCenterContainer" type="CenterContainer" parent="OptionsPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="OptionsCard" type="Panel" parent="OptionsPanel/OptionsCenterContainer"]
+[node name="OptionsCard" type="Panel" parent="OptionsPanel/OptionsCenterContainer" unique_id=1144442718]
 custom_minimum_size = Vector2(912, 672)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="OptionsBackground" type="TextureRect" parent="OptionsPanel/OptionsCenterContainer/OptionsCard"]
+[node name="OptionsBackground" type="TextureRect" parent="OptionsPanel/OptionsCenterContainer/OptionsCard" unique_id=447106597]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -293,7 +294,7 @@ texture = ExtResource("4_options_bg")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="OptionsVBox" type="VBoxContainer" parent="OptionsPanel/OptionsCenterContainer/OptionsCard"]
+[node name="OptionsVBox" type="VBoxContainer" parent="OptionsPanel/OptionsCenterContainer/OptionsCard" unique_id=2048047950]
 custom_minimum_size = Vector2(768, 552)
 layout_mode = 0
 anchor_left = 0.5
@@ -309,7 +310,7 @@ grow_vertical = 2
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="OptionsTitle" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox"]
+[node name="OptionsTitle" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=442339193]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
@@ -321,7 +322,7 @@ text = "OPCIONES"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="ClickVolumeLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox"]
+[node name="ClickVolumeLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=1012695339]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -331,11 +332,11 @@ text = "Volumen Click"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="ClickVolumeRow" type="HBoxContainer" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox"]
+[node name="ClickVolumeRow" type="HBoxContainer" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=2083109234]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="ClickVolumeSlider" type="HSlider" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow"]
+[node name="ClickVolumeSlider" type="HSlider" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow" unique_id=1882149685]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -343,7 +344,7 @@ max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="ClickVolumeValueLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow"]
+[node name="ClickVolumeValueLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow" unique_id=1694976292]
 custom_minimum_size = Vector2(92, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -354,7 +355,7 @@ horizontal_alignment = 2
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="HoverVolumeLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox"]
+[node name="HoverVolumeLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=539712347]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -364,11 +365,11 @@ text = "Volumen Hover"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="HoverVolumeRow" type="HBoxContainer" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox"]
+[node name="HoverVolumeRow" type="HBoxContainer" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=405181652]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="HoverVolumeSlider" type="HSlider" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow"]
+[node name="HoverVolumeSlider" type="HSlider" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow" unique_id=126388068]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -376,7 +377,7 @@ max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="HoverVolumeValueLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow"]
+[node name="HoverVolumeValueLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow" unique_id=849242352]
 custom_minimum_size = Vector2(92, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -387,7 +388,7 @@ horizontal_alignment = 2
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="ResolutionLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox"]
+[node name="ResolutionLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=684266611]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -397,14 +398,14 @@ text = "Resolucion"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="ResSelector" type="OptionButton" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox"]
+[node name="ResSelector" type="OptionButton" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=425444530]
 custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_fonts/font = ExtResource("3_ui_font")
 theme_override_font_sizes/font_size = 26
 
-[node name="SaveButton" type="Button" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox"]
+[node name="SaveButton" type="Button" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=1255535423]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.93, 0.68, 1)
@@ -420,7 +421,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "GUARDAR"
 
-[node name="BackButton" type="Button" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox"]
+[node name="BackButton" type="Button" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=152003812]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -437,8 +438,15 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "VOLVER"
 
-[node name="StorePanel" type="Panel" parent="."]
+[node name="StorePanel" type="Panel" parent="." unique_id=1280633485]
 visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StoreCenterContainer" type="CenterContainer" parent="StorePanel" unique_id=812721120]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -446,20 +454,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="StoreCenterContainer" type="CenterContainer" parent="StorePanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="StoreCard" type="Panel" parent="StorePanel/StoreCenterContainer"]
+[node name="StoreCard" type="Panel" parent="StorePanel/StoreCenterContainer" unique_id=2078292481]
 custom_minimum_size = Vector2(912, 672)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="StoreVBox" type="VBoxContainer" parent="StorePanel/StoreCenterContainer/StoreCard"]
+[node name="StoreVBox" type="VBoxContainer" parent="StorePanel/StoreCenterContainer/StoreCard" unique_id=747076580]
 custom_minimum_size = Vector2(768, 552)
 layout_mode = 0
 anchor_left = 0.5
@@ -475,7 +475,7 @@ grow_vertical = 2
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="StoreTitle" type="Label" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox"]
+[node name="StoreTitle" type="Label" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=483408238]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
@@ -487,7 +487,7 @@ text = "TIENDA"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="GoldLabel" type="Label" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox"]
+[node name="GoldLabel" type="Label" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1271912898]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
@@ -496,7 +496,7 @@ theme_override_font_sizes/font_size = 26
 text = "Oro: 0"
 horizontal_alignment = 1
 
-[node name="UpgradeHPButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox"]
+[node name="UpgradeHPButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1556794747]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -507,7 +507,7 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Mejorar Vida (+1)"
 
-[node name="UpgradeSTRButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox"]
+[node name="UpgradeSTRButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1371072363]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -518,7 +518,7 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Mejorar Fuerza (+1)"
 
-[node name="UpgradeMAGButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox"]
+[node name="UpgradeMAGButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1361103944]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -529,7 +529,7 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Mejorar Magia (+1)"
 
-[node name="UpgradeDEXButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox"]
+[node name="UpgradeDEXButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=663664604]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -540,7 +540,7 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Mejorar Destreza (+1)"
 
-[node name="StoreBackButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox"]
+[node name="StoreBackButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=351117902]
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -550,3 +550,9 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "VOLVER"
+
+[node name="UIAudio" type="Node" parent="." unique_id=20375023]
+
+[node name="ClickSound" type="AudioStreamPlayer" parent="UIAudio" unique_id=879104593]
+
+[node name="HoverSound" type="AudioStreamPlayer" parent="UIAudio" unique_id=1216079041]
