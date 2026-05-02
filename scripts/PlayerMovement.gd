@@ -13,6 +13,7 @@ class_name PlayerMovement
 @onready var camera: Camera2D = $Camera2D
 @onready var attack_area: Area2D = $AttackArea
 @onready var point_light: PointLight2D = $PointLight2D
+@onready var player_stats = get_node("/root/PlayerStats")
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
 var facing_direction: Vector2 = Vector2.RIGHT
@@ -37,16 +38,14 @@ func _ready() -> void:
 				player_stats_autoload.stats_changed.connect(_on_stats_changed)
 
 func _on_stats_changed(_stats: CharacterStats) -> void:
-	var player_stats_autoload = get_node_or_null("/root/PlayerStats")
-	if not player_stats_autoload or not point_light:
+	if not player_stats or not point_light:
 		return
 	
 	var reach_count = 0
-	for upg in player_stats_autoload.active_upgrades:
+	for upg in player_stats.active_upgrades:
 		if upg.get("special", "") == "arcane_reach":
 			reach_count += 1
 			
-	# Arcane reach expands vision
 	point_light.texture_scale = 4.0 + (reach_count * 1.5)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -80,7 +79,7 @@ func _process_movement() -> void:
 		attack_area.position = facing_direction * attack_range_px * 0.5
 
 # ─────────────────────────────────────────────────────────────────────────────
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack"):
 		_try_attack()
 		get_viewport().set_input_as_handled()
@@ -96,19 +95,14 @@ func _try_attack() -> void:
 
 	var overlapping := attack_area.get_overlapping_bodies()
 	var hit_any := false
+	var damage = attack_damage + GameManager.roll_dice_bonus()
 
-	for body in overlapping:
-		if body is EnemyAI:
-			var enemy := body as EnemyAI
-			var is_backstab := _check_backstab(enemy)
-			enemy.receive_hit(attack_damage + GameManager.roll_dice_bonus(), is_backstab)
-			hit_any = true
 
 	if hit_any:
 		_trigger_screen_shake()
 		
 		# Vampiric Strike logic
-		var player_stats_autoload = get_node_or_null("/root/PlayerStats")
+		var player_stats_autoload = player_stats
 		if player_stats_autoload:
 			var heal_amount = 0
 			for upg in player_stats_autoload.active_upgrades:
@@ -117,18 +111,19 @@ func _try_attack() -> void:
 			if heal_amount > 0:
 				var stats_node := get_node_or_null("Stats") as CharacterStats
 				if stats_node:
-					stats_node.current_hp = mini(stats_node.current_hp + heal_amount, stats_node.max_hp)
-					player_stats_autoload.stats_changed.emit(stats_node)
+					player_stats.apply_heal(heal_amount)
+					
 
-# ── Backstab detection ────────────────────────────────────────────────────────
-# Returns true when player is behind the enemy (approaching from its rear)
-func _check_backstab(enemy: EnemyAI) -> bool:
-	# Enemy's facing is stored in enemy.facing_direction
-	# If (player_pos - enemy_pos) is in the SAME direction as enemy_facing,
-	# the player is behind the enemy (enemy is looking away).
-	var to_player: Vector2 = (global_position - enemy.global_position).normalized()
-	var dot: float = to_player.dot(enemy.facing_direction)
-	return dot > 0.5   # player is roughly behind enemy
+	var hit_enemies := {}
+
+	for body in overlapping:
+		if body.is_in_group("enemy") and not hit_enemies.has(body):
+			hit_enemies[body] = true
+
+			if body.has_method("receive_hit"):
+				body.receive_hit(damage)
+
+			hit_any = true
 
 # ── Screen shake ──────────────────────────────────────────────────────────────
 func _trigger_screen_shake() -> void:

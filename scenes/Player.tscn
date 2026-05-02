@@ -47,5 +47,5 @@ position = Vector2(32.0, 0.0)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea" unique_id=222000002]
 shape = SubResource("RectangleShape2D_attack")
 
-[node name="Stats" type="Node" parent="." unique_id=775582042]
-script = ExtResource("3_stats_script")
+[node name="Stats" type="CharacterStats" parent="."]
+type="CharacterStats"

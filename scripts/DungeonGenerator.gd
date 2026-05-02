@@ -687,7 +687,7 @@ func _spawn_enemies() -> void:
 			push_warning("DungeonGenerator: No valid spawn cell in room %d, skipping enemy." % room_id)
 			continue
 
-		var enemy := _enemy_scene.instantiate() as EnemyAI
+		var enemy := _enemy_scene.instantiate() as Enemy
 		if enemy == null:
 			continue
 
@@ -707,7 +707,7 @@ func _spawn_enemies() -> void:
 		# Track alive count and connect death signal
 		_room_enemy_counts[room_id] = _room_enemy_counts.get(room_id, 0) + 1
 		var captured_room_id := room_id
-		enemy.enemy_defeated.connect(func(e: EnemyAI) -> void:
+		enemy.enemy_defeated.connect(func(e: Enemy) -> void:
 			_on_enemy_defeated(e, captured_room_id)
 		, CONNECT_ONE_SHOT)
 
@@ -757,7 +757,7 @@ func _get_random_floor_cell_in_room(room_info: Dictionary, avoid_center: bool) -
 # ─────────────────────────────────────────────────────────────────────────────
 # Called when an enemy's enemy_defeated signal fires.
 # Decrements the room's alive counter; emits room_cleared when it hits zero.
-func _on_enemy_defeated(_enemy: EnemyAI, room_id: int) -> void:
+func _on_enemy_defeated(_enemy: Enemy, room_id: int) -> void:
 	enemy_defeated_global.emit()
 	if not _room_enemy_counts.has(room_id):
 		return

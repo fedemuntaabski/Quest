@@ -17,7 +17,7 @@ func _ready():
 		linked_stat = GameManager.STRENGTH
 
 # Calculate success intensity using 1d6 + Character modifier + Dice bonus
-func calculate_success(character_stats: CharacterStats) -> Dictionary:
+func calculate_success(character_stats) -> Dictionary:
 	"""
 	Rolls 1d6 and adds character stat modifier + dice bonus to determine success intensity.
 	Returns a dictionary with:

@@ -10,6 +10,11 @@ extends Node
 ##   PlayerStats.apply_upgrade(upgrade_dict)   ← call from UpgradeMenu
 ##   PlayerStats.stats_changed.connect(...)    ← subscribe from HUDController
 
+const STAT_STRENGTH = "strength"
+const STAT_MAGIC = "magic"
+const STAT_DEX = "dexterity"
+const STAT_HP = "hp"
+
 signal stats_changed(stats: CharacterStats)
 signal player_died
 
@@ -40,7 +45,8 @@ func register(player_stats: CharacterStats) -> void:
 		stats.died.connect(_on_stats_died)
 	
 	# Apply loaded base stats
-	stats.max_hp = base_hp
+	if stats.max_hp <= 0:
+		stats.max_hp = base_hp
 	stats.current_hp = base_hp
 	stats.strength_modifier = base_str
 	stats.magic_modifier = base_mag
@@ -51,7 +57,7 @@ func register(player_stats: CharacterStats) -> void:
 		_apply_stat_change(upg.get("stat_affected", ""), upg.get("value_change", 0))
 	
 	print("PlayerStats: registered stats for '%s' (Loaded %d upgrades)" % [stats.character_name, active_upgrades.size()])
-	stats_changed.emit(stats)
+	
 
 func _on_stats_died() -> void:
 	player_died.emit()
@@ -72,7 +78,7 @@ func apply_upgrade(upgrade: Dictionary) -> void:
 	active_upgrades.append(upgrade)
 
 	print("PlayerStats: applied '%s' → %s %+d" % [name_str, stat, delta])
-	stats_changed.emit(stats)
+	
 
 func _apply_stat_change(stat: String, delta: int) -> void:
 	match stat:
@@ -83,8 +89,8 @@ func _apply_stat_change(stat: String, delta: int) -> void:
 		"dexterity":
 			stats.dexterity_modifier += delta
 		"hp":
-			stats.max_hp   = maxi(1, stats.max_hp   + delta)
-			stats.current_hp = mini(stats.current_hp + delta, stats.max_hp)
+			stats.max_hp = max(1, stats.max_hp + delta)
+			stats.current_hp = min(stats.current_hp + delta, stats.max_hp)
 		_:
 			push_warning("PlayerStats._apply_stat_change(): unknown stat '%s'" % stat)
-	stats_changed.emit(stats)
+	
