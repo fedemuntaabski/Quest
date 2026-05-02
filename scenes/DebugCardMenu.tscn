@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://cux1yg5kynlt4"]
+
+[ext_resource type="PackedScene" uid="uid://b2qmp3n0wly87" path="res://scenes/CardContainer.tscn" id="1_si2wd"]
+
+[node name="DebugLayer" type="Node2D" unique_id=265249645]
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=2096172996]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="DEBUG CARDS" type="Label" parent="VBoxContainer" unique_id=1018140371]
+layout_mode = 2
+text = "DEBUG CARDS"
+horizontal_alignment = 1
+
+[node name="CardContainer" parent="VBoxContainer" unique_id=959850240 instance=ExtResource("1_si2wd")]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="VBoxContainer" unique_id=1520580684]
+layout_mode = 2
+action_mode = 0
+text = "Cerrar"

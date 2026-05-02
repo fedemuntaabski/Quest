@@ -3,9 +3,10 @@
 [ext_resource type="PackedScene" uid="uid://b1q61p4edk0o2" path="res://scenes/Player.tscn" id="1_qunv1"]
 [ext_resource type="PackedScene" uid="uid://dgcx23erhb3v1" path="res://scenes/MapManager.tscn" id="2_srb6u"]
 [ext_resource type="PackedScene" uid="uid://b5v43ol8idshh" path="res://scenes/HUD.tscn" id="3_hud"]
-[ext_resource type="Script" path="res://scripts/Main2d.gd" id="4_main2d_script"]
-[ext_resource type="PackedScene" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
-[ext_resource type="PackedScene" path="res://scenes/UpgradeMenu.tscn" id="6_upgrade_menu"]
+[ext_resource type="Script" uid="uid://cfdgrf3yswyd3" path="res://scripts/Main2d.gd" id="4_main2d_script"]
+[ext_resource type="PackedScene" uid="uid://pgyrfcm2yqbw" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
+[ext_resource type="PackedScene" uid="uid://cycf6x7lmqjgg" path="res://scenes/UpgradeMenu.tscn" id="6_upgrade_menu"]
+[ext_resource type="Script" uid="uid://cordgv67shmue" path="res://scripts/DebugCardMenu.gd" id="7_kwxng"]
 
 [node name="Main2d" type="Node2D" unique_id=719008083]
 script = ExtResource("4_main2d_script")
@@ -16,19 +17,18 @@ color = Color(0.05, 0.05, 0.1, 1)
 [node name="MapManager" parent="." unique_id=145395336 instance=ExtResource("2_srb6u")]
 
 [node name="Player" parent="MapManager" unique_id=1924339904 instance=ExtResource("1_qunv1")]
-position = Vector2(0, 0)
 
 [node name="HUD" parent="." unique_id=712781322 instance=ExtResource("3_hud")]
 
-[node name="PauseMenu" parent="." instance=ExtResource("5_pause_menu")]
+[node name="PauseMenu" parent="." unique_id=315828192 instance=ExtResource("5_pause_menu")]
 
-[node name="UpgradeMenu" parent="." instance=ExtResource("6_upgrade_menu")]
+[node name="UpgradeMenu" parent="." unique_id=1983777397 instance=ExtResource("6_upgrade_menu")]
 
-[node name="DeathOverlay" type="CanvasLayer" parent="."]
+[node name="DeathOverlay" type="CanvasLayer" parent="." unique_id=154972817]
 layer = 100
 visible = false
 
-[node name="ColorRect" type="ColorRect" parent="DeathOverlay"]
+[node name="ColorRect" type="ColorRect" parent="DeathOverlay" unique_id=426427661]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -36,44 +36,61 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.8)
 
-[node name="CenterContainer" type="CenterContainer" parent="DeathOverlay"]
+[node name="CenterContainer" type="CenterContainer" parent="DeathOverlay" unique_id=1273579154]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="DeathOverlay/CenterContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="DeathOverlay/CenterContainer" unique_id=457308186]
 layout_mode = 2
 theme_override_constants/separation = 30
 
-[node name="DeathLabel" type="Label" parent="DeathOverlay/CenterContainer/VBoxContainer"]
+[node name="DeathLabel" type="Label" parent="DeathOverlay/CenterContainer/VBoxContainer" unique_id=108326312]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.2, 0.2, 1)
 theme_override_font_sizes/font_size = 48
 text = "La mazmorra reclama su tributo..."
 horizontal_alignment = 1
 
-[node name="GoldLabel" type="Label" parent="DeathOverlay/CenterContainer/VBoxContainer"]
+[node name="GoldLabel" type="Label" parent="DeathOverlay/CenterContainer/VBoxContainer" unique_id=530564371]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.84, 0, 1)
 theme_override_font_sizes/font_size = 32
 text = "Oro ganado: 0"
 horizontal_alignment = 1
 
-[node name="ButtonsHBox" type="HBoxContainer" parent="DeathOverlay/CenterContainer/VBoxContainer"]
+[node name="ButtonsHBox" type="HBoxContainer" parent="DeathOverlay/CenterContainer/VBoxContainer" unique_id=740568678]
 layout_mode = 2
 theme_override_constants/separation = 40
 alignment = 1
 
-[node name="RetryButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox"]
+[node name="RetryButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox" unique_id=477708406]
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Reintentar"
 
-[node name="ExitButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox"]
+[node name="ExitButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox" unique_id=1072872623]
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Salir"
+
+[node name="DebugLayer" type="CanvasLayer" parent="." unique_id=1593020745]
+
+[node name="Button" type="Button" parent="DebugLayer" unique_id=1194065939]
+offset_left = 632.0
+offset_top = 23.0
+offset_right = 673.0
+offset_bottom = 54.0
+action_mode = 0
+text = "Test
+"
+
+[node name="DebugCardMenu" type="CanvasLayer" parent="." unique_id=1263707014]
+process_mode = 3
+layer = 958
+visible = false
+script = ExtResource("7_kwxng")
