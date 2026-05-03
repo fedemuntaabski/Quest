@@ -52,6 +52,7 @@ var room_lights_root: Node2D
 var enemies_root: Node2D
 var fog_of_war: TileMapLayer
 var visited_fog: TileMapLayer
+var enemy_manager: EnemyManager = null
 
 var grid_origin: Vector2 = Vector2.ZERO
 var floor_cells: Dictionary = {}
@@ -124,6 +125,17 @@ func _ensure_runtime_nodes() -> void:
 	# --- FOG ---
 	fog_of_war = _ensure_tile_map_layer("FogOfWar")
 	visited_fog = _ensure_tile_map_layer("VisitedFog")
+	
+	if not enemy_manager:
+		enemy_manager = EnemyManager.new()
+		enemy_manager.name = "EnemyManager"
+		add_child(enemy_manager)
+
+		# 🔥 conectar señales
+		enemy_manager.room_cleared.connect(_on_room_cleared)
+
+func _on_room_cleared(room_id: int) -> void:
+	emit_signal("room_cleared", room_id)	
 
 func _ensure_node(node_name: String) -> Node2D:
 	var existing := get_node_or_null(node_name) as Node2D
@@ -176,7 +188,8 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 		place_player_in_start_room(player)
 
 	# Spawn enemies after layout is fully built
-	_spawn_enemies()
+	enemy_manager.setup(self, _spawned_player)
+	enemy_manager.spawn_enemies(room_infos, wall_cells)
 
 	if not room_infos.is_empty():
 		_set_active_room(int(room_infos[0]["id"]), false)
@@ -665,110 +678,3 @@ func _tween_room_lights(animate: bool) -> void:
 		else:
 			tween.tween_property(room_light, "energy", target_energy, tween_duration)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Enemy spawning
-# ─────────────────────────────────────────────────────────────────────────────
-func _spawn_enemies() -> void:
-	if _enemy_scene == null:
-		_enemy_scene = load(ENEMY_SCENE_PATH) as PackedScene
-	if _enemy_scene == null:
-		push_error("DungeonGenerator: Could not load Enemy scene at '%s'" % ENEMY_SCENE_PATH)
-		return
-
-	# Cache player torch reference once
-	var player_torch: PointLight2D = null
-	if _spawned_player:
-		player_torch = _spawned_player.get_node_or_null("PointLight2D") as PointLight2D
-
-	for room_info in room_infos:
-		var room_id: int = room_info["id"]
-		var spawn_cell := _get_random_floor_cell_in_room(room_info, room_id == 0)
-		if spawn_cell == Vector2i(-1, -1):
-			push_warning("DungeonGenerator: No valid spawn cell in room %d, skipping enemy." % room_id)
-			continue
-
-		var enemy := _enemy_scene.instantiate() as Enemy
-		if enemy == null:
-			continue
-
-		enemy.name = "Enemy_%d" % room_id
-		enemy.position = grid_to_world_coords(spawn_cell)
-		enemy.my_room_id = room_id
-		enemy.dungeon_generator = self
-
-		# Wire up player reference after the node enters the tree
-		var captured_player := _spawned_player
-		var captured_torch := player_torch
-		enemy.ready.connect(func() -> void:
-			enemy.player = captured_player
-			enemy.player_torch = captured_torch
-		, CONNECT_ONE_SHOT)
-
-		# Track alive count and connect death signal
-		_room_enemy_counts[room_id] = _room_enemy_counts.get(room_id, 0) + 1
-		var captured_room_id := room_id
-		enemy.enemy_defeated.connect(func(e: Enemy) -> void:
-			_on_enemy_defeated(e, captured_room_id)
-		, CONNECT_ONE_SHOT)
-
-		enemies_root.add_child(enemy)
-		print("DungeonGenerator: Spawned enemy in room %d at cell %v" % [room_id, spawn_cell])
-
-func _get_random_floor_cell_in_room(room_info: Dictionary, avoid_center: bool) -> Vector2i:
-	var room_cells: Array = room_info["floor_cells"]
-	var center_cell: Vector2i = room_info["center_cell"]
-
-	# Build candidate list: walkable, not a wall, not adjacent to a wall, and not center if needed
-	var candidates: Array[Vector2i] = []
-	var avoid_radius: int = 1 if avoid_center else 0
-
-	for raw_cell in room_cells:
-		var cell: Vector2i = raw_cell
-		if wall_cells.has(cell):
-			continue
-		# Skip cells too close to center when avoiding player spawn
-		if avoid_radius > 0:
-			var dx: int = absi(cell.x - center_cell.x)
-			var dy: int = absi(cell.y - center_cell.y)
-			if dx <= avoid_radius and dy <= avoid_radius:
-				continue
-		# Skip cells adjacent to a wall
-		var near_wall := false
-		for dir in [Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1)]:
-			if wall_cells.has(cell + dir):
-				near_wall = true
-				break
-		if near_wall:
-			continue
-		candidates.append(cell)
-
-	if candidates.is_empty():
-		# Fallback: any non-wall floor cell in the room
-		for raw_cell in room_cells:
-			var cell: Vector2i = raw_cell
-			if not wall_cells.has(cell):
-				candidates.append(cell)
-
-	if candidates.is_empty():
-		return Vector2i(-1, -1)
-
-	return candidates[randi() % candidates.size()]
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Called when an enemy's enemy_defeated signal fires.
-# Decrements the room's alive counter; emits room_cleared when it hits zero.
-func _on_enemy_defeated(_enemy: Enemy, room_id: int) -> void:
-	enemy_defeated_global.emit()
-	if not _room_enemy_counts.has(room_id):
-		return
-
-	_room_enemy_counts[room_id] = _room_enemy_counts[room_id] - 1
-	var remaining: int = _room_enemy_counts[room_id]
-	print("DungeonGenerator: Room %d has %d enemies remaining." % [room_id, remaining])
-
-	if remaining <= 0:
-		_room_enemy_counts.erase(room_id)
-		print("DungeonGenerator: Room %d CLEARED — emitting room_cleared." % room_id)
-		emit_signal("room_cleared", room_id)
-	
-	

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b7yguhd58c6y1"]
 
-[ext_resource type="Script" uid="uid://bsf2x1fwgjh5p" path="res://scripts/EnemyAI.gd" id="1_ai"]
+[ext_resource type="Script" uid="uid://dca78vgipeymw" path="res://scripts/Enemy.gd" id="1_55jtl"]
 [ext_resource type="Texture2D" uid="uid://bi2jq4ofb605c" path="res://assets/ui/white_2x2.svg" id="3_texture"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
@@ -42,7 +42,7 @@ func _process(delta: float) -> void:
 
 [node name="Enemy" type="CharacterBody2D" unique_id=644052857]
 collision_layer = 4
-script = ExtResource("1_ai")
+script = ExtResource("1_55jtl")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1634982355]
 modulate = Color(0.85, 0.15, 0.15, 1)
