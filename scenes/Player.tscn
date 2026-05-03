@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://b1q61p4edk0o2"]
 
 [ext_resource type="Script" uid="uid://caehere1tktuv" path="res://scripts/PlayerMovement.gd" id="1_player_script"]
+[ext_resource type="Texture2D" uid="uid://di6ma0sx3mcgu" path="res://assets/ui/256x256 textures (113).png" id="3_mdl7e"]
+[ext_resource type="Script" uid="uid://bn4vu8d7jmhi7" path="res://scripts/TorchLight.gd" id="4_mdl7e"]
 [ext_resource type="Texture2D" uid="uid://dejmffrbdemc4" path="res://icon.svg" id="4_player_texture"]
-[ext_resource type="Texture2D" uid="uid://cjdv15vjlajmd" path="res://assets/ui/vision_scope.svg" id="5_scope_texture"]
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6xq8m"]
-radius = 0.5
-height = 1.8
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mdl7e"]
+size = Vector2(14, 14)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
 size = Vector2(36, 36)
@@ -18,20 +18,24 @@ metadata/era = "14th Century"
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=748991375]
 modulate = Color(0.5, 0.3, 0.2, 1)
-scale = Vector2(0.38, 0.38)
+scale = Vector2(0.16, 0.16)
 texture = ExtResource("4_player_texture")
+offset = Vector2(0, -2)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=157155305]
-shape = SubResource("CapsuleShape2D_6xq8m")
+shape = SubResource("RectangleShape2D_mdl7e")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1422355037]
+position_smoothing_enabled = true
+position_smoothing_speed = 6.0
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=638103579]
-color = Color(1.4369954, 0.87185884, 0.3051485, 1)
+color = Color(0.984, 0.5, 0.2, 1)
 energy = 1.2
 shadow_enabled = true
-texture = ExtResource("5_scope_texture")
+texture = ExtResource("3_mdl7e")
 texture_scale = 4.0
+script = ExtResource("4_mdl7e")
 
 [node name="AttackArea" type="Area2D" parent="." unique_id=222000001]
 position = Vector2(32, 0)

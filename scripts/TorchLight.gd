@@ -12,7 +12,6 @@ var t: float = 0.0
 var noise := FastNoiseLite.new()
 
 func _ready():
-	color = Color(1.0, 0.62, 0.35)
 	texture_scale = 1.4
 
 	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
