@@ -4,6 +4,9 @@ class_name CharacterStats
 # Basic info
 var character_name: String = "Unnamed"
 
+signal hp_changed(current, max)
+signal died
+
 # Health
 var max_hp: int = 10
 var current_hp: int = 10
@@ -21,6 +24,14 @@ var stats := {
 
 func take_damage(amount: int) -> void:
 	current_hp = max(current_hp - amount, 0)
+	emit_signal("hp_changed", current_hp, max_hp)
+
+func heal(amount: int) -> void:
+	current_hp = min(current_hp + amount, max_hp)
+	emit_signal("hp_changed", current_hp, max_hp)
+
+	if current_hp == 0:
+		emit_signal("died")
 
 func is_alive() -> bool:
 	return current_hp > 0

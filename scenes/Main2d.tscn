@@ -13,7 +13,7 @@
 script = ExtResource("4_main2d_script")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=1224423481]
-color = Color(0.05, 0.05, 0.1, 1)
+color = Color(0.05, 0.05, 0.05, 1)
 
 [node name="MapManager" parent="." unique_id=145395336 instance=ExtResource("2_srb6u")]
 

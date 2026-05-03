@@ -1,51 +1,46 @@
 [gd_scene format=3 uid="uid://b1q61p4edk0o2"]
 
 [ext_resource type="Script" uid="uid://caehere1tktuv" path="res://scripts/PlayerMovement.gd" id="1_player_script"]
-[ext_resource type="Script" uid="uid://cpv8hap2ivh1u" path="res://scripts/CharacterStats.gd" id="3_stats_script"]
-[ext_resource type="Texture2D" uid="uid://damegbhsywx4q" path="res://icon.svg" id="4_player_texture"]
-[ext_resource type="Texture2D" uid="uid://dbodd0p4420l" path="res://assets/ui/vision_scope.svg" id="5_scope_texture"]
+[ext_resource type="Texture2D" uid="uid://dejmffrbdemc4" path="res://icon.svg" id="4_player_texture"]
+[ext_resource type="Texture2D" uid="uid://cjdv15vjlajmd" path="res://assets/ui/vision_scope.svg" id="5_scope_texture"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_6xq8m"]
 radius = 0.5
 height = 1.8
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
-size = Vector2(36.0, 36.0)
+size = Vector2(36, 36)
 
 [node name="Player" type="CharacterBody2D" unique_id=1924339904]
-collision_layer = 1
-collision_mask = 1
-scale = Vector2(1, 1)
 script = ExtResource("1_player_script")
 metadata/character_class = "Bounty Hunter"
 metadata/era = "14th Century"
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=748991375]
-scale = Vector2(0.38, 0.38)
 modulate = Color(0.5, 0.3, 0.2, 1)
+scale = Vector2(0.38, 0.38)
 texture = ExtResource("4_player_texture")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=157155305]
 shape = SubResource("CapsuleShape2D_6xq8m")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1422355037]
-zoom = Vector2(1.0, 1.0)
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=638103579]
+color = Color(1.4369954, 0.87185884, 0.3051485, 1)
 energy = 1.2
 shadow_enabled = true
 texture = ExtResource("5_scope_texture")
 texture_scale = 4.0
 
 [node name="AttackArea" type="Area2D" parent="." unique_id=222000001]
+position = Vector2(32, 0)
 collision_layer = 0
 collision_mask = 4
-monitoring = true
 monitorable = false
-position = Vector2(32.0, 0.0)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea" unique_id=222000002]
 shape = SubResource("RectangleShape2D_attack")
 
-[node name="Stats" type="CharacterStats" parent="."]
-type="CharacterStats"
+[node name="Stats" type="CharacterStats" parent="." unique_id=1461702208]
+type = "CharacterStats"
