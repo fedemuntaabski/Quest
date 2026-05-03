@@ -1,21 +1,21 @@
 extends Node
 class_name EnemyAI
 
-# ─────────────────────────────────────────────
-# MAIN ENTRY
-# ─────────────────────────────────────────────
-static func get_action(enemy: CharacterStats, player: CharacterStats, map_manager: MapManager) -> Dictionary:
+static func get_action(enemy: Enemy, player: CharacterBody2D, map_manager: MapManager) -> Dictionary:
 	if enemy == null or player == null or map_manager == null:
 		return {"type": "idle"}
 
 	var enemy_cell: Vector2i = map_manager.world_to_grid(enemy.global_position)
 	var player_cell: Vector2i = map_manager.world_to_grid(player.global_position)
 
-	var path : Variant = map_manager.find_path(enemy_cell, player_cell)
+	var enemy_stats: CharacterStats = enemy.stats
+	var player_stats: CharacterStats = player.get_node_or_null("Stats") as CharacterStats
+	if player_stats == null:
+		return {"type": "idle"}
 
-	# ─────────────────────────────────────────────
+	var path: Variant = map_manager.find_path(enemy_cell, player_cell)
+
 	# NO PATH → IDLE
-	# ─────────────────────────────────────────────
 	if path.is_empty():
 		return {
 			"type": "idle",
@@ -24,24 +24,18 @@ static func get_action(enemy: CharacterStats, player: CharacterStats, map_manage
 			"name": "wait"
 		}
 
-	# ─────────────────────────────────────────────
-	# NEXT STEP IN PATH
-	# ─────────────────────────────────────────────
+	# SI YA ESTÁ AL LADO → ATACA
 	if path.size() == 1:
 		return _melee_attack(enemy, player)
 
 	var next_cell: Vector2i = path[1]
 	var dir: Vector2i = next_cell - enemy_cell
 
-	# ─────────────────────────────────────────────
-	# BUMP CHECK (enemy reaches player)
-	# ─────────────────────────────────────────────
+	# SI EL SIGUIENTE ES EL PLAYER → ATACA
 	if next_cell == player_cell:
 		return _melee_attack(enemy, player)
 
-	# ─────────────────────────────────────────────
-	# MOVE ACTION
-	# ─────────────────────────────────────────────
+	# MOVE
 	return {
 		"type": "move",
 		"move": dir,
@@ -51,14 +45,14 @@ static func get_action(enemy: CharacterStats, player: CharacterStats, map_manage
 		"name": "move_towards_player"
 	}
 
-# ─────────────────────────────────────────────
-# MELEE ATTACK
-# ─────────────────────────────────────────────
-static func _melee_attack(enemy: CharacterStats, player: CharacterStats) -> Dictionary:
+
+static func _melee_attack(enemy: Enemy, player: CharacterBody2D) -> Dictionary:
+	var enemy_stats: CharacterStats = enemy.stats
+	var player_stats: CharacterStats = player.get_node_or_null("Stats") as CharacterStats
+
 	var damage := randi_range(1, 6)
 
-	# low hp = weaker behavior (simple AI tuning)
-	if enemy.current_hp < enemy.max_hp * 0.3:
+	if enemy_stats.current_hp < enemy_stats.max_hp * 0.3:
 		damage = max(1, damage - 2)
 
 	return {

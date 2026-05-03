@@ -1,6 +1,8 @@
 extends CharacterBody2D
 class_name Enemy
 
+signal enemy_defeated(enemy)
+
 var my_room_id: int = -1
 var dungeon_generator: Node = null
 
@@ -9,4 +11,9 @@ var dungeon_generator: Node = null
 var player: CharacterBody2D
 var player_torch: PointLight2D
 
+func _ready():
+	stats.died.connect(_on_died)
 
+func _on_died():
+	enemy_defeated.emit(self)
+	queue_free()

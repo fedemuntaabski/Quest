@@ -17,7 +17,6 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-Mousebrain="*res://scripts/mousebrain.gd"
 GameManager="*res://scripts/GlobalData.gd"
 TurnManager="*res://scripts/TurnManager.gd"
 PlayerStats="*res://scripts/PlayerStats.gd"

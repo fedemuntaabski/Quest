@@ -50,8 +50,7 @@ var walls_root: Node2D
 var room_detectors_root: Node2D
 var room_lights_root: Node2D
 var enemies_root: Node2D
-var fog_of_war: TileMapLayer
-var visited_fog: TileMapLayer
+var fog_manager: FogOfWarManager = null
 var enemy_manager: EnemyManager = null
 
 var grid_origin: Vector2 = Vector2.ZERO
@@ -114,18 +113,20 @@ func _ensure_runtime_nodes() -> void:
 		floors_layer.position = grid_origin
 		add_child(floors_layer)
 
-	# --- ROOTS ---
-	corridors_root = _ensure_node("Corridors")
-	rooms_root = _ensure_node("Rooms")
-	walls_root = _ensure_node("Walls")
-	room_detectors_root = _ensure_node("RoomDetectors")
-	room_lights_root = _ensure_node("RoomLights")
-	enemies_root = _ensure_node("Enemies")
+	if not fog_manager:
+		fog_manager = FogOfWarManager.new()
+		fog_manager.name = "FogManager"
+		add_child(fog_manager)
 
-	# --- FOG ---
-	fog_of_war = _ensure_tile_map_layer("FogOfWar")
-	visited_fog = _ensure_tile_map_layer("VisitedFog")
-	
+		# --- ROOTS ---
+		corridors_root = _ensure_node("Corridors")
+		rooms_root = _ensure_node("Rooms")
+		walls_root = _ensure_node("Walls")
+		room_detectors_root = _ensure_node("RoomDetectors")
+		room_lights_root = _ensure_node("RoomLights")
+		enemies_root = _ensure_node("Enemies")
+
+
 	if not enemy_manager:
 		enemy_manager = EnemyManager.new()
 		enemy_manager.name = "EnemyManager"
@@ -155,6 +156,7 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	randomize()
 	_ensure_runtime_nodes()
 	_clear_generated_content()
+	
 
 	floor_cells.clear()
 	wall_cells.clear()
@@ -168,8 +170,6 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 		-(float(grid_height) * 0.5 * tile_size)
 	)
 	floors_layer.position = grid_origin
-	fog_of_war.position = grid_origin
-	visited_fog.position = grid_origin
 
 	if not _generate_rooms():
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
@@ -178,7 +178,14 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	_connect_rooms_with_corridors()
 	_generate_walls_from_floor()
 	_repaint_all_floors()
-	_build_fog_layers()
+	fog_manager.setup(
+		self,
+		floor_cells,
+		grid_origin,
+		tile_size,
+		wall_texture
+	)
+	fog_manager.build()
 	print("Grid origin:", grid_origin)
 	print("TileMap pos:", floors_layer.position)
 	print("Tile size:", tile_size)
@@ -289,9 +296,6 @@ func _clear_generated_content() -> void:
 
 	if floors_layer:
 		floors_layer.clear() # <-- CLAVE
-
-	fog_of_war.clear()
-	visited_fog.clear()
 
 func _generate_rooms() -> bool:
 	const LAYOUT_RETRIES := 32
@@ -531,37 +535,6 @@ func _spawn_wall(cell: Vector2i) -> void:
 	walls_root.add_child(wall)
 	wall_nodes[cell] = wall
 
-func _build_fog_layers() -> void:
-	_configure_fog_layer(fog_of_war, Color(0, 0, 0, 0.9))
-	_configure_fog_layer(visited_fog, Color(0, 0, 0, 0.45))
-
-	fog_of_war.clear()
-	visited_fog.clear()
-	fog_of_war.position = grid_origin
-	visited_fog.position = grid_origin
-
-	for floor_cell in floor_cells.keys():
-		var cell: Vector2i = floor_cell
-		fog_of_war.set_cell(cell, 0, Vector2i.ZERO, 0)
-	
-
-func _configure_fog_layer(layer: TileMapLayer, tint: Color) -> void:
-	layer.modulate = tint
-	layer.z_index = 50
-	if layer.tile_set:
-		return
-
-	var tile_set := TileSet.new()
-	tile_set.tile_size = Vector2i(int(tile_size), int(tile_size))
-
-	var source := TileSetAtlasSource.new()
-	source.texture = wall_texture
-	source.texture_region_size = Vector2i(2, 2)
-	source.create_tile(Vector2i.ZERO)
-	tile_set.add_source(source, 0)
-
-	layer.tile_set = tile_set
-
 func _on_room_body_entered(body: Node2D, room_id: int) -> void:
 	if body == null:
 		return
@@ -621,7 +594,6 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	tween.tween_property(camera, "zoom", zoom_vec, 0.35)
 
 func _set_active_room(room_id: int, animate: bool) -> void:
-	
 	if room_id < 0 or room_id >= room_infos.size():
 		return
 
@@ -638,31 +610,13 @@ func _set_active_room(room_id: int, animate: bool) -> void:
 			room_info["visited"] = true
 			room_infos[index] = room_info
 
-	_update_fog_for_room_state()
+	
+	fog_manager.update_room_state(room_infos, active_room_id)
+
 	_tween_room_lights(animate)
 	emit_signal("room_changed", active_room_id)
 	_update_camera_for_room(room_id, animate)
 	
-
-func _update_fog_for_room_state() -> void:
-	for room_info in room_infos:
-		var room_id: int = room_info["id"]
-		var room_cells: Array = room_info["floor_cells"]
-		var is_visited: bool = room_info["visited"]
-		var is_active := room_id == active_room_id
-
-		for room_cell in room_cells:
-			if is_visited:
-				fog_of_war.erase_cell(room_cell)
-			else:
-				fog_of_war.set_cell(room_cell, 0, Vector2i.ZERO, 0)
-				
-
-			if is_visited and not is_active:
-				visited_fog.set_cell(room_cell, 0, Vector2i.ZERO, 0)
-			else:
-				visited_fog.erase_cell(room_cell)
-
 func _tween_room_lights(animate: bool) -> void:
 	var tween_duration := room_light_transition_seconds if animate else 0.0
 	var tween := create_tween()
@@ -677,4 +631,3 @@ func _tween_room_lights(animate: bool) -> void:
 			room_light.energy = target_energy
 		else:
 			tween.tween_property(room_light, "energy", target_energy, tween_duration)
-
