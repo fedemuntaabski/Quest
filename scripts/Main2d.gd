@@ -48,11 +48,11 @@ var tutorial_layer: Node = null
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	
-	
 	_connect_signals()
 	_load_tutorial_if_needed()
 
+	var player := $MapManager/Player
+	dungeon_generator.generate_dungeon(player)  # 🔥 ESTO FALTABA
 
 	_reset_room_timer()
 	_update_timer_ui()

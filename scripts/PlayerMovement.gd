@@ -14,23 +14,23 @@ var _start_pos: Vector2
 var is_moving_step: bool = false
 var step_timer: float = 0.0
 
+var map_manager: MapManager
 # ─────────────────────────────────────────────
 # REFERENCES
 # ─────────────────────────────────────────────
-@onready var map_manager: MapManager = get_node("/root/MapManager")
 @onready var action_controller := $PlayerActionController
 
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	add_to_group("player")
 
-	grid_pos = Vector2i(
-		int(global_position.x / tile_size),
-		int(global_position.y / tile_size)
-	)
+	map_manager = get_parent() as MapManager
+	if map_manager == null:
+		push_error("PlayerMovement: el padre no es MapManager")
+		return
 
-	global_position = grid_pos * tile_size
-	target_world_pos = global_position
+	if action_controller:
+		action_controller.setup(self, map_manager)
 
 
 # ─────────────────────────────────────────────
@@ -50,6 +50,10 @@ func request_move(dir: Vector2i) -> bool:
 
 	_start_move_to(next)
 	return true
+
+	print("PLAYER GRID:", grid_pos)
+	print("NEXT CELL:", next)
+	print("WALKABLE:", map_manager.is_walkable_cell(next))
 
 
 # ─────────────────────────────────────────────
@@ -83,3 +87,12 @@ func _process_step_move(delta: float) -> void:
 	if t >= 1.0:
 		global_position = target_world_pos
 		is_moving_step = false
+
+func sync_to_grid() -> void:
+	if map_manager == null:
+		map_manager = get_parent() as MapManager
+	if map_manager == null:
+		return
+
+	grid_pos = map_manager.world_to_grid_coords(global_position)
+	target_world_pos = global_position

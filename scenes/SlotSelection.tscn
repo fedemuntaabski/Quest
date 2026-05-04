@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://dc3x6d4urebk8"]
+
+[node name="SlotSelection" type="Control" unique_id=1388388551]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=390690179]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer" unique_id=1396628277]
+layout_mode = 2
+
+[node name="LeftPanel" type="VBoxContainer" parent="CenterContainer/HBoxContainer" unique_id=1240148231]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=472353146]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=1266543588]
+layout_mode = 2
+
+[node name="SlotRow1" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer" unique_id=728737530]
+layout_mode = 2
+
+[node name="Delete1" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer" unique_id=1031867444]
+layout_mode = 2
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=170579283]
+layout_mode = 2
+
+[node name="SlotRow2" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer3" unique_id=420925868]
+layout_mode = 2
+
+[node name="Delete2" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer3" unique_id=1660855987]
+layout_mode = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=2044991683]
+layout_mode = 2
+
+[node name="SlotRow3" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer2" unique_id=909287382]
+layout_mode = 2
+
+[node name="Delete3" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer2" unique_id=23063660]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=1233481064]
+layout_mode = 2
+
+[node name="RightPanel" type="PanelContainer" parent="CenterContainer/HBoxContainer" unique_id=792382588]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/HBoxContainer/RightPanel" unique_id=887676835]
+layout_mode = 2
+
+[node name="HoverLabel" type="Label" parent="CenterContainer/HBoxContainer/RightPanel" unique_id=241001439]
+layout_mode = 2

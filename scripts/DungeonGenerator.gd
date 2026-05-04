@@ -107,6 +107,8 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 		-(float(grid_height) * 0.5 * tile_size)
 	)
 
+	is_ready = true # 👈 CLAVE
+
 	if not _generate_rooms():
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
 		return
@@ -128,17 +130,15 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	if player:
 		_spawned_player = player
 		place_player_in_start_room(player)
-
-	enemy_manager.setup(self, _spawned_player)
+		enemy_manager.setup(self, _spawned_player)
+	else:
+		push_warning("DungeonGenerator: No player provided for placement. Call place_player_in_start_room() manually after generation.")
 	enemy_manager.spawn_enemies(room_infos, wall_cells)
 
 	if not room_infos.is_empty():
 		_set_active_room(int(room_infos[0]["id"]), false)
 
-	if not room_infos.is_empty():
-		_set_active_room(int(room_infos[0]["id"]), false)
-
-	is_ready = true # 👈 CLAVE
+	
 
 func place_player_in_start_room(player: CharacterBody2D) -> void:
 	if room_infos.is_empty() or player == null:
@@ -147,6 +147,8 @@ func place_player_in_start_room(player: CharacterBody2D) -> void:
 	var start_room := room_infos[0]
 	var center_cell: Vector2i = start_room["center_cell"]
 	player.position = grid_to_world_coords(center_cell)
+	if player.has_method("sync_to_grid"):
+		player.sync_to_grid()
 
 func is_cell_walkable(world_position: Vector2) -> bool:
 	var cell := world_to_grid_coords(world_position)

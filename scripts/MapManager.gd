@@ -11,8 +11,6 @@ signal hover_changed(cell: Vector2i)
 func update_hover(world_pos: Vector2) -> void:
 	var new_cell := world_to_grid(world_pos)
 
-	print("hover:", new_cell) # DEBUG
-
 	if new_cell == hovered_cell:
 		return
 
