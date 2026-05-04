@@ -7,7 +7,6 @@ const ROOM_TIMER_SECONDS: float = 120.0
 const WARNING_SECONDS: float = 60.0
 const CRITICAL_SECONDS: float = 15.0
 
-
 # ─────────────────────────────────────────────
 # NODES
 # ─────────────────────────────────────────────

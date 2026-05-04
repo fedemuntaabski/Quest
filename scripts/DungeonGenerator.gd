@@ -1,7 +1,5 @@
 extends Node2D
-
 class_name DungeonGenerator
-
 
 @export var floor_tileset: TileSet = preload("res://assets/texture/enviorment/dungeon_tileset.tres")
 
@@ -9,9 +7,6 @@ signal room_changed(room_id: int)
 signal room_cleared(room_id: int)
 signal enemy_defeated_global
 
-
-
-# --- RUTAS DE ASSETS RESTANTES ---
 const WALL_TEXTURE_PATH := "res://assets/ui/white_2x2.svg"
 const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
 const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
@@ -27,20 +22,8 @@ const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 @export var room_light_energy: float = 2.0
 @export var room_light_transition_seconds: float = 0.45
 
-
-
 var wall_texture: Texture2D = preload(WALL_TEXTURE_PATH)
 var light_texture: Texture2D = preload(LIGHT_TEXTURE_PATH)
-
-var corridors_root: Node2D
-var rooms_root: Node2D
-var walls_root: Node2D
-var room_detectors_root: Node2D
-var room_lights_root: Node2D
-var enemies_root: Node2D
-var fog_manager: FogOfWarManager = null
-var enemy_manager: EnemyManager = null
-var tile_renderer: DungeonTileRenderer = null
 
 var grid_origin: Vector2 = Vector2.ZERO
 var floor_cells: Dictionary = {}
@@ -53,35 +36,44 @@ var _room_enemy_counts: Dictionary = {}
 var _enemy_scene: PackedScene = null
 var _spawned_player: CharacterBody2D = null
 
+var corridors_root: Node2D
+var rooms_root: Node2D
+var walls_root: Node2D
+var room_detectors_root: Node2D
+var room_lights_root: Node2D
+var enemies_root: Node2D
+
+var fog_manager: FogOfWarManager = null
+var enemy_manager: EnemyManager = null
+var tile_renderer: DungeonTileRenderer = null
+
+
 func _ready() -> void:
 	_ensure_runtime_nodes()
 
 func _ensure_runtime_nodes() -> void:
+	_ensure_managers()
+	_ensure_scene_roots()
 
+func _ensure_managers() -> void:
 	if not fog_manager:
 		fog_manager = FogOfWarManager.new()
 		fog_manager.name = "FogManager"
 		add_child(fog_manager)
 
-		# --- ROOTS ---
-		corridors_root = _ensure_node("Corridors")
-		rooms_root = _ensure_node("Rooms")
-		walls_root = _ensure_node("Walls")
-		room_detectors_root = _ensure_node("RoomDetectors")
-		room_lights_root = _ensure_node("RoomLights")
-		enemies_root = _ensure_node("Enemies")
-
-
 	if not enemy_manager:
 		enemy_manager = EnemyManager.new()
 		enemy_manager.name = "EnemyManager"
 		add_child(enemy_manager)
-
-		# 🔥 conectar señales
 		enemy_manager.room_cleared.connect(_on_room_cleared)
 
-func _on_room_cleared(room_id: int) -> void:
-	emit_signal("room_cleared", room_id)	
+func _ensure_scene_roots() -> void:
+	corridors_root = _ensure_node("Corridors")
+	rooms_root = _ensure_node("Rooms")
+	walls_root = _ensure_node("Walls")
+	room_detectors_root = _ensure_node("RoomDetectors")
+	room_lights_root = _ensure_node("RoomLights")
+	enemies_root = _ensure_node("Enemies")
 
 func _ensure_node(node_name: String) -> Node2D:
 	var existing := get_node_or_null(node_name) as Node2D
@@ -93,6 +85,8 @@ func _ensure_node(node_name: String) -> Node2D:
 	add_child(node)
 	return node
 
+func _on_room_cleared(room_id: int) -> void:
+	emit_signal("room_cleared", room_id)	
 
 func generate_dungeon(player: CharacterBody2D = null) -> void:
 	randomize()

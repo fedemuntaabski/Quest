@@ -75,7 +75,7 @@ func _paint_cell(cell: Vector2i) -> void:
 
 	# random floor variation
 	else:
-		if randf() < 0.2:
+		if randf() < 0.3:
 			atlas_coords = TILE_VARIATIONS.pick_random()
 
 	# draw

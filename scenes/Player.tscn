@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://b1q61p4edk0o2"]
 
+[ext_resource type="Script" uid="uid://caehere1tktuv" path="res://scripts/PlayerMovement.gd" id="1_70d11"]
 [ext_resource type="Texture2D" uid="uid://di6ma0sx3mcgu" path="res://assets/ui/256x256 textures (113).png" id="3_mdl7e"]
 [ext_resource type="Script" uid="uid://bn4vu8d7jmhi7" path="res://scripts/TorchLight.gd" id="4_mdl7e"]
 [ext_resource type="Texture2D" uid="uid://dejmffrbdemc4" path="res://icon.svg" id="4_player_texture"]
@@ -10,6 +11,7 @@
 size = Vector2(14, 14)
 
 [node name="Player" type="CharacterBody2D" unique_id=1924339904]
+script = ExtResource("1_70d11")
 metadata/character_class = "Bounty Hunter"
 metadata/era = "14th Century"
 

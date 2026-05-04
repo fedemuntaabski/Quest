@@ -20,7 +20,6 @@ func _process(_delta):
 	queue_redraw()
 
 func _draw():
-	print("DRAW CALL") # DEBUG
 	if hovered_cell == Vector2i(-999, -999):
 		return
 

@@ -1,16 +1,23 @@
 extends Node
 class_name PlayerActionController
 
-var player: CharacterBody2D
+var player: PlayerMovement
 var map_manager: MapManager
-var selected_target: Enemy = null
 
-func setup(p_player: CharacterBody2D, p_map_manager: MapManager):
+func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 	player = p_player
 	map_manager = p_map_manager
 
-func get_action() -> Dictionary:
-	var dir = Vector2i.ZERO
+
+func process_input() -> void:
+	if player == null or map_manager == null:
+		return
+
+	_handle_keyboard()
+	_handle_mouse()
+
+func _handle_keyboard() -> void:
+	var dir := Vector2i.ZERO
 
 	if Input.is_action_just_pressed("ui_up"):
 		dir = Vector2i.UP
@@ -22,16 +29,27 @@ func get_action() -> Dictionary:
 		dir = Vector2i.RIGHT
 
 	if dir != Vector2i.ZERO:
-		return {
-			"type": "move",
-			"move": dir,
-			"name": "player_move"
-		}
+		player.request_move(dir)
 
-	if Input.is_action_just_pressed("attack"):
-		return {
-			"type": "attack",
-			"name": "player_attack"
-		}
+func _handle_mouse() -> void:
+	if not Input.is_action_just_pressed("mouse_left"):
+		return
 
-	return {"type": "idle"}
+	print("CLICK DETECTED") # DEBUG
+	var cam := player.get_node_or_null("Camera2D")
+	if cam == null:
+		return
+
+	var world_pos: Vector2 = cam.get_global_mouse_position()
+	var target_cell := map_manager.world_to_grid_coords(world_pos)
+
+	var dir := target_cell - player.grid_pos
+
+	# convertir a cardinal (ToME style)
+	if abs(dir.x) > abs(dir.y):
+		dir = Vector2i(sign(dir.x), 0)
+	else:
+		dir = Vector2i(0, sign(dir.y))
+
+	if dir != Vector2i.ZERO:
+		player.request_move(dir)
