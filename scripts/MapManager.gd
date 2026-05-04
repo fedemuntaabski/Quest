@@ -6,6 +6,7 @@ class_name MapManager
 @onready var nav_region: NavigationRegion2D = $NavigationRegion2D
 
 var hovered_cell: Vector2i = Vector2i(-999, -999)
+
 signal hover_changed(cell: Vector2i)
 
 func update_hover(world_pos: Vector2) -> void:
@@ -185,7 +186,7 @@ func get_enemy_at_cell(grid_pos: Vector2i) -> Node:
 
 	return null
 
-func find_path(start: Vector2i, goal: Vector2i) -> Array:
+func find_path(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
 	var open_set = []
 	var came_from = {}
 
@@ -222,7 +223,7 @@ func find_path(start: Vector2i, goal: Vector2i) -> Array:
 	return []
 
 func _get_neighbors(cell: Vector2i) -> Array:
-	var result = []
+	var result: Array[Vector2i] = []
 
 	var dirs = [
 		Vector2i.UP,
@@ -238,8 +239,8 @@ func _get_neighbors(cell: Vector2i) -> Array:
 
 	return result
 
-func _reconstruct_path(came_from: Dictionary, current: Vector2i) -> Array:
-	var path = [current]
+func _reconstruct_path(came_from: Dictionary, current: Vector2i) -> Array[Vector2i]:
+	var path: Array[Vector2i] = [current]
 
 	while came_from.has(current):
 		current = came_from[current]

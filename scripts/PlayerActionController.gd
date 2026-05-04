@@ -53,14 +53,20 @@ func _handle_mouse_click() -> void:
 
 	var world_pos: Vector2 = cam.get_global_mouse_position()
 	var target_cell := map_manager.world_to_grid_coords(world_pos)
+	if target_cell == player.grid_pos:
+		player.cancel_movement()
+		return
 
-	var dir := target_cell - player.grid_pos
 
-	# 🔥 NORMALIZAR A 1 TILE (cardinal)
-	if abs(dir.x) > abs(dir.y):
-		dir = Vector2i(sign(dir.x), 0)
-	else:
-		dir = Vector2i(0, sign(dir.y))
+	if target_cell == player.grid_pos:
+		player.cancel_movement()
+		return
 
-	if dir != Vector2i.ZERO:
-		player.request_move(dir)
+
+	var path: Array[Vector2i] = map_manager.find_path(player.grid_pos, target_cell)
+
+	if path.is_empty():
+		print("NO PATH")
+		return
+
+	player.set_path(path)

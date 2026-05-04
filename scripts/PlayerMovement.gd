@@ -15,6 +15,7 @@ var is_moving_step: bool = false
 var step_timer: float = 0.0
 
 var map_manager: MapManager
+var current_path: Array[Vector2i] = []
 # ─────────────────────────────────────────────
 # REFERENCES
 # ─────────────────────────────────────────────
@@ -69,6 +70,10 @@ func _start_move_to(next: Vector2i) -> void:
 func _physics_process(delta: float) -> void:
 	_process_step_move(delta)
 
+	if not is_moving_step and current_path.size() > 0:
+		var next_cell: Vector2i = current_path.pop_front()
+		var dir := next_cell - grid_pos
+		request_move(dir)
 func _process_step_move(delta: float) -> void:
 	if not is_moving_step:
 		return
@@ -91,3 +96,13 @@ func sync_to_grid() -> void:
 
 	grid_pos = map_manager.world_to_grid_coords(global_position)
 	target_world_pos = global_position
+
+func set_path(path: Array[Vector2i]) -> void:
+	current_path = path.duplicate()
+
+	# remover el primer nodo si es la celda actual
+	if current_path.size() > 0 and current_path[0] == grid_pos:
+		current_path.pop_front()
+
+func cancel_movement() -> void:
+	current_path.clear()
