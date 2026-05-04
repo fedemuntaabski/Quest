@@ -31,6 +31,7 @@ func _ready() -> void:
 
 	if action_controller:
 		action_controller.setup(self, map_manager)
+		action_controller.set_process_input(true)
 
 
 # ─────────────────────────────────────────────
@@ -45,15 +46,13 @@ func request_move(dir: Vector2i) -> bool:
 
 	var next := grid_pos + dir
 
-	if not map_manager.is_walkable_cell(next):
+	var walkable := map_manager.is_walkable_cell(next)
+
+	if not walkable:
 		return false
 
 	_start_move_to(next)
 	return true
-
-	print("PLAYER GRID:", grid_pos)
-	print("NEXT CELL:", next)
-	print("WALKABLE:", map_manager.is_walkable_cell(next))
 
 
 # ─────────────────────────────────────────────
@@ -68,11 +67,7 @@ func _start_move_to(next: Vector2i) -> void:
 
 # ─────────────────────────────────────────────
 func _physics_process(delta: float) -> void:
-	if action_controller:
-		action_controller.process_input()
-
 	_process_step_move(delta)
-
 
 func _process_step_move(delta: float) -> void:
 	if not is_moving_step:

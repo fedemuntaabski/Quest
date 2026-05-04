@@ -9,14 +9,24 @@ func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 	map_manager = p_map_manager
 
 
-func process_input() -> void:
-	print("PROCESS INPUT RUNNING")
+# 🔥 INPUT REAL (event-driven)
+func _input(event: InputEvent) -> void:
 	if player == null or map_manager == null:
 		return
 
-	_handle_keyboard()
-	_handle_mouse()
+	# 🖱️ CLICK IZQUIERDO
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_handle_mouse_click()
 
+	# ⌨️ TECLADO
+	if event is InputEventKey and event.pressed:
+		_handle_keyboard()
+
+
+# ─────────────────────────────────────────────
+# KEYBOARD (turn-based feel)
+# ─────────────────────────────────────────────
 func _handle_keyboard() -> void:
 	var dir := Vector2i.ZERO
 
@@ -33,35 +43,24 @@ func _handle_keyboard() -> void:
 		player.request_move(dir)
 
 
-func _handle_mouse() -> void:
-	print("CLICK DETECTED")
-
+# ─────────────────────────────────────────────
+# MOUSE CLICK → 1 STEP (ToME style)
+# ─────────────────────────────────────────────
+func _handle_mouse_click() -> void:
 	var cam := player.get_node_or_null("Camera2D")
 	if cam == null:
-		print("NO CAMERA")
 		return
 
 	var world_pos: Vector2 = cam.get_global_mouse_position()
 	var target_cell := map_manager.world_to_grid_coords(world_pos)
 
-	print("PLAYER GRID:", player.grid_pos)
-	print("TARGET CELL:", target_cell)
-
 	var dir := target_cell - player.grid_pos
-	print("RAW DIR:", dir)
 
-	# convertir a cardinal
+	# 🔥 NORMALIZAR A 1 TILE (cardinal)
 	if abs(dir.x) > abs(dir.y):
 		dir = Vector2i(sign(dir.x), 0)
 	else:
 		dir = Vector2i(0, sign(dir.y))
 
-	print("FINAL DIR:", dir)
-
 	if dir != Vector2i.ZERO:
-		print("TRY MOVE")
 		player.request_move(dir)
-	else:
-		print("DIR ZERO - NO MOVE")
-
-	
