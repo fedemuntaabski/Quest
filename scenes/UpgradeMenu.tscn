@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://cycf6x7lmqjgg"]
-
-[ext_resource type="Script" uid="uid://b6p77h1bfqcqf" path="res://scripts/UpgradeMenu.gd" id="1_upg_script"]
-
-[node name="UpgradeMenu" type="CanvasLayer" unique_id=1088808319]
-process_mode = 3
-layer = 10
-visible = false
-script = ExtResource("1_upg_script")
