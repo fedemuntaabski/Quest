@@ -41,6 +41,9 @@ func _ensure_tile_map_layer(parent: Node, name: String) -> TileMapLayer:
 # BUILD FOG
 # ─────────────────────────────────────────────
 func build() -> void:
+	if fog_of_war == null or visited_fog == null:
+		push_error("FogOfWarManager: layers not initialized. Did you call setup() before build()?")
+		return
 	_configure_fog_layer(fog_of_war, Color(0, 0, 0, 0.9))
 	_configure_fog_layer(visited_fog, Color(0, 0, 0, 0.45))
 
@@ -78,6 +81,9 @@ func _configure_fog_layer(layer: TileMapLayer, tint: Color) -> void:
 # UPDATE VISIBILITY
 # ─────────────────────────────────────────────
 func update_room_state(room_infos: Array, active_room_id: int) -> void:
+	if fog_of_war == null or visited_fog == null:
+		push_error("FogOfWarManager no inicializado (fog_of_war null). Llamá setup() + build() primero.")
+		return
 	for room_info in room_infos:
 		var room_id: int = room_info["id"]
 		var room_cells: Array = room_info["floor_cells"]

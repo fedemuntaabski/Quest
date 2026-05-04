@@ -18,7 +18,6 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameManager="*res://scripts/GlobalData.gd"
-TurnManager="*res://scripts/TurnManager.gd"
 PlayerStats="*res://scripts/PlayerStats.gd"
 SaveManager="*res://scripts/SaveManager.gd"
 

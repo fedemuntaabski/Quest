@@ -55,13 +55,8 @@ var _spawned_player: CharacterBody2D = null
 
 func _ready() -> void:
 	_ensure_runtime_nodes()
-	tile_renderer = DungeonTileRenderer.new()
-	tile_renderer.name = "TileRenderer"
-	add_child(tile_renderer)
-
 
 func _ensure_runtime_nodes() -> void:
-
 
 	if not fog_manager:
 		fog_manager = FogOfWarManager.new()
@@ -123,22 +118,17 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	_connect_rooms_with_corridors()
 	_generate_walls_from_floor()
 
-	# ✅ AQUÍ recién tenés datos válidos
+	var presentation := get_node_or_null("PresentationManager") as DungeonPresentationManager
 
-	tile_renderer.setup(self, floor_tileset, grid_origin)
-	tile_renderer.set_data(floor_cells, wall_cells)
-	tile_renderer.build()
+	if presentation == null:
+		presentation = DungeonPresentationManager.new()
+		presentation.name = "PresentationManager"
+		add_child(presentation)
 
-	# fog AFTER map exists
-	fog_manager.setup(
-		self,
-		floor_cells,
-		grid_origin,
-		tile_size,
-		wall_texture
-	)
-	fog_manager.build()
 
+	presentation.setup(self, self)
+
+	presentation.build(self, floor_tileset, wall_texture)
 	if player:
 		_spawned_player = player
 		place_player_in_start_room(player)
@@ -555,6 +545,8 @@ func _set_active_room(room_id: int, animate: bool) -> void:
 
 	
 	fog_manager.update_room_state(room_infos, active_room_id)
+	print(fog_manager.name)
+	print(fog_manager.fog_of_war)
 
 	_tween_room_lights(animate)
 	emit_signal("room_changed", active_room_id)
