@@ -10,17 +10,6 @@ signal room_cleared(room_id: int)
 signal enemy_defeated_global
 
 
-# --- CONFIGURACIÓN DE TILES (Atlas 16x16) ---
-const TILE_MAIN_FLOOR := Vector2i(5, 10)
-const TILE_VARIATIONS := [Vector2i(3,10), Vector2i(10, 8), Vector2i(7, 10), Vector2i(1, 10), Vector2i(2, 10)]
-const TILE_EDGE_TOP := Vector2i(5, 9)    
-const TILE_EDGE_TOP_RIGHT := Vector2i(6, 9)    
-const TILE_EDGE_TOP_LEFT := Vector2i(4, 9)   
-const TILE_EDGE_BOTTOM := Vector2i(5, 11)
-const TILE_EDGE_BOTTOM_RIGHT := Vector2i(6, 11)
-const TILE_EDGE_BOTTOM_LEFT := Vector2i(4, 11)
-const TILE_EDGE_LEFT := Vector2i(4, 10)
-const TILE_EDGE_RIGHT := Vector2i(6, 10)
 
 # --- RUTAS DE ASSETS RESTANTES ---
 const WALL_TEXTURE_PATH := "res://assets/ui/white_2x2.svg"
@@ -43,7 +32,6 @@ const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 var wall_texture: Texture2D = preload(WALL_TEXTURE_PATH)
 var light_texture: Texture2D = preload(LIGHT_TEXTURE_PATH)
 
-var floors_layer: TileMapLayer # Cambiado de Node2D a TileMapLayer
 var corridors_root: Node2D
 var rooms_root: Node2D
 var walls_root: Node2D
@@ -52,6 +40,7 @@ var room_lights_root: Node2D
 var enemies_root: Node2D
 var fog_manager: FogOfWarManager = null
 var enemy_manager: EnemyManager = null
+var tile_renderer: DungeonTileRenderer = null
 
 var grid_origin: Vector2 = Vector2.ZERO
 var floor_cells: Dictionary = {}
@@ -66,52 +55,13 @@ var _spawned_player: CharacterBody2D = null
 
 func _ready() -> void:
 	_ensure_runtime_nodes()
+	tile_renderer = DungeonTileRenderer.new()
+	tile_renderer.name = "TileRenderer"
+	add_child(tile_renderer)
 
-
-
-## Función auxiliar para pintar con lógica de bordes y aleatoriedad
-func _paint_floor_with_logic(cell: Vector2i) -> void:
-	var atlas_coords = TILE_MAIN_FLOOR
-	
-	# 1. Comprobar Esquinas (Prioridad máxima)
-	if wall_cells.has(cell + Vector2i.UP) and wall_cells.has(cell + Vector2i.LEFT):
-		atlas_coords = TILE_EDGE_TOP_LEFT
-	elif wall_cells.has(cell + Vector2i.UP) and wall_cells.has(cell + Vector2i.RIGHT):
-		atlas_coords = TILE_EDGE_TOP_RIGHT
-	elif wall_cells.has(cell + Vector2i.DOWN) and wall_cells.has(cell + Vector2i.LEFT):
-		atlas_coords = TILE_EDGE_BOTTOM_LEFT
-	elif wall_cells.has(cell + Vector2i.DOWN) and wall_cells.has(cell + Vector2i.RIGHT):
-		atlas_coords = TILE_EDGE_BOTTOM_RIGHT
-	
-	# 2. Comprobar Bordes Rectos
-	elif wall_cells.has(cell + Vector2i.UP):
-		atlas_coords = TILE_EDGE_TOP
-	elif wall_cells.has(cell + Vector2i.DOWN):
-		atlas_coords = TILE_EDGE_BOTTOM
-	elif wall_cells.has(cell + Vector2i.LEFT):
-		atlas_coords = TILE_EDGE_LEFT
-	elif wall_cells.has(cell + Vector2i.RIGHT):
-		atlas_coords = TILE_EDGE_RIGHT
-	
-	# 3. Piso central (con variaciones aleatorias)
-	else:
-		if randf() < 0.2: # 20% de probabilidad de detalle
-			atlas_coords = TILE_VARIATIONS.pick_random()
-		else:
-			atlas_coords = TILE_MAIN_FLOOR
-
-	# Pintamos en el TileMapLayer usando el ID 0 de la fuente (Dungeon tileset)
-	floors_layer.set_cell(cell, 0, atlas_coords)
 
 func _ensure_runtime_nodes() -> void:
-	if not floors_layer:
-		floors_layer = TileMapLayer.new()
-		floors_layer.name = "FloorsLayer"
-		floors_layer.tile_set = floor_tileset
-		tile_size = floor_tileset.tile_size.x
-		floors_layer.z_index = -2
-		floors_layer.position = grid_origin
-		add_child(floors_layer)
+
 
 	if not fog_manager:
 		fog_manager = FogOfWarManager.new()
@@ -148,28 +98,23 @@ func _ensure_node(node_name: String) -> Node2D:
 	add_child(node)
 	return node
 
-func _repaint_all_floors() -> void:
-	for cell in floor_cells.keys():
-		_paint_floor_with_logic(cell)
 
 func generate_dungeon(player: CharacterBody2D = null) -> void:
 	randomize()
 	_ensure_runtime_nodes()
 	_clear_generated_content()
-	
 
 	floor_cells.clear()
 	wall_cells.clear()
 	wall_nodes.clear()
 	room_infos.clear()
-	_room_enemy_counts.clear()
+
 	active_room_id = -1
 
 	grid_origin = Vector2(
 		-(float(grid_width) * 0.5 * tile_size),
 		-(float(grid_height) * 0.5 * tile_size)
 	)
-	floors_layer.position = grid_origin
 
 	if not _generate_rooms():
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
@@ -177,7 +122,14 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 
 	_connect_rooms_with_corridors()
 	_generate_walls_from_floor()
-	_repaint_all_floors()
+
+	# ✅ AQUÍ recién tenés datos válidos
+
+	tile_renderer.setup(self, floor_tileset, grid_origin)
+	tile_renderer.set_data(floor_cells, wall_cells)
+	tile_renderer.build()
+
+	# fog AFTER map exists
 	fog_manager.setup(
 		self,
 		floor_cells,
@@ -186,15 +138,11 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 		wall_texture
 	)
 	fog_manager.build()
-	print("Grid origin:", grid_origin)
-	print("TileMap pos:", floors_layer.position)
-	print("Tile size:", tile_size)
 
 	if player:
 		_spawned_player = player
 		place_player_in_start_room(player)
 
-	# Spawn enemies after layout is fully built
 	enemy_manager.setup(self, _spawned_player)
 	enemy_manager.spawn_enemies(room_infos, wall_cells)
 
@@ -294,8 +242,6 @@ func _clear_generated_content() -> void:
 		for child in parent.get_children():
 			child.queue_free()
 
-	if floors_layer:
-		floors_layer.clear() # <-- CLAVE
 
 func _generate_rooms() -> bool:
 	const LAYOUT_RETRIES := 32
@@ -477,9 +423,6 @@ func _add_corridor_cell(cell: Vector2i) -> void:
 
 	floor_cells[cell] = true
 
-func _paint_all_floors() -> void:
-	for cell in floor_cells.keys():
-		_paint_floor_with_logic(cell)
 
 func _generate_walls_from_floor() -> void:
 	var directions: Array[Vector2i] = [
