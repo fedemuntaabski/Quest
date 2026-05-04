@@ -20,7 +20,6 @@ const CRITICAL_SECONDS: float = 15.0
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
 @onready var death_gold_label: Label = $DeathOverlay/CenterContainer/VBoxContainer/GoldLabel
 
-@onready var card_container: CardContainer = $CardContainer
 @onready var upgrade_menu: CanvasLayer = $UpgradeMenu
 
 @onready var debug_button: Button = $DebugLayer/DebugButton
@@ -50,8 +49,7 @@ var tutorial_layer: Node = null
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	if debug_button and not debug_button.pressed.is_connected(_on_debug_pressed):
-		debug_button.pressed.connect(_on_debug_pressed)
+	
 	
 	_connect_signals()
 	_load_tutorial_if_needed()
@@ -60,9 +58,7 @@ func _ready() -> void:
 	_reset_room_timer()
 	_update_timer_ui()
 
-func _on_debug_pressed() -> void:
-	if card_container:
-		card_container.debug_print_container()
+
 
 
 
@@ -70,24 +66,11 @@ func _on_debug_pressed() -> void:
 # SIGNALS
 # ─────────────────────────────────────────────
 func _connect_signals() -> void:
-	_connect_upgrade_menu()
 	_connect_dungeon()
 	_connect_player()
 	_connect_ui()
 	
 
-
-func _connect_upgrade_menu() -> void:
-	if not upgrade_menu:
-		return
-
-	if upgrade_menu.has_signal("upgrade_chosen"):
-		if not upgrade_menu.upgrade_chosen.is_connected(_on_upgrade_chosen):
-			upgrade_menu.upgrade_chosen.connect(_on_upgrade_chosen)
-
-	if upgrade_menu.has_signal("upgrade_replaced"):
-		if not upgrade_menu.upgrade_replaced.is_connected(_on_upgrade_replaced):
-			upgrade_menu.upgrade_replaced.connect(_on_upgrade_replaced)
 
 
 func _connect_dungeon() -> void:
@@ -120,25 +103,7 @@ func _connect_ui() -> void:
 
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
-
-	# DEBUG CARDS TOGGLE
-	if debug_cards_button:
-		debug_cards_button.process_mode = Node.PROCESS_MODE_ALWAYS
-
-		if not debug_cards_button.pressed.is_connected(_toggle_debug_cards):
-			debug_cards_button.pressed.connect(_toggle_debug_cards)
-
 		
-
-var debug_cards_visible := false
-
-func _toggle_debug_cards() -> void:
-	debug_cards_visible = !debug_cards_visible
-
-	if card_container:
-		card_container.visible = debug_cards_visible
-
-	print("DEBUG CARDS:", debug_cards_visible)
 
 # ─────────────────────────────────────────────
 # TUTORIAL
@@ -248,21 +213,6 @@ func _on_player_died() -> void:
 		t.tween_property(death_overlay, "modulate:a", 1.0, 2.0)
 
 
-# ─────────────────────────────────────────────
-# UPGRADE SYSTEM
-# ─────────────────────────────────────────────
-func _on_upgrade_chosen(upgrade: Dictionary) -> void:
-	if card_container:
-		card_container.add_card(upgrade)
-
-	_update_hud_stats()
-
-
-func _on_upgrade_replaced(old: Dictionary, new: Dictionary) -> void:
-	if card_container:
-		print("Replaced:", old.get("card_name"), "->", new.get("card_name"))
-
-	_update_hud_stats()
 
 
 func _update_hud_stats() -> void:

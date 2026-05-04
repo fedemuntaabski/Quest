@@ -19,47 +19,31 @@ static func get_action(enemy: Enemy, player: CharacterBody2D, map_manager: MapMa
 	if path.is_empty():
 		return {
 			"type": "idle",
-			"damage": 0,
-			"move": Vector2i.ZERO,
 			"name": "wait"
 		}
 
-	# SI YA ESTÁ AL LADO → ATACA
+	# SI ESTÁ CERCA (1 paso) → INTENT DE ATAQUE
 	if path.size() == 1:
-		return _melee_attack(enemy, player)
+		return {
+			"type": "attack",
+			"name": "melee_attack",
+			"target_cell": player_cell
+		}
 
 	var next_cell: Vector2i = path[1]
 	var dir: Vector2i = next_cell - enemy_cell
 
-	# SI EL SIGUIENTE ES EL PLAYER → ATACA
+	# SI EL SIGUIENTE ES EL PLAYER → INTENT DE ATAQUE
 	if next_cell == player_cell:
-		return _melee_attack(enemy, player)
+		return {
+			"type": "attack",
+			"name": "melee_attack",
+			"target_cell": player_cell
+		}
 
-	# MOVE
+	# MOVE INTENT
 	return {
 		"type": "move",
 		"move": dir,
-		"damage": 0,
-		"attacker": enemy,
-		"target": player,
 		"name": "move_towards_player"
-	}
-
-
-static func _melee_attack(enemy: Enemy, player: CharacterBody2D) -> Dictionary:
-	var enemy_stats: CharacterStats = enemy.stats
-	var player_stats: CharacterStats = player.get_node_or_null("Stats") as CharacterStats
-
-	var damage := randi_range(1, 6)
-
-	if enemy_stats.current_hp < enemy_stats.max_hp * 0.3:
-		damage = max(1, damage - 2)
-
-	return {
-		"type": "attack",
-		"damage": damage,
-		"attacker": enemy,
-		"target": player,
-		"move": Vector2i.ZERO,
-		"name": "melee_attack"
 	}

@@ -17,3 +17,8 @@ func _ready():
 func _on_died():
 	enemy_defeated.emit(self)
 	queue_free()
+
+func apply_damage(amount: int):
+	stats.current_hp -= amount
+	if stats.current_hp <= 0:
+		_on_died()
