@@ -8,6 +8,7 @@ var character_name: String = "Unnamed"
 
 signal hp_changed(current, max)
 signal died
+signal stats_changed
 
 # -------------------------
 # HEALTH
@@ -16,49 +17,63 @@ var max_hp: int = 10
 var current_hp: int = 10
 
 # -------------------------
-# CORE STATS
+# CORE STATS (BASE)
 # -------------------------
-var stats := {
-	"strength": 0,
-	"agility": 0,
-	"intelligence": 0
-}
+var strength: int = 0
+var magic: int = 0
+var dexterity: int = 0
 
 # -------------------------
-# DAMAGE & LIFE (USED BY COMBATMANAGER)
+# MODIFIERS (FROM UPGRADES)
 # -------------------------
+var strength_mod: int = 0
+var magic_mod: int = 0
+var dexterity_mod: int = 0
 
+# -------------------------
+# TOTAL STATS
+# -------------------------
+func get_total_strength() -> int:
+	return strength + strength_mod
+
+func get_total_magic() -> int:
+	return magic + magic_mod
+
+func get_total_dexterity() -> int:
+	return dexterity + dexterity_mod
+
+# -------------------------
+# HEALTH SYSTEM
+# -------------------------
 func take_damage(amount: int) -> void:
 	current_hp = max(current_hp - amount, 0)
-	emit_signal("hp_changed", current_hp, max_hp)
+	hp_changed.emit(current_hp, max_hp)
 
 	if current_hp <= 0:
-		current_hp = 0
-		emit_signal("died")
+		died.emit()
 
 func heal(amount: int) -> void:
 	current_hp = min(current_hp + amount, max_hp)
-	emit_signal("hp_changed", current_hp, max_hp)
+	hp_changed.emit(current_hp, max_hp)
 
 func is_alive() -> bool:
 	return current_hp > 0
 
 # -------------------------
-# STAT SYSTEM (USED BY COMBATRULES)
+# MODIFIERS
 # -------------------------
+func apply_modifier(stat: String, value: int) -> void:
+	match stat:
+		"strength":
+			strength_mod += value
+		"magic":
+			magic_mod += value
+		"dexterity":
+			dexterity_mod += value
+		"hp":
+			max_hp = max(1, max_hp + value)
+			current_hp = min(current_hp + value, max_hp)
+		_:
+			push_warning("Unknown stat: %s" % stat)
 
-func get_modifier(stat_name: String) -> int:
-	if not stats.has(stat_name):
-		return 0
-	return stats[stat_name]
-
-func set_stat(stat_name: String, value: int) -> void:
-	stats[stat_name] = value
-
-func add_to_stat(stat_name: String, value: int) -> void:
-	if not stats.has(stat_name):
-		stats[stat_name] = 0
-	stats[stat_name] += value
-
-func apply_damage(amount: int) -> void:
-	take_damage(amount)
+	stats_changed.emit()

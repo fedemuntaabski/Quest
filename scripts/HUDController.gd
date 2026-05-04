@@ -14,6 +14,7 @@ func _ready() -> void:
 	var ps = get_node_or_null("/root/PlayerStats")
 	if ps:
 		ps.stats_changed.connect(_on_stats_changed)
+		ps.upgrades_changed.connect(_on_upgrades_changed)
 
 		base_stats = {
 			"hp": ps.base_hp,
@@ -24,6 +25,9 @@ func _ready() -> void:
 
 		if ps.stats:
 			_on_stats_changed(ps.stats)
+
+		if ps.active_upgrades:
+			upgrade_panel.refresh(ps.active_upgrades)
 
 func _setup_input() -> void:
 	if not InputMap.has_action("tab"):
@@ -39,11 +43,12 @@ func _on_stats_changed(stats: CharacterStats) -> void:
 	player_stats = stats
 	stat_panel.update_stats(stats, base_stats)
 
-	var ps = get_node("/root/PlayerStats")
-	upgrade_panel.refresh(ps.active_upgrades)
+func _on_upgrades_changed(upgrades: Array) -> void:
+	upgrade_panel.refresh(upgrades)
 
 func update_room_timer(time_left: float, _total: float, color: Color) -> void:
-	timer_ui.set_time(time_left, color)
+	if timer_ui:
+		timer_ui.set_time(time_left, color)
 
 func update_current_room(id: int) -> void:
 	pass

@@ -1,26 +1,12 @@
 extends Node
 
-## PlayerStats — Autoload singleton
-##
-## Holds a live reference to the player's CharacterStats child node
-## and broadcasts changes to all listeners (HUD, UpgradeMenu, etc.).
-##
-## Usage:
-##   PlayerStats.register(player_stats_node)   ← call from PlayerMovement._ready()
-##   PlayerStats.apply_upgrade(upgrade_dict)   ← call from UpgradeMenu
-##   PlayerStats.stats_changed.connect(...)    ← subscribe from HUDController
-
-const STAT_STRENGTH = "strength"
-const STAT_MAGIC = "magic"
-const STAT_DEX = "dexterity"
-const STAT_HP = "hp"
-
 signal stats_changed(stats: CharacterStats)
+signal upgrades_changed(upgrades: Array)
 signal player_died
 
-## The live CharacterStats node that belongs to the player.
 var stats: CharacterStats = null
 
+# BASE STATS (PERSISTENCIA)
 var base_hp: int = 10
 var base_str: int = 0
 var base_mag: int = 0
@@ -28,69 +14,56 @@ var base_dex: int = 0
 
 var active_upgrades: Array = []
 
-# ─────────────────────────────────────────────────────────────────────────────
-func _ready() -> void:
-	print("PlayerStats singleton initialised.")
-
-# ─────────────────────────────────────────────────────────────────────────────
-## Register the player's CharacterStats node.
-## Called once from PlayerMovement (or Main2d) after the player is spawned.
 func register(player_stats: CharacterStats) -> void:
 	if player_stats == null:
-		push_error("PlayerStats.register(): received null CharacterStats")
+		push_error("PlayerStats.register(): null CharacterStats")
 		return
+
 	stats = player_stats
-	
+
+	# conectar señales
 	if not stats.died.is_connected(_on_stats_died):
 		stats.died.connect(_on_stats_died)
-	
-	# Apply loaded base stats
-	if stats.max_hp <= 0:
-		stats.max_hp = base_hp
+
+	if not stats.stats_changed.is_connected(_on_stats_updated):
+		stats.stats_changed.connect(_on_stats_updated)
+
+	_apply_base_stats()
+	_reapply_upgrades()
+
+	stats_changed.emit(stats)
+
+func _apply_base_stats() -> void:
+	stats.max_hp = base_hp
 	stats.current_hp = base_hp
-	stats.strength_modifier = base_str
-	stats.magic_modifier = base_mag
-	stats.dexterity_modifier = base_dex
-	
-	# Apply all active upgrades
+
+	stats.strength = base_str
+	stats.magic = base_mag
+	stats.dexterity = base_dex
+
+func _reapply_upgrades() -> void:
 	for upg in active_upgrades:
-		_apply_stat_change(upg.get("stat_affected", ""), upg.get("value_change", 0))
-	
-	print("PlayerStats: registered stats for '%s' (Loaded %d upgrades)" % [stats.character_name, active_upgrades.size()])
-	
+		stats.apply_modifier(
+			upg.get("stat_affected", ""),
+			upg.get("value_change", 0)
+		)
+
+func apply_upgrade(upgrade: Dictionary) -> void:
+	if stats == null:
+		return
+
+	active_upgrades.append(upgrade)
+
+	stats.apply_modifier(
+		upgrade.get("stat_affected", ""),
+		upgrade.get("value_change", 0)
+	)
+
+	upgrades_changed.emit(active_upgrades)
+	stats_changed.emit(stats)
+
+func _on_stats_updated() -> void:
+	stats_changed.emit(stats)
 
 func _on_stats_died() -> void:
 	player_died.emit()
-
-# ─────────────────────────────────────────────────────────────────────────────
-## Apply an upgrade dictionary produced by UpgradeMenu.
-## upgrade = { card_name, stat_affected, value_change, rarity, … }
-func apply_upgrade(upgrade: Dictionary) -> void:
-	if stats == null:
-		push_error("PlayerStats.apply_upgrade(): no stats registered")
-		return
-
-	var stat: String  = upgrade.get("stat_affected", "")
-	var delta: int    = upgrade.get("value_change", 0)
-	var name_str: String = upgrade.get("card_name", "???")
-
-	_apply_stat_change(stat, delta)
-	active_upgrades.append(upgrade)
-
-	print("PlayerStats: applied '%s' → %s %+d" % [name_str, stat, delta])
-	
-
-func _apply_stat_change(stat: String, delta: int) -> void:
-	match stat:
-		"strength":
-			stats.strength_modifier += delta
-		"magic":
-			stats.magic_modifier += delta
-		"dexterity":
-			stats.dexterity_modifier += delta
-		"hp":
-			stats.max_hp = max(1, stats.max_hp + delta)
-			stats.current_hp = min(stats.current_hp + delta, stats.max_hp)
-		_:
-			push_warning("PlayerStats._apply_stat_change(): unknown stat '%s'" % stat)
-	
