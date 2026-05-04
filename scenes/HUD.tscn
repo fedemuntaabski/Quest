@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://b5v43ol8idshh"]
 
 [ext_resource type="Script" uid="uid://e6aoqrf7guh7" path="res://scripts/HUDController.gd" id="1_hud_script"]
-[ext_resource type="Texture2D" uid="uid://bxvwr7ujssclm" path="res://assets/ui/menuoption.png" id="2_menu_option"]
-[ext_resource type="FontFile" uid="uid://gotbtg1vwt7q" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+[ext_resource type="Texture2D" uid="uid://0nc7hiqggiu8" path="res://assets/ui/menuoption.png" id="2_menu_option"]
+[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+[ext_resource type="Script" uid="uid://01lnjdgw7lht" path="res://scripts/TimerUI.gd" id="4_7hsmw"]
 
 [node name="HUD" type="CanvasLayer" unique_id=729961790]
 layer = 2
@@ -77,7 +78,8 @@ layout_mode = 2
 [node name="LabelHP" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_HP" unique_id=1859836433]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
-tooltip_text = "Health Points (HP)\nDetermines how much damage you can take before dying."
+tooltip_text = "Health Points (HP)
+Determines how much damage you can take before dying."
 mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "HP: 10/10"
@@ -92,7 +94,8 @@ layout_mode = 2
 [node name="LabelStrength" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_Strength" unique_id=1818296356]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
-tooltip_text = "Strength (STR)\nIncreases physical damage dealt to enemies."
+tooltip_text = "Strength (STR)
+Increases physical damage dealt to enemies."
 mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Strength: +0"
@@ -104,7 +107,8 @@ layout_mode = 2
 [node name="LabelMagic" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_Magic" unique_id=93396923]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
-tooltip_text = "Magic (MAG)\nIncreases spell damage and elemental effects."
+tooltip_text = "Magic (MAG)
+Increases spell damage and elemental effects."
 mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Magic: +0"
@@ -116,19 +120,26 @@ layout_mode = 2
 [node name="LabelDexterity" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=1581397644]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
-tooltip_text = "Dexterity (DEX)\nIncreases critical strike chance and evasion."
+tooltip_text = "Dexterity (DEX)
+Increases critical strike chance and evasion."
 mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Dexterity: +0"
 
-[node name="TimerLabel" type="Label" parent="Control" unique_id=405452174]
+[node name="TimerUI" type="Control" parent="Control" unique_id=134582833]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("4_7hsmw")
+
+[node name="TimerLabel" type="Label" parent="Control/TimerUI" unique_id=405452174]
 layout_mode = 0
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -140.0
+offset_left = -160.0
 offset_top = 16.0
-offset_right = 140.0
-offset_bottom = 56.0
+offset_right = 120.0
+offset_bottom = 58.0
 theme_override_font_sizes/font_size = 30
 text = "Time: 02:00"
 horizontal_alignment = 1

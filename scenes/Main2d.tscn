@@ -5,8 +5,6 @@
 [ext_resource type="PackedScene" uid="uid://b5v43ol8idshh" path="res://scenes/HUD.tscn" id="3_hud"]
 [ext_resource type="Script" uid="uid://cfdgrf3yswyd3" path="res://scripts/Main2d.gd" id="4_main2d_script"]
 [ext_resource type="PackedScene" uid="uid://pgyrfcm2yqbw" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
-[ext_resource type="PackedScene" uid="uid://cycf6x7lmqjgg" path="res://scenes/UpgradeMenu.tscn" id="6_upgrade_menu"]
-[ext_resource type="Script" uid="uid://cordgv67shmue" path="res://scripts/DebugCardMenu.gd" id="7_kwxng"]
 [ext_resource type="PackedScene" uid="uid://dvfida6qamh5y" path="res://scenes/TileOverlay.tscn" id="8_dcq30"]
 
 [node name="Main2d" type="Node2D" unique_id=719008083]
@@ -22,8 +20,6 @@ color = Color(0.05, 0.05, 0.05, 1)
 [node name="HUD" parent="." unique_id=712781322 instance=ExtResource("3_hud")]
 
 [node name="PauseMenu" parent="." unique_id=315828192 instance=ExtResource("5_pause_menu")]
-
-[node name="UpgradeMenu" parent="." unique_id=1983777397 instance=ExtResource("6_upgrade_menu")]
 
 [node name="DeathOverlay" type="CanvasLayer" parent="." unique_id=154972817]
 layer = 100
@@ -78,23 +74,6 @@ custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Salir"
-
-[node name="DebugLayer" type="CanvasLayer" parent="." unique_id=1593020745]
-
-[node name="Button" type="Button" parent="DebugLayer" unique_id=1194065939]
-offset_left = 632.0
-offset_top = 23.0
-offset_right = 673.0
-offset_bottom = 54.0
-action_mode = 0
-text = "Test
-"
-
-[node name="DebugCardMenu" type="CanvasLayer" parent="." unique_id=1263707014]
-process_mode = 3
-layer = 958
-visible = false
-script = ExtResource("7_kwxng")
 
 [node name="TileOverlay" parent="." unique_id=1858402419 instance=ExtResource("8_dcq30")]
 process_mode = 3
