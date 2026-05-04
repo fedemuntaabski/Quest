@@ -1,18 +1,15 @@
 [gd_scene format=3 uid="uid://b1q61p4edk0o2"]
 
-[ext_resource type="Script" uid="uid://caehere1tktuv" path="res://scripts/PlayerMovement.gd" id="1_player_script"]
 [ext_resource type="Texture2D" uid="uid://di6ma0sx3mcgu" path="res://assets/ui/256x256 textures (113).png" id="3_mdl7e"]
 [ext_resource type="Script" uid="uid://bn4vu8d7jmhi7" path="res://scripts/TorchLight.gd" id="4_mdl7e"]
 [ext_resource type="Texture2D" uid="uid://dejmffrbdemc4" path="res://icon.svg" id="4_player_texture"]
+[ext_resource type="Script" uid="uid://b6lwqx80hen7e" path="res://scripts/CharacterStats.gd" id="4_qu4a1"]
+[ext_resource type="Script" uid="uid://boh5eyjv4p1ye" path="res://scripts/PlayerActionController.gd" id="5_qu4a1"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mdl7e"]
 size = Vector2(14, 14)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_attack"]
-size = Vector2(36, 36)
-
 [node name="Player" type="CharacterBody2D" unique_id=1924339904]
-script = ExtResource("1_player_script")
 metadata/character_class = "Bounty Hunter"
 metadata/era = "14th Century"
 
@@ -37,14 +34,8 @@ texture = ExtResource("3_mdl7e")
 texture_scale = 4.0
 script = ExtResource("4_mdl7e")
 
-[node name="AttackArea" type="Area2D" parent="." unique_id=222000001]
-position = Vector2(32, 0)
-collision_layer = 0
-collision_mask = 4
-monitorable = false
+[node name="Stats" type="Node" parent="." unique_id=825902653]
+script = ExtResource("4_qu4a1")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackArea" unique_id=222000002]
-shape = SubResource("RectangleShape2D_attack")
-
-[node name="Stats" type="CharacterStats" parent="." unique_id=1461702208]
-type = "CharacterStats"
+[node name="PlayerActionController" type="Node" parent="." unique_id=959578203]
+script = ExtResource("5_qu4a1")
