@@ -37,15 +37,27 @@ func is_walkable_cell(grid_pos: Vector2i) -> bool:
 	return dungeon_generator.floor_cells.has(grid_pos)
 
 func _process(_delta: float) -> void:
+	if dungeon_generator == null:
+		return
+	
+	if not dungeon_generator.is_ready:
+		return
+
 	var cam := get_viewport().get_camera_2d()
 	if cam == null:
 		return
-	print("UPDATE HOVER CALLED")
+
 	var world_pos := cam.get_global_mouse_position()
 	update_hover(world_pos)
 	
 
 func world_to_grid(world: Vector2) -> Vector2i:
+	if dungeon_generator == null:
+		return Vector2i.ZERO
+	
+	if not dungeon_generator.is_ready:
+		return Vector2i.ZERO
+
 	return dungeon_generator.world_to_grid_coords(world)
 
 func grid_to_world(grid: Vector2i) -> Vector2:

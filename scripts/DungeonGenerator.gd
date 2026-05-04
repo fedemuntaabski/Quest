@@ -47,6 +47,8 @@ var fog_manager: FogOfWarManager = null
 var enemy_manager: EnemyManager = null
 var tile_renderer: DungeonTileRenderer = null
 
+var is_ready: bool = false
+
 
 func _ready() -> void:
 	_ensure_runtime_nodes()
@@ -133,6 +135,11 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	if not room_infos.is_empty():
 		_set_active_room(int(room_infos[0]["id"]), false)
 
+	if not room_infos.is_empty():
+		_set_active_room(int(room_infos[0]["id"]), false)
+
+	is_ready = true # 👈 CLAVE
+
 func place_player_in_start_room(player: CharacterBody2D) -> void:
 	if room_infos.is_empty() or player == null:
 		return
@@ -179,6 +186,9 @@ func clear_cell_at_world(world_position: Vector2) -> void:
 		wall_nodes.erase(cell)
 
 func world_to_grid_coords(world_pos: Vector2) -> Vector2i:
+	if not is_ready:
+		return Vector2i.ZERO
+
 	var local_pos := world_pos - grid_origin
 	return Vector2i(
 		floori(local_pos.x / tile_size),
