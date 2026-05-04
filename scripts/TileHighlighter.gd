@@ -1,6 +1,7 @@
 extends Node2D
 
-@onready var map_manager: MapManager = get_tree().get_first_node_in_group("map_manager")
+@export var map_manager_path: NodePath
+@onready var map_manager: MapManager = get_node(map_manager_path)
 
 var hovered_cell: Vector2i = Vector2i(-999, -999)
 

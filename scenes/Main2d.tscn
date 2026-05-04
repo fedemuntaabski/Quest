@@ -78,3 +78,4 @@ text = "Salir"
 [node name="TileOverlay" parent="." unique_id=1858402419 instance=ExtResource("8_dcq30")]
 process_mode = 3
 z_index = 4096
+map_manager_path = NodePath("../MapManager")

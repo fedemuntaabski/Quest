@@ -127,8 +127,6 @@ func _load_tutorial_if_needed() -> void:
 # LOOP
 # ─────────────────────────────────────────────
 func _process(delta: float) -> void:
-	var mouse_pos := get_global_mouse_position()
-	map_manager.update_hover(mouse_pos)
 	
 	if get_tree().paused:
 		return
