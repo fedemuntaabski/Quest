@@ -10,15 +10,15 @@ func update_stats(stats: CharacterStats, base: Dictionary) -> void:
 	if stats == null:
 		return
 
-	var b_hp = base.get("hp", 10)
-	var b_str = base.get("strength", 0)
-	var b_mag = base.get("magic", 0)
-	var b_dex = base.get("dexterity", 0)
+	var _b_hp: int = base.get("hp", 10)
+	var b_str: int = base.get("strength", 0)
+	var b_mag: int = base.get("magic", 0)
+	var b_dex: int = base.get("dexterity", 0)
 
-	var str_total = stats.get_total_strength()
-	var mag_total = stats.get_total_magic()
-	var dex_total = stats.get_total_dexterity()
+	label_hp.text = "HP: %d/%d" % [stats.current_hp, stats.max_hp]
+	label_strength.text = "STR: %d + %d" % [b_str, stats.get_total_strength() - b_str]
+	label_magic.text = "MAG: %d + %d" % [b_mag, stats.get_total_magic() - b_mag]
+	label_dexterity.text = "DEX: %d + %d" % [b_dex, stats.get_total_dexterity() - b_dex]
 
-	label_strength.text = "STR: %d + %d" % [b_str, str_total - b_str]
-	label_magic.text = "MAG: %d + %d" % [b_mag, mag_total - b_mag]
-	label_dexterity.text = "DEX: %d + %d" % [b_dex, dex_total - b_dex]
+func update_hp(current_hp: int, max_hp: int) -> void:
+	label_hp.text = "HP: %d/%d" % [current_hp, max_hp]

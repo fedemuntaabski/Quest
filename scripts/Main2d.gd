@@ -145,10 +145,8 @@ func _on_room_changed(room_id: int) -> void:
 	if hud:
 		hud.update_current_room(room_id)
 
-		if enemy_manager:
-			hud.update_enemies_remaining(
-				enemy_manager.get_enemies_in_room(room_id)
-			)
+	if hud and enemy_manager:
+		hud.update_enemies_remaining(enemy_manager.get_enemies_in_room(room_id))
 
 func _on_room_cleared(room_id: int) -> void:
 	rooms_cleared += 1

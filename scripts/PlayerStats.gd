@@ -4,6 +4,7 @@ signal stats_changed(stats: CharacterStats)
 signal upgrades_changed(upgrades: Array)
 signal player_died
 
+
 var stats: CharacterStats = null
 
 # BASE STATS (PERSISTENCIA)
