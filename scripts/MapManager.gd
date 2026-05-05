@@ -6,6 +6,7 @@ class_name MapManager
 @onready var nav_region: NavigationRegion2D = $NavigationRegion2D
 
 var hovered_cell: Vector2i = Vector2i(-999, -999)
+var fog_controller: DungeonFogController
 
 signal hover_changed(cell: Vector2i)
 
@@ -76,6 +77,7 @@ func _ready() -> void:
 	var player := get_node_or_null("Player") as CharacterBody2D
 	
 	dungeon_generator.generate_dungeon(player)
+	_setup_fog_controller()
 
 	# Asegurar que el dungeon terminó de generarse
 	if dungeon_generator.floor_cells.is_empty():
@@ -83,6 +85,17 @@ func _ready() -> void:
 		return
 
 	_bake_navigation_region()
+
+func _setup_fog_controller() -> void:
+	var fog_manager := dungeon_generator.fog_manager
+	if fog_manager == null:
+		push_warning("MapManager: FogManager missing in DungeonGenerator.")
+		return
+
+	fog_controller = DungeonFogController.new()
+	add_child(fog_controller)
+
+	fog_controller.setup(dungeon_generator, fog_manager)
 
 # ── Navigation baking ─────────────────────────────────────────────────────────
 func _bake_navigation_region() -> void:

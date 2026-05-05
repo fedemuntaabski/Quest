@@ -43,7 +43,6 @@ var room_detectors_root: Node2D
 var room_lights_root: Node2D
 var enemies_root: Node2D
 
-var fog_manager: FogOfWarManager = null
 var enemy_manager: EnemyManager = null
 var tile_renderer: DungeonTileRenderer = null
 
@@ -58,10 +57,6 @@ func _ensure_runtime_nodes() -> void:
 	_ensure_scene_roots()
 
 func _ensure_managers() -> void:
-	if not fog_manager:
-		fog_manager = FogOfWarManager.new()
-		fog_manager.name = "FogManager"
-		add_child(fog_manager)
 
 	if not enemy_manager:
 		enemy_manager = EnemyManager.new()
@@ -548,11 +543,6 @@ func _set_active_room(room_id: int, animate: bool) -> void:
 		if is_active:
 			room_info["visited"] = true
 			room_infos[index] = room_info
-
-	
-	fog_manager.update_room_state(room_infos, active_room_id)
-	print(fog_manager.name)
-	print(fog_manager.fog_of_war)
 
 	_tween_room_lights(animate)
 	emit_signal("room_changed", active_room_id)
