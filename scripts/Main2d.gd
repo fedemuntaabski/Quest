@@ -91,7 +91,7 @@ func _connect_ui() -> void:
 		pause_menu.close_menu()
 
 # ─────────────────────────────────────────────
-# TUTORIAL (REFAC)
+# TUTORIAL 
 # ─────────────────────────────────────────────
 func _load_tutorial_if_needed() -> void:
 	var save_mgr = get_node_or_null("/root/SaveManager")

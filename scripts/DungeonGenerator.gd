@@ -38,6 +38,7 @@ var walls_root: Node2D
 var room_detectors_root: Node2D
 var room_lights_root: Node2D
 var enemies_root: Node2D
+var room_system: RoomSystem = null
 
 
 var tile_renderer: DungeonTileRenderer = null
@@ -53,7 +54,17 @@ func _ensure_runtime_nodes() -> void:
 	_ensure_scene_roots()
 
 func _ensure_managers() -> void:
-	return
+	if not room_system:
+		room_system = RoomSystem.new()
+		room_system.name = "RoomSystem"
+		add_child(room_system)
+		room_system.setup(self)
+
+		if not room_system.room_changed.is_connected(_on_room_changed_proxy):
+			room_system.room_changed.connect(_on_room_changed_proxy)
+
+func _on_room_changed_proxy(room_id: int) -> void:
+	_set_active_room(room_id, true)
 
 func _ensure_scene_roots() -> void:
 	corridors_root = _ensure_node("Corridors")
@@ -355,7 +366,7 @@ func _create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
 			room_rect.position.y + int(room_rect.size.y * 0.5)
 		)
 	)
-	area.body_entered.connect(_on_room_body_entered.bind(room_id))
+	room_system.register_room_area(area, room_id)
 
 	return area
 
@@ -458,13 +469,6 @@ func _spawn_wall(cell: Vector2i) -> void:
 
 	walls_root.add_child(wall)
 	wall_nodes[cell] = wall
-
-func _on_room_body_entered(body: Node2D, room_id: int) -> void:
-	if body == null:
-		return
-	if body.name != "Player" and not body.is_in_group("player"):
-		return
-	_set_active_room(room_id, true)
 
 func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	if _spawned_player == null:
