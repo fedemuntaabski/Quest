@@ -39,6 +39,7 @@ var room_detectors_root: Node2D
 var room_lights_root: Node2D
 var enemies_root: Node2D
 var room_system: RoomSystem = null
+var room_camera_controller: RoomCameraController = null
 
 
 var tile_renderer: DungeonTileRenderer = null
@@ -62,6 +63,21 @@ func _ensure_managers() -> void:
 
 		if not room_system.room_changed.is_connected(_on_room_changed_proxy):
 			room_system.room_changed.connect(_on_room_changed_proxy)
+
+	if not room_camera_controller:
+		room_camera_controller = RoomCameraController.new()
+		room_camera_controller.name = "RoomCameraController"
+		add_child(room_camera_controller)
+		room_camera_controller.setup(self)
+
+func get_spawned_player() -> CharacterBody2D:
+	return _spawned_player
+
+
+func get_room_info(room_id: int) -> Dictionary:
+	if room_id < 0 or room_id >= room_infos.size():
+		return {}
+	return room_infos[room_id]
 
 func _on_room_changed_proxy(room_id: int) -> void:
 	_set_active_room(room_id, true)
@@ -470,56 +486,6 @@ func _spawn_wall(cell: Vector2i) -> void:
 	walls_root.add_child(wall)
 	wall_nodes[cell] = wall
 
-func _update_camera_for_room(room_id: int, animate: bool) -> void:
-	if _spawned_player == null:
-		return
-
-	var camera := _spawned_player.get_node_or_null("Camera2D") as Camera2D
-	if camera == null:
-		return
-
-	var room_info = room_infos[room_id]
-	var room_rect: Rect2i = room_info["rect"]
-
-	# Centro real de la sala
-	var center_cell: Vector2i = room_info["center_cell"]
-	var target_pos: Vector2 = grid_to_world_coords(center_cell)
-
-	# 📦 tamaño real en mundo
-	var room_size_px = Vector2(room_rect.size) * tile_size
-
-	# 📷 viewport visible (aprox)
-	var viewport_size = get_viewport().get_visible_rect().size
-
-	# 🔍 cálculo de zoom automático para encajar sala completa
-	var zoom_x = viewport_size.x / room_size_px.x
-	var zoom_y = viewport_size.y / room_size_px.y
-	var base_zoom = (zoom_x + zoom_y) * 0.5
-
-	# usamos el más restrictivo para que ENTRE ENTERA
-	var margin_factor := 0.7  # más chico = más alejado (más aire alrededor)
-
-
-
-	# 🛑 clamp para evitar zoom exagerado
-	var target_zoom_value = clamp(base_zoom * margin_factor, 0.6, 2.5)
-
-	var zoom_vec = Vector2(target_zoom_value, target_zoom_value)
-
-	var tween := create_tween()
-
-	# 🔥 “cinematic feel”
-	tween.set_trans(Tween.TRANS_CUBIC)
-	tween.set_ease(Tween.EASE_IN_OUT)
-
-	# micro delay para sensación de corte de sala
-	tween.tween_interval(0.08)
-	
-	tween.set_parallel(true)
-
-	# movimiento suave + zoom desacoplado
-	tween.tween_property(camera, "global_position", target_pos, 0.35)
-	tween.tween_property(camera, "zoom", zoom_vec, 0.35)
 
 func _set_active_room(room_id: int, animate: bool) -> void:
 	if room_id < 0 or room_id >= room_infos.size():
@@ -540,7 +506,6 @@ func _set_active_room(room_id: int, animate: bool) -> void:
 
 	_tween_room_lights(animate)
 	emit_signal("room_changed", active_room_id)
-	_update_camera_for_room(room_id, animate)
 	
 func _tween_room_lights(animate: bool) -> void:
 	var tween_duration := room_light_transition_seconds if animate else 0.0
