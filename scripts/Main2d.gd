@@ -22,9 +22,6 @@ const CRITICAL_SECONDS: float = 15.0
 
 @onready var upgrade_menu: CanvasLayer = $UpgradeMenu
 
-@onready var debug_button: Button = $DebugLayer/DebugButton
-@onready var debug_cards_button: Button = $CanvasLayer_debug_cartas/Button
-
 # ─────────────────────────────────────────────
 # STATE
 # ─────────────────────────────────────────────
@@ -48,7 +45,6 @@ func _ready() -> void:
 	_load_tutorial_if_needed()
 
 	_reset_room_timer()
-	
 
 # ─────────────────────────────────────────────
 # HELPERS
@@ -63,7 +59,7 @@ func _connect_signals() -> void:
 	_connect_dungeon()
 	_connect_player()
 	_connect_ui()
-	
+
 func _connect_dungeon() -> void:
 	var dg = _dg()
 	if not dg:
@@ -95,7 +91,7 @@ func _connect_ui() -> void:
 		pause_menu.close_menu()
 
 # ─────────────────────────────────────────────
-# TUTORIAL
+# TUTORIAL (REFAC)
 # ─────────────────────────────────────────────
 func _load_tutorial_if_needed() -> void:
 	var save_mgr = get_node_or_null("/root/SaveManager")
@@ -109,9 +105,9 @@ func _load_tutorial_if_needed() -> void:
 	tutorial_layer = scene.instantiate()
 	add_child(tutorial_layer)
 
-	var dg = _dg()
-	if dg and tutorial_layer.has_method("_on_room_cleared"):
-		dg.room_cleared.connect(tutorial_layer._on_room_cleared)
+	# 🔥 Delegamos toda la lógica al propio tutorial
+	if tutorial_layer.has_method("setup"):
+		tutorial_layer.setup(_dg())
 
 # ─────────────────────────────────────────────
 # LOOP
@@ -187,12 +183,6 @@ func _on_player_died() -> void:
 		var t := create_tween()
 		t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 		t.tween_property(death_overlay, "modulate:a", 1.0, 2.0)
-
-func _update_hud_stats() -> void:
-	var player_stats = get_node_or_null("/root/PlayerStats")
-
-	if hud and player_stats and player_stats.stats:
-		hud.update_stats(player_stats.stats)
 
 # ─────────────────────────────────────────────
 # PAUSE
