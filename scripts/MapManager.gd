@@ -6,7 +6,8 @@ class_name MapManager
 @onready var nav_region: NavigationRegion2D = $NavigationRegion2D
 
 var hovered_cell: Vector2i = Vector2i(-999, -999)
-var fog_controller: DungeonFogController
+var enemy_manager: EnemyManager
+
 
 signal hover_changed(cell: Vector2i)
 
@@ -74,28 +75,39 @@ func _ready() -> void:
 		push_error("MapManager: DungeonGenerator node is missing.")
 		return
 
+	
 	var player := get_node_or_null("Player") as CharacterBody2D
 	
 	dungeon_generator.generate_dungeon(player)
-	_setup_fog_controller()
-
-	# Asegurar que el dungeon terminó de generarse
 	if dungeon_generator.floor_cells.is_empty():
 		push_warning("MapManager: Dungeon generation failed or empty.")
 		return
-
+	_setup_enemy_manager() 
 	_bake_navigation_region()
 
-func _setup_fog_controller() -> void:
-	var fog_manager := dungeon_generator.fog_manager
-	if fog_manager == null:
-		push_warning("MapManager: FogManager missing in DungeonGenerator.")
+func _setup_enemy_manager() -> void:
+	if enemy_manager != null:
 		return
 
-	fog_controller = DungeonFogController.new()
-	add_child(fog_controller)
+	enemy_manager = EnemyManager.new()
+	enemy_manager.name = "EnemyManager"
+	add_child(enemy_manager)
 
-	fog_controller.setup(dungeon_generator, fog_manager)
+	enemy_manager.setup(
+		dungeon_generator,
+		get_node_or_null("Player")
+	)
+
+	enemy_manager.room_cleared.connect(_on_room_cleared_from_enemies)
+
+	enemy_manager.spawn_enemies(
+		dungeon_generator.room_infos,
+		dungeon_generator.wall_cells
+	)
+
+
+func _on_room_cleared_from_enemies(room_id: int) -> void:
+	print("Room cleared by enemies:", room_id)
 
 # ── Navigation baking ─────────────────────────────────────────────────────────
 func _bake_navigation_region() -> void:

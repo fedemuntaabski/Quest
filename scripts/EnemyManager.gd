@@ -70,6 +70,8 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 
 		add_child(enemy)
 
+func get_enemies_in_room(room_id: int) -> int:
+	return _room_enemy_counts.get(room_id, 0)
 
 func _get_random_floor_cell_in_room(room_info: Dictionary, wall_cells: Dictionary, avoid_center: bool) -> Vector2i:
 	var room_cells: Array = room_info["floor_cells"]

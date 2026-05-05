@@ -14,6 +14,7 @@ const CRITICAL_SECONDS: float = 15.0
 @onready var hud: HUDController = $HUD
 @onready var pause_menu: Node = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
+@onready var enemy_manager: EnemyManager = $MapManager/EnemyManager
 
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
@@ -71,11 +72,11 @@ func _connect_dungeon() -> void:
 	if not dg.room_changed.is_connected(_on_room_changed):
 		dg.room_changed.connect(_on_room_changed)
 
-	if not dg.room_cleared.is_connected(_on_room_cleared):
-		dg.room_cleared.connect(_on_room_cleared)
+	if enemy_manager and not enemy_manager.room_cleared.is_connected(_on_room_cleared):
+		enemy_manager.room_cleared.connect(_on_room_cleared)
 
-	if not dg.enemy_defeated_global.is_connected(_on_enemy_defeated):
-		dg.enemy_defeated_global.connect(_on_enemy_defeated)
+	if enemy_manager and not enemy_manager.enemy_defeated_global.is_connected(_on_enemy_defeated):
+		enemy_manager.enemy_defeated_global.connect(_on_enemy_defeated)
 
 func _connect_player() -> void:
 	var player_stats = get_node_or_null("/root/PlayerStats")
@@ -141,15 +142,12 @@ func _on_room_changed(room_id: int) -> void:
 		visited_rooms.append(room_id)
 		_reset_room_timer()
 
-	
-
 	if hud:
 		hud.update_current_room(room_id)
 
-		var dg = _dg()
-		if dg:
+		if enemy_manager:
 			hud.update_enemies_remaining(
-				dg._room_enemy_counts.get(room_id, 0)
+				enemy_manager.get_enemies_in_room(room_id)
 			)
 
 func _on_room_cleared(room_id: int) -> void:
@@ -162,11 +160,9 @@ func _on_enemy_defeated() -> void:
 	enemies_killed += 1
 
 	var dg = _dg()
-	if hud and dg:
+	if hud and dg and enemy_manager:
 		hud.update_enemies_remaining(
-			dg._room_enemy_counts.get(
-				dg.active_room_id, 0
-			)
+			enemy_manager.get_enemies_in_room(dg.active_room_id)
 		)
 
 func _on_player_died() -> void:

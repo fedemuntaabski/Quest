@@ -9,7 +9,8 @@ func setup(parent: Node, generator: DungeonGenerator) -> void:
 	tile_renderer.name = "TileRenderer"
 	parent.add_child(tile_renderer)
 
-	fog_manager = generator.fog_manager
+	fog_manager = FogOfWarManager.new()
+	add_child(fog_manager)
 
 func build(generator: DungeonGenerator, tileset: TileSet, wall_texture: Texture2D) -> void:
 	tile_renderer.setup(generator, tileset, generator.grid_origin)

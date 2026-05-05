@@ -5,11 +5,9 @@ class_name DungeonGenerator
 
 signal room_changed(room_id: int)
 signal room_cleared(room_id: int)
-signal enemy_defeated_global
 
 const WALL_TEXTURE_PATH := "res://assets/ui/white_2x2.svg"
 const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
-const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 
 @export var grid_width: int = 90
 @export var grid_height: int = 70
@@ -32,8 +30,6 @@ var wall_nodes: Dictionary = {}
 var room_infos: Array[Dictionary] = []
 var active_room_id: int = -1
 
-var _room_enemy_counts: Dictionary = {}
-var _enemy_scene: PackedScene = null
 var _spawned_player: CharacterBody2D = null
 
 var corridors_root: Node2D
@@ -43,7 +39,7 @@ var room_detectors_root: Node2D
 var room_lights_root: Node2D
 var enemies_root: Node2D
 
-var enemy_manager: EnemyManager = null
+
 var tile_renderer: DungeonTileRenderer = null
 
 var is_ready: bool = false
@@ -57,12 +53,7 @@ func _ensure_runtime_nodes() -> void:
 	_ensure_scene_roots()
 
 func _ensure_managers() -> void:
-
-	if not enemy_manager:
-		enemy_manager = EnemyManager.new()
-		enemy_manager.name = "EnemyManager"
-		add_child(enemy_manager)
-		enemy_manager.room_cleared.connect(_on_room_cleared)
+	return
 
 func _ensure_scene_roots() -> void:
 	corridors_root = _ensure_node("Corridors")
@@ -125,10 +116,9 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	if player:
 		_spawned_player = player
 		place_player_in_start_room(player)
-		enemy_manager.setup(self, _spawned_player)
+		
 	else:
 		push_warning("DungeonGenerator: No player provided for placement. Call place_player_in_start_room() manually after generation.")
-	enemy_manager.spawn_enemies(room_infos, wall_cells)
 
 	if not room_infos.is_empty():
 		_set_active_room(int(room_infos[0]["id"]), false)
