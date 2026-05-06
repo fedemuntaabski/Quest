@@ -76,10 +76,14 @@ func _start_move_to(next: Vector2i) -> void:
 func _physics_process(delta: float) -> void:
 	_process_step_move(delta)
 
-	if not is_moving_step and current_path.size() > 0:
+	# 🔥 SOLO si es tu turno
+	if my_turn and not is_moving_step and current_path.size() > 0:
 		var next_cell: Vector2i = current_path.pop_front()
 		var dir := next_cell - grid_pos
 		request_move(dir)
+
+
+		
 func _process_step_move(delta: float) -> void:
 	if not is_moving_step:
 		return
@@ -94,6 +98,7 @@ func _process_step_move(delta: float) -> void:
 		global_position = target_world_pos
 		is_moving_step = false
 
+		# 🔥 SIEMPRE terminar turno después de 1 step
 		if my_turn:
 			my_turn = false
 			if turn_manager:
