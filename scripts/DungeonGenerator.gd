@@ -40,6 +40,7 @@ var room_lights_root: Node2D
 var enemies_root: Node2D
 var room_system: RoomSystem = null
 var room_camera_controller: RoomCameraController = null
+var layout_generator: DungeonLayoutGenerator
 
 
 var tile_renderer: DungeonTileRenderer = null
@@ -51,8 +52,12 @@ func _ready() -> void:
 	_ensure_runtime_nodes()
 
 func _ensure_runtime_nodes() -> void:
+	if not layout_generator:
+		layout_generator = DungeonLayoutGenerator.new()
+		layout_generator.setup(self)
 	_ensure_managers()
 	_ensure_scene_roots()
+	
 
 func _ensure_managers() -> void:
 	if not room_system:
@@ -122,11 +127,10 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 
 	is_ready = true # 👈 CLAVE
 
-	if not _generate_rooms():
+	if not layout_generator.generate():
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
 		return
 
-	_connect_rooms_with_corridors()
 	_generate_walls_from_floor()
 
 	var presentation := get_node_or_null("PresentationManager") as DungeonPresentationManager
@@ -250,109 +254,6 @@ func _clear_generated_content() -> void:
 		for child in parent.get_children():
 			child.queue_free()
 
-
-func _generate_rooms() -> bool:
-	const LAYOUT_RETRIES := 32
-
-	for _retry in range(LAYOUT_RETRIES):
-		_clear_generated_content()
-		floor_cells.clear()
-		wall_cells.clear()
-		wall_nodes.clear()
-		room_infos.clear()
-
-		var attempts := room_count * 90
-		while room_infos.size() < room_count and attempts > 0:
-			attempts -= 1
-
-			var room_size := _roll_room_size()
-
-			var max_x := grid_width - room_size.x - room_padding - 1
-			var max_y := grid_height - room_size.y - room_padding - 1
-			if max_x <= room_padding or max_y <= room_padding:
-				continue
-
-			var room_pos := Vector2i(
-				randi_range(room_padding, max_x),
-				randi_range(room_padding, max_y)
-			)
-			var room_rect := Rect2i(room_pos, room_size)
-
-			if _room_overlaps_existing(room_rect):
-				continue
-
-			_register_room(room_rect)
-
-		if room_infos.size() == room_count:
-			return true
-
-	return false
-
-func _roll_room_size() -> Vector2i:
-	var width := randi_range(room_min_size.x, room_max_size.x)
-	var height := randi_range(room_min_size.y, room_max_size.y)
-
-	var short_width_max := mini(room_max_size.x, room_min_size.x + 2)
-	var short_height_max := mini(room_max_size.y, room_min_size.y + 2)
-	var long_width_min := maxi(room_min_size.x, room_max_size.x - 4)
-	var long_height_min := maxi(room_min_size.y, room_max_size.y - 4)
-
-	var shape_roll := randf()
-	if shape_roll < 0.34:
-		# Wide chamber / horizontal corridor feel.
-		width = randi_range(long_width_min, room_max_size.x)
-		height = randi_range(room_min_size.y, short_height_max)
-	elif shape_roll < 0.68:
-		# Tall chamber / vertical corridor feel.
-		width = randi_range(room_min_size.x, short_width_max)
-		height = randi_range(long_height_min, room_max_size.y)
-
-	return Vector2i(width, height)
-
-func _room_overlaps_existing(candidate: Rect2i) -> bool:
-	var expanded := candidate.grow(room_padding)
-	for room_info in room_infos:
-		var other: Rect2i = room_info["rect"]
-		if expanded.intersects(other):
-			return true
-	return false
-
-func _register_room(room_rect: Rect2i) -> void:
-	var room_id := room_infos.size()
-	var room_root := Node2D.new()
-	room_root.name = "RoomVisual_%d" % room_id
-	room_root.visible = false
-	rooms_root.add_child(room_root)
-
-	var room_cells: Array[Vector2i] = []
-	for x in range(room_rect.position.x, room_rect.end.x):
-		for y in range(room_rect.position.y, room_rect.end.y):
-			var cell := Vector2i(x, y)
-			floor_cells[cell] = true
-			room_cells.append(cell)
-
-	var center_cell := Vector2i(
-		room_rect.position.x + int(room_rect.size.x * 0.5),
-		room_rect.position.y + int(room_rect.size.y * 0.5)
-	)
-
-	var room_light := _create_room_light(room_rect, center_cell)
-	room_lights_root.add_child(room_light)
-
-	var room_area := _create_room_area(room_id, room_rect)
-	room_detectors_root.add_child(room_area)
-
-	room_infos.append({
-		"id": room_id,
-		"rect": room_rect,
-		"center_cell": center_cell,
-		"floor_cells": room_cells,
-		"visited": false,
-		"visual_root": room_root,
-		"light": room_light,
-		"area": room_area
-	})
-
 func _create_room_light(room_rect: Rect2i, center_cell: Vector2i) -> PointLight2D:
 	var room_light := PointLight2D.new()
 	room_light.name = "RoomLight_%d" % room_infos.size()
@@ -385,52 +286,6 @@ func _create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
 	room_system.register_room_area(area, room_id)
 
 	return area
-
-func _connect_rooms_with_corridors() -> void:
-	if room_infos.size() <= 1:
-		return
-
-	var sorted_rooms := room_infos.duplicate()
-	sorted_rooms.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		var center_a: Vector2i = a["center_cell"]
-		var center_b: Vector2i = b["center_cell"]
-		if center_a.x == center_b.x:
-			return center_a.y < center_b.y
-		return center_a.x < center_b.x
-	)
-
-	for index in range(sorted_rooms.size() - 1):
-		var from_cell: Vector2i = sorted_rooms[index]["center_cell"]
-		var to_cell: Vector2i = sorted_rooms[index + 1]["center_cell"]
-		_carve_corridor(from_cell, to_cell)
-
-func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> void:
-	var current := from_cell
-	_add_corridor_cell(current)
-
-	if randf() < 0.5:
-		while current.x != to_cell.x:
-			current.x += signi(to_cell.x - current.x) 
-			_add_corridor_cell(current)
-		while current.y != to_cell.y:
-			current.y += signi(to_cell.y - current.y) 
-			_add_corridor_cell(current)
-	else:
-		while current.y != to_cell.y:
-			current.y += signi(to_cell.y - current.y) 
-			_add_corridor_cell(current)
-		while current.x != to_cell.x:
-			current.x += signi(to_cell.x - current.x) 
-			_add_corridor_cell(current)
-
-func _add_corridor_cell(cell: Vector2i) -> void:
-	if not is_within_bounds(cell):
-		return
-	if floor_cells.has(cell):
-		return
-
-	floor_cells[cell] = true
-
 
 func _generate_walls_from_floor() -> void:
 	var directions: Array[Vector2i] = [
