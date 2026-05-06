@@ -9,6 +9,9 @@ var enemy_manager: EnemyManager
 var navigation_helper: MapNavigationHelper
 var enemy_tracker: MapEnemyTracker
 
+# 🔥 NUEVO
+var turn_manager: TurnManager
+
 signal hover_changed(cell: Vector2i)
 
 
@@ -21,6 +24,9 @@ func _ready() -> void:
 
 	_ensure_helpers()
 
+	# 🔥 NUEVO
+	_setup_turn_manager()
+
 	var player := get_node_or_null("Player") as CharacterBody2D
 	dungeon_generator.generate_dungeon(player)
 
@@ -30,6 +36,16 @@ func _ready() -> void:
 
 	_setup_enemy_manager()
 	navigation_helper.bake_navigation_region()
+
+
+# 🔥 NUEVO
+func _setup_turn_manager() -> void:
+	if turn_manager != null:
+		return
+
+	turn_manager = TurnManager.new()
+	turn_manager.name = "TurnManager"
+	add_child(turn_manager)
 
 
 func _ensure_helpers() -> void:
@@ -101,9 +117,13 @@ func _setup_enemy_manager() -> void:
 	enemy_manager.name = "EnemyManager"
 	add_child(enemy_manager)
 
+	var player := get_node_or_null("Player")
+
+	# 🔥 MODIFICADO: ahora recibe turn_manager
 	enemy_manager.setup(
 		dungeon_generator,
-		get_node_or_null("Player")
+		player,
+		turn_manager
 	)
 
 	enemy_manager.room_cleared.connect(_on_room_cleared_from_enemies)
@@ -112,6 +132,14 @@ func _setup_enemy_manager() -> void:
 		dungeon_generator.room_infos,
 		dungeon_generator.wall_cells
 	)
+
+	# 🔥 REGISTRAR PLAYER EN TURN MANAGER
+	if player and turn_manager:
+		turn_manager.register_actor(player)
+
+	# 🔥 INICIAR SISTEMA DE TURNOS
+	if turn_manager:
+		turn_manager.start()
 
 
 func _on_room_cleared_from_enemies(room_id: int) -> void:

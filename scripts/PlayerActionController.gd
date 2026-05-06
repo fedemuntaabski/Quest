@@ -28,6 +28,9 @@ func _input(event: InputEvent) -> void:
 # KEYBOARD (turn-based feel)
 # ─────────────────────────────────────────────
 func _handle_keyboard() -> void:
+	if player == null or not player.my_turn:
+		return
+
 	var dir := Vector2i.ZERO
 
 	if Input.is_action_just_pressed("ui_up"):
@@ -47,6 +50,8 @@ func _handle_keyboard() -> void:
 # MOUSE CLICK → 1 STEP (ToME style)
 # ─────────────────────────────────────────────
 func _handle_mouse_click() -> void:
+	if player == null or not player.my_turn:
+		return
 	var cam := player.get_node_or_null("Camera2D")
 	if cam == null:
 		return
@@ -70,3 +75,5 @@ func _handle_mouse_click() -> void:
 		return
 
 	player.set_path(path)
+
+

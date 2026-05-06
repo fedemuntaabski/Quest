@@ -13,10 +13,15 @@ var dungeon: DungeonGenerator = null
 var player: CharacterBody2D = null
 var player_torch: PointLight2D = null
 
+# 🔥 NUEVO
+var enemies: Array = []
+var turn_manager: TurnManager
 
-func setup(dungeon_ref: DungeonGenerator, player_ref: CharacterBody2D) -> void:
+
+func setup(dungeon_ref: DungeonGenerator, player_ref: CharacterBody2D, tm: TurnManager) -> void:
 	dungeon = dungeon_ref
 	player = player_ref
+	turn_manager = tm
 
 	if player:
 		player_torch = player.get_node_or_null("PointLight2D") as PointLight2D
@@ -31,6 +36,7 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 		return
 
 	_room_enemy_counts.clear()
+	enemies.clear() # 🔥 importante
 
 	for room_info in room_infos:
 		var room_id: int = room_info["id"]
@@ -53,6 +59,17 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 		enemy.my_room_id = room_id
 		enemy.dungeon_generator = dungeon
 
+		# 🔥 SETUP COMPLETO (CLAVE)
+		enemy.setup(get_parent(), player)
+
+		# 🔥 TRACKING
+		enemies.append(enemy)
+
+		# 🔥 REGISTRO EN TURN MANAGER
+		if turn_manager:
+			turn_manager.register_actor(enemy)
+
+		# mantener lógica existente
 		var captured_player := player
 		var captured_torch := player_torch
 
@@ -70,8 +87,14 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 
 		add_child(enemy)
 
+
+func get_enemies() -> Array:
+	return enemies
+
+
 func get_enemies_in_room(room_id: int) -> int:
 	return _room_enemy_counts.get(room_id, 0)
+
 
 func _get_random_floor_cell_in_room(room_info: Dictionary, wall_cells: Dictionary, avoid_center: bool) -> Vector2i:
 	var room_cells: Array = room_info["floor_cells"]
@@ -115,8 +138,15 @@ func _get_random_floor_cell_in_room(room_info: Dictionary, wall_cells: Dictionar
 	return candidates[randi() % candidates.size()]
 
 
-func _on_enemy_defeated(_enemy, room_id: int) -> void:
+func _on_enemy_defeated(enemy, room_id: int) -> void:
 	enemy_defeated_global.emit()
+
+	# 🔥 REMOVER DEL TURN MANAGER
+	if turn_manager:
+		turn_manager.unregister_actor(enemy)
+
+	# 🔥 REMOVER DE LISTA
+	enemies.erase(enemy)
 
 	if not _room_enemy_counts.has(room_id):
 		return

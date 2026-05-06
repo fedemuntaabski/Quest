@@ -16,6 +16,10 @@ var step_timer: float = 0.0
 
 var map_manager: MapManager
 var current_path: Array[Vector2i] = []
+
+var my_turn: bool = false
+var turn_manager: TurnManager
+
 # ─────────────────────────────────────────────
 # REFERENCES
 # ─────────────────────────────────────────────
@@ -39,6 +43,9 @@ func _ready() -> void:
 # PUBLIC API (llamado por TurnManager)
 # ─────────────────────────────────────────────
 func request_move(dir: Vector2i) -> bool:
+	if not my_turn:
+		return false
+
 	if is_moving_step:
 		return false
 
@@ -54,7 +61,6 @@ func request_move(dir: Vector2i) -> bool:
 
 	_start_move_to(next)
 	return true
-
 
 # ─────────────────────────────────────────────
 func _start_move_to(next: Vector2i) -> void:
@@ -88,6 +94,11 @@ func _process_step_move(delta: float) -> void:
 		global_position = target_world_pos
 		is_moving_step = false
 
+		if my_turn:
+			my_turn = false
+			if turn_manager:
+				turn_manager.end_turn()
+
 func sync_to_grid() -> void:
 	if map_manager == null:
 		map_manager = get_parent() as MapManager
@@ -106,3 +117,7 @@ func set_path(path: Array[Vector2i]) -> void:
 
 func cancel_movement() -> void:
 	current_path.clear()
+
+func take_turn(tm: TurnManager) -> void:
+	turn_manager = tm
+	my_turn = true
