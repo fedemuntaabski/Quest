@@ -41,7 +41,7 @@ var enemies_root: Node2D
 var room_system: RoomSystem = null
 var room_camera_controller: RoomCameraController = null
 var layout_generator: DungeonLayoutGenerator
-
+var room_manager: DungeonRoomManager = null
 
 var tile_renderer: DungeonTileRenderer = null
 
@@ -51,13 +51,19 @@ var is_ready: bool = false
 func _ready() -> void:
 	_ensure_runtime_nodes()
 
+
 func _ensure_runtime_nodes() -> void:
 	if not layout_generator:
 		layout_generator = DungeonLayoutGenerator.new()
 		layout_generator.setup(self)
+
+	if not room_manager:
+		room_manager = DungeonRoomManager.new()
+		room_manager.setup(self)
+
 	_ensure_managers()
 	_ensure_scene_roots()
-	
+
 
 func _ensure_managers() -> void:
 	if not room_system:
@@ -75,6 +81,7 @@ func _ensure_managers() -> void:
 		add_child(room_camera_controller)
 		room_camera_controller.setup(self)
 
+
 func get_spawned_player() -> CharacterBody2D:
 	return _spawned_player
 
@@ -84,8 +91,10 @@ func get_room_info(room_id: int) -> Dictionary:
 		return {}
 	return room_infos[room_id]
 
+
 func _on_room_changed_proxy(room_id: int) -> void:
 	_set_active_room(room_id, true)
+
 
 func _ensure_scene_roots() -> void:
 	corridors_root = _ensure_node("Corridors")
@@ -94,6 +103,7 @@ func _ensure_scene_roots() -> void:
 	room_detectors_root = _ensure_node("RoomDetectors")
 	room_lights_root = _ensure_node("RoomLights")
 	enemies_root = _ensure_node("Enemies")
+
 
 func _ensure_node(node_name: String) -> Node2D:
 	var existing := get_node_or_null(node_name) as Node2D
@@ -105,8 +115,10 @@ func _ensure_node(node_name: String) -> Node2D:
 	add_child(node)
 	return node
 
+
 func _on_room_cleared(room_id: int) -> void:
-	emit_signal("room_cleared", room_id)	
+	emit_signal("room_cleared", room_id)
+
 
 func generate_dungeon(player: CharacterBody2D = null) -> void:
 	randomize()
@@ -125,7 +137,7 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 		-(float(grid_height) * 0.5 * tile_size)
 	)
 
-	is_ready = true # 👈 CLAVE
+	is_ready = true
 
 	if not layout_generator.generate():
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
@@ -134,27 +146,23 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	_generate_walls_from_floor()
 
 	var presentation := get_node_or_null("PresentationManager") as DungeonPresentationManager
-
 	if presentation == null:
 		presentation = DungeonPresentationManager.new()
 		presentation.name = "PresentationManager"
 		add_child(presentation)
 
-
 	presentation.setup(self, self)
-
 	presentation.build(self, floor_tileset, wall_texture)
+
 	if player:
 		_spawned_player = player
 		place_player_in_start_room(player)
-		
 	else:
 		push_warning("DungeonGenerator: No player provided for placement. Call place_player_in_start_room() manually after generation.")
 
 	if not room_infos.is_empty():
 		_set_active_room(int(room_infos[0]["id"]), false)
 
-	
 
 func place_player_in_start_room(player: CharacterBody2D) -> void:
 	if room_infos.is_empty() or player == null:
@@ -166,6 +174,7 @@ func place_player_in_start_room(player: CharacterBody2D) -> void:
 	if player.has_method("sync_to_grid"):
 		player.sync_to_grid()
 
+
 func is_cell_walkable(world_position: Vector2) -> bool:
 	var cell := world_to_grid_coords(world_position)
 	if not is_within_bounds(cell):
@@ -173,6 +182,7 @@ func is_cell_walkable(world_position: Vector2) -> bool:
 	if wall_cells.has(cell):
 		return false
 	return floor_cells.has(cell)
+
 
 func set_wall_at_world(world_position: Vector2) -> void:
 	var cell := world_to_grid_coords(world_position)
@@ -185,6 +195,7 @@ func set_wall_at_world(world_position: Vector2) -> void:
 
 	wall_cells[cell] = true
 	_spawn_wall(cell)
+
 
 func clear_cell_at_world(world_position: Vector2) -> void:
 	var cell := world_to_grid_coords(world_position)
@@ -203,6 +214,7 @@ func clear_cell_at_world(world_position: Vector2) -> void:
 			wall_node.queue_free()
 		wall_nodes.erase(cell)
 
+
 func world_to_grid_coords(world_pos: Vector2) -> Vector2i:
 	if not is_ready:
 		return Vector2i.ZERO
@@ -213,8 +225,10 @@ func world_to_grid_coords(world_pos: Vector2) -> Vector2i:
 		floori(local_pos.y / tile_size)
 	)
 
+
 func grid_to_world_coords(grid_pos: Vector2i) -> Vector2:
 	return grid_origin + (Vector2(grid_pos) + Vector2(0.5, 0.5)) * tile_size
+
 
 func get_adjacent_walkable_cells(world_position: Vector2) -> Array:
 	var result: Array = []
@@ -231,6 +245,7 @@ func get_adjacent_walkable_cells(world_position: Vector2) -> Array:
 
 	return result
 
+
 func is_within_bounds(grid_pos: Vector2i) -> bool:
 	return (
 		grid_pos.x >= 0
@@ -238,6 +253,7 @@ func is_within_bounds(grid_pos: Vector2i) -> bool:
 		and grid_pos.y >= 0
 		and grid_pos.y < grid_height
 	)
+
 
 func _ensure_tile_map_layer(node_name: String) -> TileMapLayer:
 	var existing := get_node_or_null(node_name) as TileMapLayer
@@ -249,10 +265,12 @@ func _ensure_tile_map_layer(node_name: String) -> TileMapLayer:
 	add_child(created)
 	return created
 
+
 func _clear_generated_content() -> void:
 	for parent in [corridors_root, rooms_root, walls_root, room_detectors_root, room_lights_root, enemies_root]:
 		for child in parent.get_children():
 			child.queue_free()
+
 
 func _create_room_light(room_rect: Rect2i, center_cell: Vector2i) -> PointLight2D:
 	var room_light := PointLight2D.new()
@@ -261,8 +279,9 @@ func _create_room_light(room_rect: Rect2i, center_cell: Vector2i) -> PointLight2
 	room_light.position = grid_to_world_coords(center_cell)
 	room_light.energy = 0.0
 	room_light.texture_scale = maxf(1.8, float(max(room_rect.size.x, room_rect.size.y)) * 0.25)
-	room_light.color = Color(0.9, 0.95, 1.0, 1.0) # slightly cooler light
+	room_light.color = Color(0.9, 0.95, 1.0, 1.0)
 	return room_light
+
 
 func _create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
 	var area := Area2D.new()
@@ -287,6 +306,7 @@ func _create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
 
 	return area
 
+
 func _generate_walls_from_floor() -> void:
 	var directions: Array[Vector2i] = [
 		Vector2i(1, 0),
@@ -309,6 +329,7 @@ func _generate_walls_from_floor() -> void:
 			wall_cells[candidate] = true
 			_spawn_wall(candidate)
 
+
 func _spawn_wall(cell: Vector2i) -> void:
 	var wall := StaticBody2D.new()
 	wall.name = "Wall_%d_%d" % [cell.x, cell.y]
@@ -327,7 +348,7 @@ func _spawn_wall(cell: Vector2i) -> void:
 	rectangle.size = Vector2(tile_size, tile_size)
 	collision_shape.shape = rectangle
 	wall.add_child(collision_shape)
-	
+
 	var occluder = LightOccluder2D.new()
 	var occ_polygon = OccluderPolygon2D.new()
 	var hs = tile_size / 2.0
@@ -343,36 +364,10 @@ func _spawn_wall(cell: Vector2i) -> void:
 
 
 func _set_active_room(room_id: int, animate: bool) -> void:
-	if room_id < 0 or room_id >= room_infos.size():
-		return
+	if room_manager:
+		room_manager.set_active_room(room_id, animate)
 
-	active_room_id = room_id
 
-	for index in range(room_infos.size()):
-		var room_info := room_infos[index]
-		var info_room_id: int = room_info["id"]
-		var is_active := info_room_id == active_room_id
-		var visual_root: Node2D = room_info["visual_root"]
-		visual_root.visible = is_active
-
-		if is_active:
-			room_info["visited"] = true
-			room_infos[index] = room_info
-
-	_tween_room_lights(animate)
-	emit_signal("room_changed", active_room_id)
-	
 func _tween_room_lights(animate: bool) -> void:
-	var tween_duration := room_light_transition_seconds if animate else 0.0
-	var tween := create_tween()
-	tween.set_parallel(true)
-
-	for room_info in room_infos:
-		var room_id: int = room_info["id"]
-		var room_light: PointLight2D = room_info["light"]
-		var target_energy := room_light_energy if room_id == active_room_id else 0.0
-
-		if tween_duration <= 0.0:
-			room_light.energy = target_energy
-		else:
-			tween.tween_property(room_light, "energy", target_energy, tween_duration)
+	if room_manager:
+		room_manager.tween_room_lights(animate)
