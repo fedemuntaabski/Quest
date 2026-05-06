@@ -7,6 +7,7 @@ class_name MapManager
 var hovered_cell: Vector2i = Vector2i(-999, -999)
 var enemy_manager: EnemyManager
 var navigation_helper: MapNavigationHelper
+var enemy_tracker: MapEnemyTracker
 
 signal hover_changed(cell: Vector2i)
 
@@ -18,7 +19,7 @@ func _ready() -> void:
 		push_error("MapManager: DungeonGenerator node is missing.")
 		return
 
-	_ensure_navigation_helper()
+	_ensure_helpers()
 
 	var player := get_node_or_null("Player") as CharacterBody2D
 	dungeon_generator.generate_dungeon(player)
@@ -31,14 +32,18 @@ func _ready() -> void:
 	navigation_helper.bake_navigation_region()
 
 
-func _ensure_navigation_helper() -> void:
-	if navigation_helper != null:
-		return
+func _ensure_helpers() -> void:
+	if navigation_helper == null:
+		navigation_helper = MapNavigationHelper.new()
+		navigation_helper.name = "MapNavigationHelper"
+		add_child(navigation_helper)
+		navigation_helper.setup(dungeon_generator, nav_region)
 
-	navigation_helper = MapNavigationHelper.new()
-	navigation_helper.name = "MapNavigationHelper"
-	add_child(navigation_helper)
-	navigation_helper.setup(dungeon_generator, nav_region)
+	if enemy_tracker == null:
+		enemy_tracker = MapEnemyTracker.new()
+		enemy_tracker.name = "MapEnemyTracker"
+		add_child(enemy_tracker)
+		enemy_tracker.setup(dungeon_generator)
 
 
 # ── Hover ─────────────────────────────────────────────────────────────────────
@@ -78,7 +83,6 @@ func grid_to_world(grid: Vector2i) -> Vector2:
 	return navigation_helper.grid_to_world_coords(grid) if navigation_helper else Vector2.ZERO
 
 
-# ⚠️ Ahora delega completamente
 func is_walkable_cell(grid_pos: Vector2i) -> bool:
 	if navigation_helper == null:
 		return false
@@ -116,21 +120,21 @@ func _on_room_cleared_from_enemies(room_id: int) -> void:
 
 # ── Enemy tracking ────────────────────────────────────────────────────────────
 func register_enemy(world_position: Vector2, enemy_node: Node2D) -> void:
-	if navigation_helper:
-		navigation_helper.register_enemy(world_position, enemy_node)
+	if enemy_tracker:
+		enemy_tracker.register_enemy(world_position, enemy_node)
 
 
 func unregister_enemy(world_position: Vector2) -> void:
-	if navigation_helper:
-		navigation_helper.unregister_enemy(world_position)
+	if enemy_tracker:
+		enemy_tracker.unregister_enemy(world_position)
 
 
 func get_enemy_at_cell(grid_pos: Vector2i) -> Node2D:
-	return navigation_helper.get_enemy_at_cell(grid_pos) if navigation_helper else null
+	return enemy_tracker.get_enemy_at_cell(grid_pos) if enemy_tracker else null
 
 
 func has_enemy_at_cell(world_position: Vector2) -> bool:
-	return navigation_helper.has_enemy_at_cell(world_position) if navigation_helper else false
+	return enemy_tracker.has_enemy_at_cell(world_position) if enemy_tracker else false
 
 
 # ── Wrappers directos (sin lógica) ────────────────────────────────────────────
