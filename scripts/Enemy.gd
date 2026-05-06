@@ -10,6 +10,13 @@ var player_torch: PointLight2D
 var my_room_id: int = -1
 var dungeon_generator: DungeonGenerator
 
+var is_moving_step: bool = false
+var step_timer: float = 0.0
+var step_time: float = 0.12
+
+var _start_pos: Vector2
+var target_world_pos: Vector2
+
 @onready var stats: CharacterStats = $Stats
 
 func _ready():
@@ -35,14 +42,37 @@ func take_turn(turn_manager):
 
 	if path.size() > 1:
 		var next_cell = path[1]
-		grid_pos = next_cell
-		global_position = map_manager.grid_to_world_coords(next_cell)
+		_start_move_to(next_cell)
 
-	# después vemos ataque, por ahora solo movimiento
-	await get_tree().create_timer(0.1).timeout
+		await _wait_for_step()
 
 	turn_manager.end_turn()
 
+func _start_move_to(next: Vector2i) -> void:
+	_start_pos = global_position
+	grid_pos = next
+	target_world_pos = map_manager.grid_to_world_coords(next)
+
+	is_moving_step = true
+	step_timer = 0.0
+
+func _physics_process(delta: float) -> void:
+	if not is_moving_step:
+		return
+
+	step_timer += delta
+	var t := step_timer / step_time
+	t = clamp(t, 0.0, 1.0)
+
+	global_position = _start_pos.lerp(target_world_pos, t)
+
+	if t >= 1.0:
+		global_position = target_world_pos
+		is_moving_step = false
+
+func _wait_for_step() -> void:
+	while is_moving_step:
+		await get_tree().process_frame
 
 func _on_died():
 	enemy_defeated.emit(self)
