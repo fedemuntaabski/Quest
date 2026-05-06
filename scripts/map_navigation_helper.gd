@@ -1,0 +1,212 @@
+extends Node
+class_name MapNavigationHelper
+
+var dungeon_generator: DungeonGenerator
+var nav_region: NavigationRegion2D
+var enemies_on_map: Dictionary = {} # Key: Vector2i, Value: Node2D
+
+
+func setup(dungeon: DungeonGenerator, navigation_region: NavigationRegion2D) -> void:
+	dungeon_generator = dungeon
+	nav_region = navigation_region
+
+
+# ── Navigation baking ─────────────────────────────────────────────────────────
+func bake_navigation_region() -> void:
+	if dungeon_generator == null:
+		return
+
+	if nav_region == null:
+		push_warning("MapNavigationHelper: NavigationRegion2D missing — enemies won't pathfind.")
+		return
+
+	var tile_size: float = dungeon_generator.tile_size
+	var floor_cells: Dictionary = dungeon_generator.floor_cells
+	var wall_cells: Dictionary = dungeon_generator.wall_cells
+
+	if floor_cells.is_empty():
+		return
+
+	var nav_poly := NavigationPolygon.new()
+
+	# Ajuste fino para evitar problemas de bordes
+	var inset: float = 2.0
+	var half: float = tile_size * 0.5
+
+	for raw_cell in floor_cells.keys():
+		var cell: Vector2i = raw_cell
+
+		# Seguridad extra (aunque no debería pasar)
+		if wall_cells.has(cell):
+			continue
+
+		var world_pos: Vector2 = dungeon_generator.grid_to_world_coords(cell)
+
+		var verts := PackedVector2Array([
+			world_pos + Vector2(-half + inset, -half + inset),
+			world_pos + Vector2(half - inset, -half + inset),
+			world_pos + Vector2(half - inset, half - inset),
+			world_pos + Vector2(-half + inset, half - inset),
+		])
+
+		nav_poly.add_outline(verts)
+
+	nav_poly.make_polygons_from_outlines()
+
+	# Limpiar y asignar
+	nav_region.navigation_polygon = null
+	nav_region.navigation_polygon = nav_poly
+
+	print("MapNavigationHelper: NavigationRegion2D baked with %d floor cells." % floor_cells.size())
+
+
+# ── Passability checks ────────────────────────────────────────────────────────
+func is_cell_walkable(world_position: Vector2) -> bool:
+	if dungeon_generator == null:
+		return false
+
+	return dungeon_generator.is_cell_walkable(world_position)
+
+
+func world_to_grid_coords(world_pos: Vector2) -> Vector2i:
+	if dungeon_generator == null:
+		return Vector2i.ZERO
+
+	if not dungeon_generator.is_ready:
+		return Vector2i.ZERO
+
+	return dungeon_generator.world_to_grid_coords(world_pos)
+
+
+func grid_to_world_coords(grid_pos: Vector2i) -> Vector2:
+	if dungeon_generator == null:
+		return Vector2.ZERO
+
+	return dungeon_generator.grid_to_world_coords(grid_pos)
+
+
+func set_wall(world_position: Vector2) -> void:
+	if dungeon_generator:
+		dungeon_generator.set_wall_at_world(world_position)
+
+
+func clear_cell(world_position: Vector2) -> void:
+	if dungeon_generator:
+		dungeon_generator.clear_cell_at_world(world_position)
+
+
+func get_adjacent_walkable_cells(world_position: Vector2) -> Array:
+	if dungeon_generator == null:
+		return []
+
+	return dungeon_generator.get_adjacent_walkable_cells(world_position)
+
+
+func is_within_bounds(grid_pos: Vector2i) -> bool:
+	if dungeon_generator == null:
+		return false
+
+	return dungeon_generator.is_within_bounds(grid_pos)
+
+
+# ── Enemy tracking ────────────────────────────────────────────────────────────
+func register_enemy(world_position: Vector2, enemy_node: Node2D) -> void:
+	if dungeon_generator == null or enemy_node == null:
+		return
+
+	var grid_pos := world_to_grid_coords(world_position)
+	enemies_on_map[grid_pos] = enemy_node
+
+
+func unregister_enemy(world_position: Vector2) -> void:
+	if dungeon_generator == null:
+		return
+
+	var grid_pos := world_to_grid_coords(world_position)
+	if enemies_on_map.has(grid_pos):
+		enemies_on_map.erase(grid_pos)
+
+
+func get_enemy_at_cell(grid_pos: Vector2i) -> Node2D:
+	if dungeon_generator == null:
+		return null
+
+	for enemy in enemies_on_map.values():
+		if enemy == null:
+			continue
+
+		if enemy is Node2D and world_to_grid_coords(enemy.global_position) == grid_pos:
+			return enemy
+
+	return null
+
+
+func has_enemy_at_cell(world_position: Vector2) -> bool:
+	var grid_pos := world_to_grid_coords(world_position)
+	return enemies_on_map.has(grid_pos)
+
+
+# ── Pathfinding ───────────────────────────────────────────────────────────────
+func find_path(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
+	var open_set: Array[Vector2i] = []
+	var came_from: Dictionary = {}
+
+	var g_score: Dictionary = {}
+	var f_score: Dictionary = {}
+
+	open_set.append(start)
+	g_score[start] = 0.0
+	f_score[start] = float(start.distance_to(goal))
+
+	while open_set.size() > 0:
+		var current: Vector2i = open_set[0]
+
+		for node in open_set:
+			if float(f_score.get(node, INF)) < float(f_score.get(current, INF)):
+				current = node
+
+		if current == goal:
+			return _reconstruct_path(came_from, current)
+
+		open_set.erase(current)
+
+		for neighbor in _get_neighbors(current):
+			var tentative_g: float = float(g_score.get(current, INF)) + 1.0
+
+			if tentative_g < float(g_score.get(neighbor, INF)):
+				came_from[neighbor] = current
+				g_score[neighbor] = tentative_g
+				f_score[neighbor] = tentative_g + float(neighbor.distance_to(goal))
+
+				if not open_set.has(neighbor):
+					open_set.append(neighbor)
+
+	return []
+
+
+func _get_neighbors(cell: Vector2i) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+
+	var dirs: Array[Vector2i] = [
+		Vector2i.UP,
+		Vector2i.DOWN,
+		Vector2i.LEFT,
+		Vector2i.RIGHT
+	]
+
+	for d in dirs:
+		var n: Vector2i = cell + d
+		if is_cell_walkable(grid_to_world_coords(n)):
+			result.append(n)
+
+	return result
+
+
+func _reconstruct_path(came_from: Dictionary, current: Vector2i) -> Array[Vector2i]:
+	var path: Array[Vector2i] = [current]
+
+	while came_from.has(current):
+		current = came_from[current]
+		path.push_front(current)
+
+	return path
