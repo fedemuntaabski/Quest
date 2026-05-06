@@ -42,6 +42,7 @@ var room_system: RoomSystem = null
 var room_camera_controller: RoomCameraController = null
 var layout_generator: DungeonLayoutGenerator
 var room_manager: DungeonRoomManager = null
+var wall_manager: DungeonWallManager = null
 
 var tile_renderer: DungeonTileRenderer = null
 
@@ -60,6 +61,10 @@ func _ensure_runtime_nodes() -> void:
 	if not room_manager:
 		room_manager = DungeonRoomManager.new()
 		room_manager.setup(self)
+
+	if not wall_manager:
+		wall_manager = DungeonWallManager.new()
+		wall_manager.setup(self)
 
 	_ensure_managers()
 	_ensure_scene_roots()
@@ -143,7 +148,7 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
 		return
 
-	_generate_walls_from_floor()
+	wall_manager.generate_walls_from_floor()
 
 	var presentation := get_node_or_null("PresentationManager") as DungeonPresentationManager
 	if presentation == null:
@@ -185,34 +190,13 @@ func is_cell_walkable(world_position: Vector2) -> bool:
 
 
 func set_wall_at_world(world_position: Vector2) -> void:
-	var cell := world_to_grid_coords(world_position)
-
-	if not is_within_bounds(cell):
-		return
-
-	if wall_cells.has(cell):
-		return
-
-	wall_cells[cell] = true
-	_spawn_wall(cell)
+	if wall_manager:
+		wall_manager.set_wall_at_world(world_position)
 
 
 func clear_cell_at_world(world_position: Vector2) -> void:
-	var cell := world_to_grid_coords(world_position)
-
-	if not is_within_bounds(cell):
-		return
-
-	if not wall_cells.has(cell):
-		return
-
-	wall_cells.erase(cell)
-
-	if wall_nodes.has(cell):
-		var wall_node := wall_nodes[cell] as Node
-		if wall_node:
-			wall_node.queue_free()
-		wall_nodes.erase(cell)
+	if wall_manager:
+		wall_manager.clear_cell_at_world(world_position)
 
 
 func world_to_grid_coords(world_pos: Vector2) -> Vector2i:
@@ -305,62 +289,6 @@ func _create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
 	room_system.register_room_area(area, room_id)
 
 	return area
-
-
-func _generate_walls_from_floor() -> void:
-	var directions: Array[Vector2i] = [
-		Vector2i(1, 0),
-		Vector2i(-1, 0),
-		Vector2i(0, 1),
-		Vector2i(0, -1)
-	]
-
-	for floor_cell in floor_cells.keys():
-		var origin: Vector2i = floor_cell
-		for direction in directions:
-			var candidate := origin + direction
-			if not is_within_bounds(candidate):
-				continue
-			if floor_cells.has(candidate):
-				continue
-			if wall_cells.has(candidate):
-				continue
-
-			wall_cells[candidate] = true
-			_spawn_wall(candidate)
-
-
-func _spawn_wall(cell: Vector2i) -> void:
-	var wall := StaticBody2D.new()
-	wall.name = "Wall_%d_%d" % [cell.x, cell.y]
-	wall.position = grid_to_world_coords(cell)
-	wall.collision_layer = 1
-	wall.collision_mask = 1
-
-	var wall_sprite := Sprite2D.new()
-	wall_sprite.texture = wall_texture
-	wall_sprite.modulate = Color(0.2, 0.18, 0.16, 1)
-	wall_sprite.scale = Vector2(tile_size / 2.0, tile_size / 2.0)
-	wall.add_child(wall_sprite)
-
-	var collision_shape := CollisionShape2D.new()
-	var rectangle := RectangleShape2D.new()
-	rectangle.size = Vector2(tile_size, tile_size)
-	collision_shape.shape = rectangle
-	wall.add_child(collision_shape)
-
-	var occluder = LightOccluder2D.new()
-	var occ_polygon = OccluderPolygon2D.new()
-	var hs = tile_size / 2.0
-	occ_polygon.polygon = PackedVector2Array([
-		Vector2(-hs, -hs), Vector2(hs, -hs),
-		Vector2(hs, hs), Vector2(-hs, hs)
-	])
-	occluder.occluder = occ_polygon
-	wall.add_child(occluder)
-
-	walls_root.add_child(wall)
-	wall_nodes[cell] = wall
 
 
 func _set_active_room(room_id: int, animate: bool) -> void:
