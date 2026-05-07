@@ -6,7 +6,7 @@
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="4_ui_font"]
 [ext_resource type="AudioStream" uid="uid://bn3f47isu51op" path="res://assets/audio/click.mp3" id="5_click_audio"]
 [ext_resource type="AudioStream" uid="uid://bawlbtgbjti0q" path="res://assets/audio/hover.mp3" id="6_hover_audio"]
-[ext_resource type="Texture2D" uid="uid://0nc7hiqggiu8" path="res://assets/ui/menuoption.png" id="7_options_bg"]
+[ext_resource type="PackedScene" path="res://scenes/OptionsMenu.tscn" id="7_options_menu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
 content_margin_left = 16.0
@@ -72,50 +72,6 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_options_panel"]
-bg_color = Color(0.08, 0.06, 0.05, 0.9)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.8, 0.63, 0.33, 1)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_save"]
-content_margin_left = 16.0
-content_margin_top = 12.0
-content_margin_right = 16.0
-content_margin_bottom = 12.0
-bg_color = Color(0.36, 0.25, 0.1, 0.92)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(1, 0.84, 0.42, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_save_pressed"]
-content_margin_left = 16.0
-content_margin_top = 12.0
-content_margin_right = 16.0
-content_margin_bottom = 12.0
-bg_color = Color(0.22, 0.15, 0.06, 0.96)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.82, 0.62, 0.28, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-
 [node name="MainMenu" type="Control" unique_id=1171593547]
 layout_mode = 3
 anchors_preset = 15
@@ -161,7 +117,7 @@ theme_override_colors/font_outline_color = Color(0.05, 0.03, 0.02, 1)
 theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("3_title_font")
 theme_override_font_sizes/font_size = 120
-text = "QUEST"
+text = "MISION"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
@@ -235,183 +191,10 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "SALIR"
 
-[node name="OptionsPanel" type="Panel" parent="." unique_id=1237015844]
-visible = false
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="OptionsCenterContainer" type="CenterContainer" parent="OptionsPanel" unique_id=592175304]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="OptionsCard" type="Panel" parent="OptionsPanel/OptionsCenterContainer" unique_id=1093580705]
-custom_minimum_size = Vector2(912, 672)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_options_panel")
-
-[node name="OptionsBackground" type="TextureRect" parent="OptionsPanel/OptionsCenterContainer/OptionsCard" unique_id=934104497]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("7_options_bg")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="OptionsVBox" type="VBoxContainer" parent="OptionsPanel/OptionsCenterContainer/OptionsCard" unique_id=456722314]
-custom_minimum_size = Vector2(768, 552)
-layout_mode = 0
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -384.0
-offset_top = -300.0
-offset_right = 384.0
-offset_bottom = 252.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 18
-alignment = 1
-
-[node name="OptionsTitle" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=1793272038]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
-theme_override_colors/font_outline_color = Color(0.05, 0.03, 0.02, 1)
-theme_override_constants/outline_size = 4
-theme_override_fonts/font = ExtResource("3_title_font")
-theme_override_font_sizes/font_size = 52
-text = "OPCIONES"
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="ClickVolumeLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=1471846155]
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("4_ui_font")
-theme_override_font_sizes/font_size = 26
-text = "Volumen Click"
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="ClickVolumeRow" type="HBoxContainer" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=406381065]
-layout_mode = 2
-theme_override_constants/separation = 14
-
-[node name="ClickVolumeSlider" type="HSlider" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow" unique_id=1751243539]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-max_value = 2.0
-step = 0.01
-value = 1.0
-
-[node name="ClickVolumeValueLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow" unique_id=1204548549]
-custom_minimum_size = Vector2(92, 44)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("4_ui_font")
-theme_override_font_sizes/font_size = 24
-text = "100%"
-horizontal_alignment = 2
-vertical_alignment = 1
-autowrap_mode = 3
-
-[node name="HoverVolumeLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=1187756659]
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("4_ui_font")
-theme_override_font_sizes/font_size = 26
-text = "Volumen Hover"
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="HoverVolumeRow" type="HBoxContainer" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=177007706]
-layout_mode = 2
-theme_override_constants/separation = 14
-
-[node name="HoverVolumeSlider" type="HSlider" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow" unique_id=1082123227]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-max_value = 2.0
-step = 0.01
-value = 1.0
-
-[node name="HoverVolumeValueLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow" unique_id=1028657288]
-custom_minimum_size = Vector2(92, 44)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("4_ui_font")
-theme_override_font_sizes/font_size = 24
-text = "100%"
-horizontal_alignment = 2
-vertical_alignment = 1
-autowrap_mode = 3
-
-[node name="ResolutionLabel" type="Label" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=751404284]
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("4_ui_font")
-theme_override_font_sizes/font_size = 26
-text = "Resolucion"
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="ResSelector" type="OptionButton" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=124346313]
-custom_minimum_size = Vector2(0, 52)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("4_ui_font")
-theme_override_font_sizes/font_size = 26
-
-[node name="SaveButton" type="Button" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=247842551]
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.93, 0.68, 1)
-theme_override_colors/font_pressed_color = Color(0.95, 0.88, 0.63, 1)
-theme_override_colors/font_hover_color = Color(1, 0.98, 0.8, 1)
-theme_override_colors/font_outline_color = Color(0.06, 0.04, 0.03, 1)
-theme_override_constants/outline_size = 3
-theme_override_fonts/font = ExtResource("4_ui_font")
-theme_override_font_sizes/font_size = 34
-theme_override_styles/normal = SubResource("StyleBoxFlat_button_save")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_button_save_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
-text = "GUARDAR"
-
-[node name="BackButton" type="Button" parent="OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=1490566337]
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_colors/font_focus_color = Color(1, 0.88, 0.53, 1)
-theme_override_colors/font_pressed_color = Color(0.86, 0.67, 0.33, 1)
-theme_override_colors/font_hover_color = Color(1, 0.9, 0.58, 1)
-theme_override_colors/font_outline_color = Color(0.05, 0.05, 0.05, 1)
-theme_override_constants/outline_size = 3
-theme_override_fonts/font = ExtResource("4_ui_font")
-theme_override_font_sizes/font_size = 34
-theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
-text = "VOLVER"
-
-[node name="UnsavedChangesDialog" type="ConfirmationDialog" parent="." unique_id=341981612]
-title = "Cambios sin guardar"
-dialog_text = "¿Deseas descartar los cambios?"
+[node name="OptionsMenu" parent="." unique_id=1577447172 instance=ExtResource("7_options_menu")]
+layout_mode = 1
+click_player_path = NodePath("../click")
+hover_player_path = NodePath("../hover")
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/StartButton" to="." method="on_start_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ExitMargin/ExitButton" to="." method="on_exit_button_pressed"]

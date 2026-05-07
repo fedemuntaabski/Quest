@@ -1,6 +1,8 @@
 extends CanvasLayer
 class_name PauseMenu
 
+signal exit_requested
+
 const UPGRADES = {
 	"hp": ["base_hp", "max_hp"],
 	"str": ["base_str", "strength_modifier"],
@@ -8,46 +10,27 @@ const UPGRADES = {
 	"dex": ["base_dex", "dexterity_modifier"]
 }
 
-const SETTINGS_PATH := "user://settings.cfg"
-const SETTINGS_SECTION := "options"
-const MAIN_MENU_SCENE := "res://scenes/MainMenu.tscn"
-
-const RESOLUTION_PRESETS = [
-	["1920x1080", Vector2i(1920, 1080)],
-	["1600x900", Vector2i(1600, 900)],
-	["1280x720", Vector2i(1280, 720)]
-]
-
 const UPGRADE_COST := 50
 
 @export var save_mgr: SaveManager
 @export var player_stats: PlayerStats
+@export var confirm_exit_on_run: bool = true
 
 @onready var pause_panel = $CenterContainer/PausePanel
-@onready var options_panel = $OptionsPanel
+@onready var options_menu: OptionsMenu = $OptionsMenu
 @onready var store_panel = $StorePanel
+@onready var exit_confirm_dialog: ConfirmationDialog = $ExitConfirmDialog
 
 @onready var click_sfx: AudioStreamPlayer = $UIAudio/ClickSound
 @onready var hover_sfx: AudioStreamPlayer = $UIAudio/HoverSound
 
-@onready var panels = [pause_panel, options_panel, store_panel]
+@onready var panels = [pause_panel, options_menu, store_panel]
 
-@onready var continue_button = $CenterContainer/PausePanel/PauseVBox/ContinueButton
 @onready var options_button = $CenterContainer/PausePanel/PauseVBox/OptionsButton
 @onready var store_button = $CenterContainer/PausePanel/PauseVBox/StoreButton
 @onready var exit_button = $CenterContainer/PausePanel/PauseVBox/ExitButton
 
-@onready var sliders = [
-	$OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow/ClickVolumeSlider,
-	$OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow/HoverVolumeSlider
-]
-
-@onready var labels = [
-	$OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow/ClickVolumeValueLabel,
-	$OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow/HoverVolumeValueLabel
-]
-
-@onready var res_selector = $OptionsPanel/OptionsCenterContainer/OptionsCard/OptionsVBox/ResSelector
+@onready var store_back_button: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/StoreBackButton
 
 @onready var gold_label = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/GoldLabel
 
@@ -74,11 +57,17 @@ func _ready() -> void:
 	click_sfx.stream = load("res://assets/audio/click.mp3")
 	hover_sfx.stream = load("res://assets/audio/hover.mp3")
 
-	_fill_res()
 	_connect()
+	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
+		options_menu.closed.connect(_on_options_menu_closed)
+	if exit_confirm_dialog and not exit_confirm_dialog.confirmed.is_connected(_on_exit_confirmed):
+		exit_confirm_dialog.confirmed.connect(_on_exit_confirmed)
+	if exit_confirm_dialog and not exit_confirm_dialog.canceled.is_connected(_on_exit_canceled):
+		exit_confirm_dialog.canceled.connect(_on_exit_canceled)
+	if exit_confirm_dialog:
+		exit_confirm_dialog.ok_button_text = "OK"
+		exit_confirm_dialog.cancel_button_text = "Cancelar"
 
-	load_settings()
-	_update_volume()
 	_set_panel(0)
 
 # ---------------- OPEN / CLOSE ----------------
@@ -92,6 +81,8 @@ func open_menu():
 func close_menu():
 	is_open = false
 	visible = false
+	if options_menu:
+		options_menu.close()
 	get_tree().paused = false
 
 func toggle_menu():
@@ -109,28 +100,33 @@ func _unhandled_input(event):
 
 # ---------------- UI ----------------
 
-func _set_panel(i):
+func _set_panel(i: int) -> void:
 	for p in panels:
 		p.visible = false
+
+	if i == 1:
+		if options_menu:
+			options_menu.open()
+		return
+
+	if options_menu:
+		options_menu.close()
 	panels[i].visible = true
 
 # ---------------- CONNECT ----------------
 
-func _connect():
-	continue_button.pressed.connect(func(): _play_click(); close_menu())
+func _connect() -> void:
 	options_button.pressed.connect(func(): _play_click(); _set_panel(1))
 	store_button.pressed.connect(func(): _play_click(); _set_panel(2); _update_store())
-	exit_button.pressed.connect(func(): _play_click(); _exit())
+	exit_button.pressed.connect(func(): _play_click(); _request_exit())
 
-	var all_buttons = [
-		continue_button,
-		options_button,
-		store_button,
-		exit_button
-	]
-
+	var all_buttons = [options_button, store_button, exit_button]
 	for b in all_buttons:
 		b.mouse_entered.connect(_play_hover)
+
+	if store_back_button:
+		store_back_button.pressed.connect(func(): _play_click(); _set_panel(0))
+		store_back_button.mouse_entered.connect(_play_hover)
 
 	var stats = ["hp", "str", "mag", "dex"]
 
@@ -141,10 +137,28 @@ func _connect():
 			_on_upgrade_pressed(stat)
 		)
 
-	for i in sliders.size():
-		sliders[i].value_changed.connect(func(v): _update_label(i, v))
+func _on_options_menu_closed() -> void:
+	_set_panel(0)
 
-	res_selector.item_selected.connect(_res)
+func _request_exit() -> void:
+	if confirm_exit_on_run and exit_confirm_dialog:
+		_show_exit_confirm_dialog()
+		return
+
+	_emit_exit_requested()
+
+func _on_exit_confirmed() -> void:
+	_emit_exit_requested()
+
+func _on_exit_canceled() -> void:
+	_set_panel(0)
+
+func _show_exit_confirm_dialog() -> void:
+	exit_confirm_dialog.popup_centered()
+	exit_confirm_dialog.position += Vector2i(0, 80)
+
+func _emit_exit_requested() -> void:
+	exit_requested.emit()
 
 # ---------------- AUDIO ----------------
 
@@ -168,31 +182,7 @@ func _update_store():
 	for b in upgrade_buttons:
 		b.disabled = not ok
 
-# ---------------- RES ----------------
-
-func _fill_res():
-	res_selector.clear()
-	for r in RESOLUTION_PRESETS:
-		res_selector.add_item(r[0])
-
-func _res(i):
-	var r = RESOLUTION_PRESETS[i][1]
-	DisplayServer.window_set_size(r)
-	get_tree().root.content_scale_size = r
-
-# ---------------- LABELS ----------------
-
-func _update_label(i, v):
-	labels[i].text = "%d%%" % int(v * 100)
-
-func _update_volume():
-	for i in sliders.size():
-		_update_label(i, sliders[i].value)
-
 # ---------------- ACTIONS ----------------
-
-func _exit():
-	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
 
 func _on_upgrade_pressed(stat):
 	if not save_mgr or not player_stats:
@@ -213,14 +203,3 @@ func _on_upgrade_pressed(stat):
 
 	save_mgr.save_game()
 	_update_store()
-
-# ---------------- SETTINGS ----------------
-
-func load_settings():
-	var cfg = ConfigFile.new()
-	if cfg.load(SETTINGS_PATH) != OK:
-		return
-
-	res_selector.select(cfg.get_value(SETTINGS_SECTION, "resolution_index", 0))
-	sliders[0].value = cfg.get_value(SETTINGS_SECTION, "click_volume", 1.0)
-	sliders[1].value = cfg.get_value(SETTINGS_SECTION, "hover_volume", 1.0)

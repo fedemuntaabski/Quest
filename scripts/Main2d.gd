@@ -12,7 +12,7 @@ const CRITICAL_SECONDS: float = 15.0
 # ─────────────────────────────────────────────
 @onready var map_manager: MapManager = $MapManager
 @onready var hud: HUDController = $HUD
-@onready var pause_menu: Node = $PauseMenu
+@onready var pause_menu: PauseMenu = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
 @onready var enemy_manager: EnemyManager = $MapManager/EnemyManager
 
@@ -89,6 +89,9 @@ func _connect_ui() -> void:
 
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
+
+	if pause_menu and not pause_menu.exit_requested.is_connected(_on_pause_exit_requested):
+		pause_menu.exit_requested.connect(_on_pause_exit_requested)
 
 # ─────────────────────────────────────────────
 # TUTORIAL 
@@ -197,6 +200,10 @@ func _set_paused_state(paused: bool) -> void:
 	get_tree().paused = paused
 
 func _on_return_pressed() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+
+func _on_pause_exit_requested() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 
