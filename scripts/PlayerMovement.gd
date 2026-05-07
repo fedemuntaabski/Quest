@@ -1,6 +1,9 @@
 extends CharacterBody2D
 class_name PlayerMovement
 
+const BaseAction = preload("res://scripts/BaseAction.gd")
+const MoveAction = preload("res://scripts/MoveAction.gd")
+
 # ─────────────────────────────────────────────
 # GRID
 # ─────────────────────────────────────────────
@@ -59,7 +62,12 @@ func request_move(dir: Vector2i) -> bool:
 	if not walkable:
 		return false
 
-	_start_move_to(next)
+	if turn_manager == null or turn_manager.action_queue == null:
+		return false
+
+	var action: BaseAction = MoveAction.new(self, map_manager, next, true)
+	turn_manager.action_queue.queue_action(action)
+	my_turn = false
 	return true
 
 # ─────────────────────────────────────────────
@@ -98,12 +106,6 @@ func _process_step_move(delta: float) -> void:
 		global_position = target_world_pos
 		is_moving_step = false
 
-		# 🔥 SIEMPRE terminar turno después de 1 step
-		if my_turn:
-			my_turn = false
-			if turn_manager:
-				turn_manager.end_turn()
-
 func sync_to_grid() -> void:
 	if map_manager == null:
 		map_manager = get_parent() as MapManager
@@ -123,6 +125,13 @@ func set_path(path: Array[Vector2i]) -> void:
 func cancel_movement() -> void:
 	current_path.clear()
 
-func take_turn(tm: TurnManager) -> void:
+func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
 	my_turn = true
+
+func begin_step_move(next: Vector2i) -> void:
+	_start_move_to(next)
+
+func wait_for_step() -> void:
+	while is_moving_step:
+		await get_tree().process_frame

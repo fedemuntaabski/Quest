@@ -1,6 +1,8 @@
 extends Node2D
 class_name DungeonGenerator
 
+const DungeonRuntimeSetup = preload("res://scripts/DungeonRuntimeSetup.gd")
+
 @export var floor_tileset: TileSet = preload("res://assets/texture/enviorment/dungeon_tileset.tres")
 
 signal room_changed(room_id: int)
@@ -49,6 +51,7 @@ var scene_helper: DungeonSceneHelper = null
 var tile_renderer: DungeonTileRenderer = null
 
 var is_ready: bool = false
+var runtime_setup: DungeonRuntimeSetup = DungeonRuntimeSetup.new()
 
 
 func _ready() -> void:
@@ -56,29 +59,10 @@ func _ready() -> void:
 
 
 func _ensure_runtime_nodes() -> void:
-	if not scene_helper:
-		scene_helper = DungeonSceneHelper.new()
-		scene_helper.setup(self)
+	if runtime_setup == null:
+		runtime_setup = DungeonRuntimeSetup.new()
 
-	if not layout_generator:
-		layout_generator = DungeonLayoutGenerator.new()
-		layout_generator.setup(self)
-
-	if not room_manager:
-		room_manager = DungeonRoomManager.new()
-		room_manager.setup(self)
-
-	if not wall_manager:
-		wall_manager = DungeonWallManager.new()
-		wall_manager.setup(self)
-
-	_ensure_managers()
-
-	if not room_factory:
-		room_factory = DungeonRoomFactory.new()
-		room_factory.setup(self, room_system)
-
-	_ensure_scene_roots()
+	runtime_setup.ensure_runtime_nodes(self)
 
 
 func _ensure_managers() -> void:

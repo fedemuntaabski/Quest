@@ -1,6 +1,8 @@
 extends Node2D
 class_name MapManager
 
+const MapTurnSetup = preload("res://scripts/MapTurnSetup.gd")
+
 @onready var dungeon_generator: DungeonGenerator = $DungeonGenerator
 @onready var nav_region: NavigationRegion2D = $NavigationRegion2D
 
@@ -11,6 +13,7 @@ var enemy_tracker: MapEnemyTracker
 
 # 🔥 NUEVO
 var turn_manager: TurnManager
+var turn_setup: MapTurnSetup = MapTurnSetup.new()
 
 signal hover_changed(cell: Vector2i)
 
@@ -40,12 +43,10 @@ func _ready() -> void:
 
 # 🔥 NUEVO
 func _setup_turn_manager() -> void:
-	if turn_manager != null:
-		return
+	if turn_setup == null:
+		turn_setup = MapTurnSetup.new()
 
-	turn_manager = TurnManager.new()
-	turn_manager.name = "TurnManager"
-	add_child(turn_manager)
+	turn_setup.ensure_turn_manager(self)
 
 
 func _ensure_helpers() -> void:
@@ -110,36 +111,10 @@ func is_walkable_cell(grid_pos: Vector2i) -> bool:
 
 # ── Enemy manager ─────────────────────────────────────────────────────────────
 func _setup_enemy_manager() -> void:
-	if enemy_manager != null:
-		return
+	if turn_setup == null:
+		turn_setup = MapTurnSetup.new()
 
-	enemy_manager = EnemyManager.new()
-	enemy_manager.name = "EnemyManager"
-	add_child(enemy_manager)
-
-	var player := get_node_or_null("Player")
-
-	# 🔥 MODIFICADO: ahora recibe turn_manager
-	enemy_manager.setup(
-		dungeon_generator,
-		player,
-		turn_manager
-	)
-
-	enemy_manager.room_cleared.connect(_on_room_cleared_from_enemies)
-
-	enemy_manager.spawn_enemies(
-		dungeon_generator.room_infos,
-		dungeon_generator.wall_cells
-	)
-
-	# 🔥 REGISTRAR PLAYER EN TURN MANAGER
-	if player and turn_manager:
-		turn_manager.register_actor(player)
-
-	# 🔥 INICIAR SISTEMA DE TURNOS
-	if turn_manager:
-		turn_manager.start()
+	turn_setup.setup_enemy_manager(self)
 
 
 func _on_room_cleared_from_enemies(room_id: int) -> void:

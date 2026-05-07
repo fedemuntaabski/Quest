@@ -1,6 +1,10 @@
 extends CharacterBody2D
 class_name Enemy
 
+const BaseAction = preload("res://scripts/BaseAction.gd")
+const MoveAction = preload("res://scripts/MoveAction.gd")
+const WaitAction = preload("res://scripts/WaitAction.gd")
+
 signal enemy_defeated(enemy)
 
 var map_manager: MapManager
@@ -16,6 +20,7 @@ var step_time: float = 0.12
 
 var _start_pos: Vector2
 var target_world_pos: Vector2
+var turn_manager: TurnManager
 
 @onready var stats: CharacterStats = $Stats
 
@@ -31,13 +36,15 @@ func sync_to_grid():
 	if map_manager:
 		grid_pos = map_manager.world_to_grid_coords(global_position)
 
-func take_turn(turn_manager):
+func begin_turn(tm: TurnManager) -> void:
+	turn_manager = tm
+
 	if map_manager == null or player == null:
-		turn_manager.end_turn()
+		_queue_wait_action()
 		return
 
 	if dungeon_generator and dungeon_generator.active_room_id != my_room_id:
-		turn_manager.end_turn()
+		_queue_wait_action()
 		return
 
 	sync_to_grid()
@@ -45,12 +52,11 @@ func take_turn(turn_manager):
 	var path: Array[Vector2i] = map_manager.find_path(grid_pos, player.grid_pos)
 
 	if path.size() > 1:
-		var next_cell = path[1]
-		_start_move_to(next_cell)
+		var next_cell: Vector2i = path[1]
+		_queue_move_action(next_cell)
+		return
 
-		await _wait_for_step()
-
-	turn_manager.end_turn()
+	_queue_wait_action()
 
 func _start_move_to(next: Vector2i) -> void:
 	_start_pos = global_position
@@ -74,9 +80,26 @@ func _physics_process(delta: float) -> void:
 		global_position = target_world_pos
 		is_moving_step = false
 
-func _wait_for_step() -> void:
+func wait_for_step() -> void:
 	while is_moving_step:
 		await get_tree().process_frame
+
+func begin_step_move(next: Vector2i) -> void:
+	_start_move_to(next)
+
+func _queue_move_action(next_cell: Vector2i) -> void:
+	if turn_manager == null or turn_manager.action_queue == null:
+		return
+
+	var action: BaseAction = MoveAction.new(self, map_manager, next_cell, true)
+	turn_manager.action_queue.queue_action(action)
+
+func _queue_wait_action() -> void:
+	if turn_manager == null or turn_manager.action_queue == null:
+		return
+
+	var action: BaseAction = WaitAction.new(self, null)
+	turn_manager.action_queue.queue_action(action)
 
 func _on_died():
 	enemy_defeated.emit(self)
