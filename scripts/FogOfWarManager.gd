@@ -84,19 +84,15 @@ func update_room_state(room_infos: Array, active_room_id: int) -> void:
 	if fog_of_war == null or visited_fog == null:
 		push_error("FogOfWarManager no inicializado (fog_of_war null). Llamá setup() + build() primero.")
 		return
+
+	visited_fog.clear()
 	for room_info in room_infos:
 		var room_id: int = room_info["id"]
 		var room_cells: Array = room_info["floor_cells"]
-		var is_visited: bool = room_info["visited"]
 		var is_active := room_id == active_room_id
 
 		for cell in room_cells:
-			if is_visited:
+			if is_active:
 				fog_of_war.erase_cell(cell)
 			else:
 				fog_of_war.set_cell(cell, 0, Vector2i.ZERO, 0)
-
-			if is_visited and not is_active:
-				visited_fog.set_cell(cell, 0, Vector2i.ZERO, 0)
-			else:
-				visited_fog.erase_cell(cell)

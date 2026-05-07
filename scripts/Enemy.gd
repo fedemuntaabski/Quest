@@ -36,6 +36,10 @@ func take_turn(turn_manager):
 		turn_manager.end_turn()
 		return
 
+	if dungeon_generator and dungeon_generator.active_room_id != my_room_id:
+		turn_manager.end_turn()
+		return
+
 	sync_to_grid()
 
 	var path: Array[Vector2i] = map_manager.find_path(grid_pos, player.grid_pos)

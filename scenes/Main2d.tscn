@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://dgcx23erhb3v1" path="res://scenes/MapManager.tscn" id="2_srb6u"]
 [ext_resource type="PackedScene" uid="uid://b5v43ol8idshh" path="res://scenes/HUD.tscn" id="3_hud"]
 [ext_resource type="Script" uid="uid://cfdgrf3yswyd3" path="res://scripts/Main2d.gd" id="4_main2d_script"]
-[ext_resource type="PackedScene" uid="uid://pgyrfcm2yqbw" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
+[ext_resource type="PackedScene" uid="uid://h3720oxsybma" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
 [ext_resource type="PackedScene" uid="uid://dvfida6qamh5y" path="res://scenes/TileOverlay.tscn" id="8_dcq30"]
 
 [node name="Main2d" type="Node2D" unique_id=719008083]

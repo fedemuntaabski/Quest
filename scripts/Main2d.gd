@@ -1,13 +1,6 @@
 extends Node2D
 
 # ─────────────────────────────────────────────
-# CONFIG
-# ─────────────────────────────────────────────
-const ROOM_TIMER_SECONDS: float = 120.0
-const WARNING_SECONDS: float = 60.0
-const CRITICAL_SECONDS: float = 15.0
-
-# ─────────────────────────────────────────────
 # NODES
 # ─────────────────────────────────────────────
 @onready var map_manager: MapManager = $MapManager
@@ -25,8 +18,8 @@ const CRITICAL_SECONDS: float = 15.0
 # ─────────────────────────────────────────────
 # STATE
 # ─────────────────────────────────────────────
-var room_timer_remaining: float = ROOM_TIMER_SECONDS
-var timer_expired_logged: bool = false
+var room_timer: Main2dRoomTimer
+var death_handler: Main2dDeathHandler
 
 var visited_rooms: Array[int] = []
 var enemies_killed: int = 0
@@ -40,6 +33,10 @@ var tutorial_layer: Node = null
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+
+	room_timer = Main2dRoomTimer.new()
+	death_handler = Main2dDeathHandler.new()
+	death_handler.setup(self, death_overlay, death_gold_label)
 
 	_connect_signals()
 	_load_tutorial_if_needed()
@@ -119,13 +116,16 @@ func _process(delta: float) -> void:
 	if get_tree().paused:
 		return
 
-	room_timer_remaining = maxf(0.0, room_timer_remaining - delta)
+	var tick_data := room_timer.tick(delta)
 
 	if hud:
-		hud.update_room_timer(room_timer_remaining, ROOM_TIMER_SECONDS, _get_timer_color())
+		hud.update_room_timer(
+			tick_data["remaining"],
+			Main2dRoomTimer.ROOM_TIMER_SECONDS,
+			tick_data["color"]
+		)
 
-	if room_timer_remaining <= 0.0 and not timer_expired_logged:
-		timer_expired_logged = true
+	if tick_data["expired"]:
 		push_warning("Room timer reached zero")
 
 func _input(event: InputEvent) -> void:
@@ -169,23 +169,8 @@ func _on_player_died() -> void:
 	_is_dead = true
 	get_tree().paused = true
 
-	var gold_reward := enemies_killed * 10 + rooms_cleared * 50
-
-	if death_gold_label:
-		death_gold_label.text = "Oro ganado: %d" % gold_reward
-
-	var save_mgr = get_node_or_null("/root/SaveManager")
-	if save_mgr:
-		save_mgr.gold += gold_reward
-		save_mgr.save_game()
-
-	if death_overlay:
-		death_overlay.visible = true
-		death_overlay.modulate.a = 0.0
-
-		var t := create_tween()
-		t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-		t.tween_property(death_overlay, "modulate:a", 1.0, 2.0)
+	if death_handler:
+		death_handler.handle_player_died(enemies_killed, rooms_cleared)
 
 # ─────────────────────────────────────────────
 # PAUSE
@@ -215,12 +200,5 @@ func _on_retry_pressed() -> void:
 # TIMER
 # ─────────────────────────────────────────────
 func _reset_room_timer() -> void:
-	room_timer_remaining = ROOM_TIMER_SECONDS
-	timer_expired_logged = false
-
-func _get_timer_color() -> Color:
-	if room_timer_remaining <= CRITICAL_SECONDS:
-		return Color(1, 0.24, 0.2)
-	elif room_timer_remaining <= WARNING_SECONDS:
-		return Color(1, 0.85, 0.2)
-	return Color.WHITE
+	if room_timer:
+		room_timer.reset()

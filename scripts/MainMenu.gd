@@ -10,11 +10,16 @@ extends Control
 @onready var hover_sound: AudioStreamPlayer = $hover
 
 var slot_selector: SaveSlotSelector = null
+var flow: MainMenuFlow = null
 
 func _ready() -> void:
 	_setup_content_scaling()
 	_connect_menu_signals()
-	_build_slot_selector()
+
+	flow = MainMenuFlow.new()
+	flow.setup(self, center_container, main_vbox, options_menu, click_sound, hover_sound)
+	flow.build_slot_selector(start_button)
+	slot_selector = flow.slot_selector
 
 	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
 		options_menu.closed.connect(_on_options_menu_closed)
@@ -22,15 +27,7 @@ func _ready() -> void:
 		options_menu.close()
 
 func _build_slot_selector() -> void:
-	slot_selector = SaveSlotSelector.new()
-	slot_selector.setup(start_button, click_sound, hover_sound)
-	slot_selector.visible = false
-	add_child(slot_selector)
-
-	if not slot_selector.slot_selected.is_connected(_on_slot_selected):
-		slot_selector.slot_selected.connect(_on_slot_selected)
-	if not slot_selector.back_pressed.is_connected(_on_slot_back_pressed):
-		slot_selector.back_pressed.connect(_on_slot_back_pressed)
+	pass
 
 func _setup_content_scaling() -> void:
 	var root_window: Window = get_tree().root
@@ -64,39 +61,29 @@ func _on_options_button_pressed() -> void:
 	_show_options_menu()
 
 func _on_options_menu_closed() -> void:
-	_show_main_menu()
+	if flow:
+		flow.show_main_menu()
 
 func _show_main_menu() -> void:
-	center_container.visible = true
-	main_vbox.visible = true
-	if slot_selector:
-		slot_selector.visible = false
+	if flow:
+		flow.show_main_menu()
 
 func _show_options_menu() -> void:
-	center_container.visible = false
-	if slot_selector:
-		slot_selector.visible = false
-	if options_menu:
-		options_menu.open()
+	if flow:
+		flow.show_options_menu()
 
 func on_start_button_pressed() -> void:
-	_play_click()
-	center_container.visible = false
-	main_vbox.visible = false
-	if slot_selector:
-		slot_selector.refresh()
-		slot_selector.visible = true
+	if flow:
+		flow.start_pressed()
 
 func _on_slot_back_pressed() -> void:
-	_show_main_menu()
+	if flow:
+		flow.handle_slot_back()
 
 func _on_slot_selected(slot_id: int) -> void:
-	SaveManager.load_game(slot_id)
-	
-	await get_tree().create_timer(0.15).timeout
-	get_tree().change_scene_to_file("res://scenes/Main2d.tscn")
+	if flow:
+		flow.handle_slot_selected(slot_id)
 
 func on_exit_button_pressed() -> void:
-	_play_click()
-	await get_tree().create_timer(0.15).timeout
-	get_tree().quit()
+	if flow:
+		flow.exit_pressed()

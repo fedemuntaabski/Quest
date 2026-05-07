@@ -225,7 +225,7 @@ hover_player_path = NodePath("../UIAudio/HoverSound")
 oversampling_override = 1.0
 title = "Confirmar salida"
 size = Vector2i(508, 100)
-visible = true
+visible = false
 dialog_text = "¿Estás seguro de salir? Se perderán los datos de esta run actual."
 
 [node name="StorePanel" type="Panel" parent="." unique_id=1280633485]

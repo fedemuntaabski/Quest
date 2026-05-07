@@ -43,6 +43,8 @@ var room_camera_controller: RoomCameraController = null
 var layout_generator: DungeonLayoutGenerator
 var room_manager: DungeonRoomManager = null
 var wall_manager: DungeonWallManager = null
+var room_factory: DungeonRoomFactory = null
+var scene_helper: DungeonSceneHelper = null
 
 var tile_renderer: DungeonTileRenderer = null
 
@@ -54,6 +56,10 @@ func _ready() -> void:
 
 
 func _ensure_runtime_nodes() -> void:
+	if not scene_helper:
+		scene_helper = DungeonSceneHelper.new()
+		scene_helper.setup(self)
+
 	if not layout_generator:
 		layout_generator = DungeonLayoutGenerator.new()
 		layout_generator.setup(self)
@@ -67,6 +73,11 @@ func _ensure_runtime_nodes() -> void:
 		wall_manager.setup(self)
 
 	_ensure_managers()
+
+	if not room_factory:
+		room_factory = DungeonRoomFactory.new()
+		room_factory.setup(self, room_system)
+
 	_ensure_scene_roots()
 
 
@@ -102,23 +113,12 @@ func _on_room_changed_proxy(room_id: int) -> void:
 
 
 func _ensure_scene_roots() -> void:
-	corridors_root = _ensure_node("Corridors")
-	rooms_root = _ensure_node("Rooms")
-	walls_root = _ensure_node("Walls")
-	room_detectors_root = _ensure_node("RoomDetectors")
-	room_lights_root = _ensure_node("RoomLights")
-	enemies_root = _ensure_node("Enemies")
+	if scene_helper:
+		scene_helper.ensure_scene_roots()
 
 
 func _ensure_node(node_name: String) -> Node2D:
-	var existing := get_node_or_null(node_name) as Node2D
-	if existing:
-		return existing
-
-	var node := Node2D.new()
-	node.name = node_name
-	add_child(node)
-	return node
+	return scene_helper.ensure_node(node_name) if scene_helper else null
 
 
 func _on_room_cleared(room_id: int) -> void:
@@ -240,55 +240,20 @@ func is_within_bounds(grid_pos: Vector2i) -> bool:
 
 
 func _ensure_tile_map_layer(node_name: String) -> TileMapLayer:
-	var existing := get_node_or_null(node_name) as TileMapLayer
-	if existing:
-		return existing
-
-	var created := TileMapLayer.new()
-	created.name = node_name
-	add_child(created)
-	return created
+	return scene_helper.ensure_tile_map_layer(node_name) if scene_helper else null
 
 
 func _clear_generated_content() -> void:
-	for parent in [corridors_root, rooms_root, walls_root, room_detectors_root, room_lights_root, enemies_root]:
-		for child in parent.get_children():
-			child.queue_free()
+	if scene_helper:
+		scene_helper.clear_generated_content()
 
 
 func _create_room_light(room_rect: Rect2i, center_cell: Vector2i) -> PointLight2D:
-	var room_light := PointLight2D.new()
-	room_light.name = "RoomLight_%d" % room_infos.size()
-	room_light.texture = light_texture
-	room_light.position = grid_to_world_coords(center_cell)
-	room_light.energy = 0.0
-	room_light.texture_scale = maxf(1.8, float(max(room_rect.size.x, room_rect.size.y)) * 0.25)
-	room_light.color = Color(0.9, 0.95, 1.0, 1.0)
-	return room_light
+	return room_factory.create_room_light(room_rect, center_cell) if room_factory else PointLight2D.new()
 
 
 func _create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
-	var area := Area2D.new()
-	area.name = "RoomArea_%d" % room_id
-	area.collision_layer = 0
-	area.collision_mask = 1
-	area.monitoring = true
-
-	var shape := RectangleShape2D.new()
-	shape.size = Vector2(room_rect.size) * tile_size
-
-	var collision := CollisionShape2D.new()
-	collision.shape = shape
-	area.add_child(collision)
-	area.position = grid_to_world_coords(
-		Vector2i(
-			room_rect.position.x + int(room_rect.size.x * 0.5),
-			room_rect.position.y + int(room_rect.size.y * 0.5)
-		)
-	)
-	room_system.register_room_area(area, room_id)
-
-	return area
+	return room_factory.create_room_area(room_id, room_rect) if room_factory else Area2D.new()
 
 
 func _set_active_room(room_id: int, animate: bool) -> void:

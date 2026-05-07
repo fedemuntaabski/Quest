@@ -3,7 +3,7 @@ class_name RoomCameraController
 
 @export var move_duration: float = 0.35
 @export var initial_delay: float = 0.08
-@export var margin_factor: float = 0.7
+@export var margin_factor: float = 0.9
 @export var min_zoom: float = 0.6
 @export var max_zoom: float = 2.5
 
