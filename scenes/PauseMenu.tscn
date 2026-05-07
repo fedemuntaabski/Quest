@@ -217,11 +217,15 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "SALIR"
 
 [node name="OptionsMenu" parent="." unique_id=703756764 instance=ExtResource("4_options_menu")]
+visible = true
 click_player_path = NodePath("../UIAudio/ClickSound")
 hover_player_path = NodePath("../UIAudio/HoverSound")
 
 [node name="ExitConfirmDialog" type="ConfirmationDialog" parent="." unique_id=1140944121]
+oversampling_override = 1.0
 title = "Confirmar salida"
+size = Vector2i(508, 100)
+visible = true
 dialog_text = "¿Estás seguro de salir? Se perderán los datos de esta run actual."
 
 [node name="StorePanel" type="Panel" parent="." unique_id=1280633485]
