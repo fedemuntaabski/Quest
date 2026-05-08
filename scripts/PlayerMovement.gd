@@ -3,6 +3,7 @@ class_name PlayerMovement
 
 const BaseAction = preload("res://scripts/BaseAction.gd")
 const MoveAction = preload("res://scripts/MoveAction.gd")
+const CombatComponent = preload("res://scripts/CombatComponent.gd")
 
 # ─────────────────────────────────────────────
 # GRID
@@ -22,6 +23,7 @@ var current_path: Array[Vector2i] = []
 
 var my_turn: bool = false
 var turn_manager: TurnManager
+var combat_component: CombatComponent
 
 # ─────────────────────────────────────────────
 # REFERENCES
@@ -40,6 +42,28 @@ func _ready() -> void:
 	if action_controller:
 		action_controller.setup(self, map_manager)
 		action_controller.set_process_input(true)
+
+	sync_to_grid()
+	if map_manager:
+		map_manager.register_actor(self, grid_pos, true)
+
+	_ensure_combat_component()
+
+	var player_stats := get_node_or_null("/root/PlayerStats") as PlayerStats
+	var stats := get_node_or_null("Stats") as CharacterStats
+	if player_stats and stats:
+		player_stats.register(stats)
+
+func _ensure_combat_component() -> void:
+	var comp := get_node_or_null("CombatComponent") as CombatComponent
+	if comp == null:
+		comp = CombatComponent.new()
+		comp.name = "CombatComponent"
+		add_child(comp)
+
+	var stats := get_node_or_null("Stats") as CharacterStats
+	comp.setup(self, stats, map_manager)
+	combat_component = comp
 
 
 # ─────────────────────────────────────────────
@@ -114,6 +138,7 @@ func sync_to_grid() -> void:
 
 	grid_pos = map_manager.world_to_grid_coords(global_position)
 	target_world_pos = global_position
+	map_manager.update_actor_cell(self, grid_pos)
 
 func set_path(path: Array[Vector2i]) -> void:
 	current_path = path.duplicate()

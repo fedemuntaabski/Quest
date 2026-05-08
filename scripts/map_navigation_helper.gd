@@ -4,11 +4,15 @@ class_name MapNavigationHelper
 var dungeon_generator: DungeonGenerator
 var nav_region: NavigationRegion2D
 var enemies_on_map: Dictionary = {} # Key: Vector2i, Value: Node2D
+var occupancy_manager: OccupancyManager = null
 
 
 func setup(dungeon: DungeonGenerator, navigation_region: NavigationRegion2D) -> void:
 	dungeon_generator = dungeon
 	nav_region = navigation_region
+
+func set_occupancy_manager(manager: OccupancyManager) -> void:
+	occupancy_manager = manager
 
 
 # ── Navigation baking ─────────────────────────────────────────────────────────
@@ -147,7 +151,7 @@ func has_enemy_at_cell(world_position: Vector2) -> bool:
 
 
 # ── Pathfinding ───────────────────────────────────────────────────────────────
-func find_path(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
+func find_path(start: Vector2i, goal: Vector2i, allow_goal_occupied: bool = false) -> Array[Vector2i]:
 	var open_set: Array[Vector2i] = []
 	var came_from: Dictionary = {}
 
@@ -170,7 +174,7 @@ func find_path(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
 
 		open_set.erase(current)
 
-		for neighbor in _get_neighbors(current):
+		for neighbor in _get_neighbors(current, goal, allow_goal_occupied):
 			var tentative_g: float = float(g_score.get(current, INF)) + 1.0
 
 			if tentative_g < float(g_score.get(neighbor, INF)):
@@ -184,7 +188,7 @@ func find_path(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
 	return []
 
 
-func _get_neighbors(cell: Vector2i) -> Array[Vector2i]:
+func _get_neighbors(cell: Vector2i, goal: Vector2i, allow_goal_occupied: bool) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
 
 	var dirs: Array[Vector2i] = [
@@ -196,8 +200,14 @@ func _get_neighbors(cell: Vector2i) -> Array[Vector2i]:
 
 	for d in dirs:
 		var n: Vector2i = cell + d
-		if is_cell_walkable(grid_to_world_coords(n)):
-			result.append(n)
+		if not is_cell_walkable(grid_to_world_coords(n)):
+			continue
+
+		if occupancy_manager and occupancy_manager.is_cell_blocked(n):
+			if not (allow_goal_occupied and n == goal):
+				continue
+
+		result.append(n)
 
 	return result
 

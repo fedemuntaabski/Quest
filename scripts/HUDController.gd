@@ -1,13 +1,13 @@
 extends CanvasLayer
 class_name HUDController
 
-@onready var stat_panel: StatPanelUI = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/HBoxContainer/VBoxContainer
+@onready var stat_panel: StatPanelUI = $Control/TabUIPanel/MarginContainer/StatPanelUI
 @onready var upgrade_panel: UpgradePanelUI = $Control/UpgradePanelUI
 @onready var timer_ui: TimerUI = $Control/TimerUI
 
 @onready var tab_panel: Control = $Control/TabUIPanel
-@onready var current_room_label: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/TopInfoRow/CurrentRoomLabel
-@onready var enemies_label: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer_Main/TopInfoRow/EnemiesLabel
+@onready var current_room_label: Label = $Control/TabUIPanel/MarginContainer/StatPanelUI/TopInfoRow/CurrentRoomLabel
+@onready var enemies_label: Label = $Control/TabUIPanel/MarginContainer/StatPanelUI/TopInfoRow/EnemiesLabel
 
 var player_stats: CharacterStats
 var base_stats := {}

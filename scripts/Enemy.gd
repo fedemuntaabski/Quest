@@ -4,6 +4,8 @@ class_name Enemy
 const BaseAction = preload("res://scripts/BaseAction.gd")
 const MoveAction = preload("res://scripts/MoveAction.gd")
 const WaitAction = preload("res://scripts/WaitAction.gd")
+const AttackAction = preload("res://scripts/AttackAction.gd")
+const CombatComponent = preload("res://scripts/CombatComponent.gd")
 
 signal enemy_defeated(enemy)
 
@@ -21,6 +23,7 @@ var step_time: float = 0.12
 var _start_pos: Vector2
 var target_world_pos: Vector2
 var turn_manager: TurnManager
+var combat_component: CombatComponent
 
 @onready var stats: CharacterStats = $Stats
 
@@ -31,10 +34,25 @@ func setup(p_map: MapManager, p_player: PlayerMovement):
 	map_manager = p_map
 	player = p_player
 	sync_to_grid()
+	if map_manager:
+		map_manager.register_actor(self, grid_pos, true)
+
+	_ensure_combat_component()
+
+func _ensure_combat_component() -> void:
+	var comp := get_node_or_null("CombatComponent") as CombatComponent
+	if comp == null:
+		comp = CombatComponent.new()
+		comp.name = "CombatComponent"
+		add_child(comp)
+
+	comp.setup(self, stats, map_manager)
+	combat_component = comp
 
 func sync_to_grid():
 	if map_manager:
 		grid_pos = map_manager.world_to_grid_coords(global_position)
+		map_manager.update_actor_cell(self, grid_pos)
 
 func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
@@ -49,8 +67,11 @@ func begin_turn(tm: TurnManager) -> void:
 
 	sync_to_grid()
 
-	var path: Array[Vector2i] = map_manager.find_path(grid_pos, player.grid_pos)
+	if combat_component and combat_component.can_attack(player):
+		_queue_attack_action(player)
+		return
 
+	var path: Array[Vector2i] = map_manager.find_path_to_adjacent(grid_pos, player.grid_pos)
 	if path.size() > 1:
 		var next_cell: Vector2i = path[1]
 		_queue_move_action(next_cell)
@@ -101,6 +122,15 @@ func _queue_wait_action() -> void:
 	var action: BaseAction = WaitAction.new(self, null)
 	turn_manager.action_queue.queue_action(action)
 
+func _queue_attack_action(target: Node) -> void:
+	if turn_manager == null or turn_manager.action_queue == null:
+		return
+
+	var action: BaseAction = AttackAction.new(combat_component, target)
+	turn_manager.action_queue.queue_action(action)
+
 func _on_died():
+	if map_manager:
+		map_manager.unregister_actor(self)
 	enemy_defeated.emit(self)
 	queue_free()

@@ -45,4 +45,6 @@ func execute() -> void:
 
 	owner.begin_step_move(next_cell)
 	await owner.wait_for_step()
+	if map_manager:
+		map_manager.update_actor_cell(owner, next_cell)
 	finish()

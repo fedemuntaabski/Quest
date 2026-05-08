@@ -1,10 +1,10 @@
 extends Control
 class_name StatPanelUI
 
-@onready var label_hp: Label = $HBoxContainer_HP/LabelHP
-@onready var label_strength: Label = $HBoxContainer_Strength/LabelStrength
-@onready var label_magic: Label = $HBoxContainer_Magic/LabelMagic
-@onready var label_dexterity: Label = $HBoxContainer_Dexterity/LabelDexterity
+@onready var label_hp: Label = $HBoxContainer/VBoxContainer/HBoxContainer_HP/LabelHP
+@onready var label_strength: Label = $HBoxContainer/VBoxContainer/HBoxContainer_Strength/LabelStrength
+@onready var label_magic: Label = $HBoxContainer/VBoxContainer/HBoxContainer_Magic/LabelMagic
+@onready var label_dexterity: Label = $HBoxContainer/VBoxContainer/HBoxContainer_Dexterity/LabelDexterity
 
 func update_stats(stats: CharacterStats, base: Dictionary) -> void:
 	if stats == null:

@@ -10,6 +10,7 @@ var hovered_cell: Vector2i = Vector2i(-999, -999)
 var enemy_manager: EnemyManager
 var navigation_helper: MapNavigationHelper
 var enemy_tracker: MapEnemyTracker
+var occupancy_manager: OccupancyManager
 
 # 🔥 NUEVO
 var turn_manager: TurnManager
@@ -62,6 +63,14 @@ func _ensure_helpers() -> void:
 		add_child(enemy_tracker)
 		enemy_tracker.setup(dungeon_generator)
 
+	if occupancy_manager == null:
+		occupancy_manager = OccupancyManager.new()
+		occupancy_manager.name = "OccupancyManager"
+		add_child(occupancy_manager)
+
+	if navigation_helper:
+		navigation_helper.set_occupancy_manager(occupancy_manager)
+
 
 # ── Hover ─────────────────────────────────────────────────────────────────────
 func update_hover(world_pos: Vector2) -> void:
@@ -104,9 +113,14 @@ func is_walkable_cell(grid_pos: Vector2i) -> bool:
 	if navigation_helper == null:
 		return false
 
-	return navigation_helper.is_cell_walkable(
-		navigation_helper.grid_to_world_coords(grid_pos)
-	)
+	var world_pos := navigation_helper.grid_to_world_coords(grid_pos)
+	if not navigation_helper.is_cell_walkable(world_pos):
+		return false
+
+	if occupancy_manager and occupancy_manager.is_cell_blocked(grid_pos):
+		return false
+
+	return true
 
 
 # ── Enemy manager ─────────────────────────────────────────────────────────────
@@ -142,7 +156,17 @@ func has_enemy_at_cell(world_position: Vector2) -> bool:
 
 # ── Wrappers directos (sin lógica) ────────────────────────────────────────────
 func is_cell_walkable(world_position: Vector2) -> bool:
-	return navigation_helper.is_cell_walkable(world_position) if navigation_helper else false
+	if navigation_helper == null:
+		return false
+
+	if not navigation_helper.is_cell_walkable(world_position):
+		return false
+
+	var grid_pos := navigation_helper.world_to_grid_coords(world_position)
+	if occupancy_manager and occupancy_manager.is_cell_blocked(grid_pos):
+		return false
+
+	return true
 
 
 func world_to_grid_coords(world_pos: Vector2) -> Vector2i:
@@ -174,3 +198,47 @@ func is_within_bounds(grid_pos: Vector2i) -> bool:
 # ── Pathfinding ───────────────────────────────────────────────────────────────
 func find_path(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
 	return navigation_helper.find_path(start, goal) if navigation_helper else []
+
+func find_path_to_adjacent(start: Vector2i, target: Vector2i) -> Array[Vector2i]:
+	if navigation_helper == null:
+		return []
+
+	var best_path: Array[Vector2i] = []
+	var neighbors: Array[Vector2i] = [
+		target + Vector2i.UP,
+		target + Vector2i.DOWN,
+		target + Vector2i.LEFT,
+		target + Vector2i.RIGHT
+	]
+
+	for cell in neighbors:
+		if not is_walkable_cell(cell):
+			continue
+
+		var path := navigation_helper.find_path(start, cell)
+		if path.is_empty():
+			continue
+
+		if best_path.is_empty() or path.size() < best_path.size():
+			best_path = path
+
+	return best_path
+
+# ── Occupancy helpers ────────────────────────────────────────────────────────
+func register_actor(actor: Node, grid_pos: Vector2i, blocks: bool = true) -> void:
+	if occupancy_manager:
+		occupancy_manager.register_actor(actor, grid_pos, blocks)
+
+func unregister_actor(actor: Node) -> void:
+	if occupancy_manager:
+		occupancy_manager.unregister_actor(actor)
+
+func update_actor_cell(actor: Node, grid_pos: Vector2i) -> void:
+	if occupancy_manager:
+		occupancy_manager.update_actor_cell(actor, grid_pos)
+
+func get_actor_at_cell(grid_pos: Vector2i) -> Node:
+	return occupancy_manager.get_actor_at_cell(grid_pos) if occupancy_manager else null
+
+func get_actor_cell(actor: Node) -> Variant:
+	return occupancy_manager.get_actor_cell(actor) if occupancy_manager else null

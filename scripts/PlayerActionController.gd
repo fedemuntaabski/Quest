@@ -3,6 +3,7 @@ class_name PlayerActionController
 
 var player: PlayerMovement
 var map_manager: MapManager
+const AttackAction = preload("res://scripts/AttackAction.gd")
 
 func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 	player = p_player
@@ -62,9 +63,18 @@ func _handle_mouse_click() -> void:
 		player.cancel_movement()
 		return
 
+	var enemy := map_manager.get_actor_at_cell(target_cell)
+	if enemy and enemy != player:
+		if player.combat_component == null:
+			return
 
-	if target_cell == player.grid_pos:
-		player.cancel_movement()
+		if not player.combat_component.can_attack(enemy):
+			return
+
+		var action := AttackAction.new(player.combat_component, enemy)
+		if player.turn_manager and player.turn_manager.action_queue:
+			player.turn_manager.action_queue.queue_action(action)
+			player.my_turn = false
 		return
 
 
