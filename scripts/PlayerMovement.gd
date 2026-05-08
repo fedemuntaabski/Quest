@@ -29,6 +29,7 @@ var combat_component: CombatComponent
 # REFERENCES
 # ─────────────────────────────────────────────
 @onready var action_controller := $PlayerActionController
+@onready var sprite: Sprite2D = $Sprite2D
 
 # ─────────────────────────────────────────────
 func _ready() -> void:
@@ -81,7 +82,7 @@ func request_move(dir: Vector2i) -> bool:
 
 	var next := grid_pos + dir
 
-	var walkable := map_manager.is_walkable_cell(next)
+	var walkable := map_manager.is_walkable_cell_for_actor(next, self)
 
 	if not walkable:
 		return false
@@ -153,9 +154,32 @@ func cancel_movement() -> void:
 func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
 	my_turn = true
+	if action_controller and action_controller.has_method("on_player_turn_started"):
+		action_controller.on_player_turn_started()
 
 func begin_step_move(next: Vector2i) -> void:
 	_start_move_to(next)
+
+func show_damage(amount: int, crit: bool = false) -> void:
+	_spawn_floating_text("-%d" % amount, Color(1, 0.4, 0.3), crit)
+
+func show_miss() -> void:
+	_spawn_floating_text("MISS", Color(0.9, 0.9, 0.9), false)
+
+func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
+	var label := Label.new()
+	label.text = text
+	label.modulate = color
+	label.z_index = 100
+	label.position = Vector2(-12, -28)
+	if crit:
+		label.scale = Vector2(1.2, 1.2)
+	add_child(label)
+
+	var tween := create_tween()
+	tween.tween_property(label, "position", label.position + Vector2(0, -18), 0.5)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(label.queue_free)
 
 func wait_for_step() -> void:
 	while is_moving_step:

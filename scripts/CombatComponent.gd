@@ -41,15 +41,21 @@ func attack(target: Node) -> Dictionary:
 
 	var result := CombatResolverScript.resolve_attack(stats, target_component.stats, attack_stat, base_damage)
 	if result.get("hit", false):
-		target_component.receive_damage(result.get("damage", 0))
+		target_component.receive_damage(result.get("damage", 0), result.get("crit", false))
+	else:
+		var target_actor := target_component.actor_owner
+		if target_actor and target_actor.has_method("show_miss"):
+			target_actor.show_miss()
 
 	return result
 
-func receive_damage(amount: int) -> void:
+func receive_damage(amount: int, crit: bool = false) -> void:
 	if stats == null:
 		return
 
 	stats.take_damage(amount)
+	if actor_owner and actor_owner.has_method("show_damage"):
+		actor_owner.show_damage(amount, crit)
 
 func _is_in_range(target_component: CombatComponent) -> bool:
 	var my_cell: Variant = _get_actor_cell(actor_owner)

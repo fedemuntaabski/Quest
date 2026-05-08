@@ -1,9 +1,12 @@
 extends CanvasLayer
 class_name HUDController
 
+signal hotbar_slot_pressed(index: int)
+
 @onready var stat_panel: StatPanelUI = $Control/TabUIPanel/MarginContainer/StatPanelUI
 @onready var upgrade_panel: UpgradePanelUI = $Control/UpgradePanelUI
 @onready var timer_ui: TimerUI = $Control/TimerUI
+@onready var hotbar_bar: HBoxContainer = $Control/HotbarBar
 
 @onready var tab_panel: Control = $Control/TabUIPanel
 @onready var current_room_label: Label = $Control/TabUIPanel/MarginContainer/StatPanelUI/TopInfoRow/CurrentRoomLabel
@@ -11,9 +14,12 @@ class_name HUDController
 
 var player_stats: CharacterStats
 var base_stats := {}
+var hotbar_slots: Array = []
 
 func _ready() -> void:
+	add_to_group("hud")
 	_setup_input()
+	_setup_hotbar()
 
 	var ps = get_node_or_null("/root/PlayerStats")
 	if ps and ps.stats:
@@ -37,6 +43,20 @@ func _ready() -> void:
 
 		if ps.active_upgrades:
 			upgrade_panel.refresh(ps.active_upgrades)
+
+func _setup_hotbar() -> void:
+	if hotbar_bar == null:
+		return
+
+	hotbar_slots.clear()
+	for child in hotbar_bar.get_children():
+		if child is HotbarSlot:
+			hotbar_slots.append(child)
+			if not child.slot_pressed.is_connected(_on_hotbar_slot_pressed):
+				child.slot_pressed.connect(_on_hotbar_slot_pressed)
+
+func _on_hotbar_slot_pressed(index: int) -> void:
+	hotbar_slot_pressed.emit(index)
 
 func _setup_input() -> void:
 	if not InputMap.has_action("tab"):
@@ -70,3 +90,17 @@ func update_current_room(id: int) -> void:
 func update_enemies_remaining(count: int) -> void:
 	if enemies_label:
 		enemies_label.text = "Enemies: %d" % count
+
+func update_hotbar(cards: Array, active_index: int) -> void:
+	if hotbar_slots.is_empty():
+		return
+
+	for i in range(hotbar_slots.size()):
+		var slot: HotbarSlot = hotbar_slots[i]
+		if i < cards.size():
+			slot.set_card(cards[i])
+		else:
+			slot.set_card({})
+			slot.set_cooldown(0)
+
+		slot.set_selected(i == active_index)

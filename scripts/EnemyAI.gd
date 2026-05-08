@@ -13,7 +13,7 @@ static func get_action(enemy: Enemy, player: CharacterBody2D, map_manager: MapMa
 	if player_stats == null:
 		return {"type": "idle"}
 
-	var path: Variant = map_manager.find_path(enemy_cell, player_cell)
+	var path: Variant = map_manager.find_path(enemy_cell, player_cell, enemy)
 
 	# NO PATH → IDLE
 	if path.is_empty():

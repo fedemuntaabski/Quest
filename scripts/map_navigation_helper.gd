@@ -151,7 +151,13 @@ func has_enemy_at_cell(world_position: Vector2) -> bool:
 
 
 # ── Pathfinding ───────────────────────────────────────────────────────────────
-func find_path(start: Vector2i, goal: Vector2i, allow_goal_occupied: bool = false) -> Array[Vector2i]:
+func find_path(
+	start: Vector2i,
+	goal: Vector2i,
+	allow_goal_occupied: bool = false,
+	allowed_rect: Rect2i = Rect2i(),
+	use_allowed_rect: bool = false
+) -> Array[Vector2i]:
 	var open_set: Array[Vector2i] = []
 	var came_from: Dictionary = {}
 
@@ -174,7 +180,7 @@ func find_path(start: Vector2i, goal: Vector2i, allow_goal_occupied: bool = fals
 
 		open_set.erase(current)
 
-		for neighbor in _get_neighbors(current, goal, allow_goal_occupied):
+		for neighbor in _get_neighbors(current, goal, allow_goal_occupied, allowed_rect, use_allowed_rect):
 			var tentative_g: float = float(g_score.get(current, INF)) + 1.0
 
 			if tentative_g < float(g_score.get(neighbor, INF)):
@@ -188,7 +194,13 @@ func find_path(start: Vector2i, goal: Vector2i, allow_goal_occupied: bool = fals
 	return []
 
 
-func _get_neighbors(cell: Vector2i, goal: Vector2i, allow_goal_occupied: bool) -> Array[Vector2i]:
+func _get_neighbors(
+	cell: Vector2i,
+	goal: Vector2i,
+	allow_goal_occupied: bool,
+	allowed_rect: Rect2i,
+	use_allowed_rect: bool
+) -> Array[Vector2i]:
 	var result: Array[Vector2i] = []
 
 	var dirs: Array[Vector2i] = [
@@ -200,6 +212,8 @@ func _get_neighbors(cell: Vector2i, goal: Vector2i, allow_goal_occupied: bool) -
 
 	for d in dirs:
 		var n: Vector2i = cell + d
+		if use_allowed_rect and not allowed_rect.has_point(n):
+			continue
 		if not is_cell_walkable(grid_to_world_coords(n)):
 			continue
 

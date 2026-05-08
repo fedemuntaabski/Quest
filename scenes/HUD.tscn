@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://bbst0d0aid6up" path="res://scripts/StatPanelUI.gd" id="3_nysna"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
 [ext_resource type="Script" uid="uid://01lnjdgw7lht" path="res://scripts/TimerUI.gd" id="4_7hsmw"]
+[ext_resource type="PackedScene" uid="uid://cbfp62ksudyq3" path="res://scenes/HotbarSlot.tscn" id="5_hotbar_slot"]
 
 [node name="HUD" type="CanvasLayer" unique_id=729961790]
 layer = 2
@@ -133,6 +134,28 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("4_7hsmw")
+
+[node name="HotbarBar" type="HBoxContainer" parent="Control" unique_id=2138843921]
+anchors_preset = 13
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -120.0
+offset_right = 180.0
+offset_bottom = -20.0
+grow_horizontal = 2
+theme_override_constants/separation = 12
+
+[node name="HotbarSlot1" parent="Control/HotbarBar" unique_id=1241558303 instance=ExtResource("5_hotbar_slot")]
+slot_index = 0
+
+[node name="HotbarSlot2" parent="Control/HotbarBar" unique_id=1476327411 instance=ExtResource("5_hotbar_slot")]
+slot_index = 1
+
+[node name="HotbarSlot3" parent="Control/HotbarBar" unique_id=175439902 instance=ExtResource("5_hotbar_slot")]
+slot_index = 2
 
 [node name="TimerLabel" type="Label" parent="Control/TimerUI" unique_id=405452174]
 layout_mode = 1

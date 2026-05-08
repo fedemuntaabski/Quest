@@ -26,9 +26,20 @@ var turn_manager: TurnManager
 var combat_component: CombatComponent
 
 @onready var stats: CharacterStats = $Stats
+@onready var sprite: Sprite2D = $Sprite2D
+@onready var health_bar: ProgressBar = $HealthBar
+
+var _base_modulate: Color = Color(1, 1, 1, 1)
 
 func _ready():
 	stats.died.connect(_on_died)
+	stats.hp_changed.connect(_on_hp_changed)
+	if sprite:
+		_base_modulate = sprite.modulate
+	if health_bar:
+		health_bar.visible = false
+		health_bar.max_value = stats.max_hp
+		health_bar.value = stats.current_hp
 
 func setup(p_map: MapManager, p_player: PlayerMovement):
 	map_manager = p_map
@@ -71,7 +82,7 @@ func begin_turn(tm: TurnManager) -> void:
 		_queue_attack_action(player)
 		return
 
-	var path: Array[Vector2i] = map_manager.find_path_to_adjacent(grid_pos, player.grid_pos)
+	var path: Array[Vector2i] = map_manager.find_path_to_adjacent(grid_pos, player.grid_pos, self)
 	if path.size() > 1:
 		var next_cell: Vector2i = path[1]
 		_queue_move_action(next_cell)
@@ -134,3 +145,39 @@ func _on_died():
 		map_manager.unregister_actor(self)
 	enemy_defeated.emit(self)
 	queue_free()
+
+func _on_hp_changed(current_hp: int, max_hp: int) -> void:
+	if health_bar:
+		health_bar.max_value = max_hp
+		health_bar.value = current_hp
+		health_bar.visible = true
+
+func set_targeted(active: bool) -> void:
+	if health_bar:
+		health_bar.visible = active or health_bar.value < health_bar.max_value
+	if sprite:
+		if active:
+			sprite.modulate = Color(1.0, 0.6, 0.6, 1.0)
+		else:
+			sprite.modulate = _base_modulate
+
+func show_damage(amount: int, crit: bool = false) -> void:
+	_spawn_floating_text("-%d" % amount, Color(1, 0.2, 0.2), crit)
+
+func show_miss() -> void:
+	_spawn_floating_text("MISS", Color(0.9, 0.9, 0.9), false)
+
+func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
+	var label := Label.new()
+	label.text = text
+	label.modulate = color
+	label.z_index = 100
+	label.position = Vector2(-12, -28)
+	if crit:
+		label.scale = Vector2(1.2, 1.2)
+	add_child(label)
+
+	var tween := create_tween()
+	tween.tween_property(label, "position", label.position + Vector2(0, -18), 0.5)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(label.queue_free)

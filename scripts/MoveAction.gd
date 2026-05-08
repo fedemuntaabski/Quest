@@ -29,13 +29,13 @@ func execute() -> void:
 
 	var next_cell := target_cell
 	if use_pathfinding:
-		var path: Array[Vector2i] = map_manager.find_path(owner.grid_pos, target_cell)
+		var path: Array[Vector2i] = map_manager.find_path(owner.grid_pos, target_cell, owner)
 		if path.is_empty():
 			finish()
 			return
 		next_cell = path[1] if path.size() > 1 else path[0]
 
-	if not map_manager.is_walkable_cell(next_cell):
+	if not map_manager.is_walkable_cell_for_actor(next_cell, owner):
 		finish()
 		return
 

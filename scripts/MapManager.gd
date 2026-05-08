@@ -122,6 +122,34 @@ func is_walkable_cell(grid_pos: Vector2i) -> bool:
 
 	return true
 
+func is_walkable_cell_for_actor(grid_pos: Vector2i, actor: Node) -> bool:
+	if not is_walkable_cell(grid_pos):
+		return false
+
+	return is_cell_allowed_for_actor(grid_pos, actor)
+
+func is_cell_allowed_for_actor(grid_pos: Vector2i, actor: Node) -> bool:
+	if dungeon_generator == null:
+		return true
+
+	if actor == null:
+		return true
+
+	if actor is PlayerMovement or actor.is_in_group("player"):
+		if not _is_player_room_locked():
+			return true
+		var room_rect := _get_room_rect(dungeon_generator.active_room_id)
+		return room_rect.has_point(grid_pos)
+
+	if actor is Enemy:
+		var enemy: Enemy = actor
+		if enemy.my_room_id < 0:
+			return true
+		var enemy_rect := _get_room_rect(enemy.my_room_id)
+		return enemy_rect.has_point(grid_pos)
+
+	return true
+
 
 # ── Enemy manager ─────────────────────────────────────────────────────────────
 func _setup_enemy_manager() -> void:
@@ -196,14 +224,27 @@ func is_within_bounds(grid_pos: Vector2i) -> bool:
 
 
 # ── Pathfinding ───────────────────────────────────────────────────────────────
-func find_path(start: Vector2i, goal: Vector2i) -> Array[Vector2i]:
-	return navigation_helper.find_path(start, goal) if navigation_helper else []
+func find_path(start: Vector2i, goal: Vector2i, actor: Node = null) -> Array[Vector2i]:
+	if navigation_helper == null:
+		return []
 
-func find_path_to_adjacent(start: Vector2i, target: Vector2i) -> Array[Vector2i]:
+	var room_rect := _get_actor_room_rect(actor)
+	var use_room := room_rect.size != Vector2i.ZERO
+	if use_room:
+		if not room_rect.has_point(start) or not room_rect.has_point(goal):
+			return []
+
+	return navigation_helper.find_path(start, goal, false, room_rect, use_room)
+
+func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null) -> Array[Vector2i]:
 	if navigation_helper == null:
 		return []
 
 	var best_path: Array[Vector2i] = []
+	var room_rect := _get_actor_room_rect(actor)
+	var use_room := room_rect.size != Vector2i.ZERO
+	if use_room and not room_rect.has_point(start):
+		return []
 	var neighbors: Array[Vector2i] = [
 		target + Vector2i.UP,
 		target + Vector2i.DOWN,
@@ -212,10 +253,10 @@ func find_path_to_adjacent(start: Vector2i, target: Vector2i) -> Array[Vector2i]
 	]
 
 	for cell in neighbors:
-		if not is_walkable_cell(cell):
+		if not is_walkable_cell_for_actor(cell, actor):
 			continue
 
-		var path := navigation_helper.find_path(start, cell)
+		var path := navigation_helper.find_path(start, cell, false, room_rect, use_room)
 		if path.is_empty():
 			continue
 
@@ -223,6 +264,41 @@ func find_path_to_adjacent(start: Vector2i, target: Vector2i) -> Array[Vector2i]
 			best_path = path
 
 	return best_path
+
+func _get_room_rect(room_id: int) -> Rect2i:
+	if dungeon_generator == null:
+		return Rect2i()
+
+	if room_id < 0 or room_id >= dungeon_generator.room_infos.size():
+		return Rect2i()
+
+	var info: Dictionary = dungeon_generator.room_infos[room_id]
+	return info.get("rect", Rect2i())
+
+func _is_player_room_locked() -> bool:
+	if dungeon_generator == null or enemy_manager == null:
+		return false
+
+	var room_id := dungeon_generator.active_room_id
+	if room_id < 0:
+		return false
+
+	return enemy_manager.get_enemies_in_room(room_id) > 0
+
+func _get_actor_room_rect(actor: Node) -> Rect2i:
+	if actor == null:
+		return Rect2i()
+
+	if actor is PlayerMovement or actor.is_in_group("player"):
+		if not _is_player_room_locked():
+			return Rect2i()
+		return _get_room_rect(dungeon_generator.active_room_id)
+
+	if actor is Enemy:
+		var enemy: Enemy = actor
+		return _get_room_rect(enemy.my_room_id)
+
+	return Rect2i()
 
 # ── Occupancy helpers ────────────────────────────────────────────────────────
 func register_actor(actor: Node, grid_pos: Vector2i, blocks: bool = true) -> void:
