@@ -138,6 +138,11 @@ func is_cell_allowed_for_actor(grid_pos: Vector2i, actor: Node) -> bool:
 		if not _is_player_room_locked():
 			return true
 		var room_rect := _get_room_rect(dungeon_generator.active_room_id)
+		var player_pos: Vector2i = actor.grid_pos if "grid_pos" in actor else Vector2i.ZERO
+		# Only restrict movement if player is actually inside the locked room.
+		# If player is in corridor (outside room rect), allow free movement.
+		if not room_rect.has_point(player_pos):
+			return true
 		return room_rect.has_point(grid_pos)
 
 	if actor is Enemy:
@@ -297,7 +302,13 @@ func _get_actor_room_rect(actor: Node) -> Rect2i:
 	if actor is PlayerMovement or actor.is_in_group("player"):
 		if not _is_player_room_locked():
 			return Rect2i()
-		return _get_room_rect(dungeon_generator.active_room_id)
+		var room_rect := _get_room_rect(dungeon_generator.active_room_id)
+		var player_pos: Vector2i = actor.grid_pos if "grid_pos" in actor else Vector2i.ZERO
+		# Only return room rect if player is actually inside the room.
+		# If player is in corridor, return empty rect to allow free pathfinding.
+		if room_rect.has_point(player_pos):
+			return room_rect
+		return Rect2i()
 
 	if actor is Enemy:
 		var enemy: Enemy = actor
