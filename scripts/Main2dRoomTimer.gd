@@ -26,6 +26,13 @@ func tick(delta: float) -> Dictionary:
 		"color": _get_timer_color()
 	}
 
+func get_status() -> Dictionary:
+	return {
+		"remaining": remaining,
+		"expired": false,
+		"color": _get_timer_color()
+	}
+
 func _get_timer_color() -> Color:
 	if remaining <= CRITICAL_SECONDS:
 		return Color(1, 0.24, 0.2)

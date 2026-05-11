@@ -28,6 +28,7 @@ var visited_rooms: Array[int] = []
 var enemies_killed: int = 0
 var rooms_cleared: int = 0
 var _is_dead: bool = false
+var _room_timer_paused: bool = false
 
 var tutorial_layer: Node = null
 
@@ -139,6 +140,12 @@ func _load_tutorial_if_needed() -> void:
 
 	tutorial_layer = scene.instantiate()
 	add_child(tutorial_layer)
+	_room_timer_paused = true
+
+	if tutorial_layer.has_signal("tutorial_started"):
+		tutorial_layer.connect("tutorial_started", _on_tutorial_started)
+	if tutorial_layer.has_signal("tutorial_finished"):
+		tutorial_layer.connect("tutorial_finished", _on_tutorial_finished)
 
 	# 🔥 Delegamos toda la lógica al propio tutorial
 	if tutorial_layer.has_method("setup"):
@@ -150,6 +157,18 @@ func _load_tutorial_if_needed() -> void:
 func _process(delta: float) -> void:
 	if get_tree().paused:
 		return
+	if _room_timer_paused:
+		if tutorial_layer == null or not is_instance_valid(tutorial_layer):
+			_room_timer_paused = false
+		else:
+			if hud and room_timer:
+				var status := room_timer.get_status()
+				hud.update_room_timer(
+					status["remaining"],
+					Main2dRoomTimer.ROOM_TIMER_SECONDS,
+					status["color"]
+				)
+			return
 
 	var tick_data := room_timer.tick(delta)
 
@@ -256,6 +275,12 @@ func _on_retry_pressed() -> void:
 func _reset_room_timer() -> void:
 	if room_timer:
 		room_timer.reset()
+
+func _on_tutorial_started() -> void:
+	_room_timer_paused = true
+
+func _on_tutorial_finished() -> void:
+	_room_timer_paused = false
 
 func _get_game_state_manager() -> GameStateManager:
 	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager

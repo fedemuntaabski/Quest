@@ -20,6 +20,8 @@ var _is_selected: bool = false
 var tooltip_host: HUDController = null
 
 func _ready() -> void:
+	focus_mode = Control.FOCUS_NONE
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	if key_label:
 		key_label.text = str(slot_index + 1)
 	_update_ui()
@@ -31,6 +33,7 @@ func _ready() -> void:
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		slot_pressed.emit(slot_index)
+		accept_event()
 
 func set_card(data: Dictionary) -> void:
 	_card_data = data if data != null else {}

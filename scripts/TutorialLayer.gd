@@ -1,6 +1,9 @@
 extends CanvasLayer
 
-## TutorialLayer — Autónomo y desacoplado
+## TutorialLayer — Autonomo y desacoplado
+
+signal tutorial_started
+signal tutorial_finished
 
 var step: int = 0
 
@@ -14,6 +17,7 @@ var prompts = [
 
 var active_tween: Tween 
 var is_transitioning: bool = false
+var is_active: bool = false
 
 var dungeon_generator: DungeonGenerator = null
 
@@ -54,7 +58,9 @@ func _input(event: InputEvent) -> void:
 # FLOW
 # ─────────────────────────────────────────────
 func _start_tutorial() -> void:
+	is_active = true
 	visible = true
+	tutorial_started.emit()
 	_show_next_prompt()
 
 func _show_next_prompt() -> void:
@@ -98,7 +104,9 @@ func _on_room_cleared(_room_id: int) -> void:
 # FINALIZACIÓN
 # ─────────────────────────────────────────────
 func _finish_tutorial() -> void:
+	is_active = false
 	visible = false
+	tutorial_finished.emit()
 
 	var save_mgr = get_node_or_null("/root/SaveManager")
 	if save_mgr:

@@ -5,10 +5,10 @@ signal exit_requested
 signal store_opened
 
 const UPGRADES = {
-	"hp": {"stat": "hp", "label": "HP", "effect": "+1 Vida maxima"},
-	"str": {"stat": "strength", "label": "Strength", "effect": "+1 dano fisico"},
-	"mag": {"stat": "magic", "label": "Magic", "effect": "+1 dano magico"},
-	"dex": {"stat": "dexterity", "label": "Dexterity", "effect": "+1 precision/crit"}
+	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+1 Vida maxima"},
+	"str": {"stat": "strength", "label": "Fuerza", "effect": "+1 dano fisico"},
+	"mag": {"stat": "magic", "label": "Magia", "effect": "+1 dano magico"},
+	"dex": {"stat": "dexterity", "label": "Precision", "effect": "+1 precision/crit"}
 }
 
 const BASE_UPGRADE_COST := 50
@@ -216,18 +216,16 @@ func _update_store():
 		var button: Button = upgrade_buttons[i]
 		button.disabled = not (can_upgrade and affordable)
 		if can_upgrade:
-			button.text = "%s Lv %d/%d | %s | Costo: %dg" % [
+			button.text = "%s\n%s\nCosto: %dg  |  Nivel %d/%d" % [
 				str(config.get("label", key.to_upper())),
-				level,
-				max_level,
 				str(config.get("effect", "")),
-				cost
-			]
-		else:
-			button.text = "%s Lv %d/%d | MAX" % [
-				str(config.get("label", key.to_upper())),
+				cost,
 				level,
 				max_level
+			]
+		else:
+			button.text = "%s\nMAX NIVEL" % [
+				str(config.get("label", key.to_upper()))
 			]
 
 func _update_gold_labels() -> void:
