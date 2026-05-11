@@ -38,13 +38,13 @@ func is_reward() -> bool:
 	return current_state == State.REWARD
 
 func can_process_input() -> bool:
-	return current_state == State.ACTIVE or current_state == State.REWARD
+	return current_state == State.ACTIVE
 
 func can_update_overlays() -> bool:
-	return current_state == State.ACTIVE or current_state == State.REWARD
+	return current_state == State.ACTIVE
 
 func can_process_turns() -> bool:
-	return current_state == State.ACTIVE or current_state == State.REWARD
+	return current_state == State.ACTIVE
 
 func set_state(new_state: State) -> void:
 	if current_state == new_state:

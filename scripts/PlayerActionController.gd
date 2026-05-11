@@ -87,12 +87,12 @@ func _handle_keyboard() -> void:
 func _handle_mouse_click() -> void:
 	if player == null or not player.can_accept_input():
 		return
-	var cam := player.get_node_or_null("Camera2D")
-	if cam == null:
-		return
-
-	var world_pos: Vector2 = cam.get_global_mouse_position()
-	var target_cell := map_manager.world_to_grid_coords(world_pos)
+	var world_pos: Vector2 = _get_mouse_world_pos()
+	if map_manager:
+		map_manager.update_hover(world_pos)
+	var target_cell := map_manager.hovered_cell if map_manager else Vector2i.ZERO
+	if target_cell == Vector2i(-999, -999) and map_manager:
+		target_cell = map_manager.world_to_grid_coords(world_pos)
 	if target_cell == player.grid_pos:
 		if combat_card_system and card_manager:
 			var self_card := card_manager.get_active_card()
@@ -212,12 +212,7 @@ func _handle_mouse_hover() -> void:
 		return
 	if player == null:
 		return
-
-	var cam := player.get_node_or_null("Camera2D")
-	if cam == null:
-		return
-
-	var world_pos: Vector2 = cam.get_global_mouse_position()
+	var world_pos: Vector2 = _get_mouse_world_pos()
 	var target_cell := map_manager.world_to_grid_coords(world_pos)
 	var actor := map_manager.get_actor_at_cell(target_cell)
 	if actor == hovered_enemy:
@@ -268,3 +263,13 @@ func _move_towards_enemy(enemy: Node) -> void:
 	if path.is_empty():
 		return
 	player.set_path(path)
+
+func _get_mouse_world_pos() -> Vector2:
+	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	if map_manager:
+		var canvas_to_world: Transform2D = map_manager.get_global_transform_with_canvas().affine_inverse()
+		return canvas_to_world * mouse_pos
+	if player:
+		var player_to_world: Transform2D = player.get_global_transform_with_canvas().affine_inverse()
+		return player_to_world * mouse_pos
+	return Vector2.ZERO

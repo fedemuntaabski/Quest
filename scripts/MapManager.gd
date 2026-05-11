@@ -91,12 +91,12 @@ func _on_hover_changed(cell: Vector2i) -> void:
 func _process(_delta: float) -> void:
 	if dungeon_generator == null or not dungeon_generator.is_ready:
 		return
+	update_hover(_get_mouse_world_pos())
 
-	var cam := get_viewport().get_camera_2d()
-	if cam == null:
-		return
-
-	update_hover(cam.get_global_mouse_position())
+func _get_mouse_world_pos() -> Vector2:
+	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	var canvas_to_world: Transform2D = get_global_transform_with_canvas().affine_inverse()
+	return canvas_to_world * mouse_pos
 
 
 # ── Grid helpers ──────────────────────────────────────────────────────────────

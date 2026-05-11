@@ -37,6 +37,7 @@ var tutorial_layer: Node = null
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_setup_content_scaling()
 
 	room_timer = Main2dRoomTimer.new()
 	death_handler = Main2dDeathHandler.new()
@@ -47,6 +48,11 @@ func _ready() -> void:
 	_load_tutorial_if_needed()
 
 	_reset_room_timer()
+
+func _setup_content_scaling() -> void:
+	var root_window: Window = get_tree().root
+	root_window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	root_window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 
 func _setup_managers() -> void:
 	# GameStateManager

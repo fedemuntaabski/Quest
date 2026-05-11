@@ -52,7 +52,7 @@ func _ready():
 		_base_modulate = sprite.modulate
 
 	if health_bar:
-		health_bar.visible = false
+		health_bar.visible = not is_tutorial_enemy
 		health_bar.max_value = stats.max_hp
 		health_bar.value = stats.current_hp
 
@@ -198,7 +198,7 @@ func _on_died():
 	queue_free()
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
-	if health_bar:
+	if health_bar and not is_tutorial_enemy:
 		health_bar.max_value = max_hp
 		health_bar.value = current_hp
 		health_bar.visible = true
@@ -223,6 +223,8 @@ func apply_tutorial_profile() -> void:
 	# Keep tutorial enemy in all default systems while making it forgiving.
 	collision_layer = 4
 	collision_mask = 0
+	if health_bar:
+		health_bar.visible = false
 
 func show_damage(amount: int, crit: bool = false) -> void:
 	_spawn_floating_text("-%d" % amount, Color(1, 0.2, 0.2), crit)

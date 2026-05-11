@@ -14,6 +14,17 @@ signal reward_card_replace_selected(card: CardData, slot_index: int)
 @onready var card_tooltip: CardTooltip = $CardTooltip
 @onready var card_reward_ui: CardRewardUI = $CardRewardUI if has_node("CardRewardUI") else null
 @onready var roll_label: Label = $Control/RollLabel if has_node("Control/RollLabel") else null
+@onready var potion_button: Button = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion/PotionButton") as Button
+@onready var potion_count_label: Label = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion/PotionCount") as Label
+@onready var potion_icon: Control = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion/IconPotion") as Control
+
+@onready var stat_tooltip: PanelContainer = get_node_or_null("Control/StatTooltip") as PanelContainer
+@onready var stat_tooltip_label: Label = get_node_or_null("Control/StatTooltip/Label") as Label
+
+@onready var icon_hp: Control = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowHP/IconHP") as Control
+@onready var icon_strength: Control = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowStrength/IconStrength") as Control
+@onready var icon_magic: Control = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowMagic/IconMagic") as Control
+@onready var icon_dexterity: Control = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowDexterity/IconDexterity") as Control
 
 @onready var current_room_label: Label = get_node_or_null("Control/CurrentRoomLabel") as Label
 @onready var enemies_label: Label = get_node_or_null("Control/EnemiesLabel") as Label
@@ -23,11 +34,17 @@ var base_stats := {}
 var hotbar_slots: Array = []
 var _bound_card_manager: CardManager = null
 var _roll_label_tween: Tween = null
+var _game_state_manager: GameStateManager = null
+var _potion_used: bool = false
+
+const POTION_HEAL_RATIO: float = 0.5
 
 func _ready() -> void:
 	add_to_group("hud")
 	_setup_hotbar()
 	_setup_reward_ui()
+	_setup_potion()
+	_setup_stat_tooltips()
 
 	var ps = get_node_or_null("/root/PlayerStats")
 	if ps and ps.stats:
@@ -94,6 +111,7 @@ func _on_stats_changed(stats: CharacterStats) -> void:
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	if stat_panel:
 		stat_panel.update_hp(current_hp, max_hp)
+	_refresh_potion_ui()
 
 func _on_upgrades_changed(upgrades: Array) -> void:
 	if upgrade_panel:
@@ -151,6 +169,92 @@ func show_card_tooltip(data: Dictionary, global_pos: Vector2) -> void:
 func hide_card_tooltip() -> void:
 	if card_tooltip:
 		card_tooltip.visible = false
+
+func _setup_potion() -> void:
+	if potion_button and not potion_button.pressed.is_connected(_on_potion_pressed):
+		potion_button.pressed.connect(_on_potion_pressed)
+	_bind_game_state()
+	_refresh_potion_ui()
+
+func _bind_game_state() -> void:
+	_game_state_manager = get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if _game_state_manager and not _game_state_manager.state_changed.is_connected(_on_game_state_changed):
+		_game_state_manager.state_changed.connect(_on_game_state_changed)
+
+func _on_game_state_changed(_new_state: GameStateManager.State, _old_state: GameStateManager.State) -> void:
+	_refresh_potion_ui()
+
+func _on_potion_pressed() -> void:
+	if _potion_used:
+		return
+	if not _can_use_potion_now():
+		return
+	var ps = get_node_or_null("/root/PlayerStats")
+	if ps == null or ps.stats == null:
+		return
+	var stats: CharacterStats = ps.stats
+	var heal_amount: int = int(ceil(float(stats.max_hp) * POTION_HEAL_RATIO))
+	if heal_amount <= 0:
+		return
+	stats.heal(heal_amount)
+	_potion_used = true
+	_refresh_potion_ui()
+
+func _can_use_potion_now() -> bool:
+	if _potion_used:
+		return false
+	if _game_state_manager and not _game_state_manager.is_active():
+		return false
+	var ps = get_node_or_null("/root/PlayerStats")
+	if ps == null or ps.stats == null:
+		return false
+	var stats: CharacterStats = ps.stats
+	return stats.current_hp < stats.max_hp
+
+func _refresh_potion_ui() -> void:
+	if potion_button:
+		potion_button.disabled = not _can_use_potion_now()
+		potion_button.text = "Usar" if not _potion_used else "Usada"
+	if potion_count_label:
+		potion_count_label.text = "x0" if _potion_used else "x1"
+	if potion_icon:
+		potion_icon.modulate = Color(1, 1, 1, 1) if not _potion_used else Color(0.5, 0.5, 0.5, 0.8)
+	if stat_tooltip:
+		stat_tooltip.visible = false
+
+func _setup_stat_tooltips() -> void:
+	if stat_tooltip:
+		stat_tooltip.visible = false
+
+	var tooltip_map: Dictionary = {
+		icon_hp: "Vida del personaje",
+		icon_strength: "Aumenta el daño físico",
+		icon_magic: "Permite usar habilidades especiales",
+		icon_dexterity: "Aumenta la probabilidad de esquivar ataques",
+		potion_icon: "Restaura vida (uso único por partida)"
+	}
+
+	for icon in tooltip_map.keys():
+		if icon == null:
+			continue
+		var text: String = tooltip_map[icon]
+		var enter_cb := _on_stat_icon_entered.bind(text, icon)
+		if not icon.mouse_entered.is_connected(enter_cb):
+			icon.mouse_entered.connect(enter_cb)
+		if not icon.mouse_exited.is_connected(_on_stat_icon_exited):
+			icon.mouse_exited.connect(_on_stat_icon_exited)
+
+func _on_stat_icon_entered(text: String, icon: Control) -> void:
+	if stat_tooltip == null or stat_tooltip_label == null:
+		return
+	stat_tooltip_label.text = text
+	stat_tooltip.visible = true
+	var rect := icon.get_global_rect()
+	stat_tooltip.global_position = rect.position + Vector2(rect.size.x + 10.0, -4.0)
+
+func _on_stat_icon_exited() -> void:
+	if stat_tooltip:
+		stat_tooltip.visible = false
 
 func set_roll_label_from_result(result: Dictionary) -> void:
 	if roll_label == null or result == null:

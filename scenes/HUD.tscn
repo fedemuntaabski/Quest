@@ -1,14 +1,27 @@
 [gd_scene format=3 uid="uid://b5v43ol8idshh"]
 
 [ext_resource type="Script" uid="uid://e6aoqrf7guh7" path="res://scripts/HUDController.gd" id="1_hud_script"]
-[ext_resource type="Texture2D" uid="uid://0nc7hiqggiu8" path="res://assets/ui/menuoption.png" id="2_menu_option"]
+[ext_resource type="Script" uid="uid://stat_icon_script" path="res://scripts/StatIcon.gd" id="2_stat_icon"]
 [ext_resource type="Script" uid="uid://bbst0d0aid6up" path="res://scripts/StatPanelUI.gd" id="3_nysna"]
-[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
 [ext_resource type="Script" uid="uid://01lnjdgw7lht" path="res://scripts/TimerUI.gd" id="4_7hsmw"]
 [ext_resource type="PackedScene" uid="uid://cbfp62ksudyq3" path="res://scenes/HotbarSlot.tscn" id="5_hotbar_slot"]
 [ext_resource type="PackedScene" path="res://scenes/CardTooltip.tscn" id="6_card_tooltip"]
 [ext_resource type="Script" uid="uid://cardpanelui_script" path="res://scripts/CardPanelUI.gd" id="7_card_panel"]
 [ext_resource type="PackedScene" uid="uid://d3caxq8yr8iqt" path="res://scenes/CardRewardUI.tscn" id="8_card_reward_ui"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stat_panel"]
+bg_color = Color(0.05, 0.05, 0.06, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stat_tooltip"]
+bg_color = Color(0.08, 0.08, 0.1, 0.92)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="HUD" type="CanvasLayer" unique_id=729961790]
 layer = 2
@@ -21,19 +34,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="StatsHUD" type="NinePatchRect" parent="Control" unique_id=986120551]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 420.0
-offset_bottom = 210.0
 mouse_filter = 2
-texture = ExtResource("2_menu_option")
-patch_margin_left = 32
-patch_margin_top = 32
-patch_margin_right = 32
-patch_margin_bottom = 32
+
+[node name="StatsHUD" type="PanelContainer" parent="Control" unique_id=986120551]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 82.0
+offset_right = 250.0
+offset_bottom = 214.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_panel")
 
 [node name="MarginContainer" type="MarginContainer" parent="Control/StatsHUD" unique_id=986120552]
 layout_mode = 1
@@ -54,76 +64,112 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 script = ExtResource("3_nysna")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=986120554]
+[node name="StatRowHP" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=986120554]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer" unique_id=986120555]
-custom_minimum_size = Vector2(200, 140)
+[node name="IconHP" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowHP" unique_id=986120555]
+custom_minimum_size = Vector2(18, 18)
 layout_mode = 2
 mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "hp"
 
-[node name="HBoxContainer_HP" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=986120556]
-custom_minimum_size = Vector2(0, 30)
+[node name="LabelHP" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowHP" unique_id=986120556]
 layout_mode = 2
 mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+text = "HP 10/10"
 
-[node name="LabelHP" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_HP" unique_id=986120557]
-custom_minimum_size = Vector2(260, 46)
+[node name="StatRowStrength" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=986120557]
 layout_mode = 2
-tooltip_text = "Representa la vida del personaje."
 mouse_filter = 2
-theme_override_font_sizes/font_size = 30
-text = "HP: 10/10"
+theme_override_constants/separation = 8
 
-[node name="HSeparator" type="HSeparator" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=986120558]
+[node name="IconStrength" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowStrength" unique_id=986120558]
+custom_minimum_size = Vector2(18, 18)
 layout_mode = 2
 mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "strength"
 
-[node name="HBoxContainer_Strength" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=986120559]
-custom_minimum_size = Vector2(0, 30)
+[node name="LabelStrength" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowStrength" unique_id=986120559]
 layout_mode = 2
 mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+text = "Fuerza 1"
 
-[node name="LabelStrength" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Strength" unique_id=986120560]
-custom_minimum_size = Vector2(260, 46)
+[node name="StatRowMagic" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=986120560]
 layout_mode = 2
-tooltip_text = "Aumenta el daño de los ataques físicos."
 mouse_filter = 2
-theme_override_font_sizes/font_size = 30
-text = "Fuerza: +0"
+theme_override_constants/separation = 8
 
-[node name="HBoxContainer_Magic" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=986120561]
-custom_minimum_size = Vector2(0, 30)
+[node name="IconMagic" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowMagic" unique_id=986120561]
+custom_minimum_size = Vector2(18, 18)
 layout_mode = 2
 mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "magic"
 
-[node name="LabelMagic" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Magic" unique_id=986120562]
-custom_minimum_size = Vector2(260, 46)
+[node name="LabelMagic" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowMagic" unique_id=986120562]
 layout_mode = 2
-tooltip_text = "Permite usar habilidades especiales."
 mouse_filter = 2
-theme_override_font_sizes/font_size = 30
-text = "Magia: +0"
+theme_override_font_sizes/font_size = 18
+text = "Magia 2"
 
-[node name="HBoxContainer_Dexterity" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=986120563]
-custom_minimum_size = Vector2(0, 30)
+[node name="StatRowDexterity" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=986120563]
 layout_mode = 2
 mouse_filter = 2
+theme_override_constants/separation = 8
 
-[node name="LabelDexterity" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=986120564]
-custom_minimum_size = Vector2(260, 46)
+[node name="IconDexterity" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowDexterity" unique_id=986120564]
+custom_minimum_size = Vector2(18, 18)
 layout_mode = 2
-tooltip_text = "Aumenta la probabilidad de esquivar ataques."
 mouse_filter = 2
-theme_override_font_sizes/font_size = 30
-text = "Destreza: +0"
+script = ExtResource("2_stat_icon")
+icon_type = "dexterity"
+
+[node name="LabelDexterity" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowDexterity" unique_id=986120565]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+text = "Agilidad 1"
+
+[node name="StatRowPotion" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="IconPotion" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "potion"
+
+[node name="LabelPotion" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+text = "Pocion"
+
+[node name="PotionCount" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+text = "x1"
+
+[node name="PotionButton" type="Button" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion"]
+custom_minimum_size = Vector2(64, 26)
+layout_mode = 2
+text = "Use"
 
 [node name="TimerUI" type="Control" parent="Control" unique_id=134582833]
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 2
 script = ExtResource("4_7hsmw")
 
 [node name="HotbarBar" type="HBoxContainer" parent="Control" unique_id=2138843921]
@@ -154,9 +200,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -36.0
-offset_top = 16.0
+offset_top = 80.0
 offset_right = 244.0
-offset_bottom = 58.0
+offset_bottom = 122.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 30
 text = "Tiempo: 2:00"
@@ -177,6 +223,21 @@ grow_horizontal = 2
 theme_override_font_sizes/font_size = 18
 text = ""
 horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="StatTooltip" type="PanelContainer" parent="Control"]
+visible = false
+layout_mode = 0
+custom_minimum_size = Vector2(260, 0)
+mouse_filter = 2
+z_index = 300
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tooltip")
+
+[node name="Label" type="Label" parent="Control/StatTooltip"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = ""
+autowrap_mode = 3
 
 [node name="CardTooltip" parent="." instance=ExtResource("6_card_tooltip")]
 z_index = 200

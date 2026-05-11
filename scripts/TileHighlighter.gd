@@ -21,6 +21,7 @@ func _ready():
 
 func _on_hover_changed(cell: Vector2i) -> void:
 	if not _can_update():
+		_path_preview.clear()
 		return
 	hovered_cell = cell
 	_update_path_preview()
@@ -28,6 +29,7 @@ func _on_hover_changed(cell: Vector2i) -> void:
 
 func _process(_delta):
 	if not _can_update():
+		_path_preview.clear()
 		return
 	if _player == null or _card_manager == null:
 		_resolve_refs()
@@ -47,7 +49,7 @@ func _draw():
 	_draw_range_preview(tile_size)
 
 	# Hovered destination
-	draw_rect(rect, Color(0.2, 0.9, 0.4, 0.1), false, 2.0)
+	draw_rect(rect, Color(0.9, 0.9, 0.9, 0.12), false, 2.0)
 
 func _draw_path_preview(tile_size: float) -> void:
 	if _path_preview.is_empty():
@@ -58,16 +60,16 @@ func _draw_path_preview(tile_size: float) -> void:
 		var cell := _path_preview[i]
 		var world_pos := map_manager.grid_to_world_coords(cell)
 		var rect := Rect2(world_pos - Vector2(tile_size, tile_size) * 0.5, Vector2(tile_size, tile_size))
-		draw_rect(rect, Color(0.2, 0.6, 1.0, 0.15), true)
+		draw_rect(rect, Color(0.9, 0.9, 0.9, 0.12), true)
 
 		if i > 0:
-			draw_line(last_center, world_pos, Color(0.2, 0.7, 1.0, 0.8), 2.0)
+			draw_line(last_center, world_pos, Color(0.9, 0.9, 0.9, 0.6), 2.0)
 		last_center = world_pos
 
 	if _path_preview.size() >= 2:
 		var from_pos := map_manager.grid_to_world_coords(_path_preview[_path_preview.size() - 2])
 		var to_pos := map_manager.grid_to_world_coords(_path_preview[_path_preview.size() - 1])
-		_draw_arrow(from_pos, to_pos, Color(0.2, 0.9, 1.0, 0.9))
+		_draw_arrow(from_pos, to_pos, Color(0.9, 0.9, 0.9, 0.75))
 
 func _draw_range_preview(tile_size: float) -> void:
 	if _player == null or _card_manager == null:

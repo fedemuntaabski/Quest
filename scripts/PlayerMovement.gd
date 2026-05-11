@@ -55,6 +55,20 @@ func _ready() -> void:
 	if player_stats and stats:
 		player_stats.register(stats)
 
+	_connect_game_state()
+
+func _connect_game_state() -> void:
+	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if gsm == null:
+		call_deferred("_connect_game_state")
+		return
+	if not gsm.state_changed.is_connected(_on_game_state_changed):
+		gsm.state_changed.connect(_on_game_state_changed)
+
+func _on_game_state_changed(new_state: int, _old_state: int) -> void:
+	if new_state != GameStateManager.State.ACTIVE:
+		cancel_movement()
+
 func _ensure_combat_component() -> void:
 	var comp := get_node_or_null("CombatComponent") as CombatComponent
 	if comp == null:
@@ -181,6 +195,9 @@ func is_turn_active() -> bool:
 	return turn_manager.current_actor == self
 
 func can_accept_input() -> bool:
+	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if gsm and not gsm.is_active():
+		return false
 	if not is_turn_active():
 		return false
 	if turn_manager and turn_manager.action_queue and turn_manager.action_queue.is_busy():
