@@ -32,6 +32,8 @@ var combat_component: CombatComponent
 
 var _base_modulate: Color = Color(1, 1, 1, 1)
 var stats: CharacterStats
+var _target_tint: Color = Color(1.0, 0.6, 0.6, 1.0)
+var is_tutorial_enemy: bool = false
 
 func _ready():
 	stats = $Stats as CharacterStats
@@ -48,8 +50,6 @@ func _ready():
 		health_bar.value = stats.current_hp
 
 func setup(p_map: MapManager, p_player: PlayerMovement) -> void:
-	await self.ready
-
 	map_manager = p_map
 	player = p_player
 
@@ -61,17 +61,17 @@ func setup(p_map: MapManager, p_player: PlayerMovement) -> void:
 	_ensure_combat_component()
 
 func _ensure_combat_component() -> void:
-	print("ENEMY STATS ON SETUP: ", stats)
+	if stats == null:
+		stats = get_node_or_null("Stats") as CharacterStats
+		if stats == null:
+			push_warning("Enemy: Stats node missing during combat setup")
+			return
+
 	var comp := get_node_or_null("CombatComponent") as CombatComponent
 	if comp == null:
 		comp = CombatComponent.new()
 		comp.name = "CombatComponent"
 		add_child(comp)
-
-	if stats == null:
-		stats = get_node_or_null("Stats") as CharacterStats
-		if stats == null:
-			push_warning("Enemy: Stats node missing during combat setup")
 
 	comp.setup(self, stats, map_manager)
 	combat_component = comp
@@ -181,9 +181,21 @@ func set_targeted(active: bool) -> void:
 		health_bar.visible = active or health_bar.value < health_bar.max_value
 	if sprite:
 		if active:
-			sprite.modulate = Color(1.0, 0.6, 0.6, 1.0)
+			sprite.modulate = _target_tint
 		else:
 			sprite.modulate = _base_modulate
+
+func set_visual_tint(base_tint: Color, target_tint: Color = Color(0.7, 1.0, 0.7, 1.0)) -> void:
+	_base_modulate = base_tint
+	_target_tint = target_tint
+	if sprite:
+		sprite.modulate = _base_modulate
+
+func apply_tutorial_profile() -> void:
+	is_tutorial_enemy = true
+	# Keep tutorial enemy in all default systems while making it forgiving.
+	collision_layer = 4
+	collision_mask = 0
 
 func show_damage(amount: int, crit: bool = false) -> void:
 	_spawn_floating_text("-%d" % amount, Color(1, 0.2, 0.2), crit)

@@ -5,13 +5,14 @@ signal exit_requested
 signal store_opened
 
 const UPGRADES = {
-	"hp": ["base_hp", "max_hp"],
-	"str": ["base_str", "strength_modifier"],
-	"mag": ["base_mag", "magic_modifier"],
-	"dex": ["base_dex", "dexterity_modifier"]
+	"hp": {"stat": "hp", "label": "HP", "effect": "+1 Vida maxima"},
+	"str": {"stat": "strength", "label": "Strength", "effect": "+1 dano fisico"},
+	"mag": {"stat": "magic", "label": "Magic", "effect": "+1 dano magico"},
+	"dex": {"stat": "dexterity", "label": "Dexterity", "effect": "+1 precision/crit"}
 }
 
-const UPGRADE_COST := 50
+const BASE_UPGRADE_COST := 50
+const UPGRADE_COST_STEP := 25
 
 @export var save_mgr: SaveManager
 @export var player_stats: PlayerStats
@@ -149,10 +150,10 @@ func _connect() -> void:
 		store_back_button.pressed.connect(func(): _play_click(); _set_panel(0))
 		store_back_button.mouse_entered.connect(_play_hover)
 
-	var stats = ["hp", "str", "mag", "dex"]
+	var stats: Array[String] = ["hp", "str", "mag", "dex"]
 
 	for i in upgrade_buttons.size():
-		var stat = stats[i]
+		var stat: String = stats[i]
 		upgrade_buttons[i].pressed.connect(func():
 			_play_click()
 			_on_upgrade_pressed(stat)
@@ -199,9 +200,35 @@ func _update_store():
 
 	gold_label.text = "Oro: %d" % save_mgr.gold
 
-	var ok = save_mgr.gold >= UPGRADE_COST
-	for b in upgrade_buttons:
-		b.disabled = not ok
+	var stats: Array[String] = ["hp", "str", "mag", "dex"]
+	for i in upgrade_buttons.size():
+		var key: String = stats[i]
+		var config: Dictionary = UPGRADES.get(key, {})
+		var stat_name: String = str(config.get("stat", ""))
+		var level := 0
+		var max_level := 10
+		if player_stats:
+			level = player_stats.get_upgrade_level(stat_name)
+			max_level = player_stats.get_max_upgrade_level()
+		var cost := _get_upgrade_cost(level)
+		var can_upgrade := player_stats != null and player_stats.can_upgrade_stat(stat_name)
+		var affordable := save_mgr.gold >= cost
+		var button: Button = upgrade_buttons[i]
+		button.disabled = not (can_upgrade and affordable)
+		if can_upgrade:
+			button.text = "%s Lv %d/%d | %s | Costo: %dg" % [
+				str(config.get("label", key.to_upper())),
+				level,
+				max_level,
+				str(config.get("effect", "")),
+				cost
+			]
+		else:
+			button.text = "%s Lv %d/%d | MAX" % [
+				str(config.get("label", key.to_upper())),
+				level,
+				max_level
+			]
 
 func _update_gold_labels() -> void:
 	var save := save_mgr if save_mgr else get_node_or_null("/root/SaveManager")
@@ -212,28 +239,42 @@ func _update_gold_labels() -> void:
 
 func _on_gold_changed(_amount: int) -> void:
 	_update_gold_labels()
+	_update_store()
 
 # ---------------- ACTIONS ----------------
 
-func _on_upgrade_pressed(stat):
+func _on_upgrade_pressed(stat: String):
 	if not save_mgr or not player_stats:
 		return
-	if save_mgr.gold < UPGRADE_COST:
+	var config: Dictionary = UPGRADES.get(stat, {})
+	if config.is_empty():
 		return
 
-	var u = UPGRADES.get(stat)
-	if not u:
+	var stat_name: String = str(config.get("stat", ""))
+	if stat_name == "" or not player_stats.can_upgrade_stat(stat_name):
 		return
 
-	save_mgr.gold -= UPGRADE_COST
+	var level := player_stats.get_upgrade_level(stat_name)
+	var cost := _get_upgrade_cost(level)
+	if save_mgr.gold < cost:
+		return
 
-	player_stats.set(u[0], player_stats.get(u[0]) + 1)
+	var upgrade := {
+		"card_name": "Store Upgrade",
+		"stat_affected": stat_name,
+		"value_change": 1
+	}
+	if not player_stats.apply_upgrade(upgrade):
+		return
 
-	if player_stats.stats:
-		player_stats.stats.set(u[1], player_stats.stats.get(u[1]) + 1)
+	save_mgr.gold -= cost
 
 	save_mgr.save_game()
+	_update_gold_labels()
 	_update_store()
+
+func _get_upgrade_cost(level: int) -> int:
+	return BASE_UPGRADE_COST + (max(level, 0) * UPGRADE_COST_STEP)
 
 func _get_game_state_manager() -> GameStateManager:
 	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager

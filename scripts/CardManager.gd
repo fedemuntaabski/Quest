@@ -29,17 +29,17 @@ func set_deck(cards: Array[CardData]) -> void:
 	draw_pile = cards.duplicate()
 	discard_pile.clear()
 	if equipped.is_empty():
-		_equip_initial_cards()
+		_initialize_empty_hotbar()
 	_update_cooldown_cache()
 	equipped_changed.emit()
 	_emit_ui_state()
 	_shuffle_draw_pile()
 
-func _equip_initial_cards() -> void:
+func _initialize_empty_hotbar() -> void:
 	equipped.clear()
-	for i in range(min(max_equipped, draw_pile.size())):
-		equipped.append(draw_pile[i])
-	active_index = clamp(active_index, 0, max(0, equipped.size() - 1))
+	for _i in range(max_equipped):
+		equipped.append(null)
+	active_index = 0
 
 func equip_card(card: CardData, slot_index: int) -> void:
 	if card == null:
@@ -53,6 +53,33 @@ func equip_card(card: CardData, slot_index: int) -> void:
 	equipped_changed.emit()
 	_emit_ui_state()
 
+func replace_equipped_card(card: CardData, slot_index: int) -> void:
+	if card == null:
+		return
+	if slot_index < 0 or slot_index >= max_equipped:
+		return
+	while equipped.size() < max_equipped:
+		equipped.append(null)
+
+	var replaced_card: CardData = equipped[slot_index]
+	if replaced_card != null:
+		discard_pile.append(replaced_card)
+		_remove_card_from_pool(draw_pile, replaced_card)
+		_remove_card_from_pool(deck, replaced_card)
+		_cooldowns.erase(replaced_card)
+
+	equipped[slot_index] = card
+	register_new_card(card)
+	active_index = slot_index
+	equipped_changed.emit()
+	_emit_ui_state()
+
+func register_new_card(card: CardData) -> void:
+	if card == null:
+		return
+	deck.append(card)
+	_cooldowns[card] = 0
+
 func get_active_card() -> CardData:
 	if active_index < 0 or active_index >= equipped.size():
 		return null
@@ -60,6 +87,8 @@ func get_active_card() -> CardData:
 
 func set_active_index(index: int) -> void:
 	if index < 0 or index >= equipped.size():
+		return
+	if equipped[index] == null:
 		return
 	active_index = index
 	active_index_changed.emit(index)
@@ -149,3 +178,8 @@ func _update_cooldown_cache() -> void:
 
 func _emit_ui_state() -> void:
 	ui_state_changed.emit(get_equipped_payload(), active_index)
+
+func _remove_card_from_pool(pool: Array[CardData], card: CardData) -> void:
+	var index := pool.find(card)
+	if index >= 0:
+		pool.remove_at(index)

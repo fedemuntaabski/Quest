@@ -3,6 +3,8 @@ class_name HUDController
 
 signal hotbar_slot_pressed(index: int)
 signal reward_card_selected(card: CardData)
+signal reward_skipped
+signal reward_card_replace_selected(card: CardData, slot_index: int)
 
 @onready var stat_panel: StatPanelUI = $Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI
 @onready var upgrade_panel: UpgradePanelUI = $Control/UpgradePanelUI if has_node("Control/UpgradePanelUI") else null
@@ -70,12 +72,22 @@ func _setup_reward_ui() -> void:
 		return
 	if not card_reward_ui.card_selected.is_connected(_on_reward_card_selected):
 		card_reward_ui.card_selected.connect(_on_reward_card_selected)
+	if not card_reward_ui.reward_skipped.is_connected(_on_reward_skipped):
+		card_reward_ui.reward_skipped.connect(_on_reward_skipped)
+	if not card_reward_ui.card_replace_selected.is_connected(_on_reward_card_replace_selected):
+		card_reward_ui.card_replace_selected.connect(_on_reward_card_replace_selected)
 
 func _on_hotbar_slot_pressed(index: int) -> void:
 	hotbar_slot_pressed.emit(index)
 
 func _on_reward_card_selected(card: CardData) -> void:
 	reward_card_selected.emit(card)
+
+func _on_reward_skipped() -> void:
+	reward_skipped.emit()
+
+func _on_reward_card_replace_selected(card: CardData, slot_index: int) -> void:
+	reward_card_replace_selected.emit(card, slot_index)
 
 func _setup_tab_switching() -> void:
 	if tab_bar == null:
@@ -183,9 +195,9 @@ func bind_card_manager(card_manager: CardManager) -> void:
 func _on_card_ui_state_changed(cards_payload: Array, active_index: int) -> void:
 	update_hotbar(cards_payload, active_index)
 
-func show_reward_selection(cards: Array) -> void:
+func show_reward_selection(cards: Array, requires_replace: bool = false, equipped_slots: Array = []) -> void:
 	if card_reward_ui:
-		card_reward_ui.show_reward(cards)
+		card_reward_ui.show_reward(cards, requires_replace, equipped_slots)
 
 func hide_reward_selection() -> void:
 	if card_reward_ui:
