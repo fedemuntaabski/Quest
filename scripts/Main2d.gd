@@ -115,6 +115,10 @@ func _connect_ui() -> void:
 
 	if hud and not hud.reward_card_selected.is_connected(_on_reward_card_selected):
 		hud.reward_card_selected.connect(_on_reward_card_selected)
+	if hud and not hud.reward_skipped.is_connected(_on_reward_skipped):
+		hud.reward_skipped.connect(_on_reward_skipped)
+	if hud and not hud.reward_card_replace_selected.is_connected(_on_reward_card_replace_selected):
+		hud.reward_card_replace_selected.connect(_on_reward_card_replace_selected)
 
 	if game_state_manager and not game_state_manager.reward_entered.is_connected(_on_reward_entered):
 		game_state_manager.reward_entered.connect(_on_reward_entered)
@@ -157,7 +161,8 @@ func _process(delta: float) -> void:
 		)
 
 	if tick_data["expired"]:
-		push_warning("Room timer reached zero")
+		push_warning("Room timer reached zero - triggering death state")
+		_on_player_died()
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and not _is_dead:
@@ -274,7 +279,12 @@ func _update_hotbar_display() -> void:
 
 func _on_reward_entered(cards: Array) -> void:
 	if hud:
-		hud.show_reward_selection(cards)
+		var requires_replace := false
+		var equipped_slots: Array = []
+		if card_reward_manager:
+			requires_replace = card_reward_manager.is_hotbar_full()
+			equipped_slots = card_reward_manager.get_equipped_cards_for_replace()
+		hud.show_reward_selection(cards, requires_replace, equipped_slots)
 
 func _on_reward_exited(_selected_card: CardData) -> void:
 	if hud:
@@ -284,3 +294,13 @@ func _on_reward_card_selected(selected_card: CardData) -> void:
 	if card_reward_manager == null:
 		return
 	card_reward_manager.apply_selected_reward(selected_card)
+
+func _on_reward_card_replace_selected(selected_card: CardData, slot_index: int) -> void:
+	if card_reward_manager == null:
+		return
+	card_reward_manager.apply_selected_reward(selected_card, slot_index)
+
+func _on_reward_skipped() -> void:
+	if card_reward_manager == null:
+		return
+	card_reward_manager.skip_reward()

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cbfp62ksudyq3"]
 
-[ext_resource type="Script" path="res://scripts/HotbarSlot.gd" id="1_hotbar_slot_script"]
+[ext_resource type="Script" uid="uid://bjkx4feu10tob" path="res://scripts/HotbarSlot.gd" id="1_hotbar_slot_script"]
 
 [node name="HotbarSlot" type="PanelContainer" unique_id=1354943843]
 custom_minimum_size = Vector2(84, 84)
@@ -28,19 +28,19 @@ theme_override_font_sizes/font_size = 10
 horizontal_alignment = 1
 
 [node name="State" type="Label" parent="VBox" unique_id=917690203]
+modulate = Color(0.6, 0.6, 0.6, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
-text = "EMPTY"
+text = "VACIO
+"
 horizontal_alignment = 1
-modulate = Color(0.6, 0.6, 0.6, 1)
 
 [node name="KeyLabel" type="Label" parent="VBox" unique_id=917690201]
+modulate = Color(0.8, 0.8, 0.8, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "1"
 horizontal_alignment = 2
-vertical_alignment = 0
-modulate = Color(0.8, 0.8, 0.8, 1)
 
 [node name="SelectionBorder" type="Panel" parent="." unique_id=917690202]
 visible = false

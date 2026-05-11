@@ -6,6 +6,7 @@ signal enemy_defeated_global
 signal enemy_defeated_with_reward(enemy, reward_position: Vector2)
 
 const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
+const TutorialEnemyOverride = preload("res://scripts/TutorialEnemyOverride.gd")
 
 var _enemy_scene: PackedScene = null
 var _room_enemy_counts: Dictionary = {}
@@ -41,13 +42,21 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 	_room_enemy_counts.clear()
 	enemies.clear() # 🔥 importante
 
+	var map_manager := get_parent() as MapManager
+	var occupied_spawn_cells: Dictionary = {}
+	var player_cell: Vector2i = Vector2i(-9999, -9999)
+	if map_manager and player:
+		player_cell = map_manager.world_to_grid_coords(player.global_position)
+
 	for room_info in room_infos:
 		var room_id: int = room_info["id"]
 
 		var spawn_cell := _get_random_floor_cell_in_room(
 			room_info,
 			wall_cells,
-			room_id == 0
+			room_id == 0,
+			player_cell,
+			occupied_spawn_cells
 		)
 
 		if spawn_cell == Vector2i(-1, -1):
@@ -58,12 +67,19 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 			continue
 
 		enemy.name = "Enemy_%d" % room_id
-		enemy.position = dungeon.grid_to_world_coords(spawn_cell)
+		enemy.global_position = dungeon.grid_to_world_coords(spawn_cell)
 		enemy.my_room_id = room_id
 		enemy.dungeon_generator = dungeon
+		add_child(enemy)
+		occupied_spawn_cells[spawn_cell] = true
 
-		# 🔥 SETUP COMPLETO (CLAVE)
+		# Register every enemy through the same setup path after it is inside the scene tree.
 		enemy.setup(get_parent(), player)
+		if room_id == 0:
+			# Keep tutorial enemy in the normal systems; only override combat profile.
+			TutorialEnemyOverride.apply(enemy)
+			# Ensure tutorial enemy is registered and synced for click-targeting/combat range checks.
+			enemy.sync_to_grid()
 
 		# 🔥 TRACKING
 		enemies.append(enemy)
@@ -88,8 +104,6 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 			_on_enemy_defeated(e, captured_room_id)
 		, CONNECT_ONE_SHOT)
 
-		add_child(enemy)
-
 
 func get_enemies() -> Array:
 	return enemies
@@ -99,7 +113,13 @@ func get_enemies_in_room(room_id: int) -> int:
 	return _room_enemy_counts.get(room_id, 0)
 
 
-func _get_random_floor_cell_in_room(room_info: Dictionary, wall_cells: Dictionary, avoid_center: bool) -> Vector2i:
+func _get_random_floor_cell_in_room(
+	room_info: Dictionary,
+	wall_cells: Dictionary,
+	avoid_center: bool,
+	player_cell: Vector2i,
+	occupied_spawn_cells: Dictionary
+) -> Vector2i:
 	var room_cells: Array = room_info["floor_cells"]
 	var center_cell: Vector2i = room_info["center_cell"]
 
@@ -110,6 +130,10 @@ func _get_random_floor_cell_in_room(room_info: Dictionary, wall_cells: Dictionar
 		var cell: Vector2i = raw_cell
 
 		if wall_cells.has(cell):
+			continue
+		if cell == player_cell:
+			continue
+		if occupied_spawn_cells.has(cell):
 			continue
 
 		if avoid_radius > 0:
@@ -132,7 +156,7 @@ func _get_random_floor_cell_in_room(room_info: Dictionary, wall_cells: Dictionar
 	if candidates.is_empty():
 		for raw_cell in room_cells:
 			var cell: Vector2i = raw_cell
-			if not wall_cells.has(cell):
+			if not wall_cells.has(cell) and cell != player_cell and not occupied_spawn_cells.has(cell):
 				candidates.append(cell)
 
 	if candidates.is_empty():

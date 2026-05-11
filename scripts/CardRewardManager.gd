@@ -28,6 +28,7 @@ func _load_all_cards() -> void:
 			_available_cards.append(card)
 
 func generate_reward_options(count: int = 3, on_complete: Callable = Callable()) -> Array[CardData]:
+	_resolve_card_manager()
 	_on_reward_completed = on_complete
 	return _select_random_cards(count)
 
@@ -45,17 +46,49 @@ func _select_random_cards(count: int) -> Array[CardData]:
 	
 	return selected
 
-func apply_selected_reward(card: CardData) -> void:
+func apply_selected_reward(card: CardData, replace_slot_index: int = -1) -> void:
 	if card == null:
 		return
 	if card_manager:
-		_add_card_to_player(card)
+		_add_card_to_player(card, replace_slot_index)
 	
 	reward_completed.emit(card)
 	
 	if _on_reward_completed.is_valid():
 		_on_reward_completed.call(card)
 	_on_reward_completed = Callable()
+
+func skip_reward() -> void:
+	reward_completed.emit(null)
+	if _on_reward_completed.is_valid():
+		_on_reward_completed.call(null)
+	_on_reward_completed = Callable()
+
+func is_hotbar_full() -> bool:
+	_resolve_card_manager()
+	if card_manager == null:
+		return false
+	for i in range(card_manager.max_equipped):
+		if i >= card_manager.equipped.size() or card_manager.equipped[i] == null:
+			return false
+	return true
+
+func get_equipped_cards_for_replace() -> Array:
+	_resolve_card_manager()
+	var equipped_cards: Array = []
+	if card_manager == null:
+		return equipped_cards
+	for i in range(card_manager.max_equipped):
+		var card: CardData = null
+		if i < card_manager.equipped.size():
+			card = card_manager.equipped[i]
+		equipped_cards.append({
+			"slot_index": i,
+			"card": card,
+			"name": card.display_name if card else "Empty",
+			"icon": card.icon if card else null
+		})
+	return equipped_cards
 
 func _resolve_card_manager() -> void:
 	if card_manager != null:
@@ -65,16 +98,18 @@ func _resolve_card_manager() -> void:
 	if player:
 		card_manager = player.get_node_or_null("CardManager") as CardManager
 
-func _add_card_to_player(card: CardData) -> void:
+func _add_card_to_player(card: CardData, replace_slot_index: int = -1) -> void:
 	_resolve_card_manager()
 	if card_manager == null:
 		return
-	
-	# Add to deck
-	card_manager.deck.append(card)
+
+	if replace_slot_index >= 0 and replace_slot_index < card_manager.max_equipped:
+		card_manager.replace_equipped_card(card, replace_slot_index)
+		return
 	
 	# Try to equip in empty slot if available
 	for i in range(card_manager.max_equipped):
 		if i >= card_manager.equipped.size() or card_manager.equipped[i] == null:
+			card_manager.register_new_card(card)
 			card_manager.equip_card(card, i)
 			break

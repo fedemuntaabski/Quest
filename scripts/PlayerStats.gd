@@ -14,6 +14,13 @@ var base_mag: int = 0
 var base_dex: int = 0
 
 var active_upgrades: Array = []
+const MAX_UPGRADE_LEVEL: int = 10
+var upgrade_levels := {
+	"hp": 0,
+	"strength": 0,
+	"magic": 0,
+	"dexterity": 0
+}
 
 func register(player_stats: CharacterStats) -> void:
 	if player_stats == null:
@@ -30,6 +37,7 @@ func register(player_stats: CharacterStats) -> void:
 		stats.stats_changed.connect(_on_stats_updated)
 
 	_apply_base_stats()
+	_rebuild_upgrade_levels()
 	_reapply_upgrades()
 
 	stats_changed.emit(stats)
@@ -49,19 +57,45 @@ func _reapply_upgrades() -> void:
 			upg.get("value_change", 0)
 		)
 
-func apply_upgrade(upgrade: Dictionary) -> void:
+func apply_upgrade(upgrade: Dictionary) -> bool:
 	if stats == null:
-		return
+		return false
+
+	var stat_key := str(upgrade.get("stat_affected", ""))
+	if not upgrade_levels.has(stat_key):
+		return false
+	if not can_upgrade_stat(stat_key):
+		return false
 
 	active_upgrades.append(upgrade)
+	upgrade_levels[stat_key] = int(upgrade_levels[stat_key]) + 1
 
 	stats.apply_modifier(
-		upgrade.get("stat_affected", ""),
+		stat_key,
 		upgrade.get("value_change", 0)
 	)
 
 	upgrades_changed.emit(active_upgrades)
 	stats_changed.emit(stats)
+	return true
+
+func can_upgrade_stat(stat_key: String) -> bool:
+	return int(upgrade_levels.get(stat_key, 0)) < MAX_UPGRADE_LEVEL
+
+func get_upgrade_level(stat_key: String) -> int:
+	return int(upgrade_levels.get(stat_key, 0))
+
+func get_max_upgrade_level() -> int:
+	return MAX_UPGRADE_LEVEL
+
+func _rebuild_upgrade_levels() -> void:
+	for key in upgrade_levels.keys():
+		upgrade_levels[key] = 0
+
+	for upg in active_upgrades:
+		var stat_key := str(upg.get("stat_affected", ""))
+		if upgrade_levels.has(stat_key):
+			upgrade_levels[stat_key] = min(MAX_UPGRADE_LEVEL, int(upgrade_levels[stat_key]) + 1)
 
 func _on_stats_updated() -> void:
 	stats_changed.emit(stats)

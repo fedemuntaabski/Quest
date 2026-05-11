@@ -5,13 +5,11 @@ extends CanvasLayer
 var step: int = 0
 
 var prompts = [
-	"Usa el click izquierdo para moverte de forma por las casillas.", 
-	"Tus stats base (HP, Strength, Magic, Dexterity) son fijas.",
-	"El dado 1d6 bonifica tus ataques, pero no altera tus stats.",
-	"Presiona TAB para ver tus estadísticas y mejoras.",
-	"Gestiona tus 3 cartas para derrotar a los enemigos y avanzar.",
-	"¡Derrota al enemigo final para completar el contrato!",
-	"¡Buena suerte, cazarecompensas!"
+	"Paso 1/5 - Movimiento: haz click en una casilla cercana para avanzar 1 turno.",
+	"Paso 2/5 - Combate: acércate al enemigo verde del tutorial y atácalo con tus cartas.",
+	"Paso 3/5 - Cartas: usa 1, 2, 3 para cambiar carta activa y revisa su alcance.",
+	"Paso 4/5 - Información: mantén TAB para ver stats, cartas equipadas y progreso.",
+	"Paso 5/5 - Tienda: usa tu oro para mejorar HP, Fuerza, Magia o Destreza."
 ]
 
 var active_tween: Tween 
@@ -64,7 +62,7 @@ func _show_next_prompt() -> void:
 		_finish_tutorial()
 		return
 	
-	label.text = prompts[step]
+	label.text = "%s\n\n[Click izquierdo o Enter para continuar]" % prompts[step]
 	is_transitioning = false
 	
 	if active_tween:

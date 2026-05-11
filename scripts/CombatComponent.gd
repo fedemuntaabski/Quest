@@ -6,6 +6,7 @@ const CombatResolverScript = preload("res://scripts/CombatResolver.gd")
 @export var attack_range: int = 1
 @export var attack_stat: String = "strength"
 @export var base_damage: int = 0
+@export_range(0.0, 1.0, 0.01) var forced_miss_chance: float = 0.0
 
 var actor_owner: Node = null
 var stats: CharacterStats = null
@@ -76,6 +77,18 @@ func attack(target: Node) -> Dictionary:
 			"damage": 0,
 			"reason": "out_of_range"
 		}
+
+	if forced_miss_chance > 0.0 and randf() < forced_miss_chance:
+		var forced_miss_result := {
+			"hit": false,
+			"crit": false,
+			"damage": 0,
+			"reason": "forced_miss"
+		}
+		var forced_target_actor := target_component.actor_owner
+		if forced_target_actor and forced_target_actor.has_method("show_miss"):
+			forced_target_actor.show_miss()
+		return forced_miss_result
 
 	var result := CombatResolverScript.resolve_attack(
 		stats,

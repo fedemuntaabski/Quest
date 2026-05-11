@@ -1,6 +1,8 @@
 extends Node
 class_name PlayerActionController
 
+const AttackAction = preload("res://scripts/AttackAction.gd")
+
 var player: PlayerMovement
 var map_manager: MapManager
 
@@ -105,7 +107,7 @@ func _handle_mouse_click() -> void:
 	print("TARGET CELL: ", target_cell)
 	var enemy := map_manager.get_actor_at_cell(target_cell)
 	print("ACTOR AT CELL: ", enemy)
-	if enemy and enemy != player:
+	if _is_enemy_combat_target(enemy):
 		print("ENEMY CLICKED")
 		if combat_card_system and card_manager:
 			var card := card_manager.get_active_card()
@@ -113,6 +115,9 @@ func _handle_mouse_click() -> void:
 				if combat_card_system.queue_card_action(card, enemy, player.turn_manager):
 					_update_hotbar_ui()
 				return
+		if _queue_basic_attack(enemy):
+			return
+		_move_towards_enemy(enemy)
 		return
 
 
@@ -221,7 +226,7 @@ func _handle_mouse_hover() -> void:
 	if hovered_enemy and hovered_enemy.has_method("set_targeted"):
 		hovered_enemy.set_targeted(false)
 
-	hovered_enemy = actor if actor is Enemy else null
+	hovered_enemy = actor if _is_enemy_combat_target(actor) else null
 	if hovered_enemy and hovered_enemy.has_method("set_targeted"):
 		hovered_enemy.set_targeted(true)
 
@@ -230,3 +235,36 @@ func _can_process_input() -> bool:
 	if game_state_manager:
 		return game_state_manager.can_process_input()
 	return true
+
+func _is_enemy_combat_target(actor: Node) -> bool:
+	if actor == null or actor == player:
+		return false
+	if actor.has_method("get_combat_component"):
+		return actor.get_combat_component() != null
+	return actor.get_node_or_null("CombatComponent") != null
+
+func _queue_basic_attack(target: Node) -> bool:
+	if player == null or player.turn_manager == null or player.turn_manager.action_queue == null:
+		return false
+
+	var player_combat := player.get_combat_component()
+	if player_combat == null:
+		return false
+	if not player_combat.can_attack(target):
+		return false
+
+	var action := AttackAction.new(player_combat, target)
+	player.turn_manager.action_queue.queue_action(action)
+	return true
+
+func _move_towards_enemy(enemy: Node) -> void:
+	if player == null or map_manager == null:
+		return
+	if enemy == null or enemy.get("grid_pos") == null:
+		return
+
+	var enemy_cell: Vector2i = enemy.get("grid_pos")
+	var path := map_manager.find_path_to_adjacent(player.grid_pos, enemy_cell, player)
+	if path.is_empty():
+		return
+	player.set_path(path)
