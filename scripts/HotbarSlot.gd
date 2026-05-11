@@ -11,9 +11,14 @@ signal slot_pressed(index: int)
 
 var _card_data: Dictionary = {}
 var _is_selected: bool = false
+var tooltip_host: HUDController = null
 
 func _ready() -> void:
 	_update_ui()
+	if not mouse_entered.is_connected(_on_mouse_entered):
+		mouse_entered.connect(_on_mouse_entered)
+	if not mouse_exited.is_connected(_on_mouse_exited):
+		mouse_exited.connect(_on_mouse_exited)
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -22,6 +27,9 @@ func _gui_input(event: InputEvent) -> void:
 func set_card(data: Dictionary) -> void:
 	_card_data = data if data != null else {}
 	_update_ui()
+
+func set_tooltip_host(host: HUDController) -> void:
+	tooltip_host = host
 
 func set_selected(selected: bool) -> void:
 	_is_selected = selected
@@ -44,3 +52,11 @@ func _update_ui() -> void:
 		icon.texture = tex
 
 	set_cooldown(int(_card_data.get("cooldown_remaining", 0)))
+
+func _on_mouse_entered() -> void:
+	if tooltip_host:
+		tooltip_host.show_card_tooltip(_card_data, get_global_mouse_position())
+
+func _on_mouse_exited() -> void:
+	if tooltip_host:
+		tooltip_host.hide_card_tooltip()

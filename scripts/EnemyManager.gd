@@ -17,6 +17,8 @@ var player_torch: PointLight2D = null
 var enemies: Array = []
 var turn_manager: TurnManager
 
+const COIN_REWARD_PER_ENEMY := 5
+
 
 func setup(dungeon_ref: DungeonGenerator, player_ref: CharacterBody2D, tm: TurnManager) -> void:
 	dungeon = dungeon_ref
@@ -140,6 +142,9 @@ func _get_random_floor_cell_in_room(room_info: Dictionary, wall_cells: Dictionar
 
 func _on_enemy_defeated(enemy, room_id: int) -> void:
 	enemy_defeated_global.emit()
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	if currency and enemy and enemy is Node2D:
+		currency.add_gold(COIN_REWARD_PER_ENEMY, enemy.global_position)
 
 	# 🔥 REMOVER DEL TURN MANAGER
 	if turn_manager:

@@ -171,6 +171,15 @@ theme_override_font_sizes/font_size = 56
 text = "PAUSA"
 horizontal_alignment = 1
 
+[node name="PauseGoldLabel" type="Label" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1182267748]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+text = "Oro: 0"
+horizontal_alignment = 1
+
 [node name="OptionsButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1136326752]
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2

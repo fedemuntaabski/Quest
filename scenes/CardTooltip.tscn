@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://c6k0u8o5kwv8e"]
+
+[ext_resource type="Script" path="res://scripts/ui/CardTooltip.gd" id="1_tooltip_script"]
+
+[node name="CardTooltip" type="Control"]
+visible = false
+script = ExtResource("1_tooltip_script")
+custom_minimum_size = Vector2(240, 120)
+
+[node name="Panel" type="Panel" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/VBox"]
+text = "Card"
+
+[node name="Description" type="Label" parent="Panel/VBox"]
+autowrap_mode = 3
+text = ""
+
+[node name="Stats" type="Label" parent="Panel/VBox"]
+text = "Range: 0 | CD: 0 | Stat: -"

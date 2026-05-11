@@ -2,6 +2,7 @@ extends CanvasLayer
 class_name PauseMenu
 
 signal exit_requested
+signal store_opened
 
 const UPGRADES = {
 	"hp": ["base_hp", "max_hp"],
@@ -29,6 +30,7 @@ const UPGRADE_COST := 50
 @onready var options_button = $CenterContainer/PausePanel/PauseVBox/OptionsButton
 @onready var store_button = $CenterContainer/PausePanel/PauseVBox/StoreButton
 @onready var exit_button = $CenterContainer/PausePanel/PauseVBox/ExitButton
+@onready var pause_gold_label: Label = $CenterContainer/PausePanel/PauseVBox/PauseGoldLabel
 
 @onready var store_back_button: Button = $StorePanel/StoreCenterContainer/StoreCard/StoreVBox/StoreBackButton
 
@@ -57,6 +59,11 @@ func _ready() -> void:
 	click_sfx.stream = load("res://assets/audio/click.mp3")
 	hover_sfx.stream = load("res://assets/audio/hover.mp3")
 
+	if save_mgr == null:
+		save_mgr = get_node_or_null("/root/SaveManager") as SaveManager
+	if player_stats == null:
+		player_stats = get_node_or_null("/root/PlayerStats") as PlayerStats
+
 	_connect()
 	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
 		options_menu.closed.connect(_on_options_menu_closed)
@@ -69,6 +76,11 @@ func _ready() -> void:
 		exit_confirm_dialog.cancel_button_text = "Cancelar"
 
 	_set_panel(0)
+	_update_gold_labels()
+
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	if currency and not currency.gold_changed.is_connected(_on_gold_changed):
+		currency.gold_changed.connect(_on_gold_changed)
 
 # ---------------- OPEN / CLOSE ----------------
 
@@ -77,6 +89,7 @@ func open_menu():
 	visible = true
 	get_tree().paused = true
 	_set_panel(0)
+	_update_gold_labels()
 
 func close_menu():
 	is_open = false
@@ -112,6 +125,8 @@ func _set_panel(i: int) -> void:
 	if options_menu:
 		options_menu.close()
 	panels[i].visible = true
+	if i == 2:
+		store_opened.emit()
 
 # ---------------- CONNECT ----------------
 
@@ -181,6 +196,16 @@ func _update_store():
 	var ok = save_mgr.gold >= UPGRADE_COST
 	for b in upgrade_buttons:
 		b.disabled = not ok
+
+func _update_gold_labels() -> void:
+	var save := save_mgr if save_mgr else get_node_or_null("/root/SaveManager")
+	if pause_gold_label and save:
+		pause_gold_label.text = "Oro: %d" % save.gold
+	if gold_label and save:
+		gold_label.text = "Oro: %d" % save.gold
+
+func _on_gold_changed(_amount: int) -> void:
+	_update_gold_labels()
 
 # ---------------- ACTIONS ----------------
 

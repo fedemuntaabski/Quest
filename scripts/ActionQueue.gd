@@ -53,6 +53,7 @@ func process_next() -> void:
 
 func clear() -> void:
 	_queue.clear()
+	_is_busy = false
 
 func is_busy() -> bool:
 	return _is_busy

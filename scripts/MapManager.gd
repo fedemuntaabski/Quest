@@ -9,8 +9,8 @@ const MapTurnSetup = preload("res://scripts/MapTurnSetup.gd")
 var hovered_cell: Vector2i = Vector2i(-999, -999)
 var enemy_manager: EnemyManager
 var navigation_helper: MapNavigationHelper
-var enemy_tracker: MapEnemyTracker
 var occupancy_manager: OccupancyManager
+var floating_text_manager: FloatingTextManager
 
 # 🔥 NUEVO
 var turn_manager: TurnManager
@@ -57,16 +57,15 @@ func _ensure_helpers() -> void:
 		add_child(navigation_helper)
 		navigation_helper.setup(dungeon_generator, nav_region)
 
-	if enemy_tracker == null:
-		enemy_tracker = MapEnemyTracker.new()
-		enemy_tracker.name = "MapEnemyTracker"
-		add_child(enemy_tracker)
-		enemy_tracker.setup(dungeon_generator)
-
 	if occupancy_manager == null:
 		occupancy_manager = OccupancyManager.new()
 		occupancy_manager.name = "OccupancyManager"
 		add_child(occupancy_manager)
+
+	if floating_text_manager == null:
+		floating_text_manager = FloatingTextManager.new()
+		floating_text_manager.name = "FloatingTextManager"
+		add_child(floating_text_manager)
 
 	if navigation_helper:
 		navigation_helper.set_occupancy_manager(occupancy_manager)
@@ -165,21 +164,27 @@ func _on_room_cleared_from_enemies(room_id: int) -> void:
 
 # ── Enemy tracking ────────────────────────────────────────────────────────────
 func register_enemy(world_position: Vector2, enemy_node: Node2D) -> void:
-	if enemy_tracker:
-		enemy_tracker.register_enemy(world_position, enemy_node)
+	if enemy_node == null:
+		return
+	var grid_pos := world_to_grid_coords(world_position)
+	register_actor(enemy_node, grid_pos, true)
 
 
 func unregister_enemy(world_position: Vector2) -> void:
-	if enemy_tracker:
-		enemy_tracker.unregister_enemy(world_position)
+	var grid_pos := world_to_grid_coords(world_position)
+	var actor := get_actor_at_cell(grid_pos)
+	if actor is Enemy:
+		unregister_actor(actor)
 
 
 func get_enemy_at_cell(grid_pos: Vector2i) -> Node2D:
-	return enemy_tracker.get_enemy_at_cell(grid_pos) if enemy_tracker else null
+	var actor := get_actor_at_cell(grid_pos)
+	return actor if actor is Enemy else null
 
 
 func has_enemy_at_cell(world_position: Vector2) -> bool:
-	return enemy_tracker.has_enemy_at_cell(world_position) if enemy_tracker else false
+	var grid_pos := world_to_grid_coords(world_position)
+	return get_enemy_at_cell(grid_pos) != null
 
 
 # ── Wrappers directos (sin lógica) ────────────────────────────────────────────

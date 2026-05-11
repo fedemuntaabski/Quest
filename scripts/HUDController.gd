@@ -7,6 +7,7 @@ signal hotbar_slot_pressed(index: int)
 @onready var upgrade_panel: UpgradePanelUI = $Control/UpgradePanelUI
 @onready var timer_ui: TimerUI = $Control/TimerUI
 @onready var hotbar_bar: HBoxContainer = $Control/HotbarBar
+@onready var card_tooltip: CardTooltip = $CardTooltip
 
 @onready var tab_panel: Control = $Control/TabUIPanel
 @onready var current_room_label: Label = $Control/TabUIPanel/MarginContainer/StatPanelUI/TopInfoRow/CurrentRoomLabel
@@ -52,6 +53,7 @@ func _setup_hotbar() -> void:
 	for child in hotbar_bar.get_children():
 		if child is HotbarSlot:
 			hotbar_slots.append(child)
+			child.set_tooltip_host(self)
 			if not child.slot_pressed.is_connected(_on_hotbar_slot_pressed):
 				child.slot_pressed.connect(_on_hotbar_slot_pressed)
 
@@ -104,3 +106,13 @@ func update_hotbar(cards: Array, active_index: int) -> void:
 			slot.set_cooldown(0)
 
 		slot.set_selected(i == active_index)
+
+func show_card_tooltip(data: Dictionary, global_pos: Vector2) -> void:
+	if card_tooltip == null:
+		return
+	card_tooltip.set_card(data)
+	card_tooltip.global_position = global_pos + Vector2(12, 12)
+
+func hide_card_tooltip() -> void:
+	if card_tooltip:
+		card_tooltip.visible = false

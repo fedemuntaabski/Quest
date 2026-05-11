@@ -91,6 +91,10 @@ func begin_turn(tm: TurnManager) -> void:
 		_queue_wait_action()
 		return
 
+	if combat_component == null or combat_component.stats == null:
+		_queue_wait_action()
+		return
+
 	if dungeon_generator and dungeon_generator.active_room_id != my_room_id:
 		_queue_wait_action()
 		return
@@ -143,7 +147,7 @@ func _queue_move_action(next_cell: Vector2i) -> void:
 	if turn_manager == null or turn_manager.action_queue == null:
 		return
 
-	var action: BaseAction = MoveAction.new(self, map_manager, next_cell, true)
+	var action: BaseAction = MoveAction.new(self, map_manager, next_cell, false)
 	turn_manager.action_queue.queue_action(action)
 
 func _queue_wait_action() -> void:

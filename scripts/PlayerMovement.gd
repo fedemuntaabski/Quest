@@ -21,7 +21,6 @@ var step_timer: float = 0.0
 var map_manager: MapManager
 var current_path: Array[Vector2i] = []
 
-var my_turn: bool = false
 var turn_manager: TurnManager
 var combat_component: CombatComponent
 
@@ -40,15 +39,15 @@ func _ready() -> void:
 		push_error("PlayerMovement: el padre no es MapManager")
 		return
 
-	if action_controller:
-		action_controller.setup(self, map_manager)
-		action_controller.set_process_input(true)
-
 	sync_to_grid()
 	if map_manager:
 		map_manager.register_actor(self, grid_pos, true)
 
 	_ensure_combat_component()
+
+	if action_controller:
+		action_controller.setup(self, map_manager)
+		action_controller.set_process_input(true)
 
 	var player_stats := get_node_or_null("/root/PlayerStats") as PlayerStats
 	var stats := get_node_or_null("Stats") as CharacterStats
@@ -95,9 +94,8 @@ func request_move(dir: Vector2i) -> bool:
 	if turn_manager == null or turn_manager.action_queue == null:
 		return false
 
-	var action: BaseAction = MoveAction.new(self, map_manager, next, true)
+	var action: BaseAction = MoveAction.new(self, map_manager, next, false)
 	turn_manager.action_queue.queue_action(action)
-	my_turn = false
 	return true
 
 # ─────────────────────────────────────────────
@@ -158,13 +156,12 @@ func cancel_movement() -> void:
 
 func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
-	my_turn = true
 	if action_controller and action_controller.has_method("on_player_turn_started"):
 		action_controller.on_player_turn_started()
 
 func is_turn_active() -> bool:
 	if turn_manager == null:
-		return my_turn
+		return false
 	return turn_manager.current_actor == self
 
 func can_accept_input() -> bool:

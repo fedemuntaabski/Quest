@@ -31,7 +31,8 @@ func setup_enemy_manager(map_manager: MapManager) -> void:
 		map_manager.turn_manager
 	)
 
-	map_manager.enemy_manager.room_cleared.connect(map_manager._on_room_cleared_from_enemies)
+	if not map_manager.enemy_manager.room_cleared.is_connected(map_manager._on_room_cleared_from_enemies):
+		map_manager.enemy_manager.room_cleared.connect(map_manager._on_room_cleared_from_enemies)
 
 	map_manager.enemy_manager.spawn_enemies(
 		map_manager.dungeon_generator.room_infos,

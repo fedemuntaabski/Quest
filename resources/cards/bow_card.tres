@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://3d0xe0theo0g"]
+
+[ext_resource type="Script" path="res://scripts/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/cards/DamageEffect.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+stat_key = "dexterity"
+damage_scaling = 0.6
+
+[resource]
+script = ExtResource("1")
+id = "bow_shot"
+display_name = "Bow Shot"
+description = "A precise ranged shot."
+card_type = "ranged"
+stat_key = "dexterity"
+damage_scaling = 0.6
+range = 3
+cooldown = 1
+effects = Array[Resource]([SubResource("1")])

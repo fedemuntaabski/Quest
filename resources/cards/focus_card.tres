@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://dlehokkh10rjb"]
+
+[ext_resource type="Script" path="res://scripts/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/cards/StatModifierEffect.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+stat_key = "magic"
+value = 1
+
+[resource]
+script = ExtResource("1")
+id = "focus"
+display_name = "Focus"
+description = "Empower your next spells."
+card_type = "buff"
+target_type = "self"
+stat_key = "magic"
+damage_scaling = 0.0
+range = 0
+cooldown = 3
+effects = Array[Resource]([SubResource("1")])

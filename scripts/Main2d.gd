@@ -167,6 +167,16 @@ func _on_player_died() -> void:
 		return
 
 	_is_dead = true
+	if map_manager and map_manager.turn_manager:
+		map_manager.turn_manager.stop()
+	if pause_menu and pause_menu.has_method("close_menu"):
+		pause_menu.close_menu()
+
+	var player := map_manager.get_node_or_null("Player") as PlayerMovement
+	if player:
+		var controller := player.get_node_or_null("PlayerActionController")
+		if controller:
+			controller.set_process_input(false)
 	get_tree().paused = true
 
 	if death_handler:

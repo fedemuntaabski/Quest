@@ -3,19 +3,28 @@ class_name PlayerActionController
 
 var player: PlayerMovement
 var map_manager: MapManager
-const AttackAction = preload("res://scripts/AttackAction.gd")
+const CardManager = preload("res://scripts/CardManager.gd")
+const CombatCardSystem = preload("res://scripts/CombatCardSystem.gd")
 
 var hud: HUDController = null
-
-var cards: Array[Dictionary] = []
-var active_card_index: int = 0
 var hovered_enemy: Node = null
+
+var card_manager: CardManager = null
+var combat_card_system: CombatCardSystem = null
+
+var DEFAULT_DECK: Array[CardData] = [
+	load("res://resources/cards/sword_card.tres"),
+	load("res://resources/cards/bow_card.tres"),
+	load("res://resources/cards/fire_card.tres"),
+	load("res://resources/cards/focus_card.tres"),
+	load("res://resources/cards/cripple_card.tres"),
+]
 
 func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 	player = p_player
 	map_manager = p_map_manager
 	_ensure_input_actions()
-	_init_default_cards()
+	_ensure_card_system()
 	_resolve_hud()
 
 
@@ -83,6 +92,13 @@ func _handle_mouse_click() -> void:
 	var world_pos: Vector2 = cam.get_global_mouse_position()
 	var target_cell := map_manager.world_to_grid_coords(world_pos)
 	if target_cell == player.grid_pos:
+		if combat_card_system and card_manager:
+			var self_card := card_manager.get_active_card()
+			if self_card and self_card.target_type == "self":
+				if combat_card_system.can_play(self_card, player):
+					combat_card_system.queue_card_action(self_card, player, player.turn_manager)
+					_update_hotbar_ui()
+					return
 		player.cancel_movement()
 		return
 	print("CLICK WORLD: ", world_pos)
@@ -91,39 +107,12 @@ func _handle_mouse_click() -> void:
 	print("ACTOR AT CELL: ", enemy)
 	if enemy and enemy != player:
 		print("ENEMY CLICKED")
-
-		print("PLAYER COMBAT COMPONENT: ", player.combat_component)
-		print("TURN MANAGER: ", player.turn_manager)
-
-		if player.combat_component == null:
-			print("NO COMBAT COMPONENT")
-			return
-
-		if not _can_use_active_card():
-			print("CARD ON COOLDOWN")
-			return
-
-		_apply_active_card_to_combat()
-
-		var can_attack := player.combat_component.can_attack(enemy)
-
-		print("CAN ATTACK: ", can_attack)
-
-		if not can_attack:
-			return
-
-		var action := AttackAction.new(player.combat_component, enemy)
-
-		print("ACTION CREATED: ", action)
-
-		if player.turn_manager and player.turn_manager.action_queue:
-			print("QUEUEING ACTION")
-			player.turn_manager.action_queue.queue_action(action)
-			player.my_turn = false
-			_consume_active_card()
-		else:
-			print("NO TURN MANAGER OR ACTION QUEUE")
-
+		if combat_card_system and card_manager:
+			var card := card_manager.get_active_card()
+			if card and combat_card_system.can_play(card, enemy):
+				if combat_card_system.queue_card_action(card, enemy, player.turn_manager):
+					_update_hotbar_ui()
+				return
 		return
 
 
@@ -136,7 +125,8 @@ func _handle_mouse_click() -> void:
 	player.set_path(path)
 
 func on_player_turn_started() -> void:
-	_tick_cooldowns()
+	if card_manager:
+		card_manager.tick_cooldowns()
 	_update_hotbar_ui()
 
 func _ensure_input_actions() -> void:
@@ -158,36 +148,25 @@ func _ensure_input_actions() -> void:
 		ev3.keycode = KEY_3
 		InputMap.action_add_event("hotbar_3", ev3)
 
-func _init_default_cards() -> void:
-	cards = [
-		{
-			"name": "Espada",
-			"description": "Golpe fisico cuerpo a cuerpo",
-			"stat": "strength",
-			"base_damage": 1,
-			"range": 1,
-			"cooldown": 0,
-			"cooldown_remaining": 0
-		},
-		{
-			"name": "Arco",
-			"description": "Disparo preciso a distancia",
-			"stat": "dexterity",
-			"base_damage": 0,
-			"range": 3,
-			"cooldown": 1,
-			"cooldown_remaining": 0
-		},
-		{
-			"name": "Fuego",
-			"description": "Hechizo de fuego a media distancia",
-			"stat": "magic",
-			"base_damage": 2,
-			"range": 2,
-			"cooldown": 2,
-			"cooldown_remaining": 0
-		}
-	]
+func _ensure_card_system() -> void:
+	if player == null:
+		return
+
+	card_manager = player.get_node_or_null("CardManager") as CardManager
+	if card_manager == null:
+		card_manager = CardManager.new()
+		card_manager.name = "CardManager"
+		player.add_child(card_manager)
+	card_manager.max_equipped = 3
+	card_manager.set_deck(DEFAULT_DECK)
+
+	combat_card_system = player.get_node_or_null("CombatCardSystem") as CombatCardSystem
+	if combat_card_system == null:
+		combat_card_system = CombatCardSystem.new()
+		combat_card_system.name = "CombatCardSystem"
+		player.add_child(combat_card_system)
+
+	combat_card_system.setup(player, map_manager, card_manager, player.get_combat_component())
 
 func _resolve_hud() -> void:
 	hud = get_tree().get_first_node_in_group("hud") as HUDController
@@ -196,47 +175,30 @@ func _resolve_hud() -> void:
 		return
 	if hud and not hud.hotbar_slot_pressed.is_connected(_on_hotbar_slot_pressed):
 		hud.hotbar_slot_pressed.connect(_on_hotbar_slot_pressed)
+	if card_manager:
+		if not card_manager.cooldowns_changed.is_connected(_update_hotbar_ui):
+			card_manager.cooldowns_changed.connect(_update_hotbar_ui)
+		if not card_manager.active_index_changed.is_connected(_on_active_index_changed):
+			card_manager.active_index_changed.connect(_on_active_index_changed)
+		if not card_manager.equipped_changed.is_connected(_update_hotbar_ui):
+			card_manager.equipped_changed.connect(_update_hotbar_ui)
 	_update_hotbar_ui()
 
 func _update_hotbar_ui() -> void:
-	if hud:
-		hud.update_hotbar(cards, active_card_index)
+	if hud and card_manager:
+		hud.update_hotbar(card_manager.get_equipped_payload(), card_manager.active_index)
 
 func _select_card(index: int) -> void:
-	if index < 0 or index >= cards.size():
+	if card_manager == null:
 		return
-	active_card_index = index
+	card_manager.set_active_index(index)
 	_update_hotbar_ui()
 
 func _on_hotbar_slot_pressed(index: int) -> void:
 	_select_card(index)
 
-func _apply_active_card_to_combat() -> void:
-	if player == null or player.combat_component == null:
-		return
-
-	var card := cards[active_card_index]
-	player.combat_component.attack_stat = card.get("stat", "strength")
-	player.combat_component.base_damage = int(card.get("base_damage", 0))
-	player.combat_component.attack_range = int(card.get("range", 1))
-
-func _can_use_active_card() -> bool:
-	if cards.is_empty():
-		return false
-
-	var cd := int(cards[active_card_index].get("cooldown_remaining", 0))
-	return cd <= 0
-
-func _consume_active_card() -> void:
-	var cd := int(cards[active_card_index].get("cooldown", 0))
-	cards[active_card_index]["cooldown_remaining"] = cd
+func _on_active_index_changed(_index: int) -> void:
 	_update_hotbar_ui()
-
-func _tick_cooldowns() -> void:
-	for i in range(cards.size()):
-		var cd := int(cards[i].get("cooldown_remaining", 0))
-		if cd > 0:
-			cards[i]["cooldown_remaining"] = cd - 1
 
 func _handle_mouse_hover() -> void:
 	if player == null:
@@ -258,5 +220,3 @@ func _handle_mouse_hover() -> void:
 	hovered_enemy = actor if actor is Enemy else null
 	if hovered_enemy and hovered_enemy.has_method("set_targeted"):
 		hovered_enemy.set_targeted(true)
-
-

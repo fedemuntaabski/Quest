@@ -20,7 +20,10 @@ func handle_player_died(enemies_killed: int, rooms_cleared: int) -> void:
 		death_gold_label.text = "Oro ganado: %d" % gold_reward
 
 	var save_mgr = owner.get_node_or_null("/root/SaveManager")
-	if save_mgr:
+	var currency := owner.get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	if currency:
+		currency.add_gold(gold_reward)
+	elif save_mgr:
 		save_mgr.gold += gold_reward
 		save_mgr.save_game()
 

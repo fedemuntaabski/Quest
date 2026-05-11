@@ -9,6 +9,7 @@ var pending_actors: int = 0
 var current_actor_index: int = 0
 var current_actor: Node = null
 var action_queue: ActionQueue
+var _active: bool = true
 
 func _ready() -> void:
 	_ensure_action_queue()
@@ -38,6 +39,7 @@ func unregister_actor(actor: Node) -> void:
 # ─────────────────────────────────────────────
 func start() -> void:
 	_ensure_action_queue()
+	_active = true
 	if actors.is_empty():
 		push_warning("TurnManager: No actors registered")
 		return
@@ -52,6 +54,8 @@ func _start_turn() -> void:
 	_begin_actor_turn()
 
 func _begin_actor_turn() -> void:
+	if not _active:
+		return
 	if actors.is_empty():
 		return
 
@@ -85,6 +89,13 @@ func _begin_actor_turn() -> void:
 func end_turn() -> void:
 	_actor_finished()
 
+func stop() -> void:
+	_active = false
+	if action_queue:
+		action_queue.clear()
+	current_actor = null
+	pending_actors = 0
+
 func _actor_finished() -> void:
 	pending_actors -= 1
 	current_actor_index += 1
@@ -98,6 +109,8 @@ func _actor_finished() -> void:
 
 func _on_action_finished(action: BaseAction) -> void:
 	if action == null:
+		return
+	if not _active:
 		return
 
 	print("[TurnManager] Action finished: ", action.get_class(), " consume_turn=", action.consume_turn)

@@ -6,6 +6,7 @@
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
 [ext_resource type="Script" uid="uid://01lnjdgw7lht" path="res://scripts/TimerUI.gd" id="4_7hsmw"]
 [ext_resource type="PackedScene" uid="uid://cbfp62ksudyq3" path="res://scenes/HotbarSlot.tscn" id="5_hotbar_slot"]
+[ext_resource type="PackedScene" path="res://scenes/CardTooltip.tscn" id="6_card_tooltip"]
 
 [node name="HUD" type="CanvasLayer" unique_id=729961790]
 layer = 2
@@ -170,3 +171,6 @@ grow_horizontal = 2
 theme_override_font_sizes/font_size = 30
 text = "Tiempo: 2:00"
 horizontal_alignment = 1
+
+[node name="CardTooltip" parent="." instance=ExtResource("6_card_tooltip")]
+z_index = 200
