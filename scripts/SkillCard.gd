@@ -14,7 +14,8 @@ func set_data(data: Dictionary) -> void:
 		card_description.text = data.get("description", "")
 
 	if stat_icon:
-		stat_icon.text = "Stat: %s" % data.get("stat", "strength")
+		var stat_key := str(data.get("stat", "strength"))
+		stat_icon.text = "Atributo: %s" % StatTypes.get_label(stat_key)
 
 	if damage_label:
-		damage_label.text = "Damage: %d" % int(data.get("base_damage", 0))
+		damage_label.text = "Dano: %d" % int(data.get("base_damage", 0))

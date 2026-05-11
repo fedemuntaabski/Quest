@@ -17,4 +17,4 @@ func set_card(data: Dictionary) -> void:
 	var range_val := int(data.get("range", 0))
 	var cd := int(data.get("cooldown", 0))
 	var stat := str(data.get("stat", ""))
-	stats_label.text = "Range: %d | CD: %d | Stat: %s" % [range_val, cd, stat]
+	stats_label.text = "Alcance: %d | Enfriamiento: %d | Atributo: %s" % [range_val, cd, StatTypes.get_label(stat)]

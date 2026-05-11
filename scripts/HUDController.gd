@@ -13,6 +13,7 @@ signal reward_card_replace_selected(card: CardData, slot_index: int)
 @onready var hotbar_bar: HBoxContainer = $Control/HotbarBar
 @onready var card_tooltip: CardTooltip = $CardTooltip
 @onready var card_reward_ui: CardRewardUI = $CardRewardUI if has_node("CardRewardUI") else null
+@onready var roll_label: Label = $Control/RollLabel if has_node("Control/RollLabel") else null
 
 @onready var tab_panel: Control = $Control/TabUIPanel
 @onready var current_room_label: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/TopInfoRow/CurrentRoomLabel
@@ -177,6 +178,30 @@ func show_card_tooltip(data: Dictionary, global_pos: Vector2) -> void:
 func hide_card_tooltip() -> void:
 	if card_tooltip:
 		card_tooltip.visible = false
+
+func set_roll_label_from_result(result: Dictionary) -> void:
+	if roll_label == null or result == null:
+		return
+	if not result.has("dice_roll"):
+		return
+	var roll: int = int(result.get("dice_roll", 0))
+	var multiplier: float = float(result.get("damage_multiplier", 1.0))
+	roll_label.text = "Tirada: %d - %s (x%.2f)" % [roll, _roll_label_name(roll), multiplier]
+
+func _roll_label_name(roll: int) -> String:
+	match roll:
+		6:
+			return "Critico"
+		5:
+			return "Golpe fuerte"
+		4, 3:
+			return "Normal"
+		2:
+			return "Golpe debil"
+		1:
+			return "Golpe rasante"
+		_:
+			return "Normal"
 
 func bind_card_manager(card_manager: CardManager) -> void:
 	if card_manager == null:

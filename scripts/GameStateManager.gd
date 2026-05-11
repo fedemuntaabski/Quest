@@ -38,10 +38,13 @@ func is_reward() -> bool:
 	return current_state == State.REWARD
 
 func can_process_input() -> bool:
-	return current_state == State.ACTIVE
+	return current_state == State.ACTIVE or current_state == State.REWARD
 
 func can_update_overlays() -> bool:
-	return current_state == State.ACTIVE
+	return current_state == State.ACTIVE or current_state == State.REWARD
+
+func can_process_turns() -> bool:
+	return current_state == State.ACTIVE or current_state == State.REWARD
 
 func set_state(new_state: State) -> void:
 	if current_state == new_state:
@@ -98,4 +101,4 @@ func _handle_state_change(new_state: State, _old_state: State) -> void:
 		State.DEAD:
 			get_tree().paused = true
 		State.REWARD:
-			get_tree().paused = true
+			get_tree().paused = false

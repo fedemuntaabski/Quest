@@ -4,15 +4,17 @@ class_name DiceSystem
 static func roll_d6() -> int:
 	return randi_range(1, 6)
 
-static func roll_bonus() -> int:
-	match roll_d6():
-		1:
-			return -2
-		2, 3:
-			return -1
-		4, 5:
-			return 0
+static func get_damage_multiplier(roll: int) -> float:
+	match roll:
 		6:
-			return 2
+			return 1.5
+		5:
+			return 1.15
+		4, 3:
+			return 1.0
+		2:
+			return 0.95
+		1:
+			return 0.85
 		_:
-			return 0
+			return 1.0

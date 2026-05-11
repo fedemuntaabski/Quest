@@ -63,6 +63,10 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 		return {"hit": false, "damage": 0, "reason": "no_target"}
 
 	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
+	if owner_actor and owner_actor.is_in_group("player"):
+		var hud := get_tree().get_first_node_in_group("hud") as HUDController
+		if hud:
+			hud.set_roll_label_from_result(result)
 	var damage := int(result.get("damage", 0))
 	if result.get("hit", false) and damage > 0:
 		target_component.receive_damage(damage, result.get("crit", false))

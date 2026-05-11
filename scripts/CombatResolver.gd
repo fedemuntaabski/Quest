@@ -12,37 +12,20 @@ static func resolve_attack(attacker: CharacterStats, target: CharacterStats, sta
 			"reason": "missing_stats"
 		}
 
-	var attack_stat := _get_stat_value(attacker, stat_key)
-	var dodge_stat := target.get_total_dexterity()
-
-	var attack_roll := DiceSystem.roll_d6()
-	var dodge_roll := DiceSystem.roll_d6()
-
-	var attack_total := attack_roll + attack_stat
-	var dodge_total := dodge_roll + dodge_stat
-	var hit := attack_total >= dodge_total
-
-	var crit_roll := DiceSystem.roll_d6()
-	var crit := hit and crit_roll == 6
-
-	var damage := 0
-	var damage_roll := 0
-
-	if hit:
-		damage_roll = DiceSystem.roll_d6()
-		damage = max(1, damage_roll + attack_stat + base_damage)
-		if crit:
-			damage += DiceSystem.roll_d6()
+	var attack_stat: int = _get_stat_value(attacker, stat_key)
+	var base_total: int = base_damage + attack_stat
+	var dice_roll: int = DiceSystem.roll_d6()
+	var multiplier: float = DiceSystem.get_damage_multiplier(dice_roll)
+	var damage: int = max(1, int(round(float(base_total) * multiplier)))
+	var crit: bool = dice_roll == 6
 
 	return {
-		"hit": hit,
+		"hit": true,
 		"crit": crit,
 		"damage": damage,
-		"attack_roll": attack_roll,
-		"dodge_roll": dodge_roll,
-		"attack_total": attack_total,
-		"dodge_total": dodge_total,
-		"damage_roll": damage_roll,
+		"dice_roll": dice_roll,
+		"damage_multiplier": multiplier,
+		"base_total": base_total,
 		"stat_key": stat_key,
 		"stat_value": attack_stat
 	}

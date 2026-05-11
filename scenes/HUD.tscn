@@ -103,8 +103,8 @@ layout_mode = 2
 [node name="LabelHP" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_HP" unique_id=1859836433]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
-tooltip_text = "Health Points (HP)
-Determines how much damage you can take before dying."
+tooltip_text = "HP (Vida)
+Cuanto dano puedes recibir antes de morir."
 mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "HP: 10/10"
@@ -119,8 +119,8 @@ layout_mode = 2
 [node name="LabelStrength" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Strength" unique_id=1818296356]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
-tooltip_text = "Strength (STR)
-Increases physical damage dealt to enemies."
+tooltip_text = "Fuerza
+Aumenta el dano fisico."
 mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Fuerza: +0"
@@ -132,8 +132,8 @@ layout_mode = 2
 [node name="LabelMagic" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Magic" unique_id=93396923]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
-tooltip_text = "Magic (MAG)
-Increases spell damage and elemental effects."
+tooltip_text = "Magia
+Recurso para habilidades especiales."
 mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Magia: +0"
@@ -145,8 +145,8 @@ layout_mode = 2
 [node name="LabelDexterity" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=1581397644]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
-tooltip_text = "Dexterity (DEX)
-Increases critical strike chance and evasion."
+tooltip_text = "Agilidad
+Aumenta la prob. de esquivar."
 mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Agilidad: +0"
@@ -214,6 +214,22 @@ offset_bottom = 58.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 30
 text = "Tiempo: 2:00"
+horizontal_alignment = 1
+
+[node name="RollLabel" type="Label" parent="Control" unique_id=1680001123]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -150.0
+offset_right = 180.0
+offset_bottom = -120.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 18
+text = ""
 horizontal_alignment = 1
 
 [node name="CardTooltip" parent="." instance=ExtResource("6_card_tooltip")]

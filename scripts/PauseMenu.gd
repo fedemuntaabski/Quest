@@ -7,8 +7,8 @@ signal store_opened
 const UPGRADES = {
 	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+1 Vida maxima"},
 	"str": {"stat": "strength", "label": "Fuerza", "effect": "+1 dano fisico"},
-	"mag": {"stat": "magic", "label": "Magia", "effect": "+1 dano magico"},
-	"dex": {"stat": "dexterity", "label": "Precision", "effect": "+1 precision/crit"}
+	"mag": {"stat": "magic", "label": "Magia", "effect": "+1 energia para habilidades"},
+	"dex": {"stat": "dexterity", "label": "Agilidad", "effect": "+1 prob. de esquivar"}
 }
 
 const BASE_UPGRADE_COST := 50

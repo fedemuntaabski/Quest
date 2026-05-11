@@ -131,5 +131,5 @@ func _on_action_finished(action: BaseAction) -> void:
 func _can_process_turns() -> bool:
 	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
 	if game_state_manager:
-		return game_state_manager.is_active()
+		return game_state_manager.can_process_turns()
 	return true

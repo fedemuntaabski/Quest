@@ -93,10 +93,11 @@ func _create_card_row(slot_num: int, data: Dictionary) -> void:
 	# Stats line
 	var stats_label := Label.new()
 	var stat_key: String = data.get("scaling_stat", data.get("stat", ""))
+	var stat_label := StatTypes.get_label(stat_key)
 	var base_dmg: int = data.get("base_damage", 0)
 	var range_val: int = data.get("range", 0)
 	var cd: int = data.get("cooldown", 0)
-	stats_label.text = "Scaling: %s | Base Dmg: %d | Range: %d | Cooldown: %d" % [stat_key, base_dmg, range_val, cd]
+	stats_label.text = "Escala: %s | Dano base: %d | Alcance: %d | Enfriamiento: %d" % [stat_label, base_dmg, range_val, cd]
 	stats_label.add_theme_font_size_override("font_size", 12)
 	stats_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.95, 1))
 	info_vbox.add_child(stats_label)
