@@ -25,8 +25,16 @@ func create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
 	area.collision_mask = 1
 	area.monitoring = true
 
+	# Expand room detection by 1 tile in all directions to cover corridor connections
+	# This prevents players from getting stuck at room/corridor transition points
+	var expansion := 1
+	var expanded_size := Vector2(
+		(room_rect.size.x + expansion * 2) * dungeon.tile_size,
+		(room_rect.size.y + expansion * 2) * dungeon.tile_size
+	)
+
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(room_rect.size) * dungeon.tile_size
+	shape.size = expanded_size
 
 	var collision := CollisionShape2D.new()
 	collision.shape = shape

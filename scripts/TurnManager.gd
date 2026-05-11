@@ -93,8 +93,16 @@ func stop() -> void:
 	_active = false
 	if action_queue:
 		action_queue.clear()
-	current_actor = null
+	
+	# Clear current actor reference to prevent stale access
+	if current_actor != null:
+		# Notify actor their turn was interrupted (if they care)
+		if current_actor.has_method("turn_interrupted"):
+			current_actor.turn_interrupted()
+		current_actor = null
+	
 	pending_actors = 0
+	current_actor_index = 0
 
 func _actor_finished() -> void:
 	pending_actors -= 1

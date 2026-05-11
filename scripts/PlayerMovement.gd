@@ -23,6 +23,7 @@ var current_path: Array[Vector2i] = []
 
 var turn_manager: TurnManager
 var combat_component: CombatComponent
+var _is_dead: bool = false
 
 # ─────────────────────────────────────────────
 # REFERENCES
@@ -106,6 +107,11 @@ func _start_move_to(next: Vector2i) -> void:
 
 	is_moving_step = true
 	step_timer = 0.0
+	
+	# Safety timeout to prevent infinite hang if tween gets stuck
+	var safety_tween := create_tween()
+	safety_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	safety_tween.tween_callback(_force_step_complete).set_delay(step_time * 2.0)
 
 
 # ─────────────────────────────────────────────
@@ -131,8 +137,13 @@ func _process_step_move(delta: float) -> void:
 	global_position = _start_pos.lerp(target_world_pos, t)
 
 	if t >= 1.0:
-		global_position = target_world_pos
-		is_moving_step = false
+		_force_step_complete()
+
+func _force_step_complete() -> void:
+	if not is_moving_step:
+		return
+	global_position = target_world_pos
+	is_moving_step = false
 
 func sync_to_grid() -> void:
 	if map_manager == null:
@@ -158,6 +169,11 @@ func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
 	if action_controller and action_controller.has_method("on_player_turn_started"):
 		action_controller.on_player_turn_started()
+
+func turn_interrupted() -> void:
+	# Clear any pending movement when turn is interrupted (e.g., on death)
+	cancel_movement()
+	_is_dead = true
 
 func is_turn_active() -> bool:
 	if turn_manager == null:
@@ -197,4 +213,5 @@ func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 
 func wait_for_step() -> void:
 	while is_moving_step:
-		await get_tree().process_frame
+		# Use a shorter timeout approach to prevent infinite hang
+		await get_tree().create_timer(0.016, true, true).timeout

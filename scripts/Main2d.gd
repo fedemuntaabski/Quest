@@ -165,20 +165,29 @@ func _on_enemy_defeated() -> void:
 func _on_player_died() -> void:
 	if _is_dead:
 		return
-
+	
 	_is_dead = true
+	
+	# Stop turn manager first to prevent new actions from starting
 	if map_manager and map_manager.turn_manager:
 		map_manager.turn_manager.stop()
+	
+	# Close pause menu if open
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
-
-	var player := map_manager.get_node_or_null("Player") as PlayerMovement
-	if player:
-		var controller := player.get_node_or_null("PlayerActionController")
-		if controller:
-			controller.set_process_input(false)
+	
+	# Disable player input safely
+	if map_manager:
+		var player := map_manager.get_node_or_null("Player") as PlayerMovement
+		if player and is_instance_valid(player):
+			var controller := player.get_node_or_null("PlayerActionController")
+			if controller and is_instance_valid(controller):
+				controller.set_process_input(false)
+	
+	# Pause the game tree (must happen AFTER stopping turn manager)
 	get_tree().paused = true
-
+	
+	# Show death overlay
 	if death_handler:
 		death_handler.handle_player_died(enemies_killed, rooms_cleared)
 

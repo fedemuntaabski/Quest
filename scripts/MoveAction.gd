@@ -4,6 +4,7 @@ class_name MoveAction
 var map_manager: MapManager = null
 var target_cell: Vector2i = Vector2i.ZERO
 var use_pathfinding: bool = true
+var tween_pause_mode: bool = true
 
 func _init(
 	p_owner: Node = null,

@@ -29,8 +29,12 @@ func handle_player_died(enemies_killed: int, rooms_cleared: int) -> void:
 
 	if death_overlay:
 		death_overlay.visible = true
-		death_overlay.modulate.a = 0.0
-
-		var t := owner.create_tween()
-		t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-		t.tween_property(death_overlay, "modulate:a", 1.0, 2.0)
+		
+		# Fade in the ColorRect (CanvasLayer doesn't have modulate, but ColorRect does)
+		var color_rect := death_overlay.get_node_or_null("ColorRect") as ColorRect
+		if color_rect:
+			color_rect.modulate.a = 0.0
+			
+			var t := owner.create_tween()
+			t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+			t.tween_property(color_rect, "modulate:a", 1.0, 2.0)
