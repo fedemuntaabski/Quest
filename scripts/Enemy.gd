@@ -35,11 +35,18 @@ var stats: CharacterStats
 var _target_tint: Color = Color(1.0, 0.6, 0.6, 1.0)
 var is_tutorial_enemy: bool = false
 
+const STANDARD_ENEMY_HP := 10
+const STANDARD_ENEMY_STRENGTH := 1
+const STANDARD_ENEMY_MAGIC := 0
+const STANDARD_ENEMY_DEX := 0
+const STANDARD_ENEMY_BASE_DAMAGE := 2
+
 func _ready():
 	stats = $Stats as CharacterStats
 
 	stats.died.connect(_on_died)
 	stats.hp_changed.connect(_on_hp_changed)
+	_apply_standard_profile()
 
 	if sprite:
 		_base_modulate = sprite.modulate
@@ -59,6 +66,26 @@ func setup(p_map: MapManager, p_player: PlayerMovement) -> void:
 		map_manager.register_actor(self, grid_pos, true)
 
 	_ensure_combat_component()
+	_apply_standard_combat_profile()
+
+func _apply_standard_profile() -> void:
+	if stats == null:
+		return
+	stats.max_hp = STANDARD_ENEMY_HP
+	stats.current_hp = STANDARD_ENEMY_HP
+	stats.strength = STANDARD_ENEMY_STRENGTH
+	stats.magic = STANDARD_ENEMY_MAGIC
+	stats.dexterity = STANDARD_ENEMY_DEX
+	stats.strength_mod = 0
+	stats.magic_mod = 0
+	stats.dexterity_mod = 0
+	stats.hp_changed.emit(stats.current_hp, stats.max_hp)
+	stats.stats_changed.emit()
+
+func _apply_standard_combat_profile() -> void:
+	if combat_component == null:
+		return
+	combat_component.base_damage = STANDARD_ENEMY_BASE_DAMAGE
 
 func _ensure_combat_component() -> void:
 	if stats == null:

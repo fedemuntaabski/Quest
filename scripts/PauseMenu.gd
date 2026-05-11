@@ -5,10 +5,10 @@ signal exit_requested
 signal store_opened
 
 const UPGRADES = {
-	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+1 Vida maxima"},
-	"str": {"stat": "strength", "label": "Fuerza", "effect": "+1 dano fisico"},
-	"mag": {"stat": "magic", "label": "Magia", "effect": "+1 energia para habilidades"},
-	"dex": {"stat": "dexterity", "label": "Agilidad", "effect": "+1 prob. de esquivar"}
+	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+2 Vida maxima", "value": 2},
+	"str": {"stat": "strength", "label": "Fuerza", "effect": "+1 dano fisico", "value": 1},
+	"mag": {"stat": "magic", "label": "Magia", "effect": "+1 energia para habilidades", "value": 1},
+	"dex": {"stat": "dexterity", "label": "Agilidad", "effect": "+1 prob. de esquivar", "value": 1}
 }
 
 const BASE_UPGRADE_COST := 50
@@ -257,10 +257,11 @@ func _on_upgrade_pressed(stat: String):
 	if save_mgr.gold < cost:
 		return
 
+	var value_change := int(config.get("value", 1))
 	var upgrade := {
 		"card_name": "Store Upgrade",
 		"stat_affected": stat_name,
-		"value_change": 1
+		"value_change": value_change
 	}
 	if not player_stats.apply_upgrade(upgrade):
 		return

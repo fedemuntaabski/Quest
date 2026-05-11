@@ -6,30 +6,27 @@ signal reward_card_selected(card: CardData)
 signal reward_skipped
 signal reward_card_replace_selected(card: CardData, slot_index: int)
 
-@onready var stat_panel: StatPanelUI = $Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI
+@onready var stat_panel: StatPanelUI = $Control/StatsHUD/MarginContainer/StatPanelUI
 @onready var upgrade_panel: UpgradePanelUI = $Control/UpgradePanelUI if has_node("Control/UpgradePanelUI") else null
-@onready var card_panel: CardPanelUI = $Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/CardPanelUI if has_node("Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/CardPanelUI") else null
+@onready var card_panel: CardPanelUI = get_node_or_null("Control/CardPanelUI") as CardPanelUI
 @onready var timer_ui: TimerUI = $Control/TimerUI
 @onready var hotbar_bar: HBoxContainer = $Control/HotbarBar
 @onready var card_tooltip: CardTooltip = $CardTooltip
 @onready var card_reward_ui: CardRewardUI = $CardRewardUI if has_node("CardRewardUI") else null
 @onready var roll_label: Label = $Control/RollLabel if has_node("Control/RollLabel") else null
 
-@onready var tab_panel: Control = $Control/TabUIPanel
-@onready var current_room_label: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/TopInfoRow/CurrentRoomLabel
-@onready var enemies_label: Label = $Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/TopInfoRow/EnemiesLabel
-@onready var tab_bar: TabBar = $Control/TabUIPanel/MarginContainer/VBoxContainer/TabBar if has_node("Control/TabUIPanel/MarginContainer/VBoxContainer/TabBar") else null
+@onready var current_room_label: Label = get_node_or_null("Control/CurrentRoomLabel") as Label
+@onready var enemies_label: Label = get_node_or_null("Control/EnemiesLabel") as Label
 
 var player_stats: CharacterStats
 var base_stats := {}
 var hotbar_slots: Array = []
 var _bound_card_manager: CardManager = null
+var _roll_label_tween: Tween = null
 
 func _ready() -> void:
 	add_to_group("hud")
-	_setup_input()
 	_setup_hotbar()
-	_setup_tab_switching()
 	_setup_reward_ui()
 
 	var ps = get_node_or_null("/root/PlayerStats")
@@ -90,30 +87,6 @@ func _on_reward_skipped() -> void:
 func _on_reward_card_replace_selected(card: CardData, slot_index: int) -> void:
 	reward_card_replace_selected.emit(card, slot_index)
 
-func _setup_tab_switching() -> void:
-	if tab_bar == null:
-		return
-	if not tab_bar.tab_changed.is_connected(_on_tab_changed):
-		tab_bar.tab_changed.connect(_on_tab_changed)
-	# Initialize to first tab
-	_on_tab_changed(0)
-
-func _on_tab_changed(tab_index: int) -> void:
-	if stat_panel:
-		stat_panel.visible = (tab_index == 0)
-	if card_panel:
-		card_panel.visible = (tab_index == 1)
-
-func _setup_input() -> void:
-	if not InputMap.has_action("tab"):
-		InputMap.add_action("tab")
-		var ev := InputEventKey.new()
-		ev.keycode = KEY_TAB
-		InputMap.action_add_event("tab", ev)
-
-func _process(_delta: float) -> void:
-	tab_panel.visible = Input.is_action_pressed("tab")
-
 func _on_stats_changed(stats: CharacterStats) -> void:
 	player_stats = stats
 	stat_panel.update_stats(stats, base_stats)
@@ -159,7 +132,7 @@ func update_hotbar(cards: Array, active_index: int) -> void:
 
 			slot.set_selected(i == active_index)
 	
-	# Also update the Cards panel in TAB menu
+	# Also update the Cards panel if present
 	update_cards_panel(cards)
 
 func update_cards_panel(cards: Array) -> void:
@@ -187,6 +160,18 @@ func set_roll_label_from_result(result: Dictionary) -> void:
 	var roll: int = int(result.get("dice_roll", 0))
 	var multiplier: float = float(result.get("damage_multiplier", 1.0))
 	roll_label.text = "Tirada: %d - %s (x%.2f)" % [roll, _roll_label_name(roll), multiplier]
+	roll_label.visible = true
+	roll_label.modulate.a = 1.0
+
+	if _roll_label_tween:
+		_roll_label_tween.kill()
+	_roll_label_tween = create_tween()
+	_roll_label_tween.tween_interval(2.0)
+	_roll_label_tween.tween_property(roll_label, "modulate:a", 0.0, 0.35)
+	_roll_label_tween.tween_callback(func():
+		roll_label.visible = false
+		roll_label.text = ""
+	)
 
 func _roll_label_name(roll: int) -> String:
 	match roll:

@@ -11,7 +11,7 @@ var prompts = [
 	"Paso 1/5 - Movimiento: haz click en una casilla cercana para avanzar 1 turno.",
 	"Paso 2/5 - Combate: acércate al enemigo verde del tutorial y atácalo con tus cartas.",
 	"Paso 3/5 - Cartas: usa 1, 2, 3 para cambiar carta activa y revisa su alcance.",
-	"Paso 4/5 - Información: mantén TAB para ver stats, cartas equipadas y progreso.",
+	"Paso 4/5 - Información: tus stats siempre están visibles en el HUD.",
 	"Paso 5/5 - Tienda: usa tu oro para mejorar HP, Fuerza, Magia o Destreza."
 ]
 
