@@ -100,10 +100,17 @@ func update_hotbar(cards: Array, active_index: int) -> void:
 	for i in range(hotbar_slots.size()):
 		var slot: HotbarSlot = hotbar_slots[i]
 		if i < cards.size():
-			slot.set_card(cards[i])
+			var card_data = cards[i]
+			slot.set_card(card_data)
+			# Set cooldown from card data if available
+			var cd_remaining: int = card_data.get("cooldown_remaining", 0) if card_data is Dictionary else 0
+			slot.set_cooldown(cd_remaining)
+			# Disable slot if on cooldown
+			slot.set_usable(cd_remaining <= 0)
 		else:
 			slot.set_card({})
 			slot.set_cooldown(0)
+			slot.set_usable(true)
 
 		slot.set_selected(i == active_index)
 

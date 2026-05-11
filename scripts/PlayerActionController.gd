@@ -3,8 +3,6 @@ class_name PlayerActionController
 
 var player: PlayerMovement
 var map_manager: MapManager
-const CardManager = preload("res://scripts/CardManager.gd")
-const CombatCardSystem = preload("res://scripts/CombatCardSystem.gd")
 
 var hud: HUDController = null
 var hovered_enemy: Node = null
@@ -30,6 +28,8 @@ func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 
 # 🔥 INPUT REAL (event-driven)
 func _input(event: InputEvent) -> void:
+	if not _can_process_input():
+		return
 	if player == null or map_manager == null:
 		return
 
@@ -201,6 +201,8 @@ func _on_active_index_changed(_index: int) -> void:
 	_update_hotbar_ui()
 
 func _handle_mouse_hover() -> void:
+	if not _can_process_input():
+		return
 	if player == null:
 		return
 
@@ -220,3 +222,9 @@ func _handle_mouse_hover() -> void:
 	hovered_enemy = actor if actor is Enemy else null
 	if hovered_enemy and hovered_enemy.has_method("set_targeted"):
 		hovered_enemy.set_targeted(true)
+
+func _can_process_input() -> bool:
+	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if game_state_manager:
+		return game_state_manager.can_process_input()
+	return true

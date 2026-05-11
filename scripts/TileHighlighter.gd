@@ -20,11 +20,15 @@ func _ready():
 	_resolve_refs()
 
 func _on_hover_changed(cell: Vector2i) -> void:
+	if not _can_update():
+		return
 	hovered_cell = cell
 	_update_path_preview()
 	queue_redraw()
 
 func _process(_delta):
+	if not _can_update():
+		return
 	if _player == null or _card_manager == null:
 		_resolve_refs()
 	queue_redraw()
@@ -35,7 +39,7 @@ func _draw():
 
 	var tile_size := _get_tile_size()
 	var hovered_pos := map_manager.grid_to_world_coords(hovered_cell)
-	var half := tile_size * 0.5
+	var _half := tile_size * 0.5
 	var top_left := hovered_pos - Vector2(tile_size, tile_size) * 0.5
 	var rect := Rect2(top_left, Vector2(tile_size, tile_size))
 
@@ -127,3 +131,9 @@ func _resolve_refs() -> void:
 		_player = get_tree().get_first_node_in_group("player") as PlayerMovement
 	if _card_manager == null and _player:
 		_card_manager = _player.get_node_or_null("CardManager") as CardManager
+
+func _can_update() -> bool:
+	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if game_state_manager:
+		return game_state_manager.can_update_overlays()
+	return true

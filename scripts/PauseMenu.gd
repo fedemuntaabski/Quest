@@ -87,16 +87,22 @@ func _ready() -> void:
 func open_menu():
 	is_open = true
 	visible = true
-	get_tree().paused = true
 	_set_panel(0)
 	_update_gold_labels()
+	
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.request_pause()
 
 func close_menu():
 	is_open = false
 	visible = false
 	if options_menu:
 		options_menu.close()
-	get_tree().paused = false
+	
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.request_resume()
 
 func toggle_menu():
 	if is_open:
@@ -228,3 +234,6 @@ func _on_upgrade_pressed(stat):
 
 	save_mgr.save_game()
 	_update_store()
+
+func _get_game_state_manager() -> GameStateManager:
+	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager

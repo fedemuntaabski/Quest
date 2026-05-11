@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://d3caxq8yr8iqt"]
+
+[ext_resource type="Script" path="res://scripts/CardRewardUI.gd" id="1_4k8e2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1v3q1"]
+bg_color = Color(0.1, 0.1, 0.1, 0.95)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="CardRewardUI" type="CanvasLayer"]
+layer = 50
+script = ExtResource("1_4k8e2")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RewardPanel" type="Panel" parent="CenterContainer"]
+layout_mode = 2
+minimum_size = Vector2(500, 300)
+theme_override_styles/panel = SubResource("StyleBoxFlat_1v3q1")
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/RewardPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/RewardPanel/MarginContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Choose a Card Reward"
+horizontal_alignment = 1
+
+[node name="CardsContainer" type="HBoxContainer" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="SkipButton" type="Button" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Skip Reward"

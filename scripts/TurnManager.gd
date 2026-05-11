@@ -56,6 +56,8 @@ func _start_turn() -> void:
 func _begin_actor_turn() -> void:
 	if not _active:
 		return
+	if not _can_process_turns():
+		return
 	if actors.is_empty():
 		return
 
@@ -125,3 +127,9 @@ func _on_action_finished(action: BaseAction) -> void:
 
 	if action.consume_turn:
 		end_turn()
+
+func _can_process_turns() -> bool:
+	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if game_state_manager:
+		return game_state_manager.is_active()
+	return true

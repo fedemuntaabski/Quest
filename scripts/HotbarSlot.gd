@@ -33,7 +33,9 @@ func set_tooltip_host(host: HUDController) -> void:
 
 func set_selected(selected: bool) -> void:
 	_is_selected = selected
-	self_modulate = Color(1, 1, 1, 1) if selected else Color(0.8, 0.8, 0.8, 1)
+
+func set_usable(usable: bool) -> void:
+	modulate = Color(1, 1, 1, 1) if usable else Color(0.5, 0.5, 0.5, 0.8)
 
 func set_cooldown(turns_left: int) -> void:
 	if turns_left > 0:

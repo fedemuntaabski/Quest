@@ -8,12 +8,16 @@ extends Node2D
 @onready var pause_menu: PauseMenu = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
 @onready var enemy_manager: EnemyManager = $MapManager/EnemyManager
+@onready var card_reward_ui: CardRewardUI = $CardRewardUI
 
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
 @onready var death_gold_label: Label = $DeathOverlay/CenterContainer/VBoxContainer/GoldLabel
 
 @onready var upgrade_menu: CanvasLayer = $UpgradeMenu
+
+var game_state_manager: GameStateManager
+var card_reward_manager: CardRewardManager
 
 # ─────────────────────────────────────────────
 # STATE
@@ -38,10 +42,34 @@ func _ready() -> void:
 	death_handler = Main2dDeathHandler.new()
 	death_handler.setup(self, death_overlay, death_gold_label)
 
+	_setup_managers()
 	_connect_signals()
 	_load_tutorial_if_needed()
 
 	_reset_room_timer()
+
+func _setup_managers() -> void:
+	# GameStateManager
+	game_state_manager = get_node_or_null("GameStateManager") as GameStateManager
+	if game_state_manager == null:
+		game_state_manager = GameStateManager.new()
+		game_state_manager.name = "GameStateManager"
+		add_child(game_state_manager)
+
+	# CardRewardManager
+	card_reward_manager = get_node_or_null("CardRewardManager") as CardRewardManager
+	if card_reward_manager == null:
+		card_reward_manager = CardRewardManager.new()
+		card_reward_manager.name = "CardRewardManager"
+		add_child(card_reward_manager)
+
+	card_reward_manager.reward_ui = card_reward_ui
+	
+	# Connect reward signals
+	if card_reward_manager and not card_reward_manager.reward_completed.is_connected(_on_reward_completed):
+		card_reward_manager.reward_completed.connect(_on_reward_completed)
+	if card_reward_manager and not card_reward_manager.reward_declined.is_connected(_on_reward_declined):
+		card_reward_manager.reward_declined.connect(_on_reward_declined)
 
 # ─────────────────────────────────────────────
 # HELPERS
@@ -70,6 +98,9 @@ func _connect_dungeon() -> void:
 
 	if enemy_manager and not enemy_manager.enemy_defeated_global.is_connected(_on_enemy_defeated):
 		enemy_manager.enemy_defeated_global.connect(_on_enemy_defeated)
+
+	if enemy_manager and not enemy_manager.enemy_defeated_with_reward.is_connected(_on_enemy_defeated_with_reward):
+		enemy_manager.enemy_defeated_with_reward.connect(_on_enemy_defeated_with_reward)
 
 func _connect_player() -> void:
 	var player_stats = get_node_or_null("/root/PlayerStats")
@@ -168,24 +199,17 @@ func _on_player_died() -> void:
 	
 	_is_dead = true
 	
-	# Stop turn manager first to prevent new actions from starting
-	if map_manager and map_manager.turn_manager:
-		map_manager.turn_manager.stop()
-	
-	# Close pause menu if open
-	if pause_menu and pause_menu.has_method("close_menu"):
-		pause_menu.close_menu()
-	
-	# Disable player input safely
-	if map_manager:
-		var player := map_manager.get_node_or_null("Player") as PlayerMovement
-		if player and is_instance_valid(player):
-			var controller := player.get_node_or_null("PlayerActionController")
-			if controller and is_instance_valid(controller):
-				controller.set_process_input(false)
-	
-	# Pause the game tree (must happen AFTER stopping turn manager)
-	get_tree().paused = true
+	# Use GameStateManager to handle death state
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.request_death()
+	else:
+		# Fallback to old method
+		if map_manager and map_manager.turn_manager:
+			map_manager.turn_manager.stop()
+		if pause_menu and pause_menu.has_method("close_menu"):
+			pause_menu.close_menu()
+		get_tree().paused = true
 	
 	# Show death overlay
 	if death_handler:
@@ -200,8 +224,6 @@ func _set_paused_state(paused: bool) -> void:
 			pause_menu.open_menu()
 		elif not paused and pause_menu.has_method("close_menu"):
 			pause_menu.close_menu()
-
-	get_tree().paused = paused
 
 func _on_return_pressed() -> void:
 	get_tree().paused = false
@@ -221,3 +243,41 @@ func _on_retry_pressed() -> void:
 func _reset_room_timer() -> void:
 	if room_timer:
 		room_timer.reset()
+
+func _get_game_state_manager() -> GameStateManager:
+	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+
+# ─────────────────────────────────────────────
+# REWARD HANDLERS
+# ─────────────────────────────────────────────
+func _on_enemy_defeated_with_reward(_enemy, _position: Vector2) -> void:
+	if _is_dead:
+		return
+	
+	# Queue a card reward (actual UI will be shown via GameStateManager)
+	if card_reward_manager and game_state_manager:
+		# Don't show immediately - queue for after combat resolves
+		call_deferred("_process_next_reward")
+
+func _process_next_reward() -> void:
+	if card_reward_manager and game_state_manager and game_state_manager.is_active():
+		card_reward_manager.offer_reward()
+
+func _on_reward_completed(_selected_card: CardData) -> void:
+	# Reward completed, return to active state via GameStateManager
+	if game_state_manager:
+		game_state_manager.close_reward(_selected_card)
+	_update_hotbar_display()
+
+func _on_reward_declined() -> void:
+	# Reward declined, return to active state via GameStateManager
+	if game_state_manager:
+		game_state_manager.close_reward(null)
+
+func _update_hotbar_display() -> void:
+	if map_manager:
+		var player := map_manager.get_node_or_null("Player") as PlayerMovement
+		if player:
+			var controller := player.get_node_or_null("PlayerActionController") as PlayerActionController
+			if controller:
+				controller._update_hotbar_ui()

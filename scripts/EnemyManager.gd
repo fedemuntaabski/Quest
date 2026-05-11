@@ -3,6 +3,7 @@ class_name EnemyManager
 
 signal room_cleared(room_id: int)
 signal enemy_defeated_global
+signal enemy_defeated_with_reward(enemy, reward_position: Vector2)
 
 const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 
@@ -142,6 +143,10 @@ func _get_random_floor_cell_in_room(room_info: Dictionary, wall_cells: Dictionar
 
 func _on_enemy_defeated(enemy, room_id: int) -> void:
 	enemy_defeated_global.emit()
+	
+	var reward_position: Vector2 = enemy.global_position if enemy and enemy is Node2D else Vector2.ZERO
+	enemy_defeated_with_reward.emit(enemy, reward_position)
+	
 	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
 	if currency and enemy and enemy is Node2D:
 		currency.add_gold(COIN_REWARD_PER_ENEMY, enemy.global_position)
