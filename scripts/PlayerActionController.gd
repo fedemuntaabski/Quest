@@ -42,7 +42,7 @@ func _input(event: InputEvent) -> void:
 # KEYBOARD (turn-based feel)
 # ─────────────────────────────────────────────
 func _handle_keyboard() -> void:
-	if player == null or not player.my_turn:
+	if player == null or not player.can_accept_input():
 		return
 
 	if Input.is_action_just_pressed("hotbar_1"):
@@ -74,7 +74,7 @@ func _handle_keyboard() -> void:
 # MOUSE CLICK → 1 STEP (ToME style)
 # ─────────────────────────────────────────────
 func _handle_mouse_click() -> void:
-	if player == null or not player.my_turn:
+	if player == null or not player.can_accept_input():
 		return
 	var cam := player.get_node_or_null("Camera2D")
 	if cam == null:
@@ -85,25 +85,45 @@ func _handle_mouse_click() -> void:
 	if target_cell == player.grid_pos:
 		player.cancel_movement()
 		return
-
+	print("CLICK WORLD: ", world_pos)
+	print("TARGET CELL: ", target_cell)
 	var enemy := map_manager.get_actor_at_cell(target_cell)
+	print("ACTOR AT CELL: ", enemy)
 	if enemy and enemy != player:
+		print("ENEMY CLICKED")
+
+		print("PLAYER COMBAT COMPONENT: ", player.combat_component)
+		print("TURN MANAGER: ", player.turn_manager)
+
 		if player.combat_component == null:
+			print("NO COMBAT COMPONENT")
 			return
 
 		if not _can_use_active_card():
+			print("CARD ON COOLDOWN")
 			return
 
 		_apply_active_card_to_combat()
 
-		if not player.combat_component.can_attack(enemy):
+		var can_attack := player.combat_component.can_attack(enemy)
+
+		print("CAN ATTACK: ", can_attack)
+
+		if not can_attack:
 			return
 
 		var action := AttackAction.new(player.combat_component, enemy)
+
+		print("ACTION CREATED: ", action)
+
 		if player.turn_manager and player.turn_manager.action_queue:
+			print("QUEUEING ACTION")
 			player.turn_manager.action_queue.queue_action(action)
 			player.my_turn = false
 			_consume_active_card()
+		else:
+			print("NO TURN MANAGER OR ACTION QUEUE")
+
 		return
 
 

@@ -11,7 +11,9 @@ func _init(
 	p_target_cell: Vector2i = Vector2i.ZERO,
 	p_use_pathfinding: bool = true
 ) -> void:
-	super(p_owner, p_target_cell)
+	super._init(p_owner, p_target_cell)
+	consume_turn = true
+
 	map_manager = p_map_manager
 	target_cell = p_target_cell
 	use_pathfinding = p_use_pathfinding

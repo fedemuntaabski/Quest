@@ -36,7 +36,7 @@ texture = ExtResource("3_mdl7e")
 texture_scale = 4.0
 script = ExtResource("4_mdl7e")
 
-[node name="Stats" type="Node" parent="." unique_id=825902653]
+[node name="Stats" type="CharacterStats" parent="." unique_id=825902653]
 script = ExtResource("4_qu4a1")
 
 [node name="PlayerActionController" type="Node" parent="." unique_id=959578203]

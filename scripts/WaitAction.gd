@@ -2,6 +2,7 @@ extends BaseAction
 class_name WaitAction
 
 func execute() -> void:
+	consume_turn = true
 	if duration <= 0.0:
 		finish()
 		return

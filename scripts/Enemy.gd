@@ -25,40 +25,59 @@ var target_world_pos: Vector2
 var turn_manager: TurnManager
 var combat_component: CombatComponent
 
-@onready var stats: CharacterStats = $Stats
+
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var health_bar: ProgressBar = $HealthBar
 
+
 var _base_modulate: Color = Color(1, 1, 1, 1)
+var stats: CharacterStats
 
 func _ready():
+	stats = $Stats as CharacterStats
+
 	stats.died.connect(_on_died)
 	stats.hp_changed.connect(_on_hp_changed)
+
 	if sprite:
 		_base_modulate = sprite.modulate
+
 	if health_bar:
 		health_bar.visible = false
 		health_bar.max_value = stats.max_hp
 		health_bar.value = stats.current_hp
 
-func setup(p_map: MapManager, p_player: PlayerMovement):
+func setup(p_map: MapManager, p_player: PlayerMovement) -> void:
+	await self.ready
+
 	map_manager = p_map
 	player = p_player
+
 	sync_to_grid()
+
 	if map_manager:
 		map_manager.register_actor(self, grid_pos, true)
 
 	_ensure_combat_component()
 
 func _ensure_combat_component() -> void:
+	print("ENEMY STATS ON SETUP: ", stats)
 	var comp := get_node_or_null("CombatComponent") as CombatComponent
 	if comp == null:
 		comp = CombatComponent.new()
 		comp.name = "CombatComponent"
 		add_child(comp)
 
+	if stats == null:
+		stats = get_node_or_null("Stats") as CharacterStats
+		if stats == null:
+			push_warning("Enemy: Stats node missing during combat setup")
+
 	comp.setup(self, stats, map_manager)
 	combat_component = comp
+
+func get_combat_component() -> CombatComponent:
+	return combat_component
 
 func sync_to_grid():
 	if map_manager:
@@ -101,6 +120,7 @@ func _start_move_to(next: Vector2i) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_moving_step:
 		return
+	print("ENEMY GRID: ", grid_pos)
 
 	step_timer += delta
 	var t := step_timer / step_time

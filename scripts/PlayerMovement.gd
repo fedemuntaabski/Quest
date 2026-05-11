@@ -30,7 +30,7 @@ var combat_component: CombatComponent
 # ─────────────────────────────────────────────
 @onready var action_controller := $PlayerActionController
 @onready var sprite: Sprite2D = $Sprite2D
-
+@onready var stats: CharacterStats = $Stats
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	add_to_group("player")
@@ -63,15 +63,20 @@ func _ensure_combat_component() -> void:
 		add_child(comp)
 
 	var stats := get_node_or_null("Stats") as CharacterStats
+	if stats == null:
+		push_warning("PlayerMovement: Stats node missing during combat setup")
 	comp.setup(self, stats, map_manager)
 	combat_component = comp
+
+func get_combat_component() -> CombatComponent:
+	return combat_component
 
 
 # ─────────────────────────────────────────────
 # PUBLIC API (llamado por TurnManager)
 # ─────────────────────────────────────────────
 func request_move(dir: Vector2i) -> bool:
-	if not my_turn:
+	if not can_accept_input():
 		return false
 
 	if is_moving_step:
@@ -110,7 +115,7 @@ func _physics_process(delta: float) -> void:
 	_process_step_move(delta)
 
 	# 🔥 SOLO si es tu turno
-	if my_turn and not is_moving_step and current_path.size() > 0:
+	if can_accept_input() and not is_moving_step and current_path.size() > 0:
 		var next_cell: Vector2i = current_path.pop_front()
 		var dir := next_cell - grid_pos
 		request_move(dir)
@@ -156,6 +161,18 @@ func begin_turn(tm: TurnManager) -> void:
 	my_turn = true
 	if action_controller and action_controller.has_method("on_player_turn_started"):
 		action_controller.on_player_turn_started()
+
+func is_turn_active() -> bool:
+	if turn_manager == null:
+		return my_turn
+	return turn_manager.current_actor == self
+
+func can_accept_input() -> bool:
+	if not is_turn_active():
+		return false
+	if turn_manager and turn_manager.action_queue and turn_manager.action_queue.is_busy():
+		return false
+	return true
 
 func begin_step_move(next: Vector2i) -> void:
 	_start_move_to(next)

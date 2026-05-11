@@ -12,6 +12,7 @@ func queue_action(action: BaseAction) -> void:
 	if action == null:
 		return
 
+	print("[ActionQueue] Queue action: ", action.get_class())
 	_queue.append(action)
 
 	if not _is_busy:
@@ -30,8 +31,10 @@ func process_next() -> void:
 		return
 
 	_is_busy = true
+	print("[ActionQueue] Execute action: ", action.get_class())
 
 	if not action.can_execute():
+		print("[ActionQueue] Action blocked: ", action.get_class())
 		action.finish()
 		_is_busy = false
 		action_finished.emit(action)
@@ -42,6 +45,7 @@ func process_next() -> void:
 	if not action.is_complete:
 		await action.completed
 
+	print("[ActionQueue] Action finished: ", action.get_class())
 	action.finish()
 	_is_busy = false
 	action_finished.emit(action)

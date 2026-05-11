@@ -1,36 +1,25 @@
 extends BaseAction
 class_name AttackAction
 
-var attacker: CombatComponent = null
-var target_actor: Node = null
-var result: Dictionary = {}
+var combat_component: CombatComponent
 
-func _init(p_attacker: CombatComponent = null, p_target: Node = null) -> void:
-	super(p_attacker, p_target)
-	attacker = p_attacker
-	target_actor = p_target
+func _init(p_combat_component: CombatComponent, p_target: Node):
+	combat_component = p_combat_component
+	var owner := combat_component.actor_owner if combat_component else null
+	super._init(owner, p_target)
+	consume_turn = true
 
 func can_execute() -> bool:
-	if attacker == null:
-		consume_turn = false
+	print("[Action] AttackAction can_execute")
+	if combat_component == null:
 		return false
-
-	if not attacker.can_attack(target_actor):
-		consume_turn = false
-		return false
-
-	return true
+	return combat_component.can_attack(target)
 
 func execute() -> void:
-	if attacker == null:
-		consume_turn = false
-		finish()
-		return
+	print("[Action] AttackAction execute")
 
-	if not attacker.can_attack(target_actor):
-		consume_turn = false
-		finish()
-		return
+	if combat_component:
+		var result = combat_component.attack(target)
+		print("[Combat] Attack result: ", result)
 
-	result = attacker.attack(target_actor)
 	finish()
