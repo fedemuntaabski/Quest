@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c6k0u8o5kwv8e"]
 
-[ext_resource type="Script" path="res://scripts/ui/CardTooltip.gd" id="1_tooltip_script"]
+[ext_resource type="Script" path="res://scripts/CardTooltip.gd" id="1_tooltip_script"]
 
 [node name="CardTooltip" type="Control"]
 visible = false

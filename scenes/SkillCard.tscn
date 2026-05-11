@@ -1,73 +1,52 @@
 [gd_scene format=3 uid="uid://dq8m4xy0y5yh"]
 
-[ext_resource type="Script" path="res://scripts/SkillCard.gd" id="1_skill_script"]
+[ext_resource type="Script" uid="uid://dmipycb1xpgt" path="res://scripts/SkillCard.gd" id="1_skill_script"]
 
-[node name="SkillCard" type="Control"]
-script = ExtResource("1_skill_script")
-anchors_left = 0.0
-anchors_top = 0.0
-anchors_right = 0.0
-anchors_bottom = 0.0
+[node name="SkillCard" type="Control" unique_id=1343782818]
+custom_minimum_size = Vector2(150, 200)
+layout_mode = 3
+anchors_preset = 0
 offset_right = 150.0
 offset_bottom = 200.0
-custom_minimum_size = Vector2(150, 200)
+script = ExtResource("1_skill_script")
 
-[node name="Panel" type="Panel" parent="."]
-anchors_left = 0.0
-anchors_top = 0.0
-anchors_right = 1.0
-anchors_bottom = 1.0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
+[node name="Panel" type="Panel" parent="." unique_id=342511705]
+layout_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
-anchors_left = 0.0
-anchors_top = 0.0
-anchors_right = 1.0
-anchors_bottom = 1.0
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel" unique_id=2076980112]
+custom_minimum_size = Vector2(130, 180)
+layout_mode = 0
 offset_left = 10.0
 offset_top = 10.0
 offset_right = -10.0
 offset_bottom = -10.0
-custom_minimum_size = Vector2(130, 180)
 
-[node name="CardName" type="Label" parent="Panel/VBoxContainer"]
-margin_right = 130.0
-margin_bottom = 30.0
-text = "Skill Name"
+[node name="CardName" type="Label" parent="Panel/VBoxContainer" unique_id=620087598]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
 theme_override_font_sizes/font_size = 18
+text = "Skill Name"
 horizontal_alignment = 1
 vertical_alignment = 1
-custom_minimum_size = Vector2(0, 30)
 
-[node name="Separator" type="HSeparator" parent="Panel/VBoxContainer"]
-margin_top = 34.0
-margin_right = 130.0
-margin_bottom = 38.0
+[node name="Separator" type="HSeparator" parent="Panel/VBoxContainer" unique_id=1560158197]
+layout_mode = 2
 
-[node name="CardDescription" type="Label" parent="Panel/VBoxContainer"]
-margin_top = 42.0
-margin_right = 130.0
-margin_bottom = 90.0
-text = "A skill description"
-text_overrun_behavior = 2
+[node name="CardDescription" type="Label" parent="Panel/VBoxContainer" unique_id=115055015]
 custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "A skill description"
 autowrap_mode = 2
+text_overrun_behavior = 2
 
-[node name="StatIcon" type="Label" parent="Panel/VBoxContainer"]
-margin_top = 94.0
-margin_right = 130.0
-margin_bottom = 124.0
+[node name="StatIcon" type="Label" parent="Panel/VBoxContainer" unique_id=415169808]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
 text = "Linked to: Strength"
 horizontal_alignment = 1
-custom_minimum_size = Vector2(0, 30)
 
-[node name="DamageLabel" type="Label" parent="Panel/VBoxContainer"]
-margin_top = 128.0
-margin_right = 130.0
-margin_bottom = 160.0
+[node name="DamageLabel" type="Label" parent="Panel/VBoxContainer" unique_id=1421410581]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
 text = "Base Damage: 1"
 horizontal_alignment = 1
-custom_minimum_size = Vector2(0, 32)

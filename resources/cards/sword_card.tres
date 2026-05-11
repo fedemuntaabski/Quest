@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="CardData" format=3 uid="uid://74s7wsvar8rx"]
 
 [ext_resource type="Script" path="res://scripts/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/cards/DamageEffect.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/DamageEffect.gd" id="2"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
