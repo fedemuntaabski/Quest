@@ -173,6 +173,8 @@ func _resolve_hud() -> void:
 	if hud == null:
 		call_deferred("_resolve_hud")
 		return
+	if hud and card_manager:
+		hud.bind_card_manager(card_manager)
 	if hud and not hud.hotbar_slot_pressed.is_connected(_on_hotbar_slot_pressed):
 		hud.hotbar_slot_pressed.connect(_on_hotbar_slot_pressed)
 	if card_manager:
@@ -185,8 +187,8 @@ func _resolve_hud() -> void:
 	_update_hotbar_ui()
 
 func _update_hotbar_ui() -> void:
-	if hud and card_manager:
-		hud.update_hotbar(card_manager.get_equipped_payload(), card_manager.active_index)
+	if card_manager:
+		card_manager.ui_state_changed.emit(card_manager.get_equipped_payload(), card_manager.active_index)
 
 func _select_card(index: int) -> void:
 	if card_manager == null:

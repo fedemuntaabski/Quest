@@ -51,6 +51,3 @@ layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 20
 
-[node name="SkipButton" type="Button" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Skip Reward"

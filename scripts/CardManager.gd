@@ -4,6 +4,7 @@ class_name CardManager
 signal equipped_changed
 signal active_index_changed(index: int)
 signal cooldowns_changed
+signal ui_state_changed(cards_payload: Array, active_index: int)
 
 const CardData = preload("res://scripts/CardData.gd")
 
@@ -31,6 +32,7 @@ func set_deck(cards: Array[CardData]) -> void:
 		_equip_initial_cards()
 	_update_cooldown_cache()
 	equipped_changed.emit()
+	_emit_ui_state()
 	_shuffle_draw_pile()
 
 func _equip_initial_cards() -> void:
@@ -49,6 +51,7 @@ func equip_card(card: CardData, slot_index: int) -> void:
 	equipped[slot_index] = card
 	active_index = clamp(active_index, 0, max(0, equipped.size() - 1))
 	equipped_changed.emit()
+	_emit_ui_state()
 
 func get_active_card() -> CardData:
 	if active_index < 0 or active_index >= equipped.size():
@@ -60,6 +63,7 @@ func set_active_index(index: int) -> void:
 		return
 	active_index = index
 	active_index_changed.emit(index)
+	_emit_ui_state()
 
 func can_play_card(card: CardData) -> bool:
 	if card == null:
@@ -71,6 +75,7 @@ func start_cooldown(card: CardData) -> void:
 		return
 	_cooldowns[card] = max(card.cooldown, 0)
 	cooldowns_changed.emit()
+	_emit_ui_state()
 
 func tick_cooldowns() -> void:
 	var changed := false
@@ -81,6 +86,7 @@ func tick_cooldowns() -> void:
 			changed = true
 	if changed:
 		cooldowns_changed.emit()
+		_emit_ui_state()
 
 func get_cooldown_remaining(card: CardData) -> int:
 	return int(_cooldowns.get(card, 0))
@@ -95,10 +101,13 @@ func get_equipped_payload() -> Array:
 			"name": card.display_name,
 			"description": card.description,
 			"stat": card.stat_key,
+			"scaling_stat": card.stat_key,
 			"base_damage": card.base_damage,
 			"range": card.range,
 			"cooldown": card.cooldown,
 			"cooldown_remaining": get_cooldown_remaining(card),
+			"is_usable": can_play_card(card),
+			"state": "available" if can_play_card(card) else "blocked",
 			"icon": card.icon,
 			"card": card
 		})
@@ -137,3 +146,6 @@ func _update_cooldown_cache() -> void:
 	_cooldowns.clear()
 	for card in deck:
 		_cooldowns[card] = 0
+
+func _emit_ui_state() -> void:
+	ui_state_changed.emit(get_equipped_payload(), active_index)

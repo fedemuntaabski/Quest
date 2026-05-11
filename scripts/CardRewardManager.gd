@@ -2,9 +2,7 @@ extends Node
 class_name CardRewardManager
 
 signal reward_completed(selected_card: CardData)
-signal reward_declined
 
-@export var reward_ui: CardRewardUI
 @export var card_manager: CardManager
 
 var _available_cards: Array[CardData] = []
@@ -13,7 +11,6 @@ var _on_reward_completed: Callable = Callable()
 func _ready() -> void:
 	add_to_group("card_reward_manager")
 	_load_all_cards()
-	_connect_ui()
 
 func _load_all_cards() -> void:
 	var card_files := [
@@ -30,25 +27,9 @@ func _load_all_cards() -> void:
 		if card:
 			_available_cards.append(card)
 
-func _connect_ui() -> void:
-	if reward_ui == null:
-		return
-	
-	if not reward_ui.card_selected.is_connected(_on_card_selected):
-		reward_ui.card_selected.connect(_on_card_selected)
-	if not reward_ui.declined.is_connected(_on_reward_declined):
-		reward_ui.declined.connect(_on_reward_declined)
-
-func offer_reward(on_complete: Callable = Callable()) -> void:
+func generate_reward_options(count: int = 3, on_complete: Callable = Callable()) -> Array[CardData]:
 	_on_reward_completed = on_complete
-	
-	var reward_cards := _select_random_cards(3)
-	if reward_cards.is_empty():
-		reward_declined.emit()
-		return
-	
-	if reward_ui:
-		reward_ui.show_reward(reward_cards)
+	return _select_random_cards(count)
 
 func _select_random_cards(count: int) -> Array[CardData]:
 	if _available_cards.is_empty():
@@ -64,7 +45,9 @@ func _select_random_cards(count: int) -> Array[CardData]:
 	
 	return selected
 
-func _on_card_selected(card: CardData) -> void:
+func apply_selected_reward(card: CardData) -> void:
+	if card == null:
+		return
 	if card_manager:
 		_add_card_to_player(card)
 	
@@ -72,13 +55,6 @@ func _on_card_selected(card: CardData) -> void:
 	
 	if _on_reward_completed.is_valid():
 		_on_reward_completed.call(card)
-	_on_reward_completed = Callable()
-
-func _on_reward_declined() -> void:
-	reward_declined.emit()
-	
-	if _on_reward_completed.is_valid():
-		_on_reward_completed.call(null)
 	_on_reward_completed = Callable()
 
 func _resolve_card_manager() -> void:

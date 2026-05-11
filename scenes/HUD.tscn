@@ -7,6 +7,8 @@
 [ext_resource type="Script" uid="uid://01lnjdgw7lht" path="res://scripts/TimerUI.gd" id="4_7hsmw"]
 [ext_resource type="PackedScene" uid="uid://cbfp62ksudyq3" path="res://scenes/HotbarSlot.tscn" id="5_hotbar_slot"]
 [ext_resource type="PackedScene" path="res://scenes/CardTooltip.tscn" id="6_card_tooltip"]
+[ext_resource type="Script" uid="uid://cardpanelui_script" path="res://scripts/CardPanelUI.gd" id="7_card_panel"]
+[ext_resource type="PackedScene" uid="uid://d3caxq8yr8iqt" path="res://scenes/CardRewardUI.tscn" id="8_card_reward_ui"]
 
 [node name="HUD" type="CanvasLayer" unique_id=729961790]
 layer = 2
@@ -14,7 +16,11 @@ script = ExtResource("1_hud_script")
 
 [node name="Control" type="Control" parent="." unique_id=1840515114]
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="TabUIPanel" type="NinePatchRect" parent="Control" unique_id=987654321]
 visible = false
@@ -41,45 +47,60 @@ theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="StatPanelUI" type="VBoxContainer" parent="Control/TabUIPanel/MarginContainer" unique_id=234567890]
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/TabUIPanel/MarginContainer" unique_id=234567891]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TabBar" type="TabBar" parent="Control/TabUIPanel/MarginContainer/VBoxContainer" unique_id=987654322]
+layout_mode = 2
+tab_count = 2
+tab_0/title = "Stats"
+tab_1/title = "Cards"
+
+[node name="ContentPanel" type="VBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer" unique_id=234567892]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StatPanelUI" type="VBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel" unique_id=234567890]
+visible = true
 layout_mode = 2
 theme_override_constants/separation = 16
 script = ExtResource("3_nysna")
 
-[node name="TopInfoRow" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/StatPanelUI" unique_id=345678901]
+[node name="TopInfoRow" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI" unique_id=345678901]
 layout_mode = 2
 theme_override_constants/separation = 40
 
-[node name="CurrentRoomLabel" type="Label" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/TopInfoRow" unique_id=456789012]
+[node name="CurrentRoomLabel" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/TopInfoRow" unique_id=456789012]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
 theme_override_fonts/font = ExtResource("3_ui_font")
 theme_override_font_sizes/font_size = 28
 text = "Sala: 0"
 
-[node name="EnemiesLabel" type="Label" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/TopInfoRow" unique_id=567890123]
+[node name="EnemiesLabel" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/TopInfoRow" unique_id=567890123]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.3, 0.3, 1)
 theme_override_fonts/font = ExtResource("3_ui_font")
 theme_override_font_sizes/font_size = 28
 text = "Enemigos: 0"
 
-[node name="HSeparator_Top" type="HSeparator" parent="Control/TabUIPanel/MarginContainer/StatPanelUI" unique_id=678901234]
+[node name="HSeparator_Top" type="HSeparator" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI" unique_id=678901234]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/StatPanelUI" unique_id=871130441]
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI" unique_id=871130441]
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer" unique_id=16085052]
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer" unique_id=16085052]
 custom_minimum_size = Vector2(200, 140)
 layout_mode = 2
 
-[node name="HBoxContainer_HP" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=1581858995]
+[node name="HBoxContainer_HP" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=1581858995]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelHP" type="Label" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_HP" unique_id=1859836433]
+[node name="LabelHP" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_HP" unique_id=1859836433]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
 tooltip_text = "Health Points (HP)
@@ -88,14 +109,14 @@ mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "HP: 10/10"
 
-[node name="HSeparator" type="HSeparator" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=1689967631]
+[node name="HSeparator" type="HSeparator" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=1689967631]
 layout_mode = 2
 
-[node name="HBoxContainer_Strength" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=1676587056]
+[node name="HBoxContainer_Strength" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=1676587056]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelStrength" type="Label" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Strength" unique_id=1818296356]
+[node name="LabelStrength" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Strength" unique_id=1818296356]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
 tooltip_text = "Strength (STR)
@@ -104,11 +125,11 @@ mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Fuerza: +0"
 
-[node name="HBoxContainer_Magic" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=1967426573]
+[node name="HBoxContainer_Magic" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=1967426573]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelMagic" type="Label" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Magic" unique_id=93396923]
+[node name="LabelMagic" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Magic" unique_id=93396923]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
 tooltip_text = "Magic (MAG)
@@ -117,11 +138,11 @@ mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Magia: +0"
 
-[node name="HBoxContainer_Dexterity" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=121873463]
+[node name="HBoxContainer_Dexterity" type="HBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer" unique_id=121873463]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="LabelDexterity" type="Label" parent="Control/TabUIPanel/MarginContainer/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=1581397644]
+[node name="LabelDexterity" type="Label" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/StatPanelUI/HBoxContainer/VBoxContainer/HBoxContainer_Dexterity" unique_id=1581397644]
 custom_minimum_size = Vector2(260, 46)
 layout_mode = 2
 tooltip_text = "Dexterity (DEX)
@@ -129,6 +150,29 @@ Increases critical strike chance and evasion."
 mouse_filter = 1
 theme_override_font_sizes/font_size = 34
 text = "Agilidad: +0"
+
+[node name="CardPanelUI" type="Control" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel" unique_id=999999001]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("7_card_panel")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/CardPanelUI" unique_id=999999002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/TabUIPanel/MarginContainer/VBoxContainer/ContentPanel/CardPanelUI/ScrollContainer" unique_id=999999003]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
 [node name="TimerUI" type="Control" parent="Control" unique_id=134582833]
 anchors_preset = 0
@@ -142,10 +186,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -180.0
-offset_top = -120.0
-offset_right = 180.0
-offset_bottom = -20.0
+offset_left = -168.0
+offset_top = -110.0
+offset_right = 168.0
+offset_bottom = -10.0
 grow_horizontal = 2
 theme_override_constants/separation = 12
 
@@ -174,3 +218,5 @@ horizontal_alignment = 1
 
 [node name="CardTooltip" parent="." instance=ExtResource("6_card_tooltip")]
 z_index = 200
+
+[node name="CardRewardUI" parent="." instance=ExtResource("8_card_reward_ui")]

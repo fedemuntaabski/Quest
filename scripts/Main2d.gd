@@ -8,7 +8,6 @@ extends Node2D
 @onready var pause_menu: PauseMenu = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
 @onready var enemy_manager: EnemyManager = $MapManager/EnemyManager
-@onready var card_reward_ui: CardRewardUI = $CardRewardUI
 
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
@@ -62,14 +61,10 @@ func _setup_managers() -> void:
 		card_reward_manager = CardRewardManager.new()
 		card_reward_manager.name = "CardRewardManager"
 		add_child(card_reward_manager)
-
-	card_reward_manager.reward_ui = card_reward_ui
 	
 	# Connect reward signals
 	if card_reward_manager and not card_reward_manager.reward_completed.is_connected(_on_reward_completed):
 		card_reward_manager.reward_completed.connect(_on_reward_completed)
-	if card_reward_manager and not card_reward_manager.reward_declined.is_connected(_on_reward_declined):
-		card_reward_manager.reward_declined.connect(_on_reward_declined)
 
 # ─────────────────────────────────────────────
 # HELPERS
@@ -99,9 +94,6 @@ func _connect_dungeon() -> void:
 	if enemy_manager and not enemy_manager.enemy_defeated_global.is_connected(_on_enemy_defeated):
 		enemy_manager.enemy_defeated_global.connect(_on_enemy_defeated)
 
-	if enemy_manager and not enemy_manager.enemy_defeated_with_reward.is_connected(_on_enemy_defeated_with_reward):
-		enemy_manager.enemy_defeated_with_reward.connect(_on_enemy_defeated_with_reward)
-
 func _connect_player() -> void:
 	var player_stats = get_node_or_null("/root/PlayerStats")
 
@@ -120,6 +112,14 @@ func _connect_ui() -> void:
 
 	if pause_menu and not pause_menu.exit_requested.is_connected(_on_pause_exit_requested):
 		pause_menu.exit_requested.connect(_on_pause_exit_requested)
+
+	if hud and not hud.reward_card_selected.is_connected(_on_reward_card_selected):
+		hud.reward_card_selected.connect(_on_reward_card_selected)
+
+	if game_state_manager and not game_state_manager.reward_entered.is_connected(_on_reward_entered):
+		game_state_manager.reward_entered.connect(_on_reward_entered)
+	if game_state_manager and not game_state_manager.reward_exited.is_connected(_on_reward_exited):
+		game_state_manager.reward_exited.connect(_on_reward_exited)
 
 # ─────────────────────────────────────────────
 # TUTORIAL 
@@ -183,6 +183,14 @@ func _on_room_cleared(room_id: int) -> void:
 
 	if upgrade_menu and upgrade_menu.has_method("show_menu"):
 		upgrade_menu.show_menu(room_id)
+
+	if _is_dead:
+		return
+
+	if card_reward_manager and game_state_manager and game_state_manager.is_active():
+		var reward_cards: Array[CardData] = card_reward_manager.generate_reward_options(3)
+		if not reward_cards.is_empty():
+			game_state_manager.request_reward(reward_cards)
 
 func _on_enemy_defeated() -> void:
 	enemies_killed += 1
@@ -250,29 +258,11 @@ func _get_game_state_manager() -> GameStateManager:
 # ─────────────────────────────────────────────
 # REWARD HANDLERS
 # ─────────────────────────────────────────────
-func _on_enemy_defeated_with_reward(_enemy, _position: Vector2) -> void:
-	if _is_dead:
-		return
-	
-	# Queue a card reward (actual UI will be shown via GameStateManager)
-	if card_reward_manager and game_state_manager:
-		# Don't show immediately - queue for after combat resolves
-		call_deferred("_process_next_reward")
-
-func _process_next_reward() -> void:
-	if card_reward_manager and game_state_manager and game_state_manager.is_active():
-		card_reward_manager.offer_reward()
-
 func _on_reward_completed(_selected_card: CardData) -> void:
 	# Reward completed, return to active state via GameStateManager
 	if game_state_manager:
 		game_state_manager.close_reward(_selected_card)
 	_update_hotbar_display()
-
-func _on_reward_declined() -> void:
-	# Reward declined, return to active state via GameStateManager
-	if game_state_manager:
-		game_state_manager.close_reward(null)
 
 func _update_hotbar_display() -> void:
 	if map_manager:
@@ -281,3 +271,16 @@ func _update_hotbar_display() -> void:
 			var controller := player.get_node_or_null("PlayerActionController") as PlayerActionController
 			if controller:
 				controller._update_hotbar_ui()
+
+func _on_reward_entered(cards: Array) -> void:
+	if hud:
+		hud.show_reward_selection(cards)
+
+func _on_reward_exited(_selected_card: CardData) -> void:
+	if hud:
+		hud.hide_reward_selection()
+
+func _on_reward_card_selected(selected_card: CardData) -> void:
+	if card_reward_manager == null:
+		return
+	card_reward_manager.apply_selected_reward(selected_card)
