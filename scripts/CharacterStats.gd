@@ -13,15 +13,15 @@ signal stats_changed
 # -------------------------
 # HEALTH
 # -------------------------
-var max_hp: int = 10
-var current_hp: int = 10
+var max_hp: int = 20
+var current_hp: int = 20
 
 # -------------------------
 # CORE STATS (BASE)
 # -------------------------
-var strength: int = 0
-var magic: int = 0
-var dexterity: int = 0
+var strength: int = 1
+var magic: int = 2
+var dexterity: int = 1
 
 # -------------------------
 # MODIFIERS (FROM UPGRADES)
