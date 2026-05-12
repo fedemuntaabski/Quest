@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://dq8m4xy0y5yh"]
+[gd_scene format=3 uid="uid://b5raq0hltxbyu"]
 
-[ext_resource type="Script" uid="uid://dmipycb1xpgt" path="res://scripts/SkillCard.gd" id="1_skill_script"]
+[ext_resource type="Script" path="res://scripts/SkillCard.gd" id="1_skill_script"]
 
 [node name="SkillCard" type="Control" unique_id=1343782818]
 custom_minimum_size = Vector2(150, 200)
