@@ -17,10 +17,12 @@ signal reward_exited(card_selected: CardData)
 
 var current_state: State = State.ACTIVE
 var _previous_state: State = State.ACTIVE
+var _state_stack: Array[State] = []
 
 func _ready() -> void:
 	add_to_group("game_state_manager")
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_state_stack = [current_state]
 
 func get_state() -> State:
 	return current_state
@@ -49,38 +51,51 @@ func can_process_turns() -> bool:
 func set_state(new_state: State) -> void:
 	if current_state == new_state:
 		return
-	
-	_previous_state = current_state
-	current_state = new_state
-	
-	_handle_state_change(current_state, _previous_state)
-	state_changed.emit(current_state, _previous_state)
+	_state_stack.clear()
+	_state_stack.append(new_state)
+	_apply_state_change(new_state, current_state)
+
+func push_state(new_state: State) -> void:
+	if current_state == new_state:
+		return
+	_state_stack.append(new_state)
+	_apply_state_change(new_state, current_state)
+
+func pop_state(expected_state: int = -1) -> void:
+	if _state_stack.size() <= 1:
+		return
+	if expected_state != -1 and current_state != expected_state:
+		return
+	var old_state := current_state
+	_state_stack.pop_back()
+	var next_state: State = _state_stack[_state_stack.size() - 1]
+	_apply_state_change(next_state, old_state)
 
 func request_pause() -> void:
 	if current_state == State.ACTIVE:
-		set_state(State.PAUSED)
+		push_state(State.PAUSED)
 		pause_requested.emit()
 
 func request_resume() -> void:
 	if current_state == State.PAUSED:
-		set_state(State.ACTIVE)
+		pop_state(State.PAUSED)
 		resume_requested.emit()
 
 func request_death() -> void:
 	if current_state != State.DEAD:
-		_previous_state = current_state
-		set_state(State.DEAD)
+		_state_stack.clear()
+		_state_stack.append(State.DEAD)
+		_apply_state_change(State.DEAD, current_state)
 		death_entered.emit()
 
 func request_reward(card_options: Array) -> void:
 	if current_state == State.ACTIVE:
-		_previous_state = current_state
-		set_state(State.REWARD)
+		push_state(State.REWARD)
 		reward_entered.emit(card_options)
 
 func close_reward(selected_card: CardData) -> void:
 	if current_state == State.REWARD:
-		set_state(State.ACTIVE)
+		pop_state(State.REWARD)
 		reward_exited.emit(selected_card)
 
 func toggle_pause() -> void:
@@ -90,7 +105,13 @@ func toggle_pause() -> void:
 		request_resume()
 
 func return_to_previous_state() -> void:
-	set_state(_previous_state)
+	pop_state()
+
+func _apply_state_change(new_state: State, old_state: State) -> void:
+	_previous_state = old_state
+	current_state = new_state
+	_handle_state_change(current_state, _previous_state)
+	state_changed.emit(current_state, _previous_state)
 
 func _handle_state_change(new_state: State, _old_state: State) -> void:
 	match new_state:

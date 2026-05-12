@@ -10,9 +10,34 @@ var current_actor_index: int = 0
 var current_actor: Node = null
 var action_queue: ActionQueue
 var _active: bool = true
+var _waiting_for_state: bool = false
 
 func _ready() -> void:
 	_ensure_action_queue()
+	_bind_game_state()
+
+func _bind_game_state() -> void:
+	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if gsm == null:
+		call_deferred("_bind_game_state")
+		return
+	if not gsm.state_changed.is_connected(_on_game_state_changed):
+		gsm.state_changed.connect(_on_game_state_changed)
+
+func _on_game_state_changed(new_state: int, _old_state: int) -> void:
+	if new_state != GameStateManager.State.ACTIVE:
+		return
+	if not _waiting_for_state:
+		return
+	_waiting_for_state = false
+	_resume_if_possible()
+
+func _resume_if_possible() -> void:
+	if not _active:
+		return
+	if action_queue and action_queue.is_busy():
+		return
+	_begin_actor_turn()
 
 func _ensure_action_queue() -> void:
 	if action_queue != null:
@@ -57,7 +82,9 @@ func _begin_actor_turn() -> void:
 	if not _active:
 		return
 	if not _can_process_turns():
+		_waiting_for_state = true
 		return
+	_waiting_for_state = false
 	if actors.is_empty():
 		return
 

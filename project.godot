@@ -27,7 +27,6 @@ CurrencyManager="*res://scripts/CurrencyManager.gd"
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 mouse_cursor/custom_image="res://assets/ui/gauntletcursor.png"
 
 [input]

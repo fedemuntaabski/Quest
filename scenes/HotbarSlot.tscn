@@ -2,37 +2,73 @@
 
 [ext_resource type="Script" uid="uid://bjkx4feu10tob" path="res://scripts/HotbarSlot.gd" id="1_hotbar_slot_script"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot_base"]
+bg_color = Color(0.08, 0.08, 0.1, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.35, 0.4, 0.8)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot_hover"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.75, 0.85, 1.0, 0.9)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot_selected"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1.0, 0.84, 0.2, 0.95)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
 [node name="HotbarSlot" type="PanelContainer" unique_id=1354943843]
-custom_minimum_size = Vector2(84, 84)
+custom_minimum_size = Vector2(90, 90)
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot_base")
 script = ExtResource("1_hotbar_slot_script")
 
 [node name="VBox" type="VBoxContainer" parent="." unique_id=414310777]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 2
 
 [node name="Icon" type="TextureRect" parent="VBox" unique_id=522403284]
-custom_minimum_size = Vector2(44, 44)
+custom_minimum_size = Vector2(48, 48)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Name" type="Label" parent="VBox" unique_id=1101253629]
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 12
 text = "-"
 horizontal_alignment = 1
 
 [node name="Cooldown" type="Label" parent="VBox" unique_id=917690200]
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 11
 horizontal_alignment = 1
 
 [node name="State" type="Label" parent="VBox" unique_id=917690203]
 modulate = Color(0.6, 0.6, 0.6, 1)
 layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "VACIO
-"
+theme_override_font_sizes/font_size = 11
+text = "EMPTY"
 horizontal_alignment = 1
 
 [node name="KeyLabel" type="Label" parent="VBox" unique_id=917690201]
@@ -42,7 +78,29 @@ theme_override_font_sizes/font_size = 11
 text = "1"
 horizontal_alignment = 2
 
+[node name="CooldownOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.0, 0.0, 0.0, 0.35)
+
+[node name="HoverBorder" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot_hover")
+
 [node name="SelectionBorder" type="Panel" parent="." unique_id=917690202]
 visible = false
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot_selected")

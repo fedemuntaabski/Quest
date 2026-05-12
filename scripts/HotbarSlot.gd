@@ -11,9 +11,8 @@ signal slot_pressed(index: int)
 @onready var state_label: Label = $VBox/State
 @onready var key_label: Label = $VBox/KeyLabel
 @onready var selection_border: Panel = $SelectionBorder
-
-const SELECTED_COLOR := Color(1.0, 0.84, 0.0, 0.8)  # Gold highlight
-const UNSELECTED_COLOR := Color(1.0, 1.0, 1.0, 0.0)  # Transparent
+@onready var hover_border: Panel = $HoverBorder
+@onready var cooldown_overlay: ColorRect = $CooldownOverlay
 
 var _card_data: Dictionary = {}
 var _is_selected: bool = false
@@ -46,9 +45,6 @@ func set_selected(selected: bool) -> void:
 	_is_selected = selected
 	if selection_border:
 		selection_border.visible = selected
-		var style_box := selection_border.get_theme_stylebox("panel") as StyleBoxFlat
-		if style_box:
-			style_box.bg_color = SELECTED_COLOR if selected else UNSELECTED_COLOR
 
 func set_usable(usable: bool) -> void:
 	modulate = Color(1, 1, 1, 1) if usable else Color(0.5, 0.5, 0.5, 0.8)
@@ -78,6 +74,8 @@ func set_cooldown(turns_left: int) -> void:
 	else:
 		cooldown_label.text = ""
 		cooldown_label.visible = false
+	if cooldown_overlay:
+		cooldown_overlay.visible = turns_left > 0
 
 func _update_ui() -> void:
 	if name_label:
@@ -91,9 +89,13 @@ func _update_ui() -> void:
 	set_state_label(str(_card_data.get("state", "available")))
 
 func _on_mouse_entered() -> void:
+	if hover_border:
+		hover_border.visible = true
 	if tooltip_host:
 		tooltip_host.show_card_tooltip(_card_data, get_global_mouse_position())
 
 func _on_mouse_exited() -> void:
+	if hover_border:
+		hover_border.visible = false
 	if tooltip_host:
 		tooltip_host.hide_card_tooltip()
