@@ -285,6 +285,38 @@ func _get_room_rect(room_id: int) -> Rect2i:
 	var info: Dictionary = dungeon_generator.room_infos[room_id]
 	return info.get("rect", Rect2i())
 
+func get_room_id_for_cell(grid_pos: Vector2i) -> int:
+	if dungeon_generator == null:
+		return -1
+	for info in dungeon_generator.room_infos:
+		var rect: Rect2i = info.get("rect", Rect2i())
+		if rect.has_point(grid_pos):
+			return int(info.get("id", -1))
+	return -1
+
+func get_actor_room_id(actor: Node) -> int:
+	if actor == null:
+		return -1
+	if actor is Enemy:
+		return actor.my_room_id
+	var cell: Variant = get_actor_cell(actor)
+	if cell == null and actor.get("grid_pos") != null:
+		cell = actor.get("grid_pos")
+	if cell == null:
+		return -1
+	return get_room_id_for_cell(cell)
+
+func can_actors_engage(source: Node, target: Node) -> bool:
+	if dungeon_generator == null:
+		return true
+	if source == null or target == null:
+		return false
+	var source_room := get_actor_room_id(source)
+	var target_room := get_actor_room_id(target)
+	if source_room == -1 and target_room == -1:
+		return true
+	return source_room != -1 and source_room == target_room
+
 func _is_player_room_locked() -> bool:
 	if dungeon_generator == null or enemy_manager == null:
 		return false

@@ -56,6 +56,8 @@ func can_attack(target: Node) -> bool:
 		actor_owner.sync_to_grid()
 	if target_component.actor_owner and target_component.actor_owner.has_method("sync_to_grid"):
 		target_component.actor_owner.sync_to_grid()
+	if map_manager and not map_manager.can_actors_engage(actor_owner, target_component.actor_owner):
+		return false
 
 	return _is_in_range(target_component)
 

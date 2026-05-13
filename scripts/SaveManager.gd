@@ -29,10 +29,10 @@ func save_game(slot: int = current_slot) -> void:
 		cfg.set_value(SAVE_SECTION, "base_dex", player_stats_autoload.base_dex)
 		cfg.set_value(SAVE_SECTION, "active_upgrades", player_stats_autoload.active_upgrades)
 	else:
-		cfg.set_value(SAVE_SECTION, "base_hp", 10)
-		cfg.set_value(SAVE_SECTION, "base_str", 0)
-		cfg.set_value(SAVE_SECTION, "base_mag", 0)
-		cfg.set_value(SAVE_SECTION, "base_dex", 0)
+		cfg.set_value(SAVE_SECTION, "base_hp", 20)
+		cfg.set_value(SAVE_SECTION, "base_str", 1)
+		cfg.set_value(SAVE_SECTION, "base_mag", 1)
+		cfg.set_value(SAVE_SECTION, "base_dex", 1)
 		cfg.set_value(SAVE_SECTION, "active_upgrades", [])
 
 	cfg.set_value(SAVE_SECTION, "first_time_player", first_time_player)
@@ -59,10 +59,10 @@ func load_game(slot: int = current_slot) -> void:
 		contracts_completed = cfg.get_value(SAVE_SECTION, "contracts_completed", 0)
 		
 		if player_stats_autoload:
-			player_stats_autoload.base_hp = cfg.get_value(SAVE_SECTION, "base_hp", 10)
-			player_stats_autoload.base_str = cfg.get_value(SAVE_SECTION, "base_str", 0)
-			player_stats_autoload.base_mag = cfg.get_value(SAVE_SECTION, "base_mag", 0)
-			player_stats_autoload.base_dex = cfg.get_value(SAVE_SECTION, "base_dex", 0)
+			player_stats_autoload.base_hp = cfg.get_value(SAVE_SECTION, "base_hp", 20)
+			player_stats_autoload.base_str = cfg.get_value(SAVE_SECTION, "base_str", 1)
+			player_stats_autoload.base_mag = cfg.get_value(SAVE_SECTION, "base_mag", 1)
+			player_stats_autoload.base_dex = cfg.get_value(SAVE_SECTION, "base_dex", 1)
 			player_stats_autoload.active_upgrades = cfg.get_value(SAVE_SECTION, "active_upgrades", [])
 	else:
 		print("SaveManager: No save file found for slot %d, starting fresh." % slot)
@@ -70,10 +70,10 @@ func load_game(slot: int = current_slot) -> void:
 		gold = 0
 		contracts_completed = 0
 		if player_stats_autoload:
-			player_stats_autoload.base_hp = 10
-			player_stats_autoload.base_str = 0
-			player_stats_autoload.base_mag = 0
-			player_stats_autoload.base_dex = 0
+			player_stats_autoload.base_hp = 20
+			player_stats_autoload.base_str = 1
+			player_stats_autoload.base_mag = 1
+			player_stats_autoload.base_dex = 1
 			player_stats_autoload.active_upgrades = []
 
 func has_save(slot: int) -> bool:

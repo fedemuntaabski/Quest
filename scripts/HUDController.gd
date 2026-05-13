@@ -36,6 +36,7 @@ var _bound_card_manager: CardManager = null
 var _roll_label_tween: Tween = null
 var _game_state_manager: GameStateManager = null
 var _potion_used: bool = false
+var _bound_stats: CharacterStats = null
 
 const POTION_HEAL_RATIO: float = 0.5
 
@@ -47,28 +48,8 @@ func _ready() -> void:
 	_setup_stat_tooltips()
 
 	var ps = get_node_or_null("/root/PlayerStats")
-	if ps and ps.stats:
-		var stats: CharacterStats = ps.stats
-
-		stats.stats_changed.connect(_on_stats_changed)
-		stats.hp_changed.connect(_on_hp_changed)
-
-		_on_stats_changed(stats)
-		ps.upgrades_changed.connect(_on_upgrades_changed)
-
-		base_stats = {
-			"hp": ps.base_hp,
-			"strength": ps.base_str,
-			"magic": ps.base_mag,
-			"dexterity": ps.base_dex
-		}
-
-		if ps.stats:
-			_on_stats_changed(ps.stats)
-
-		if ps.active_upgrades:
-			if upgrade_panel:
-				upgrade_panel.refresh(ps.active_upgrades)
+	if ps:
+		_bind_player_stats(ps)
 
 func _setup_hotbar() -> void:
 	if hotbar_bar == null:
@@ -103,6 +84,43 @@ func _on_reward_skipped() -> void:
 
 func _on_reward_card_replace_selected(card: CardData, slot_index: int) -> void:
 	reward_card_replace_selected.emit(card, slot_index)
+
+func _bind_player_stats(ps: PlayerStats) -> void:
+	if ps == null:
+		return
+	if not ps.stats_changed.is_connected(_on_player_stats_changed):
+		ps.stats_changed.connect(_on_player_stats_changed)
+	if not ps.upgrades_changed.is_connected(_on_upgrades_changed):
+		ps.upgrades_changed.connect(_on_upgrades_changed)
+
+	base_stats = {
+		"hp": ps.base_hp,
+		"strength": ps.base_str,
+		"magic": ps.base_mag,
+		"dexterity": ps.base_dex
+	}
+
+	if ps.stats:
+		_on_player_stats_changed(ps.stats)
+
+	if ps.active_upgrades and upgrade_panel:
+		upgrade_panel.refresh(ps.active_upgrades)
+
+func _on_player_stats_changed(stats: CharacterStats) -> void:
+	if stats == null:
+		return
+	if _bound_stats != stats:
+		if _bound_stats and _bound_stats.hp_changed.is_connected(_on_hp_changed):
+			_bound_stats.hp_changed.disconnect(_on_hp_changed)
+		if _bound_stats and _bound_stats.stats_changed.is_connected(_on_stats_changed):
+			_bound_stats.stats_changed.disconnect(_on_stats_changed)
+		_bound_stats = stats
+		if not stats.hp_changed.is_connected(_on_hp_changed):
+			stats.hp_changed.connect(_on_hp_changed)
+		if not stats.stats_changed.is_connected(_on_stats_changed):
+			stats.stats_changed.connect(_on_stats_changed)
+
+	_on_stats_changed(stats)
 
 func _on_stats_changed(stats: CharacterStats) -> void:
 	player_stats = stats

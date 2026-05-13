@@ -10,7 +10,7 @@ var stats: CharacterStats = null
 # BASE STATS (PERSISTENCIA)
 var base_hp: int = 20
 var base_str: int = 1
-var base_mag: int = 2
+var base_mag: int = 1
 var base_dex: int = 1
 
 var active_upgrades: Array = []

@@ -20,7 +20,7 @@ var current_hp: int = 20
 # CORE STATS (BASE)
 # -------------------------
 var strength: int = 1
-var magic: int = 2
+var magic: int = 1
 var dexterity: int = 1
 
 # -------------------------
