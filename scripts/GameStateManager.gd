@@ -5,6 +5,7 @@ enum State {
 	ACTIVE,
 	PAUSED,
 	DEAD,
+	VICTORY,
 	REWARD
 }
 
@@ -12,6 +13,7 @@ signal state_changed(new_state: State, old_state: State)
 signal pause_requested
 signal resume_requested
 signal death_entered
+signal victory_entered
 signal reward_entered(cards: Array)
 signal reward_exited(card_selected: CardData)
 
@@ -88,6 +90,12 @@ func request_death() -> void:
 		_apply_state_change(State.DEAD, current_state)
 		death_entered.emit()
 
+func request_victory() -> void:
+	# Push a victory state if currently active
+	if current_state == State.ACTIVE:
+		push_state(State.VICTORY)
+		victory_entered.emit()
+
 func request_reward(card_options: Array) -> void:
 	if current_state == State.ACTIVE:
 		push_state(State.REWARD)
@@ -120,6 +128,8 @@ func _handle_state_change(new_state: State, _old_state: State) -> void:
 		State.PAUSED:
 			get_tree().paused = true
 		State.DEAD:
+			get_tree().paused = true
+		State.VICTORY:
 			get_tree().paused = true
 		State.REWARD:
 			get_tree().paused = false

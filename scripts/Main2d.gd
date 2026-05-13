@@ -12,6 +12,7 @@ extends Node2D
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
 @onready var death_gold_label: Label = $DeathOverlay/CenterContainer/VBoxContainer/GoldLabel
+@onready var continue_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ContinueButton
 
 @onready var upgrade_menu: CanvasLayer = $UpgradeMenu
 
@@ -29,6 +30,7 @@ var enemies_killed: int = 0
 var rooms_cleared: int = 0
 var _is_dead: bool = false
 var _room_timer_paused: bool = false
+var _victory_triggered: bool = false
 
 var tutorial_layer: Node = null
 
@@ -101,6 +103,9 @@ func _connect_dungeon() -> void:
 	if enemy_manager and not enemy_manager.enemy_defeated_global.is_connected(_on_enemy_defeated):
 		enemy_manager.enemy_defeated_global.connect(_on_enemy_defeated)
 
+	if enemy_manager and enemy_manager.has_signal("boss_defeated") and not enemy_manager.boss_defeated.is_connected(_on_boss_defeated):
+		enemy_manager.boss_defeated.connect(_on_boss_defeated)
+
 func _connect_player() -> void:
 	var player_stats = get_node_or_null("/root/PlayerStats")
 
@@ -113,6 +118,9 @@ func _connect_ui() -> void:
 
 	if exit_button and not exit_button.pressed.is_connected(_on_return_pressed):
 		exit_button.pressed.connect(_on_return_pressed)
+
+	if continue_button and not continue_button.pressed.is_connected(_on_continue_pressed):
+		continue_button.pressed.connect(_on_continue_pressed)
 
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
@@ -256,6 +264,33 @@ func _on_player_died() -> void:
 	# Show death overlay
 	if death_handler:
 		death_handler.handle_player_died(enemies_killed, rooms_cleared)
+
+func _on_boss_defeated(enemy) -> void:
+	if _victory_triggered:
+		return
+
+	_victory_triggered = true
+
+	# Trigger victory via GameStateManager
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.request_victory()
+	else:
+		# fallback: pause
+		get_tree().paused = true
+
+	# Show victory overlay
+	if death_handler:
+		death_handler.handle_victory(enemies_killed, rooms_cleared)
+
+
+func _on_continue_pressed() -> void:
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.return_to_previous_state()
+	# hide overlay and resume
+	if death_overlay:
+		death_overlay.visible = false
 
 # ─────────────────────────────────────────────
 # PAUSE

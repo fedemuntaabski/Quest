@@ -327,6 +327,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Mejorar Magia (+1)"
+hint_tooltip = "Magia: aumenta el daño de cartas y habilidades."
 
 [node name="UpgradeDEXButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=663664604]
 custom_minimum_size = Vector2(0, 96)

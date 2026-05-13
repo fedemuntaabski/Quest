@@ -4,6 +4,7 @@ class_name EnemyManager
 signal room_cleared(room_id: int)
 signal enemy_defeated_global
 signal enemy_defeated_with_reward(enemy, reward_position: Vector2)
+signal boss_defeated(enemy)
 
 const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 const TutorialEnemyOverride = preload("res://scripts/TutorialEnemyOverride.gd")
@@ -18,6 +19,8 @@ var player_torch: PointLight2D = null
 # 🔥 NUEVO
 var enemies: Array = []
 var turn_manager: TurnManager
+var boss_spawned: bool = false
+var boss_enemy: Node = null
 
 const COIN_REWARD_PER_ENEMY := 5
 
@@ -48,6 +51,11 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 	if map_manager and player:
 		player_cell = map_manager.world_to_grid_coords(player.global_position)
 
+	# Determine final room id (highest id) and spawn normally for other rooms.
+	var final_room_id: int = -1
+	for ri in room_infos:
+		final_room_id = max(final_room_id, ri.get("id", -1))
+
 	for room_info in room_infos:
 		var room_id: int = room_info["id"]
 
@@ -75,6 +83,17 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 
 		# Register every enemy through the same setup path after it is inside the scene tree.
 		enemy.setup(get_parent(), player)
+
+		# Boss spawn rules: only one boss per run, must spawn in final room.
+		if not boss_spawned and room_id == final_room_id:
+			boss_spawned = true
+			boss_enemy = enemy
+			enemy.name = "Boss_Purple_%d" % room_id
+			# Mark as boss for downstream checks
+			enemy.set("is_boss", true)
+			# Configure boss: 30 HP, 5 base damage, dex 4 (~10% dodge), purple tint
+			if enemy.has_method("configure_profile"):
+				enemy.configure_profile(30, 5, 4, Color(0.6, 0.2, 0.8, 1.0), Color(1.0, 0.6, 1.0, 1.0))
 		if room_id == 0:
 			# Keep tutorial enemy in the normal systems; only override combat profile.
 			TutorialEnemyOverride.apply(enemy)
@@ -167,6 +186,10 @@ func _get_random_floor_cell_in_room(
 
 func _on_enemy_defeated(enemy, room_id: int) -> void:
 	enemy_defeated_global.emit()
+
+	# If this enemy was the boss, emit boss_defeated (only once)
+	if enemy and enemy.get("is_boss"):
+		boss_defeated.emit(enemy)
 	
 	var reward_position: Vector2 = enemy.global_position if enemy and enemy is Node2D else Vector2.ZERO
 	enemy_defeated_with_reward.emit(enemy, reward_position)

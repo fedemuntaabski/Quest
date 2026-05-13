@@ -38,3 +38,35 @@ func handle_player_died(enemies_killed: int, rooms_cleared: int) -> void:
 			var t := owner.create_tween()
 			t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 			t.tween_property(color_rect, "modulate:a", 1.0, 2.0)
+
+func handle_victory(enemies_killed: int, rooms_cleared: int) -> void:
+	if owner == null:
+		return
+
+	# Show victory message and award gold as normal
+	var gold_reward := enemies_killed * 10 + rooms_cleared * 50
+
+	if death_gold_label:
+		death_gold_label.text = "Oro ganado: %d" % gold_reward
+
+	var save_mgr = owner.get_node_or_null("/root/SaveManager")
+	var currency := owner.get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	if currency:
+		currency.add_gold(gold_reward)
+	elif save_mgr:
+		save_mgr.gold += gold_reward
+		save_mgr.save_game()
+
+	if death_overlay:
+		# Update label text to victory
+		var lbl := death_overlay.get_node_or_null("CenterContainer/VBoxContainer/DeathLabel") as Label
+		if lbl:
+			lbl.text = "You defeated the enemy and escaped the dungeon."
+
+		death_overlay.visible = true
+		var color_rect := death_overlay.get_node_or_null("ColorRect") as ColorRect
+		if color_rect:
+			color_rect.modulate.a = 0.0
+			var t := owner.create_tween()
+			t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+			t.tween_property(color_rect, "modulate:a", 1.0, 1.2)

@@ -237,11 +237,11 @@ func _setup_stat_tooltips() -> void:
 		stat_tooltip.visible = false
 
 	var tooltip_map: Dictionary = {
-		icon_hp: "Vida del personaje",
-		icon_strength: "Aumenta el daño físico",
-		icon_magic: "Permite usar habilidades especiales",
-		icon_dexterity: "Aumenta la probabilidad de esquivar ataques",
-		potion_icon: "Restaura vida (uso único por partida)"
+		icon_hp: "HP: Vida actual y máxima; determina la supervivencia.",
+		icon_strength: "Fuerza: aumenta el daño físico de cartas y ataques.",
+		icon_magic: "Magia: aumenta el daño de cartas y habilidades.",
+		icon_dexterity: "Destreza: aumenta la probabilidad de esquivar ataques (2.5% en 1 → 25% en 10).",
+		potion_icon: "Poción: restaura una porción de la vida máxima al usarla."
 	}
 
 	for icon in tooltip_map.keys():
@@ -257,10 +257,20 @@ func _setup_stat_tooltips() -> void:
 func _on_stat_icon_entered(text: String, icon: Control) -> void:
 	if stat_tooltip == null or stat_tooltip_label == null:
 		return
+	# Populate and show tooltip
 	stat_tooltip_label.text = text
 	stat_tooltip.visible = true
-	var rect := icon.get_global_rect()
-	stat_tooltip.global_position = rect.position + Vector2(rect.size.x + 10.0, -4.0)
+	# Position to the right of the stats panel by default
+	var panel_rect := stat_panel.get_global_rect()
+	var preferred_pos := panel_rect.position + Vector2(panel_rect.size.x + 12.0, 0.0)
+	stat_tooltip.global_position = preferred_pos
+	# If tooltip intersects the timer UI, flip to the left side of the panel
+	if timer_ui:
+		var tooltip_rect := stat_tooltip.get_global_rect()
+		var timer_rect := timer_ui.get_global_rect()
+		if tooltip_rect.intersects(timer_rect):
+			var left_pos := panel_rect.position + Vector2(-stat_tooltip.rect_size.x - 12.0, 0.0)
+			stat_tooltip.global_position = left_pos
 
 func _on_stat_icon_exited() -> void:
 	if stat_tooltip:

@@ -103,6 +103,27 @@ func _ensure_combat_component() -> void:
 	comp.setup(self, stats, map_manager)
 	combat_component = comp
 
+func configure_profile(max_hp: int, base_damage: int, dex: int = 0, base_tint: Color = Color(0.7, 0.3, 0.9, 1.0), target_tint: Color = Color(1.0, 0.7, 1.0, 1.0)) -> void:
+	# Public helper to customize enemy stats and visuals (used for special enemy types)
+	if stats:
+		stats.max_hp = max_hp
+		stats.current_hp = max_hp
+		stats.dexterity = dex
+		stats.strength = 0
+		stats.magic = 0
+		stats.strength_mod = 0
+		stats.magic_mod = 0
+		stats.dexterity_mod = 0
+		if health_bar:
+			health_bar.max_value = stats.max_hp
+			health_bar.value = stats.current_hp
+
+	if combat_component:
+		combat_component.base_damage = base_damage
+
+	# Apply visual tint
+	set_visual_tint(base_tint, target_tint)
+
 func get_combat_component() -> CombatComponent:
 	return combat_component
 
