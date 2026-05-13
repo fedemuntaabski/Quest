@@ -30,6 +30,11 @@ var strength_mod: int = 0
 var magic_mod: int = 0
 var dexterity_mod: int = 0
 
+func reset_modifiers() -> void:
+	strength_mod = 0
+	magic_mod = 0
+	dexterity_mod = 0
+
 # -------------------------
 # TOTAL STATS
 # -------------------------

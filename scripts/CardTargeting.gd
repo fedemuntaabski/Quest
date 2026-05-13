@@ -30,6 +30,8 @@ static func is_valid_target(card: CardData, source: Node, target: Node, map_mana
 		"enemy":
 			if target == null or target == source:
 				return false
+			if map_manager and not map_manager.can_actors_engage(source, target):
+				return false
 			return target.has_method("get_combat_component") or target.get_node_or_null("CombatComponent") != null
 		"ground":
 			return true

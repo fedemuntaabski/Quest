@@ -112,13 +112,9 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 	if _bound_stats != stats:
 		if _bound_stats and _bound_stats.hp_changed.is_connected(_on_hp_changed):
 			_bound_stats.hp_changed.disconnect(_on_hp_changed)
-		if _bound_stats and _bound_stats.stats_changed.is_connected(_on_stats_changed):
-			_bound_stats.stats_changed.disconnect(_on_stats_changed)
 		_bound_stats = stats
 		if not stats.hp_changed.is_connected(_on_hp_changed):
 			stats.hp_changed.connect(_on_hp_changed)
-		if not stats.stats_changed.is_connected(_on_stats_changed):
-			stats.stats_changed.connect(_on_stats_changed)
 
 	_on_stats_changed(stats)
 

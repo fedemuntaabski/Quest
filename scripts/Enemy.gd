@@ -129,6 +129,9 @@ func begin_turn(tm: TurnManager) -> void:
 	sync_to_grid()
 
 	if combat_component and combat_component.can_attack(player):
+		if map_manager and not map_manager.can_actors_engage(self, player):
+			_queue_wait_action()
+			return
 		_queue_attack_action(player)
 		return
 

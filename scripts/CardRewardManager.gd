@@ -6,6 +6,7 @@ signal reward_completed(selected_card: CardData)
 @export var card_manager: CardManager
 
 var _available_cards: Array[CardData] = []
+var _rewarded_cards: Dictionary = {}
 var _on_reward_completed: Callable = Callable()
 
 func _ready() -> void:
@@ -27,6 +28,9 @@ func _load_all_cards() -> void:
 		if card:
 			_available_cards.append(card)
 
+func reset_run_rewards() -> void:
+	_rewarded_cards.clear()
+
 func generate_reward_options(count: int = 3, on_complete: Callable = Callable()) -> Array[CardData]:
 	_resolve_card_manager()
 	_on_reward_completed = on_complete
@@ -37,7 +41,13 @@ func _select_random_cards(count: int) -> Array[CardData]:
 		return []
 	
 	var selected: Array[CardData] = []
-	var pool := _available_cards.duplicate()
+	var pool: Array[CardData] = []
+	for card in _available_cards:
+		if card == null:
+			continue
+		if _rewarded_cards.has(card):
+			continue
+		pool.append(card)
 	
 	for i in range(min(count, pool.size())):
 		var idx := randi() % pool.size()
@@ -49,6 +59,7 @@ func _select_random_cards(count: int) -> Array[CardData]:
 func apply_selected_reward(card: CardData, replace_slot_index: int = -1) -> void:
 	if card == null:
 		return
+	_rewarded_cards[card] = true
 	if card_manager:
 		_add_card_to_player(card, replace_slot_index)
 	

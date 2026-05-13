@@ -36,6 +36,15 @@ func register(player_stats: CharacterStats) -> void:
 	if not stats.stats_changed.is_connected(_on_stats_updated):
 		stats.stats_changed.connect(_on_stats_updated)
 
+	refresh_stats()
+
+func refresh_stats() -> void:
+	if stats == null:
+		return
+
+	if stats.has_method("reset_modifiers"):
+		stats.reset_modifiers()
+
 	_apply_base_stats()
 	_rebuild_upgrade_levels()
 	_reapply_upgrades()

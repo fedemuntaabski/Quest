@@ -64,6 +64,7 @@ func load_game(slot: int = current_slot) -> void:
 			player_stats_autoload.base_mag = cfg.get_value(SAVE_SECTION, "base_mag", 1)
 			player_stats_autoload.base_dex = cfg.get_value(SAVE_SECTION, "base_dex", 1)
 			player_stats_autoload.active_upgrades = cfg.get_value(SAVE_SECTION, "active_upgrades", [])
+			player_stats_autoload.refresh_stats()
 	else:
 		print("SaveManager: No save file found for slot %d, starting fresh." % slot)
 		first_time_player = true
@@ -75,6 +76,7 @@ func load_game(slot: int = current_slot) -> void:
 			player_stats_autoload.base_mag = 1
 			player_stats_autoload.base_dex = 1
 			player_stats_autoload.active_upgrades = []
+			player_stats_autoload.refresh_stats()
 
 func has_save(slot: int) -> bool:
 	var file = FileAccess.open(get_save_path(slot), FileAccess.READ)
