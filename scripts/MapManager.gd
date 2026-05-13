@@ -11,6 +11,7 @@ var enemy_manager: EnemyManager
 var navigation_helper: MapNavigationHelper
 var occupancy_manager: OccupancyManager
 var floating_text_manager: FloatingTextManager
+var core: MapManagerCore = null
 
 # 🔥 NUEVO
 var turn_manager: TurnManager
@@ -70,6 +71,13 @@ func _ensure_helpers() -> void:
 	if navigation_helper:
 		navigation_helper.set_occupancy_manager(occupancy_manager)
 
+	# core helper that encapsulates grid, occupancy and room queries
+	if core == null:
+		core = preload("res://scripts/map_manager/MapManagerCore.gd").new()
+		core.name = "MapManagerCore"
+		add_child(core)
+		core.setup(self)
+
 
 # ── Hover ─────────────────────────────────────────────────────────────────────
 func update_hover(world_pos: Vector2) -> void:
@@ -101,58 +109,21 @@ func _get_mouse_world_pos() -> Vector2:
 
 # ── Grid helpers ──────────────────────────────────────────────────────────────
 func world_to_grid(world: Vector2) -> Vector2i:
-	return navigation_helper.world_to_grid_coords(world) if navigation_helper else Vector2i.ZERO
+	return core.world_to_grid(world) if core else (navigation_helper.world_to_grid_coords(world) if navigation_helper else Vector2i.ZERO)
 
 
 func grid_to_world(grid: Vector2i) -> Vector2:
-	return navigation_helper.grid_to_world_coords(grid) if navigation_helper else Vector2.ZERO
+	return core.grid_to_world(grid) if core else (navigation_helper.grid_to_world_coords(grid) if navigation_helper else Vector2.ZERO)
 
 
 func is_walkable_cell(grid_pos: Vector2i) -> bool:
-	if navigation_helper == null:
-		return false
-
-	var world_pos := navigation_helper.grid_to_world_coords(grid_pos)
-	if not navigation_helper.is_cell_walkable(world_pos):
-		return false
-
-	if occupancy_manager and occupancy_manager.is_cell_blocked(grid_pos):
-		return false
-
-	return true
+	return core.is_walkable_cell(grid_pos) if core else false
 
 func is_walkable_cell_for_actor(grid_pos: Vector2i, actor: Node) -> bool:
-	if not is_walkable_cell(grid_pos):
-		return false
-
-	return is_cell_allowed_for_actor(grid_pos, actor)
+	return core.is_walkable_cell_for_actor(grid_pos, actor) if core else false
 
 func is_cell_allowed_for_actor(grid_pos: Vector2i, actor: Node) -> bool:
-	if dungeon_generator == null:
-		return true
-
-	if actor == null:
-		return true
-
-	if actor is PlayerMovement or actor.is_in_group("player"):
-		if not _is_player_room_locked():
-			return true
-		var room_rect := _get_room_rect(dungeon_generator.active_room_id)
-		var player_pos: Vector2i = actor.grid_pos if "grid_pos" in actor else Vector2i.ZERO
-		# Only restrict movement if player is actually inside the locked room.
-		# If player is in corridor (outside room rect), allow free movement.
-		if not room_rect.has_point(player_pos):
-			return true
-		return room_rect.has_point(grid_pos)
-
-	if actor is Enemy:
-		var enemy: Enemy = actor
-		if enemy.my_room_id < 0:
-			return true
-		var enemy_rect := _get_room_rect(enemy.my_room_id)
-		return enemy_rect.has_point(grid_pos)
-
-	return true
+	return core.is_cell_allowed_for_actor(grid_pos, actor) if core else true
 
 
 # ── Enemy manager ─────────────────────────────────────────────────────────────
@@ -194,43 +165,37 @@ func has_enemy_at_cell(world_position: Vector2) -> bool:
 
 # ── Wrappers directos (sin lógica) ────────────────────────────────────────────
 func is_cell_walkable(world_position: Vector2) -> bool:
-	if navigation_helper == null:
-		return false
-
-	if not navigation_helper.is_cell_walkable(world_position):
-		return false
-
-	var grid_pos := navigation_helper.world_to_grid_coords(world_position)
-	if occupancy_manager and occupancy_manager.is_cell_blocked(grid_pos):
-		return false
-
-	return true
+	return core.is_cell_walkable_world(world_position) if core else false
 
 
 func world_to_grid_coords(world_pos: Vector2) -> Vector2i:
-	return navigation_helper.world_to_grid_coords(world_pos) if navigation_helper else Vector2i.ZERO
+	return core.world_to_grid_coords(world_pos) if core else (navigation_helper.world_to_grid_coords(world_pos) if navigation_helper else Vector2i.ZERO)
 
 
 func grid_to_world_coords(grid_pos: Vector2i) -> Vector2:
-	return navigation_helper.grid_to_world_coords(grid_pos) if navigation_helper else Vector2.ZERO
+	return core.grid_to_world_coords(grid_pos) if core else (navigation_helper.grid_to_world_coords(grid_pos) if navigation_helper else Vector2.ZERO)
 
 
 func set_wall(world_position: Vector2) -> void:
-	if navigation_helper:
+	if core:
+		core.set_wall(world_position)
+	elif navigation_helper:
 		navigation_helper.set_wall(world_position)
 
 
 func clear_cell(world_position: Vector2) -> void:
-	if navigation_helper:
+	if core:
+		core.clear_cell(world_position)
+	elif navigation_helper:
 		navigation_helper.clear_cell(world_position)
 
 
 func get_adjacent_walkable_cells(world_position: Vector2) -> Array:
-	return navigation_helper.get_adjacent_walkable_cells(world_position) if navigation_helper else []
+	return core.get_adjacent_walkable_cells(world_position) if core else (navigation_helper.get_adjacent_walkable_cells(world_position) if navigation_helper else [])
 
 
 func is_within_bounds(grid_pos: Vector2i) -> bool:
-	return navigation_helper.is_within_bounds(grid_pos) if navigation_helper else false
+	return core.is_within_bounds(grid_pos) if core else (navigation_helper.is_within_bounds(grid_pos) if navigation_helper else false)
 
 
 # ── Pathfinding ───────────────────────────────────────────────────────────────
@@ -276,93 +241,44 @@ func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null
 	return best_path
 
 func _get_room_rect(room_id: int) -> Rect2i:
-	if dungeon_generator == null:
-		return Rect2i()
-
-	if room_id < 0 or room_id >= dungeon_generator.room_infos.size():
-		return Rect2i()
-
-	var info: Dictionary = dungeon_generator.room_infos[room_id]
-	return info.get("rect", Rect2i())
+	return core._get_room_rect(room_id) if core else Rect2i()
 
 func get_room_id_for_cell(grid_pos: Vector2i) -> int:
-	if dungeon_generator == null:
-		return -1
-	for info in dungeon_generator.room_infos:
-		var rect: Rect2i = info.get("rect", Rect2i())
-		if rect.has_point(grid_pos):
-			return int(info.get("id", -1))
-	return -1
+	return core.get_room_id_for_cell(grid_pos) if core else -1
 
 func get_actor_room_id(actor: Node) -> int:
-	if actor == null:
-		return -1
-	if actor is Enemy:
-		return actor.my_room_id
-	var cell: Variant = get_actor_cell(actor)
-	if cell == null and actor.get("grid_pos") != null:
-		cell = actor.get("grid_pos")
-	if cell == null:
-		return -1
-	return get_room_id_for_cell(cell)
+	return core.get_actor_room_id(actor) if core else -1
 
 func can_actors_engage(source: Node, target: Node) -> bool:
-	if dungeon_generator == null:
-		return true
-	if source == null or target == null:
-		return false
-	var source_room := get_actor_room_id(source)
-	var target_room := get_actor_room_id(target)
-	if source_room == -1 and target_room == -1:
-		return true
-	return source_room != -1 and source_room == target_room
+	return core.can_actors_engage(source, target) if core else true
 
 func _is_player_room_locked() -> bool:
-	if dungeon_generator == null or enemy_manager == null:
-		return false
-
-	var room_id := dungeon_generator.active_room_id
-	if room_id < 0:
-		return false
-
-	return enemy_manager.get_enemies_in_room(room_id) > 0
+	return core._is_player_room_locked() if core else false
 
 func _get_actor_room_rect(actor: Node) -> Rect2i:
-	if actor == null:
-		return Rect2i()
-
-	if actor is PlayerMovement or actor.is_in_group("player"):
-		if not _is_player_room_locked():
-			return Rect2i()
-		var room_rect := _get_room_rect(dungeon_generator.active_room_id)
-		var player_pos: Vector2i = actor.grid_pos if "grid_pos" in actor else Vector2i.ZERO
-		# Only return room rect if player is actually inside the room.
-		# If player is in corridor, return empty rect to allow free pathfinding.
-		if room_rect.has_point(player_pos):
-			return room_rect
-		return Rect2i()
-
-	if actor is Enemy:
-		var enemy: Enemy = actor
-		return _get_room_rect(enemy.my_room_id)
-
-	return Rect2i()
+	return core._get_actor_room_rect(actor) if core else Rect2i()
 
 # ── Occupancy helpers ────────────────────────────────────────────────────────
 func register_actor(actor: Node, grid_pos: Vector2i, blocks: bool = true) -> void:
-	if occupancy_manager:
+	if core:
+		core.register_actor(actor, grid_pos, blocks)
+	elif occupancy_manager:
 		occupancy_manager.register_actor(actor, grid_pos, blocks)
 
 func unregister_actor(actor: Node) -> void:
-	if occupancy_manager:
+	if core:
+		core.unregister_actor(actor)
+	elif occupancy_manager:
 		occupancy_manager.unregister_actor(actor)
 
 func update_actor_cell(actor: Node, grid_pos: Vector2i) -> void:
-	if occupancy_manager:
+	if core:
+		core.update_actor_cell(actor, grid_pos)
+	elif occupancy_manager:
 		occupancy_manager.update_actor_cell(actor, grid_pos)
 
 func get_actor_at_cell(grid_pos: Vector2i) -> Node:
-	return occupancy_manager.get_actor_at_cell(grid_pos) if occupancy_manager else null
+	return core.get_actor_at_cell(grid_pos) if core else (occupancy_manager.get_actor_at_cell(grid_pos) if occupancy_manager else null)
 
 func get_actor_cell(actor: Node) -> Variant:
-	return occupancy_manager.get_actor_cell(actor) if occupancy_manager else null
+	return core.get_actor_cell(actor) if core else (occupancy_manager.get_actor_cell(actor) if occupancy_manager else null)

@@ -13,7 +13,6 @@ extends Node2D
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
 @onready var death_gold_label: Label = $DeathOverlay/CenterContainer/VBoxContainer/GoldLabel
-@onready var continue_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ContinueButton
 
 @onready var upgrade_menu: CanvasLayer = $UpgradeMenu
 
@@ -119,9 +118,6 @@ func _connect_ui() -> void:
 
 	if exit_button and not exit_button.pressed.is_connected(_on_return_pressed):
 		exit_button.pressed.connect(_on_return_pressed)
-
-	if continue_button and not continue_button.pressed.is_connected(_on_continue_pressed):
-		continue_button.pressed.connect(_on_continue_pressed)
 
 	if victory_overlay:
 		if not victory_overlay.retry_requested.is_connected(_on_retry_pressed):
@@ -293,16 +289,6 @@ func _on_boss_defeated(enemy) -> void:
 	if victory_overlay:
 		victory_overlay.show_victory(enemies_killed, rooms_cleared)
 
-
-func _on_continue_pressed() -> void:
-	var gsm := _get_game_state_manager()
-	if gsm:
-		gsm.return_to_previous_state()
-	# hide overlay and resume
-	if death_overlay:
-		death_overlay.visible = false
-	if victory_overlay:
-		victory_overlay.hide_victory()
 
 # ─────────────────────────────────────────────
 # PAUSE

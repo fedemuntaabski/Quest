@@ -46,6 +46,8 @@ var _cached_range_cells: Array[Vector2i] = []
 
 var _last_active_card = null
 var _last_player_grid_pos: Vector2i = INVALID_CELL
+var _renderer: TileHighlighterRenderer = null
+var _cache: TileHighlighterCache = null
 
 # =====================================================
 # READY
@@ -55,6 +57,12 @@ func _ready() -> void:
 	z_index = 999
 
 	_resolve_refs()
+
+	# Initialize renderer for drawing routines
+	_renderer = preload("res://scripts/tile_highlighter/TileHighlighterRenderer.gd").new()
+
+	# Cache helper for range calculations
+	_cache = preload("res://scripts/tile_highlighter/TileHighlighterCache.gd").new()
 
 	if map_manager:
 		map_manager.hover_changed.connect(_on_hover_changed)
@@ -123,145 +131,10 @@ func _draw() -> void:
 
 	var tile_size := _get_tile_size()
 
-	_draw_range_preview(tile_size)
-	_draw_path_preview(tile_size)
-	_draw_hover(tile_size)
+	if _renderer:
+		_renderer.draw(self, tile_size, _path_preview, _cached_range_cells, hovered_cell, _player, map_manager)
 
-# =====================================================
-# HOVER
-# =====================================================
-
-func _draw_hover(tile_size: float) -> void:
-	var hover_pos := map_manager.grid_to_world_coords(hovered_cell)
-
-	var rect := Rect2(
-		hover_pos - Vector2.ONE * tile_size * 0.5,
-		Vector2.ONE * tile_size
-	)
-
-	var color := COLOR_VALID
-
-	if _player and not map_manager.is_walkable_cell_for_actor(hovered_cell, _player):
-		color = COLOR_INVALID
-
-	draw_rect(rect, color, true)
-	draw_rect(rect, color.lightened(0.3), false, HOVER_BORDER_WIDTH)
-
-# =====================================================
-# PATH
-# =====================================================
-
-func _draw_path_preview(tile_size: float) -> void:
-	if _path_preview.is_empty():
-		return
-
-	var previous_pos := Vector2.ZERO
-
-	for i in range(_path_preview.size()):
-		var cell := _path_preview[i]
-
-		var world_pos := map_manager.grid_to_world_coords(cell)
-
-		var rect := Rect2(
-			world_pos - Vector2.ONE * tile_size * 0.5,
-			Vector2.ONE * tile_size
-		)
-
-		var alpha = lerp(
-	0.06,
-	0.18,
-	float(i) / max(1.0, _path_preview.size() - 1)
-)
-
-		var fill_color := COLOR_PATH_FILL
-		fill_color.a = alpha
-
-		draw_rect(rect, fill_color, true)
-		draw_rect(rect, COLOR_PATH_BORDER, false, 1.0)
-
-		if i > 0:
-			draw_line(
-				previous_pos,
-				world_pos,
-				COLOR_LINE,
-				PATH_LINE_WIDTH,
-				true
-			)
-
-		previous_pos = world_pos
-
-	if _path_preview.size() >= 2:
-		var from_pos := map_manager.grid_to_world_coords(
-			_path_preview[_path_preview.size() - 2]
-		)
-
-		var to_pos := map_manager.grid_to_world_coords(
-			_path_preview[_path_preview.size() - 1]
-		)
-
-		_draw_arrow(from_pos, to_pos)
-
-# =====================================================
-# RANGE
-# =====================================================
-
-func _draw_range_preview(tile_size: float) -> void:
-	if _cached_range_cells.is_empty():
-		return
-
-	for cell in _cached_range_cells:
-		var world_pos := map_manager.grid_to_world_coords(cell)
-
-		var rect := Rect2(
-			world_pos - Vector2.ONE * tile_size * 0.5,
-			Vector2.ONE * tile_size
-		)
-
-		draw_rect(rect, COLOR_RANGE_FILL, true)
-		draw_rect(rect, COLOR_RANGE_BORDER, false, 2.0)
-		draw_rect(rect.grow(-2.0), COLOR_RANGE_INNER, false, 1.0)
-
-	var hover_actor := map_manager.get_actor_at_cell(hovered_cell)
-
-	if hover_actor and hover_actor != _player:
-		var in_range := hovered_cell in _cached_range_cells
-
-		var hover_pos := map_manager.grid_to_world_coords(hovered_cell)
-
-		var hover_rect := Rect2(
-			hover_pos - Vector2.ONE * tile_size * 0.5,
-			Vector2.ONE * tile_size
-		)
-
-		var color = COLOR_VALID if in_range else COLOR_INVALID
-
-		draw_rect(hover_rect, color, true)
-
-# =====================================================
-# ARROW
-# =====================================================
-
-func _draw_arrow(from_pos: Vector2, to_pos: Vector2) -> void:
-	var dir := (to_pos - from_pos).normalized()
-
-	var tip := to_pos
-
-	var arrow_size := 6.0
-
-	var left := (
-		tip
-		- dir * arrow_size
-		+ Vector2(-dir.y, dir.x) * (arrow_size * 0.7)
-	)
-
-	var right := (
-		tip
-		- dir * arrow_size
-		+ Vector2(dir.y, -dir.x) * (arrow_size * 0.7)
-	)
-
-	draw_line(tip, left, COLOR_ARROW, 2.0, true)
-	draw_line(tip, right, COLOR_ARROW, 2.0, true)
+# Drawing moved to TileHighlighterRenderer
 
 # =====================================================
 # PATH UPDATE
@@ -313,36 +186,8 @@ func _update_path_preview() -> void:
 # =====================================================
 
 func _update_range_cache_if_needed() -> void:
-	if _player == null or _card_manager == null:
-		return
-
-	var card = _card_manager.get_active_card()
-
-	if card == _last_active_card:
-		return
-
-	_last_active_card = card
-	_cached_range_cells.clear()
-
-	if card == null:
-		queue_redraw()
-		return
-
-	if card.target_type != "enemy":
-		queue_redraw()
-		return
-
-	if card.range <= 0:
-		queue_redraw()
-		return
-
-	_cached_range_cells = CardTargeting.get_range_cells(
-		_player.grid_pos,
-		card.range,
-		map_manager
-	)
-
-	queue_redraw()
+	if _cache:
+		_cache.update_range_cache(self)
 
 # =====================================================
 # HELPERS
