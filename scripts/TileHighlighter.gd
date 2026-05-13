@@ -13,7 +13,9 @@ const COLOR_PATH_BORDER := Color(1.0, 1.0, 1.0, 0.22)
 const COLOR_VALID := Color(0.25, 1.0, 0.45, 0.20)
 const COLOR_INVALID := Color(1.0, 0.25, 0.25, 0.20)
 
-const COLOR_RANGE := Color(1.0, 0.2, 0.2, 0.06)
+const COLOR_RANGE_FILL := Color(1.0, 0.2, 0.2, 0.18)
+const COLOR_RANGE_BORDER := Color(1.0, 0.35, 0.35, 0.95)
+const COLOR_RANGE_INNER := Color(1.0, 0.7, 0.7, 0.18)
 
 const COLOR_LINE := Color(1.0, 1.0, 1.0, 0.55)
 const COLOR_ARROW := Color(1.0, 1.0, 1.0, 0.85)
@@ -175,7 +177,9 @@ func _draw_range_preview(tile_size: float) -> void:
 			Vector2.ONE * tile_size
 		)
 
-		draw_rect(rect, COLOR_RANGE, false, 1.0)
+		draw_rect(rect, COLOR_RANGE_FILL, true)
+		draw_rect(rect, COLOR_RANGE_BORDER, false, 2.0)
+		draw_rect(rect.grow(-2.0), COLOR_RANGE_INNER, false, 1.0)
 
 	var hover_actor := map_manager.get_actor_at_cell(hovered_cell)
 

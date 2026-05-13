@@ -153,14 +153,11 @@ func update_hotbar(cards: Array, active_index: int) -> void:
 				var cd_remaining: int = card_data.get("cooldown_remaining", 0) if card_data is Dictionary else 0
 				slot.set_cooldown(cd_remaining)
 				var is_usable: bool = card_data.get("is_usable", cd_remaining <= 0) if card_data is Dictionary else true
-				var state_label: String = card_data.get("state", "available") if card_data is Dictionary else "available"
 				slot.set_usable(is_usable)
-				slot.set_state_label(state_label)
 			else:
 				slot.set_card({})
 				slot.set_cooldown(0)
 				slot.set_usable(false)
-				slot.set_state_label("blocked")
 
 			slot.set_selected(i == active_index)
 	
@@ -174,11 +171,10 @@ func update_cards_panel(cards: Array) -> void:
 			normalized_cards.append(card if card is Dictionary else {})
 		card_panel.refresh(normalized_cards)
 
-func show_card_tooltip(data: Dictionary, global_pos: Vector2) -> void:
+func show_card_tooltip(data: Dictionary) -> void:
 	if card_tooltip == null:
 		return
 	card_tooltip.set_card(data)
-	card_tooltip.global_position = global_pos + Vector2(12, 12)
 
 func hide_card_tooltip() -> void:
 	if card_tooltip:

@@ -38,6 +38,7 @@ func setup(dg: DungeonGenerator) -> void:
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	layer = 15
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 
 	var save_mgr = get_node_or_null("/root/SaveManager")
@@ -75,6 +76,7 @@ func _show_next_prompt() -> void:
 		active_tween.kill()
 		
 	active_tween = create_tween().set_parallel(true)
+	active_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	active_tween.tween_property(label, "modulate:a", 1.0, 0.5).from(0.0)
 	active_tween.tween_property(bg, "modulate:a", 0.6, 0.5).from(0.0)
 
@@ -85,6 +87,7 @@ func _advance_tutorial() -> void:
 		active_tween.kill()
 		
 	active_tween = create_tween().set_parallel(true)
+	active_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	active_tween.tween_property(label, "modulate:a", 0.0, 0.3)
 	active_tween.tween_property(bg, "modulate:a", 0.0, 0.3)
 	

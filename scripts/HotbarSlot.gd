@@ -48,24 +48,15 @@ func set_selected(selected: bool) -> void:
 
 func set_usable(usable: bool) -> void:
 	modulate = Color(1, 1, 1, 1) if usable else Color(0.5, 0.5, 0.5, 0.8)
-	if state_label and _card_data.is_empty():
-		state_label.text = "EMPTY"
-		state_label.modulate = Color(0.6, 0.6, 0.6, 1.0)
+	if state_label:
+		state_label.visible = false
+		state_label.text = ""
 
 func set_state_label(state: String) -> void:
 	if state_label == null:
 		return
-	var normalized := state.to_lower()
-	if _card_data.is_empty():
-		state_label.text = "EMPTY"
-		state_label.modulate = Color(0.6, 0.6, 0.6, 1.0)
-		return
-	if normalized == "available":
-		state_label.text = "AVAILABLE"
-		state_label.modulate = Color(0.4, 1.0, 0.4, 1.0)
-	else:
-		state_label.text = "BLOCKED"
-		state_label.modulate = Color(1.0, 0.45, 0.45, 1.0)
+	state_label.visible = false
+	state_label.text = ""
 
 func set_cooldown(turns_left: int) -> void:
 	if turns_left > 0:
@@ -81,6 +72,10 @@ func _update_ui() -> void:
 	if name_label:
 		name_label.text = _card_data.get("name", "-")
 
+	if state_label:
+		state_label.visible = false
+		state_label.text = ""
+
 	if icon:
 		var tex: Texture2D = _card_data.get("icon", null)
 		icon.texture = tex
@@ -92,7 +87,7 @@ func _on_mouse_entered() -> void:
 	if hover_border:
 		hover_border.visible = true
 	if tooltip_host:
-		tooltip_host.show_card_tooltip(_card_data, get_global_mouse_position())
+		tooltip_host.show_card_tooltip(_card_data)
 
 func _on_mouse_exited() -> void:
 	if hover_border:

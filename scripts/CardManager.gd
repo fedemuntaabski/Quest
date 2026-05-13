@@ -131,6 +131,7 @@ func get_equipped_payload() -> Array:
 			"description": card.description,
 			"stat": card.stat_key,
 			"scaling_stat": card.stat_key,
+			"damage_scaling": card.damage_scaling,
 			"base_damage": card.base_damage,
 			"range": card.range,
 			"cooldown": card.cooldown,

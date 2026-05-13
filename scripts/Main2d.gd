@@ -145,6 +145,8 @@ func _load_tutorial_if_needed() -> void:
 		return
 
 	tutorial_layer = scene.instantiate()
+	if tutorial_layer is Node:
+		tutorial_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(tutorial_layer)
 	_room_timer_paused = true
 
@@ -190,6 +192,8 @@ func _process(delta: float) -> void:
 		_on_player_died()
 
 func _input(event: InputEvent) -> void:
+	if tutorial_layer and is_instance_valid(tutorial_layer) and tutorial_layer.visible:
+		return
 	if event.is_action_pressed("ui_cancel") and not _is_dead:
 		_set_paused_state(not get_tree().paused)
 		get_viewport().set_input_as_handled()
@@ -284,9 +288,15 @@ func _reset_room_timer() -> void:
 
 func _on_tutorial_started() -> void:
 	_room_timer_paused = true
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.request_pause()
 
 func _on_tutorial_finished() -> void:
 	_room_timer_paused = false
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.request_resume()
 
 func _get_game_state_manager() -> GameStateManager:
 	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
