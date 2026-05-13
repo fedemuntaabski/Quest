@@ -7,6 +7,7 @@ extends Node2D
 @onready var hud: HUDController = $HUD
 @onready var pause_menu: PauseMenu = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
+@onready var victory_overlay: VictoryOverlay = $VictoryOverlay
 @onready var enemy_manager: EnemyManager = $MapManager/EnemyManager
 
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
@@ -121,6 +122,12 @@ func _connect_ui() -> void:
 
 	if continue_button and not continue_button.pressed.is_connected(_on_continue_pressed):
 		continue_button.pressed.connect(_on_continue_pressed)
+
+	if victory_overlay:
+		if not victory_overlay.retry_requested.is_connected(_on_retry_pressed):
+			victory_overlay.retry_requested.connect(_on_retry_pressed)
+		if not victory_overlay.exit_requested.is_connected(_on_return_pressed):
+			victory_overlay.exit_requested.connect(_on_return_pressed)
 
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
@@ -248,6 +255,8 @@ func _on_player_died() -> void:
 		return
 	
 	_is_dead = true
+	if victory_overlay:
+		victory_overlay.hide_victory()
 	
 	# Use GameStateManager to handle death state
 	var gsm := _get_game_state_manager()
@@ -270,6 +279,8 @@ func _on_boss_defeated(enemy) -> void:
 		return
 
 	_victory_triggered = true
+	if death_overlay:
+		death_overlay.visible = false
 
 	# Trigger victory via GameStateManager
 	var gsm := _get_game_state_manager()
@@ -279,9 +290,8 @@ func _on_boss_defeated(enemy) -> void:
 		# fallback: pause
 		get_tree().paused = true
 
-	# Show victory overlay
-	if death_handler:
-		death_handler.handle_victory(enemies_killed, rooms_cleared)
+	if victory_overlay:
+		victory_overlay.show_victory(enemies_killed, rooms_cleared)
 
 
 func _on_continue_pressed() -> void:
@@ -291,6 +301,8 @@ func _on_continue_pressed() -> void:
 	# hide overlay and resume
 	if death_overlay:
 		death_overlay.visible = false
+	if victory_overlay:
+		victory_overlay.hide_victory()
 
 # ─────────────────────────────────────────────
 # PAUSE

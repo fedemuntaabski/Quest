@@ -75,6 +75,8 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 
 	card_manager.start_cooldown(card)
 	card_played.emit(card, target, result)
+	if owner_actor and owner_actor.is_in_group("player") and card_manager:
+		card_manager.set_active_index(-1)
 	return result
 
 func _resolve_target_component(target: Node) -> CombatComponent:

@@ -37,7 +37,7 @@ var outline_size: float = 2.0:
 		queue_redraw()
 
 func _ready() -> void:
-	mouse_filter = MOUSE_FILTER_IGNORE
+	mouse_filter = MOUSE_FILTER_STOP
 	custom_minimum_size = Vector2(24, 24)
 
 func _notification(what: int) -> void:

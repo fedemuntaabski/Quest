@@ -6,7 +6,7 @@
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="4_ui_font"]
 [ext_resource type="AudioStream" uid="uid://bn3f47isu51op" path="res://assets/audio/click.mp3" id="5_click_audio"]
 [ext_resource type="AudioStream" uid="uid://bawlbtgbjti0q" path="res://assets/audio/hover.mp3" id="6_hover_audio"]
-[ext_resource type="PackedScene" path="res://scenes/OptionsMenu.tscn" id="7_options_menu"]
+[ext_resource type="PackedScene" uid="uid://baeb8xmga0bum" path="res://scenes/OptionsMenu.tscn" id="7_options_menu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
 content_margin_left = 16.0
@@ -192,6 +192,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "SALIR"
 
 [node name="OptionsMenu" parent="." unique_id=1577447172 instance=ExtResource("7_options_menu")]
+visible = false
 layout_mode = 1
 click_player_path = NodePath("../click")
 hover_player_path = NodePath("../hover")

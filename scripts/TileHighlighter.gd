@@ -79,11 +79,19 @@ func _connect_player_signals() -> void:
 	if gsm and not gsm.state_changed.is_connected(_on_game_state_changed):
 		gsm.state_changed.connect(_on_game_state_changed)
 
+	if _card_manager and not _card_manager.active_index_changed.is_connected(_on_active_index_changed):
+		_card_manager.active_index_changed.connect(_on_active_index_changed)
+
 func _on_game_state_changed(new_state: int, _old_state: int) -> void:
 	# Clear range grid when game state changes (e.g., combat ends, turn ends)
 	if new_state != GameStateManager.State.ACTIVE:
 		_cached_range_cells.clear()
 		queue_redraw()
+
+func _on_active_index_changed(_index: int) -> void:
+	_cached_range_cells.clear()
+	_last_active_card = null
+	queue_redraw()
 
 # =====================================================
 # PROCESS
@@ -346,6 +354,8 @@ func _resolve_refs() -> void:
 
 	if _card_manager == null and _player:
 		_card_manager = _player.get_node_or_null("CardManager") as CardManager
+		if _card_manager and not _card_manager.active_index_changed.is_connected(_on_active_index_changed):
+			_card_manager.active_index_changed.connect(_on_active_index_changed)
 
 func _get_tile_size() -> float:
 	if map_manager and map_manager.dungeon_generator:

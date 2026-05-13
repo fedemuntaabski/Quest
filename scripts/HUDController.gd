@@ -7,6 +7,7 @@ signal reward_skipped
 signal reward_card_replace_selected(card: CardData, slot_index: int)
 
 @onready var stat_panel: StatPanelUI = $Control/StatsHUD/MarginContainer/StatPanelUI
+@onready var stats_hud_panel: PanelContainer = $Control/StatsHUD
 @onready var upgrade_panel: UpgradePanelUI = $Control/UpgradePanelUI if has_node("Control/UpgradePanelUI") else null
 @onready var card_panel: CardPanelUI = get_node_or_null("Control/CardPanelUI") as CardPanelUI
 @onready var timer_ui: TimerUI = $Control/TimerUI
@@ -237,11 +238,11 @@ func _setup_stat_tooltips() -> void:
 		stat_tooltip.visible = false
 
 	var icons_and_text: Array = [
-		[icon_hp, "HP: Vida actual y máxima; determina la supervivencia."],
-		[icon_strength, "Fuerza: aumenta el daño físico de cartas y ataques."],
-		[icon_magic, "Magia: aumenta el daño de cartas y habilidades."],
-		[icon_dexterity, "Destreza: aumenta la probabilidad de esquivar ataques (2.5% en 1 → 25% en 10)."],
-		[potion_icon, "Poción: restaura una porción de la vida máxima al usarla."]
+		[icon_hp, "HP: vida actual y máxima."],
+		[icon_strength, "Fuerza: sube el daño físico."],
+		[icon_magic, "Magia: sube el daño mágico."],
+		[icon_dexterity, "Destreza / Agilidad: mejora el esquive y la movilidad."],
+		[potion_icon, "Poción: cura parte de tu vida máxima."]
 	]
 
 	for icon_pair in icons_and_text:
@@ -261,8 +262,8 @@ func _on_stat_icon_entered(text: String, icon: Control) -> void:
 	# Populate and show tooltip
 	stat_tooltip_label.text = text
 	stat_tooltip.visible = true
-	# Position to the right of the stats panel by default
-	var panel_rect := stat_panel.get_global_rect()
+	# Position to the right of the status HUD by default
+	var panel_rect := stats_hud_panel.get_global_rect() if stats_hud_panel else stat_panel.get_global_rect()
 	var preferred_pos := panel_rect.position + Vector2(panel_rect.size.x + 12.0, 0.0)
 	stat_tooltip.global_position = preferred_pos
 	# If tooltip intersects the timer UI, flip to the left side of the panel

@@ -20,7 +20,7 @@ border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.75, 0.85, 1.0, 0.9)
+border_color = Color(0.75, 0.85, 1, 0.9)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
@@ -32,7 +32,7 @@ border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1.0, 0.84, 0.2, 0.95)
+border_color = Color(1, 0.84, 0.2, 0.95)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
@@ -69,7 +69,7 @@ visible = false
 modulate = Color(0.6, 0.6, 0.6, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
-text = "EMPTY"
+text = "VACIO"
 horizontal_alignment = 1
 
 [node name="KeyLabel" type="Label" parent="VBox" unique_id=917690201]
@@ -79,29 +79,20 @@ theme_override_font_sizes/font_size = 11
 text = "1"
 horizontal_alignment = 2
 
-[node name="CooldownOverlay" type="ColorRect" parent="."]
+[node name="CooldownOverlay" type="ColorRect" parent="." unique_id=1895241212]
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+layout_mode = 2
 mouse_filter = 2
-color = Color(0.0, 0.0, 0.0, 0.35)
+color = Color(0, 0, 0, 0.35)
 
-[node name="HoverBorder" type="Panel" parent="."]
+[node name="HoverBorder" type="Panel" parent="." unique_id=778994651]
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot_hover")
 
 [node name="SelectionBorder" type="Panel" parent="." unique_id=917690202]
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot_selected")

@@ -114,7 +114,6 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
 [node name="OptionsMenu" type="Control" unique_id=1102198647]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -273,5 +272,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "VOLVER"
 
 [node name="UnsavedChangesDialog" type="ConfirmationDialog" parent="." unique_id=432187618]
+oversampling_override = 1.0
 title = "Cambios sin guardar"
+size = Vector2i(259, 100)
 dialog_text = "¿Deseas descartar los cambios?"
