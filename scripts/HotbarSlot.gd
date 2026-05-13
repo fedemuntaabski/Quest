@@ -45,6 +45,9 @@ func set_selected(selected: bool) -> void:
 	_is_selected = selected
 	if selection_border:
 		selection_border.visible = selected
+	# Restore full opacity when deselected
+	if not selected:
+		modulate = Color(1, 1, 1, 1)
 
 func set_usable(usable: bool) -> void:
 	modulate = Color(1, 1, 1, 1) if usable else Color(0.5, 0.5, 0.5, 0.8)

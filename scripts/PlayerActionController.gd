@@ -198,7 +198,13 @@ func _update_hotbar_ui() -> void:
 func _select_card(index: int) -> void:
 	if card_manager == null:
 		return
-	card_manager.set_active_index(index)
+	
+	# Toggle behavior: if already selected, deselect to neutral state
+	if card_manager.active_index == index:
+		card_manager.set_active_index(-1)
+	else:
+		card_manager.set_active_index(index)
+	
 	_update_hotbar_ui()
 
 func _on_hotbar_slot_pressed(index: int) -> void:

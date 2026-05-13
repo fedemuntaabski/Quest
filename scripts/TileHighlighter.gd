@@ -45,6 +45,7 @@ var _path_preview: Array[Vector2i] = []
 var _cached_range_cells: Array[Vector2i] = []
 
 var _last_active_card = null
+var _last_player_grid_pos: Vector2i = INVALID_CELL
 
 # =====================================================
 # READY
@@ -58,7 +59,31 @@ func _ready() -> void:
 	if map_manager:
 		map_manager.hover_changed.connect(_on_hover_changed)
 
+	_connect_player_signals()
 	queue_redraw()
+
+# =====================================================
+# PLAYER MOVEMENT & STATE SIGNALS
+# =====================================================
+
+func _connect_player_signals() -> void:
+	if _player == null:
+		_player = get_tree().get_first_node_in_group("player") as PlayerMovement
+	
+	if _player == null:
+		call_deferred("_connect_player_signals")
+		return
+	
+	# Connect to game state changes to clear overlays when state changes
+	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if gsm and not gsm.state_changed.is_connected(_on_game_state_changed):
+		gsm.state_changed.connect(_on_game_state_changed)
+
+func _on_game_state_changed(new_state: int, _old_state: int) -> void:
+	# Clear range grid when game state changes (e.g., combat ends, turn ends)
+	if new_state != GameStateManager.State.ACTIVE:
+		_cached_range_cells.clear()
+		queue_redraw()
 
 # =====================================================
 # PROCESS
@@ -67,6 +92,13 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _player == null or _card_manager == null:
 		_resolve_refs()
+
+	# Clear range grid if player moved
+	if _player and _player.grid_pos != _last_player_grid_pos:
+		_last_player_grid_pos = _player.grid_pos
+		if not _cached_range_cells.is_empty():
+			_cached_range_cells.clear()
+			queue_redraw()
 
 	_update_range_cache_if_needed()
 

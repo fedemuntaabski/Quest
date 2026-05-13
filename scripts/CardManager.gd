@@ -81,11 +81,18 @@ func register_new_card(card: CardData) -> void:
 	_cooldowns[card] = 0
 
 func get_active_card() -> CardData:
-	if active_index < 0 or active_index >= equipped.size():
+	if active_index == -1 or active_index < 0 or active_index >= equipped.size():
 		return null
 	return equipped[active_index]
 
 func set_active_index(index: int) -> void:
+	# Support -1 as neutral/no-skill-selected state
+	if index == -1:
+		active_index = -1
+		active_index_changed.emit(-1)
+		_emit_ui_state()
+		return
+	
 	if index < 0 or index >= equipped.size():
 		return
 	if equipped[index] == null:

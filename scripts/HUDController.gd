@@ -236,18 +236,19 @@ func _setup_stat_tooltips() -> void:
 	if stat_tooltip:
 		stat_tooltip.visible = false
 
-	var tooltip_map: Dictionary = {
-		icon_hp: "HP: Vida actual y máxima; determina la supervivencia.",
-		icon_strength: "Fuerza: aumenta el daño físico de cartas y ataques.",
-		icon_magic: "Magia: aumenta el daño de cartas y habilidades.",
-		icon_dexterity: "Destreza: aumenta la probabilidad de esquivar ataques (2.5% en 1 → 25% en 10).",
-		potion_icon: "Poción: restaura una porción de la vida máxima al usarla."
-	}
+	var icons_and_text: Array = [
+		[icon_hp, "HP: Vida actual y máxima; determina la supervivencia."],
+		[icon_strength, "Fuerza: aumenta el daño físico de cartas y ataques."],
+		[icon_magic, "Magia: aumenta el daño de cartas y habilidades."],
+		[icon_dexterity, "Destreza: aumenta la probabilidad de esquivar ataques (2.5% en 1 → 25% en 10)."],
+		[potion_icon, "Poción: restaura una porción de la vida máxima al usarla."]
+	]
 
-	for icon in tooltip_map.keys():
+	for icon_pair in icons_and_text:
+		var icon: Control = icon_pair[0]
+		var text: String = icon_pair[1]
 		if icon == null:
 			continue
-		var text: String = tooltip_map[icon]
 		var enter_cb := _on_stat_icon_entered.bind(text, icon)
 		if not icon.mouse_entered.is_connected(enter_cb):
 			icon.mouse_entered.connect(enter_cb)
