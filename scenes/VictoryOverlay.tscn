@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://uipe5cbrkn5j"]
 
-[ext_resource type="Script" path="res://scripts/VictoryOverlay.gd" id="1_victory_script"]
+[ext_resource type="Script" uid="uid://q2o7vsbcvo8o" path="res://scripts/VictoryOverlay.gd" id="1_victory_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_left"]
 bg_color = Color(0.08, 0.08, 0.1, 0.96)
@@ -16,12 +16,11 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[node name="VictoryOverlay" type="CanvasLayer"]
+[node name="VictoryOverlay" type="CanvasLayer" unique_id=1893276244]
 layer = 101
-visible = false
 script = ExtResource("1_victory_script")
 
-[node name="Control" type="Control" parent="."]
+[node name="Control" type="Control" parent="." unique_id=1350499552]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -30,17 +29,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="ColorRect" type="ColorRect" parent="Control"]
+[node name="ColorRect" type="ColorRect" parent="Control" unique_id=853929370]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.82)
 mouse_filter = 2
+color = Color(0, 0, 0, 0.82)
 
-[node name="CenterContainer" type="CenterContainer" parent="Control"]
+[node name="CenterContainer" type="CenterContainer" parent="Control" unique_id=609912708]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -48,84 +47,85 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Control/CenterContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/CenterContainer" unique_id=1228190950]
 layout_mode = 2
 theme_override_constants/separation = 24
 alignment = 1
 
-[node name="LeftPanel" type="PanelContainer" parent="Control/CenterContainer/HBoxContainer"]
+[node name="LeftPanel" type="PanelContainer" parent="Control/CenterContainer/HBoxContainer" unique_id=1073482423]
 custom_minimum_size = Vector2(460, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_victory_left")
 
-[node name="MarginContainer" type="MarginContainer" parent="Control/CenterContainer/HBoxContainer/LeftPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="Control/CenterContainer/HBoxContainer/LeftPanel" unique_id=1232830259]
 layout_mode = 2
 theme_override_constants/margin_left = 28
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 28
 theme_override_constants/margin_bottom = 24
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer" unique_id=1534210903]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="VictoryLabel" type="Label" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+[node name="VictoryLabel" type="Label" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer" unique_id=475174351]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.84, 0.25, 1)
 theme_override_font_sizes/font_size = 50
 text = "¡Victoria!"
 horizontal_alignment = 1
 
-[node name="SummaryLabel" type="Label" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+[node name="SummaryLabel" type="Label" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer" unique_id=814902468]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "El jefe púrpura ha caído."
-autowrap_mode = 3
 horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="ButtonsHBox" type="HBoxContainer" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+[node name="ButtonsHBox" type="HBoxContainer" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer" unique_id=583819452]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="RetryButton" type="Button" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/ButtonsHBox"]
+[node name="RetryButton" type="Button" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/ButtonsHBox" unique_id=299344753]
 custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Reintentar"
 
-[node name="ExitButton" type="Button" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/ButtonsHBox"]
+[node name="ExitButton" type="Button" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/ButtonsHBox" unique_id=662383925]
 custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Salir"
 
-[node name="RightPanel" type="PanelContainer" parent="Control/CenterContainer/HBoxContainer"]
+[node name="RightPanel" type="PanelContainer" parent="Control/CenterContainer/HBoxContainer" unique_id=2057326663]
 custom_minimum_size = Vector2(340, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_victory_right")
 
-[node name="MarginContainer" type="MarginContainer" parent="Control/CenterContainer/HBoxContainer/RightPanel"]
+[node name="MarginContainer" type="MarginContainer" parent="Control/CenterContainer/HBoxContainer/RightPanel" unique_id=215215078]
 layout_mode = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Control/CenterContainer/HBoxContainer/RightPanel/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/CenterContainer/HBoxContainer/RightPanel/MarginContainer" unique_id=426263066]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="CreditsTitle" type="Label" parent="Control/CenterContainer/HBoxContainer/RightPanel/MarginContainer/VBoxContainer"]
+[node name="CreditsTitle" type="Label" parent="Control/CenterContainer/HBoxContainer/RightPanel/MarginContainer/VBoxContainer" unique_id=1563324246]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.88, 1, 1)
 theme_override_font_sizes/font_size = 26
 text = "Créditos"
 horizontal_alignment = 1
 
-[node name="CreditsLabel" type="RichTextLabel" parent="Control/CenterContainer/HBoxContainer/RightPanel/MarginContainer/VBoxContainer"]
+[node name="CreditsLabel" type="RichTextLabel" parent="Control/CenterContainer/HBoxContainer/RightPanel/MarginContainer/VBoxContainer" unique_id=454089695]
 layout_mode = 2
-fit_content = true
 bbcode_enabled = true
-autowrap_mode = 3
-text = "[center]Quest Team\n\nDiseño y sistemas\nCódigo y combate\nArte / UI\n\nGodot 4.6[/center]"
+text = "[center]
+Bazinga
+[/center]"
+fit_content = true
