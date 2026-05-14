@@ -1,8 +1,6 @@
 extends Node2D
 class_name DungeonGenerator
 
-const DungeonRuntimeSetup = preload("res://scripts/DungeonRuntimeSetup.gd")
-
 @export var floor_tileset: TileSet = preload("res://assets/texture/enviorment/dungeon_tileset.tres")
 
 signal room_changed(room_id: int)
@@ -111,7 +109,6 @@ func _on_room_cleared(room_id: int) -> void:
 
 func generate_dungeon(player: CharacterBody2D = null) -> void:
 	randomize()
-	_ensure_runtime_nodes()
 	_clear_generated_content()
 
 	floor_cells.clear()

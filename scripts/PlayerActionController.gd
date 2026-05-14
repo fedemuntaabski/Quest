@@ -1,7 +1,7 @@
 extends Node
 class_name PlayerActionController
 
-const AttackAction = preload("res://scripts/AttackAction.gd")
+const PRELOAD_ATTACK_ACTION = preload("res://scripts/AttackAction.gd")
 
 @export var card_library: CardLibrary
 
@@ -266,7 +266,7 @@ func _queue_basic_attack(target: Node) -> bool:
 	if not player_combat.can_attack(target):
 		return false
 
-	var action := AttackAction.new(player_combat, target)
+	var action := PRELOAD_ATTACK_ACTION.new(player_combat, target)
 	player.turn_manager.action_queue.queue_action(action)
 	return true
 

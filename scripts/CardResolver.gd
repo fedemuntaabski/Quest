@@ -1,7 +1,7 @@
 extends RefCounted
 class_name CardResolver
 
-const DamageEffect = preload("res://scripts/DamageEffect.gd")
+const PRELOAD_DAMAGE_EFFECT = preload("res://scripts/DamageEffect.gd")
 
 static func resolve_card(card: CardData, source_stats: CharacterStats, target_stats: CharacterStats) -> Dictionary:
 	var results: Array = []
@@ -11,7 +11,7 @@ static func resolve_card(card: CardData, source_stats: CharacterStats, target_st
 		return {"results": results, "hit": false, "damage": 0}
 
 	if card.effects.is_empty():
-		var fallback_damage := DamageEffect.new()
+		var fallback_damage := PRELOAD_DAMAGE_EFFECT.new()
 		fallback_damage.base_damage = card.base_damage
 		fallback_damage.stat_key = card.stat_key
 		fallback_damage.damage_scaling = card.damage_scaling
@@ -27,7 +27,7 @@ static func resolve_card(card: CardData, source_stats: CharacterStats, target_st
 			var effect_result: Variant = effect.apply(source_stats, target_stats, {"card": card})
 			if effect_result is Dictionary:
 				results.append(effect_result)
-				if effect is DamageEffect or str(effect_result.get("effect", "")) == "damage":
+				if effect is PRELOAD_DAMAGE_EFFECT or str(effect_result.get("effect", "")) == "damage":
 					has_damage = true
 
 	var summary := _summarize_results(results)

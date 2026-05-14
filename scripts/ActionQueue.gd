@@ -1,7 +1,7 @@
 extends Node
 class_name ActionQueue
 
-const BaseAction = preload("res://scripts/BaseAction.gd")
+const PRELOAD_BASE_ACTION = preload("res://scripts/BaseAction.gd")
 
 signal action_finished(action: BaseAction)
 

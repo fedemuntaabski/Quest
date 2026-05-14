@@ -1,7 +1,7 @@
 extends Node2D
 class_name MapManager
 
-const MapTurnSetup = preload("res://scripts/MapTurnSetup.gd")
+const PRELOAD_MAP_TURN_SETUP = preload("res://scripts/MapTurnSetup.gd")
 
 @onready var dungeon_generator: DungeonGenerator = $DungeonGenerator
 @onready var nav_region: NavigationRegion2D = $NavigationRegion2D
@@ -15,7 +15,7 @@ var core: MapManagerCore = null
 
 # 🔥 NUEVO
 var turn_manager: TurnManager
-var turn_setup: MapTurnSetup = MapTurnSetup.new()
+var turn_setup: MapTurnSetup = PRELOAD_MAP_TURN_SETUP.new()
 
 signal hover_changed(cell: Vector2i)
 
@@ -46,7 +46,7 @@ func _ready() -> void:
 # 🔥 NUEVO
 func _setup_turn_manager() -> void:
 	if turn_setup == null:
-		turn_setup = MapTurnSetup.new()
+		turn_setup = PRELOAD_MAP_TURN_SETUP.new()
 
 	turn_setup.ensure_turn_manager(self)
 

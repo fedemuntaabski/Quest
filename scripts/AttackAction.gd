@@ -5,8 +5,8 @@ var combat_component: CombatComponent
 
 func _init(p_combat_component: CombatComponent, p_target: Node):
 	combat_component = p_combat_component
-	var owner := combat_component.actor_owner if combat_component else null
-	super._init(owner, p_target)
+	var actor_owner_local := combat_component.actor_owner if combat_component else null
+	super._init(actor_owner_local, p_target)
 	consume_turn = true
 
 func can_execute() -> bool:

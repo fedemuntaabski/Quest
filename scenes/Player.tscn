@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://dejmffrbdemc4" path="res://icon.svg" id="4_player_texture"]
 [ext_resource type="Script" uid="uid://b6lwqx80hen7e" path="res://scripts/CharacterStats.gd" id="4_qu4a1"]
 [ext_resource type="Script" uid="uid://boh5eyjv4p1ye" path="res://scripts/PlayerActionController.gd" id="5_qu4a1"]
+[ext_resource type="PackedScene" uid="uid://status_indicator" path="res://scenes/StatusIndicator.tscn" id="6_status_indicator"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mdl7e"]
 size = Vector2(14, 14)
@@ -35,6 +36,8 @@ shadow_enabled = true
 texture = ExtResource("3_mdl7e")
 texture_scale = 4.0
 script = ExtResource("4_mdl7e")
+
+[node name="StatusIndicator" parent="." instance=ExtResource("6_status_indicator") unique_id=202020203]
 
 [node name="Stats" type="CharacterStats" parent="." unique_id=825902653]
 script = ExtResource("4_qu4a1")

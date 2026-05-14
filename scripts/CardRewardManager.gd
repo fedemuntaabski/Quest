@@ -6,10 +6,15 @@ signal reward_completed(selected_card: CardData)
 @export var card_manager: CardManager
 @export var card_library: CardLibrary
 
+# Exposed weights for balancing via the editor (sum may be any positive values)
+@export_range(0, 100) var strength_weight: int = 33
+@export_range(0, 100) var agility_weight: int = 33
+@export_range(0, 100) var magic_weight: int = 33
+
 var _available_cards: Array[CardData] = []
 var _rewarded_cards: Dictionary = {}
 var _on_reward_completed: Callable = Callable()
-var _category_weights := {
+var _category_weights: Dictionary = {
 	"strength": 1.0,
 	"agility": 1.0,
 	"magic": 1.0,
@@ -18,6 +23,22 @@ var _category_weights := {
 func _ready() -> void:
 	add_to_group("card_reward_manager")
 	_load_all_cards()
+	_update_category_weights()
+
+func _update_category_weights() -> void:
+	# Normalize exported integer weights into float map
+	var s : Variant = max(0, int(strength_weight))
+	var a : Variant = max(0, int(agility_weight))
+	var m : Variant = max(0, int(magic_weight))
+	var total : Variant = float(s + a + m)
+	if total <= 0.0:
+		_category_weights["strength"] = 1.0
+		_category_weights["agility"] = 1.0
+		_category_weights["magic"] = 1.0
+		return
+	_category_weights["strength"] = float(s) / total
+	_category_weights["agility"] = float(a) / total
+	_category_weights["magic"] = float(m) / total
 
 func _load_all_cards() -> void:
 	if card_library == null:

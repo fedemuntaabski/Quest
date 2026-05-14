@@ -14,8 +14,6 @@ extends Node2D
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
 @onready var death_gold_label: Label = $DeathOverlay/CenterContainer/VBoxContainer/GoldLabel
 
-@onready var upgrade_menu: CanvasLayer = get_node_or_null("UpgradeMenu") as CanvasLayer
-
 var game_state_manager: GameStateManager
 var card_reward_manager: CardRewardManager
 
@@ -33,6 +31,7 @@ var _room_timer_paused: bool = false
 var _victory_triggered: bool = false
 
 var tutorial_layer: Node = null
+var _run_gold_start: int = 0
 
 # ─────────────────────────────────────────────
 # INIT
@@ -50,6 +49,11 @@ func _ready() -> void:
 	_load_tutorial_if_needed()
 
 	_reset_room_timer()
+
+	# Capture starting gold for this run to compute run-earned gold later
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	if currency:
+		_run_gold_start = int(currency.get_gold())
 
 func _setup_content_scaling() -> void:
 	var root_window: Window = get_tree().root
@@ -223,11 +227,12 @@ func _on_room_changed(room_id: int) -> void:
 	if hud and enemy_manager:
 		hud.update_enemies_remaining(enemy_manager.get_enemies_in_room(room_id))
 
-func _on_room_cleared(room_id: int) -> void:
+func _on_room_cleared(_room_id: int) -> void:
 	rooms_cleared += 1
 
-	if upgrade_menu and upgrade_menu.has_method("show_menu"):
-		upgrade_menu.show_menu(room_id)
+	# If victory already triggered (boss died), skip reward flow
+	if _victory_triggered:
+		return
 
 	if _is_dead:
 		return
@@ -267,8 +272,14 @@ func _on_player_died() -> void:
 		get_tree().paused = true
 	
 	# Show death overlay
+	# Compute run-earned gold (do not double-add gold here)
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var run_gold := 0
+	if currency:
+		run_gold = max(0, int(currency.get_gold() - _run_gold_start))
+
 	if death_handler:
-		death_handler.handle_player_died(enemies_killed, rooms_cleared)
+		death_handler.handle_player_died(enemies_killed, rooms_cleared, run_gold)
 
 func _on_boss_defeated(enemy) -> void:
 	if _victory_triggered:
@@ -288,8 +299,13 @@ func _on_boss_defeated(enemy) -> void:
 		# fallback: pause
 		get_tree().paused = true
 
+	# Compute run-earned gold and show victory overlay
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var run_gold := 0
+	if currency:
+		run_gold = max(0, int(currency.get_gold() - _run_gold_start))
 	if victory_overlay:
-		victory_overlay.show_victory(enemies_killed, rooms_cleared)
+		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
 
 
 # ─────────────────────────────────────────────

@@ -8,7 +8,7 @@ signal reward_card_replace_selected(card: CardData, slot_index: int)
 
 @onready var stat_panel: StatPanelUI = $Control/StatsHUD/MarginContainer/StatPanelUI
 @onready var stats_hud_panel: PanelContainer = $Control/StatsHUD
-@onready var upgrade_panel: UpgradePanelUI = $Control/UpgradePanelUI if has_node("Control/UpgradePanelUI") else null
+
 @onready var card_panel: CardPanelUI = get_node_or_null("Control/CardPanelUI") as CardPanelUI
 @onready var timer_ui: TimerUI = $Control/TimerUI
 @onready var hotbar_bar: HBoxContainer = $Control/HotbarBar
@@ -91,8 +91,6 @@ func _bind_player_stats(ps: PlayerStats) -> void:
 		return
 	if not ps.stats_changed.is_connected(_on_player_stats_changed):
 		ps.stats_changed.connect(_on_player_stats_changed)
-	if not ps.upgrades_changed.is_connected(_on_upgrades_changed):
-		ps.upgrades_changed.connect(_on_upgrades_changed)
 
 	base_stats = {
 		"hp": ps.base_hp,
@@ -103,9 +101,6 @@ func _bind_player_stats(ps: PlayerStats) -> void:
 
 	if ps.stats:
 		_on_player_stats_changed(ps.stats)
-
-	if upgrade_panel:
-		upgrade_panel.refresh(ps.active_upgrades)
 
 func _on_player_stats_changed(stats: CharacterStats) -> void:
 	if stats == null:
@@ -127,10 +122,6 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	if stat_panel:
 		stat_panel.update_hp(current_hp, max_hp)
 	_refresh_potion_ui()
-
-func _on_upgrades_changed(upgrades: Array) -> void:
-	if upgrade_panel:
-		upgrade_panel.refresh(upgrades)
 
 func update_room_timer(time_left: float, _total: float, color: Color) -> void:
 	if timer_ui:
@@ -256,7 +247,7 @@ func _setup_stat_tooltips() -> void:
 		if not icon.mouse_exited.is_connected(_on_stat_icon_exited):
 			icon.mouse_exited.connect(_on_stat_icon_exited)
 
-func _on_stat_icon_entered(text: String, icon: Control) -> void:
+func _on_stat_icon_entered(text: String, _icon: Control) -> void:
 	if stat_tooltip == null or stat_tooltip_label == null:
 		return
 	# Populate and show tooltip

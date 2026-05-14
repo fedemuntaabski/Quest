@@ -18,11 +18,11 @@ func _ready() -> void:
 	if exit_button and not exit_button.pressed.is_connected(_on_exit_pressed):
 		exit_button.pressed.connect(_on_exit_pressed)
 
-func show_victory(enemies_killed: int, rooms_cleared: int) -> void:
+func show_victory(enemies_killed: int, rooms_cleared: int, gold_earned: int = 0) -> void:
 	if victory_label:
 		victory_label.text = "¡Victoria!"
 	if summary_label:
-		summary_label.text = "El jefe púrpura ha caído.\nEnemigos derrotados: %d\nHabitaciones limpiadas: %d" % [enemies_killed, rooms_cleared]
+		summary_label.text = "El jefe púrpura ha caído.\nEnemigos derrotados: %d\nHabitaciones limpiadas: %d\nOro ganado: %d" % [enemies_killed, rooms_cleared, gold_earned]
 	if credits_label:
 		credits_label.text = "[center][b]Créditos[/b][/center]\n\nQuest Team\nDiseño y sistemas\nCódigo y combate\nArte / UI\n\nGodot 4.6"
 	visible = true

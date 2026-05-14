@@ -7,8 +7,8 @@ var card_data: CardData
 func _init(p_system: CombatCardSystem, p_card: CardData, p_target: Node) -> void:
 	card_system = p_system
 	card_data = p_card
-	var owner := card_system.owner_actor if card_system else null
-	super._init(owner, p_target)
+	var actor_owner_local := card_system.owner_actor if card_system else null
+	super._init(actor_owner_local, p_target)
 	consume_turn = true
 
 func can_execute() -> bool:

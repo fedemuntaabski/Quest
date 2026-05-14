@@ -1,8 +1,8 @@
 extends Node
 class_name TurnManager
 
-const ActionQueue = preload("res://scripts/ActionQueue.gd")
-const BaseAction = preload("res://scripts/BaseAction.gd")
+const PRELOAD_ACTION_QUEUE = preload("res://scripts/ActionQueue.gd")
+const PRELOAD_BASE_ACTION = preload("res://scripts/BaseAction.gd")
 
 var actors: Array = []
 var pending_actors: int = 0
@@ -43,7 +43,7 @@ func _ensure_action_queue() -> void:
 	if action_queue != null:
 		return
 
-	action_queue = ActionQueue.new()
+	action_queue = PRELOAD_ACTION_QUEUE.new()
 	action_queue.name = "ActionQueue"
 	add_child(action_queue)
 	if not action_queue.action_finished.is_connected(_on_action_finished):

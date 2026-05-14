@@ -10,22 +10,13 @@ func setup(p_owner: Node, p_death_overlay: CanvasLayer, p_death_gold_label: Labe
 	death_overlay = p_death_overlay
 	death_gold_label = p_death_gold_label
 
-func handle_player_died(enemies_killed: int, rooms_cleared: int) -> void:
+func handle_player_died(_enemies_killed: int, _rooms_cleared: int, run_gold: int) -> void:
 	if owner == null:
 		return
 
-	var gold_reward := enemies_killed * 10 + rooms_cleared * 50
-
+	# Display run-earned gold but do NOT add extra gold here (gold is awarded during gameplay)
 	if death_gold_label:
-		death_gold_label.text = "Oro ganado: %d" % gold_reward
-
-	var save_mgr = owner.get_node_or_null("/root/SaveManager")
-	var currency := owner.get_node_or_null("/root/CurrencyManager") as CurrencyManager
-	if currency:
-		currency.add_gold(gold_reward)
-	elif save_mgr:
-		save_mgr.gold += gold_reward
-		save_mgr.save_game()
+		death_gold_label.text = "Oro ganado: %d" % run_gold
 
 	if death_overlay:
 		death_overlay.visible = true

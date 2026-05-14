@@ -23,6 +23,9 @@ static func apply_status(target_actor: Node, target_stats: CharacterStats, paylo
 	existing["magnitude"] = magnitude
 	statuses[status_id] = existing
 	target_actor.set_meta(META_KEY, statuses)
+	# Notify actor to refresh status visuals (if implemented)
+	if is_instance_valid(target_actor):
+		target_actor.call_deferred("on_status_changed")
 
 	return {
 		"applied": true,
@@ -62,6 +65,10 @@ static func process_turn_start(actor: Node, stats: CharacterStats) -> Dictionary
 			updated[status_id] = status
 
 	actor.set_meta(META_KEY, updated)
+	# Notify actor so visuals can update after tick
+	if is_instance_valid(actor):
+		actor.call_deferred("on_status_changed")
+
 	return result
 
 static func _apply_status_tick(actor: Node, stats: CharacterStats, status_id: String, status: Dictionary) -> Dictionary:

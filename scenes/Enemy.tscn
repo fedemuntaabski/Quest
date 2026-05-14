@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dca78vgipeymw" path="res://scripts/Enemy.gd" id="1_55jtl"]
 [ext_resource type="Script" uid="uid://b6lwqx80hen7e" path="res://scripts/CharacterStats.gd" id="3_mpr68"]
 [ext_resource type="Texture2D" uid="uid://bi2jq4ofb605c" path="res://assets/ui/white_2x2.svg" id="3_texture"]
+[ext_resource type="PackedScene" uid="uid://status_indicator" path="res://scenes/StatusIndicator.tscn" id="4_status_indicator"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mpr68"]
 size = Vector2(16, 16)
@@ -50,6 +51,8 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_fill")
 max_value = 10.0
 value = 10.0
 show_percentage = false
+
+[node name="StatusIndicator" parent="." instance=ExtResource("4_status_indicator") unique_id=202020202]
 
 [node name="Stats" type="Node" parent="." unique_id=879922539]
 script = ExtResource("3_mpr68")

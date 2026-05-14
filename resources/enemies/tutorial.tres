@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyData" format=3]
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://ce8f2iieui6uo"]
 
-[ext_resource type="Script" path="res://scripts/EnemyData.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/ui/white_2x2.svg" id="2"]
+[ext_resource type="Script" uid="uid://cg0t7peubmgaq" path="res://scripts/EnemyData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bi2jq4ofb605c" path="res://assets/ui/white_2x2.svg" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -9,18 +9,9 @@ enemy_id = "tutorial"
 enemy_name = "Tutorial"
 max_hp = 1
 strength = 0
-magic = 0
-dexterity = 0
 base_damage = 0
-attack_range = 1
-attack_stat = "strength"
-movement = 1
 forced_miss_chance = 1.0
-move_step_time = 0.12
 reward_gold = 0
-ai_type = "melee_chase"
 sprite_texture = ExtResource("2")
-base_tint = Color(1, 1, 1, 1)
 target_tint = Color(0.92, 0.92, 0.92, 1)
-is_boss = false
 tags = Array[String](["tutorial"])

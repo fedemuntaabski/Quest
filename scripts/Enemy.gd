@@ -330,3 +330,9 @@ func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 	tween.tween_property(label, "position", label.position + Vector2(0, -18), 0.5)
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(label.queue_free)
+
+func on_status_changed() -> void:
+	var indicator := get_node_or_null("StatusIndicator")
+	if indicator:
+		var statuses := StatusRuntime._get_statuses(self)
+		indicator.refresh_statuses(statuses)

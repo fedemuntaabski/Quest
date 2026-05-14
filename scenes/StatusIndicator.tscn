@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://kcs0b06asf7v"]
+
+[ext_resource type="Script" path="res://scripts/StatusIndicator.gd" id="1_script"]
+
+[node name="StatusIndicator" type="Node2D"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="IconContainer" type="HBoxContainer" parent="." ]
+margin_left = -16
+margin_top = -36
+
