@@ -104,7 +104,7 @@ func _bind_player_stats(ps: PlayerStats) -> void:
 	if ps.stats:
 		_on_player_stats_changed(ps.stats)
 
-	if ps.active_upgrades and upgrade_panel:
+	if upgrade_panel:
 		upgrade_panel.refresh(ps.active_upgrades)
 
 func _on_player_stats_changed(stats: CharacterStats) -> void:

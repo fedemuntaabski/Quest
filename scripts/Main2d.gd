@@ -14,7 +14,7 @@ extends Node2D
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
 @onready var death_gold_label: Label = $DeathOverlay/CenterContainer/VBoxContainer/GoldLabel
 
-@onready var upgrade_menu: CanvasLayer = $UpgradeMenu
+@onready var upgrade_menu: CanvasLayer = get_node_or_null("UpgradeMenu") as CanvasLayer
 
 var game_state_manager: GameStateManager
 var card_reward_manager: CardRewardManager
@@ -272,6 +272,8 @@ func _on_player_died() -> void:
 
 func _on_boss_defeated(enemy) -> void:
 	if _victory_triggered:
+		return
+	if enemy == null or not bool(enemy.get("is_boss")) or not str(enemy.name).begins_with("Boss_Purple_"):
 		return
 
 	_victory_triggered = true

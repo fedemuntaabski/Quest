@@ -7,7 +7,12 @@ signal enemy_defeated_with_reward(enemy, reward_position: Vector2)
 signal boss_defeated(enemy)
 
 const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
-const TutorialEnemyOverride = preload("res://scripts/TutorialEnemyOverride.gd")
+const TUTORIAL_ENEMY_DATA = preload("res://resources/enemies/tutorial.tres")
+const GOBLIN_ENEMY_DATA = preload("res://resources/enemies/goblin.tres")
+const BOSS_ENEMY_DATA = preload("res://resources/enemies/boss.tres")
+
+@export var default_enemy_data: EnemyData
+@export var enemy_data_pool: Array[EnemyData] = []
 
 var _enemy_scene: PackedScene = null
 var _room_enemy_counts: Dictionary = {}
@@ -23,6 +28,18 @@ var boss_spawned: bool = false
 var boss_enemy: Node = null
 
 const COIN_REWARD_PER_ENEMY := 5
+
+
+func _ready() -> void:
+	if default_enemy_data == null:
+		default_enemy_data = GOBLIN_ENEMY_DATA
+
+	if enemy_data_pool.is_empty():
+		enemy_data_pool = [
+			TUTORIAL_ENEMY_DATA,
+			GOBLIN_ENEMY_DATA,
+			BOSS_ENEMY_DATA,
+		]
 
 
 func setup(dungeon_ref: DungeonGenerator, player_ref: CharacterBody2D, tm: TurnManager) -> void:
@@ -44,6 +61,8 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 
 	_room_enemy_counts.clear()
 	enemies.clear() # 🔥 importante
+	boss_spawned = false
+	boss_enemy = null
 
 	var map_manager := get_parent() as MapManager
 	var occupied_spawn_cells: Dictionary = {}
@@ -78,6 +97,11 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 		enemy.global_position = dungeon.grid_to_world_coords(spawn_cell)
 		enemy.my_room_id = room_id
 		enemy.dungeon_generator = dungeon
+		var selected_data := _select_enemy_data(room_id, final_room_id)
+		if selected_data and enemy.has_method("apply_enemy_data"):
+			enemy.apply_enemy_data(selected_data)
+			if selected_data.enemy_name != "":
+				enemy.name = "%s_%d" % [selected_data.enemy_name, room_id]
 		add_child(enemy)
 		occupied_spawn_cells[spawn_cell] = true
 
@@ -86,19 +110,17 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 
 		# Boss spawn rules: only one boss per run, must spawn in final room.
 		if not boss_spawned and room_id == final_room_id:
-			boss_spawned = true
-			boss_enemy = enemy
-			enemy.name = "Boss_Purple_%d" % room_id
-			# Mark as boss for downstream checks
+			if selected_data and selected_data.is_boss:
+				boss_spawned = true
+				boss_enemy = enemy
+				enemy.name = "Boss_Purple_%d" % room_id
+				enemy.set("is_boss", true)
+			else:
+				enemy.set("is_boss", false)
+		elif selected_data and selected_data.is_boss:
 			enemy.set("is_boss", true)
-			# Configure boss: 30 HP, 5 base damage, dex 4 (~10% dodge), purple tint
-			if enemy.has_method("configure_profile"):
-				enemy.configure_profile(30, 5, 4, Color(0.6, 0.2, 0.8, 1.0), Color(1.0, 0.6, 1.0, 1.0))
-		if room_id == 0:
-			# Keep tutorial enemy in the normal systems; only override combat profile.
-			TutorialEnemyOverride.apply(enemy)
-			# Ensure tutorial enemy is registered and synced for click-targeting/combat range checks.
-			enemy.sync_to_grid()
+		else:
+			enemy.set("is_boss", false)
 
 		# 🔥 TRACKING
 		enemies.append(enemy)
@@ -122,6 +144,45 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 		enemy.enemy_defeated.connect(func(e):
 			_on_enemy_defeated(e, captured_room_id)
 		, CONNECT_ONE_SHOT)
+
+func _select_enemy_data(room_id: int, final_room_id: int) -> EnemyData:
+	if room_id == 0:
+		var tutorial := _find_enemy_data_by_id("tutorial")
+		if tutorial:
+			return tutorial
+
+	if room_id == final_room_id:
+		var boss_candidates: Array[EnemyData] = []
+		for data in enemy_data_pool:
+			if data and data.is_boss:
+				boss_candidates.append(data)
+		if not boss_candidates.is_empty():
+			return boss_candidates[randi() % boss_candidates.size()]
+
+	var candidates: Array[EnemyData] = []
+	for data in enemy_data_pool:
+		if data == null:
+			continue
+		if data.is_boss:
+			continue
+		if data.enemy_id == "tutorial":
+			continue
+		candidates.append(data)
+
+	if not candidates.is_empty():
+		return candidates[randi() % candidates.size()]
+
+	if default_enemy_data:
+		return default_enemy_data
+
+	return _find_enemy_data_by_id("goblin")
+
+
+func _find_enemy_data_by_id(enemy_id: String) -> EnemyData:
+	for data in enemy_data_pool:
+		if data and data.enemy_id == enemy_id:
+			return data
+	return null
 
 
 func get_enemies() -> Array:
@@ -196,7 +257,10 @@ func _on_enemy_defeated(enemy, room_id: int) -> void:
 	
 	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
 	if currency and enemy and enemy is Node2D:
-		currency.add_gold(COIN_REWARD_PER_ENEMY, enemy.global_position)
+		var reward_gold := COIN_REWARD_PER_ENEMY
+		if enemy.has_method("get_reward_gold"):
+			reward_gold = int(enemy.get_reward_gold())
+		currency.add_gold(reward_gold, enemy.global_position)
 
 	# 🔥 REMOVER DEL TURN MANAGER
 	if turn_manager:

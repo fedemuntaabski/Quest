@@ -6,3 +6,6 @@ class_name CardEffect
 
 func apply(_source_stats: CharacterStats, _target_stats: CharacterStats, _context: Dictionary) -> Dictionary:
 	return {}
+
+func get_description() -> String:
+	return description

@@ -1,13 +1,9 @@
 extends CharacterBody2D
 class_name Enemy
 
-const BaseAction = preload("res://scripts/BaseAction.gd")
-const MoveAction = preload("res://scripts/MoveAction.gd")
-const WaitAction = preload("res://scripts/WaitAction.gd")
-const AttackAction = preload("res://scripts/AttackAction.gd")
-const CombatComponent = preload("res://scripts/CombatComponent.gd")
-
 signal enemy_defeated(enemy)
+
+@export var enemy_data: EnemyData
 
 var map_manager: MapManager
 var player: PlayerMovement
@@ -19,6 +15,7 @@ var dungeon_generator: DungeonGenerator
 var is_moving_step: bool = false
 var step_timer: float = 0.0
 var step_time: float = 0.12
+var movement_points: int = 1
 
 var _start_pos: Vector2
 var target_world_pos: Vector2
@@ -46,7 +43,10 @@ func _ready():
 
 	stats.died.connect(_on_died)
 	stats.hp_changed.connect(_on_hp_changed)
-	_apply_standard_profile()
+	if enemy_data:
+		apply_enemy_data(enemy_data)
+	else:
+		_apply_standard_profile()
 
 	if sprite:
 		_base_modulate = sprite.modulate
@@ -66,7 +66,10 @@ func setup(p_map: MapManager, p_player: PlayerMovement) -> void:
 		map_manager.register_actor(self, grid_pos, true)
 
 	_ensure_combat_component()
-	_apply_standard_combat_profile()
+	if enemy_data:
+		_apply_combat_from_data(enemy_data)
+	else:
+		_apply_standard_combat_profile()
 
 func _apply_standard_profile() -> void:
 	if stats == null:
@@ -86,6 +89,16 @@ func _apply_standard_combat_profile() -> void:
 	if combat_component == null:
 		return
 	combat_component.base_damage = STANDARD_ENEMY_BASE_DAMAGE
+	combat_component.attack_range = 1
+	combat_component.attack_stat = "strength"
+
+func _apply_combat_from_data(data: EnemyData) -> void:
+	if combat_component == null or data == null:
+		return
+	combat_component.base_damage = data.base_damage
+	combat_component.attack_range = max(1, data.attack_range)
+	combat_component.attack_stat = data.attack_stat
+	combat_component.forced_miss_chance = clampf(data.forced_miss_chance, 0.0, 1.0)
 
 func _ensure_combat_component() -> void:
 	if stats == null:
@@ -124,6 +137,47 @@ func configure_profile(max_hp: int, base_damage: int, dex: int = 0, base_tint: C
 	# Apply visual tint
 	set_visual_tint(base_tint, target_tint)
 
+func apply_enemy_data(data: EnemyData) -> void:
+	enemy_data = data
+	if enemy_data == null:
+		return
+
+	if stats:
+		stats.character_name = enemy_data.enemy_name
+		stats.max_hp = max(1, enemy_data.max_hp)
+		stats.current_hp = stats.max_hp
+		stats.strength = enemy_data.strength
+		stats.magic = enemy_data.magic
+		stats.dexterity = enemy_data.dexterity
+		stats.strength_mod = 0
+		stats.magic_mod = 0
+		stats.dexterity_mod = 0
+		stats.hp_changed.emit(stats.current_hp, stats.max_hp)
+		stats.stats_changed.emit()
+
+	step_time = max(0.01, enemy_data.move_step_time)
+	movement_points = max(1, enemy_data.movement)
+
+	if sprite and enemy_data.sprite_texture:
+		sprite.texture = enemy_data.sprite_texture
+
+	set_visual_tint(enemy_data.base_tint, enemy_data.target_tint)
+
+	if health_bar:
+		health_bar.max_value = stats.max_hp if stats else enemy_data.max_hp
+		health_bar.value = stats.current_hp if stats else enemy_data.max_hp
+
+	if enemy_data.enemy_id == "tutorial" or enemy_data.tags.has("tutorial"):
+		apply_tutorial_profile()
+
+	if combat_component:
+		_apply_combat_from_data(enemy_data)
+
+func get_reward_gold() -> int:
+	if enemy_data:
+		return max(0, enemy_data.reward_gold)
+	return 5
+
 func get_combat_component() -> CombatComponent:
 	return combat_component
 
@@ -134,6 +188,12 @@ func sync_to_grid():
 
 func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
+
+	if stats and stats.is_alive():
+		var status_result := StatusRuntime.process_turn_start(self, stats)
+		if not bool(status_result.get("can_act", true)):
+			_queue_wait_action()
+			return
 
 	if map_manager == null or player == null:
 		_queue_wait_action()

@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://cbfp62ksudyq3" path="res://scenes/HotbarSlot.tscn" id="5_hotbar_slot"]
 [ext_resource type="PackedScene" uid="uid://c6k0u8o5kwv8e" path="res://scenes/CardTooltip.tscn" id="6_card_tooltip"]
 [ext_resource type="PackedScene" uid="uid://d3caxq8yr8iqt" path="res://scenes/CardRewardUI.tscn" id="8_card_reward_ui"]
+[ext_resource type="Script" path="res://scripts/UpgradePanelUI.gd" id="9_upgrade_panel"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stat_panel"]
 bg_color = Color(0.05, 0.05, 0.06, 0.8)
@@ -234,3 +235,31 @@ offset_bottom = 0.0
 grow_vertical = 0
 
 [node name="CardRewardUI" parent="." unique_id=1037817439 instance=ExtResource("8_card_reward_ui")]
+
+[node name="UpgradePanelUI" type="PanelContainer" parent="Control" unique_id=2109473720]
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -310.0
+offset_top = 82.0
+offset_right = -18.0
+offset_bottom = 282.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_panel")
+script = ExtResource("9_upgrade_panel")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Control/UpgradePanelUI" unique_id=2109473721]
+layout_mode = 2
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/UpgradePanelUI/ScrollContainer" unique_id=2109473722]
+layout_mode = 2
+theme_override_constants/separation = 10

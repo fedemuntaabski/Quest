@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/DamageEffect.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/BuffEffect.gd" id="3"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+base_damage = 2
+stat_key = "strength"
+damage_scaling = 0.5
+description = "Strike and weaken enemy mobility."
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("3")
+stat_key = "dexterity"
+value = -1
+duration_turns = 2
+apply_to_source = false
+description = "Reduce enemy Dexterity by 1."
+
+[resource]
+script = ExtResource("1")
+id = "armor_break"
+display_name = "Armor Break"
+description = "A brutal hit that leaves the target exposed."
+category = "strength"
+card_type = "debuff"
+target_type = "enemy"
+stat_key = "strength"
+base_damage = 2
+damage_scaling = 0.5
+range = 1
+cooldown = 2
+effects = Array[Resource]([SubResource("1"), SubResource("2")])
+tags = Array[String](["strength", "debuff"])

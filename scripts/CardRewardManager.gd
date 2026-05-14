@@ -4,16 +4,31 @@ class_name CardRewardManager
 signal reward_completed(selected_card: CardData)
 
 @export var card_manager: CardManager
+@export var card_library: CardLibrary
 
 var _available_cards: Array[CardData] = []
 var _rewarded_cards: Dictionary = {}
 var _on_reward_completed: Callable = Callable()
+var _category_weights := {
+	"strength": 1.0,
+	"agility": 1.0,
+	"magic": 1.0,
+}
 
 func _ready() -> void:
 	add_to_group("card_reward_manager")
 	_load_all_cards()
 
 func _load_all_cards() -> void:
+	if card_library == null:
+		card_library = load("res://resources/cards/card_library.tres") as CardLibrary
+
+	if card_library:
+		_available_cards = card_library.get_reward_cards().duplicate()
+		_available_cards = _filter_valid_cards(_available_cards)
+		if not _available_cards.is_empty():
+			return
+
 	var card_files := [
 		"res://resources/cards/sword_card.tres",
 		"res://resources/cards/bow_card.tres",
@@ -27,6 +42,13 @@ func _load_all_cards() -> void:
 		var card := load(path) as CardData
 		if card:
 			_available_cards.append(card)
+
+func _filter_valid_cards(cards: Array[CardData]) -> Array[CardData]:
+	var filtered: Array[CardData] = []
+	for card in cards:
+		if card:
+			filtered.append(card)
+	return filtered
 
 func reset_run_rewards() -> void:
 	_rewarded_cards.clear()
@@ -48,13 +70,65 @@ func _select_random_cards(count: int) -> Array[CardData]:
 		if _rewarded_cards.has(card):
 			continue
 		pool.append(card)
-	
-	for i in range(min(count, pool.size())):
-		var idx := randi() % pool.size()
-		selected.append(pool[idx])
-		pool.remove_at(idx)
+
+	for _i in range(min(count, pool.size())):
+		var selected_category := _roll_category_from_pool(pool)
+		if selected_category == "":
+			break
+
+		var category_cards := _get_cards_for_category(pool, selected_category)
+		if category_cards.is_empty():
+			continue
+
+		var picked := category_cards[randi() % category_cards.size()]
+		selected.append(picked)
+		pool.erase(picked)
 	
 	return selected
+
+
+func _roll_category_from_pool(pool: Array[CardData]) -> String:
+	var totals: Dictionary = {}
+	var total_weight := 0.0
+
+	for card in pool:
+		if card == null:
+			continue
+		var normalized := _normalize_category(card.category)
+		var weight := float(_category_weights.get(normalized, 0.0))
+		if weight <= 0.0:
+			continue
+		totals[normalized] = float(totals.get(normalized, 0.0)) + weight
+		total_weight += weight
+
+	if total_weight <= 0.0:
+		return ""
+
+	var roll := randf() * total_weight
+	var cumulative := 0.0
+	for key in totals.keys():
+		cumulative += float(totals[key])
+		if roll <= cumulative:
+			return str(key)
+
+	return str(totals.keys().back())
+
+
+func _get_cards_for_category(pool: Array[CardData], category: String) -> Array[CardData]:
+	var cards: Array[CardData] = []
+	for card in pool:
+		if card == null:
+			continue
+		if _normalize_category(card.category) == category:
+			cards.append(card)
+	return cards
+
+
+func _normalize_category(category: String) -> String:
+	var normalized := category.strip_edges().to_lower()
+	if normalized == "dexterity":
+		return "agility"
+	return normalized
 
 func apply_selected_reward(card: CardData, replace_slot_index: int = -1) -> void:
 	if card == null:

@@ -1,0 +1,109 @@
+extends RefCounted
+class_name StatusRuntime
+
+const META_KEY := "runtime_statuses"
+
+static func apply_status(target_actor: Node, target_stats: CharacterStats, payload: Dictionary) -> Dictionary:
+	if target_actor == null or target_stats == null:
+		return {"applied": false, "reason": "missing_target"}
+
+	var status_id := str(payload.get("status_id", "")).to_lower()
+	if status_id == "":
+		return {"applied": false, "reason": "missing_status_id"}
+
+	var duration: int = max(1, int(payload.get("duration", 1)))
+	var stacks: int = max(1, int(payload.get("stacks", 1)))
+	var magnitude: int = max(1, int(payload.get("magnitude", 1)))
+
+	var statuses := _get_statuses(target_actor)
+	var existing: Dictionary = statuses.get(status_id, {})
+	existing["status_id"] = status_id
+	existing["duration"] = max(int(existing.get("duration", 0)), duration)
+	existing["stacks"] = int(existing.get("stacks", 0)) + stacks
+	existing["magnitude"] = magnitude
+	statuses[status_id] = existing
+	target_actor.set_meta(META_KEY, statuses)
+
+	return {
+		"applied": true,
+		"status_id": status_id,
+		"duration": int(existing["duration"]),
+		"stacks": int(existing["stacks"]),
+		"magnitude": int(existing["magnitude"])
+	}
+
+static func process_turn_start(actor: Node, stats: CharacterStats) -> Dictionary:
+	var result := {
+		"can_act": true,
+		"events": []
+	}
+
+	if actor == null or stats == null:
+		return result
+
+	var statuses := _get_statuses(actor)
+	if statuses.is_empty():
+		return result
+
+	var updated := statuses.duplicate(true)
+	for status_id in statuses.keys():
+		var status: Dictionary = statuses[status_id]
+		var event := _apply_status_tick(actor, stats, status_id, status)
+		if not event.is_empty():
+			result["events"].append(event)
+			if bool(event.get("skip_turn", false)):
+				result["can_act"] = false
+
+		var next_duration := int(status.get("duration", 0)) - 1
+		if next_duration <= 0:
+			updated.erase(status_id)
+		else:
+			status["duration"] = next_duration
+			updated[status_id] = status
+
+	actor.set_meta(META_KEY, updated)
+	return result
+
+static func _apply_status_tick(actor: Node, stats: CharacterStats, status_id: String, status: Dictionary) -> Dictionary:
+	var stacks: int = max(1, int(status.get("stacks", 1)))
+	var magnitude: int = max(1, int(status.get("magnitude", 1)))
+
+	match status_id:
+		"poison":
+			var poison_damage: int = stacks * magnitude
+			stats.take_damage(poison_damage)
+			if actor.has_method("show_damage"):
+				actor.show_damage(poison_damage, false)
+			return {
+				"status_id": "poison",
+				"damage": poison_damage
+			}
+		"burn":
+			var burn_damage: int = stacks * magnitude
+			stats.take_damage(burn_damage)
+			if actor.has_method("show_damage"):
+				actor.show_damage(burn_damage, false)
+			return {
+				"status_id": "burn",
+				"damage": burn_damage
+			}
+		"freeze":
+			return {
+				"status_id": "freeze",
+				"skip_turn": true
+			}
+		_:
+			return {
+				"status_id": status_id,
+				"applied": false
+			}
+
+static func _get_statuses(actor: Node) -> Dictionary:
+	if actor == null:
+		return {}
+	if not actor.has_meta(META_KEY):
+		return {}
+	var statuses: Variant = actor.get_meta(META_KEY)
+	if statuses is Dictionary:
+		return statuses
+	return {}

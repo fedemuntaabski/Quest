@@ -15,7 +15,7 @@ var deck: Array[CardData] = []
 var draw_pile: Array[CardData] = []
 var discard_pile: Array[CardData] = []
 var equipped: Array[CardData] = []
-var active_index: int = 0
+var active_index: int = -1
 
 var _cooldowns: Dictionary = {}
 
@@ -39,7 +39,7 @@ func _initialize_empty_hotbar() -> void:
 	equipped.clear()
 	for _i in range(max_equipped):
 		equipped.append(null)
-	active_index = 0
+	active_index = -1
 
 func equip_card(card: CardData, slot_index: int) -> void:
 	if card == null:
@@ -49,7 +49,8 @@ func equip_card(card: CardData, slot_index: int) -> void:
 	while equipped.size() < max_equipped:
 		equipped.append(null)
 	equipped[slot_index] = card
-	active_index = clamp(active_index, 0, max(0, equipped.size() - 1))
+	if active_index >= equipped.size():
+		active_index = -1
 	equipped_changed.emit()
 	_emit_ui_state()
 
@@ -70,7 +71,6 @@ func replace_equipped_card(card: CardData, slot_index: int) -> void:
 
 	equipped[slot_index] = card
 	register_new_card(card)
-	active_index = slot_index
 	equipped_changed.emit()
 	_emit_ui_state()
 

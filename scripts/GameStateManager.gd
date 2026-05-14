@@ -132,4 +132,4 @@ func _handle_state_change(new_state: State, _old_state: State) -> void:
 		State.VICTORY:
 			get_tree().paused = true
 		State.REWARD:
-			get_tree().paused = false
+			get_tree().paused = true

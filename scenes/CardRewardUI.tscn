@@ -3,11 +3,16 @@
 [ext_resource type="Script" uid="uid://daiv7g5lmxiy3" path="res://scripts/CardRewardUI.gd" id="1_4k8e2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1v3q1"]
-bg_color = Color(0.1, 0.1, 0.1, 0.95)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.08, 0.08, 0.1, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.3, 0.35, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="CardRewardUI" type="CanvasLayer" unique_id=1358357399]
 layer = 50
@@ -21,7 +26,9 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="RewardPanel" type="Panel" parent="CenterContainer" unique_id=136998490]
+custom_minimum_size = Vector2(980, 420)
 layout_mode = 2
+offset_top = -5
 theme_override_styles/panel = SubResource("StyleBoxFlat_1v3q1")
 
 [node name="MarginContainer" type="MarginContainer" parent="CenterContainer/RewardPanel" unique_id=1485608600]
@@ -31,21 +38,23 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/RewardPanel/MarginContainer" unique_id=1924314246]
 layout_mode = 2
 alignment = 1
+theme_override_constants/separation = 18
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer" unique_id=1598734408]
 layout_mode = 2
 text = "Choose a Card Reward"
 horizontal_alignment = 1
+theme_override_font_sizes/font_size = 30
 
 [node name="CardsContainer" type="HBoxContainer" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer" unique_id=900049683]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 16
 alignment = 1

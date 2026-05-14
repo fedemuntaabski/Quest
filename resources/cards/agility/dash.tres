@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/MovementEffect.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+move_cells = 2
+movement_mode = "dash"
+apply_to_source = true
+description = "Dash forward up to 2 tiles."
+
+[resource]
+script = ExtResource("1")
+id = "dash"
+display_name = "Dash"
+description = "Reposition quickly across the battlefield."
+category = "agility"
+card_type = "buff"
+target_type = "self"
+stat_key = "dexterity"
+range = 0
+cooldown = 2
+effects = Array[Resource]([SubResource("1")])
+tags = Array[String](["agility", "movement"])

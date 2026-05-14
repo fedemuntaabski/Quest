@@ -3,6 +3,8 @@ class_name PlayerActionController
 
 const AttackAction = preload("res://scripts/AttackAction.gd")
 
+@export var card_library: CardLibrary
+
 var player: PlayerMovement
 var map_manager: MapManager
 
@@ -163,7 +165,8 @@ func _ensure_card_system() -> void:
 		card_manager.name = "CardManager"
 		player.add_child(card_manager)
 	card_manager.max_equipped = 3
-	card_manager.set_deck(DEFAULT_DECK)
+	var starter_deck := _get_starter_deck()
+	card_manager.set_deck(starter_deck)
 
 	combat_card_system = player.get_node_or_null("CombatCardSystem") as CombatCardSystem
 	if combat_card_system == null:
@@ -172,6 +175,15 @@ func _ensure_card_system() -> void:
 		player.add_child(combat_card_system)
 
 	combat_card_system.setup(player, map_manager, card_manager, player.get_combat_component())
+
+func _get_starter_deck() -> Array[CardData]:
+	if card_library == null:
+		card_library = load("res://resources/cards/card_library.tres") as CardLibrary
+	if card_library:
+		var starter := card_library.get_starter_deck()
+		if not starter.is_empty():
+			return starter
+	return DEFAULT_DECK
 
 func _resolve_hud() -> void:
 	hud = get_tree().get_first_node_in_group("hud") as HUDController

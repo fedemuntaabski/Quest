@@ -1,10 +1,6 @@
 extends CharacterBody2D
 class_name PlayerMovement
 
-const BaseAction = preload("res://scripts/BaseAction.gd")
-const MoveAction = preload("res://scripts/MoveAction.gd")
-const CombatComponent = preload("res://scripts/CombatComponent.gd")
-
 # ─────────────────────────────────────────────
 # GRID
 # ─────────────────────────────────────────────
@@ -51,9 +47,9 @@ func _ready() -> void:
 		action_controller.set_process_input(true)
 
 	var player_stats := get_node_or_null("/root/PlayerStats") as PlayerStats
-	var stats := get_node_or_null("Stats") as CharacterStats
-	if player_stats and stats:
-		player_stats.register(stats)
+	var player_stats_component := get_node_or_null("Stats") as CharacterStats
+	if player_stats and player_stats_component:
+		player_stats.register(player_stats_component)
 
 	_connect_game_state()
 
@@ -76,10 +72,10 @@ func _ensure_combat_component() -> void:
 		comp.name = "CombatComponent"
 		add_child(comp)
 
-	var stats := get_node_or_null("Stats") as CharacterStats
-	if stats == null:
+	var combat_stats := get_node_or_null("Stats") as CharacterStats
+	if combat_stats == null:
 		push_warning("PlayerMovement: Stats node missing during combat setup")
-	comp.setup(self, stats, map_manager)
+	comp.setup(self, combat_stats, map_manager)
 	combat_component = comp
 
 func get_combat_component() -> CombatComponent:
@@ -185,6 +181,12 @@ func cancel_movement() -> void:
 
 func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
+	if stats and stats.is_alive():
+		var status_result := StatusRuntime.process_turn_start(self, stats)
+		if not bool(status_result.get("can_act", true)):
+			if turn_manager and turn_manager.action_queue:
+				turn_manager.action_queue.queue_action(WaitAction.new(self, null))
+			return
 	if action_controller and action_controller.has_method("on_player_turn_started"):
 		action_controller.on_player_turn_started()
 

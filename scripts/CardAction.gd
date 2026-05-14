@@ -16,5 +16,5 @@ func can_execute() -> bool:
 
 func execute() -> void:
 	if card_system:
-		card_system.execute_card(card_data, target)
+		await card_system.execute_card(card_data, target)
 	finish()
