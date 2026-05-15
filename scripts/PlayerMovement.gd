@@ -182,6 +182,7 @@ func cancel_movement() -> void:
 func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
 	if stats and stats.is_alive():
+		stats.process_runtime_modifiers_turn_start()
 		var status_result := StatusRuntime.process_turn_start(self, stats)
 		if status_result.get("can_act", true) != true:
 			if turn_manager and turn_manager.action_queue:

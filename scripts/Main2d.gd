@@ -7,7 +7,7 @@ extends Node2D
 @onready var hud: HUDController = $HUD
 @onready var pause_menu: PauseMenu = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
-@onready var victory_overlay: VictoryOverlay = $VictoryOverlay
+@onready var victory_overlay = $VictoryOverlay
 @onready var enemy_manager: EnemyManager = $MapManager/EnemyManager
 
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
@@ -146,6 +146,8 @@ func _connect_ui() -> void:
 		game_state_manager.reward_entered.connect(_on_reward_entered)
 	if game_state_manager and not game_state_manager.reward_exited.is_connected(_on_reward_exited):
 		game_state_manager.reward_exited.connect(_on_reward_exited)
+	if game_state_manager and not game_state_manager.victory_entered.is_connected(_on_victory_entered):
+		game_state_manager.victory_entered.connect(_on_victory_entered)
 
 # ─────────────────────────────────────────────
 # TUTORIAL 
@@ -315,15 +317,26 @@ func _on_boss_defeated(enemy) -> void:
 	tree.set_meta("victory_gold_earned", run_gold)
 	tree.set_meta("victory_from_gameplay_scene", true)
 
-	print("[BOSS_DEFEATED] Attempting scene transition to VictoryOverlay...")
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.request_victory()
+	else:
+		_on_victory_entered()
+
+
+func _on_victory_entered() -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
 	var changed := tree.change_scene_to_file("res://scenes/VictoryOverlay.tscn")
 	if changed != OK:
-		push_error("[BOSS_DEFEATED] Scene transition failed with error code: %d" % changed)
+		push_error("[MAIN_2D] Victory scene transition failed with error code: %d" % changed)
 		if victory_overlay:
-			print("[BOSS_DEFEATED] Fallback: showing victory_overlay in-place")
-			victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
-	else:
-		print("[BOSS_DEFEATED] Scene transition succeeded")
+			victory_overlay.show_victory(
+				enemies_killed,
+				rooms_cleared,
+				int(tree.get_meta("victory_gold_earned", 0))
+			)
 
 
 # ─────────────────────────────────────────────

@@ -203,6 +203,9 @@ func _get_random_floor_cell_in_room(
 ) -> Vector2i:
 	var room_cells: Array = room_info["floor_cells"]
 	var center_cell: Vector2i = room_info["center_cell"]
+	var forbidden_spawn_cells: Dictionary = {}
+	if dungeon and dungeon.has_method("get_room_spawn_forbidden_cells"):
+		forbidden_spawn_cells = dungeon.get_room_spawn_forbidden_cells(int(room_info.get("id", -1)))
 
 	var candidates: Array[Vector2i] = []
 	var avoid_radius: int = 1 if avoid_center else 0
@@ -211,6 +214,8 @@ func _get_random_floor_cell_in_room(
 		var cell: Vector2i = raw_cell
 
 		if wall_cells.has(cell):
+			continue
+		if forbidden_spawn_cells.has(cell):
 			continue
 		if cell == player_cell:
 			continue
@@ -233,12 +238,6 @@ func _get_random_floor_cell_in_room(
 			continue
 
 		candidates.append(cell)
-
-	if candidates.is_empty():
-		for raw_cell in room_cells:
-			var cell: Vector2i = raw_cell
-			if not wall_cells.has(cell) and cell != player_cell and not occupied_spawn_cells.has(cell):
-				candidates.append(cell)
 
 	if candidates.is_empty():
 		return Vector2i(-1, -1)

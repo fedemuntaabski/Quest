@@ -3,6 +3,7 @@ class_name DungeonGenerator
 
 @export var floor_tileset: TileSet = preload("res://assets/texture/enviorment/dungeon_tileset.tres")
 
+@warning_ignore("unused_signal")
 signal room_changed(room_id: int)
 signal room_cleared(room_id: int)
 
@@ -88,6 +89,33 @@ func get_room_info(room_id: int) -> Dictionary:
 	if room_id < 0 or room_id >= room_infos.size():
 		return {}
 	return room_infos[room_id]
+
+
+func get_room_spawn_forbidden_cells(room_id: int) -> Dictionary:
+	var forbidden: Dictionary = {}
+	var room_info := get_room_info(room_id)
+	if room_info.is_empty():
+		return forbidden
+
+	var room_cells: Array = room_info.get("floor_cells", [])
+	if room_cells.is_empty():
+		return forbidden
+
+	var room_cell_set: Dictionary = {}
+	for raw_cell in room_cells:
+		var cell: Vector2i = raw_cell
+		room_cell_set[cell] = true
+
+	for raw_cell in room_cells:
+		var cell: Vector2i = raw_cell
+		if _is_room_entrance_cell(cell, room_cell_set):
+			forbidden[cell] = true
+			for dir in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]:
+				var neighbor: Vector2i = cell + dir
+				if room_cell_set.has(neighbor):
+					forbidden[neighbor] = true
+
+	return forbidden
 
 
 func _on_room_changed_proxy(room_id: int) -> void:
@@ -245,3 +273,12 @@ func _set_active_room(room_id: int, animate: bool) -> void:
 func _tween_room_lights(animate: bool) -> void:
 	if room_manager:
 		room_manager.tween_room_lights(animate)
+
+
+func _is_room_entrance_cell(cell: Vector2i, room_cell_set: Dictionary) -> bool:
+	for dir in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]:
+		var neighbor: Vector2i = cell + dir
+		if floor_cells.has(neighbor) and not room_cell_set.has(neighbor):
+			return true
+
+	return false

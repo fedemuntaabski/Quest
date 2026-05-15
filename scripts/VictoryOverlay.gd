@@ -20,8 +20,9 @@ var _pending_gold_earned: int = 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	if get_tree() and get_tree().current_scene == self:
-		_read_victory_summary_from_tree()
+	var should_show_victory := get_tree() != null and get_tree().has_meta("victory_from_gameplay_scene")
+	_read_victory_summary_from_tree()
+	if should_show_victory:
 		show_victory(_pending_enemies_killed, _pending_rooms_cleared, _pending_gold_earned)
 	else:
 		hide_victory()

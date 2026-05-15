@@ -15,12 +15,13 @@ func apply(source_stats: CharacterStats, target_stats: CharacterStats, _context:
 			"reason": "missing_target"
 		}
 
-	receiver.apply_modifier(stat_key, value)
+	var modifier_id: String = receiver.apply_runtime_modifier(stat_key, value, duration_turns)
 	return {
 		"effect": "buff",
-		"applied": true,
+		"applied": modifier_id != "",
 		"stat_key": stat_key,
 		"value": value,
 		"duration": duration_turns,
+		"modifier_id": modifier_id,
 		"target": "source" if apply_to_source else "target"
 	}

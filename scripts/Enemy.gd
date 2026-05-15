@@ -190,6 +190,7 @@ func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
 
 	if stats and stats.is_alive():
+		stats.process_runtime_modifiers_turn_start()
 		var status_result := StatusRuntime.process_turn_start(self, stats)
 		if status_result.get("can_act", true) != true:
 			_queue_wait_action()
@@ -209,11 +210,11 @@ func begin_turn(tm: TurnManager) -> void:
 
 	sync_to_grid()
 
-	if combat_component and combat_component.can_attack(player):
-		if map_manager and not map_manager.can_actors_engage(self, player):
+	if combat_component and combat_component.can_attack(player as Node):
+		if map_manager and not map_manager.can_actors_engage(self, player as Node):
 			_queue_wait_action()
 			return
-		_queue_attack_action(player)
+		_queue_attack_action(player as Node)
 		return
 
 	var path: Array[Vector2i] = map_manager.find_path_to_adjacent(grid_pos, player.grid_pos, self)
