@@ -31,7 +31,7 @@ func show_victory(enemies_killed: int, rooms_cleared: int, gold_earned: int = 0)
 	if victory_label:
 		victory_label.text = "¡Victoria!"
 	if summary_label:
-		summary_label.text = "El jefe púrpura ha caído.\nEnemigos derrotados: %d\nHabitaciones limpiadas: %d\nOro ganado: %d" % [enemies_killed, rooms_cleared, gold_earned]
+		summary_label.text = "Contrato completado!.\nEnemigos derrotados: %d\nHabitaciones limpiadas: %d\n" % [enemies_killed, rooms_cleared]
 	if gold_label:
 		gold_label.text = "Oro ganado en esta partida: %d" % gold_earned
 
