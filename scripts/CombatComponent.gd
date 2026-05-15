@@ -33,12 +33,6 @@ func setup(p_owner: Node, p_stats: CharacterStats, p_map_manager: MapManager) ->
 func can_attack(target: Node) -> bool:
 	var target_component := _resolve_target_component(target)
 
-	print("[Combat] Validate attack")
-	print("[Combat] Attacker: ", actor_owner)
-	print("[Combat] Target node: ", target)
-	print("[Combat] Target component: ", target_component)
-	print("[Combat] Attacker stats: ", stats)
-
 	if target_component:
 		print("[Combat] Target stats: ", target_component.stats)
 		print("[Combat] Target owner: ", target_component.actor_owner)
@@ -128,13 +122,6 @@ func _is_in_range(target_component: CombatComponent) -> bool:
 	var my_cell: Variant = _get_actor_cell(actor_owner)
 	var target_cell: Variant = _get_actor_cell(target_component.actor_owner)
 
-	print("========== RANGE CHECK ==========")
-	print("SELF ACTOR: ", actor_owner)
-	print("TARGET ACTOR: ", target_component.actor_owner)
-
-	print("MY CELL: ", my_cell)
-	print("TARGET CELL: ", target_cell)
-
 	if my_cell == null or target_cell == null:
 		print("NULL CELL")
 		return false
@@ -143,15 +130,7 @@ func _is_in_range(target_component: CombatComponent) -> bool:
 	var dy := absi(my_cell.y - target_cell.y)
 	var chebyshev: int = max(dx, dy)
 
-	print("DX: ", dx)
-	print("DY: ", dy)
-	print("CHEBYSHEV: ", chebyshev)
-	print("ATTACK RANGE: ", attack_range)
-
 	var result: bool = chebyshev <= attack_range
-
-	print("IN RANGE RESULT: ", result)
-	print("================================")
 
 	return result
 

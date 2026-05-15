@@ -91,7 +91,6 @@ func update_hover(world_pos: Vector2) -> void:
 
 
 func _on_hover_changed(cell: Vector2i) -> void:
-	print("DRAW CELL:", cell)
 	hovered_cell = cell
 	queue_redraw()
 

@@ -41,28 +41,40 @@ func _update_category_weights() -> void:
 	_category_weights["magic"] = float(m) / total
 
 func _load_all_cards() -> void:
-	if card_library == null:
-		card_library = load("res://resources/cards/card_library.tres") as CardLibrary
-
-	if card_library:
-		_available_cards = card_library.get_reward_cards().duplicate()
-		_available_cards = _filter_valid_cards(_available_cards)
-		if not _available_cards.is_empty():
-			return
-
-	var card_files := [
-		"res://resources/cards/sword_card.tres",
-		"res://resources/cards/bow_card.tres",
-		"res://resources/cards/fire_card.tres",
-		"res://resources/cards/focus_card.tres",
-		"res://resources/cards/cripple_card.tres",
-	]
-	
+	# Prefer dynamic discovery of .tres card resources in card folders so newly added cards are available at runtime.
 	_available_cards.clear()
-	for path in card_files:
-		var card := load(path) as CardData
-		if card:
-			_available_cards.append(card)
+	var seen_paths: Dictionary = {}
+	_collect_cards_from_dir("res://resources/cards", seen_paths)
+
+	# Fallback to card_library if nothing discovered
+	if _available_cards.is_empty():
+		if card_library == null:
+			card_library = load("res://resources/cards/card_library.tres") as CardLibrary
+		if card_library:
+			_available_cards = card_library.get_reward_cards().duplicate()
+
+	_available_cards = _filter_valid_cards(_available_cards)
+
+
+func _collect_cards_from_dir(dir_path: String, seen_paths: Dictionary) -> void:
+	var dir := DirAccess.open(dir_path)
+	if dir == null:
+		return
+
+	dir.list_dir_begin()
+	var entry := dir.get_next()
+	while entry != "":
+		if entry != "." and entry != "..":
+			var full_path := "%s/%s" % [dir_path, entry]
+			if dir.current_is_dir():
+				_collect_cards_from_dir(full_path, seen_paths)
+			elif entry.to_lower().ends_with(".tres") and not seen_paths.has(full_path):
+				seen_paths[full_path] = true
+				var card := load(full_path) as CardData
+				if card:
+					_available_cards.append(card)
+		entry = dir.get_next()
+	dir.list_dir_end()
 
 func _filter_valid_cards(cards: Array[CardData]) -> Array[CardData]:
 	var filtered: Array[CardData] = []

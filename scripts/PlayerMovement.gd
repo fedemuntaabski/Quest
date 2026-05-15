@@ -183,7 +183,7 @@ func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
 	if stats and stats.is_alive():
 		var status_result := StatusRuntime.process_turn_start(self, stats)
-		if not bool(status_result.get("can_act", true)):
+		if status_result.get("can_act", true) != true:
 			if turn_manager and turn_manager.action_queue:
 				turn_manager.action_queue.queue_action(WaitAction.new(self, null))
 			return
@@ -236,7 +236,7 @@ func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 
 func on_status_changed() -> void:
 	var indicator := get_node_or_null("StatusIndicator")
-	if indicator:
+	if indicator and indicator.has_method("refresh_statuses"):
 		var statuses := StatusRuntime._get_statuses(self)
 		indicator.refresh_statuses(statuses)
 

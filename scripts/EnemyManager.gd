@@ -248,18 +248,24 @@ func _get_random_floor_cell_in_room(
 func _on_enemy_defeated(enemy, room_id: int) -> void:
 	enemy_defeated_global.emit()
 
-	# If this enemy was the boss, emit boss_defeated (only once)
-	if enemy and enemy.get("is_boss"):
+	var is_boss: bool = false
+	if enemy:
+		is_boss = enemy.get("is_boss") == true
+
+	# Bosses: emit boss_defeated and grant gold, but DO NOT emit the reward signal
+	if is_boss:
 		boss_defeated.emit(enemy)
-	
-	var reward_position: Vector2 = enemy.global_position if enemy and enemy is Node2D else Vector2.ZERO
-	enemy_defeated_with_reward.emit(enemy, reward_position)
-	
+	else:
+		var reward_position: Vector2 = enemy.global_position if enemy and enemy is Node2D else Vector2.ZERO
+		enemy_defeated_with_reward.emit(enemy, reward_position)
+
+	# Grant gold for all enemy types here (single source of truth)
 	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
 	if currency and enemy and enemy is Node2D:
 		var reward_gold := COIN_REWARD_PER_ENEMY
 		if enemy.has_method("get_reward_gold"):
 			reward_gold = int(enemy.get_reward_gold())
+		# Always add gold on death; avoid adding gold elsewhere (no duplicates at end-of-run)
 		currency.add_gold(reward_gold, enemy.global_position)
 
 	# 🔥 REMOVER DEL TURN MANAGER

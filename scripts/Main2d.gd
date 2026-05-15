@@ -284,27 +284,28 @@ func _on_player_died() -> void:
 func _on_boss_defeated(enemy) -> void:
 	if _victory_triggered:
 		return
-	if enemy == null or not bool(enemy.get("is_boss")) or not str(enemy.name).begins_with("Boss_Purple_"):
+	if enemy == null or enemy.get("is_boss") != true or not str(enemy.name).begins_with("Boss_Purple_"):
 		return
 
 	_victory_triggered = true
-	if death_overlay:
-		death_overlay.visible = false
-
-	# Trigger victory via GameStateManager
-	var gsm := _get_game_state_manager()
-	if gsm:
-		gsm.request_victory()
-	else:
-		# fallback: pause
-		get_tree().paused = true
 
 	# Compute run-earned gold and show victory overlay
 	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
 	var run_gold := 0
 	if currency:
 		run_gold = max(0, int(currency.get_gold() - _run_gold_start))
-	if victory_overlay:
+
+	if death_overlay:
+		death_overlay.visible = false
+
+	var tree := get_tree()
+	tree.set_meta("victory_enemies_killed", enemies_killed)
+	tree.set_meta("victory_rooms_cleared", rooms_cleared)
+	tree.set_meta("victory_gold_earned", run_gold)
+	tree.set_meta("victory_from_gameplay_scene", true)
+
+	var changed := tree.change_scene_to_file("res://scenes/VictoryOverlay.tscn")
+	if changed != OK and victory_overlay:
 		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
 
 

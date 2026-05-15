@@ -54,7 +54,7 @@ static func process_turn_start(actor: Node, stats: CharacterStats) -> Dictionary
 		var event := _apply_status_tick(actor, stats, status_id, status)
 		if not event.is_empty():
 			result["events"].append(event)
-			if bool(event.get("skip_turn", false)):
+			if event.get("skip_turn", false) == true:
 				result["can_act"] = false
 
 		var next_duration := int(status.get("duration", 0)) - 1

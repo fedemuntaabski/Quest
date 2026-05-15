@@ -82,6 +82,14 @@ text = "El jefe púrpura ha caído."
 horizontal_alignment = 1
 autowrap_mode = 3
 
+[node name="GoldLabel" type="Label" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer" unique_id=1932874567]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.84, 0.25, 1)
+theme_override_font_sizes/font_size = 22
+text = "Oro ganado en esta partida: 0"
+horizontal_alignment = 1
+autowrap_mode = 3
+
 [node name="ButtonsHBox" type="HBoxContainer" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer" unique_id=583819452]
 layout_mode = 2
 theme_override_constants/separation = 20
@@ -91,13 +99,13 @@ alignment = 1
 custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "Reintentar"
+text = "Retry"
 
 [node name="ExitButton" type="Button" parent="Control/CenterContainer/HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/ButtonsHBox" unique_id=662383925]
 custom_minimum_size = Vector2(180, 56)
 layout_mode = 2
 theme_override_font_sizes/font_size = 26
-text = "Salir"
+text = "Exit to Main Menu"
 
 [node name="RightPanel" type="PanelContainer" parent="Control/CenterContainer/HBoxContainer" unique_id=2057326663]
 custom_minimum_size = Vector2(340, 0)
