@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://cfdgrf3yswyd3" path="res://scripts/Main2d.gd" id="4_main2d_script"]
 [ext_resource type="PackedScene" uid="uid://h3720oxsybma" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
 [ext_resource type="PackedScene" uid="uid://dvfida6qamh5y" path="res://scenes/TileOverlay.tscn" id="8_dcq30"]
-[ext_resource type="PackedScene" path="res://scenes/VictoryOverlay.tscn" id="9_victory_overlay"]
+[ext_resource type="PackedScene" uid="uid://uipe5cbrkn5j" path="res://scenes/VictoryOverlay.tscn" id="9_victory_overlay"]
 
 [node name="Main2d" type="Node2D" unique_id=719008083]
 script = ExtResource("4_main2d_script")
@@ -69,6 +69,7 @@ custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Reintentar"
+
 [node name="ExitButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox" unique_id=1072872623]
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
@@ -80,4 +81,5 @@ process_mode = 3
 z_index = 4096
 map_manager_path = NodePath("../MapManager")
 
-[node name="VictoryOverlay" parent="." instance=ExtResource("9_victory_overlay")]
+[node name="VictoryOverlay" parent="." unique_id=107348359 instance=ExtResource("9_victory_overlay")]
+

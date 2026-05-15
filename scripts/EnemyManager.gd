@@ -252,21 +252,20 @@ func _on_enemy_defeated(enemy, room_id: int) -> void:
 	if enemy:
 		is_boss = enemy.get("is_boss") == true
 
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var reward_gold := COIN_REWARD_PER_ENEMY
+	if enemy and enemy.has_method("get_reward_gold"):
+		reward_gold = int(enemy.get_reward_gold())
+	if currency and enemy and enemy is Node2D:
+		# Always add gold on death; boss victory snapshots must see the finalized total.
+		currency.add_gold(reward_gold, enemy.global_position)
+
 	# Bosses: emit boss_defeated and grant gold, but DO NOT emit the reward signal
 	if is_boss:
 		boss_defeated.emit(enemy)
 	else:
 		var reward_position: Vector2 = enemy.global_position if enemy and enemy is Node2D else Vector2.ZERO
 		enemy_defeated_with_reward.emit(enemy, reward_position)
-
-	# Grant gold for all enemy types here (single source of truth)
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
-	if currency and enemy and enemy is Node2D:
-		var reward_gold := COIN_REWARD_PER_ENEMY
-		if enemy.has_method("get_reward_gold"):
-			reward_gold = int(enemy.get_reward_gold())
-		# Always add gold on death; avoid adding gold elsewhere (no duplicates at end-of-run)
-		currency.add_gold(reward_gold, enemy.global_position)
 
 	# 🔥 REMOVER DEL TURN MANAGER
 	if turn_manager:

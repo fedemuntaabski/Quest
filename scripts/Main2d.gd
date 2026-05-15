@@ -7,7 +7,7 @@ extends Node2D
 @onready var hud: HUDController = $HUD
 @onready var pause_menu: PauseMenu = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
-@onready var victory_overlay = $VictoryOverlay
+@onready var victory_overlay: VictoryOverlay = $VictoryOverlay
 @onready var enemy_manager: EnemyManager = $MapManager/EnemyManager
 
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
@@ -123,11 +123,10 @@ func _connect_ui() -> void:
 	if exit_button and not exit_button.pressed.is_connected(_on_return_pressed):
 		exit_button.pressed.connect(_on_return_pressed)
 
-	if victory_overlay:
-		if not victory_overlay.retry_requested.is_connected(_on_retry_pressed):
-			victory_overlay.retry_requested.connect(_on_retry_pressed)
-		if not victory_overlay.exit_requested.is_connected(_on_return_pressed):
-			victory_overlay.exit_requested.connect(_on_return_pressed)
+	if victory_overlay and not victory_overlay.retry_requested.is_connected(_on_retry_pressed):
+		victory_overlay.retry_requested.connect(_on_retry_pressed)
+	if victory_overlay and not victory_overlay.exit_requested.is_connected(_on_return_pressed):
+		victory_overlay.exit_requested.connect(_on_return_pressed)
 
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
@@ -302,20 +301,8 @@ func _on_boss_defeated(enemy) -> void:
 	_victory_triggered = true  # Set FIRST to guard against room_cleared signal
 	print("[BOSS_DEFEATED] _victory_triggered set to true")
 
-	# Compute run-earned gold and show victory overlay
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
-	var run_gold := 0
-	if currency:
-		run_gold = max(0, int(currency.get_gold() - _run_gold_start))
-
 	if death_overlay:
 		death_overlay.visible = false
-
-	var tree := get_tree()
-	tree.set_meta("victory_enemies_killed", enemies_killed)
-	tree.set_meta("victory_rooms_cleared", rooms_cleared)
-	tree.set_meta("victory_gold_earned", run_gold)
-	tree.set_meta("victory_from_gameplay_scene", true)
 
 	var gsm := _get_game_state_manager()
 	if gsm:
@@ -328,15 +315,18 @@ func _on_victory_entered() -> void:
 	var tree := get_tree()
 	if tree == null:
 		return
-	var changed := tree.change_scene_to_file("res://scenes/VictoryOverlay.tscn")
-	if changed != OK:
-		push_error("[MAIN_2D] Victory scene transition failed with error code: %d" % changed)
-		if victory_overlay:
-			victory_overlay.show_victory(
-				enemies_killed,
-				rooms_cleared,
-				int(tree.get_meta("victory_gold_earned", 0))
-			)
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var run_gold := 0
+	if currency:
+		run_gold = max(0, int(currency.get_gold() - _run_gold_start))
+
+		# Removed SceneTree metadata writes. VictoryOverlay is authoritative and
+		# will be shown directly via `show_victory(...)`.
+
+	if victory_overlay:
+		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
+	else:
+		push_error("[MAIN_2D] Victory overlay node is missing from Main2D.tscn")
 
 
 # ─────────────────────────────────────────────

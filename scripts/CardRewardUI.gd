@@ -158,10 +158,11 @@ func _show_replace_selection() -> void:
 func _on_replace_slot_selected(slot_index: int) -> void:
 	if not _is_active:
 		return
-	if _pending_card == null:
+	var selected_card := _pending_card
+	if selected_card == null:
 		return
 	hide_reward()
-	card_replace_selected.emit(_pending_card, slot_index)
+	card_replace_selected.emit(selected_card, slot_index)
 
 func _on_skip_pressed() -> void:
 	if not _is_active:
