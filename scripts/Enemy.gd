@@ -21,6 +21,7 @@ var _start_pos: Vector2
 var target_world_pos: Vector2
 var turn_manager: TurnManager
 var combat_component: CombatComponent
+var is_boss: bool = false
 
 
 @onready var sprite: Sprite2D = $Sprite2D

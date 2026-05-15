@@ -17,7 +17,11 @@ func _ready() -> void:
 	_bind_game_state()
 
 func _bind_game_state() -> void:
-	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	var tree := get_tree()
+	if tree == null:
+		call_deferred("_bind_game_state")
+		return
+	var gsm := tree.get_first_node_in_group("game_state_manager") as GameStateManager
 	if gsm == null:
 		call_deferred("_bind_game_state")
 		return
@@ -156,7 +160,10 @@ func _on_action_finished(action: BaseAction) -> void:
 		end_turn()
 
 func _can_process_turns() -> bool:
-	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	var tree := get_tree()
+	if tree == null:
+		return true
+	var game_state_manager := tree.get_first_node_in_group("game_state_manager") as GameStateManager
 	if game_state_manager:
 		return game_state_manager.can_process_turns()
 	return true
