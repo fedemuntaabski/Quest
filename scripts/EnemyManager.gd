@@ -26,6 +26,7 @@ var enemies: Array = []
 var turn_manager: TurnManager
 var boss_spawned: bool = false
 var boss_enemy: Node = null
+var final_room_id: int = -1
 
 const COIN_REWARD_PER_ENEMY := 5
 
@@ -71,7 +72,7 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 		player_cell = map_manager.world_to_grid_coords(player.global_position)
 
 	# Determine final room id (highest id) and spawn normally for other rooms.
-	var final_room_id: int = -1
+	final_room_id = -1
 	for ri in room_infos:
 		final_room_id = max(final_room_id, ri.get("id", -1))
 

@@ -64,13 +64,17 @@ func push_state(new_state: State) -> void:
 	_apply_state_change(new_state, current_state)
 
 func pop_state(expected_state: int = -1) -> void:
+	print("[GAME_STATE_MANAGER] pop_state() called, current_state=%s, stack_size=%d" % [State.keys()[current_state], _state_stack.size()])
 	if _state_stack.size() <= 1:
+		print("[GAME_STATE_MANAGER] ERROR: Cannot pop - stack size is 1 or less")
 		return
 	if expected_state != -1 and current_state != expected_state:
+		print("[GAME_STATE_MANAGER] ERROR: Expected state %s but current is %s" % [State.keys()[expected_state], State.keys()[current_state]])
 		return
 	var old_state := current_state
 	_state_stack.pop_back()
 	var next_state: State = _state_stack[_state_stack.size() - 1]
+	print("[GAME_STATE_MANAGER] Transitioned from %s to %s" % [State.keys()[old_state], State.keys()[next_state]])
 	_apply_state_change(next_state, old_state)
 
 func request_pause() -> void:
@@ -102,9 +106,14 @@ func request_reward(card_options: Array) -> void:
 		reward_entered.emit(card_options)
 
 func close_reward(selected_card: CardData) -> void:
+	print("[GAME_STATE_MANAGER] close_reward() called, current_state=%s" % State.keys()[current_state])
 	if current_state == State.REWARD:
+		print("[GAME_STATE_MANAGER] Popping REWARD state...")
 		pop_state(State.REWARD)
+		print("[GAME_STATE_MANAGER] New state after pop: %s" % State.keys()[current_state])
 		reward_exited.emit(selected_card)
+	else:
+		print("[GAME_STATE_MANAGER] WARNING: close_reward() called but current_state is %s, not REWARD!" % State.keys()[current_state])
 
 func toggle_pause() -> void:
 	if current_state == State.ACTIVE:
@@ -122,14 +131,20 @@ func _apply_state_change(new_state: State, old_state: State) -> void:
 	state_changed.emit(current_state, _previous_state)
 
 func _handle_state_change(new_state: State, _old_state: State) -> void:
+	print("[GAME_STATE_MANAGER] _handle_state_change: %s -> %s" % [State.keys()[_old_state], State.keys()[new_state]])
 	match new_state:
 		State.ACTIVE:
+			print("[GAME_STATE_MANAGER] Setting get_tree().paused = false")
 			get_tree().paused = false
 		State.PAUSED:
+			print("[GAME_STATE_MANAGER] Setting get_tree().paused = true (PAUSED)")
 			get_tree().paused = true
 		State.DEAD:
+			print("[GAME_STATE_MANAGER] Setting get_tree().paused = true (DEAD)")
 			get_tree().paused = true
 		State.VICTORY:
+			print("[GAME_STATE_MANAGER] Setting get_tree().paused = true (VICTORY)")
 			get_tree().paused = true
 		State.REWARD:
+			print("[GAME_STATE_MANAGER] Setting get_tree().paused = true (REWARD)")
 			get_tree().paused = true

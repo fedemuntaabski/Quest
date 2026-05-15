@@ -166,10 +166,12 @@ func _normalize_category(category: String) -> String:
 func apply_selected_reward(card: CardData, replace_slot_index: int = -1) -> void:
 	if card == null:
 		return
+	print("[CARD_REWARD_MANAGER] Applying reward card: %s to slot %d" % [card.display_name, replace_slot_index])
 	_rewarded_cards[card] = true
 	if card_manager:
 		_add_card_to_player(card, replace_slot_index)
 	
+	print("[CARD_REWARD_MANAGER] Emitting reward_completed signal for: %s" % card.display_name)
 	reward_completed.emit(card)
 	
 	if _on_reward_completed.is_valid():

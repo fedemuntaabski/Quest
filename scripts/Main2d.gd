@@ -229,17 +229,26 @@ func _on_room_changed(room_id: int) -> void:
 
 func _on_room_cleared(_room_id: int) -> void:
 	rooms_cleared += 1
+	print("[ROOM_CLEARED] Room %d cleared, _victory_triggered=%s" % [_room_id, _victory_triggered])
 
 	# If victory already triggered (boss died), skip reward flow
 	if _victory_triggered:
+		print("[ROOM_CLEARED] Victory already triggered, skipping rewards")
 		return
 
 	if _is_dead:
 		return
 
+	# Guard: Skip reward generation if we're in the boss/final room
+	# (room_cleared may fire before _on_boss_defeated sets _victory_triggered)
+	if enemy_manager and _room_id == enemy_manager.final_room_id:
+		print("[ROOM_CLEARED] Boss room cleared, but _victory_triggered not yet set. Skipping rewards.")
+		return
+
 	if card_reward_manager and game_state_manager and game_state_manager.is_active():
 		var reward_cards: Array[CardData] = card_reward_manager.generate_reward_options(3)
 		if not reward_cards.is_empty():
+			print("[ROOM_CLEARED] Requesting reward with %d cards" % reward_cards.size())
 			game_state_manager.request_reward(reward_cards)
 
 func _on_enemy_defeated() -> void:
@@ -287,7 +296,9 @@ func _on_boss_defeated(enemy) -> void:
 	if enemy == null or enemy.get("is_boss") != true or not str(enemy.name).begins_with("Boss_Purple_"):
 		return
 
-	_victory_triggered = true
+	print("[BOSS_DEFEATED] Boss enemy defeated: %s" % enemy.name)
+	_victory_triggered = true  # Set FIRST to guard against room_cleared signal
+	print("[BOSS_DEFEATED] _victory_triggered set to true")
 
 	# Compute run-earned gold and show victory overlay
 	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
@@ -304,9 +315,15 @@ func _on_boss_defeated(enemy) -> void:
 	tree.set_meta("victory_gold_earned", run_gold)
 	tree.set_meta("victory_from_gameplay_scene", true)
 
+	print("[BOSS_DEFEATED] Attempting scene transition to VictoryOverlay...")
 	var changed := tree.change_scene_to_file("res://scenes/VictoryOverlay.tscn")
-	if changed != OK and victory_overlay:
-		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
+	if changed != OK:
+		push_error("[BOSS_DEFEATED] Scene transition failed with error code: %d" % changed)
+		if victory_overlay:
+			print("[BOSS_DEFEATED] Fallback: showing victory_overlay in-place")
+			victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
+	else:
+		print("[BOSS_DEFEATED] Scene transition succeeded")
 
 
 # ─────────────────────────────────────────────
@@ -358,9 +375,14 @@ func _get_game_state_manager() -> GameStateManager:
 # ─────────────────────────────────────────────
 func _on_reward_completed(_selected_card: CardData) -> void:
 	# Reward completed, return to active state via GameStateManager
+	print("[MAIN_2D] _on_reward_completed called with card: %s" % (_selected_card.display_name if _selected_card else "null"))
 	if game_state_manager:
+		print("[MAIN_2D] Calling game_state_manager.close_reward()")
 		game_state_manager.close_reward(_selected_card)
+	else:
+		print("[MAIN_2D] ERROR: game_state_manager is null!")
 	_update_hotbar_display()
+	print("[MAIN_2D] Hotbar display updated")
 
 func _update_hotbar_display() -> void:
 	if map_manager:
