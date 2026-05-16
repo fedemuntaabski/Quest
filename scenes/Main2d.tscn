@@ -82,4 +82,4 @@ z_index = 4096
 map_manager_path = NodePath("../MapManager")
 
 [node name="VictoryOverlay" parent="." unique_id=107348359 instance=ExtResource("9_victory_overlay")]
-
+visible = false

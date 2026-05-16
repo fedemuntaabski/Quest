@@ -5,14 +5,20 @@ signal room_changed(room_id: int)
 
 var dungeon: DungeonGenerator = null
 var active_room_id: int = -1
+var room_areas: Dictionary = {}
 
 func setup(dg: DungeonGenerator) -> void:
 	dungeon = dg
 
 func register_room_area(area: Area2D, room_id: int) -> void:
-	# Room activation is driven by the player's grid cell so corridor overlap
-	# cannot trigger enemies before the player is actually inside the room.
-	return
+	if area == null or room_id < 0:
+		return
+
+	room_areas[room_id] = area
+
+
+func get_room_area(room_id: int) -> Area2D:
+	return room_areas.get(room_id, null)
 
 func _on_body_entered(body: Node2D, room_id: int) -> void:
 	if body == null:

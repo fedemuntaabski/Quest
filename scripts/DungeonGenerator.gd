@@ -96,6 +96,20 @@ func get_room_info(room_id: int) -> Dictionary:
 	return room_infos[room_id]
 
 
+func get_connected_room_ids(room_id: int) -> Array[int]:
+	if layout_generator == null:
+		return []
+
+	return layout_generator.get_connected_room_ids(room_id)
+
+
+func are_rooms_connected(room_a: int, room_b: int) -> bool:
+	if layout_generator == null:
+		return false
+
+	return layout_generator.are_rooms_connected(room_a, room_b)
+
+
 func get_room_spawn_forbidden_cells(room_id: int) -> Dictionary:
 	var forbidden: Dictionary = {}
 	var room_info := get_room_info(room_id)

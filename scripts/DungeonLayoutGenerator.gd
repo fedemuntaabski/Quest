@@ -3,10 +3,12 @@ class_name DungeonLayoutGenerator
 
 var dungeon: DungeonGenerator
 var room_connections: Dictionary = {}
+var room_adjacency: Dictionary = {}
 
 func setup(p_dungeon: DungeonGenerator) -> void:
 	dungeon = p_dungeon
 	room_connections.clear()
+	room_adjacency.clear()
 
 
 func generate() -> bool:
@@ -18,6 +20,8 @@ func generate() -> bool:
 		dungeon.wall_cells.clear()
 		dungeon.wall_nodes.clear()
 		dungeon.room_infos.clear()
+		room_connections.clear()
+		room_adjacency.clear()
 
 		var attempts := dungeon.room_count * 90
 
@@ -85,6 +89,7 @@ func _room_overlaps_existing(candidate: Rect2i) -> bool:
 
 func _register_room(room_rect: Rect2i) -> void:
 	var room_id := dungeon.room_infos.size()
+	room_adjacency[room_id] = {}
 
 	var room_root := Node2D.new()
 	room_root.name = "RoomVisual_%d" % room_id
@@ -215,6 +220,34 @@ func _has_connection(room_a: int, room_b: int) -> bool:
 func _register_connection(room_a: int, room_b: int) -> void:
 	var key := "%d_%d" % [room_a, room_b]
 	room_connections[key] = true
+	_add_adjacency_link(room_a, room_b)
+	_add_adjacency_link(room_b, room_a)
+
+
+func _add_adjacency_link(room_a: int, room_b: int) -> void:
+	if room_a < 0 or room_b < 0:
+		return
+
+	if not room_adjacency.has(room_a):
+		room_adjacency[room_a] = {}
+
+	room_adjacency[room_a][room_b] = true
+
+
+func get_connected_room_ids(room_id: int) -> Array[int]:
+	var connected: Array[int] = []
+	var adjacency: Dictionary = room_adjacency.get(room_id, {})
+
+	for raw_room_id in adjacency.keys():
+		connected.append(int(raw_room_id))
+
+	connected.sort()
+	return connected
+
+
+func are_rooms_connected(room_a: int, room_b: int) -> bool:
+	var adjacency: Dictionary = room_adjacency.get(room_a, {})
+	return adjacency.has(room_b)
 
 
 func _find_nearest_room(from_center: Vector2i, candidates: Array[Dictionary]) -> Dictionary:
