@@ -1,13 +1,13 @@
 extends PointLight2D
 class_name TorchLight
 
-@export var base_energy: float = 1.8
+@export var base_energy: float = 1.9
 @export var slow_flicker_speed: float = 1.0
 @export var fast_flicker_speed: float = 14.0
 @export var flicker_intensity: float = 0.25
 @export_range(0.0, 1.0) var stability: float = 0.6
-@export var response_speed: float = 6.0
-@export var follow_speed: float = 8.0
+@export var response_speed: float = 8.0
+@export var follow_speed: float = 12.0
 
 var t: float = 0.0
 var noise := FastNoiseLite.new()
