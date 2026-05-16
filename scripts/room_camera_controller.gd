@@ -103,6 +103,16 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	var target_zoom_value: float = clamp(base_zoom * margin_factor, min_zoom, max_zoom)
 	var zoom_vec: Vector2 = Vector2(target_zoom_value, target_zoom_value)
 
+	var corridor_margin: float = dungeon.tile_size * 3.0
+	var room_world_pos: Vector2 = dungeon.grid_to_world_coords(room_rect.position)
+	var room_world_end: Vector2 = dungeon.grid_to_world_coords(room_rect.end)
+
+	camera.limit_left = int(room_world_pos.x - corridor_margin)
+	camera.limit_top = int(room_world_pos.y - corridor_margin)
+	camera.limit_right = int(room_world_end.x + corridor_margin)
+	camera.limit_bottom = int(room_world_end.y + corridor_margin)
+	camera.limit_smoothed = true
+
 	_kill_tween()
 
 	if not animate:

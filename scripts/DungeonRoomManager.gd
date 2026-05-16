@@ -40,9 +40,8 @@ func tween_room_lights(animate: bool) -> void:
 	tween.set_parallel(true)
 
 	for room_info in dungeon.room_infos:
-		var room_id: int = room_info["id"]
 		var room_light: PointLight2D = room_info["light"]
-		var target_energy := dungeon.room_light_energy if room_id == dungeon.active_room_id else 0.0
+		var target_energy := 0.0
 
 		if tween_duration <= 0.0:
 			room_light.energy = target_energy

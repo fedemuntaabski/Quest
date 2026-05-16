@@ -2,9 +2,11 @@ extends RefCounted
 class_name DungeonLayoutGenerator
 
 var dungeon: DungeonGenerator
+var room_connections: Dictionary = {}
 
 func setup(p_dungeon: DungeonGenerator) -> void:
 	dungeon = p_dungeon
+	room_connections.clear()
 
 
 func generate() -> bool:
@@ -124,44 +126,74 @@ func _connect_rooms_with_corridors() -> void:
 	if dungeon.room_infos.size() <= 1:
 		return
 
-	var sorted_rooms := dungeon.room_infos.duplicate()
+	var unvisited_rooms := dungeon.room_infos.duplicate()
+	var main_path: Array[Dictionary] = []
 
-	sorted_rooms.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		var center_a: Vector2i = a["center_cell"]
-		var center_b: Vector2i = b["center_cell"]
+	var current_room: Dictionary = unvisited_rooms[0]
+	main_path.append(current_room)
+	unvisited_rooms.erase(current_room)
 
-		if center_a.x == center_b.x:
-			return center_a.y < center_b.y
+	while unvisited_rooms.size() > 0:
+		var current_center: Vector2i = current_room["center_cell"]
+		var nearest_room: Dictionary = _find_nearest_room(current_center, unvisited_rooms)
 
-		return center_a.x < center_b.x
-	)
+		if nearest_room.is_empty():
+			break
 
-	for index in range(sorted_rooms.size() - 1):
-		var from_cell: Vector2i = sorted_rooms[index]["center_cell"]
-		var to_cell: Vector2i = sorted_rooms[index + 1]["center_cell"]
-		_carve_corridor(from_cell, to_cell)
+		var from_room_id: int = current_room["id"]
+		var to_room_id: int = nearest_room["id"]
+		var from_cell: Vector2i = current_room["center_cell"]
+		var to_cell: Vector2i = nearest_room["center_cell"]
+
+		if not _has_connection(from_room_id, to_room_id):
+			_carve_corridor(from_cell, to_cell)
+			_register_connection(from_room_id, to_room_id)
+
+		main_path.append(nearest_room)
+		unvisited_rooms.erase(nearest_room)
+		current_room = nearest_room
+
+	for room_info in main_path:
+		room_info["is_main_path"] = true
+
+	if dungeon.main_path_branching and unvisited_rooms.size() > 0:
+		for room_info in unvisited_rooms:
+			_connect_to_nearest_main_path_room(room_info, main_path)
 
 
 func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> void:
+	var min_length := dungeon.corridor_min_length
+	var max_length := dungeon.corridor_max_length
+
 	var current := from_cell
+	var corridor_length := 0
 	_add_corridor_cell(current)
 
-	if randf() < 0.5:
+	var horizontal_first := randf() < 0.5
+
+	if horizontal_first:
 		while current.x != to_cell.x:
 			current.x += signi(to_cell.x - current.x)
 			_add_corridor_cell(current)
+			corridor_length += 1
 
 		while current.y != to_cell.y:
 			current.y += signi(to_cell.y - current.y)
 			_add_corridor_cell(current)
+			corridor_length += 1
 	else:
 		while current.y != to_cell.y:
 			current.y += signi(to_cell.y - current.y)
 			_add_corridor_cell(current)
+			corridor_length += 1
 
 		while current.x != to_cell.x:
 			current.x += signi(to_cell.x - current.x)
 			_add_corridor_cell(current)
+			corridor_length += 1
+
+	if corridor_length < min_length or corridor_length > max_length:
+		push_warning("Corridor length %d outside bounds [%d, %d]. Consider adjusting room placement." % [corridor_length, min_length, max_length])
 
 
 func _add_corridor_cell(cell: Vector2i) -> void:
@@ -172,3 +204,49 @@ func _add_corridor_cell(cell: Vector2i) -> void:
 		return
 
 	dungeon.floor_cells[cell] = true
+
+
+func _has_connection(room_a: int, room_b: int) -> bool:
+	var key_a := "%d_%d" % [room_a, room_b]
+	var key_b := "%d_%d" % [room_b, room_a]
+	return room_connections.has(key_a) or room_connections.has(key_b)
+
+
+func _register_connection(room_a: int, room_b: int) -> void:
+	var key := "%d_%d" % [room_a, room_b]
+	room_connections[key] = true
+
+
+func _find_nearest_room(from_center: Vector2i, candidates: Array[Dictionary]) -> Dictionary:
+	if candidates.is_empty():
+		return {}
+
+	var nearest: Dictionary = {}
+	var nearest_dist: float = INF
+
+	for room_info in candidates:
+		var room_center: Vector2i = room_info["center_cell"]
+		var dist := from_center.distance_squared_to(room_center)
+
+		if dist < nearest_dist:
+			nearest_dist = dist
+			nearest = room_info
+
+	return nearest
+
+
+func _connect_to_nearest_main_path_room(room_info: Dictionary, main_path: Array[Dictionary]) -> void:
+	var room_center: Vector2i = room_info["center_cell"]
+	var nearest_main: Dictionary = _find_nearest_room(room_center, main_path)
+
+	if nearest_main.is_empty():
+		return
+
+	var from_room_id: int = room_info["id"]
+	var to_room_id: int = nearest_main["id"]
+	var from_cell: Vector2i = room_info["center_cell"]
+	var to_cell: Vector2i = nearest_main["center_cell"]
+
+	if not _has_connection(from_room_id, to_room_id):
+		_carve_corridor(from_cell, to_cell)
+		_register_connection(from_room_id, to_room_id)
