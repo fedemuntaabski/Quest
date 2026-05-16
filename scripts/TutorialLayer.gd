@@ -8,11 +8,14 @@ signal tutorial_finished
 var step: int = 0
 
 var prompts = [
-	"Paso 1/5 - Movimiento: haz click en una casilla cercana para avanzar 1 turno.",
-	"Paso 2/5 - Combate: acércate al enemigo verde del tutorial y atácalo con tus cartas.",
-	"Paso 3/5 - Cartas: usa 1, 2, 3 para cambiar carta activa y revisa su alcance.",
-	"Paso 4/5 - Información: tus stats siempre están visibles en el HUD.",
-	"Paso 5/5 - Tienda: usa tu oro para mejorar HP, Fuerza, Magia o Destreza."
+	"Paso 1/8 - Movimiento: haz click en una casilla válida para moverte por la mazmorra. El movimiento consume un turno.",
+	"Paso 2/8 - Cámara y exploración: avanza por las habitaciones. La cámara sigue tu posición dentro de la sala actual.",
+	"Paso 3/8 - Combate básico: acércate a un enemigo y haciendo click sobre ellos al estar en rango. Cada acción consume turnos.",
+	"Paso 4/8 - Sistema de cartas: usa las teclas 1, 2 y 3 para cambiar tu carta activa y ver su rango de acción.",
+	"Paso 5/8 - Estados: algunos ataques aplican efectos como Burn, Freeze o Poison. Estos afectan al enemigo por varios turnos.",
+	"Paso 6/8 - Recursos: los enemigos pueden soltar oro. Este oro se usa para mejoras entre combates.",
+	"Paso 7/8 - HUD: tu vida, estadisticas y estados actuales siempre se muestran en la interfaz superior.",
+	"Paso 8/8 - Progresión: limpia habitaciones para avanzar. Al derrotar enemigos avanzas hacia el jefe final."
 ]
 
 var active_tween: Tween 
