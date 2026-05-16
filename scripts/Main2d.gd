@@ -297,9 +297,7 @@ func _on_boss_defeated(enemy) -> void:
 	if enemy == null or enemy.get("is_boss") != true or not str(enemy.name).begins_with("Boss_Purple_"):
 		return
 
-	print("[BOSS_DEFEATED] Boss enemy defeated: %s" % enemy.name)
 	_victory_triggered = true  # Set FIRST to guard against room_cleared signal
-	print("[BOSS_DEFEATED] _victory_triggered set to true")
 
 	if death_overlay:
 		death_overlay.visible = false

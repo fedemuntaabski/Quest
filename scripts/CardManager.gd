@@ -75,7 +75,6 @@ func replace_equipped_card(card: CardData, slot_index: int) -> void:
 	# If the replaced slot was active, reset active_index to -1
 	# (Force player to consciously reselect)
 	if active_index == slot_index:
-		print("[CARD_MANAGER] Replaced card in active slot %d, resetting active_index to -1" % slot_index)
 		active_index = -1
 		active_index_changed.emit(-1)
 	

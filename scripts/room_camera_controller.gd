@@ -6,6 +6,8 @@ class_name RoomCameraController
 @export var margin_factor: float = 0.9
 @export var min_zoom: float = 0.6
 @export var max_zoom: float = 2.5
+@export var room_margin_tiles: float = 3.0
+@export var corridor_margin_tiles: float = 10.0
 
 var dungeon: DungeonGenerator = null
 var active_tween: Tween = null
@@ -21,6 +23,7 @@ func setup(dg: DungeonGenerator) -> void:
 		dungeon.room_changed.connect(_on_room_changed)
 
 	call_deferred("_sync_to_current_room")
+	set_process(true)
 
 # ─────────────────────────────────────────────
 # INIT SYNC
@@ -138,3 +141,59 @@ func _kill_tween() -> void:
 	if active_tween != null:
 		active_tween.kill()
 		active_tween = null
+
+func _is_player_in_corridor() -> bool:
+	if dungeon == null:
+		return false
+
+	var player: CharacterBody2D = dungeon.get_spawned_player()
+	if player == null:
+		return false
+
+	var player_grid: Vector2i = dungeon.world_to_grid_coords(player.global_position)
+
+	# Check if player is within any room's bounds
+	for room_info in dungeon.room_infos:
+		var room_rect: Rect2i = room_info["rect"]
+		if room_rect.has_point(player_grid):
+			return false
+
+	# If not in any room, player is in a corridor
+	return true
+
+func _process(_delta: float) -> void:
+	if dungeon == null:
+		return
+
+	if dungeon.active_room_id < 0:
+		return
+
+	var player: CharacterBody2D = dungeon.get_spawned_player()
+	if player == null:
+		return
+
+	var node: Node = player.get_node_or_null("Camera2D")
+	if node == null:
+		return
+
+	var camera: Camera2D = node as Camera2D
+	if camera == null:
+		return
+
+	# Update camera bounds dynamically based on player location
+	var room_info: Dictionary = dungeon.get_room_info(dungeon.active_room_id)
+	if room_info.is_empty():
+		return
+
+	var room_rect: Rect2i = room_info["rect"]
+	var room_world_pos: Vector2 = dungeon.grid_to_world_coords(room_rect.position)
+	var room_world_end: Vector2 = dungeon.grid_to_world_coords(room_rect.end)
+
+	var in_corridor: bool = _is_player_in_corridor()
+	var margin: float = corridor_margin_tiles if in_corridor else room_margin_tiles
+	var margin_px: float = margin * dungeon.tile_size
+
+	camera.limit_left = int(room_world_pos.x - margin_px)
+	camera.limit_top = int(room_world_pos.y - margin_px)
+	camera.limit_right = int(room_world_end.x + margin_px)
+	camera.limit_bottom = int(room_world_end.y + margin_px)

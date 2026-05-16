@@ -7,9 +7,11 @@ class_name TorchLight
 @export var flicker_intensity: float = 0.35
 @export_range(0.0, 1.0) var stability: float = 0.55
 @export var response_speed: float = 6.0
+@export var follow_speed: float = 8.0
 
 var t: float = 0.0
 var noise := FastNoiseLite.new()
+var target_position: Vector2
 
 func _ready():
 	texture_scale = 1.4
@@ -37,3 +39,9 @@ func _process(delta: float) -> void:
 	target_energy = clamp(target_energy, base_energy * 0.4, base_energy * 1.3)
 
 	energy = lerp(energy, target_energy, delta * response_speed)
+
+	# Position smoothing for organic light follow
+	var parent_node = get_parent()
+	if parent_node:
+		target_position = parent_node.global_position
+		global_position = global_position.lerp(target_position, delta * follow_speed)

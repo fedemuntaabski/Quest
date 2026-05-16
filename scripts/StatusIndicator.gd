@@ -28,7 +28,6 @@ func refresh_statuses(statuses: Dictionary) -> void:
 			tex = load(icon_path) as Texture2D
 
 		var icon := TextureRect.new()
-		icon.expand = false
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.custom_minimum_size = Vector2(24,24)
 		if tex:
@@ -48,5 +47,7 @@ func _status_icon_path(status_id: String) -> String:
 			return "res://assets/ui/status/status_burn.svg"
 		"freeze":
 			return "res://assets/ui/status/status_freeze.svg"
+		"arcane_shield":
+			return "res://assets/ui/status/status_arcane_shield.svg"
 		_:
 			return ""

@@ -10,16 +10,13 @@ func _init(p_combat_component: CombatComponent, p_target: Node):
 	consume_turn = true
 
 func can_execute() -> bool:
-	print("[Action] AttackAction can_execute")
 	if combat_component == null:
 		return false
 	return combat_component.can_attack(target)
 
 func execute() -> void:
-	print("[Action] AttackAction execute")
 
 	if combat_component:
 		var result = combat_component.attack(target)
-		print("[Combat] Attack result: ", result)
 
 	finish()

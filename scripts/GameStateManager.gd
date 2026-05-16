@@ -64,9 +64,7 @@ func push_state(new_state: State) -> void:
 	_apply_state_change(new_state, current_state)
 
 func pop_state(expected_state: int = -1) -> void:
-	print("[GAME_STATE_MANAGER] pop_state() called, current_state=%s, stack_size=%d" % [State.keys()[current_state], _state_stack.size()])
 	if _state_stack.size() <= 1:
-		print("[GAME_STATE_MANAGER] ERROR: Cannot pop - stack size is 1 or less")
 		return
 	if expected_state != -1 and current_state != expected_state:
 		print("[GAME_STATE_MANAGER] ERROR: Expected state %s but current is %s" % [State.keys()[expected_state], State.keys()[current_state]])
@@ -74,7 +72,6 @@ func pop_state(expected_state: int = -1) -> void:
 	var old_state := current_state
 	_state_stack.pop_back()
 	var next_state: State = _state_stack[_state_stack.size() - 1]
-	print("[GAME_STATE_MANAGER] Transitioned from %s to %s" % [State.keys()[old_state], State.keys()[next_state]])
 	_apply_state_change(next_state, old_state)
 
 func request_pause() -> void:

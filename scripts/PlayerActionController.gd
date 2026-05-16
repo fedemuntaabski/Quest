@@ -105,12 +105,8 @@ func _handle_mouse_click() -> void:
 					return
 		player.cancel_movement()
 		return
-	print("CLICK WORLD: ", world_pos)
-	print("TARGET CELL: ", target_cell)
 	var enemy := map_manager.get_actor_at_cell(target_cell)
-	print("ACTOR AT CELL: ", enemy)
 	if _is_enemy_combat_target(enemy):
-		print("ENEMY CLICKED")
 		if combat_card_system and card_manager:
 			var card := card_manager.get_active_card()
 			if card and combat_card_system.can_play(card, enemy):
@@ -126,7 +122,6 @@ func _handle_mouse_click() -> void:
 	var path: Array[Vector2i] = map_manager.find_path(player.grid_pos, target_cell, player)
 
 	if path.is_empty():
-		print("NO PATH")
 		return
 
 	player.set_path(path)

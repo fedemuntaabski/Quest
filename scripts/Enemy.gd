@@ -237,7 +237,6 @@ func _start_move_to(next: Vector2i) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_moving_step:
 		return
-	print("ENEMY GRID: ", grid_pos)
 
 	step_timer += delta
 	var t := step_timer / step_time

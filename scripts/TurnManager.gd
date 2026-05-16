@@ -108,7 +108,6 @@ func _begin_actor_turn() -> void:
 		return
 
 	if current_actor.has_method("begin_turn"):
-		print("[TurnManager] Begin turn: ", current_actor)
 		current_actor.begin_turn(self)
 	else:
 		_actor_finished()
@@ -140,8 +139,6 @@ func stop() -> void:
 func _actor_finished() -> void:
 	pending_actors -= 1
 	current_actor_index += 1
-	print("[TurnManager] Turn finished: ", current_actor)
-
 	if pending_actors <= 0:
 		_start_turn()
 		return
@@ -153,8 +150,6 @@ func _on_action_finished(action: BaseAction) -> void:
 		return
 	if not _active:
 		return
-
-	print("[TurnManager] Action finished: ", action.get_class(), " consume_turn=", action.consume_turn)
 
 	if action.consume_turn:
 		end_turn()

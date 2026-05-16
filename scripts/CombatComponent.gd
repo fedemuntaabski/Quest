@@ -33,10 +33,6 @@ func setup(p_owner: Node, p_stats: CharacterStats, p_map_manager: MapManager) ->
 func can_attack(target: Node) -> bool:
 	var target_component := _resolve_target_component(target)
 
-	if target_component:
-		print("[Combat] Target stats: ", target_component.stats)
-		print("[Combat] Target owner: ", target_component.actor_owner)
-
 	if target_component == null:
 		return false
 
@@ -123,7 +119,6 @@ func _is_in_range(target_component: CombatComponent) -> bool:
 	var target_cell: Variant = _get_actor_cell(target_component.actor_owner)
 
 	if my_cell == null or target_cell == null:
-		print("NULL CELL")
 		return false
 
 	var dx := absi(my_cell.x - target_cell.x)
