@@ -14,8 +14,9 @@ func create_room_light(room_rect: Rect2i, center_cell: Vector2i) -> PointLight2D
 	room_light.texture = dungeon.light_texture
 	room_light.position = dungeon.grid_to_world_coords(center_cell)
 	room_light.energy = 0.0
-	room_light.texture_scale = maxf(1.8, float(max(room_rect.size.x, room_rect.size.y)) * 0.25)
-	room_light.color = Color(0.9, 0.95, 1.0, 1.0)
+	# Slightly warmer, larger room lights for a torchy ambiance
+	room_light.texture_scale = maxf(2.2, float(max(room_rect.size.x, room_rect.size.y)) * 0.3)
+	room_light.color = Color(1.0, 0.85, 0.6, 1.0)
 	return room_light
 
 func create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:

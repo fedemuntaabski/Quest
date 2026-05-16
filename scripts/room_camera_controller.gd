@@ -19,6 +19,9 @@ var dungeon: DungeonGenerator = null
 var active_tween: Tween = null
 var _has_initialized: bool = false
 
+var _shake_timer: float = 0.0
+var _shake_intensity: float = 0.0
+
 ## Camera state modes
 var current_mode: CameraMode = null
 var room_mode: CameraMode_Room = null
@@ -36,8 +39,15 @@ func setup(dg: DungeonGenerator) -> void:
 	corridor_mode = CameraMode_Corridor.new(dungeon)
 	current_mode = room_mode  # Start in room mode by default
 
-	if dungeon != null and not dungeon.room_changed.is_connected(_on_room_changed):
-		dungeon.room_changed.connect(_on_room_changed)
+	if dungeon != null and not dungeon.room_changed.is_connected(Callable(self, "_on_room_changed")):
+		dungeon.room_changed.connect(Callable(self, "_on_room_changed"))
+
+	# Connect to visual feedback screen shake if present
+	var vfs := get_tree().get_nodes_in_group("visual_feedback")
+	if vfs.size() > 0:
+		var vf := vfs[0]
+		if not vf.is_connected("screen_shake", Callable(self, "_on_screen_shake")):
+			vf.connect("screen_shake", Callable(self, "_on_screen_shake"))
 
 	call_deferred("_sync_to_current_room")
 	set_process(true)
@@ -190,10 +200,15 @@ func _switch_camera_mode(to_corridor: bool) -> void:
 	if current_mode != null:
 		current_mode.exit()
 	
-	current_mode = corridor_mode if to_corridor else room_mode
+	current_mode = corridor_mode as CameraMode if to_corridor else room_mode as CameraMode
 	
 	if current_mode != null:
 		current_mode.enter()
+
+
+func _on_screen_shake(intensity: float, duration: float) -> void:
+	_shake_intensity = intensity
+	_shake_timer = max(_shake_timer, duration)
 
 func _process(_delta: float) -> void:
 	if dungeon == null:
@@ -225,3 +240,9 @@ func _process(_delta: float) -> void:
 	# Update camera via current mode
 	if current_mode != null:
 		current_mode.update_camera(player, camera, dungeon, _delta)
+
+	# Apply screen shake overlay (subtle)
+	if _shake_timer > 0.0:
+		var shake_offset := Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _shake_intensity
+		camera.global_position += shake_offset
+		_shake_timer = max(0.0, _shake_timer - _delta)

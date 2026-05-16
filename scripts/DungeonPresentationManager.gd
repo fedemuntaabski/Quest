@@ -17,6 +17,12 @@ func setup(parent: Node, generator: DungeonGenerator) -> void:
 	add_child(fog_controller)
 	fog_controller.setup(generator, fog_manager)
 
+	# Add visual feedback manager to the presentation layer so camera and actors can use it
+	var VisualFeedbackClass = preload("res://scripts/visual/VisualFeedback.gd")
+	var vf = VisualFeedbackClass.new()
+	vf.name = "VisualFeedback"
+	add_child(vf)
+
 func build(generator: DungeonGenerator, tileset: TileSet, wall_texture: Texture2D) -> void:
 	tile_renderer.setup(generator, tileset, generator.grid_origin)
 	tile_renderer.set_data(generator.floor_cells, generator.wall_cells)

@@ -314,6 +314,15 @@ func apply_tutorial_profile() -> void:
 func show_damage(amount: int, crit: bool = false) -> void:
 	_spawn_floating_text("-%d" % amount, Color(1, 0.2, 0.2), crit)
 
+	# Request visual feedback (damage flash, particles, hit pause, small shake)
+	var vfs := get_tree().get_nodes_in_group("visual_feedback")
+	if vfs.size() > 0:
+		var vf := vfs[0]
+		vf.request_damage_flash(self, Color(1, 0.9, 0.9), 0.12)
+		vf.request_particles(global_position, Color(1.0, 0.6, 0.2), 6)
+		vf.request_hit_pause(0.04, 0.18)
+		vf.request_screen_shake(2.0, 0.12)
+
 func show_miss() -> void:
 	_spawn_floating_text("MISS", Color(0.9, 0.9, 0.9), false)
 
