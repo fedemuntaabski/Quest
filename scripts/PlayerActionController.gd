@@ -125,6 +125,11 @@ func _handle_mouse_click() -> void:
 		return
 
 	player.set_path(path)
+	
+	# Clear path preview overlay once movement is confirmed/queued
+	var highlighter := get_tree().get_first_node_in_group("tile_highlighter") as TileHighlighter
+	if highlighter:
+		highlighter.clear_path_preview()
 
 func on_player_turn_started() -> void:
 	if card_manager:

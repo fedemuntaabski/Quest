@@ -1,23 +1,40 @@
 extends Node
 class_name RoomCameraController
 
+## Hybrid camera controller: switches between ROOM and CORRIDOR modes dynamically
+## ROOM mode: tight margins, room-centered framing
+## CORRIDOR mode: expanded bounds, active player follow
+
+# Preload camera mode classes for type resolution
+const CameraMode_Room = preload("res://scripts/camera/CameraMode_Room.gd")
+const CameraMode_Corridor = preload("res://scripts/camera/CameraMode_Corridor.gd")
+
 @export var move_duration: float = 0.35
 @export var initial_delay: float = 0.08
 @export var margin_factor: float = 0.9
 @export var min_zoom: float = 0.6
 @export var max_zoom: float = 2.5
-@export var room_margin_tiles: float = 3.0
-@export var corridor_margin_tiles: float = 10.0
 
 var dungeon: DungeonGenerator = null
 var active_tween: Tween = null
 var _has_initialized: bool = false
+
+## Camera state modes
+var current_mode: CameraMode = null
+var room_mode: CameraMode_Room = null
+var corridor_mode: CameraMode_Corridor = null
+var _last_was_corridor: bool = false
 
 # ─────────────────────────────────────────────
 # SETUP
 # ─────────────────────────────────────────────
 func setup(dg: DungeonGenerator) -> void:
 	dungeon = dg
+	
+	# Initialize camera modes
+	room_mode = CameraMode_Room.new(dungeon)
+	corridor_mode = CameraMode_Corridor.new(dungeon)
+	current_mode = room_mode  # Start in room mode by default
 
 	if dungeon != null and not dungeon.room_changed.is_connected(_on_room_changed):
 		dungeon.room_changed.connect(_on_room_changed)
@@ -84,6 +101,10 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	if camera == null:
 		return
 
+	# Reset to room mode on room transition
+	_switch_camera_mode(false)
+	_last_was_corridor = false
+
 	var room_rect: Rect2i = room_info["rect"]
 	var center_cell: Vector2i = room_info["center_cell"]
 
@@ -106,14 +127,15 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	var target_zoom_value: float = clamp(base_zoom * margin_factor, min_zoom, max_zoom)
 	var zoom_vec: Vector2 = Vector2(target_zoom_value, target_zoom_value)
 
-	var corridor_margin: float = dungeon.tile_size * 3.0
+	var base_margin: float = 3.0  # Room base margin
+	var margin_px: float = base_margin * dungeon.tile_size
 	var room_world_pos: Vector2 = dungeon.grid_to_world_coords(room_rect.position)
 	var room_world_end: Vector2 = dungeon.grid_to_world_coords(room_rect.end)
 
-	camera.limit_left = int(room_world_pos.x - corridor_margin)
-	camera.limit_top = int(room_world_pos.y - corridor_margin)
-	camera.limit_right = int(room_world_end.x + corridor_margin)
-	camera.limit_bottom = int(room_world_end.y + corridor_margin)
+	camera.limit_left = int(room_world_pos.x - margin_px)
+	camera.limit_top = int(room_world_pos.y - margin_px)
+	camera.limit_right = int(room_world_end.x + margin_px)
+	camera.limit_bottom = int(room_world_end.y + margin_px)
 	camera.limit_smoothed = true
 
 	_kill_tween()
@@ -161,6 +183,18 @@ func _is_player_in_corridor() -> bool:
 	# If not in any room, player is in a corridor
 	return true
 
+# ─────────────────────────────────────────────
+# MODE SWITCHING
+# ─────────────────────────────────────────────
+func _switch_camera_mode(to_corridor: bool) -> void:
+	if current_mode != null:
+		current_mode.exit()
+	
+	current_mode = corridor_mode if to_corridor else room_mode
+	
+	if current_mode != null:
+		current_mode.enter()
+
 func _process(_delta: float) -> void:
 	if dungeon == null:
 		return
@@ -180,20 +214,14 @@ func _process(_delta: float) -> void:
 	if camera == null:
 		return
 
-	# Update camera bounds dynamically based on player location
-	var room_info: Dictionary = dungeon.get_room_info(dungeon.active_room_id)
-	if room_info.is_empty():
-		return
-
-	var room_rect: Rect2i = room_info["rect"]
-	var room_world_pos: Vector2 = dungeon.grid_to_world_coords(room_rect.position)
-	var room_world_end: Vector2 = dungeon.grid_to_world_coords(room_rect.end)
-
+	# Detect current location (room or corridor)
 	var in_corridor: bool = _is_player_in_corridor()
-	var margin: float = corridor_margin_tiles if in_corridor else room_margin_tiles
-	var margin_px: float = margin * dungeon.tile_size
-
-	camera.limit_left = int(room_world_pos.x - margin_px)
-	camera.limit_top = int(room_world_pos.y - margin_px)
-	camera.limit_right = int(room_world_end.x + margin_px)
-	camera.limit_bottom = int(room_world_end.y + margin_px)
+	
+	# Switch modes if needed
+	if in_corridor != _last_was_corridor:
+		_switch_camera_mode(in_corridor)
+		_last_was_corridor = in_corridor
+	
+	# Update camera via current mode
+	if current_mode != null:
+		current_mode.update_camera(player, camera, dungeon, _delta)

@@ -55,6 +55,8 @@ var _cache: TileHighlighterCache = null
 
 func _ready() -> void:
 	z_index = 999
+	
+	add_to_group("tile_highlighter")
 
 	_resolve_refs()
 
@@ -82,6 +84,13 @@ func _connect_player_signals() -> void:
 		call_deferred("_connect_player_signals")
 		return
 	
+	# Connect movement lifecycle signals for overlay cleanup
+	if not _player.movement_started.is_connected(_on_player_movement_started):
+		_player.movement_started.connect(_on_player_movement_started)
+	
+	if not _player.movement_ended.is_connected(_on_player_movement_ended):
+		_player.movement_ended.connect(_on_player_movement_ended)
+	
 	# Connect to game state changes to clear overlays when state changes
 	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
 	if gsm and not gsm.state_changed.is_connected(_on_game_state_changed):
@@ -89,10 +98,16 @@ func _connect_player_signals() -> void:
 
 	if _card_manager and not _card_manager.active_index_changed.is_connected(_on_active_index_changed):
 		_card_manager.active_index_changed.connect(_on_active_index_changed)
+	
+	# Connect to card play events for overlay cleanup when combat action starts
+	var combat_card_system := get_tree().get_first_node_in_group("combat_card_system") as CombatCardSystem
+	if combat_card_system and not combat_card_system.card_played.is_connected(_on_card_played):
+		combat_card_system.card_played.connect(_on_card_played)
 
 func _on_game_state_changed(new_state: int, _old_state: int) -> void:
-	# Clear range grid when game state changes (e.g., combat ends, turn ends)
+	# Clear overlay when game state changes (e.g., pause, reward, dead)
 	if new_state != GameStateManager.State.ACTIVE:
+		clear_path_preview()
 		_cached_range_cells.clear()
 		queue_redraw()
 
@@ -100,6 +115,25 @@ func _on_active_index_changed(_index: int) -> void:
 	_cached_range_cells.clear()
 	_last_active_card = null
 	queue_redraw()
+
+# ─────────────────────────────────────────────
+# MOVEMENT LIFECYCLE HANDLERS
+# ─────────────────────────────────────────────
+func _on_player_movement_started() -> void:
+	"""Clear path preview when player starts moving."""
+	clear_path_preview()
+
+func _on_player_movement_ended() -> void:
+	"""Called when player movement animation completes."""
+	# Movement completed; path preview already cleared by movement_started
+	pass
+
+# ─────────────────────────────────────────────
+# COMBAT HANDLERS
+# ─────────────────────────────────────────────
+func _on_card_played(_card: CardData, _target: Node, _result: Dictionary) -> void:
+	"""Clear path preview when a combat card is played."""
+	clear_path_preview()
 
 # =====================================================
 # PROCESS
@@ -180,6 +214,16 @@ func _update_path_preview() -> void:
 		hovered_cell,
 		_player
 	)
+
+# ─────────────────────────────────────────────
+# CLEANUP: Clear path preview and hover state
+# ─────────────────────────────────────────────
+func clear_path_preview() -> void:
+	"""Clear overlay state: path preview, hover cell, and cached tracking."""
+	_path_preview.clear()
+	hovered_cell = INVALID_CELL
+	_last_hover_cell = INVALID_CELL
+	queue_redraw()
 
 # =====================================================
 # RANGE CACHE

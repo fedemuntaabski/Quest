@@ -2,6 +2,12 @@ extends CharacterBody2D
 class_name PlayerMovement
 
 # ─────────────────────────────────────────────
+# SIGNALS
+# ─────────────────────────────────────────────
+signal movement_started
+signal movement_ended
+
+# ─────────────────────────────────────────────
 # GRID
 # ─────────────────────────────────────────────
 @export var tile_size: int = 16
@@ -118,6 +124,9 @@ func _start_move_to(next: Vector2i) -> void:
 	is_moving_step = true
 	step_timer = 0.0
 	
+	# Emit signal: movement animation started
+	movement_started.emit()
+	
 	# Safety timeout to prevent infinite hang if tween gets stuck
 	var safety_tween := create_tween()
 	safety_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
@@ -154,6 +163,9 @@ func _force_step_complete() -> void:
 		return
 	global_position = target_world_pos
 	is_moving_step = false
+	
+	# Emit signal: movement animation completed
+	movement_ended.emit()
 
 func sync_to_grid() -> void:
 	if map_manager == null:
