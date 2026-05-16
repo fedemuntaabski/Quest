@@ -27,9 +27,6 @@ func execute() -> void:
 		finish()
 		return
 
-	if owner.has_method("sync_to_grid"):
-		owner.sync_to_grid()
-
 	var next_cell := target_cell
 	if use_pathfinding:
 		var path: Array[Vector2i] = map_manager.find_path(owner.grid_pos, target_cell, owner)
@@ -50,4 +47,6 @@ func execute() -> void:
 	await owner.wait_for_step()
 	if map_manager:
 		map_manager.update_actor_cell(owner, next_cell)
+	if owner.has_method("update_room_state_from_grid"):
+		owner.update_room_state_from_grid()
 	finish()

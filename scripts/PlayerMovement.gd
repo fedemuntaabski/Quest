@@ -177,6 +177,13 @@ func sync_to_grid() -> void:
 	target_world_pos = global_position
 	map_manager.update_actor_cell(self, grid_pos)
 
+	update_room_state_from_grid()
+
+
+func update_room_state_from_grid() -> void:
+	if map_manager == null:
+		return
+
 	var dungeon := map_manager.dungeon_generator if map_manager else null
 	if dungeon and dungeon.room_system:
 		dungeon.room_system.update_player_cell(grid_pos)
