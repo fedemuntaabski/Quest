@@ -35,6 +35,7 @@ var wall_cells: Dictionary = {}
 var wall_nodes: Dictionary = {}
 var room_infos: Array[Dictionary] = []
 var active_room_id: int = -1
+var dungeon_graph: DungeonGraph = null
 
 var _spawned_player: CharacterBody2D = null
 
@@ -110,6 +111,12 @@ func are_rooms_connected(room_a: int, room_b: int) -> bool:
 	return layout_generator.are_rooms_connected(room_a, room_b)
 
 
+func get_dungeon_graph() -> DungeonGraph:
+	if layout_generator:
+		return layout_generator.get_dungeon_graph()
+	return dungeon_graph
+
+
 func get_room_spawn_forbidden_cells(room_id: int) -> Dictionary:
 	var forbidden: Dictionary = {}
 	var room_info := get_room_info(room_id)
@@ -164,6 +171,7 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	room_infos.clear()
 
 	active_room_id = -1
+	dungeon_graph = null
 
 	grid_origin = Vector2(
 		-(float(grid_width) * 0.5 * tile_size),
@@ -175,6 +183,8 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	if not layout_generator.generate():
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
 		return
+
+	dungeon_graph = layout_generator.get_dungeon_graph()
 
 	wall_manager.generate_walls_from_floor()
 

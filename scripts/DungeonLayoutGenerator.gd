@@ -2,13 +2,20 @@ extends RefCounted
 class_name DungeonLayoutGenerator
 
 var dungeon: DungeonGenerator
-var room_connections: Dictionary = {}
-var room_adjacency: Dictionary = {}
+var dungeon_graph: DungeonGraph = null
 
 func setup(p_dungeon: DungeonGenerator) -> void:
 	dungeon = p_dungeon
-	room_connections.clear()
-	room_adjacency.clear()
+	if dungeon_graph == null:
+		dungeon_graph = DungeonGraph.new()
+	else:
+		dungeon_graph.clear()
+
+
+func get_dungeon_graph() -> DungeonGraph:
+	if dungeon_graph == null:
+		dungeon_graph = DungeonGraph.new()
+	return dungeon_graph
 
 
 func generate() -> bool:
@@ -20,8 +27,7 @@ func generate() -> bool:
 		dungeon.wall_cells.clear()
 		dungeon.wall_nodes.clear()
 		dungeon.room_infos.clear()
-		room_connections.clear()
-		room_adjacency.clear()
+		get_dungeon_graph().clear()
 
 		var attempts := dungeon.room_count * 90
 
@@ -50,6 +56,8 @@ func generate() -> bool:
 
 		if dungeon.room_infos.size() == dungeon.room_count:
 			_connect_rooms_with_corridors()
+			if not _validate_graph():
+				continue
 			return true
 
 	return false
@@ -89,12 +97,7 @@ func _room_overlaps_existing(candidate: Rect2i) -> bool:
 
 func _register_room(room_rect: Rect2i) -> void:
 	var room_id := dungeon.room_infos.size()
-	room_adjacency[room_id] = {}
-
-	var room_root := Node2D.new()
-	room_root.name = "RoomVisual_%d" % room_id
-	room_root.visible = false
-	dungeon.rooms_root.add_child(room_root)
+	var room_template := _get_room_template(room_id)
 
 	var room_cells: Array[Vector2i] = []
 
@@ -109,21 +112,22 @@ func _register_room(room_rect: Rect2i) -> void:
 		room_rect.position.y + int(room_rect.size.y * 0.5)
 	)
 
-	var room_light := dungeon._create_room_light(room_rect, center_cell)
-	dungeon.room_lights_root.add_child(room_light)
-
-	var room_area := dungeon._create_room_area(room_id, room_rect)
-	dungeon.room_detectors_root.add_child(room_area)
-
 	dungeon.room_infos.append({
 		"id": room_id,
 		"rect": room_rect,
 		"center_cell": center_cell,
 		"floor_cells": room_cells,
 		"visited": false,
-		"visual_root": room_root,
-		"light": room_light,
-		"area": room_area
+		"template": room_template,
+		"visual_root": null,
+		"light": null,
+		"area": null
+	})
+
+	get_dungeon_graph().add_room(room_id, {
+		"rect": room_rect,
+		"center_cell": center_cell,
+		"template": room_template
 	})
 
 
@@ -150,9 +154,9 @@ func _connect_rooms_with_corridors() -> void:
 		var from_cell: Vector2i = current_room["center_cell"]
 		var to_cell: Vector2i = nearest_room["center_cell"]
 
-		if not _has_connection(from_room_id, to_room_id):
-			_carve_corridor(from_cell, to_cell)
-			_register_connection(from_room_id, to_room_id)
+		if not get_dungeon_graph().has_edge(from_room_id, to_room_id):
+			var corridor_cells := _carve_corridor(from_cell, to_cell)
+			_register_connection(from_room_id, to_room_id, corridor_cells)
 
 		main_path.append(nearest_room)
 		unvisited_rooms.erase(nearest_room)
@@ -166,88 +170,70 @@ func _connect_rooms_with_corridors() -> void:
 			_connect_to_nearest_main_path_room(room_info, main_path)
 
 
-func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> void:
+func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 	var min_length := dungeon.corridor_min_length
 	var max_length := dungeon.corridor_max_length
+	var corridor_cells: Array[Vector2i] = []
 
 	var current := from_cell
 	var corridor_length := 0
-	_add_corridor_cell(current)
+	if _add_corridor_cell(current):
+		corridor_cells.append(current)
 
 	var horizontal_first := randf() < 0.5
 
 	if horizontal_first:
 		while current.x != to_cell.x:
 			current.x += signi(to_cell.x - current.x)
-			_add_corridor_cell(current)
+			if _add_corridor_cell(current):
+				corridor_cells.append(current)
 			corridor_length += 1
 
 		while current.y != to_cell.y:
 			current.y += signi(to_cell.y - current.y)
-			_add_corridor_cell(current)
+			if _add_corridor_cell(current):
+				corridor_cells.append(current)
 			corridor_length += 1
 	else:
 		while current.y != to_cell.y:
 			current.y += signi(to_cell.y - current.y)
-			_add_corridor_cell(current)
+			if _add_corridor_cell(current):
+				corridor_cells.append(current)
 			corridor_length += 1
 
 		while current.x != to_cell.x:
 			current.x += signi(to_cell.x - current.x)
-			_add_corridor_cell(current)
+			if _add_corridor_cell(current):
+				corridor_cells.append(current)
 			corridor_length += 1
 
 	if corridor_length < min_length or corridor_length > max_length:
 		push_warning("Corridor length %d outside bounds [%d, %d]. Consider adjusting room placement." % [corridor_length, min_length, max_length])
 
+	return corridor_cells
 
-func _add_corridor_cell(cell: Vector2i) -> void:
+
+func _add_corridor_cell(cell: Vector2i) -> bool:
 	if not dungeon.is_within_bounds(cell):
-		return
+		return false
 
 	if dungeon.floor_cells.has(cell):
-		return
+		return false
 
 	dungeon.floor_cells[cell] = true
+	return true
 
 
-func _has_connection(room_a: int, room_b: int) -> bool:
-	var key_a := "%d_%d" % [room_a, room_b]
-	var key_b := "%d_%d" % [room_b, room_a]
-	return room_connections.has(key_a) or room_connections.has(key_b)
-
-
-func _register_connection(room_a: int, room_b: int) -> void:
-	var key := "%d_%d" % [room_a, room_b]
-	room_connections[key] = true
-	_add_adjacency_link(room_a, room_b)
-	_add_adjacency_link(room_b, room_a)
-
-
-func _add_adjacency_link(room_a: int, room_b: int) -> void:
-	if room_a < 0 or room_b < 0:
-		return
-
-	if not room_adjacency.has(room_a):
-		room_adjacency[room_a] = {}
-
-	room_adjacency[room_a][room_b] = true
+func _register_connection(room_a: int, room_b: int, corridor_cells: Array[Vector2i]) -> void:
+	get_dungeon_graph().add_edge(room_a, room_b, corridor_cells)
 
 
 func get_connected_room_ids(room_id: int) -> Array[int]:
-	var connected: Array[int] = []
-	var adjacency: Dictionary = room_adjacency.get(room_id, {})
-
-	for raw_room_id in adjacency.keys():
-		connected.append(int(raw_room_id))
-
-	connected.sort()
-	return connected
+	return get_dungeon_graph().get_connected_room_ids(room_id)
 
 
 func are_rooms_connected(room_a: int, room_b: int) -> bool:
-	var adjacency: Dictionary = room_adjacency.get(room_a, {})
-	return adjacency.has(room_b)
+	return get_dungeon_graph().are_rooms_connected(room_a, room_b)
 
 
 func _find_nearest_room(from_center: Vector2i, candidates: Array[Dictionary]) -> Dictionary:
@@ -280,6 +266,28 @@ func _connect_to_nearest_main_path_room(room_info: Dictionary, main_path: Array[
 	var from_cell: Vector2i = room_info["center_cell"]
 	var to_cell: Vector2i = nearest_main["center_cell"]
 
-	if not _has_connection(from_room_id, to_room_id):
-		_carve_corridor(from_cell, to_cell)
-		_register_connection(from_room_id, to_room_id)
+	if not get_dungeon_graph().has_edge(from_room_id, to_room_id):
+		var corridor_cells := _carve_corridor(from_cell, to_cell)
+		_register_connection(from_room_id, to_room_id, corridor_cells)
+
+
+func _get_room_template(room_id: int) -> String:
+	if room_id == 0:
+		return DungeonGraph.TEMPLATE_NORMAL
+
+	if room_id == dungeon.room_count - 1:
+		return DungeonGraph.TEMPLATE_BOSS
+
+	return DungeonGraph.TEMPLATE_NORMAL
+
+
+func _validate_graph() -> bool:
+	var graph := get_dungeon_graph()
+	var result: Dictionary = graph.validate(dungeon.room_count, true)
+	if bool(result.get("valid", false)):
+		return true
+
+	for error_text in result.get("errors", []):
+		push_error("DungeonLayoutGenerator: %s" % str(error_text))
+
+	return false

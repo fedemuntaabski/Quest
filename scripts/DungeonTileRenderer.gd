@@ -1,4 +1,4 @@
-extends Node2D
+extends DungeonMapRenderer
 class_name DungeonTileRenderer
 
 var floor_layer: TileMapLayer

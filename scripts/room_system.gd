@@ -44,5 +44,8 @@ func _set_active_room(room_id: int) -> void:
 	if room_id == active_room_id:
 		return
 
+	if dungeon != null and active_room_id >= 0 and not dungeon.are_rooms_connected(active_room_id, room_id):
+		return
+
 	active_room_id = room_id
 	emit_signal("room_changed", room_id)

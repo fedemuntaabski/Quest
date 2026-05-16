@@ -8,9 +8,48 @@ func setup(p_dungeon: DungeonGenerator, p_room_system: RoomSystem) -> void:
 	dungeon = p_dungeon
 	room_system = p_room_system
 
-func create_room_light(room_rect: Rect2i, center_cell: Vector2i) -> PointLight2D:
+
+func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_root: Node2D, room_detectors_root: Node2D) -> Dictionary:
+	var room_id := int(room_info.get("id", -1))
+	var room_rect: Rect2i = room_info.get("rect", Rect2i())
+	var center_cell: Vector2i = room_info.get("center_cell", Vector2i.ZERO)
+
+	var room_root := Node2D.new()
+	room_root.name = "RoomVisual_%d" % room_id
+	room_root.visible = false
+	if rooms_root:
+		rooms_root.add_child(room_root)
+
+	var room_light := create_room_light(room_rect, center_cell, room_id)
+	if room_lights_root:
+		room_lights_root.add_child(room_light)
+
+	var room_area := create_room_area(room_id, room_rect)
+	if room_detectors_root:
+		room_detectors_root.add_child(room_area)
+
+	return {
+		"visual_root": room_root,
+		"light": room_light,
+		"area": room_area
+	}
+
+
+func create_corridor_entity(edge_data: Dictionary, corridors_root: Node2D) -> Node2D:
+	var room_a := int(edge_data.get("room_a", -1))
+	var room_b := int(edge_data.get("room_b", -1))
+	var corridor := Node2D.new()
+	corridor.name = "Corridor_%d_%d" % [room_a, room_b]
+	corridor.set_meta("room_a", room_a)
+	corridor.set_meta("room_b", room_b)
+	corridor.set_meta("corridor_cells", edge_data.get("corridor_cells", []))
+	if corridors_root:
+		corridors_root.add_child(corridor)
+	return corridor
+
+func create_room_light(room_rect: Rect2i, center_cell: Vector2i, room_id: int = -1) -> PointLight2D:
 	var room_light := PointLight2D.new()
-	room_light.name = "RoomLight_%d" % dungeon.room_infos.size()
+	room_light.name = "RoomLight_%d" % room_id
 	room_light.texture = dungeon.light_texture
 	room_light.position = dungeon.grid_to_world_coords(center_cell)
 	room_light.energy = 0.0

@@ -21,19 +21,23 @@ func set_active_room(room_id: int, animate: bool) -> void:
 		var info_room_id: int = int(room_info["id"])
 		var is_active: bool = info_room_id == dungeon.active_room_id
 		var is_visited: bool = bool(room_info.get("visited", false))
-		var visual_root: Node2D = room_info["visual_root"] as Node2D
+		var visual_root: Node2D = room_info.get("visual_root", null) as Node2D
 
 		# Visible if active or previously visited
-		visual_root.visible = is_active or is_visited
+		if visual_root:
+			visual_root.visible = is_active or is_visited
 
 		# Apply modulate tint for discovered (visited but not active)
 		if is_active:
-			visual_root.modulate = Color(1, 1, 1, 1)
+			if visual_root:
+				visual_root.modulate = Color(1, 1, 1, 1)
 			room_info["visited"] = true
 		elif is_visited:
-			visual_root.modulate = Color(0.6, 0.6, 0.7, 1)
+			if visual_root:
+				visual_root.modulate = Color(0.6, 0.6, 0.7, 1)
 		else:
-			visual_root.modulate = Color(1, 1, 1, 1)
+			if visual_root:
+				visual_root.modulate = Color(1, 1, 1, 1)
 
 		dungeon.room_infos[index] = room_info
 
@@ -51,7 +55,7 @@ func tween_room_lights(animate: bool) -> void:
 
 	for rinfo in dungeon.room_infos:
 		var room_info: Dictionary = rinfo
-		var room_light: PointLight2D = room_info["light"] as PointLight2D
+		var room_light: PointLight2D = room_info.get("light", null) as PointLight2D
 		var is_active: bool = int(room_info["id"]) == dungeon.active_room_id
 		var is_visited: bool = bool(room_info.get("visited", false))
 
@@ -62,6 +66,9 @@ func tween_room_lights(animate: bool) -> void:
 			target_energy = dungeon.room_light_energy * 0.45
 		else:
 			target_energy = 0.0
+
+		if room_light == null:
+			continue
 
 		if tween_duration <= 0.0:
 			room_light.energy = target_energy
