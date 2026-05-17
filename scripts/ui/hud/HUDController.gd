@@ -43,6 +43,8 @@ const POTION_HEAL_RATIO: float = 0.5
 
 func _ready() -> void:
 	add_to_group("hud")
+	# Allow HUD to continue processing while the SceneTree is paused (reward/victory overlays still interactive)
+	# (pause behavior is handled by scene pause settings)
 	_setup_hotbar()
 	_setup_reward_ui()
 	_setup_potion()
@@ -67,6 +69,7 @@ func _setup_hotbar() -> void:
 func _setup_reward_ui() -> void:
 	if card_reward_ui == null:
 		return
+	# Ensure reward UI processes during paused state (if configured in-scene)
 	if not card_reward_ui.card_selected.is_connected(_on_reward_card_selected):
 		card_reward_ui.card_selected.connect(_on_reward_card_selected)
 	if not card_reward_ui.reward_skipped.is_connected(_on_reward_skipped):

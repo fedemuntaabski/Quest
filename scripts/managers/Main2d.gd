@@ -32,6 +32,7 @@ var _victory_triggered: bool = false
 
 var tutorial_layer: Node = null
 var _run_gold_start: int = 0
+var _reward_pending: bool = false
 
 # ─────────────────────────────────────────────
 # INIT
@@ -76,8 +77,10 @@ func _setup_managers() -> void:
 		add_child(card_reward_manager)
 	
 	# Connect reward signals
-	if card_reward_manager and not card_reward_manager.reward_completed.is_connected(_on_reward_completed):
-		card_reward_manager.reward_completed.connect(_on_reward_completed)
+	if card_reward_manager:
+		var reward_cb := Callable(self, "_on_reward_completed")
+		if not card_reward_manager.reward_completed.is_connected(reward_cb):
+			card_reward_manager.reward_completed.connect(reward_cb)
 
 # ─────────────────────────────────────────────
 # HELPERS
@@ -98,55 +101,55 @@ func _connect_dungeon() -> void:
 	if not dg:
 		return
 
-	if not dg.room_changed.is_connected(_on_room_changed):
-		dg.room_changed.connect(_on_room_changed)
+	if not dg.room_changed.is_connected(Callable(self, "_on_room_changed")):
+		dg.room_changed.connect(Callable(self, "_on_room_changed"))
 
-	if enemy_manager and not enemy_manager.room_cleared.is_connected(_on_room_cleared):
-		enemy_manager.room_cleared.connect(_on_room_cleared)
+	if enemy_manager and not enemy_manager.room_cleared.is_connected(Callable(self, "_on_room_cleared")):
+		enemy_manager.room_cleared.connect(Callable(self, "_on_room_cleared"))
 
-	if enemy_manager and not enemy_manager.enemy_defeated_global.is_connected(_on_enemy_defeated):
-		enemy_manager.enemy_defeated_global.connect(_on_enemy_defeated)
+	if enemy_manager and not enemy_manager.enemy_defeated_global.is_connected(Callable(self, "_on_enemy_defeated")):
+		enemy_manager.enemy_defeated_global.connect(Callable(self, "_on_enemy_defeated"))
 
-	if enemy_manager and enemy_manager.has_signal("boss_defeated") and not enemy_manager.boss_defeated.is_connected(_on_boss_defeated):
-		enemy_manager.boss_defeated.connect(_on_boss_defeated)
+	if enemy_manager and enemy_manager.has_signal("boss_defeated") and not enemy_manager.boss_defeated.is_connected(Callable(self, "_on_boss_defeated")):
+		enemy_manager.boss_defeated.connect(Callable(self, "_on_boss_defeated"))
 
 func _connect_player() -> void:
 	var player_stats = get_node_or_null("/root/PlayerStats")
 
-	if player_stats and not player_stats.player_died.is_connected(_on_player_died):
-		player_stats.player_died.connect(_on_player_died)
+	if player_stats and not player_stats.player_died.is_connected(Callable(self, "_on_player_died")):
+		player_stats.player_died.connect(Callable(self, "_on_player_died"))
 
 func _connect_ui() -> void:
-	if retry_button and not retry_button.pressed.is_connected(_on_retry_pressed):
-		retry_button.pressed.connect(_on_retry_pressed)
+	if retry_button and not retry_button.pressed.is_connected(Callable(self, "_on_retry_pressed")):
+		retry_button.pressed.connect(Callable(self, "_on_retry_pressed"))
 
-	if exit_button and not exit_button.pressed.is_connected(_on_return_pressed):
-		exit_button.pressed.connect(_on_return_pressed)
+	if exit_button and not exit_button.pressed.is_connected(Callable(self, "_on_return_pressed")):
+		exit_button.pressed.connect(Callable(self, "_on_return_pressed"))
 
-	if victory_overlay and not victory_overlay.retry_requested.is_connected(_on_retry_pressed):
-		victory_overlay.retry_requested.connect(_on_retry_pressed)
-	if victory_overlay and not victory_overlay.exit_requested.is_connected(_on_return_pressed):
-		victory_overlay.exit_requested.connect(_on_return_pressed)
+	if victory_overlay and not victory_overlay.retry_requested.is_connected(Callable(self, "_on_retry_pressed")):
+		victory_overlay.retry_requested.connect(Callable(self, "_on_retry_pressed"))
+	if victory_overlay and not victory_overlay.exit_requested.is_connected(Callable(self, "_on_return_pressed")):
+		victory_overlay.exit_requested.connect(Callable(self, "_on_return_pressed"))
 
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
 
-	if pause_menu and not pause_menu.exit_requested.is_connected(_on_pause_exit_requested):
-		pause_menu.exit_requested.connect(_on_pause_exit_requested)
+	if pause_menu and not pause_menu.exit_requested.is_connected(Callable(self, "_on_pause_exit_requested")):
+		pause_menu.exit_requested.connect(Callable(self, "_on_pause_exit_requested"))
 
-	if hud and not hud.reward_card_selected.is_connected(_on_reward_card_selected):
-		hud.reward_card_selected.connect(_on_reward_card_selected)
-	if hud and not hud.reward_skipped.is_connected(_on_reward_skipped):
-		hud.reward_skipped.connect(_on_reward_skipped)
-	if hud and not hud.reward_card_replace_selected.is_connected(_on_reward_card_replace_selected):
-		hud.reward_card_replace_selected.connect(_on_reward_card_replace_selected)
+	if hud and not hud.reward_card_selected.is_connected(Callable(self, "_on_reward_card_selected")):
+		hud.reward_card_selected.connect(Callable(self, "_on_reward_card_selected"))
+	if hud and not hud.reward_skipped.is_connected(Callable(self, "_on_reward_skipped")):
+		hud.reward_skipped.connect(Callable(self, "_on_reward_skipped"))
+	if hud and not hud.reward_card_replace_selected.is_connected(Callable(self, "_on_reward_card_replace_selected")):
+		hud.reward_card_replace_selected.connect(Callable(self, "_on_reward_card_replace_selected"))
 
-	if game_state_manager and not game_state_manager.reward_entered.is_connected(_on_reward_entered):
-		game_state_manager.reward_entered.connect(_on_reward_entered)
-	if game_state_manager and not game_state_manager.reward_exited.is_connected(_on_reward_exited):
-		game_state_manager.reward_exited.connect(_on_reward_exited)
-	if game_state_manager and not game_state_manager.victory_entered.is_connected(_on_victory_entered):
-		game_state_manager.victory_entered.connect(_on_victory_entered)
+	if game_state_manager and not game_state_manager.reward_entered.is_connected(Callable(self, "_on_reward_entered")):
+		game_state_manager.reward_entered.connect(Callable(self, "_on_reward_entered"))
+	if game_state_manager and not game_state_manager.reward_exited.is_connected(Callable(self, "_on_reward_exited")):
+		game_state_manager.reward_exited.connect(Callable(self, "_on_reward_exited"))
+	if game_state_manager and not game_state_manager.victory_entered.is_connected(Callable(self, "_on_victory_entered")):
+		game_state_manager.victory_entered.connect(Callable(self, "_on_victory_entered"))
 
 # ─────────────────────────────────────────────
 # TUTORIAL 
@@ -247,10 +250,46 @@ func _on_room_cleared(_room_id: int) -> void:
 		return
 
 	if card_reward_manager and game_state_manager and game_state_manager.is_active():
+		# Prevent overlapping reward requests
+		if _reward_pending:
+			print("[ROOM_CLEARED] Reward already pending, skipping duplicate request")
+			return
+
 		var reward_cards: Array[CardData] = card_reward_manager.generate_reward_options(3)
-		if not reward_cards.is_empty():
+		if reward_cards.is_empty():
+			return
+
+		# If this is the final room (boss), request reward immediately is guarded above;
+		# otherwise delay slightly for pacing. Capture room id locally for the await scope.
+		var captured_room_id: int = _room_id
+		_reward_pending = true
+		# If this room is the final room id and victory might be triggered, skip delay
+		if enemy_manager and captured_room_id == enemy_manager.final_room_id:
+			print("[ROOM_CLEARED] Final room cleared — requesting reward immediately")
+			game_state_manager.request_reward(reward_cards)
+			return
+
+		# Non-boss delay to improve pacing. Re-check guards after the delay.
+		print("[ROOM_CLEARED] Delaying reward by 1.0s for pacing")
+		await get_tree().create_timer(1.0).timeout
+
+		# Post-delay validation: abort if victory/death triggered or game state not active
+		if _victory_triggered or _is_dead:
+			print("[ROOM_CLEARED] Post-delay abort: victory or death detected")
+			_reward_pending = false
+			return
+
+		if enemy_manager and enemy_manager.get_enemies_in_room(captured_room_id) > 0:
+			print("[ROOM_CLEARED] Post-delay abort: enemies reappeared in room %d" % captured_room_id)
+			_reward_pending = false
+			return
+
+		if game_state_manager and game_state_manager.is_active():
 			print("[ROOM_CLEARED] Requesting reward with %d cards" % reward_cards.size())
 			game_state_manager.request_reward(reward_cards)
+		else:
+			print("[ROOM_CLEARED] Post-delay abort: game state not active")
+			_reward_pending = false
 
 func _on_enemy_defeated() -> void:
 	enemies_killed += 1
@@ -308,6 +347,9 @@ func _on_boss_defeated(enemy) -> void:
 		gsm.request_victory()
 	else:
 		_on_victory_entered()
+
+	# Clear any pending reward flags to avoid accidental reward UIs
+	_reward_pending = false
 
 
 func _on_victory_entered() -> void:
@@ -414,6 +456,8 @@ func _on_reward_entered(cards: Array) -> void:
 func _on_reward_exited(_selected_card: CardData) -> void:
 	if hud:
 		hud.hide_reward_selection()
+	# Clear pending flag so future rewards can be requested
+	_reward_pending = false
 
 func _on_reward_card_selected(selected_card: CardData) -> void:
 	if card_reward_manager == null:

@@ -21,6 +21,7 @@ var tooltip_host: HUDController = null
 func _ready() -> void:
 	focus_mode = Control.FOCUS_NONE
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	# Allow hover/selection visuals while game is paused (scene-controlled)
 	if key_label:
 		key_label.text = str(slot_index + 1)
 	_update_ui()
@@ -48,6 +49,13 @@ func set_selected(selected: bool) -> void:
 	# Restore full opacity when deselected
 	if not selected:
 		modulate = Color(1, 1, 1, 1)
+	# subtle scale feedback
+	if selected:
+		var t = create_tween()
+		t.tween_property(self, "scale", Vector2(1.04, 1.04), 0.12)
+	else:
+		var t2 = create_tween()
+		t2.tween_property(self, "scale", Vector2(1, 1), 0.12)
 
 func set_usable(usable: bool) -> void:
 	modulate = Color(1, 1, 1, 1) if usable else Color(0.5, 0.5, 0.5, 0.8)
@@ -55,7 +63,7 @@ func set_usable(usable: bool) -> void:
 		state_label.visible = false
 		state_label.text = ""
 
-func set_state_label(state: String) -> void:
+func set_state_label(_state: String) -> void:
 	if state_label == null:
 		return
 	state_label.visible = false
@@ -89,11 +97,20 @@ func _update_ui() -> void:
 func _on_mouse_entered() -> void:
 	if hover_border:
 		hover_border.visible = true
+	# hover scale
+	var t = create_tween()
+	t.tween_property(self, "scale", Vector2(1.02, 1.02), 0.08)
 	if tooltip_host:
 		tooltip_host.show_card_tooltip(_card_data)
 
 func _on_mouse_exited() -> void:
 	if hover_border:
 		hover_border.visible = false
+	# restore scale (respect selection state)
+	var target_scale := Vector2(1, 1)
+	if _is_selected:
+		target_scale = Vector2(1.04, 1.04)
+	var t = create_tween()
+	t.tween_property(self, "scale", target_scale, 0.08)
 	if tooltip_host:
 		tooltip_host.hide_card_tooltip()

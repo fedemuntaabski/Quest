@@ -16,6 +16,7 @@ corner_radius_bottom_left = 10
 
 [node name="CardRewardUI" type="CanvasLayer" unique_id=1358357399]
 layer = 50
+pause_mode = 2
 script = ExtResource("1_4k8e2")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=306955614]

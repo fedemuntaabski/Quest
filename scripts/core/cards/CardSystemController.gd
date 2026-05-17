@@ -66,17 +66,21 @@ func bind_hud() -> void:
 	# Bind card manager to HUD
 	if hud and card_manager:
 		hud.bind_card_manager(card_manager)
-		# Connect HUD hotbar presses to controller
-		if not hud.hotbar_slot_pressed.is_connected(self.on_hotbar_slot_pressed):
-			hud.hotbar_slot_pressed.connect(self.on_hotbar_slot_pressed)
+		# Connect HUD hotbar presses to controller (use Callable for clarity)
+		var hotbar_cb := Callable(self, "on_hotbar_slot_pressed")
+		if not hud.hotbar_slot_pressed.is_connected(hotbar_cb):
+			hud.hotbar_slot_pressed.connect(hotbar_cb)
 	# Connect card manager signals to update UI
 	if card_manager:
-		if not card_manager.cooldowns_changed.is_connected(self.update_hotbar_ui):
-			card_manager.cooldowns_changed.connect(self.update_hotbar_ui)
-		if not card_manager.active_index_changed.is_connected(self.on_active_index_changed):
-			card_manager.active_index_changed.connect(self.on_active_index_changed)
-		if not card_manager.equipped_changed.is_connected(self.update_hotbar_ui):
-			card_manager.equipped_changed.connect(self.update_hotbar_ui)
+		var cooldowns_cb := Callable(self, "update_hotbar_ui")
+		var active_idx_cb := Callable(self, "on_active_index_changed")
+		var equipped_cb := Callable(self, "update_hotbar_ui")
+		if not card_manager.cooldowns_changed.is_connected(cooldowns_cb):
+			card_manager.cooldowns_changed.connect(cooldowns_cb)
+		if not card_manager.active_index_changed.is_connected(active_idx_cb):
+			card_manager.active_index_changed.connect(active_idx_cb)
+		if not card_manager.equipped_changed.is_connected(equipped_cb):
+			card_manager.equipped_changed.connect(equipped_cb)
 	# Initial UI refresh
 	update_hotbar_ui()
 

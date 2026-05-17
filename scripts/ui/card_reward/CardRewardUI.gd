@@ -24,6 +24,7 @@ func _ready() -> void:
 	_is_active = false
 	if panel:
 		panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	# (pause mode left to scene configuration)
 
 func show_reward(cards: Array, requires_replace: bool = false, equipped_slots: Array = []) -> void:
 	if cards.is_empty():
@@ -40,11 +41,30 @@ func show_reward(cards: Array, requires_replace: bool = false, equipped_slots: A
 	_create_card_buttons()
 	_add_skip_button()
 	
+	if panel:
+		panel.modulate.a = 0.0
+		panel.scale = Vector2(0.98, 0.98)
 	visible = true
 	_is_active = true
 	title_label.text = "Choose a Card Reward" if not _requires_replace else "Choose a Card (then replace a slot)"
+	# entrance tween
+	if panel:
+			var tw = create_tween()
+			tw.tween_property(panel, "modulate:a", 1.0, 0.18)
+			tw.tween_property(panel, "scale", Vector2(1, 1), 0.15)
 
 func hide_reward() -> void:
+	if not visible:
+		return
+	# exit tween, then finalize hide
+	if panel:
+		var tw = create_tween()
+		tw.tween_property(panel, "modulate:a", 0.0, 0.12)
+		tw.tween_callback(func(): _finalize_hide())
+	else:
+		_finalize_hide()
+
+func _finalize_hide() -> void:
 	visible = false
 	_is_active = false
 	_requires_replace = false
@@ -146,13 +166,33 @@ func _show_replace_selection() -> void:
 	_clear_cards_container()
 	title_label.text = "Hotbar full: choose a slot to replace"
 	for slot in _replace_slots:
-		var slot_button := Button.new()
 		var slot_index: int = int(slot.get("slot_index", -1))
 		var slot_name: String = str(slot.get("name", "Unknown"))
-		slot_button.text = "Replace Slot %d: %s" % [slot_index + 1, slot_name]
-		slot_button.custom_minimum_size = Vector2(240, 36)
-		slot_button.pressed.connect(_on_replace_slot_selected.bind(slot_index))
-		cards_container.add_child(slot_button)
+		var icon_tex: Texture2D = slot.get("icon", null)
+		var h := HBoxContainer.new()
+		h.custom_minimum_size = Vector2(360, 40)
+		h.add_theme_constant_override("separation", 12)
+		# Icon
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(40, 40)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		if icon_tex:
+			icon.texture = icon_tex
+		h.add_child(icon)
+		# Label
+		var lbl := Label.new()
+		lbl.text = "Slot %d: %s" % [slot_index + 1, slot_name]
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		h.add_child(lbl)
+		# Button
+		var btn := Button.new()
+		btn.text = "Replace"
+		btn.custom_minimum_size = Vector2(110, 36)
+		btn.pressed.connect(_on_replace_slot_selected.bind(slot_index))
+		h.add_child(btn)
+		cards_container.add_child(h)
 	_add_skip_button()
 
 func _on_replace_slot_selected(slot_index: int) -> void:

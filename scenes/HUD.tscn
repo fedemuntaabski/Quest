@@ -24,6 +24,7 @@ corner_radius_bottom_left = 6
 
 [node name="HUD" type="CanvasLayer" unique_id=729961790]
 layer = 2
+pause_mode = 2
 script = ExtResource("1_hud_script")
 
 [node name="Control" type="Control" parent="." unique_id=1840515114]
