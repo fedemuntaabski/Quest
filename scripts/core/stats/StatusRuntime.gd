@@ -116,6 +116,14 @@ static func process_turn_start(actor: Node, stats: CharacterStats) -> Dictionary
 
 	return result
 
+static func get_statuses(actor: Node) -> Dictionary:
+	if actor == null:
+		return {}
+	var status_component := actor.get_node_or_null("StatusComponent") as StatusComponent
+	if status_component != null:
+		return status_component.get_active_statuses()
+	return _get_statuses(actor)
+
 static func _apply_status_tick(actor: Node, stats: CharacterStats, status_id: String, status: Dictionary) -> Dictionary:
 	var stacks: int = max(1, int(status.get("stacks", 1)))
 	var magnitude: int = max(1, int(status.get("magnitude", 1)))

@@ -84,16 +84,17 @@ func clear_all() -> void:
 		_on_status_changed()
 
 
-## Get all active statuses as array
-func get_active_statuses() -> Array:
-	var result: Array = []
+## Get all active statuses as dictionary keyed by status_id.
+## Shape matches StatusIndicatorUI.refresh_statuses(statuses: Dictionary).
+func get_active_statuses() -> Dictionary:
+	var result: Dictionary = {}
 	for status_id in statuses.keys():
-		var status = statuses[status_id]
-		result.append({
-			"id": status_id,
-			"stacks": status["stacks"],
-			"turns_remaining": status["turns_remaining"]
-		})
+		var status: Dictionary = statuses[status_id]
+		result[status_id] = {
+			"stacks": int(status.get("stacks", 1)),
+			"duration": int(status.get("turns_remaining", 0)),
+			"damage_on_tick": int(status.get("damage_on_tick", 0))
+		}
 	return result
 
 

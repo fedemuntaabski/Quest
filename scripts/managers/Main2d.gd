@@ -294,7 +294,8 @@ func _on_player_died() -> void:
 func _on_boss_defeated(enemy) -> void:
 	if _victory_triggered:
 		return
-	if enemy == null or enemy.get("is_boss") != true or not str(enemy.name).begins_with("Boss_Purple_"):
+	# Rely on the explicit `is_boss` flag rather than fragile name prefixes
+	if enemy == null or enemy.get("is_boss") != true:
 		return
 
 	_victory_triggered = true  # Set FIRST to guard against room_cleared signal

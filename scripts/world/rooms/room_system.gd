@@ -16,6 +16,13 @@ func register_room_area(area: Area2D, room_id: int) -> void:
 
 	room_areas[room_id] = area
 
+	# Connect Area2D enter events so runtime-created room detectors notify the RoomSystem.
+	# Bind the room_id so the handler knows which room fired the event.
+	if area:
+		var cb := Callable(self, "_on_body_entered").bind(room_id)
+		if not area.is_connected("body_entered", cb):
+			area.connect("body_entered", cb)
+
 
 func get_room_area(room_id: int) -> Area2D:
 	return room_areas.get(room_id, null)
@@ -44,7 +51,12 @@ func _set_active_room(room_id: int) -> void:
 	if room_id == active_room_id:
 		return
 
-	if dungeon != null and active_room_id >= 0 and not dungeon.are_rooms_connected(active_room_id, room_id):
+	# Use the global dungeon.active_room_id for connectivity checks. The RoomSystem's
+	# local active_room_id can be stale during initialization or when managers update
+	# state from elsewhere; consulting the dungeon keeps the single source of truth.
+	if dungeon != null and dungeon.active_room_id >= 0 and not dungeon.are_rooms_connected(dungeon.active_room_id, room_id):
+		# Helpful debug log to trace rejected transitions in odd rooms.
+		print("RoomSystem: rejected activation of room %d because it's not connected to active room %d" % [room_id, dungeon.active_room_id])
 		return
 
 	active_room_id = room_id

@@ -63,6 +63,7 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 		var hud := get_tree().get_first_node_in_group("hud") as HUDController
 		if hud:
 			hud.set_roll_label_from_result(result)
+
 	var damage := int(result.get("damage", 0))
 	if result.get("hit", false) and damage > 0:
 		target_component.receive_damage(damage, result.get("crit", false))
@@ -70,9 +71,16 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 		target_component.actor_owner.show_miss()
 
 	# Apply runtime effects via EffectApplier to centralize map/status interactions
-	var ctx := EffectContext.new(owner_actor, map_manager, card_manager, combat_component)
-	var applier := EffectApplier.new()
-	await applier.apply(result, target_component, ctx)
+	# Defensive: ensure map_manager and target actor are valid before applying effects
+	if map_manager == null:
+		push_warning("CombatCardSystem.execute_card: missing map_manager, skipping runtime effects")
+	else:
+		if target_component.actor_owner == null or not is_instance_valid(target_component.actor_owner):
+			push_warning("CombatCardSystem.execute_card: target actor invalid, skipping runtime effects")
+		else:
+			var ctx := EffectContext.new(owner_actor, map_manager, card_manager, combat_component)
+			var applier := EffectApplier.new()
+			await applier.apply(result, target_component, ctx)
 
 	card_manager.start_cooldown(card)
 	card_played.emit(card, target, result)
