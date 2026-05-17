@@ -15,7 +15,33 @@ func apply(source_stats: CharacterStats, target_stats: CharacterStats, _context:
 			"reason": "missing_target"
 		}
 
-	var modifier_id: String = receiver.apply_runtime_modifier(stat_key, value, duration_turns)
+	var stat_key_l := stat_key.to_lower()
+	var modifier_id: String = ""
+	# Prefer using ModifierStack directly when available for clearer lifecycle management
+	match stat_key_l:
+		"strength":
+			if receiver.has_method("_ensure_stacks") and receiver.strength_stack:
+				modifier_id = receiver.strength_stack.add_runtime_modifier(value, duration_turns, "buff")
+				if receiver.has_method("register_stack_modifier"):
+					receiver.register_stack_modifier("strength", modifier_id, value, duration_turns, "buff")
+			else:
+				modifier_id = receiver.apply_runtime_modifier(stat_key_l, value, duration_turns)
+		"magic":
+			if receiver.has_method("_ensure_stacks") and receiver.magic_stack:
+				modifier_id = receiver.magic_stack.add_runtime_modifier(value, duration_turns, "buff")
+				if receiver.has_method("register_stack_modifier"):
+					receiver.register_stack_modifier("magic", modifier_id, value, duration_turns, "buff")
+			else:
+				modifier_id = receiver.apply_runtime_modifier(stat_key_l, value, duration_turns)
+		"dexterity":
+			if receiver.has_method("_ensure_stacks") and receiver.dexterity_stack:
+				modifier_id = receiver.dexterity_stack.add_runtime_modifier(value, duration_turns, "buff")
+				if receiver.has_method("register_stack_modifier"):
+					receiver.register_stack_modifier("dexterity", modifier_id, value, duration_turns, "buff")
+			else:
+				modifier_id = receiver.apply_runtime_modifier(stat_key_l, value, duration_turns)
+		_:
+			modifier_id = receiver.apply_runtime_modifier(stat_key_l, value, duration_turns)
 	return {
 		"effect": "buff",
 		"applied": modifier_id != "",

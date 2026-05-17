@@ -389,9 +389,17 @@ func _update_hotbar_display() -> void:
 	if map_manager:
 		var player := map_manager.get_node_or_null("Player") as PlayerMovement
 		if player:
-			var controller := player.get_node_or_null("PlayerActionController") as PlayerActionController
+			var controller = player.get_node_or_null("PlayerActionController")
 			if controller:
-				controller._update_hotbar_ui()
+				# Use CardSystemController to update hotbar UI
+				if controller.has_method("_update_hotbar_ui"):
+					controller._update_hotbar_ui()
+				var card_ctrl = player.get_node_or_null("CardSystemController")
+				if card_ctrl and card_ctrl.has_method("update_hotbar_ui"):
+					card_ctrl.update_hotbar_ui()
+				else:
+					if controller and controller.has_method("_select_card"):
+						controller._select_card(-1) # fallback to trigger state update
 
 func _on_reward_entered(cards: Array) -> void:
 	if hud:

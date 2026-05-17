@@ -13,6 +13,7 @@ var hovered_enemy: Node = null
 
 var card_manager: CardManager = null
 var combat_card_system: CombatCardSystem = null
+var card_system_controller = null
 
 var DEFAULT_DECK: Array[CardData] = [
 	load("res://resources/cards/sword_card.tres"),
@@ -26,29 +27,29 @@ func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 	player = p_player
 	map_manager = p_map_manager
 	_ensure_input_actions()
-	_ensure_card_system()
-	_resolve_hud()
+	# Ensure an InputHandler child exists to capture input events
+	var input_handler := get_node_or_null("InputHandler") as InputHandler
+	if input_handler == null:
+		input_handler = InputHandler.new()
+		input_handler.name = "InputHandler"
+		add_child(input_handler)
+	input_handler.setup(player, map_manager)
+	# Setup card system via CardSystemController
+	card_system_controller = get_node_or_null("CardSystemController")
+	if card_system_controller == null:
+		var cls = load("res://scripts/CardSystemController.gd")
+		card_system_controller = cls.new()
+		card_system_controller.name = "CardSystemController"
+		add_child(card_system_controller)
+	card_system_controller.setup(player, map_manager, card_library)
+	# Expose convenience references
+	card_manager = card_system_controller.card_manager
+	combat_card_system = card_system_controller.combat_card_system
+	# Bind HUD via CardSystemController
+	card_system_controller.bind_hud()
 
 
-# 🔥 INPUT REAL (event-driven)
-func _input(event: InputEvent) -> void:
-	if not _can_process_input():
-		return
-	if player == null or map_manager == null:
-		return
-
-	# 🖱️ CLICK IZQUIERDO
-	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			_handle_mouse_click()
-
-	# 🖱️ HOVER
-	if event is InputEventMouseMotion:
-		_handle_mouse_hover()
-
-	# ⌨️ TECLADO
-	if event is InputEventKey and event.pressed:
-		_handle_keyboard()
+# Input is now handled by InputHandler child; keep handlers here for delegation
 
 
 # ─────────────────────────────────────────────
@@ -101,7 +102,8 @@ func _handle_mouse_click() -> void:
 			if self_card and self_card.target_type == "self":
 				if combat_card_system.can_play(self_card, player):
 					combat_card_system.queue_card_action(self_card, player, player.turn_manager)
-					_update_hotbar_ui()
+					if card_system_controller:
+						card_system_controller.update_hotbar_ui()
 					return
 		player.cancel_movement()
 		return
@@ -111,7 +113,8 @@ func _handle_mouse_click() -> void:
 			var card := card_manager.get_active_card()
 			if card and combat_card_system.can_play(card, enemy):
 				if combat_card_system.queue_card_action(card, enemy, player.turn_manager):
-					_update_hotbar_ui()
+					if card_system_controller:
+						card_system_controller.update_hotbar_ui()
 				return
 		if _queue_basic_attack(enemy):
 			return
@@ -132,9 +135,9 @@ func _handle_mouse_click() -> void:
 		highlighter.clear_path_preview()
 
 func on_player_turn_started() -> void:
-	if card_manager:
-		card_manager.tick_cooldowns()
-	_update_hotbar_ui()
+	if card_system_controller:
+		card_system_controller.tick_cooldowns()
+		card_system_controller.update_hotbar_ui()
 
 func _ensure_input_actions() -> void:
 	if not InputMap.has_action("hotbar_1"):
@@ -185,28 +188,6 @@ func _get_starter_deck() -> Array[CardData]:
 			return starter
 	return DEFAULT_DECK
 
-func _resolve_hud() -> void:
-	hud = get_tree().get_first_node_in_group("hud") as HUDController
-	if hud == null:
-		call_deferred("_resolve_hud")
-		return
-	if hud and card_manager:
-		hud.bind_card_manager(card_manager)
-	if hud and not hud.hotbar_slot_pressed.is_connected(_on_hotbar_slot_pressed):
-		hud.hotbar_slot_pressed.connect(_on_hotbar_slot_pressed)
-	if card_manager:
-		if not card_manager.cooldowns_changed.is_connected(_update_hotbar_ui):
-			card_manager.cooldowns_changed.connect(_update_hotbar_ui)
-		if not card_manager.active_index_changed.is_connected(_on_active_index_changed):
-			card_manager.active_index_changed.connect(_on_active_index_changed)
-		if not card_manager.equipped_changed.is_connected(_update_hotbar_ui):
-			card_manager.equipped_changed.connect(_update_hotbar_ui)
-	_update_hotbar_ui()
-
-func _update_hotbar_ui() -> void:
-	if card_manager:
-		card_manager.ui_state_changed.emit(card_manager.get_equipped_payload(), card_manager.active_index)
-
 func _select_card(index: int) -> void:
 	if card_manager == null:
 		return
@@ -216,14 +197,15 @@ func _select_card(index: int) -> void:
 		card_manager.set_active_index(-1)
 	else:
 		card_manager.set_active_index(index)
-	
-	_update_hotbar_ui()
+	if card_system_controller:
+		card_system_controller.update_hotbar_ui()
 
 func _on_hotbar_slot_pressed(index: int) -> void:
 	_select_card(index)
 
 func _on_active_index_changed(_index: int) -> void:
-	_update_hotbar_ui()
+	if card_system_controller:
+		card_system_controller.update_hotbar_ui()
 
 func _handle_mouse_hover() -> void:
 	if not _can_process_input():

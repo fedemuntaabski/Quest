@@ -69,7 +69,10 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 	elif not result.get("hit", false) and target_component.actor_owner and target_component.actor_owner.has_method("show_miss"):
 		target_component.actor_owner.show_miss()
 
-	await _apply_runtime_effects(result, target_component)
+	# Apply runtime effects via EffectApplier to centralize map/status interactions
+	var ctx := EffectContext.new(owner_actor, map_manager, card_manager, combat_component)
+	var applier := EffectApplier.new()
+	await applier.apply(result, target_component, ctx)
 
 	card_manager.start_cooldown(card)
 	card_played.emit(card, target, result)
@@ -77,56 +80,7 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 		card_manager.set_active_index(-1)
 	return result
 
-func _apply_runtime_effects(result: Dictionary, target_component: CombatComponent) -> void:
-	if target_component == null:
-		return
-
-	var target_actor := target_component.actor_owner
-	for move_data in result.get("movement", []):
-		if not (move_data is Dictionary):
-			continue
-		await _apply_movement_effect(move_data, target_actor)
-
-	for status_data in result.get("statuses", []):
-		if not (status_data is Dictionary):
-			continue
-		_apply_status_effect(status_data, target_component)
-
-func _apply_movement_effect(move_data: Dictionary, target_actor: Node) -> void:
-	if map_manager == null:
-		return
-
-	var receiver := owner_actor if str(move_data.get("target", "source")) == "source" else target_actor
-	if receiver == null:
-		return
-	if not receiver.has_method("begin_step_move") or not receiver.has_method("wait_for_step"):
-		return
-
-	var move_cells: int = max(1, int(move_data.get("move_cells", 1)))
-	var movement_mode: String = str(move_data.get("movement_mode", "dash"))
-	var reference := target_actor if receiver == owner_actor else owner_actor
-	var direction := _resolve_movement_direction(receiver, reference, movement_mode)
-	if direction == Vector2i.ZERO:
-		return
-
-	for _i in range(move_cells):
-		var from_cell : Vector2i = CardTargeting.get_actor_cell(receiver, map_manager)
-		if from_cell == null:
-			break
-
-		var next_cell: Vector2i = from_cell + direction
-		if not map_manager.is_walkable_cell_for_actor(next_cell, receiver):
-			break
-
-		receiver.begin_step_move(next_cell)
-		await receiver.wait_for_step()
-		map_manager.update_actor_cell(receiver, next_cell)
-
-func _apply_status_effect(status_data: Dictionary, target_component: CombatComponent) -> void:
-	var receiver_component: CombatComponent = combat_component if str(status_data.get("target", "target")) == "source" else target_component
-	if receiver_component == null:
-		return
-	StatusRuntime.apply_status(receiver_component.actor_owner, receiver_component.stats, status_data)
+## Runtime application moved to EffectApplier.gd (EffectContext)
 
 func _resolve_movement_direction(receiver: Node, reference: Node, movement_mode: String) -> Vector2i:
 	var receiver_cell: Vector2i = CardTargeting.get_actor_cell(receiver, map_manager)

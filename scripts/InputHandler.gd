@@ -1,0 +1,36 @@
+extends Node
+class_name InputHandler
+
+var player: PlayerMovement = null
+var map_manager: MapManager = null
+
+func setup(p_player: PlayerMovement, p_map: MapManager) -> void:
+	player = p_player
+	map_manager = p_map
+	set_process_input(true)
+
+func _input(event: InputEvent) -> void:
+	# Delegate gating to parent controller if available
+	var parent_ctrl := get_parent()
+	if parent_ctrl and parent_ctrl.has_method("_can_process_input"):
+		if not parent_ctrl._can_process_input():
+			return
+
+	# Mouse left click
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			if parent_ctrl and parent_ctrl.has_method("_handle_mouse_click"):
+				parent_ctrl._handle_mouse_click()
+			return
+
+	# Mouse hover
+	if event is InputEventMouseMotion:
+		if parent_ctrl and parent_ctrl.has_method("_handle_mouse_hover"):
+			parent_ctrl._handle_mouse_hover()
+		return
+
+	# Keyboard
+	if event is InputEventKey and event.pressed:
+		if parent_ctrl and parent_ctrl.has_method("_handle_keyboard"):
+			parent_ctrl._handle_keyboard()
+		return
