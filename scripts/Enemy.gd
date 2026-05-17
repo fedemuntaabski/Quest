@@ -116,6 +116,20 @@ func _ensure_combat_component() -> void:
 
 	comp.setup(self, stats, map_manager)
 	combat_component = comp
+	
+	# Ensure StatusComponent exists
+	_ensure_status_component()
+
+
+func _ensure_status_component() -> void:
+	var status_comp := get_node_or_null("StatusComponent") as StatusComponent
+	if status_comp == null:
+		status_comp = StatusComponent.new()
+		status_comp.name = "StatusComponent"
+		add_child(status_comp)
+	
+	if stats != null:
+		status_comp.setup(stats)
 
 func configure_profile(max_hp: int, base_damage: int, dex: int = 0, base_tint: Color = Color(0.7, 0.3, 0.9, 1.0), target_tint: Color = Color(1.0, 0.7, 1.0, 1.0)) -> void:
 	# Public helper to customize enemy stats and visuals (used for special enemy types)
