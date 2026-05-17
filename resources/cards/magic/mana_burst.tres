@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" path="res://scripts/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/HealEffect.gd" id="2"]
-[ext_resource type="Script" path="res://scripts/BuffEffect.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/HealEffect.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/core/effects/BuffEffect.gd" id="3"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")

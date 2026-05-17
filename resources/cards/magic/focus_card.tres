@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="CardData" format=3 uid="uid://dlehokkh10rjb"]
 
-[ext_resource type="Script" uid="uid://dkra6pr0yrbtl" path="res://scripts/StatModifierEffect.gd" id="1_icbys"]
-[ext_resource type="Script" uid="uid://b3r367pf7k1g2" path="res://scripts/CardData.gd" id="2_h68x5"]
+[ext_resource type="Script" uid="uid://dkra6pr0yrbtl" path="res://scripts/core/effects/StatModifierEffect.gd" id="1_icbys"]
+[ext_resource type="Script" uid="uid://b3r367pf7k1g2" path="res://scripts/core/cards/CardData.gd" id="2_h68x5"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("1_icbys")

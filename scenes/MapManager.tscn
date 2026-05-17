@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dgcx23erhb3v1"]
 
-[ext_resource type="Script" uid="uid://cwowlgio0q0w8" path="res://scripts/MapManager.gd" id="1_map_script"]
-[ext_resource type="Script" uid="uid://densb3ynbqngm" path="res://scripts/DungeonGenerator.gd" id="2_dungeon_script"]
+[ext_resource type="Script" uid="uid://cwowlgio0q0w8" path="res://scripts/world/rooms/MapManager.gd" id="1_map_script"]
+[ext_resource type="Script" uid="uid://densb3ynbqngm" path="res://scripts/world/dungeon/DungeonGenerator.gd" id="2_dungeon_script"]
 
 [node name="MapManager" type="Node2D" unique_id=145395336]
 script = ExtResource("1_map_script")

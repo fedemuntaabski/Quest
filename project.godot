@@ -17,8 +17,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-PlayerStats="*res://scripts/PlayerStats.gd"
-SaveManager="*res://scripts/SaveManager.gd"
+PlayerStats="*res://scripts/core/stats/PlayerStats.gd"
+SaveManager="*res://scripts/managers/SaveManager.gd"
 MapManag="uid://cwowlgio0q0w8"
 CurrencyManager="*res://scripts/CurrencyManager.gd"
 

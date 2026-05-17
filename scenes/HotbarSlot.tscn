@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cbfp62ksudyq3"]
 
-[ext_resource type="Script" uid="uid://bjkx4feu10tob" path="res://scripts/HotbarSlot.gd" id="1_hotbar_slot_script"]
+[ext_resource type="Script" uid="uid://bjkx4feu10tob" path="res://scripts/ui/hud/HotbarSlot.gd" id="1_hotbar_slot_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot_base"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)

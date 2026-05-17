@@ -1,5 +1,4 @@
 extends Node2D
-class_name VisualFeedback
 
 signal screen_shake(intensity: float, duration: float)
 

@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://b1q61p4edk0o2"]
 
-[ext_resource type="Script" uid="uid://caehere1tktuv" path="res://scripts/PlayerMovement.gd" id="1_70d11"]
+[ext_resource type="Script" uid="uid://caehere1tktuv" path="res://scripts/core/movement/PlayerMovement.gd" id="1_70d11"]
 [ext_resource type="Texture2D" uid="uid://di6ma0sx3mcgu" path="res://assets/ui/256x256 textures (113).png" id="3_mdl7e"]
 [ext_resource type="Script" uid="uid://bn4vu8d7jmhi7" path="res://scripts/TorchLight.gd" id="4_mdl7e"]
 [ext_resource type="Texture2D" uid="uid://dejmffrbdemc4" path="res://icon.svg" id="4_player_texture"]
-[ext_resource type="Script" uid="uid://b6lwqx80hen7e" path="res://scripts/CharacterStats.gd" id="4_qu4a1"]
-[ext_resource type="Script" uid="uid://boh5eyjv4p1ye" path="res://scripts/PlayerActionController.gd" id="5_qu4a1"]
+[ext_resource type="Script" uid="uid://b6lwqx80hen7e" path="res://scripts/core/stats/CharacterStats.gd" id="4_qu4a1"]
+[ext_resource type="Script" uid="uid://boh5eyjv4p1ye" path="res://scripts/core/movement/PlayerActionController.gd" id="5_qu4a1"]
 [ext_resource type="PackedScene" uid="uid://status_indicator" path="res://scenes/StatusIndicator.tscn" id="6_status_indicator"]
-[ext_resource type="Script" uid="uid://status_component" path="res://scripts/StatusComponent.gd" id="7_status_component"]
+[ext_resource type="Script" uid="uid://status_component" path="res://scripts/core/stats/StatusComponent.gd" id="7_status_component"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mdl7e"]
 size = Vector2(14, 14)

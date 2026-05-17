@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b7yguhd58c6y1"]
 
-[ext_resource type="Script" uid="uid://dca78vgipeymw" path="res://scripts/Enemy.gd" id="1_55jtl"]
-[ext_resource type="Script" uid="uid://b6lwqx80hen7e" path="res://scripts/CharacterStats.gd" id="3_mpr68"]
+[ext_resource type="Script" uid="uid://dca78vgipeymw" path="res://scripts/core/enemy/Enemy.gd" id="1_55jtl"]
+[ext_resource type="Script" uid="uid://b6lwqx80hen7e" path="res://scripts/core/stats/CharacterStats.gd" id="3_mpr68"]
 [ext_resource type="Texture2D" uid="uid://bi2jq4ofb605c" path="res://assets/ui/white_2x2.svg" id="3_texture"]
 [ext_resource type="PackedScene" uid="uid://kcs0b06asf7v" path="res://scenes/StatusIndicator.tscn" id="4_status_indicator"]
 
