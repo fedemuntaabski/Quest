@@ -38,11 +38,20 @@ func can_play(card: CardData, target: Node) -> bool:
 	return true
 
 func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) -> bool:
-	if turn_manager == null or turn_manager.action_queue == null:
+	if card == null:
+		card_failed.emit(card, "missing_card")
+		return false
+	if turn_manager == null:
+		card_failed.emit(card, "no_turn_manager")
+		return false
+	if turn_manager.action_queue == null:
+		card_failed.emit(card, "no_action_queue")
 		return false
 	if turn_manager.action_queue.is_busy():
+		card_failed.emit(card, "queue_busy")
 		return false
 	if not can_play(card, target):
+		card_failed.emit(card, "invalid")
 		return false
 	var action := CardAction.new(self, card, target)
 	turn_manager.action_queue.queue_action(action)

@@ -93,8 +93,8 @@ func _handle_mouse_click() -> void:
 			var self_card := card_manager.get_active_card()
 			if self_card and self_card.target_type == "self":
 				if combat_card_system.can_play(self_card, player):
-					combat_card_system.queue_card_action(self_card, player, player.turn_manager)
-					if card_system_controller:
+					var queued := combat_card_system.queue_card_action(self_card, player, player.turn_manager)
+					if queued and card_system_controller:
 						card_system_controller.update_hotbar_ui()
 					return
 		player.cancel_movement()
@@ -104,7 +104,8 @@ func _handle_mouse_click() -> void:
 		if combat_card_system and card_manager:
 			var card := card_manager.get_active_card()
 			if card and combat_card_system.can_play(card, enemy):
-				if combat_card_system.queue_card_action(card, enemy, player.turn_manager):
+				var queued := combat_card_system.queue_card_action(card, enemy, player.turn_manager)
+				if queued:
 					if card_system_controller:
 						card_system_controller.update_hotbar_ui()
 				return

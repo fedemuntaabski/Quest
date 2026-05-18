@@ -6,7 +6,8 @@ signal reward_skipped
 signal card_replace_selected(card: CardData, slot_index: int)
 
 @onready var panel: Panel = $CenterContainer/RewardPanel
-@onready var cards_container: HBoxContainer = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/CardsContainer
+@onready var cards_container: HBoxContainer = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/CardsScroll/CardsContainer
+@onready var footer_container: CenterContainer = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/FooterContainer
 @onready var title_label: Label = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/TitleLabel
 
 var _reward_cards: Array[CardData] = []
@@ -83,6 +84,9 @@ func _finalize_hide() -> void:
 func _clear_cards_container() -> void:
 	for child in cards_container.get_children():
 		child.queue_free()
+	if footer_container:
+		for child in footer_container.get_children():
+			child.queue_free()
 
 func _create_card_buttons() -> void:
 	for card in _reward_cards:
@@ -96,7 +100,10 @@ func _add_skip_button() -> void:
 	skip_button.text = "Skip Reward"
 	skip_button.custom_minimum_size = Vector2(140, 32)
 	skip_button.pressed.connect(_on_skip_pressed)
-	cards_container.add_child(skip_button)
+	if footer_container:
+		footer_container.add_child(skip_button)
+	else:
+		cards_container.add_child(skip_button)
 
 func _create_card_button(card: CardData) -> Control:
 	var container := PanelContainer.new()
