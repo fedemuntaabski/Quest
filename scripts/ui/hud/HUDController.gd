@@ -5,6 +5,7 @@ signal hotbar_slot_pressed(index: int)
 signal reward_card_selected(card: CardData)
 signal reward_skipped
 signal reward_card_replace_selected(card: CardData, slot_index: int)
+signal hud_ready  # warning-ignore:unused_signal # Emitted after full HUD initialization (used by CardSystemController for deferred binding)
 
 @onready var stat_panel: StatPanelUI = $Control/StatsHUD/MarginContainer/StatPanelUI
 @onready var stats_hud_panel: PanelContainer = $Control/StatsHUD
@@ -53,6 +54,9 @@ func _ready() -> void:
 	var ps = get_node_or_null("/root/PlayerStats")
 	if ps:
 		_bind_player_stats(ps)
+	
+	# Signal that HUD is fully initialized and ready for card system binding
+	call_deferred("hud_ready.emit")
 
 func _setup_hotbar() -> void:
 	if hotbar_bar == null:

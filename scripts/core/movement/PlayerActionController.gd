@@ -15,14 +15,6 @@ var card_manager: CardManager = null
 var combat_card_system: CombatCardSystem = null
 var card_system_controller = null
 
-var DEFAULT_DECK: Array[CardData] = [
-	load("res://resources/cards/strength/sword_card.tres"),
-	load("res://resources/cards/agility/bow_card.tres"),
-	load("res://resources/cards/magic/fire_card.tres"),
-	load("res://resources/cards/magic/focus_card.tres"),
-	load("res://resources/cards/agility/cripple_card.tres"),
-]
-
 func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 	player = p_player
 	map_manager = p_map_manager
@@ -157,36 +149,6 @@ func _ensure_input_actions() -> void:
 		var ev3 := InputEventKey.new()
 		ev3.keycode = KEY_3
 		InputMap.action_add_event("hotbar_3", ev3)
-
-func _ensure_card_system() -> void:
-	if player == null:
-		return
-
-	card_manager = player.get_node_or_null("CardManager") as CardManager
-	if card_manager == null:
-		card_manager = CardManager.new()
-		card_manager.name = "CardManager"
-		player.add_child(card_manager)
-	card_manager.max_equipped = 3
-	var starter_deck := _get_starter_deck()
-	card_manager.set_deck(starter_deck)
-
-	combat_card_system = player.get_node_or_null("CombatCardSystem") as CombatCardSystem
-	if combat_card_system == null:
-		combat_card_system = CombatCardSystem.new()
-		combat_card_system.name = "CombatCardSystem"
-		player.add_child(combat_card_system)
-
-	combat_card_system.setup(player, map_manager, card_manager, player.get_combat_component())
-
-func _get_starter_deck() -> Array[CardData]:
-	if card_library == null:
-		card_library = load("res://resources/cards/card_library.tres") as CardLibrary
-	if card_library:
-		var starter := card_library.get_starter_deck()
-		if not starter.is_empty():
-			return starter
-	return DEFAULT_DECK
 
 func _select_card(index: int) -> void:
 	if card_manager == null:

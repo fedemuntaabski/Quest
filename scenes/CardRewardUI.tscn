@@ -4,10 +4,10 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1v3q1"]
 bg_color = Color(0.08, 0.08, 0.1, 0.97)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
 border_color = Color(0.28, 0.3, 0.35, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
@@ -53,9 +53,13 @@ theme_override_constants/separation = 18
 layout_mode = 2
 text = "Choose a Card Reward"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 30
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+custom_minimum_size = Vector2(0, 40)
 
 [node name="CardsContainer" type="HBoxContainer" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer" unique_id=900049683]
 layout_mode = 2
-theme_override_constants/separation = 16
+size_flags_vertical = 3
+theme_override_constants/separation = 20
 alignment = 1
