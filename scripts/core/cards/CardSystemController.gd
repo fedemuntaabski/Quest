@@ -140,7 +140,39 @@ func _on_hud_ready() -> void:
 
 func update_hotbar_ui() -> void:
 	if card_manager:
-		card_manager.ui_state_changed.emit(card_manager.get_equipped_payload(), card_manager.active_index)
+		# Get base payload from CardManager and enrich with combat-level playability
+		var payload := card_manager.get_equipped_payload()
+		# Iterate payload and compute full_playable where we can (self-target or hovered enemy)
+		for i in range(payload.size()):
+			var entry: Dictionary = payload[i] as Dictionary
+			if not entry.has("card"):
+				continue
+			var card: CardData = entry.get("card") as CardData
+			var cooldown_ok: bool = bool(entry.get("cooldown_ok", entry.get("is_usable", true)))
+			var full_playable: bool = cooldown_ok
+			var playability_reason: String = ""
+
+			if combat_card_system and card != null:
+				if card.target_type == "self":
+					var validation := combat_card_system.get_card_validation(card, player)
+					full_playable = bool(validation.get("valid", false))
+					playability_reason = validation.get("reason", null)
+				elif card.target_type == "enemy":
+					# If we have a hovered actor, validate against it; otherwise leave as cooldown_ok
+					if map_manager and map_manager.hovered_cell != Vector2i(-999, -999):
+						var target_actor := map_manager.get_actor_at_cell(map_manager.hovered_cell)
+						if target_actor != null:
+							var validation2 := combat_card_system.get_card_validation(card, target_actor)
+							full_playable = bool(validation2.get("valid", false))
+							playability_reason = str(validation2.get("reason", ""))
+
+			entry["cooldown_ok"] = cooldown_ok
+			entry["full_playable"] = full_playable
+			entry["playability_reason"] = playability_reason
+			entry["playability_reason_readable"] = _human_readable_playability_reason(playability_reason)
+			payload[i] = entry
+
+		card_manager.ui_state_changed.emit(payload, card_manager.active_index)
 
 func clear_targeting_state() -> void:
 	print("[CardSystemController] clear_targeting_state()")
@@ -174,4 +206,46 @@ func on_hotbar_slot_pressed(index: int) -> void:
 	update_hotbar_ui()
 
 func on_active_index_changed(_index: int) -> void:
+	update_hotbar_ui()
+
+
+func _human_readable_playability_reason(reason: String) -> String:
+	if reason == null or reason == "":
+		return ""
+	match reason:
+		"card_on_cooldown":
+			return "En enfriamiento"
+		"out_of_range":
+			return "Fuera de rango"
+		"no_target":
+			return "Sin objetivo"
+		"missing_target_stats":
+			return "Objetivo inválido"
+		"target_dead":
+			return "Objetivo muerto"
+		"source_dead":
+			return "Fuente muerta"
+		"missing_card":
+			return "Carta faltante"
+		"missing_card_manager":
+			return "Gestor de cartas faltante"
+		"missing_combat_component":
+			return "Componente de combate faltante"
+		"missing_stats":
+			return "Estadísticas faltantes"
+		"stale_snapshot":
+			return "Instantánea obsoleta"
+		_:
+			return str(reason)
+
+
+func request_set_active_index(index: int) -> void:
+	# Canonical external API for requesting selection changes.
+	# CardManager remains the single data owner; CardSystemController is the
+	# canonical external writer that coordinates UI refresh and any higher-
+	# level invariants.
+	if card_manager == null:
+		push_error("[CardSystemController] request_set_active_index: card_manager is NULL")
+		return
+	card_manager.set_active_index(index)
 	update_hotbar_ui()

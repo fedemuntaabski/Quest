@@ -90,6 +90,15 @@ func update_hover(world_pos: Vector2) -> void:
 	hover_changed.emit(new_cell)
 
 
+func clear_hover() -> void:
+	"""Clear the hover cell and notify listeners. Use this when external
+	controllers want to explicitly reset targeting/hover state."""
+	if hovered_cell == Vector2i(-999, -999):
+		return
+	hovered_cell = Vector2i(-999, -999)
+	hover_changed.emit(hovered_cell)
+
+
 func _on_hover_changed(cell: Vector2i) -> void:
 	hovered_cell = cell
 	queue_redraw()

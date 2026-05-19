@@ -16,7 +16,10 @@ func setup(p_owner: Node, p_map: MapManager, p_card_manager: CardManager, p_comb
 	combat_component = p_combat
 	add_to_group("combat_card_system")
 
-func get_card_validation(card: CardData, target: Node) -> Dictionary:
+func _compute_card_validation(card: CardData, target: Node) -> Dictionary:
+	# Internal consolidated validator. Keep logic identical to the previous
+	# public implementation to preserve runtime behaviour. External callers
+	# should continue to use get_card_validation() which wraps this helper.
 	var result := {
 		"valid": false,
 		"reason": "invalid"
@@ -49,7 +52,7 @@ func get_card_validation(card: CardData, target: Node) -> Dictionary:
 		if not target_component.stats.is_alive():
 			result["reason"] = "target_dead"
 			return result
-		
+        
 		# PHASE 2: Enforce range validation for cards
 		if not CardTargeting.is_in_range(owner_actor, target, card.range, map_manager):
 			result["reason"] = "out_of_range"
@@ -66,8 +69,17 @@ func get_card_validation(card: CardData, target: Node) -> Dictionary:
 	result["distance"] = _get_card_distance(card, target)
 	return result
 
+
+func get_card_validation(card: CardData, target: Node) -> Dictionary:
+	# Public wrapper kept for compatibility. Internally delegates to
+	# _compute_card_validation so future callers in this file can reuse the
+	# internal helper and we have a single place to extend validation behaviour.
+	return _compute_card_validation(card, target)
+
+
 func can_play(card: CardData, target: Node) -> bool:
 	return bool(get_card_validation(card, target).get("valid", false))
+
 
 func _get_card_distance(card: CardData, target: Node) -> int:
 	# Returns distance from owner to target (Chebyshev distance)
@@ -78,6 +90,7 @@ func _get_card_distance(card: CardData, target: Node) -> int:
 	if owner_cell == null or target_cell == null:
 		return -1
 	return CardTargeting.get_chebyshev_distance(owner_cell, target_cell)
+
 
 func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) -> bool:
 	if card == null:
@@ -122,41 +135,14 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 		var reason := str(validation.get("reason", "invalid"))
 		card_failed.emit(card, reason)
 		return {"hit": false, "damage": 0, "reason": reason}
-
 	var target_component := _resolve_target_component(target)
 	if target_component == null or target_component.stats == null:
 		card_failed.emit(card, "no_target")
 		return {"hit": false, "damage": 0, "reason": "no_target"}
 
 	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
-	if owner_actor and owner_actor.is_in_group("player"):
-		var hud := get_tree().get_first_node_in_group("hud") as HUDController
-		if hud:
-			hud.set_roll_label_from_result(result)
-
-	var damage := int(result.get("damage", 0))
-	if result.get("hit", false) and damage > 0:
-		target_component.receive_damage(damage, result.get("crit", false))
-	elif not result.get("hit", false) and target_component.actor_owner and target_component.actor_owner.has_method("show_miss"):
-		target_component.actor_owner.show_miss()
-
-	# Apply runtime effects via EffectApplier to centralize map/status interactions
-	# Defensive: ensure map_manager and target actor are valid before applying effects
-	if map_manager == null:
-		push_warning("CombatCardSystem.execute_card: missing map_manager, skipping runtime effects")
-	else:
-		if target_component.actor_owner == null or not is_instance_valid(target_component.actor_owner):
-			push_warning("CombatCardSystem.execute_card: target actor invalid, skipping runtime effects")
-		else:
-			var ctx := EffectContext.new(owner_actor, map_manager, card_manager, combat_component)
-			var applier := EffectApplier.new()
-			await applier.apply(result, target_component, ctx)
-
-	card_manager.start_cooldown(card)
-	card_played.emit(card, target, result)
-	if owner_actor and owner_actor.is_in_group("player") and card_manager:
-		card_manager.set_active_index(-1)
-	return result
+	# Use default occ_version when executing live path
+	return await _finalize_card_execution(card, target, target_component, result)
 
 
 func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
@@ -195,34 +181,46 @@ func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 		print("[CombatCardSystem] Execute card '%s' at distance %d / range %d (occ_ver: %d)" % [card.display_name, distance, card.range, int(snapshot.get("occ_version", -1))])
 
 	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
-	if owner_actor and owner_actor.is_in_group("player"):
-		var hud := get_tree().get_first_node_in_group("hud") as HUDController
-		if hud:
-			hud.set_roll_label_from_result(result)
+	return await _finalize_card_execution(card, target, target_component, result, int(snapshot.get("occ_version", -1)))
 
-	var damage := int(result.get("damage", 0))
-	if result.get("hit", false) and damage > 0:
-		target_component.receive_damage(damage, result.get("crit", false))
-	elif not result.get("hit", false) and target_component.actor_owner and target_component.actor_owner.has_method("show_miss"):
-		target_component.actor_owner.show_miss()
-
-	if map_manager == null:
-		push_warning("CombatCardSystem.execute_card_snapshot: missing map_manager, skipping runtime effects")
-	else:
-		if target_component.actor_owner == null or not is_instance_valid(target_component.actor_owner):
-			push_warning("CombatCardSystem.execute_card_snapshot: target actor invalid, skipping runtime effects")
-		else:
-			var ctx := EffectContext.new(owner_actor, map_manager, card_manager, combat_component)
-			var applier := EffectApplier.new()
-			await applier.apply(result, target_component, ctx)
-
-	card_manager.start_cooldown(card)
-	card_played.emit(card, target, result)
-	if owner_actor and owner_actor.is_in_group("player") and card_manager:
-		card_manager.set_active_index(-1)
-	return result
 
 ## Runtime application moved to EffectApplier.gd (EffectContext)
+
+func _finalize_card_execution(card: CardData, target: Node, target_component: CombatComponent, result: Dictionary, _occ_version: int = -1) -> Dictionary:
+		# Shared finalization logic for card execution paths. Performs HUD update,
+		# damage/miss handling, effect application (awaited), cooldown and signal
+		# emission, and active_index reset for player-owned actors.
+		if owner_actor and owner_actor.is_in_group("player"):
+			var hud := get_tree().get_first_node_in_group("hud") as HUDController
+			if hud:
+				hud.set_roll_label_from_result(result)
+
+		var damage := int(result.get("damage", 0))
+		if result.get("hit", false) and damage > 0:
+			target_component.receive_damage(damage, result.get("crit", false))
+		elif not result.get("hit", false) and target_component.actor_owner and target_component.actor_owner.has_method("show_miss"):
+			target_component.actor_owner.show_miss()
+
+		if map_manager == null:
+			push_warning("CombatCardSystem._finalize_card_execution: missing map_manager, skipping runtime effects")
+		else:
+			if target_component.actor_owner == null or not is_instance_valid(target_component.actor_owner):
+				push_warning("CombatCardSystem._finalize_card_execution: target actor invalid, skipping runtime effects")
+			else:
+				var ctx := EffectContext.new(owner_actor, map_manager, card_manager, combat_component)
+				var applier := EffectApplier.new()
+				await applier.apply(result, target_component, ctx)
+
+		card_manager.start_cooldown(card)
+		card_played.emit(card, target, result)
+		if owner_actor and owner_actor.is_in_group("player") and card_manager:
+			# Prefer CardSystemController as the canonical external writer for selection
+			var controller := owner_actor.get_node_or_null("CardSystemController") as CardSystemController
+			if controller != null:
+				controller.request_set_active_index(-1)
+			else:
+				card_manager.set_active_index(-1)
+		return result
 
 func _resolve_movement_direction(receiver: Node, reference: Node, movement_mode: String) -> Vector2i:
 	var receiver_cell: Vector2i = CardTargeting.get_actor_cell(receiver, map_manager)

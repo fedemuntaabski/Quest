@@ -28,7 +28,8 @@ func set_card(data: Dictionary) -> void:
 	var cd_remaining := int(data.get("cooldown_remaining", 0))
 	var stat := str(data.get("scaling_stat", data.get("stat", "")))
 	var scaling := float(data.get("damage_scaling", 1.0))
-	var available : Variant = data.get("is_usable", true) != false
+	# Prefer explicit full_playable set by CardManager/CombatCardSystem; fall back to legacy is_usable
+	var available : Variant = (data.get("full_playable") != false) if data.has("full_playable") else (data.get("is_usable", true) != false)
 	var state_text := "Disponible" if available and cd_remaining <= 0 else "En enfriamiento (%d)" % cd_remaining
 	if not available and cd_remaining <= 0:
 		state_text = str(data.get("state", "Bloqueada")).capitalize()
@@ -41,3 +42,8 @@ func set_card(data: Dictionary) -> void:
 		scaling,
 		state_text
 	]
+
+	# Show playability reason if provided by enriched payload
+	var readable_reason := str(data.get("playability_reason_readable", ""))
+	if readable_reason != "":
+		details_label.text += "\n(%s)" % readable_reason

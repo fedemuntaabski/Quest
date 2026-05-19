@@ -150,7 +150,9 @@ func get_equipped_payload() -> Array:
 			"range": card.range,
 			"cooldown": card.cooldown,
 			"cooldown_remaining": get_cooldown_remaining(card),
-			"is_usable": can_play_card(card),
+			"cooldown_ok": can_play_card(card),
+			"full_playable": can_play_card(card),
+			"playability_reason": null,
 			"state": "available" if can_play_card(card) else "blocked",
 			"icon": card.icon,
 			"card": card

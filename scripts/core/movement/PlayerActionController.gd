@@ -178,8 +178,11 @@ func _on_card_played(_card: CardData, _target: Node, _result: Dictionary) -> voi
 	_clear_card_targeting_state()
 
 func _clear_card_targeting_state() -> void:
-	if card_manager:
-		card_manager.set_active_index(-1)
+	if card_system_controller:
+		card_system_controller.request_set_active_index(-1)
+	else:
+		if card_manager:
+			card_manager.set_active_index(-1)
 	_clear_hover_targeting_state()
 	if card_system_controller:
 		card_system_controller.update_hotbar_ui()
@@ -188,6 +191,9 @@ func _clear_hover_targeting_state() -> void:
 	if hovered_enemy and hovered_enemy.has_method("set_targeted"):
 		hovered_enemy.set_targeted(false)
 	hovered_enemy = null
+	# Centralize hover clear in MapManager (MapManager is the source of truth for hovered_cell)
+	if map_manager:
+		map_manager.clear_hover()
 	var highlighter := get_tree().get_first_node_in_group("tile_highlighter") as TileHighlighter
 	if highlighter:
 		highlighter.clear_path_preview()
@@ -219,9 +225,15 @@ func _select_card(index: int) -> void:
 	
 	# Toggle behavior: if already selected, deselect to neutral state
 	if card_manager.active_index == index:
-		card_manager.set_active_index(-1)
+		if card_system_controller:
+			card_system_controller.request_set_active_index(-1)
+		else:
+			card_manager.set_active_index(-1)
 	else:
-		card_manager.set_active_index(index)
+		if card_system_controller:
+			card_system_controller.request_set_active_index(index)
+		else:
+			card_manager.set_active_index(index)
 	if card_system_controller:
 		card_system_controller.update_hotbar_ui()
 

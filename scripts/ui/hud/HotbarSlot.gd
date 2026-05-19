@@ -93,6 +93,9 @@ func _update_ui() -> void:
 
 	set_cooldown(int(_card_data.get("cooldown_remaining", 0)))
 	set_state_label(str(_card_data.get("state", "available")))
+	# Visual usability: prefer explicit full_playable if present, otherwise fall back to legacy is_usable
+	var usable := bool(_card_data.get("full_playable")) if _card_data.has("full_playable") else bool(_card_data.get("is_usable", true))
+	set_usable(usable)
 
 func _on_mouse_entered() -> void:
 	if hover_border:
