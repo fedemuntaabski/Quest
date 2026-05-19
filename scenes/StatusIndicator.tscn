@@ -1,13 +1,8 @@
 [gd_scene format=3 uid="uid://kcs0b06asf7v"]
 
-[ext_resource type="Script" path="res://scripts/ui/hud/StatusIndicator.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cl5iub16gg7qi" path="res://scripts/ui/hud/StatusIndicator.gd" id="1_script"]
 
-[node name="StatusIndicator" type="Node2D"]
+[node name="StatusIndicator" type="Node2D" unique_id=166775526]
 script = ExtResource("1_script")
-anchor_right = 1.0
-anchor_bottom = 1.0
 
-[node name="IconContainer" type="HBoxContainer" parent="." ]
-margin_left = -16
-margin_top = -36
-
+[node name="IconContainer" type="HBoxContainer" parent="." unique_id=516050626]
