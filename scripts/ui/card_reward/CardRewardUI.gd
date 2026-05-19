@@ -138,7 +138,8 @@ func _create_card_button(card: CardData) -> Control:
 	name_label.text = card.display_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name_label.add_theme_font_size_override("font_size", 22)
+	name_label.add_theme_font_size_override("font_size", 20)
+	name_label.max_lines_visible = 2
 	name_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
 	vbox.add_child(name_label)
 	
@@ -170,15 +171,21 @@ func _create_card_button(card: CardData) -> Control:
 	stats_label.custom_minimum_size = Vector2(188, 40)
 	vbox.add_child(stats_label)
 	
-	# Effects description
+	# Effects description inside a vertical ScrollContainer to constrain height
+	var effects_scroll := ScrollContainer.new()
+	# Use the vertical size flags property on Controls
+	effects_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	effects_scroll.custom_minimum_size = Vector2(188, 80)
+
 	var effects_label := Label.new()
 	effects_label.text = _build_reward_effects_text(card)
 	effects_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	effects_label.add_theme_color_override("font_color", Color(0.78, 0.9, 1.0, 1))
 	effects_label.add_theme_font_size_override("font_size", 11)
-	effects_label.custom_minimum_size = Vector2(188, 50)
-	effects_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(effects_label)
+	effects_label.custom_minimum_size = Vector2(180, 0)
+	effects_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	effects_scroll.add_child(effects_label)
+	vbox.add_child(effects_scroll)
 	
 	# Select button with visual feedback
 	var select_btn := Button.new()
@@ -373,7 +380,11 @@ func _build_reward_effects_text(card: CardData) -> String:
 					effect_descriptions.append(effect_desc)
 		if not effect_descriptions.is_empty():
 			effects.append("Effects: " + ", ".join(effect_descriptions))
-	return "\n".join(effects)
+
+	var out := "\n".join(effects)
+	if out.length() > 400:
+		return out.substr(0, 400) + "..."
+	return out
 
 func _build_card_style(border_color: Color = NORMAL_COLOR) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

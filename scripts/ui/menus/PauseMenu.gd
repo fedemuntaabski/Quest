@@ -168,6 +168,38 @@ func _connect() -> void:
 			_on_upgrade_pressed(stat)
 		)
 
+	# Play hover SFX for upgrade buttons and ensure they show tooltips on hover
+	for b in upgrade_buttons:
+		if b:
+			b.mouse_entered.connect(_play_hover)
+			b.mouse_entered.connect(_on_upgrade_button_entered.bind(b))
+			b.mouse_exited.connect(_on_upgrade_button_exited)
+
+
+func _on_upgrade_button_entered(btn: Button) -> void:
+	# Show HUD tooltip with full details if HUD exists
+	_play_hover()
+	var hud_nodes := get_tree().get_nodes_in_group("hud")
+	if hud_nodes.size() == 0:
+		return
+	var hud := hud_nodes[0]
+	var hint := ""
+	if btn.has_meta("upgrade_hint"):
+		hint = str(btn.get_meta("upgrade_hint"))
+	if hint == "":
+		return
+	# Position tooltip to the right of the button
+	var rect := btn.get_global_rect()
+	var pos := rect.position + Vector2(rect.size.x + 12.0, 0.0)
+	hud.show_simple_tooltip(hint, pos)
+
+func _on_upgrade_button_exited() -> void:
+	var hud_nodes := get_tree().get_nodes_in_group("hud")
+	if hud_nodes.size() == 0:
+		return
+	var hud := hud_nodes[0]
+	hud.hide_simple_tooltip()
+
 func _on_options_menu_closed() -> void:
 	_set_panel(0)
 
@@ -231,13 +263,19 @@ func _update_store():
 		var button: Button = upgrade_buttons[i]
 		button.disabled = not (can_upgrade and affordable)
 		if can_upgrade:
-			button.text = "%s\n%s\nCosto: %dg  |  Nivel %d/%d" % [
+			# Short two-line button text and full details in engine tooltip
+			button.text = "%s\n%s | %dg" % [
 				str(config.get("label", key.to_upper())),
 				str(config.get("effect", "")),
-				cost,
-				level,
-				max_level
+				cost
 			]
+			button.set_meta("upgrade_hint", "%s\nNivel %d/%d\nCosto: %dg\n%s" % [
+				str(config.get("label", key.to_upper())),
+				level,
+				max_level,
+				cost,
+				str(config.get("effect", ""))
+			])
 		else:
 			button.text = "%s\nMAX NIVEL" % [
 				str(config.get("label", key.to_upper()))

@@ -18,6 +18,7 @@ func setup(parent: Node, generator: DungeonGenerator) -> void:
 	fog_controller.setup(generator, fog_manager)
 
 	# Add visual feedback manager to the presentation layer so camera and actors can use it
+	# VisualFeedback authority: use UI layer implementation (scripts/ui/visual/VisualFeedback.gd)
 	var VisualFeedbackClass = preload("res://scripts/ui/visual/VisualFeedback.gd")
 	var vf = VisualFeedbackClass.new()
 	vf.name = "VisualFeedback"

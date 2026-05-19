@@ -7,10 +7,19 @@ class_name CardTooltip
 
 func set_card(data: Dictionary) -> void:
 	if data == null or data.is_empty():
+		# Clear contents to avoid ghost text when hidden
 		visible = false
+		name_label.text = ""
+		desc_label.text = ""
+		details_label.text = ""
 		return
 
 	visible = true
+	# Ensure labels are reset before populating
+	name_label.text = ""
+	desc_label.text = ""
+	details_label.text = ""
+
 	name_label.text = str(data.get("name", "Card"))
 	desc_label.text = str(data.get("description", ""))
 
@@ -24,7 +33,8 @@ func set_card(data: Dictionary) -> void:
 	if not available and cd_remaining <= 0:
 		state_text = str(data.get("state", "Bloqueada")).capitalize()
 
-	details_label.text = "Alcance: %d\nEnfriamiento: %d\nAtributo/escala: %s x%.2f\nEstado: %s" % [
+	# Build details text with short labels to keep tooltip compact
+	details_label.text = "R: %d  CD: %d\n%s x%.2f  |  %s" % [
 		range_val,
 		cd,
 		StatTypes.get_label(stat),

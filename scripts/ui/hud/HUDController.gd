@@ -39,6 +39,8 @@ var _roll_label_tween: Tween = null
 var _game_state_manager: GameStateManager = null
 var _potion_used: bool = false
 var _bound_stats: CharacterStats = null
+var _card_tooltip_timer : Variant = null
+var _pending_card_data: Dictionary = {}
 
 const POTION_HEAL_RATIO: float = 0.5
 
@@ -51,12 +53,19 @@ func _ready() -> void:
 	_setup_potion()
 	_setup_stat_tooltips()
 
+	# Create a short-lived timer used to debounce card tooltip display
+	_card_tooltip_timer = Timer.new()
+	_card_tooltip_timer.one_shot = true
+	_card_tooltip_timer.wait_time = 0.08
+	_card_tooltip_timer.connect("timeout", Callable(self, "_on_card_tooltip_timer_timeout"))
+	add_child(_card_tooltip_timer)
+
 	var ps = get_node_or_null("/root/PlayerStats")
 	if ps:
 		_bind_player_stats(ps)
 	
 	# Signal that HUD is fully initialized and ready for card system binding
-	call_deferred("hud_ready.emit")
+	call_deferred("_emit_hud_ready")
 
 func _setup_hotbar() -> void:
 	if hotbar_bar == null:
@@ -171,13 +180,51 @@ func update_cards_panel(cards: Array) -> void:
 		card_panel.refresh(normalized_cards)
 
 func show_card_tooltip(data: Dictionary) -> void:
+	# Debounce rapid hover switches to avoid overlapping tooltip animations
 	if card_tooltip == null:
 		return
-	card_tooltip.set_card(data)
+	_pending_card_data = data if data != null else {}
+	# restart timer
+	if _card_tooltip_timer.time_left > 0.0:
+		_card_tooltip_timer.stop()
+	_card_tooltip_timer.start()
 
 func hide_card_tooltip() -> void:
+	# Cancel pending tooltip show and hide any visible tooltip
+	_pending_card_data = {}
+	if _card_tooltip_timer and _card_tooltip_timer.time_left > 0.0:
+		_card_tooltip_timer.stop()
 	if card_tooltip:
 		card_tooltip.visible = false
+		# clear contents to avoid ghost text
+		card_tooltip.set_card({})
+
+
+func show_simple_tooltip(text: String, global_pos = null) -> void:
+	if stat_tooltip == null or stat_tooltip_label == null:
+		return
+	stat_tooltip_label.text = text
+	stat_tooltip.visible = true
+	if global_pos != null:
+		stat_tooltip.global_position = global_pos
+	else:
+		# default position to right of stats panel
+		var panel_rect := stats_hud_panel.get_global_rect() if stats_hud_panel else stat_panel.get_global_rect()
+		stat_tooltip.global_position = panel_rect.position + Vector2(panel_rect.size.x + 12.0, 0.0)
+
+
+func hide_simple_tooltip() -> void:
+	if stat_tooltip:
+		stat_tooltip.visible = false
+
+
+func _on_card_tooltip_timer_timeout() -> void:
+	# If pending data is empty, nothing to show
+	if _pending_card_data.size() == 0:
+		return
+	# Only show if we still have valid data
+	card_tooltip.set_card(_pending_card_data)
+	_pending_card_data = {}
 
 func _setup_potion() -> void:
 	if potion_button and not potion_button.pressed.is_connected(_on_potion_pressed):
@@ -236,29 +283,44 @@ func _setup_stat_tooltips() -> void:
 		stat_tooltip.visible = false
 
 	var icons_and_text: Array = [
-		[icon_hp, "HP: vida actual y máxima."],
-		[icon_strength, "Fuerza: sube el daño físico."],
-		[icon_magic, "Magia: sube el daño mágico."],
-		[icon_dexterity, "Destreza / Agilidad: mejora el esquive y la movilidad."],
-		[potion_icon, "Poción: cura parte de tu vida máxima."]
+		[icon_hp, "hp"],
+		[icon_strength, "strength"],
+		[icon_magic, "magic"],
+		[icon_dexterity, "dexterity"],
+		[potion_icon, "potion"]
 	]
 
 	for icon_pair in icons_and_text:
 		var icon: Control = icon_pair[0]
-		var text: String = icon_pair[1]
+		var key: String = icon_pair[1]
 		if icon == null:
 			continue
-		var enter_cb := _on_stat_icon_entered.bind(text, icon)
+		var enter_cb := _on_stat_icon_entered.bind(key, icon)
 		if not icon.mouse_entered.is_connected(enter_cb):
 			icon.mouse_entered.connect(enter_cb)
 		if not icon.mouse_exited.is_connected(_on_stat_icon_exited):
 			icon.mouse_exited.connect(_on_stat_icon_exited)
 
-func _on_stat_icon_entered(text: String, _icon: Control) -> void:
+
+func _on_stat_icon_entered(key: String, _icon: Control) -> void:
 	if stat_tooltip == null or stat_tooltip_label == null:
 		return
-	# Populate and show tooltip
-	stat_tooltip_label.text = text
+	# Populate and show short tooltip using current bound stats if available
+	var short_text := ""
+	if key == "hp" and _bound_stats != null:
+		short_text = "HP: %d/%d" % [_bound_stats.current_hp, _bound_stats.max_hp]
+	elif key == "potion":
+		short_text = "Poción: x1"
+	elif key == "strength":
+		short_text = "Fuerza: %d" % [_bound_stats.strength if _bound_stats != null else 0]
+	elif key == "magic":
+		short_text = "Magia: %d" % [_bound_stats.magic if _bound_stats != null else 0]
+	elif key == "dexterity":
+		short_text = "Destreza: %d" % [_bound_stats.dexterity if _bound_stats != null else 0]
+	else:
+		short_text = key.capitalize()
+
+	stat_tooltip_label.text = short_text
 	stat_tooltip.visible = true
 	# Position to the right of the status HUD by default
 	var panel_rect := stats_hud_panel.get_global_rect() if stats_hud_panel else stat_panel.get_global_rect()
@@ -336,3 +398,8 @@ func show_reward_selection(cards: Array, requires_replace: bool = false, equippe
 func hide_reward_selection() -> void:
 	if card_reward_ui:
 		card_reward_ui.hide_reward()
+
+
+func _emit_hud_ready() -> void:
+	# Explicit emit so static analysis recognizes usage of the signal
+	emit_signal("hud_ready")
