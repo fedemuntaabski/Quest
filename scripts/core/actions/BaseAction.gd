@@ -17,6 +17,9 @@ func _init(p_owner: Node = null, p_target: Variant = null) -> void:
 func can_execute() -> bool:
 	return true
 
+func get_execution_state_token() -> Dictionary:
+	return {}
+
 func execute() -> void:
 	finish()
 

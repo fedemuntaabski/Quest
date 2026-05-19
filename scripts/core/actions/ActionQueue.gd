@@ -50,6 +50,7 @@ func process_next() -> void:
 	print("[ActionQueue] process_next: executing action, type=%s" % _describe_action(action))
 	_is_busy = true
 	_current_action = action
+	var start_token: Dictionary = action.get_execution_state_token() if action else {}
 
 	if not action.can_execute():
 		print("[ActionQueue] process_next: action cannot execute, finishing action=%s" % _describe_action(action))
@@ -67,6 +68,12 @@ func process_next() -> void:
 		completed_args = await action.completed
 	# completed_args expected [action, result]
 	var res: Dictionary = action.result if action.result else (completed_args[1] if completed_args.size() >= 2 else {})
+	var end_token: Dictionary = action.get_execution_state_token() if action else {}
+	var state_changed: bool = start_token != end_token
+	if state_changed:
+		res["state_changed_during_execution"] = true
+		res["execution_state_token_start"] = start_token
+		res["execution_state_token_end"] = end_token
 
 	if not action.is_complete:
 		# if action didn't call finish, finish it now with default success

@@ -50,3 +50,12 @@ func execute() -> void:
 	if owner.has_method("update_room_state_from_grid"):
 		owner.update_room_state_from_grid()
 	finish()
+
+func get_execution_state_token() -> Dictionary:
+	var token: Dictionary = {}
+	if owner and "grid_pos" in owner:
+		token["owner_cell"] = owner.grid_pos
+	token["target_cell"] = target_cell
+	if map_manager and map_manager.occupancy_manager:
+		token["occ_version"] = map_manager.occupancy_manager.get_version()
+	return token

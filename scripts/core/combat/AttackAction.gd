@@ -20,3 +20,11 @@ func execute() -> void:
 		var result = combat_component.attack(target)
 
 	finish()
+
+func get_execution_state_token() -> Dictionary:
+	var token: Dictionary = {}
+	if combat_component and combat_component.actor_owner and "grid_pos" in combat_component.actor_owner:
+		token["owner_cell"] = combat_component.actor_owner.grid_pos
+	if target and "grid_pos" in target:
+		token["target_cell"] = target.grid_pos
+	return token

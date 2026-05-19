@@ -50,3 +50,11 @@ func execute() -> void:
 	print("[CardAction] execute: calling finish(result)")
 	finish(res if res else {"status":"unknown"})
 	print("[CardAction] execute: COMPLETE")
+
+func get_execution_state_token() -> Dictionary:
+	var token: Dictionary = {}
+	if card_system and card_system.map_manager and card_system.map_manager.occupancy_manager:
+		token["occ_version"] = card_system.map_manager.occupancy_manager.get_version()
+	if typeof(target) == TYPE_DICTIONARY:
+		token["snapshot"] = target.duplicate(true)
+	return token
