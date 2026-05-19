@@ -307,18 +307,20 @@ func _on_stat_icon_entered(key: String, _icon: Control) -> void:
 		return
 	# Populate and show short tooltip using current bound stats if available
 	var short_text := ""
-	if key == "hp" and _bound_stats != null:
-		short_text = "HP: %d/%d" % [_bound_stats.current_hp, _bound_stats.max_hp]
-	elif key == "potion":
-		short_text = "Poción: x1"
-	elif key == "strength":
-		short_text = "Fuerza: %d" % [_bound_stats.strength if _bound_stats != null else 0]
-	elif key == "magic":
-		short_text = "Magia: %d" % [_bound_stats.magic if _bound_stats != null else 0]
-	elif key == "dexterity":
-		short_text = "Destreza: %d" % [_bound_stats.dexterity if _bound_stats != null else 0]
-	else:
-		short_text = key.capitalize()
+	# Provide brief Spanish descriptions for stats and potion
+	match key:
+		"hp":
+			short_text = "Puntos de vida. Indican tu salud actual. La poción cura el 50% de la vida máxima."
+		"potion":
+			short_text = "Poción: restaura el 50% de la vida máxima al usarla."
+		"strength":
+			short_text = "Fuerza: aumenta el daño físico y el escalado de cartas de fuerza."
+		"magic":
+			short_text = "Magia: aumenta el daño mágico y potencia efectos mágicos."
+		"dexterity":
+			short_text = "Destreza: mejora precisión, evasión y probabilidad de golpes críticos."
+		_:
+			short_text = key.capitalize()
 
 	stat_tooltip_label.text = short_text
 	stat_tooltip.visible = true

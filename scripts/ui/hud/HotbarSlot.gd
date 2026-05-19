@@ -66,8 +66,12 @@ func set_usable(usable: bool) -> void:
 func set_state_label(_state: String) -> void:
 	if state_label == null:
 		return
-	state_label.visible = false
-	state_label.text = ""
+	if _state == null or str(_state) == "":
+		state_label.visible = false
+		state_label.text = ""
+		return
+	state_label.visible = true
+	state_label.text = str(_state)
 
 func set_cooldown(turns_left: int) -> void:
 	if turns_left > 0:
@@ -92,10 +96,15 @@ func _update_ui() -> void:
 		icon.texture = tex
 
 	set_cooldown(int(_card_data.get("cooldown_remaining", 0)))
-	set_state_label(str(_card_data.get("state", "available")))
 	# Visual usability: prefer explicit full_playable if present, otherwise fall back to legacy is_usable
 	var usable := bool(_card_data.get("full_playable")) if _card_data.has("full_playable") else bool(_card_data.get("is_usable", true))
 	set_usable(usable)
+	# Show playability reason if blocked
+	if not usable:
+		var reason := str(_card_data.get("playability_reason_readable", _card_data.get("playability_reason", "")))
+		set_state_label(reason)
+	else:
+		set_state_label("")
 
 func _on_mouse_entered() -> void:
 	if hover_border:
