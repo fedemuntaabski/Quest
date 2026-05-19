@@ -111,7 +111,12 @@ func request_move(dir: Vector2i) -> bool:
 	if turn_manager == null or turn_manager.action_queue == null:
 		return false
 
-	var action: BaseAction = MoveAction.new(self, map_manager, next, false)
+	var snapshot: Dictionary = {}
+	if map_manager and map_manager.occupancy_manager:
+		snapshot["occ_version"] = map_manager.occupancy_manager.get_version()
+	snapshot["owner_cell"] = grid_pos
+	snapshot["target_cell"] = next
+	var action: BaseAction = MoveAction.new(self, map_manager, next, false, snapshot)
 	turn_manager.action_queue.queue_action(action)
 	return true
 

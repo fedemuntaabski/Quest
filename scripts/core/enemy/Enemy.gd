@@ -284,7 +284,12 @@ func _queue_move_action(next_cell: Vector2i) -> void:
 	if turn_manager == null or turn_manager.action_queue == null:
 		return
 
-	var action: BaseAction = MoveAction.new(self, map_manager, next_cell, false)
+	var snapshot: Dictionary = {}
+	if map_manager and map_manager.occupancy_manager:
+		snapshot["occ_version"] = map_manager.occupancy_manager.get_version()
+	snapshot["owner_cell"] = grid_pos
+	snapshot["target_cell"] = next_cell
+	var action: BaseAction = MoveAction.new(self, map_manager, next_cell, false, snapshot)
 	turn_manager.action_queue.queue_action(action)
 
 func _queue_wait_action() -> void:

@@ -5,12 +5,15 @@ var map_manager: MapManager = null
 var target_cell: Vector2i = Vector2i.ZERO
 var use_pathfinding: bool = true
 var tween_pause_mode: bool = true
+var validation_reason: String = ""
+var validation_snapshot: Dictionary = {}
 
 func _init(
 	p_owner: Node = null,
 	p_map_manager: MapManager = null,
 	p_target_cell: Vector2i = Vector2i.ZERO,
-	p_use_pathfinding: bool = true
+	p_use_pathfinding: bool = true,
+	p_snapshot: Dictionary = {}
 ) -> void:
 	super._init(p_owner, p_target_cell)
 	consume_turn = true
@@ -18,9 +21,20 @@ func _init(
 	map_manager = p_map_manager
 	target_cell = p_target_cell
 	use_pathfinding = p_use_pathfinding
+	validation_snapshot = p_snapshot.duplicate(true) if p_snapshot else {}
 
 func can_execute() -> bool:
-	return owner != null and map_manager != null
+	if owner == null or map_manager == null:
+		validation_reason = "missing_owner_or_map"
+		return false
+	if validation_snapshot.size() > 0 and map_manager.occupancy_manager:
+		var current_ver := map_manager.occupancy_manager.get_version()
+		var snap_ver := int(validation_snapshot.get("occ_version", -1))
+		if snap_ver != -1 and snap_ver != current_ver:
+			validation_reason = "stale_snapshot"
+			return false
+	validation_reason = ""
+	return true
 
 func execute() -> void:
 	if not can_execute():
@@ -58,4 +72,9 @@ func get_execution_state_token() -> Dictionary:
 	token["target_cell"] = target_cell
 	if map_manager and map_manager.occupancy_manager:
 		token["occ_version"] = map_manager.occupancy_manager.get_version()
+	if validation_snapshot.size() > 0:
+		token["snapshot"] = validation_snapshot.duplicate(true)
 	return token
+
+func get_failure_reason() -> String:
+	return validation_reason
