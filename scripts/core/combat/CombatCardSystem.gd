@@ -79,10 +79,6 @@ func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) 
 		card_failed.emit(card, str(validation.get("reason", "invalid")))
 		return false
 
-	# Explicitly repair target room/occupancy before snapshotting
-	if map_manager and map_manager.core:
-		map_manager.core.repair_actor_room(target)
-
 	var occ_ver := -1
 	if map_manager and map_manager.occupancy_manager:
 		occ_ver = map_manager.occupancy_manager.get_version()
