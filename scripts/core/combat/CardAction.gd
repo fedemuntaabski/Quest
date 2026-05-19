@@ -3,6 +3,7 @@ class_name CardAction
 
 var card_system: CombatCardSystem
 var card_data: CardData
+var validation_reason: String = ""
 
 func _init(p_system: CombatCardSystem, p_card: CardData, p_target: Variant) -> void:
 	card_system = p_system
@@ -19,17 +20,23 @@ func can_execute() -> bool:
 		real_target = target as Node
 
 	if card_system == null:
+		validation_reason = "no_card_system"
 		print("[CardAction] can_execute: reject reason=no_card_system card=%s target=%s" % [card_data.display_name if card_data else "NULL", real_target.name if real_target else "NULL"])
 		return false
 	if card_data == null:
+		validation_reason = "no_card_data"
 		print("[CardAction] can_execute: reject reason=no_card_data target=%s" % [real_target.name if real_target else "NULL"])
 		return false
 	if real_target == null:
+		validation_reason = "no_target"
 		print("[CardAction] can_execute: reject reason=no_target card=%s" % [card_data.display_name])
 		return false
 	var ok: bool = card_system.can_play(card_data, real_target)
 	if not ok:
+		validation_reason = str(card_system.get_card_validation(card_data, real_target).get("reason", "invalid"))
 		print("[CardAction] can_execute: reject reason=can_play_false card=%s target=%s" % [card_data.display_name, real_target.name if real_target else "NULL"])
+	else:
+		validation_reason = ""
 	return ok
 
 func execute() -> void:
@@ -58,3 +65,6 @@ func get_execution_state_token() -> Dictionary:
 	if typeof(target) == TYPE_DICTIONARY:
 		token["snapshot"] = target.duplicate(true)
 	return token
+
+func get_failure_reason() -> String:
+	return validation_reason

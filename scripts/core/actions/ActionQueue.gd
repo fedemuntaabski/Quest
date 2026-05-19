@@ -54,7 +54,8 @@ func process_next() -> void:
 
 	if not action.can_execute():
 		print("[ActionQueue] process_next: action cannot execute, finishing action=%s" % _describe_action(action))
-		var res := {"status":"cannot_execute", "consumes_turn": false, "reason":"can_execute_false"}
+		var failure_reason : Variant = action.get_failure_reason() if action and action.has_method("get_failure_reason") else ""
+		var res : Dictionary = {"status":"cannot_execute", "consumes_turn": false, "reason": failure_reason if failure_reason != "" else "can_execute_false"}
 		action.finish(res)
 		_is_busy = false
 		_current_action = null

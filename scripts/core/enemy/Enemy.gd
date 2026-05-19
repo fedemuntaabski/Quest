@@ -298,7 +298,13 @@ func _queue_attack_action(target: Node) -> void:
 	if turn_manager == null or turn_manager.action_queue == null:
 		return
 
-	var action: BaseAction = AttackAction.new(combat_component, target)
+	var snapshot: Dictionary = {}
+	if map_manager and map_manager.occupancy_manager:
+		snapshot["occ_version"] = map_manager.occupancy_manager.get_version()
+	if map_manager:
+		snapshot["target_cell"] = map_manager.get_actor_cell(target)
+		snapshot["target_room_id"] = map_manager.get_actor_room_id(target)
+	var action: BaseAction = AttackAction.new(combat_component, target, snapshot)
 	turn_manager.action_queue.queue_action(action)
 
 func _on_died():

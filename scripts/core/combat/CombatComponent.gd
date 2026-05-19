@@ -30,44 +30,67 @@ func setup(p_owner: Node, p_stats: CharacterStats, p_map_manager: MapManager) ->
 
 	stats = p_stats
 
-func can_attack(target: Node) -> bool:
-	var target_component := _resolve_target_component(target)
+func get_attack_validation(target: Node) -> Dictionary:
+	var result := {
+		"valid": false,
+		"reason": "invalid"
+	}
 
+	var target_component := _resolve_target_component(target)
 	if target_component == null:
-		return false
+		result["reason"] = "no_target"
+		return result
 
 	if stats == null or target_component.stats == null:
-		return false
+		result["reason"] = "missing_stats"
+		return result
 
-	if not stats.is_alive() or not target_component.stats.is_alive():
-		return false
+	if not stats.is_alive():
+		result["reason"] = "source_dead"
+		return result
+
+	if not target_component.stats.is_alive():
+		result["reason"] = "target_dead"
+		return result
 
 	if actor_owner and actor_owner.has_method("sync_to_grid"):
 		actor_owner.sync_to_grid()
 	if target_component.actor_owner and target_component.actor_owner.has_method("sync_to_grid"):
 		target_component.actor_owner.sync_to_grid()
-	if map_manager and not map_manager.can_actors_engage(actor_owner, target_component.actor_owner):
-		return false
 
-	return _is_in_range(target_component)
+	if map_manager and not map_manager.can_actors_engage(actor_owner, target_component.actor_owner):
+		result["reason"] = "not_in_same_room"
+		return result
+
+	if not _is_in_range(target_component):
+		result["reason"] = "out_of_range"
+		return result
+
+	result["valid"] = true
+	result["reason"] = "ok"
+	result["target_component"] = target_component
+	return result
+
+func can_attack(target: Node) -> bool:
+	return bool(get_attack_validation(target).get("valid", false))
 
 func attack(target: Node) -> Dictionary:
-	var target_component := _resolve_target_component(target)
+	var validation := get_attack_validation(target)
+	if not bool(validation.get("valid", false)):
+		return {
+			"hit": false,
+			"crit": false,
+			"damage": 0,
+			"reason": validation.get("reason", "invalid")
+		}
 
+	var target_component := validation.get("target_component") as CombatComponent
 	if target_component == null:
 		return {
 			"hit": false,
 			"crit": false,
 			"damage": 0,
 			"reason": "no_target"
-		}
-
-	if not can_attack(target):
-		return {
-			"hit": false,
-			"crit": false,
-			"damage": 0,
-			"reason": "out_of_range"
 		}
 
 	if forced_miss_chance > 0.0 and randf() < forced_miss_chance:

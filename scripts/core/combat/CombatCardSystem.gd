@@ -16,22 +16,50 @@ func setup(p_owner: Node, p_map: MapManager, p_card_manager: CardManager, p_comb
 	combat_component = p_combat
 	add_to_group("combat_card_system")
 
-func can_play(card: CardData, target: Node) -> bool:
-	if card == null or card_manager == null or combat_component == null:
-		return false
+func get_card_validation(card: CardData, target: Node) -> Dictionary:
+	var result := {
+		"valid": false,
+		"reason": "invalid"
+	}
+
+	if card == null:
+		result["reason"] = "missing_card"
+		return result
+	if card_manager == null:
+		result["reason"] = "missing_card_manager"
+		return result
+	if combat_component == null:
+		result["reason"] = "missing_combat_component"
+		return result
 	if combat_component.stats == null:
-		return false
+		result["reason"] = "missing_stats"
+		return result
 	if not card_manager.can_play_card(card):
-		return false
+		result["reason"] = "card_on_cooldown"
+		return result
+
 	if card.target_type == "enemy":
 		var target_component := _resolve_target_component(target)
-		if target_component == null or target_component.stats == null:
-			return false
+		if target_component == null:
+			result["reason"] = "no_target"
+			return result
+		if target_component.stats == null:
+			result["reason"] = "missing_target_stats"
+			return result
 		if not target_component.stats.is_alive():
-			return false
-	if card.target_type == "self" and combat_component.stats and not combat_component.stats.is_alive():
-		return false
-	return true
+			result["reason"] = "target_dead"
+			return result
+
+	if card.target_type == "self" and not combat_component.stats.is_alive():
+		result["reason"] = "source_dead"
+		return result
+
+	result["valid"] = true
+	result["reason"] = "ok"
+	return result
+
+func can_play(card: CardData, target: Node) -> bool:
+	return bool(get_card_validation(card, target).get("valid", false))
 
 func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) -> bool:
 	if card == null:
@@ -46,8 +74,9 @@ func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) 
 	if turn_manager.action_queue.is_busy():
 		card_failed.emit(card, "queue_busy")
 		return false
-	if not can_play(card, target):
-		card_failed.emit(card, "invalid")
+	var validation := get_card_validation(card, target)
+	if not bool(validation.get("valid", false)):
+		card_failed.emit(card, str(validation.get("reason", "invalid")))
 		return false
 
 	# Explicitly repair target room/occupancy before snapshotting
@@ -70,9 +99,11 @@ func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) 
 	return true
 
 func execute_card(card: CardData, target: Node) -> Dictionary:
-	if not can_play(card, target):
-		card_failed.emit(card, "invalid")
-		return {"hit": false, "damage": 0, "reason": "invalid"}
+	var validation := get_card_validation(card, target)
+	if not bool(validation.get("valid", false)):
+		var reason := str(validation.get("reason", "invalid"))
+		card_failed.emit(card, reason)
+		return {"hit": false, "damage": 0, "reason": reason}
 
 	var target_component := _resolve_target_component(target)
 	if target_component == null or target_component.stats == null:
@@ -134,6 +165,12 @@ func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 	if target_component == null or target_component.stats == null:
 		card_failed.emit(card, "no_target_component")
 		return {"hit": false, "damage": 0, "reason": "no_target_component"}
+
+	var validation := get_card_validation(card, target)
+	if not bool(validation.get("valid", false)):
+		var reason := str(validation.get("reason", "invalid"))
+		card_failed.emit(card, reason)
+		return {"hit": false, "damage": 0, "reason": reason}
 
 	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
 	if owner_actor and owner_actor.is_in_group("player"):
