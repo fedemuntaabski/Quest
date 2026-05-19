@@ -33,7 +33,7 @@ func _on_body_entered(body: Node2D, room_id: int) -> void:
 	if body.name != "Player" and not body.is_in_group("player"):
 		return
 
-	_set_active_room(room_id)
+	_set_active_room(room_id, false)
 
 func update_player_cell(grid_pos: Vector2i) -> void:
 	if dungeon == null:
@@ -44,20 +44,21 @@ func update_player_cell(grid_pos: Vector2i) -> void:
 		if not room_rect.has_point(grid_pos):
 			continue
 
-		_set_active_room(int(room_info.get("id", -1)))
+		_set_active_room(int(room_info.get("id", -1)), false)
 		return
 
-func _set_active_room(room_id: int) -> void:
+func _set_active_room(room_id: int, enforce_connectivity: bool = true) -> void:
 	if room_id == active_room_id:
 		return
 
-	# Use the global dungeon.active_room_id for connectivity checks. The RoomSystem's
-	# local active_room_id can be stale during initialization or when managers update
-	# state from elsewhere; consulting the dungeon keeps the single source of truth.
-	if dungeon != null and dungeon.active_room_id >= 0 and not dungeon.are_rooms_connected(dungeon.active_room_id, room_id):
-		# Helpful debug log to trace rejected transitions in odd rooms.
+	if enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0 and not dungeon.are_rooms_connected(dungeon.active_room_id, room_id):
 		print("RoomSystem: rejected activation of room %d because it's not connected to active room %d" % [room_id, dungeon.active_room_id])
 		return
 
+	if not enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0 and not dungeon.are_rooms_connected(dungeon.active_room_id, room_id):
+		print("RoomSystem: accepting non-adjacent room sync from player position room %d -> %d" % [dungeon.active_room_id, room_id])
+
 	active_room_id = room_id
+	if dungeon:
+		dungeon.active_room_id = room_id
 	emit_signal("room_changed", room_id)

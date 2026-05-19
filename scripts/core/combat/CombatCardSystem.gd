@@ -23,15 +23,11 @@ func can_play(card: CardData, target: Node) -> bool:
 		return false
 	if not card_manager.can_play_card(card):
 		return false
-	if not CardTargeting.is_valid_target(card, owner_actor, target, map_manager):
-		return false
 	if card.target_type == "enemy":
 		var target_component := _resolve_target_component(target)
 		if target_component == null or target_component.stats == null:
 			return false
 		if not target_component.stats.is_alive():
-			return false
-		if not CardTargeting.is_in_range(owner_actor, target, card.range, map_manager):
 			return false
 	if card.target_type == "self" and combat_component.stats and not combat_component.stats.is_alive():
 		return false

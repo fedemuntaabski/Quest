@@ -6,12 +6,16 @@ class_name EffectApplier
 # no longer directly manipulates map or status metadata.
 
 func apply(result: Dictionary, target_component: CombatComponent, context: EffectContext) -> void:
+	print("[EffectApplier] apply: START result=%s, target=%s" % [result, target_component.actor_owner.name if target_component and target_component.actor_owner else "NULL"])
 	if result == null:
+		print("[EffectApplier] apply: result is NULL")
 		return
 	if target_component == null:
+		print("[EffectApplier] apply: target_component is NULL")
 		return
 	if context == null:
 		push_warning("EffectApplier.apply called with null context")
+		print("[EffectApplier] apply: context is NULL")
 		return
 
 	var map_manager := context.map_manager
@@ -19,9 +23,11 @@ func apply(result: Dictionary, target_component: CombatComponent, context: Effec
 
 	if map_manager == null:
 		push_warning("EffectApplier: missing map_manager in context")
+		print("[EffectApplier] apply: reject reason=missing_map_manager")
 		return
 	if target_component.actor_owner == null or not is_instance_valid(target_component.actor_owner):
 		push_warning("EffectApplier: target actor is invalid or freed")
+		print("[EffectApplier] apply: reject reason=invalid_target_actor")
 		return
 
 	# Begin effect transaction
@@ -31,6 +37,8 @@ func apply(result: Dictionary, target_component: CombatComponent, context: Effec
 	var success: bool = true
 
 	# Movement
+	var movement_count: int = result.get("movement", []).size()
+	print("[EffectApplier] apply: processing %d movement effects" % movement_count)
 	for move_data in result.get("movement", []):
 		if not (move_data is Dictionary):
 			continue
@@ -42,6 +50,8 @@ func apply(result: Dictionary, target_component: CombatComponent, context: Effec
 
 	# Statuses
 	if success:
+		var status_count: int = result.get("statuses", []).size()
+		print("[EffectApplier] apply: processing %d status effects" % status_count)
 		for status_data in result.get("statuses", []):
 			if not (status_data is Dictionary):
 				continue
@@ -51,11 +61,13 @@ func apply(result: Dictionary, target_component: CombatComponent, context: Effec
 				success = false
 				break
 
+	print("[EffectApplier] apply: effects complete success=%s movement_count=%d status_count=%d" % [success, movement_count, result.get("statuses", []).size()])
 	if context:
 		if success:
 			context.commit()
 		else:
 			context.rollback()
+	print("[EffectApplier] apply: COMPLETE")
 
 func _apply_movement_effect(move_data: Dictionary, target_component: CombatComponent, owner_actor: Node, map_manager: Node, context: EffectContext) -> bool:
 	if map_manager == null:

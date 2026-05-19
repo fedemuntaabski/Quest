@@ -20,9 +20,9 @@ func add_gold(amount: int, position: Vector2 = Vector2.ZERO) -> void:
 	# Optional: You can add visual effects here (floating text, particle effects, etc.)
 	# For now, just print for debugging
 	if position != Vector2.ZERO:
-		print("[CurrencyManager] Added %d gold at %s, total: %d" % [amount, position, _gold])
+		print("Added %d gold at position %s" % [amount, position])
 	else:
-		print("[CurrencyManager] Added %d gold, total: %d" % [amount, _gold])
+		print("Added %d gold" % amount)
 
 func set_gold(amount: int) -> void:
 	_gold = max(0, amount)

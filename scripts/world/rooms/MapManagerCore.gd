@@ -19,6 +19,17 @@ func _occupancy() -> OccupancyManager:
 func _enemy_manager() -> EnemyManager:
 	return map_manager.enemy_manager if map_manager else null
 
+func _is_active_gameplay() -> bool:
+	if map_manager == null:
+		return false
+	var tree := map_manager.get_tree()
+	if tree == null:
+		return false
+	var gsm := tree.get_first_node_in_group("game_state_manager") as GameStateManager
+	if gsm == null:
+		return true
+	return gsm.can_process_input()
+
 func world_to_grid(world: Vector2) -> Vector2i:
 	var nav = _nav()
 	return nav.world_to_grid_coords(world) if nav else Vector2i.ZERO
@@ -129,29 +140,65 @@ func get_room_id_for_cell(grid_pos: Vector2i) -> int:
 			return int(info.get("id", -1))
 	return -1
 
-func get_actor_room_id(actor: Node) -> int:
+func _resolve_actor_cell(actor: Node) -> Variant:
 	if actor == null:
-		return -1
-	if actor is Enemy:
-		return actor.my_room_id
+		return null
 	var cell: Variant = get_actor_cell(actor)
-	if cell == null and actor.get("grid_pos") != null:
+	if cell != null:
+		return cell
+	if actor.get("grid_pos") != null:
 		cell = actor.get("grid_pos")
+	if cell == null and actor is Node2D and map_manager:
+		cell = map_manager.world_to_grid_coords((actor as Node2D).global_position)
+	if cell != null:
+		update_actor_cell(actor, cell)
+	return cell
+
+func _repair_room_id_from_actor(actor: Node) -> int:
+	var cell: Variant = _resolve_actor_cell(actor)
 	if cell == null:
 		return -1
 	return get_room_id_for_cell(cell)
+
+func get_actor_room_id(actor: Node) -> int:
+	if actor == null:
+		return -1
+	if actor is Enemy and actor.my_room_id >= 0:
+		return actor.my_room_id
+	var room_id := _repair_room_id_from_actor(actor)
+	if room_id != -1:
+		return room_id
+	if _is_active_gameplay() and (actor is PlayerMovement or actor.is_in_group("player")):
+		var dungeon := _dungeon()
+		if dungeon and dungeon.active_room_id >= 0:
+			print("[MapManagerCore] get_actor_room_id: repaired player room from active_room_id=%d after unresolved room (-1)" % dungeon.active_room_id)
+			return dungeon.active_room_id
+	if _is_active_gameplay():
+		print("[MapManagerCore] get_actor_room_id: unresolved room=-1 actor=%s" % (actor.name if actor else "NULL"))
+	return -1
 
 func can_actors_engage(source: Node, target: Node) -> bool:
 	var dungeon: DungeonGenerator = _dungeon()
 	if dungeon == null:
 		return true
 	if source == null or target == null:
+		print("[MapManagerCore] can_actors_engage: source or target NULL")
 		return false
 	var source_room := get_actor_room_id(source)
 	var target_room := get_actor_room_id(target)
+	if _is_active_gameplay() and (source_room == -1 or target_room == -1):
+		source_room = _repair_room_id_from_actor(source) if source_room == -1 else source_room
+		target_room = _repair_room_id_from_actor(target) if target_room == -1 else target_room
+		if source_room == -1 and (source is PlayerMovement or source.is_in_group("player")) and dungeon and dungeon.active_room_id >= 0:
+			source_room = dungeon.active_room_id
+		if target_room == -1 and (target is PlayerMovement or target.is_in_group("player")) and dungeon and dungeon.active_room_id >= 0:
+			target_room = dungeon.active_room_id
 	if source_room == -1 and target_room == -1:
 		return true
-	return source_room != -1 and source_room == target_room
+	var can_engage := source_room != -1 and source_room == target_room
+	if not can_engage:
+		print("[MapManagerCore] can_actors_engage: blocked source=%s room=%d target=%s room=%d active_room=%d source_cell=%s target_cell=%s" % [source.name if source else "NULL", source_room, target.name if target else "NULL", target_room, dungeon.active_room_id, str(_resolve_actor_cell(source)), str(_resolve_actor_cell(target))])
+	return can_engage
 
 func _is_player_room_locked() -> bool:
 	var dungeon: DungeonGenerator = _dungeon()

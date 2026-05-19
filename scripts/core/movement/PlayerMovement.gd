@@ -163,6 +163,9 @@ func _force_step_complete() -> void:
 		return
 	global_position = target_world_pos
 	is_moving_step = false
+	if map_manager:
+		map_manager.update_actor_cell(self, grid_pos)
+	update_room_state_from_grid()
 	
 	# Emit signal: movement animation completed
 	movement_ended.emit()
@@ -200,6 +203,7 @@ func cancel_movement() -> void:
 
 func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
+	sync_to_grid()
 	if stats and stats.is_alive():
 		stats.process_runtime_modifiers_turn_start()
 		var status_result := StatusRuntime.process_turn_start(self, stats)

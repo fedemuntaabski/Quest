@@ -220,7 +220,7 @@ func begin_turn(tm: TurnManager) -> void:
 		return
 
 	if dungeon_generator and dungeon_generator.active_room_id != my_room_id:
-		_queue_wait_action()
+		_skip_turn("off_room")
 		return
 
 	sync_to_grid()
@@ -239,6 +239,13 @@ func begin_turn(tm: TurnManager) -> void:
 		return
 
 	_queue_wait_action()
+
+func _skip_turn(reason: String = "") -> void:
+	if turn_manager == null:
+		return
+	print("[Enemy] _skip_turn: enemy=%s reason=%s" % [name, reason])
+	# Defer to avoid nested turn-manager recursion within begin_turn()
+	turn_manager.call_deferred("end_turn")
 
 func _start_move_to(next: Vector2i) -> void:
 	_start_pos = global_position

@@ -36,7 +36,7 @@ var player: PlayerMovement = null
 var map_manager: MapManager = null
 var card_library: CardLibrary = null
 var card_manager: CardManager = null
-var combat_card_system: CombatCardSystem = null
+var combat_card_system: CombatCardSystem = null	
 
 func setup(p_player: PlayerMovement, p_map_manager: MapManager, p_card_library: CardLibrary = null) -> void:
 	player = p_player
@@ -68,17 +68,23 @@ func _ensure_card_system() -> void:
 		card_manager.name = "CardManager"
 		player.add_child(card_manager)
 	card_manager.max_equipped = 3
-	var starter_deck := _get_starter_deck()
-	if starter_deck == null or starter_deck.is_empty():
-		push_error("[CardSystemController] Failed to load starter deck")
-		return
-	card_manager.set_deck(starter_deck)
 
 	combat_card_system = player.get_node_or_null("CombatCardSystem") as CombatCardSystem
 	if combat_card_system == null:
+		print("[CardSystemController] CombatCardSystem not found, creating new instance")
 		combat_card_system = CombatCardSystem.new()
 		combat_card_system.name = "CombatCardSystem"
 		player.add_child(combat_card_system)
+		print("[CardSystemController] CombatCardSystem created and added to player")
+	else:
+		print("[CardSystemController] CombatCardSystem found existing instance")
+
+	var starter_deck := _get_starter_deck()
+	if starter_deck == null or starter_deck.is_empty():
+		push_error("[CardSystemController] Failed to load starter deck; initializing empty deck")
+		card_manager.set_deck([])
+	else:
+		card_manager.set_deck(starter_deck)
 
 	combat_card_system.setup(player, map_manager, card_manager, player.get_combat_component())
 
@@ -107,6 +113,9 @@ func _on_hud_ready() -> void:
 	var hud := get_tree().get_first_node_in_group("hud") as HUDController
 	if hud == null or card_manager == null:
 		return
+	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if game_state_manager and not game_state_manager.state_changed.is_connected(Callable(self, "_on_game_state_changed")):
+		game_state_manager.state_changed.connect(Callable(self, "_on_game_state_changed"))
 	
 	hud.bind_card_manager(card_manager)
 	
@@ -133,9 +142,30 @@ func update_hotbar_ui() -> void:
 	if card_manager:
 		card_manager.ui_state_changed.emit(card_manager.get_equipped_payload(), card_manager.active_index)
 
+func clear_targeting_state() -> void:
+	print("[CardSystemController] clear_targeting_state()")
+	if card_manager and card_manager.active_index != -1:
+		card_manager.set_active_index(-1)
+	var action_controller := get_parent() as PlayerActionController
+	if action_controller and action_controller.has_method("clear_hover_targeting_state"):
+		action_controller.clear_hover_targeting_state()
+	update_hotbar_ui()
+
+func _on_game_state_changed(new_state: GameStateManager.State, _old_state: GameStateManager.State) -> void:
+	print("[CardSystemController] _on_game_state_changed: %s -> %s" % [GameStateManager.State.keys()[_old_state], GameStateManager.State.keys()[new_state]])
+	if new_state != GameStateManager.State.ACTIVE:
+		clear_targeting_state()
+
 func on_hotbar_slot_pressed(index: int) -> void:
 	# Toggle selection behavior
 	if card_manager == null:
+		return
+	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	if game_state_manager and not game_state_manager.can_process_input():
+		print("[CardSystemController] on_hotbar_slot_pressed: ignored, game state is %s" % GameStateManager.State.keys()[game_state_manager.get_state()])
+		return
+	if player and player.has_method("can_accept_input") and not player.can_accept_input():
+		print("[CardSystemController] on_hotbar_slot_pressed: ignored, player cannot accept input")
 		return
 	if card_manager.active_index == index:
 		card_manager.set_active_index(-1)

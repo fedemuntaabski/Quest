@@ -26,13 +26,19 @@ static func is_valid_target(card: CardData, source: Node, target: Node, map_mana
 
 	match card.target_type:
 		"self":
-			return target == source
+			var self_ok := target == source
+			return self_ok
 		"enemy":
 			if target == null or target == source:
 				return false
 			if map_manager and not map_manager.can_actors_engage(source, target):
+				var source_room := map_manager.get_actor_room_id(source)
+				var target_room := map_manager.get_actor_room_id(target)
 				return false
-			return target.has_method("get_combat_component") or target.get_node_or_null("CombatComponent") != null
+			var has_combat := target.has_method("get_combat_component") or target.get_node_or_null("CombatComponent") != null
+			#if not has_combat:
+
+			return has_combat
 		"ground":
 			return true
 		"ally":

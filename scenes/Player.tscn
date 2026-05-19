@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://dejmffrbdemc4" path="res://icon.svg" id="4_player_texture"]
 [ext_resource type="Script" uid="uid://b6lwqx80hen7e" path="res://scripts/core/stats/CharacterStats.gd" id="4_qu4a1"]
 [ext_resource type="Script" uid="uid://boh5eyjv4p1ye" path="res://scripts/core/movement/PlayerActionController.gd" id="5_qu4a1"]
+[ext_resource type="Script" path="res://scripts/core/cards/CardSystemController.gd" id="8_card_system_controller"]
 [ext_resource type="PackedScene" uid="uid://status_indicator" path="res://scenes/StatusIndicator.tscn" id="6_status_indicator"]
 [ext_resource type="Script" uid="uid://status_component" path="res://scripts/core/stats/StatusComponent.gd" id="7_status_component"]
 
@@ -52,3 +53,6 @@ script = ExtResource("7_status_component")
 
 [node name="PlayerActionController" type="Node" parent="." unique_id=959578203]
 script = ExtResource("5_qu4a1")
+
+[node name="CardSystemController" type="Node" parent="PlayerActionController"]
+script = ExtResource("8_card_system_controller")

@@ -6,8 +6,10 @@ const PRELOAD_DAMAGE_EFFECT = preload("res://scripts/core/effects/DamageEffect.g
 static func resolve_card(card: CardData, source_stats: CharacterStats, target_stats: CharacterStats) -> Dictionary:
 	var results: Array = []
 	var has_damage := false
+	print("[CardResolver] resolve_card: START card=%s effects=%d" % [card.display_name if card else "NULL", card.effects.size() if card else 0])
 
 	if card == null or source_stats == null or target_stats == null:
+		print("[CardResolver] resolve_card: reject reason=missing_inputs card=%s source_stats=%s target_stats=%s" % ["valid" if card else "NULL", "valid" if source_stats else "NULL", "valid" if target_stats else "NULL"])
 		return {"results": results, "hit": false, "damage": 0}
 
 	if card.effects.is_empty():
@@ -33,6 +35,7 @@ static func resolve_card(card: CardData, source_stats: CharacterStats, target_st
 	var summary := _summarize_results(results)
 	if not has_damage:
 		summary["hit"] = true
+	print("[CardResolver] resolve_card: END card=%s hit=%s damage=%d result_count=%d movement=%d statuses=%d modifiers=%d" % [card.display_name, summary.get("hit", false), int(summary.get("damage", 0)), results.size(), summary.get("movement", []).size(), summary.get("statuses", []).size(), summary.get("modifiers", []).size()])
 
 	return summary
 
