@@ -308,6 +308,10 @@ func _on_player_died() -> void:
 	if victory_overlay:
 		victory_overlay.hide_victory()
 	
+	# Grant accumulated gold from defeated enemies before showing death screen
+	if enemy_manager:
+		enemy_manager.grant_and_reset_accumulated_gold()
+	
 	# Use GameStateManager to handle death state
 	var gsm := _get_game_state_manager()
 	if gsm:
@@ -356,6 +360,11 @@ func _on_victory_entered() -> void:
 	var tree := get_tree()
 	if tree == null:
 		return
+	
+	# Grant accumulated gold from defeated enemies before showing victory screen
+	if enemy_manager:
+		enemy_manager.grant_and_reset_accumulated_gold()
+	
 	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
 	var run_gold := 0
 	if currency:

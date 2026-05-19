@@ -22,7 +22,7 @@ config/icon="uid://csy67bd45j2vb"
 PlayerStats="*res://scripts/core/stats/PlayerStats.gd"
 SaveManager="*res://scripts/managers/SaveManager.gd"
 MapManag="uid://cwowlgio0q0w8"
-CurrencyManager="*res://scripts/CurrencyManager.gd"
+CurrencyManager="*res://scripts/managers/CurrencyManager.gd"
 
 [display]
 

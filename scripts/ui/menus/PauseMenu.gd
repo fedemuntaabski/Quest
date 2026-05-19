@@ -46,6 +46,10 @@ const UPGRADE_COST_STEP := 25
 
 var is_open := false
 
+# PHASE 2: Transaction error feedback
+var _error_message_timer: float = 0.0
+var _error_message: String = ""
+
 # ---------------- INIT ----------------
 
 func _ready() -> void:
@@ -82,6 +86,11 @@ func _ready() -> void:
 	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
 	if currency and not currency.gold_changed.is_connected(_on_gold_changed):
 		currency.gold_changed.connect(_on_gold_changed)
+
+func _process(delta: float) -> void:
+	# PHASE 2: Handle error message display timeout
+	if _error_message_timer > 0:
+		_error_message_timer -= delta
 
 # ---------------- OPEN / CLOSE ----------------
 
@@ -198,7 +207,13 @@ func _update_store():
 	if not save_mgr:
 		return
 
-	gold_label.text = "Oro: %d" % save_mgr.gold
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var current_gold := currency.get_gold() if currency else save_mgr.gold
+	gold_label.text = "Oro: %d" % current_gold
+	
+	# PHASE 2: Display transaction error if present
+	if _error_message_timer > 0 and _error_message != "":
+		gold_label.text = "%s - %s" % [gold_label.text, _error_message]
 
 	var stats: Array[String] = ["hp", "str", "mag", "dex"]
 	for i in upgrade_buttons.size():
@@ -229,11 +244,12 @@ func _update_store():
 			]
 
 func _update_gold_labels() -> void:
-	var save := save_mgr if save_mgr else get_node_or_null("/root/SaveManager")
-	if pause_gold_label and save:
-		pause_gold_label.text = "Oro: %d" % save.gold
-	if gold_label and save:
-		gold_label.text = "Oro: %d" % save.gold
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var current_gold := currency.get_gold() if currency else (save_mgr.gold if save_mgr else 0)
+	if pause_gold_label:
+		pause_gold_label.text = "Oro: %d" % current_gold
+	if gold_label:
+		gold_label.text = "Oro: %d" % current_gold
 
 func _on_gold_changed(_amount: int) -> void:
 	_update_gold_labels()
@@ -254,9 +270,19 @@ func _on_upgrade_pressed(stat: String):
 
 	var level := player_stats.get_upgrade_level(stat_name)
 	var cost := _get_upgrade_cost(level)
-	if save_mgr.gold < cost:
+	
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	if currency == null:
+		return
+	
+	# PHASE 2: Validate transaction atomically
+	if not currency.spend_gold(cost):
+		# Transaction failed: insufficient gold
+		_show_error_message("Oro Insuficiente")
+		_play_click()
 		return
 
+	# Transaction succeeded: apply upgrade
 	var value_change := int(config.get("value", 1))
 	var upgrade := {
 		"card_name": "Store Upgrade",
@@ -264,16 +290,19 @@ func _on_upgrade_pressed(stat: String):
 		"value_change": value_change
 	}
 	if not player_stats.apply_upgrade(upgrade):
+		push_warning("Upgrade apply failed after gold deduction for stat: %s" % stat_name)
 		return
 
-	save_mgr.gold -= cost
-
-	save_mgr.save_game()
 	_update_gold_labels()
 	_update_store()
 
 func _get_upgrade_cost(level: int) -> int:
 	return BASE_UPGRADE_COST + (max(level, 0) * UPGRADE_COST_STEP)
+
+func _show_error_message(message: String) -> void:
+	# PHASE 2: Display error feedback temporarily
+	_error_message = message
+	_error_message_timer = 3.0  # Show for 3 seconds
 
 func _get_game_state_manager() -> GameStateManager:
 	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager

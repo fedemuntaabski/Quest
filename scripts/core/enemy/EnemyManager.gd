@@ -30,6 +30,9 @@ var final_room_id: int = -1
 
 const COIN_REWARD_PER_ENEMY := 5
 
+# Deferred gold reward system: accumulate during run, grant at run-end
+var _run_accumulated_gold: int = 0
+
 
 func _ready() -> void:
 	if default_enemy_data == null:
@@ -62,6 +65,7 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 
 	_room_enemy_counts.clear()
 	enemies.clear() # 🔥 importante
+	_run_accumulated_gold = 0  # Reset accumulated gold for new run
 	boss_spawned = false
 	boss_enemy = null
 
@@ -259,13 +263,15 @@ func _on_enemy_defeated(enemy, room_id: int) -> void:
 	if enemy:
 		is_boss = enemy.get("is_boss") == true
 
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
 	var reward_gold := COIN_REWARD_PER_ENEMY
 	if enemy and enemy.has_method("get_reward_gold"):
 		reward_gold = int(enemy.get_reward_gold())
-	if currency and enemy and enemy is Node2D:
-		# Always add gold on death; boss victory snapshots must see the finalized total.
-		currency.add_gold(reward_gold, enemy.global_position)
+	
+	# DEFERRED GOLD: Accumulate reward internally instead of granting immediately
+	# This prevents players from spending gold during combat and ensures
+	# all rewards are granted atomically at run-end (victory or defeat screen)
+	_run_accumulated_gold += max(0, reward_gold)
+	print("[EnemyManager] Enemy defeated: +%dg (accumulated total: %dg)" % [reward_gold, _run_accumulated_gold])
 
 	# Bosses: emit boss_defeated and grant gold, but DO NOT emit the reward signal
 	if is_boss:
@@ -289,3 +295,23 @@ func _on_enemy_defeated(enemy, room_id: int) -> void:
 	if _room_enemy_counts[room_id] <= 0:
 		_room_enemy_counts.erase(room_id)
 		room_cleared.emit(room_id)
+
+
+func grant_and_reset_accumulated_gold() -> int:
+	# Grant all accumulated gold at run-end and return the amount granted
+	# This is called by Main2d when victory or defeat screen appears
+	if _run_accumulated_gold <= 0:
+		return 0
+	
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	if currency == null:
+		push_warning("[EnemyManager] Cannot grant accumulated gold: CurrencyManager not found")
+		var temp := _run_accumulated_gold
+		_run_accumulated_gold = 0
+		return temp
+	
+	var amount := _run_accumulated_gold
+	currency.add_gold(amount, Vector2.ZERO)  # Grant without world position (bulk reward)
+	print("[EnemyManager] Run ended: granted accumulated gold +%dg" % amount)
+	_run_accumulated_gold = 0
+	return amount
