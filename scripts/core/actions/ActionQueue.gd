@@ -3,10 +3,11 @@ class_name ActionQueue
 
 const PRELOAD_BASE_ACTION = preload("res://scripts/core/actions/BaseAction.gd")
 
-signal action_finished(action: BaseAction)
+signal action_finished(action: BaseAction, result: Dictionary)
 
 var _queue: Array[BaseAction] = []
 var _is_busy: bool = false
+var _current_action: BaseAction = null
 
 func _describe_action(action: BaseAction) -> String:
 	if action == null:
@@ -48,28 +49,60 @@ func process_next() -> void:
 
 	print("[ActionQueue] process_next: executing action, type=%s" % _describe_action(action))
 	_is_busy = true
+	_current_action = action
 
 	if not action.can_execute():
 		print("[ActionQueue] process_next: action cannot execute, finishing action=%s" % _describe_action(action))
-		action.finish()
+		var res := {"status":"cannot_execute", "consumes_turn": false, "reason":"can_execute_false"}
+		action.finish(res)
 		_is_busy = false
-		action_finished.emit(action)
+		_current_action = null
+		action_finished.emit(action, res)
 		process_next()
 		return
 
 	action.execute()
+	var completed_args = []
 	if not action.is_complete:
-		await action.completed
+		completed_args = await action.completed
+	# completed_args expected [action, result]
+	var res: Dictionary = action.result if action.result else (completed_args[1] if completed_args.size() >= 2 else {})
 
-	action.finish()
+	if not action.is_complete:
+		# if action didn't call finish, finish it now with default success
+		action.finish(res)
+
 	print("[ActionQueue] process_next: action finished, type=%s queue_size_remaining=%d" % [_describe_action(action), _queue.size()])
 	_is_busy = false
-	action_finished.emit(action)
+	_current_action = null
+	action_finished.emit(action, res)
 	process_next()
 
 func clear() -> void:
 	_queue.clear()
 	_is_busy = false
+	_current_action = null
+
+
+func cancel_action(action: BaseAction, reason: String = "canceled") -> bool:
+	# If action is queued but not running, remove and emit cancellation
+	if action == null:
+		return false
+	if _queue.has(action):
+		_queue.erase(action)
+		var res := {"status":"canceled", "reason": reason, "consumes_turn": false}
+		action.finish(res)
+		action_finished.emit(action, res)
+		return true
+
+	# If action is running, attempt to finish it immediately
+	if _current_action == action:
+		var res2 := {"status":"canceled", "reason": reason, "consumes_turn": false}
+		# best-effort finish
+		action.finish(res2)
+		return true
+
+	return false
 
 func is_busy() -> bool:
 	return _is_busy

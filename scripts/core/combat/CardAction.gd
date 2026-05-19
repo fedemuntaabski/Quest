@@ -4,7 +4,7 @@ class_name CardAction
 var card_system: CombatCardSystem
 var card_data: CardData
 
-func _init(p_system: CombatCardSystem, p_card: CardData, p_target: Node) -> void:
+func _init(p_system: CombatCardSystem, p_card: CardData, p_target: Variant) -> void:
 	card_system = p_system
 	card_data = p_card
 	var actor_owner_local := card_system.owner_actor if card_system else null
@@ -12,28 +12,41 @@ func _init(p_system: CombatCardSystem, p_card: CardData, p_target: Node) -> void
 	consume_turn = true
 
 func can_execute() -> bool:
+	var real_target: Node = null
+	if typeof(target) == TYPE_DICTIONARY and target.has("target") and target["target"] is Node:
+		real_target = target["target"] as Node
+	elif target is Node:
+		real_target = target as Node
+
 	if card_system == null:
-		print("[CardAction] can_execute: reject reason=no_card_system card=%s target=%s" % [card_data.display_name if card_data else "NULL", target.name if target else "NULL"])
+		print("[CardAction] can_execute: reject reason=no_card_system card=%s target=%s" % [card_data.display_name if card_data else "NULL", real_target.name if real_target else "NULL"])
 		return false
 	if card_data == null:
-		print("[CardAction] can_execute: reject reason=no_card_data target=%s" % [target.name if target else "NULL"])
+		print("[CardAction] can_execute: reject reason=no_card_data target=%s" % [real_target.name if real_target else "NULL"])
 		return false
-	if target == null:
+	if real_target == null:
 		print("[CardAction] can_execute: reject reason=no_target card=%s" % [card_data.display_name])
 		return false
-	var ok := card_system.can_play(card_data, target)
+	var ok: bool = card_system.can_play(card_data, real_target)
 	if not ok:
-		print("[CardAction] can_execute: reject reason=can_play_false card=%s target=%s" % [card_data.display_name, target.name if target else "NULL"])
+		print("[CardAction] can_execute: reject reason=can_play_false card=%s target=%s" % [card_data.display_name, real_target.name if real_target else "NULL"])
 	return ok
 
 func execute() -> void:
-	print("[CardAction] execute: START card=%s, target=%s" % [card_data.display_name if card_data else "NULL", target.name if target else "NULL"])
+	var res: Dictionary = {}
+	var real_target: Node = null
+	if typeof(target) == TYPE_DICTIONARY and target.has("target") and target["target"] is Node:
+		real_target = target["target"] as Node
+	elif target is Node:
+		real_target = target as Node
+
+	print("[CardAction] execute: START card=%s, target=%s" % [card_data.display_name if card_data else "NULL", real_target.name if real_target else "NULL"])
 	if card_system:
-		print("[CardAction] execute: awaiting card_system.execute_card()")
-		await card_system.execute_card(card_data, target)
-		print("[CardAction] execute: card_system.execute_card() completed")
+		print("[CardAction] execute: awaiting card_system.execute_card_snapshot()")
+		res = await card_system.execute_card_snapshot(card_data, target)
+		print("[CardAction] execute: card_system.execute_card_snapshot() completed")
 	else:
 		print("[CardAction] execute: card_system is NULL")
-	print("[CardAction] execute: calling finish()")
-	finish()
+	print("[CardAction] execute: calling finish(result)")
+	finish(res if res else {"status":"unknown"})
 	print("[CardAction] execute: COMPLETE")

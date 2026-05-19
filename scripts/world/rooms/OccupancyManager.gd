@@ -7,6 +7,7 @@ var _cell_to_actor: Dictionary = {} # cell(Vector2i) -> Array of actors
 var _actor_to_cell: Dictionary = {}
 var _blocking_actors: Dictionary = {}
 var _default_multi_mode: bool = false
+var _version: int = 0
 
 # Enable or disable default multi-occupancy mode for new registrations.
 func set_default_multi_mode(enabled: bool) -> void:
@@ -121,4 +122,14 @@ func _update_actor_cell(actor: Node, grid_pos: Vector2i, allow_multi: bool = fal
 		_cell_to_actor[grid_pos] = actor
 
 	_actor_to_cell[actor] = grid_pos
+	# Ensure actor's local grid_pos reflects canonical occupancy state
+	if actor != null and "grid_pos" in actor:
+		actor.grid_pos = grid_pos
+
+	# Bump internal occupancy version and emit change
+	_version += 1
 	occupancy_changed.emit(grid_pos, actor)
+
+
+func get_version() -> int:
+	return _version

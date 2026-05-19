@@ -145,13 +145,17 @@ func _actor_finished() -> void:
 
 	_begin_actor_turn()
 
-func _on_action_finished(action: BaseAction) -> void:
+func _on_action_finished(action: BaseAction, result: Dictionary) -> void:
 	if action == null:
 		return
 	if not _active:
 		return
 
-	if action.consume_turn:
+	var consumes := action.consume_turn
+	if result and result.has("consumes_turn"):
+		consumes = bool(result["consumes_turn"])
+
+	if consumes:
 		end_turn()
 
 func _can_process_turns() -> bool:

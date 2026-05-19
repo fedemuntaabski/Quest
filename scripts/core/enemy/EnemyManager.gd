@@ -109,6 +109,13 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 		# Register every enemy through the same setup path after it is inside the scene tree.
 		enemy.setup(get_parent(), player)
 
+		# Register occupancy and repair room membership explicitly after setup
+		if map_manager:
+			var grid_pos := map_manager.world_to_grid_coords(enemy.global_position)
+			map_manager.update_actor_cell(enemy, grid_pos)
+			if map_manager.core:
+				map_manager.core.repair_actor_room(enemy)
+
 		# Boss spawn rules: only one boss per run, must spawn in final room.
 		if not boss_spawned and room_id == final_room_id:
 			if selected_data and selected_data.is_boss:

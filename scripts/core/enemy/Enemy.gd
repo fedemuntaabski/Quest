@@ -204,6 +204,10 @@ func sync_to_grid():
 func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
 
+	# Ensure canonical occupancy/room assignment before making decisions
+	if map_manager and map_manager.core:
+		map_manager.core.repair_actor_room(self)
+
 	if stats and stats.is_alive():
 		stats.process_runtime_modifiers_turn_start()
 		var status_result := StatusRuntime.process_turn_start(self, stats)

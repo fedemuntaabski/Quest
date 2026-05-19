@@ -13,9 +13,12 @@ func set_active_room(room_id: int, animate: bool) -> void:
 		return
 	if room_id < 0 or room_id >= dungeon.room_infos.size():
 		return
+	# Delegate authoritative active-room assignment to RoomSystem if present
+	if dungeon.room_system:
+		# ask RoomSystem to set the active room (it will update dungeon.active_room_id and emit)
+		dungeon.room_system._set_active_room(room_id)
 
-	dungeon.active_room_id = room_id
-
+	# Update visuals and visited state based on the canonical dungeon.active_room_id
 	for index in range(dungeon.room_infos.size()):
 		var room_info: Dictionary = dungeon.room_infos[index]
 		var info_room_id: int = int(room_info["id"])
@@ -42,7 +45,6 @@ func set_active_room(room_id: int, animate: bool) -> void:
 		dungeon.room_infos[index] = room_info
 
 	tween_room_lights(animate)
-	dungeon.emit_signal("room_changed", dungeon.active_room_id)
 
 
 func tween_room_lights(animate: bool) -> void:

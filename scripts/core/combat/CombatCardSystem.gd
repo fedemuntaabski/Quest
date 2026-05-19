@@ -49,7 +49,23 @@ func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) 
 	if not can_play(card, target):
 		card_failed.emit(card, "invalid")
 		return false
-	var action := CardAction.new(self, card, target)
+
+	# Explicitly repair target room/occupancy before snapshotting
+	if map_manager and map_manager.core:
+		map_manager.core.repair_actor_room(target)
+
+	var occ_ver := -1
+	if map_manager and map_manager.occupancy_manager:
+		occ_ver = map_manager.occupancy_manager.get_version()
+
+	var snapshot := {
+		"target": target,
+		"cell": map_manager.get_actor_cell(target) if map_manager else null,
+		"room_id": map_manager.get_actor_room_id(target) if map_manager else -1,
+		"occ_version": occ_ver
+	}
+
+	var action := CardAction.new(self, card, snapshot)
 	turn_manager.action_queue.queue_action(action)
 	return true
 
@@ -82,6 +98,60 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 	else:
 		if target_component.actor_owner == null or not is_instance_valid(target_component.actor_owner):
 			push_warning("CombatCardSystem.execute_card: target actor invalid, skipping runtime effects")
+		else:
+			var ctx := EffectContext.new(owner_actor, map_manager, card_manager, combat_component)
+			var applier := EffectApplier.new()
+			await applier.apply(result, target_component, ctx)
+
+	card_manager.start_cooldown(card)
+	card_played.emit(card, target, result)
+	if owner_actor and owner_actor.is_in_group("player") and card_manager:
+		card_manager.set_active_index(-1)
+	return result
+
+
+func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
+	# Snapshot-aware execution: validate occupancy version and avoid re-repairing
+	if card == null:
+		card_failed.emit(card, "missing_card")
+		return {"hit": false, "damage": 0, "reason": "missing_card"}
+
+	var target: Node = snapshot.get("target", null)
+	if target == null:
+		card_failed.emit(card, "no_target")
+		return {"hit": false, "damage": 0, "reason": "no_target"}
+
+	# Check occupancy version
+	if map_manager and map_manager.occupancy_manager:
+		var current_ver := map_manager.occupancy_manager.get_version()
+		var snap_ver := int(snapshot.get("occ_version", -1))
+		if snap_ver != -1 and snap_ver != current_ver:
+			card_failed.emit(card, "stale_snapshot")
+			return {"hit": false, "damage": 0, "reason": "stale_snapshot", "stale": true}
+
+	# Use resolved target component without re-repair
+	var target_component := _resolve_target_component(target)
+	if target_component == null or target_component.stats == null:
+		card_failed.emit(card, "no_target_component")
+		return {"hit": false, "damage": 0, "reason": "no_target_component"}
+
+	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
+	if owner_actor and owner_actor.is_in_group("player"):
+		var hud := get_tree().get_first_node_in_group("hud") as HUDController
+		if hud:
+			hud.set_roll_label_from_result(result)
+
+	var damage := int(result.get("damage", 0))
+	if result.get("hit", false) and damage > 0:
+		target_component.receive_damage(damage, result.get("crit", false))
+	elif not result.get("hit", false) and target_component.actor_owner and target_component.actor_owner.has_method("show_miss"):
+		target_component.actor_owner.show_miss()
+
+	if map_manager == null:
+		push_warning("CombatCardSystem.execute_card_snapshot: missing map_manager, skipping runtime effects")
+	else:
+		if target_component.actor_owner == null or not is_instance_valid(target_component.actor_owner):
+			push_warning("CombatCardSystem.execute_card_snapshot: target actor invalid, skipping runtime effects")
 		else:
 			var ctx := EffectContext.new(owner_actor, map_manager, card_manager, combat_component)
 			var applier := EffectApplier.new()
