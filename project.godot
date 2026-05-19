@@ -11,9 +11,11 @@ config_version=5
 [application]
 
 config/name="QUEST"
+config/version="1.0"
 run/main_scene="res://scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/icon="res://icon.svg"
+boot_splash/stretch_mode=0
+config/icon="uid://csy67bd45j2vb"
 
 [autoload]
 
@@ -26,8 +28,8 @@ CurrencyManager="*res://scripts/CurrencyManager.gd"
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/size/mode=3
 window/stretch/mode="canvas_items"
-mouse_cursor/custom_image="res://assets/ui/gauntletcursor.png"
 
 [input]
 
