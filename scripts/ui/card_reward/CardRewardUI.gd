@@ -1,6 +1,10 @@
 extends CanvasLayer
 class_name CardRewardUI
 
+## CardRewardUI is a presentation layer for reward selection.
+## It owns visual feedback and animation.
+## It delegates workflow state to RewardFlowState.
+
 signal card_selected(card: CardData)
 signal reward_skipped
 signal card_replace_selected(card: CardData, slot_index: int)
@@ -12,11 +16,9 @@ signal card_replace_selected(card: CardData, slot_index: int)
 
 var _reward_cards: Array[CardData] = []
 var _card_nodes: Array = []
-var _is_active: bool = false
-var _requires_replace: bool = false
-var _replace_slots: Array = []
-var _pending_card: CardData = null
-var _selected_card_button: Control = null  # Track which card button is selected for visual feedback
+var _is_active: bool = false  # Local UI visibility state
+var _selected_card_button: Control = null  # Local visual feedback tracking
+var _flow_state: RewardFlowState = null  # Owns workflow state
 
 const CARD_REWARD_COUNT: int = 3
 
@@ -33,19 +35,26 @@ func _ready() -> void:
 	_is_active = false
 	if panel:
 		panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	# (pause mode left to scene configuration)
+	
+	# Create workflow state handler
+	_flow_state = RewardFlowState.new()
+	add_child(_flow_state)
+	_flow_state.state_changed.connect(_on_flow_state_changed)
+	_flow_state.reward_flow_completed.connect(_on_reward_flow_completed)
 
 func show_reward(cards: Array, requires_replace: bool = false, equipped_slots: Array = []) -> void:
 	if cards.is_empty():
 		return
 	
+	# Initialize workflow state
+	_flow_state.start_reward_session(cards, requires_replace, equipped_slots)
+	
+	# Store cards for presentation
 	_reward_cards.clear()
 	_reward_cards.assign(cards)
 	_card_nodes.clear()
-	_requires_replace = requires_replace
-	_replace_slots = equipped_slots.duplicate()
-	_pending_card = null
 	
+	# Clear UI and prepare for animation
 	_clear_cards_container()
 	_create_card_buttons()
 	_add_skip_button()
@@ -55,17 +64,18 @@ func show_reward(cards: Array, requires_replace: bool = false, equipped_slots: A
 		panel.scale = Vector2(0.98, 0.98)
 	visible = true
 	_is_active = true
-	title_label.text = "Choose a Card Reward" if not _requires_replace else "Choose a Card (then replace a slot)"
-	# entrance tween
+	title_label.text = "Choose a Card Reward" if not requires_replace else "Choose a Card (then replace a slot)"
+	
+	# Entrance animation
 	if panel:
-			var tw = create_tween()
-			tw.tween_property(panel, "modulate:a", 1.0, 0.18)
-			tw.tween_property(panel, "scale", Vector2(1, 1), 0.15)
+		var tw = create_tween()
+		tw.tween_property(panel, "modulate:a", 1.0, 0.18)
+		tw.tween_property(panel, "scale", Vector2(1, 1), 0.15)
 
 func hide_reward() -> void:
 	if not visible:
 		return
-	# exit tween, then finalize hide
+	# Exit animation, then finalize hide
 	if panel:
 		var tw = create_tween()
 		tw.tween_property(panel, "modulate:a", 0.0, 0.12)
@@ -76,10 +86,9 @@ func hide_reward() -> void:
 func _finalize_hide() -> void:
 	visible = false
 	_is_active = false
-	_requires_replace = false
-	_replace_slots.clear()
-	_pending_card = null
+	_selected_card_button = null
 	_clear_cards_container()
+	# Workflow state is managed by RewardFlowState; UI layer only manages visibility
 
 func _clear_cards_container() -> void:
 	for child in cards_container.get_children():
@@ -231,15 +240,18 @@ func _on_card_selected(card: CardData, button: Control = null) -> void:
 		var selected_style := _build_card_style(SELECTED_COLOR)
 		button.add_theme_stylebox_override("panel", selected_style)
 	
-	if _requires_replace:
-		_pending_card = card
-		# Delay briefly for visual feedback before transitioning
+	# Delegate workflow state to RewardFlowState
+	_flow_state.select_card(card)
+	
+	# If replacement is required, RewardFlowState will transition to SLOT_PENDING
+	# and we'll receive _on_flow_state_changed() signal to show slot selection UI
+	if _flow_state.is_awaiting_slot_selection():
 		await get_tree().create_timer(0.15).timeout
 		_show_replace_selection()
-		return
-	
-	hide_reward()
-	card_selected.emit(card)
+	elif _flow_state.is_complete():
+		# Direct completion (no replacement needed)
+		hide_reward()
+		card_selected.emit(card)
 
 func _on_card_button_hover_enter(button: Control) -> void:
 	if button == _selected_card_button:
@@ -305,8 +317,11 @@ func _refresh_slot_selection() -> void:
 	separator.custom_minimum_size = Vector2(0, 4)
 	cards_container.add_child(separator)
 	
+	# Get replacement slots from workflow state
+	var replace_slots: Array[Dictionary] = _flow_state.get_replacement_slots()
+	
 	# Create slot buttons with better layout
-	for slot in _replace_slots:
+	for slot in replace_slots:
 		var slot_index: int = int(slot.get("slot_index", -1))
 		var slot_name: String = str(slot.get("name", "Unknown"))
 		var icon_tex: Texture2D = slot.get("icon", null)
@@ -374,17 +389,38 @@ func _build_slot_icon_style() -> StyleBoxFlat:
 func _on_replace_slot_selected(slot_index: int) -> void:
 	if not _is_active:
 		return
-	var selected_card := _pending_card
-	if selected_card == null:
-		return
-	hide_reward()
-	card_replace_selected.emit(selected_card, slot_index)
+	
+	# Delegate to RewardFlowState to validate and complete the workflow
+	_flow_state.select_replacement_slot(slot_index)
 
 func _on_skip_pressed() -> void:
 	if not _is_active:
 		return
+	
+	# Skip through workflow state
+	_flow_state.skip_reward()
 	hide_reward()
 	reward_skipped.emit()
+
+## Flow state signal handlers
+
+func _on_flow_state_changed(new_state: int, _old_state: int) -> void:
+	# Presentation updates based on workflow state changes
+	# RewardFlowState owns the state; UI reacts to it
+	match RewardFlowState.WorkflowState.values()[new_state]:
+		RewardFlowState.WorkflowState.SHOWING_REWARDS:
+			print("[CardRewardUI] Flow state: showing rewards")
+		RewardFlowState.WorkflowState.SLOT_PENDING:
+			print("[CardRewardUI] Flow state: awaiting slot selection")
+		RewardFlowState.WorkflowState.COMPLETE:
+			print("[CardRewardUI] Flow state: complete (transitioning to idle)")
+
+func _on_reward_flow_completed(selected_card: CardData, slot_index: int) -> void:
+	# Forward the completed workflow event to upstream handlers
+	if slot_index >= 0:
+		card_replace_selected.emit(selected_card, slot_index)
+	else:
+		card_selected.emit(selected_card)
 
 func _build_reward_description(card: CardData) -> String:
 	return card.description

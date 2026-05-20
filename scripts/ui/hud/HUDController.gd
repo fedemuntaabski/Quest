@@ -158,35 +158,48 @@ func update_enemies_remaining(count: int) -> void:
 	if enemies_label:
 		enemies_label.text = "Enemies: %d" % count
 
-func update_hotbar(cards: Array, active_index: int) -> void:
+func update_hotbar(cards_payload: Array, active_index: int) -> void:
 	if not hotbar_slots.is_empty():
 		for i in range(hotbar_slots.size()):
 			var slot: HotbarSlot = hotbar_slots[i]
-			if i < cards.size():
-				var card_data = cards[i]
-				slot.set_card(card_data)
-				var cd_remaining: int = card_data.get("cooldown_remaining", 0) if card_data is Dictionary else 0
-				slot.set_cooldown(cd_remaining)
-				var is_usable: bool = card_data.get("is_usable", cd_remaining <= 0) if card_data is Dictionary else true
-				slot.set_usable(is_usable)
+			if i < cards_payload.size():
+				var card_dict = cards_payload[i]
+				# Convert dictionary payload to typed CardDisplayData
+				var display_data: CardDisplayData = null
+				if card_dict is Dictionary and not card_dict.is_empty():
+					# Extract CardData and runtime state from payload
+					var card_data = card_dict.get("card") as CardData
+					if card_data != null:
+						display_data = CardPresentationAdapter.create_display_data(card_data, card_dict)
+				
+				if display_data != null:
+					slot.set_card(display_data)
+				else:
+					slot.set_card(null)
 			else:
-				slot.set_card({})
-				slot.set_cooldown(0)
-				slot.set_usable(false)
+				slot.set_card(null)
 
 			slot.set_selected(i == active_index)
 	
 	# Also update the Cards panel if present
-	update_cards_panel(cards)
+	update_cards_panel(cards_payload)
 
-func update_cards_panel(cards: Array) -> void:
+func update_cards_panel(cards_payload: Array) -> void:
 	if card_panel:
-		var normalized_cards: Array = []
-		for card in cards:
-			normalized_cards.append(card if card is Dictionary else {})
-		card_panel.refresh(normalized_cards)
+		var display_data_array: Array[CardDisplayData] = []
+		for card_dict in cards_payload:
+			if card_dict is Dictionary and not card_dict.is_empty():
+				var card_data = card_dict.get("card") as CardData
+				if card_data != null:
+					var display_data = CardPresentationAdapter.create_display_data(card_data, card_dict)
+					display_data_array.append(display_data)
+				else:
+					display_data_array.append(null)
+			else:
+				display_data_array.append(null)
+		card_panel.refresh(display_data_array)
 
-func show_card_tooltip(data: Dictionary) -> void:
+func show_card_tooltip(data: CardDisplayData) -> void:
 	# Delegate tooltip presentation (debounce + show) to CardTooltip to clarify ownership
 	if card_tooltip == null:
 		return
@@ -194,7 +207,7 @@ func show_card_tooltip(data: Dictionary) -> void:
 		card_tooltip.request_show(data)
 	else:
 		# Fallback: immediate show
-		card_tooltip.set_card(data if data != null else {})
+		card_tooltip.set_card(data)
 
 func hide_card_tooltip() -> void:
 	# Delegate hide to CardTooltip
@@ -204,7 +217,65 @@ func hide_card_tooltip() -> void:
 		card_tooltip.request_hide()
 	else:
 		card_tooltip.visible = false
-		card_tooltip.set_card({})
+		card_tooltip.set_card(null)
+
+func set_roll_label_from_result(result: Dictionary) -> void:
+	if roll_label == null:
+		return
+	if result == null or result.is_empty():
+		roll_label.visible = false
+		roll_label.text = ""
+		return
+
+	var hit: bool = bool(result.get("hit", false))
+	var crit: bool = bool(result.get("crit", false))
+	var damage: int = int(result.get("damage", 0))
+	var reason: String = str(result.get("reason", ""))
+	var dice_roll: int = int(result.get("dice_roll", 0))
+	var multiplier: float = float(result.get("damage_multiplier", 0.0))
+
+	var text := ""
+	var color := Color(0.95, 0.95, 0.95, 1.0)
+	if hit:
+		text = "HIT"
+		if crit:
+			text = "CRIT"
+		if damage > 0:
+			text += " %d" % damage
+		if dice_roll > 0:
+			text += " | d6:%d" % dice_roll
+		if multiplier > 0.0:
+			text += " x%.2f" % multiplier
+		color = Color(0.62, 1.0, 0.62, 1.0) if not crit else Color(1.0, 0.9, 0.45, 1.0)
+	else:
+		text = "MISS"
+		if not reason.is_empty() and reason != "null":
+			text += " (%s)" % reason
+		color = Color(1.0, 0.55, 0.55, 1.0)
+
+	_show_roll_label_text(text, color)
+
+func _show_roll_label_text(text: String, color: Color) -> void:
+	if roll_label == null:
+		return
+
+	if _roll_label_tween:
+		_roll_label_tween.kill()
+		_roll_label_tween = null
+
+	roll_label.visible = true
+	roll_label.text = text
+	roll_label.modulate = color
+	roll_label.modulate.a = 0.0
+
+	_roll_label_tween = create_tween()
+	_roll_label_tween.tween_property(roll_label, "modulate:a", 1.0, 0.08)
+	_roll_label_tween.tween_interval(1.15)
+	_roll_label_tween.tween_property(roll_label, "modulate:a", 0.0, 0.22)
+	_roll_label_tween.tween_callback(func() -> void:
+		if roll_label:
+			roll_label.visible = false
+	)
 
 
 func show_simple_tooltip(text: String, global_pos = null) -> void:
@@ -219,130 +290,29 @@ func show_simple_tooltip(text: String, global_pos = null) -> void:
 		var panel_rect := stats_hud_panel.get_global_rect() if stats_hud_panel else stat_panel.get_global_rect()
 		stat_tooltip.global_position = panel_rect.position + Vector2(panel_rect.size.x + 12.0, 0.0)
 
-
 func hide_simple_tooltip() -> void:
 	if stat_tooltip:
 		stat_tooltip.visible = false
 
-
-
-
-# Potion logic moved to PotionController (scripts/ui/hud/PotionController.gd)
-
 func _setup_stat_tooltips() -> void:
-	if stat_tooltip:
-		stat_tooltip.visible = false
-		# Make the tooltip more compact vertically and force wrap
-		stat_tooltip.custom_minimum_size = Vector2(220, 56)
-		if stat_tooltip_label:
-			stat_tooltip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Stat tooltips (HP, Strength, etc) are shown on hover
+	# Handled by separate StatIcon nodes that manage their own tooltips
+	pass
 
-	var icons_and_text: Array = [
-		[icon_hp, "hp"],
-		[icon_strength, "strength"],
-		[icon_magic, "magic"],
-		[icon_dexterity, "dexterity"],
-		[potion_icon, "potion"]
-	]
+## Card Manager Binding
+## Establishes the connection between CardManager and UI to receive card state updates
 
-	for icon_pair in icons_and_text:
-		var icon: Control = icon_pair[0]
-		var key: String = icon_pair[1]
-		if icon == null:
-			continue
-		var enter_cb := _on_stat_icon_entered.bind(key, icon)
-		if not icon.mouse_entered.is_connected(enter_cb):
-			icon.mouse_entered.connect(enter_cb)
-		if not icon.mouse_exited.is_connected(_on_stat_icon_exited):
-			icon.mouse_exited.connect(_on_stat_icon_exited)
-
-
-func _on_stat_icon_entered(key: String, _icon: Control) -> void:
-	if stat_tooltip == null or stat_tooltip_label == null:
+func bind_card_manager(manager: CardManager) -> void:
+	if manager == null:
 		return
-	# Populate and show short tooltip using current bound stats if available
-	var short_text := ""
-	# Provide brief Spanish descriptions for stats and potion
-	match key:
-		"hp":
-			short_text = "Puntos de vida. Indican tu salud actual. La poción cura el 50% de la vida máxima."
-		"potion":
-			short_text = "Poción: restaura el 50% de la vida máxima al usarla."
-		"strength":
-			short_text = "Fuerza: aumenta el daño físico y el escalado de cartas de fuerza."
-		"magic":
-			short_text = "Magia: aumenta el daño mágico y potencia efectos mágicos."
-		"dexterity":
-			short_text = "Destreza: mejora precisión, evasión y probabilidad de golpes críticos."
-		_:
-			short_text = key.capitalize()
-
-	stat_tooltip_label.text = short_text
-	stat_tooltip.visible = true
-	# Position to the right of the status HUD by default
-	var panel_rect := stats_hud_panel.get_global_rect() if stats_hud_panel else stat_panel.get_global_rect()
-	var preferred_pos := panel_rect.position + Vector2(panel_rect.size.x + 12.0, 0.0)
-	stat_tooltip.global_position = preferred_pos
-	# If tooltip intersects the timer UI, flip to the left side of the panel
-	if timer_ui:
-		var tooltip_rect := stat_tooltip.get_global_rect()
-		var timer_rect := timer_ui.get_global_rect()
-		if tooltip_rect.intersects(timer_rect):
-			var left_pos := panel_rect.position + Vector2(-stat_tooltip.size.x - 12.0, 0.0)
-			stat_tooltip.global_position = left_pos
-
-func _on_stat_icon_exited() -> void:
-	if stat_tooltip:
-		stat_tooltip.visible = false
-
-func set_roll_label_from_result(result: Dictionary) -> void:
-	if roll_label == null or result == null:
-		return
-	if not result.has("dice_roll"):
-		return
-	var roll: int = int(result.get("dice_roll", 0))
-	var multiplier: float = float(result.get("damage_multiplier", 1.0))
-	roll_label.text = "Tirada: %d - %s (x%.2f)" % [roll, _roll_label_name(roll), multiplier]
-	roll_label.visible = true
-	roll_label.modulate.a = 1.0
-
-	if _roll_label_tween:
-		_roll_label_tween.kill()
-	_roll_label_tween = create_tween()
-	_roll_label_tween.tween_interval(2.0)
-	_roll_label_tween.tween_property(roll_label, "modulate:a", 0.0, 0.35)
-	_roll_label_tween.tween_callback(func():
-		roll_label.visible = false
-		roll_label.text = ""
-	)
-
-func _roll_label_name(roll: int) -> String:
-	match roll:
-		6:
-			return "Critico"
-		5:
-			return "Golpe fuerte"
-		4, 3:
-			return "Normal"
-		2:
-			return "Golpe debil"
-		1:
-			return "Golpe rasante"
-		_:
-			return "Normal"
-
-func bind_card_manager(card_manager: CardManager) -> void:
-	if card_manager == null:
-		return
-
-	if _bound_card_manager and _bound_card_manager != card_manager:
+	if _bound_card_manager != null:
 		if _bound_card_manager.ui_state_changed.is_connected(_on_card_ui_state_changed):
 			_bound_card_manager.ui_state_changed.disconnect(_on_card_ui_state_changed)
-
-	_bound_card_manager = card_manager
+	
+	_bound_card_manager = manager
 	if not _bound_card_manager.ui_state_changed.is_connected(_on_card_ui_state_changed):
 		_bound_card_manager.ui_state_changed.connect(_on_card_ui_state_changed)
-
+	
 	_on_card_ui_state_changed(_bound_card_manager.get_equipped_payload(), _bound_card_manager.active_index)
 
 func _on_card_ui_state_changed(cards_payload: Array, active_index: int) -> void:
@@ -358,5 +328,4 @@ func hide_reward_selection() -> void:
 
 
 func _emit_hud_ready() -> void:
-	# Explicit emit so static analysis recognizes usage of the signal
-	emit_signal("hud_ready")
+	hud_ready.emit()

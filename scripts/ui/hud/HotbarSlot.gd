@@ -5,8 +5,6 @@ signal slot_pressed(index: int)
 
 @export var slot_index: int = 0
 
-# Use the CardViewModel class by name (class_name in its script) to avoid duplicate preload issues
-
 @onready var icon: TextureRect = $VBox/Icon
 @onready var name_label: Label = $VBox/Name
 @onready var cooldown_label: Label = $VBox/Cooldown
@@ -16,7 +14,7 @@ signal slot_pressed(index: int)
 @onready var hover_border: Panel = $HoverBorder
 @onready var cooldown_overlay: ColorRect = $CooldownOverlay
 
-var _card_data: Dictionary = {}
+var _card_data: CardDisplayData = null  # Now typed instead of Dictionary
 var _is_selected: bool = false
 var tooltip_host: CardTooltip = null
 
@@ -37,8 +35,8 @@ func _gui_input(event: InputEvent) -> void:
 		slot_pressed.emit(slot_index)
 		accept_event()
 
-func set_card(data: Dictionary) -> void:
-	_card_data = data if data != null else {}
+func set_card(data: CardDisplayData) -> void:
+	_card_data = data
 	_update_ui()
 
 func set_tooltip_host(host: CardTooltip) -> void:
@@ -97,41 +95,43 @@ func set_cooldown(turns_left: int) -> void:
 		cooldown_overlay.visible = turns_left > 0
 
 func _update_ui() -> void:
-	var _cvm_script = load("res://scripts/ui/hud/CardViewModel.gd")
-	var view: Dictionary = {}
-	if _cvm_script and _cvm_script.has_method("normalize_from_payload"):
-		view = _cvm_script.normalize_from_payload(_card_data)
-	else:
-		# Minimal fallback presentation
-		view = {
-			"display_name": str(_card_data.get("display_name", _card_data.get("name", "-"))),
-			"icon": _card_data.get("icon", null),
-			"cooldown_remaining": int(_card_data.get("cooldown_remaining", 0)),
-			"is_usable": bool(_card_data.get("is_usable", true)),
-			"playability_reason": _card_data.get("playability_reason", null),
-			"playability_reason_readable": str(_card_data.get("playability_reason_readable", ""))
-		}
-
+	if _card_data == null:
+		_clear_display()
+		return
+	
+	# Use typed properties directly (no .get() fallback needed)
 	if name_label:
-		name_label.text = view.get("display_name", "-")
+		name_label.text = _card_data.display_name
 
 	if state_label:
 		state_label.visible = false
 		state_label.text = ""
 
 	if icon:
-		icon.texture = view.get("icon", null)
+		icon.texture = _card_data.icon
 
-	set_cooldown(int(view.get("cooldown_remaining", 0)))
-	# Visual usability: use normalized hint
-	var usable := bool(view.get("is_usable", true))
-	set_usable(usable)
+	set_cooldown(_card_data.cooldown_remaining)
+	# Visual usability: use typed property
+	set_usable(_card_data.is_usable)
 	# Show playability reason if blocked
-	if not usable:
-		var reason := str(view.get("playability_reason_readable", view.get("playability_reason", "")))
-		set_state_label(reason)
+	if not _card_data.is_usable:
+		set_state_label(_card_data.playability_reason)
 	else:
 		set_state_label("")
+
+func _clear_display() -> void:
+	if name_label:
+		name_label.text = "-"
+	if icon:
+		icon.texture = null
+	if state_label:
+		state_label.visible = false
+		state_label.text = ""
+	if cooldown_label:
+		cooldown_label.visible = false
+		cooldown_label.text = ""
+	if cooldown_overlay:
+		cooldown_overlay.visible = false
 
 func _on_mouse_entered() -> void:
 	if hover_border:
@@ -139,7 +139,8 @@ func _on_mouse_entered() -> void:
 	# hover scale
 	var t = create_tween()
 	t.tween_property(self, "scale", Vector2(1.02, 1.02), 0.08)
-	if tooltip_host:
+	if tooltip_host and _card_data:
+		# Pass CardDisplayData directly instead of dictionary
 		tooltip_host.request_show(_card_data)
 
 func _on_mouse_exited() -> void:
@@ -151,5 +152,10 @@ func _on_mouse_exited() -> void:
 		target_scale = Vector2(1.04, 1.04)
 	var t = create_tween()
 	t.tween_property(self, "scale", target_scale, 0.08)
+	if tooltip_host:
+		tooltip_host.request_hide()
+		target_scale = Vector2(1.04, 1.04)
+	var d = create_tween()
+	d.tween_property(self, "scale", target_scale, 0.08)
 	if tooltip_host:
 		tooltip_host.request_hide()
