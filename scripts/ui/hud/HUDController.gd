@@ -236,22 +236,27 @@ func set_roll_label_from_result(result: Dictionary) -> void:
 
 	var text := ""
 	var color := Color(0.95, 0.95, 0.95, 1.0)
+
 	if hit:
-		text = "HIT"
 		if crit:
-			text = "CRIT"
+			text = "CRÍTICO"
+			color = Color(1.0, 0.9, 0.45, 1.0)
+		else:
+			text = "IMPACTO"
+			color = Color(0.62, 1.0, 0.62, 1.0)
+
 		if damage > 0:
-			text += " %d" % damage
+			text += " · %d DAÑO" % damage
+
 		if dice_roll > 0:
-			text += " | d6:%d" % dice_roll
-		if multiplier > 0.0:
-			text += " x%.2f" % multiplier
-		color = Color(0.62, 1.0, 0.62, 1.0) if not crit else Color(1.0, 0.9, 0.45, 1.0)
+			text += "\n🎲 Tirada: %d" % dice_roll
+
 	else:
-		text = "MISS"
-		if not reason.is_empty() and reason != "null":
-			text += " (%s)" % reason
+		text = "FALLO"
 		color = Color(1.0, 0.55, 0.55, 1.0)
+
+		if not reason.is_empty() and reason != "null":
+			text += "\n%s" % reason.capitalize()
 
 	_show_roll_label_text(text, color)
 
@@ -270,7 +275,7 @@ func _show_roll_label_text(text: String, color: Color) -> void:
 
 	_roll_label_tween = create_tween()
 	_roll_label_tween.tween_property(roll_label, "modulate:a", 1.0, 0.08)
-	_roll_label_tween.tween_interval(1.15)
+	_roll_label_tween.tween_interval(1.55)
 	_roll_label_tween.tween_property(roll_label, "modulate:a", 0.0, 0.22)
 	_roll_label_tween.tween_callback(func() -> void:
 		if roll_label:
