@@ -5,6 +5,8 @@ signal card_selected(card: CardData)
 signal reward_skipped
 signal card_replace_selected(card: CardData, slot_index: int)
 
+const CardViewModel = preload("res://scripts/ui/hud/CardViewModel.gd")
+
 @onready var panel: Panel = $CenterContainer/RewardPanel
 @onready var cards_container: HBoxContainer = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/CardsScroll/CardsContainer
 @onready var footer_container: CenterContainer = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/FooterContainer
@@ -134,8 +136,9 @@ func _create_card_button(card: CardData) -> Control:
 	margin.add_child(vbox)
 	
 	# Title - larger, bold appearance
+	var view := CardViewModel.from_card(card)
 	var name_label := Label.new()
-	name_label.text = card.display_name
+	name_label.text = view.get("display_name")
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_label.add_theme_font_size_override("font_size", 20)
@@ -145,7 +148,7 @@ func _create_card_button(card: CardData) -> Control:
 	
 	# Category badge
 	var category_label := Label.new()
-	category_label.text = "[%s]" % card.category.to_upper()
+	category_label.text = "[%s]" % str(view.get("category", "")).to_upper()
 	category_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	category_label.add_theme_font_size_override("font_size", 11)
 	var category_color := _get_category_color(card.category)
@@ -158,13 +161,13 @@ func _create_card_button(card: CardData) -> Control:
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.custom_minimum_size = Vector2(188, 100)
 	icon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if card.icon:
-		icon.texture = card.icon
+	if view.get("icon"):
+		icon.texture = view.get("icon")
 	vbox.add_child(icon)
 	
 	# Stats summary (damage, range, cooldown)
 	var stats_label := Label.new()
-	stats_label.text = _build_card_stats_text(card)
+	stats_label.text = str(view.get("stats_summary", ""))
 	stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stats_label.add_theme_font_size_override("font_size", 12)
 	stats_label.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9, 1.0))
@@ -178,7 +181,7 @@ func _create_card_button(card: CardData) -> Control:
 	effects_scroll.custom_minimum_size = Vector2(188, 80)
 
 	var effects_label := Label.new()
-	effects_label.text = _build_reward_effects_text(card)
+	effects_label.text = str(view.get("effects_summary", ""))
 	effects_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	effects_label.add_theme_color_override("font_color", Color(0.78, 0.9, 1.0, 1))
 	effects_label.add_theme_font_size_override("font_size", 11)

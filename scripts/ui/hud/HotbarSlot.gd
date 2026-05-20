@@ -5,6 +5,8 @@ signal slot_pressed(index: int)
 
 @export var slot_index: int = 0
 
+const CardViewModel = preload("res://scripts/ui/hud/CardViewModel.gd")
+
 @onready var icon: TextureRect = $VBox/Icon
 @onready var name_label: Label = $VBox/Name
 @onready var cooldown_label: Label = $VBox/Cooldown
@@ -95,24 +97,25 @@ func set_cooldown(turns_left: int) -> void:
 		cooldown_overlay.visible = turns_left > 0
 
 func _update_ui() -> void:
+	var view := CardViewModel.normalize_from_payload(_card_data)
+
 	if name_label:
-		name_label.text = _card_data.get("name", "-")
+		name_label.text = view.get("display_name", "-")
 
 	if state_label:
 		state_label.visible = false
 		state_label.text = ""
 
 	if icon:
-		var tex: Texture2D = _card_data.get("icon", null)
-		icon.texture = tex
+		icon.texture = view.get("icon", null)
 
-	set_cooldown(int(_card_data.get("cooldown_remaining", 0)))
-	# Visual usability: prefer explicit full_playable if present, otherwise fall back to legacy is_usable
-	var usable := bool(_card_data.get("full_playable")) if _card_data.has("full_playable") else bool(_card_data.get("is_usable", true))
+	set_cooldown(int(view.get("cooldown_remaining", 0)))
+	# Visual usability: use normalized hint
+	var usable := bool(view.get("is_usable", true))
 	set_usable(usable)
 	# Show playability reason if blocked
 	if not usable:
-		var reason := str(_card_data.get("playability_reason_readable", _card_data.get("playability_reason", "")))
+		var reason := str(view.get("playability_reason_readable", view.get("playability_reason", "")))
 		set_state_label(reason)
 	else:
 		set_state_label("")

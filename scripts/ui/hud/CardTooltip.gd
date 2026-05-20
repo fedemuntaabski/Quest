@@ -1,9 +1,45 @@
 extends Control
 class_name CardTooltip
 
+const CardViewModel = preload("res://scripts/ui/hud/CardViewModel.gd")
+
 @onready var name_label: Label = $Panel/VBox/Name
 @onready var desc_label: Label = $Panel/VBox/Description
 @onready var details_label: Label = $Panel/VBox/Details
+
+var _tooltip_timer: Timer = null
+var _pending_card_data: Dictionary = {}
+const TOOLTIP_DEBOUNCE_TIME := 0.08
+
+func _ready() -> void:
+	# Create an internal timer to debounce rapid hover switches
+	_tooltip_timer = Timer.new()
+	_tooltip_timer.one_shot = true
+	_tooltip_timer.wait_time = TOOLTIP_DEBOUNCE_TIME
+	_tooltip_timer.connect("timeout", Callable(self, "_on_tooltip_timer_timeout"))
+	add_child(_tooltip_timer)
+
+func request_show(data: Dictionary) -> void:
+	# Called by HUDController or HotbarSlot to request a tooltip show. Debounced.
+	_pending_card_data = data if data != null else {}
+	if _tooltip_timer.time_left > 0.0:
+		_tooltip_timer.stop()
+	_tooltip_timer.start()
+
+func request_hide() -> void:
+	# Cancel pending show and hide any visible tooltip
+	_pending_card_data = {}
+	if _tooltip_timer and _tooltip_timer.time_left > 0.0:
+		_tooltip_timer.stop()
+	visible = false
+	set_card({})
+
+func _on_tooltip_timer_timeout() -> void:
+	if _pending_card_data.size() == 0:
+		return
+	set_card(_pending_card_data)
+	_pending_card_data = {}
+
 
 func set_card(data: Dictionary) -> void:
 	if data == null or data.is_empty():
@@ -19,31 +55,15 @@ func set_card(data: Dictionary) -> void:
 	name_label.text = ""
 	desc_label.text = ""
 	details_label.text = ""
+	var view := CardViewModel.normalize_from_payload(data)
 
-	name_label.text = str(data.get("name", "Card"))
-	desc_label.text = str(data.get("description", ""))
+	name_label.text = view.get("display_name", "Card")
+	desc_label.text = view.get("description", "")
 
-	var range_val := int(data.get("range", 0))
-	var cd := int(data.get("cooldown", 0))
-	var cd_remaining := int(data.get("cooldown_remaining", 0))
-	var stat := str(data.get("scaling_stat", data.get("stat", "")))
-	var scaling := float(data.get("damage_scaling", 1.0))
-	# Prefer explicit full_playable set by CardManager/CombatCardSystem; fall back to legacy is_usable
-	var available : Variant = (data.get("full_playable") != false) if data.has("full_playable") else (data.get("is_usable", true) != false)
-	var state_text := "Disponible" if available and cd_remaining <= 0 else "En enfriamiento (%d)" % cd_remaining
-	if not available and cd_remaining <= 0:
-		state_text = str(data.get("state", "Bloqueada")).capitalize()
-
-	# Build details text with short labels to keep tooltip compact
-	details_label.text = "R: %d  CD: %d\n%s x%.2f  |  %s" % [
-		range_val,
-		cd,
-		StatTypes.get_label(stat),
-		scaling,
-		state_text
-	]
-
-	# Show playability reason if provided by enriched payload
-	var readable_reason := str(data.get("playability_reason_readable", ""))
-	if readable_reason != "":
-		details_label.text += "\n(%s)" % readable_reason
+	# Use normalized summaries for compact tooltip
+	var stats := str(view.get("stats_summary", ""))
+	var state_text := str(view.get("state_text", ""))
+	details_label.text = "%s\n%s" % [stats, state_text]
+	var readable := str(view.get("playability_reason_readable", ""))
+	if readable != "":
+		details_label.text += "\n(%s)" % readable

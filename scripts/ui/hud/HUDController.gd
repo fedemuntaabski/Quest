@@ -39,8 +39,7 @@ var _roll_label_tween: Tween = null
 var _game_state_manager: GameStateManager = null
 var _potion_used: bool = false
 var _bound_stats: CharacterStats = null
-var _card_tooltip_timer : Variant = null
-var _pending_card_data: Dictionary = {}
+# Tooltip debounce is owned by CardTooltip. HUDController delegates tooltip timing.
 
 const POTION_HEAL_RATIO: float = 0.5
 
@@ -53,12 +52,7 @@ func _ready() -> void:
 	_setup_potion()
 	_setup_stat_tooltips()
 
-	# Create a short-lived timer used to debounce card tooltip display
-	_card_tooltip_timer = Timer.new()
-	_card_tooltip_timer.one_shot = true
-	_card_tooltip_timer.wait_time = 0.08
-	_card_tooltip_timer.connect("timeout", Callable(self, "_on_card_tooltip_timer_timeout"))
-	add_child(_card_tooltip_timer)
+	# Tooltip debounce is handled by CardTooltip itself; HUDController delegates show/hide requests.
 
 	var ps = get_node_or_null("/root/PlayerStats")
 	if ps:
@@ -180,23 +174,23 @@ func update_cards_panel(cards: Array) -> void:
 		card_panel.refresh(normalized_cards)
 
 func show_card_tooltip(data: Dictionary) -> void:
-	# Debounce rapid hover switches to avoid overlapping tooltip animations
+	# Delegate tooltip presentation (debounce + show) to CardTooltip to clarify ownership
 	if card_tooltip == null:
 		return
-	_pending_card_data = data if data != null else {}
-	# restart timer
-	if _card_tooltip_timer.time_left > 0.0:
-		_card_tooltip_timer.stop()
-	_card_tooltip_timer.start()
+	if card_tooltip.has_method("request_show"):
+		card_tooltip.request_show(data)
+	else:
+		# Fallback: immediate show
+		card_tooltip.set_card(data if data != null else {})
 
 func hide_card_tooltip() -> void:
-	# Cancel pending tooltip show and hide any visible tooltip
-	_pending_card_data = {}
-	if _card_tooltip_timer and _card_tooltip_timer.time_left > 0.0:
-		_card_tooltip_timer.stop()
-	if card_tooltip:
+	# Delegate hide to CardTooltip
+	if card_tooltip == null:
+		return
+	if card_tooltip.has_method("request_hide"):
+		card_tooltip.request_hide()
+	else:
 		card_tooltip.visible = false
-		# clear contents to avoid ghost text
 		card_tooltip.set_card({})
 
 
@@ -218,13 +212,7 @@ func hide_simple_tooltip() -> void:
 		stat_tooltip.visible = false
 
 
-func _on_card_tooltip_timer_timeout() -> void:
-	# If pending data is empty, nothing to show
-	if _pending_card_data.size() == 0:
-		return
-	# Only show if we still have valid data
-	card_tooltip.set_card(_pending_card_data)
-	_pending_card_data = {}
+
 
 func _setup_potion() -> void:
 	if potion_button and not potion_button.pressed.is_connected(_on_potion_pressed):
