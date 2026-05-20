@@ -6,23 +6,23 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 
-stat_key = "strength"
+stat_key = "magic"
 value = 2
-duration_turns = 3
+duration_turns = 2
 apply_to_source = true
 
-description = "Entras en un estado de furia, aumentando tu Fuerza en +2 durante 3 turnos."
+description = "Aumenta tu poder mágico temporalmente."
 
 [resource]
 script = ExtResource("1")
-id = "rage"
-display_name = "Furia"
-description = "Aumenta tu Fuerza temporalmente."
-category = "strength"
+id = "sobrecarga_mental"
+display_name = "Sobrecarga Mental"
+description = "Amplifica tu capacidad arcana a costa de estabilidad."
+category = "magic"
 card_type = "buff"
 target_type = "self"
-stat_key = "strength"
+stat_key = "magic"
 range = 0
 cooldown = 3
 effects = Array[Resource]([SubResource("1")])
-tags = Array[String](["strength", "buff", "tempo"])
+tags = Array[String](["magic", "buff", "scaling"])

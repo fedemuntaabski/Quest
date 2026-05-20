@@ -8,8 +8,7 @@
 script = ExtResource("2")
 base_damage = 1
 stat_key = "magic"
-damage_scaling = 0.5
-description = "Cold strike with minor damage."
+damage_scaling = 0.6
 
 [sub_resource type="Resource" id="2"]
 script = ExtResource("3")
@@ -18,20 +17,21 @@ duration_turns = 1
 stacks = 1
 magnitude = 1
 apply_to_source = false
-description = "Apply Freeze for 1 turn."
+
+description = "Reduce movilidad y puede bloquear acciones."
 
 [resource]
 script = ExtResource("1")
-id = "freeze"
-display_name = "Freeze"
-description = "Encases the target in bitter frost."
+id = "prision_hielo"
+display_name = "Prisión de Hielo"
+description = "Congela parcialmente al enemigo."
 category = "magic"
 card_type = "magic"
 target_type = "enemy"
 stat_key = "magic"
 base_damage = 1
-damage_scaling = 0.5
-range = 3
+damage_scaling = 0.6
+range = 2
 cooldown = 2
 effects = Array[Resource]([SubResource("1"), SubResource("2")])
-tags = Array[String](["magic", "control", "status"])
+tags = Array[String](["magic", "control", "freeze"])

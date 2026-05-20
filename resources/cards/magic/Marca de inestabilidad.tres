@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/StatusEffect.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+status_id = "shock"
+duration_turns = 3
+stacks = 1
+magnitude = 1
+apply_to_source = false
+
+description = "El objetivo queda inestable, amplificando daño eléctrico."
+
+[resource]
+script = ExtResource("1")
+id = "marca_inestabilidad"
+display_name = "Marca de Inestabilidad"
+description = "Marca al enemigo para futuros combos eléctricos."
+category = "magic"
+card_type = "magic"
+target_type = "enemy"
+stat_key = "magic"
+base_damage = 0
+damage_scaling = 0
+range = 3
+cooldown = 2
+effects = Array[Resource]([SubResource("1")])
+tags = Array[String](["magic", "status", "setup"])

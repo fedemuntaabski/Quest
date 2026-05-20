@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+base_damage = 2
+stat_key = "magic"
+damage_scaling = 0.8
+description = "Daño estable de energía arcana."
+
+[resource]
+script = ExtResource("1")
+id = "descarga_arcana"
+display_name = "Descarga Arcana"
+description = "Dispara energía mágica concentrada."
+category = "magic"
+card_type = "magic"
+target_type = "enemy"
+stat_key = "magic"
+base_damage = 2
+damage_scaling = 0.8
+range = 2
+cooldown = 2
+effects = Array[Resource]([SubResource("1")])
+tags = Array[String](["magic", "damage", "basic"])
