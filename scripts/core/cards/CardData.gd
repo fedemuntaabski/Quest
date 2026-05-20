@@ -21,3 +21,7 @@ class_name CardData
 @export var vfx_id: String = ""
 @export var sfx_id: String = ""
 @export var tags: Array[String] = []
+@export var resource_cost: int = 0
+@export var keywords: Array[String] = []
+@export var archetype: String = ""
+@export var combo_tags: Array[String] = []

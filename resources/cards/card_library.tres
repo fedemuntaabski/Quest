@@ -6,11 +6,9 @@
 [ext_resource type="Resource" path="res://resources/cards/magic/fire_card.tres" id="4"]
 [ext_resource type="Resource" path="res://resources/cards/magic/focus_card.tres" id="5"]
 [ext_resource type="Resource" path="res://resources/cards/agility/cripple_card.tres" id="6"]
-[ext_resource type="Resource" path="res://resources/cards/strength/heavy_strike.tres" id="7"]
-[ext_resource type="Resource" path="res://resources/cards/strength/cleave.tres" id="8"]
-[ext_resource type="Resource" path="res://resources/cards/strength/rage.tres" id="9"]
-[ext_resource type="Resource" path="res://resources/cards/strength/armor_break.tres" id="10"]
-[ext_resource type="Resource" path="res://resources/cards/strength/execute.tres" id="11"]
+[ext_resource type="Resource" path="res://resources/cards/strength/tajo_brutal.tres" id="30"]
+[ext_resource type="Resource" path="res://resources/cards/strength/herida_profunda.tres" id="31"]
+[ext_resource type="Resource" path="res://resources/cards/strength/golpe_pesado.tres" id="32"]
 [ext_resource type="Resource" path="res://resources/cards/agility/dash.tres" id="12"]
 [ext_resource type="Resource" path="res://resources/cards/agility/backstab.tres" id="13"]
 [ext_resource type="Resource" path="res://resources/cards/agility/evasion.tres" id="14"]
@@ -24,6 +22,25 @@
 
 [resource]
 script = ExtResource("1")
-all_cards = Array[ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16"), ExtResource("17"), ExtResource("18"), ExtResource("19"), ExtResource("20"), ExtResource("21")]
-starter_deck = Array[ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")]
-reward_pool = Array[ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16"), ExtResource("17"), ExtResource("18"), ExtResource("19"), ExtResource("20"), ExtResource("21")]
+all_cards = Array[
+	ExtResource("30"),
+	ExtResource("31"),
+	ExtResource("32"),
+	ExtResource("3"),
+	ExtResource("4"),
+	ExtResource("5"),
+	ExtResource("6"),
+	ExtResource("12"),
+	ExtResource("13"),
+	ExtResource("14"),
+	ExtResource("15"),
+	ExtResource("16"),
+	ExtResource("17"),
+	ExtResource("18"),
+	ExtResource("19"),
+	ExtResource("20"),
+	ExtResource("21")
+]
+
+starter_deck = Array[ExtResource("30"), ExtResource("31"), ExtResource("32")]
+reward_pool = Array[ExtResource("30"), ExtResource("31"), ExtResource("32"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16"), ExtResource("17"), ExtResource("18"), ExtResource("19"), ExtResource("20"), ExtResource("21")]

@@ -124,6 +124,37 @@ static func get_statuses(actor: Node) -> Dictionary:
 		return status_component.get_active_statuses()
 	return _get_statuses(actor)
 
+static func has_status(actor: Node, status_id: String) -> bool:
+	var statuses := get_statuses(actor)
+	return statuses.has(status_id)
+
+static func get_status_stacks(actor: Node, status_id: String) -> int:
+	var statuses := get_statuses(actor)
+
+	if not statuses.has(status_id):
+		return 0
+
+	return int(statuses[status_id].get("stacks", 0))
+
+static func remove_status(actor: Node, status_id: String) -> void:
+	if actor == null:
+		return
+
+	var status_component := actor.get_node_or_null("StatusComponent") as StatusComponent
+
+	if status_component != null:
+		status_component.remove_status(status_id)
+		return
+
+	var statuses := _get_statuses(actor)
+
+	if statuses.has(status_id):
+		statuses.erase(status_id)
+		actor.set_meta(META_KEY, statuses)
+
+		if actor.has_method("on_status_changed"):
+			actor.call_deferred("on_status_changed")
+
 static func _apply_status_tick(actor: Node, stats: CharacterStats, status_id: String, status: Dictionary) -> Dictionary:
 	var stacks: int = max(1, int(status.get("stacks", 1)))
 	var magnitude: int = max(1, int(status.get("magnitude", 1)))

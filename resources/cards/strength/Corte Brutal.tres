@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://do21ie81utnhk"]
+
+[ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" uid="uid://di03ffuiig3v2" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+base_damage = 3
+damage_scaling = 0.7
+description = "Un golpe brutal y confiable."
+
+[resource]
+script = ExtResource("1")
+id = "corte_brutal"
+display_name = "Corte Brutal"
+description = "Un ataque pesado y directo."
+base_damage = 3
+damage_scaling = 0.7
+effects = Array[Resource]([SubResource("1")])
+tags = Array[String](["strength", "damage"])
+resource_cost = 1
+keywords = Array[String](["golpe", "melee"])
+archetype = "pressure"
+combo_tags = Array[String](["starter"])

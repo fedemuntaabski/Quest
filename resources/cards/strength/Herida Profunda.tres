@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/core/effects/StatusEffect.gd" id="3"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+base_damage = 1
+stat_key = "strength"
+damage_scaling = 0.4
+description = "Un corte que provoca sangrado."
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("3")
+status_id = "bleed"
+duration_turns = 3
+stacks = 2
+magnitude = 1
+max_stacks = 10
+refresh_duration_on_reapply = true
+stack_behavior = "add"
+status_tags = Array[String](["physical", "bleed"])
+
+[resource]
+script = ExtResource("1")
+id = "herida_profunda"
+display_name = "Herida Profunda"
+description = "Provoca sangrado prolongado."
+category = "strength"
+rarity = "common"
+card_type = "debuff"
+target_type = "enemy"
+stat_key = "strength"
+base_damage = 1
+damage_scaling = 0.4
+range = 1
+cooldown = 1
+resource_cost = 1
+effects = Array[Resource]([SubResource("1"), SubResource("2")])
+tags = Array[String](["strength", "bleed", "setup"])
+keywords = Array[String](["bleed", "sangrado"])
+archetype = "pressure"
+combo_tags = Array[String](["bleed", "setup"])
