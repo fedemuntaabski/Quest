@@ -26,6 +26,7 @@ description = "Desestabiliza al enemigo con un impacto brutal."
 base_damage = 2
 damage_scaling = 0.5
 cooldown = 3
+range = 1
 effects = Array[Resource]([SubResource("1"), SubResource("2")])
 tags = Array[String](["strength", "control"])
 resource_cost = 1
