@@ -281,6 +281,10 @@ func _refresh_potion_ui() -> void:
 func _setup_stat_tooltips() -> void:
 	if stat_tooltip:
 		stat_tooltip.visible = false
+		# Make the tooltip more compact vertically and force wrap
+		stat_tooltip.custom_minimum_size = Vector2(220, 56)
+		if stat_tooltip_label:
+			stat_tooltip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	var icons_and_text: Array = [
 		[icon_hp, "hp"],
@@ -333,7 +337,7 @@ func _on_stat_icon_entered(key: String, _icon: Control) -> void:
 		var tooltip_rect := stat_tooltip.get_global_rect()
 		var timer_rect := timer_ui.get_global_rect()
 		if tooltip_rect.intersects(timer_rect):
-			var left_pos := panel_rect.position + Vector2(-stat_tooltip.rect_size.x - 12.0, 0.0)
+			var left_pos := panel_rect.position + Vector2(-stat_tooltip.size.x - 12.0, 0.0)
 			stat_tooltip.global_position = left_pos
 
 func _on_stat_icon_exited() -> void:

@@ -58,10 +58,21 @@ func set_selected(selected: bool) -> void:
 		t2.tween_property(self, "scale", Vector2(1, 1), 0.12)
 
 func set_usable(usable: bool) -> void:
-	modulate = Color(1, 1, 1, 1) if usable else Color(0.5, 0.5, 0.5, 0.8)
+	modulate = Color(1, 1, 1, 1) if usable else Color(0.8, 0.6, 0.6, 0.9)
 	if state_label:
 		state_label.visible = false
 		state_label.text = ""
+	# Color-code borders when blocked to provide a stronger visual cue
+	if not usable:
+		if hover_border:
+			hover_border.modulate = Color(1.0, 0.45, 0.45)
+		if selection_border:
+			selection_border.modulate = Color(1.0, 0.45, 0.45)
+	else:
+		if hover_border:
+			hover_border.modulate = Color(1, 1, 1, 1)
+		if selection_border:
+			selection_border.modulate = Color(1, 1, 1, 1)
 
 func set_state_label(_state: String) -> void:
 	if state_label == null:

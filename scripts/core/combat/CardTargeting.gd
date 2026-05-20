@@ -20,32 +20,6 @@ static func is_in_range(source: Node, target: Node, range_value: int, map_manage
 		return false
 	return get_chebyshev_distance(source_cell, target_cell) <= range_value
 
-static func is_valid_target(card: CardData, source: Node, target: Node, map_manager: MapManager) -> bool:
-	if card == null or source == null:
-		return false
-
-	match card.target_type:
-		"self":
-			var self_ok := target == source
-			return self_ok
-		"enemy":
-			if target == null or target == source:
-				return false
-			if map_manager and not map_manager.can_actors_engage(source, target):
-				var source_room := map_manager.get_actor_room_id(source)
-				var target_room := map_manager.get_actor_room_id(target)
-				return false
-			var has_combat := target.has_method("get_combat_component") or target.get_node_or_null("CombatComponent") != null
-			#if not has_combat:
-
-			return has_combat
-		"ground":
-			return true
-		"ally":
-			return target != null
-		_:
-			return target != null
-
 static func get_range_cells(center: Vector2i, range_value: int, map_manager: MapManager) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	for dx in range(-range_value, range_value + 1):

@@ -145,6 +145,7 @@ func update_hotbar_ui() -> void:
 		# Iterate payload and compute full_playable where we can (self-target or hovered enemy)
 		for i in range(payload.size()):
 			var entry: Dictionary = payload[i] as Dictionary
+			var used_prediction: bool = false
 			if not entry.has("card"):
 				continue
 			var card: CardData = entry.get("card") as CardData
@@ -158,18 +159,54 @@ func update_hotbar_ui() -> void:
 					full_playable = bool(validation.get("valid", false))
 					playability_reason = validation.get("reason", null)
 				elif card.target_type == "enemy":
-					# If we have a hovered actor, validate against it; otherwise leave as cooldown_ok
+					# If we have a hovered actor, validate against it; otherwise try to predict
+					var validated := false
 					if map_manager and map_manager.hovered_cell != Vector2i(-999, -999):
 						var target_actor := map_manager.get_actor_at_cell(map_manager.hovered_cell)
 						if target_actor != null:
 							var validation2 := combat_card_system.get_card_validation(card, target_actor)
 							full_playable = bool(validation2.get("valid", false))
 							playability_reason = str(validation2.get("reason", ""))
+							validated = true
+					# Predict nearest enemy in the room if no hovered target available
+					if not validated and map_manager and player:
+						var enemy_mgr := map_manager.core._enemy_manager() if map_manager.core else null
+						if enemy_mgr != null:
+							var enemies := enemy_mgr.get_enemies()
+							if enemies and enemies.size() > 0:
+								# Find nearest alive enemy by chebyshev distance
+								var player_cell = CardTargeting.get_actor_cell(player, map_manager)
+								var nearest: Node = null
+								var best_dist := 99999
+								for e in enemies:
+									if e == null:
+										continue
+									if not e.has_method("get_combat_component") and e.get_node_or_null("CombatComponent") == null:
+										continue
+									var ec = CardTargeting.get_actor_cell(e, map_manager)
+									if ec == null or player_cell == null:
+										continue
+									var dist := CardTargeting.get_chebyshev_distance(player_cell, ec)
+									if dist < best_dist:
+										best_dist = dist
+										nearest = e
+								if nearest != null:
+									var validation3 := combat_card_system.get_card_validation(card, nearest)
+									full_playable = bool(validation3.get("valid", false))
+									playability_reason = str(validation3.get("reason", ""))
+									validated = true
+									used_prediction = true
 
 			entry["cooldown_ok"] = cooldown_ok
 			entry["full_playable"] = full_playable
 			entry["playability_reason"] = playability_reason
-			entry["playability_reason_readable"] = _human_readable_playability_reason(playability_reason)
+			var readable_reason := _human_readable_playability_reason(playability_reason)
+			if used_prediction:
+				if readable_reason != "":
+					readable_reason = "%s (predicted)" % readable_reason
+				else:
+					readable_reason = "(predicted)"
+			entry["playability_reason_readable"] = readable_reason
 			payload[i] = entry
 
 		card_manager.ui_state_changed.emit(payload, card_manager.active_index)
