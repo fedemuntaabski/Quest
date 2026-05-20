@@ -23,6 +23,6 @@ card_type = "buff"
 target_type = "self"
 stat_key = "strength"
 range = 0
-cooldown = 3
+cooldown = 4
 effects = Array[Resource]([SubResource("1")])
 tags = Array[String](["strength", "buff", "tempo"])
