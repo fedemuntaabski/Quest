@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://baeb8xmga0bum"]
 
-[ext_resource type="Script" uid="uid://cxwymeacpk8vx" path="res://scripts/OptionsMenu.gd" id="1_options_menu_script"]
+[ext_resource type="Script" uid="uid://cxwymeacpk8vx" path="res://scripts/ui/menus/OptionsMenu.gd" id="1_options_menu_script"]
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
 [ext_resource type="Texture2D" uid="uid://0nc7hiqggiu8" path="res://assets/ui/menuoption.png" id="4_options_bg"]
@@ -114,7 +114,6 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
 [node name="OptionsMenu" type="Control" unique_id=1102198647]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -273,5 +272,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "VOLVER"
 
 [node name="UnsavedChangesDialog" type="ConfirmationDialog" parent="." unique_id=432187618]
+oversampling_override = 1.0
 title = "Cambios sin guardar"
+size = Vector2i(259, 100)
 dialog_text = "¿Deseas descartar los cambios?"

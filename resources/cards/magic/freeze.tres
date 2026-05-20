@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/core/effects/StatusEffect.gd" id="3"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+base_damage = 1
+stat_key = "magic"
+damage_scaling = 0.5
+description = "Cold strike with minor damage."
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("3")
+status_id = "freeze"
+duration_turns = 1
+stacks = 1
+magnitude = 1
+apply_to_source = false
+description = "Apply Freeze for 1 turn."
+
+[resource]
+script = ExtResource("1")
+id = "freeze"
+display_name = "Freeze"
+description = "Encases the target in bitter frost."
+category = "magic"
+card_type = "magic"
+target_type = "enemy"
+stat_key = "magic"
+base_damage = 1
+damage_scaling = 0.5
+range = 3
+cooldown = 2
+effects = Array[Resource]([SubResource("1"), SubResource("2")])
+tags = Array[String](["magic", "control", "status"])

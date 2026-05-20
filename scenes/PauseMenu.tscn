@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://h3720oxsybma"]
 
-[ext_resource type="Script" uid="uid://bgkmd8ru5ou3m" path="res://scripts/PauseMenu.gd" id="1_pause_script"]
+[ext_resource type="Script" uid="uid://bgkmd8ru5ou3m" path="res://scripts/ui/menus/PauseMenu.gd" id="1_pause_script"]
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
-[ext_resource type="PackedScene" path="res://scenes/OptionsMenu.tscn" id="4_options_menu"]
+[ext_resource type="PackedScene" uid="uid://baeb8xmga0bum" path="res://scenes/OptionsMenu.tscn" id="4_options_menu"]
 
 [sub_resource type="Shader" id="Shader_pause_blur"]
 code = "shader_type canvas_item;
@@ -234,7 +234,6 @@ hover_player_path = NodePath("../UIAudio/HoverSound")
 oversampling_override = 1.0
 title = "Confirmar salida"
 size = Vector2i(508, 100)
-visible = false
 dialog_text = "¿Estás seguro de salir? Se perderán los datos de esta run actual."
 
 [node name="StorePanel" type="Panel" parent="." unique_id=1280633485]
@@ -296,44 +295,44 @@ text = "Oro: 0"
 horizontal_alignment = 1
 
 [node name="UpgradeHPButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1556794747]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "Mejorar Vida (+1)"
+text = "Mejorar Vida (+2)"
 
 [node name="UpgradeSTRButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1371072363]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Mejorar Fuerza (+1)"
 
 [node name="UpgradeMAGButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1361103944]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "Mejorar Magia (+1)"
 
 [node name="UpgradeDEXButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=663664604]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+base_damage = 5
+stat_key = "strength"
+damage_scaling = 1.1
+description = "Finisher with very high scaling."
+
+[resource]
+script = ExtResource("1")
+id = "execute"
+display_name = "Execute"
+description = "Attempt to finish a wounded foe."
+category = "strength"
+card_type = "melee"
+target_type = "enemy"
+stat_key = "strength"
+base_damage = 5
+damage_scaling = 1.1
+range = 1
+cooldown = 3
+effects = Array[Resource]([SubResource("1")])
+tags = Array[String](["strength", "finisher"])

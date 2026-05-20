@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://ce8f2iieui6uo"]
+
+[ext_resource type="Script" uid="uid://cg0t7peubmgaq" path="res://scripts/core/enemy/EnemyData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bi2jq4ofb605c" path="res://assets/ui/white_2x2.svg" id="2"]
+
+[resource]
+script = ExtResource("1")
+enemy_id = "tutorial"
+enemy_name = "Tutorial"
+max_hp = 1
+strength = 0
+base_damage = 0
+forced_miss_chance = 1.0
+reward_gold = 0
+sprite_texture = ExtResource("2")
+target_tint = Color(0.92, 0.92, 0.92, 1)
+tags = Array[String](["tutorial"])

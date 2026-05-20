@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/BuffEffect.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/core/effects/StatusEffect.gd" id="3"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+stat_key = "dexterity"
+value = 1
+duration_turns = 2
+apply_to_source = true
+description = "Gain +1 Dexterity while shielded."
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("3")
+status_id = "arcane_shield"
+duration_turns = 2
+stacks = 1
+magnitude = 1
+apply_to_source = true
+description = "Gain Arcane Shield for 2 turns."
+
+[resource]
+script = ExtResource("1")
+id = "arcane_shield"
+display_name = "Arcane Shield"
+description = "Wrap yourself in protective arcane energy."
+category = "magic"
+card_type = "buff"
+target_type = "self"
+stat_key = "magic"
+range = 0
+cooldown = 3
+effects = Array[Resource]([SubResource("1"), SubResource("2")])
+tags = Array[String](["magic", "defense", "status"])

@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://kcs0b06asf7v"]
+
+[ext_resource type="Script" uid="uid://cl5iub16gg7qi" path="res://scripts/ui/hud/StatusIndicator.gd" id="1_script"]
+
+[node name="StatusIndicator" type="Node2D" unique_id=166775526]
+script = ExtResource("1_script")
+
+[node name="IconContainer" type="HBoxContainer" parent="." unique_id=516050626]

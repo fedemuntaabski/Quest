@@ -11,23 +11,27 @@ config_version=5
 [application]
 
 config/name="QUEST"
+config/version="1.0"
 run/main_scene="res://scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/icon="res://icon.svg"
+boot_splash/stretch_mode=0
+config/icon="uid://csy67bd45j2vb"
 
 [autoload]
 
-PlayerStats="*res://scripts/PlayerStats.gd"
-SaveManager="*res://scripts/SaveManager.gd"
+PlayerStats="*res://scripts/core/stats/PlayerStats.gd"
+SaveManager="*res://scripts/managers/SaveManager.gd"
 MapManag="uid://cwowlgio0q0w8"
-CurrencyManager="*res://scripts/CurrencyManager.gd"
+CurrencyManager="*res://scripts/managers/CurrencyManager.gd"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/size/mode=3
 window/stretch/mode="canvas_items"
-mouse_cursor/custom_image="res://assets/ui/gauntletcursor.png"
+mouse_cursor/custom_image="uid://cbtsbpk8s6y35"
+mouse_cursor/tooltip_position_offset=Vector2(0, 0)
 
 [input]
 

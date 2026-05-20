@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://bsssqfi5uxflq"]
+
+[ext_resource type="Script" uid="uid://dhy3xdc6sd4t2" path="res://scripts/core/effects/DamageEffect.gd" id="1_1cbyl"]
+[ext_resource type="Script" uid="uid://b3r367pf7k1g2" path="res://scripts/core/cards/CardData.gd" id="2_sln5j"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("1_1cbyl")
+base_damage = 2
+stat_key = "magic"
+damage_scaling = 0.7
+
+[resource]
+script = ExtResource("2_sln5j")
+id = "fire_bolt"
+display_name = "Fire Bolt"
+description = "A focused bolt of fire."
+category = "magic"
+card_type = "magic"
+target_type = "enemy"
+stat_key = "magic"
+base_damage = 2
+damage_scaling = 0.7
+range = 2
+cooldown = 2
+effects = Array[Resource]([SubResource("1")])

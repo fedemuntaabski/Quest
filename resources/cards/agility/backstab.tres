@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+base_damage = 3
+stat_key = "dexterity"
+damage_scaling = 1.0
+description = "Precise strike with strong dexterity scaling."
+
+[resource]
+script = ExtResource("1")
+id = "backstab"
+display_name = "Backstab"
+description = "A precise attack that rewards agility."
+category = "agility"
+card_type = "melee"
+target_type = "enemy"
+stat_key = "dexterity"
+base_damage = 3
+damage_scaling = 1.0
+range = 1
+cooldown = 2
+effects = Array[Resource]([SubResource("1")])
+tags = Array[String](["agility", "burst"])

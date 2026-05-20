@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://cq35uvvhefduw"]
 
-[ext_resource type="Script" uid="uid://83bq6t8fg0tc" path="res://scripts/MainMenu.gd" id="1_mainmenu_script"]
+[ext_resource type="Script" uid="uid://2n7s7t6876g8" path="res://scripts/ui/menus/MainMenu.gd" id="1_mainmenu_script"]
 [ext_resource type="Texture2D" uid="uid://dnmltyygw5pje" path="res://assets/ui/mainbackground.png" id="2_main_background"]
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="3_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="4_ui_font"]
 [ext_resource type="AudioStream" uid="uid://bn3f47isu51op" path="res://assets/audio/click.mp3" id="5_click_audio"]
 [ext_resource type="AudioStream" uid="uid://bawlbtgbjti0q" path="res://assets/audio/hover.mp3" id="6_hover_audio"]
-[ext_resource type="PackedScene" path="res://scenes/OptionsMenu.tscn" id="7_options_menu"]
+[ext_resource type="PackedScene" uid="uid://baeb8xmga0bum" path="res://scenes/OptionsMenu.tscn" id="7_options_menu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
 content_margin_left = 16.0
@@ -192,9 +192,11 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "SALIR"
 
 [node name="OptionsMenu" parent="." unique_id=1577447172 instance=ExtResource("7_options_menu")]
+visible = false
 layout_mode = 1
 click_player_path = NodePath("../click")
 hover_player_path = NodePath("../hover")
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/StartButton" to="." method="on_start_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/OptionsButton" to="." method="_on_options_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ExitMargin/ExitButton" to="." method="on_exit_button_pressed"]

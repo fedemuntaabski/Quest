@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://dw1g5rbp50njp"]
+
+[ext_resource type="Script" uid="uid://bp0gdkxxuyr5v" path="res://scripts/core/enemy/EnemyData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bi2jq4ofb605c" path="res://assets/ui/white_2x2.svg" id="2"]
+
+[resource]
+script = ExtResource("1")
+enemy_id = "boss"
+enemy_name = "Boss_Purple"
+max_hp = 30
+strength = 0
+dexterity = 4
+base_damage = 5
+reward_gold = 200
+sprite_texture = ExtResource("2")
+base_tint = Color(0.6, 0.2, 0.8, 1)
+target_tint = Color(1, 0.6, 1, 1)
+is_boss = true
+tags = Array[String](["boss"])

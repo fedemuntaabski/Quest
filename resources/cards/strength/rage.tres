@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/BuffEffect.gd" id="2"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+stat_key = "strength"
+value = 2
+duration_turns = 2
+apply_to_source = true
+description = "Gain +2 Strength for a short burst."
+
+[resource]
+script = ExtResource("1")
+id = "rage"
+display_name = "Rage"
+description = "Channel fury to increase your damage output."
+category = "strength"
+card_type = "buff"
+target_type = "self"
+stat_key = "strength"
+range = 0
+cooldown = 3
+effects = Array[Resource]([SubResource("1")])
+tags = Array[String](["strength", "buff"])
