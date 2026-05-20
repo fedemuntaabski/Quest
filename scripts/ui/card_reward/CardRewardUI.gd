@@ -138,6 +138,15 @@ func _create_card_button(card: CardData) -> Control:
 	var view := {}
 	if _cvm_script and _cvm_script.has_method("from_card"):
 		view = _cvm_script.from_card(card)
+	elif _cvm_script and _cvm_script.has_method("build_reward_effects_text"):
+		view = {
+			"display_name": card.display_name,
+			"description": card.description,
+			"icon": card.icon,
+			"category": card.category,
+			"stats_summary": "%s x%.2f | D:%d | R:%d | CD:%d" % [StatTypes.get_label(card.stat_key), card.damage_scaling, card.base_damage, card.range, card.cooldown],
+			"effects_summary": _cvm_script.build_reward_effects_text(card)
+		}
 	else:
 		view = {
 			"display_name": card.display_name,
@@ -145,7 +154,7 @@ func _create_card_button(card: CardData) -> Control:
 			"icon": card.icon,
 			"category": card.category,
 			"stats_summary": "%s x%.2f | D:%d | R:%d | CD:%d" % [StatTypes.get_label(card.stat_key), card.damage_scaling, card.base_damage, card.range, card.cooldown],
-			"effects_summary": _build_reward_effects_text(card)
+			"effects_summary": ""
 		}
 	var name_label := Label.new()
 	name_label.text = view.get("display_name")
@@ -379,32 +388,6 @@ func _on_skip_pressed() -> void:
 
 func _build_reward_description(card: CardData) -> String:
 	return card.description
-
-func _build_reward_effects_text(card: CardData) -> String:
-	var effects: Array[String] = []
-	effects.append("Bonus: %s | Base %d | Range %d | CD %d" % [StatTypes.get_label(card.stat_key), card.base_damage, card.range, card.cooldown])
-	if not card.effects.is_empty():
-		var effect_descriptions: Array[String] = []
-		for effect in card.effects:
-			if effect:
-				var effect_desc := ""
-				if effect is CardEffect:
-					effect_desc = str(effect.get_description())
-				elif typeof(effect) == TYPE_DICTIONARY:
-					effect_desc = str(effect.get("description"))
-				elif typeof(effect) == TYPE_OBJECT:
-					var candidate = effect.get("description")
-					if candidate != null:
-						effect_desc = str(candidate)
-				if effect_desc != "":
-					effect_descriptions.append(effect_desc)
-		if not effect_descriptions.is_empty():
-			effects.append("Effects: " + ", ".join(effect_descriptions))
-
-	var out := "\n".join(effects)
-	if out.length() > 400:
-		return out.substr(0, 400) + "..."
-	return out
 
 func _build_card_style(border_color: Color = NORMAL_COLOR) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

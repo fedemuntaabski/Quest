@@ -205,3 +205,8 @@ static func from_card(card: Resource) -> Dictionary:
 		"category": card.category
 	}
 	return normalize_from_payload(p)
+
+static func build_reward_effects_text(card: Resource) -> String:
+	if card == null:
+		return ""
+	return str(from_card(card).get("effects_summary", ""))
