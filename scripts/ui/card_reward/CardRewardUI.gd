@@ -5,8 +5,6 @@ signal card_selected(card: CardData)
 signal reward_skipped
 signal card_replace_selected(card: CardData, slot_index: int)
 
-const CardViewModel = preload("res://scripts/ui/hud/CardViewModel.gd")
-
 @onready var panel: Panel = $CenterContainer/RewardPanel
 @onready var cards_container: HBoxContainer = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/CardsScroll/CardsContainer
 @onready var footer_container: CenterContainer = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/FooterContainer
@@ -136,7 +134,19 @@ func _create_card_button(card: CardData) -> Control:
 	margin.add_child(vbox)
 	
 	# Title - larger, bold appearance
-	var view := CardViewModel.from_card(card)
+	var _cvm_script = load("res://scripts/ui/hud/CardViewModel.gd")
+	var view := {}
+	if _cvm_script and _cvm_script.has_method("from_card"):
+		view = _cvm_script.from_card(card)
+	else:
+		view = {
+			"display_name": card.display_name,
+			"description": card.description,
+			"icon": card.icon,
+			"category": card.category,
+			"stats_summary": "%s x%.2f | D:%d | R:%d | CD:%d" % [StatTypes.get_label(card.stat_key), card.damage_scaling, card.base_damage, card.range, card.cooldown],
+			"effects_summary": _build_reward_effects_text(card)
+		}
 	var name_label := Label.new()
 	name_label.text = view.get("display_name")
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -377,8 +387,15 @@ func _build_reward_effects_text(card: CardData) -> String:
 		var effect_descriptions: Array[String] = []
 		for effect in card.effects:
 			if effect:
-				var effect_desc_value: Variant = effect.get("description")
-				var effect_desc := "" if effect_desc_value == null else str(effect_desc_value)
+				var effect_desc := ""
+				if effect is CardEffect:
+					effect_desc = str(effect.get_description())
+				elif typeof(effect) == TYPE_DICTIONARY:
+					effect_desc = str(effect.get("description"))
+				elif typeof(effect) == TYPE_OBJECT:
+					var candidate = effect.get("description")
+					if candidate != null:
+						effect_desc = str(candidate)
 				if effect_desc != "":
 					effect_descriptions.append(effect_desc)
 		if not effect_descriptions.is_empty():

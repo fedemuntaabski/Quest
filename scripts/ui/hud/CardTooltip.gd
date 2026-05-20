@@ -1,8 +1,6 @@
 extends Control
 class_name CardTooltip
 
-const CardViewModel = preload("res://scripts/ui/hud/CardViewModel.gd")
-
 @onready var name_label: Label = $Panel/VBox/Name
 @onready var desc_label: Label = $Panel/VBox/Description
 @onready var details_label: Label = $Panel/VBox/Details
@@ -55,7 +53,18 @@ func set_card(data: Dictionary) -> void:
 	name_label.text = ""
 	desc_label.text = ""
 	details_label.text = ""
-	var view := CardViewModel.normalize_from_payload(data)
+	var cvm_script = load("res://scripts/ui/hud/CardViewModel.gd")
+	var view: Dictionary = {}
+	if cvm_script and cvm_script.has_method("normalize_from_payload"):
+		view = cvm_script.normalize_from_payload(data)
+	else:
+		view = {
+			"display_name": str(data.get("display_name", data.get("name", "Card"))),
+			"description": str(data.get("description", "")),
+			"stats_summary": "",
+			"state_text": str(data.get("state", "")),
+			"playability_reason_readable": str(data.get("playability_reason_readable", ""))
+		}
 
 	name_label.text = view.get("display_name", "Card")
 	desc_label.text = view.get("description", "")

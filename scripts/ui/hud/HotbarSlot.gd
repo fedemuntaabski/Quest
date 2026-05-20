@@ -5,7 +5,7 @@ signal slot_pressed(index: int)
 
 @export var slot_index: int = 0
 
-const CardViewModel = preload("res://scripts/ui/hud/CardViewModel.gd")
+# Use the CardViewModel class by name (class_name in its script) to avoid duplicate preload issues
 
 @onready var icon: TextureRect = $VBox/Icon
 @onready var name_label: Label = $VBox/Name
@@ -18,7 +18,7 @@ const CardViewModel = preload("res://scripts/ui/hud/CardViewModel.gd")
 
 var _card_data: Dictionary = {}
 var _is_selected: bool = false
-var tooltip_host: HUDController = null
+var tooltip_host: CardTooltip = null
 
 func _ready() -> void:
 	focus_mode = Control.FOCUS_NONE
@@ -41,7 +41,7 @@ func set_card(data: Dictionary) -> void:
 	_card_data = data if data != null else {}
 	_update_ui()
 
-func set_tooltip_host(host: HUDController) -> void:
+func set_tooltip_host(host: CardTooltip) -> void:
 	tooltip_host = host
 
 func set_selected(selected: bool) -> void:
@@ -97,7 +97,20 @@ func set_cooldown(turns_left: int) -> void:
 		cooldown_overlay.visible = turns_left > 0
 
 func _update_ui() -> void:
-	var view := CardViewModel.normalize_from_payload(_card_data)
+	var _cvm_script = load("res://scripts/ui/hud/CardViewModel.gd")
+	var view: Dictionary = {}
+	if _cvm_script and _cvm_script.has_method("normalize_from_payload"):
+		view = _cvm_script.normalize_from_payload(_card_data)
+	else:
+		# Minimal fallback presentation
+		view = {
+			"display_name": str(_card_data.get("display_name", _card_data.get("name", "-"))),
+			"icon": _card_data.get("icon", null),
+			"cooldown_remaining": int(_card_data.get("cooldown_remaining", 0)),
+			"is_usable": bool(_card_data.get("is_usable", true)),
+			"playability_reason": _card_data.get("playability_reason", null),
+			"playability_reason_readable": str(_card_data.get("playability_reason_readable", ""))
+		}
 
 	if name_label:
 		name_label.text = view.get("display_name", "-")
@@ -127,7 +140,7 @@ func _on_mouse_entered() -> void:
 	var t = create_tween()
 	t.tween_property(self, "scale", Vector2(1.02, 1.02), 0.08)
 	if tooltip_host:
-		tooltip_host.show_card_tooltip(_card_data)
+		tooltip_host.request_show(_card_data)
 
 func _on_mouse_exited() -> void:
 	if hover_border:
@@ -139,4 +152,4 @@ func _on_mouse_exited() -> void:
 	var t = create_tween()
 	t.tween_property(self, "scale", target_scale, 0.08)
 	if tooltip_host:
-		tooltip_host.hide_card_tooltip()
+		tooltip_host.request_hide()

@@ -38,9 +38,21 @@ func _update_display() -> void:
 			_create_empty_slot_row(i + 1)
 
 func _create_card_row(slot_num: int, data: Dictionary) -> void:
-	var CardViewModel = preload("res://scripts/ui/hud/CardViewModel.gd")
-	var view := CardViewModel.normalize_from_payload(data)
-    
+
+	var _cvm_script = load("res://scripts/ui/hud/CardViewModel.gd")
+	var view: Dictionary = {}
+	if _cvm_script and _cvm_script.has_method("normalize_from_payload"):
+		view = _cvm_script.normalize_from_payload(data)
+	else:
+		view = {
+			"display_name": str(data.get("display_name", data.get("name", ""))),
+			"description": str(data.get("description", "")),
+			"icon": data.get("icon", null),
+			"stats_summary": "",
+			"cooldown_remaining": int(data.get("cooldown_remaining", 0)),
+			"state": data.get("state", "")
+		}
+	
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 12)
 	

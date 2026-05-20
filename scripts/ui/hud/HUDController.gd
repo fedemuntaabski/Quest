@@ -37,7 +37,7 @@ var hotbar_slots: Array = []
 var _bound_card_manager: CardManager = null
 var _roll_label_tween: Tween = null
 var _game_state_manager: GameStateManager = null
-var _potion_used: bool = false
+var _potion_controller = null
 var _bound_stats: CharacterStats = null
 # Tooltip debounce is owned by CardTooltip. HUDController delegates tooltip timing.
 
@@ -49,7 +49,8 @@ func _ready() -> void:
 	# (pause behavior is handled by scene pause settings)
 	_setup_hotbar()
 	_setup_reward_ui()
-	_setup_potion()
+	# Initialize potion controller to own potion UI/logic
+	_init_potion_controller()
 	_setup_stat_tooltips()
 
 	# Tooltip debounce is handled by CardTooltip itself; HUDController delegates show/hide requests.
@@ -69,7 +70,8 @@ func _setup_hotbar() -> void:
 	for child in hotbar_bar.get_children():
 		if child is HotbarSlot:
 			hotbar_slots.append(child)
-			child.set_tooltip_host(self)
+			# Pass the tooltip node directly so slots can call tooltip APIs without HUD mediation
+			child.set_tooltip_host(card_tooltip)
 			if not child.slot_pressed.is_connected(_on_hotbar_slot_pressed):
 				child.slot_pressed.connect(_on_hotbar_slot_pressed)
 
@@ -83,6 +85,16 @@ func _setup_reward_ui() -> void:
 		card_reward_ui.reward_skipped.connect(_on_reward_skipped)
 	if not card_reward_ui.card_replace_selected.is_connected(_on_reward_card_replace_selected):
 		card_reward_ui.card_replace_selected.connect(_on_reward_card_replace_selected)
+
+func _init_potion_controller() -> void:
+	# Create and attach a PotionController to own potion UI/behavior
+	if _potion_controller != null:
+		return
+	var PotionController = preload("res://scripts/ui/hud/PotionController.gd")
+	_potion_controller = PotionController.new()
+	add_child(_potion_controller)
+	# Provide HUD nodes (they may be null if scene differs)
+	_potion_controller.setup(potion_button, potion_count_label, potion_icon)
 
 func _on_hotbar_slot_pressed(index: int) -> void:
 	hotbar_slot_pressed.emit(index)
@@ -131,7 +143,8 @@ func _on_stats_changed(stats: CharacterStats) -> void:
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	if stat_panel:
 		stat_panel.update_hp(current_hp, max_hp)
-	_refresh_potion_ui()
+	if _potion_controller:
+		_potion_controller.refresh()
 
 func update_room_timer(time_left: float, _total: float, color: Color) -> void:
 	if timer_ui:
@@ -214,57 +227,7 @@ func hide_simple_tooltip() -> void:
 
 
 
-func _setup_potion() -> void:
-	if potion_button and not potion_button.pressed.is_connected(_on_potion_pressed):
-		potion_button.pressed.connect(_on_potion_pressed)
-	_bind_game_state()
-	_refresh_potion_ui()
-
-func _bind_game_state() -> void:
-	_game_state_manager = get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
-	if _game_state_manager and not _game_state_manager.state_changed.is_connected(_on_game_state_changed):
-		_game_state_manager.state_changed.connect(_on_game_state_changed)
-
-func _on_game_state_changed(_new_state: GameStateManager.State, _old_state: GameStateManager.State) -> void:
-	_refresh_potion_ui()
-
-func _on_potion_pressed() -> void:
-	if _potion_used:
-		return
-	if not _can_use_potion_now():
-		return
-	var ps = get_node_or_null("/root/PlayerStats")
-	if ps == null or ps.stats == null:
-		return
-	var stats: CharacterStats = ps.stats
-	var heal_amount: int = int(ceil(float(stats.max_hp) * POTION_HEAL_RATIO))
-	if heal_amount <= 0:
-		return
-	stats.heal(heal_amount)
-	_potion_used = true
-	_refresh_potion_ui()
-
-func _can_use_potion_now() -> bool:
-	if _potion_used:
-		return false
-	if _game_state_manager and not _game_state_manager.is_active():
-		return false
-	var ps = get_node_or_null("/root/PlayerStats")
-	if ps == null or ps.stats == null:
-		return false
-	var stats: CharacterStats = ps.stats
-	return stats.current_hp < stats.max_hp
-
-func _refresh_potion_ui() -> void:
-	if potion_button:
-		potion_button.disabled = not _can_use_potion_now()
-		potion_button.text = "Usar" if not _potion_used else "Usada"
-	if potion_count_label:
-		potion_count_label.text = "x0" if _potion_used else "x1"
-	if potion_icon:
-		potion_icon.modulate = Color(1, 1, 1, 1) if not _potion_used else Color(0.5, 0.5, 0.5, 0.8)
-	if stat_tooltip:
-		stat_tooltip.visible = false
+# Potion logic moved to PotionController (scripts/ui/hud/PotionController.gd)
 
 func _setup_stat_tooltips() -> void:
 	if stat_tooltip:
