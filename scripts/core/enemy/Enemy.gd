@@ -163,46 +163,18 @@ func sync_to_grid():
 
 func begin_turn(tm: TurnManager) -> void:
 	turn_manager = tm
-
-	# Ensure canonical occupancy/room assignment before making decisions
-	if map_manager and map_manager.core:
-		map_manager.core.repair_actor_room(self)
-
-	if stats and stats.is_alive():
-		stats.process_runtime_modifiers_turn_start()
-		var status_result := StatusRuntime.process_turn_start(self, stats)
-		if status_result.get("can_act", true) != true:
+	var decision := EnemyTurnPolicy.decide(self)
+	match int(decision.get("decision", EnemyTurnPolicy.Decision.WAIT)):
+		EnemyTurnPolicy.Decision.SKIP:
+			_skip_turn(str(decision.get("reason", "")))
+		EnemyTurnPolicy.Decision.ATTACK:
+			var attack_target := decision.get("target", player) as Node
+			_queue_attack_action(attack_target)
+		EnemyTurnPolicy.Decision.MOVE:
+			var next_cell := decision.get("next_cell", Vector2i.ZERO) as Vector2i
+			_queue_move_action(next_cell)
+		_:
 			_queue_wait_action()
-			return
-
-	if map_manager == null or player == null:
-		_queue_wait_action()
-		return
-
-	if combat_component == null or combat_component.stats == null:
-		_queue_wait_action()
-		return
-
-	if dungeon_generator and dungeon_generator.active_room_id != my_room_id:
-		_skip_turn("off_room")
-		return
-
-	sync_to_grid()
-
-	if combat_component and combat_component.can_attack(player as Node):
-		if map_manager and not map_manager.can_actors_engage(self, player as Node):
-			_queue_wait_action()
-			return
-		_queue_attack_action(player as Node)
-		return
-
-	var path: Array[Vector2i] = map_manager.find_path_to_adjacent(grid_pos, player.grid_pos, self)
-	if path.size() > 1:
-		var next_cell: Vector2i = path[1]
-		_queue_move_action(next_cell)
-		return
-
-	_queue_wait_action()
 
 func _skip_turn(reason: String = "") -> void:
 	if turn_manager == null:

@@ -191,61 +191,10 @@ func _get_random_floor_cell_in_room(
 
 
 func _on_enemy_defeated(enemy, room_id: int) -> void:
-	enemy_defeated_global.emit()
-
-	var is_boss: bool = false
-	if enemy:
-		is_boss = enemy.get("is_boss") == true
-
-	var reward_gold := COIN_REWARD_PER_ENEMY
-	if enemy and enemy.has_method("get_reward_gold"):
-		reward_gold = int(enemy.get_reward_gold())
-	
-	# DEFERRED GOLD: Accumulate reward internally instead of granting immediately
-	# This prevents players from spending gold during combat and ensures
-	# all rewards are granted atomically at run-end (victory or defeat screen)
-	_run_accumulated_gold += max(0, reward_gold)
-	print("[EnemyManager] Enemy defeated: +%dg (accumulated total: %dg)" % [reward_gold, _run_accumulated_gold])
-
-	# Bosses: emit boss_defeated and grant gold, but DO NOT emit the reward signal
-	if is_boss:
-		boss_defeated.emit(enemy)
-	else:
-		var reward_position: Vector2 = enemy.global_position if enemy and enemy is Node2D else Vector2.ZERO
-		enemy_defeated_with_reward.emit(enemy, reward_position)
-
-	# 🔥 REMOVER DEL TURN MANAGER
-	if turn_manager:
-		turn_manager.unregister_actor(enemy)
-
-	# 🔥 REMOVER DE LISTA
-	enemies.erase(enemy)
-
-	if not _room_enemy_counts.has(room_id):
-		return
-
-	_room_enemy_counts[room_id] -= 1
-
-	if _room_enemy_counts[room_id] <= 0:
-		_room_enemy_counts.erase(room_id)
-		room_cleared.emit(room_id)
+	EnemyRewardService.process_enemy_defeat(self, enemy, room_id)
 
 
 func grant_and_reset_accumulated_gold() -> int:
-	# Grant all accumulated gold at run-end and return the amount granted
-	# This is called by Main2d when victory or defeat screen appears
-	if _run_accumulated_gold <= 0:
-		return 0
-	
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
-	if currency == null:
-		push_warning("[EnemyManager] Cannot grant accumulated gold: CurrencyManager not found")
-		var temp := _run_accumulated_gold
-		_run_accumulated_gold = 0
-		return temp
-	
-	var amount := _run_accumulated_gold
-	currency.add_gold(amount, Vector2.ZERO)  # Grant without world position (bulk reward)
-	print("[EnemyManager] Run ended: granted accumulated gold +%dg" % amount)
-	_run_accumulated_gold = 0
-	return amount
+	# Grant all accumulated gold at run-end and return the amount granted.
+	# This is called by Main2d when victory or defeat screen appears.
+	return EnemyRewardService.grant_and_reset_accumulated_gold(self)
