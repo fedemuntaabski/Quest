@@ -73,33 +73,13 @@ func setup(p_map: MapManager, p_player: PlayerMovement) -> void:
 		_apply_standard_combat_profile()
 
 func _apply_standard_profile() -> void:
-	if stats == null:
-		return
-	stats.max_hp = STANDARD_ENEMY_HP
-	stats.current_hp = STANDARD_ENEMY_HP
-	stats.strength = STANDARD_ENEMY_STRENGTH
-	stats.magic = STANDARD_ENEMY_MAGIC
-	stats.dexterity = STANDARD_ENEMY_DEX
-	stats.strength_mod = 0
-	stats.magic_mod = 0
-	stats.dexterity_mod = 0
-	stats.hp_changed.emit(stats.current_hp, stats.max_hp)
-	stats.stats_changed.emit()
+	EnemyProfileApplier.apply_standard_profile(stats)
 
 func _apply_standard_combat_profile() -> void:
-	if combat_component == null:
-		return
-	combat_component.base_damage = STANDARD_ENEMY_BASE_DAMAGE
-	combat_component.attack_range = 1
-	combat_component.attack_stat = "strength"
+	EnemyProfileApplier.apply_standard_combat_profile(combat_component)
 
 func _apply_combat_from_data(data: EnemyData) -> void:
-	if combat_component == null or data == null:
-		return
-	combat_component.base_damage = data.base_damage
-	combat_component.attack_range = max(1, data.attack_range)
-	combat_component.attack_stat = data.attack_stat
-	combat_component.forced_miss_chance = clampf(data.forced_miss_chance, 0.0, 1.0)
+	EnemyProfileApplier.apply_combat_from_data(combat_component, data)
 
 func _ensure_combat_component() -> void:
 	if stats == null:
@@ -156,37 +136,17 @@ func apply_enemy_data(data: EnemyData) -> void:
 	enemy_data = data
 	if enemy_data == null:
 		return
-
-	if stats:
-		stats.character_name = enemy_data.enemy_name
-		stats.max_hp = max(1, enemy_data.max_hp)
-		stats.current_hp = stats.max_hp
-		stats.strength = enemy_data.strength
-		stats.magic = enemy_data.magic
-		stats.dexterity = enemy_data.dexterity
-		stats.strength_mod = 0
-		stats.magic_mod = 0
-		stats.dexterity_mod = 0
-		stats.hp_changed.emit(stats.current_hp, stats.max_hp)
-		stats.stats_changed.emit()
-
-	step_time = max(0.01, enemy_data.move_step_time)
-	movement_points = max(1, enemy_data.movement)
-
-	if sprite and enemy_data.sprite_texture:
-		sprite.texture = enemy_data.sprite_texture
-
-	set_visual_tint(enemy_data.base_tint, enemy_data.target_tint)
-
-	if health_bar:
-		health_bar.max_value = stats.max_hp if stats else enemy_data.max_hp
-		health_bar.value = stats.current_hp if stats else enemy_data.max_hp
-
-	if enemy_data.enemy_id == "tutorial" or enemy_data.tags.has("tutorial"):
-		apply_tutorial_profile()
-
-	if combat_component:
-		_apply_combat_from_data(enemy_data)
+	var applied := EnemyProfileApplier.apply_enemy_data(
+		enemy_data,
+		stats,
+		sprite,
+		health_bar,
+		combat_component,
+		Callable(self, "set_visual_tint"),
+		Callable(self, "apply_tutorial_profile")
+	)
+	step_time = float(applied.get("step_time", step_time))
+	movement_points = int(applied.get("movement_points", movement_points))
 
 func get_reward_gold() -> int:
 	if enemy_data:

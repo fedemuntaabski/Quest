@@ -158,43 +158,11 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 		, CONNECT_ONE_SHOT)
 
 func _select_enemy_data(room_id: int, p_final_room_id: int) -> EnemyData:
-	if room_id == 0:
-		var tutorial := _find_enemy_data_by_id("tutorial")
-		if tutorial:
-			return tutorial
-
-	if room_id == p_final_room_id:
-		var boss_candidates: Array[EnemyData] = []
-		for data in enemy_data_pool:
-			if data and data.is_boss:
-				boss_candidates.append(data)
-		if not boss_candidates.is_empty():
-			return boss_candidates[randi() % boss_candidates.size()]
-
-	var candidates: Array[EnemyData] = []
-	for data in enemy_data_pool:
-		if data == null:
-			continue
-		if data.is_boss:
-			continue
-		if data.enemy_id == "tutorial":
-			continue
-		candidates.append(data)
-
-	if not candidates.is_empty():
-		return candidates[randi() % candidates.size()]
-
-	if default_enemy_data:
-		return default_enemy_data
-
-	return _find_enemy_data_by_id("goblin")
+	return EnemyDataSelector.select_enemy_data(room_id, p_final_room_id, enemy_data_pool, default_enemy_data)
 
 
 func _find_enemy_data_by_id(enemy_id: String) -> EnemyData:
-	for data in enemy_data_pool:
-		if data and data.enemy_id == enemy_id:
-			return data
-	return null
+	return EnemyDataSelector.find_enemy_data_by_id(enemy_data_pool, enemy_id)
 
 
 func get_enemies() -> Array:
@@ -212,48 +180,14 @@ func _get_random_floor_cell_in_room(
 	player_cell: Vector2i,
 	occupied_spawn_cells: Dictionary
 ) -> Vector2i:
-	var room_cells: Array = room_info["floor_cells"]
-	var center_cell: Vector2i = room_info["center_cell"]
-	var forbidden_spawn_cells: Dictionary = {}
-	if dungeon and dungeon.has_method("get_room_spawn_forbidden_cells"):
-		forbidden_spawn_cells = dungeon.get_room_spawn_forbidden_cells(int(room_info.get("id", -1)))
-
-	var candidates: Array[Vector2i] = []
-	var avoid_radius: int = 1 if avoid_center else 0
-
-	for raw_cell in room_cells:
-		var cell: Vector2i = raw_cell
-
-		if wall_cells.has(cell):
-			continue
-		if forbidden_spawn_cells.has(cell):
-			continue
-		if cell == player_cell:
-			continue
-		if occupied_spawn_cells.has(cell):
-			continue
-
-		if avoid_radius > 0:
-			var dx: int = absi(cell.x - center_cell.x)
-			var dy: int = absi(cell.y - center_cell.y)
-			if dx <= avoid_radius and dy <= avoid_radius:
-				continue
-
-		var near_wall := false
-		for dir in [Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1)]:
-			if wall_cells.has(cell + dir):
-				near_wall = true
-				break
-
-		if near_wall:
-			continue
-
-		candidates.append(cell)
-
-	if candidates.is_empty():
-		return Vector2i(-1, -1)
-
-	return candidates[randi() % candidates.size()]
+	return EnemySpawnPlanner.get_random_floor_cell_in_room(
+		room_info,
+		wall_cells,
+		avoid_center,
+		player_cell,
+		occupied_spawn_cells,
+		dungeon
+	)
 
 
 func _on_enemy_defeated(enemy, room_id: int) -> void:

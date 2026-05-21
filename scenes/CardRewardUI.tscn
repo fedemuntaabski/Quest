@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d3caxq8yr8iqt"]
 
-[ext_resource type="Script" uid="uid://daiv7g5lmxiy3" path="res://scripts/ui/card_reward/CardRewardUI.gd" id="1_4k8e2"]
+[ext_resource type="Script" uid="uid://cf8kdj4ywa7bu" path="res://scripts/ui/card_reward/CardRewardUI.gd" id="1_4k8e2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1v3q1"]
 bg_color = Color(0.08, 0.08, 0.1, 0.97)
@@ -16,7 +16,6 @@ corner_radius_bottom_left = 10
 
 [node name="CardRewardUI" type="CanvasLayer" unique_id=1358357399]
 layer = 50
-pause_mode = 2
 script = ExtResource("1_4k8e2")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=306955614]
@@ -29,7 +28,6 @@ grow_vertical = 2
 [node name="RewardPanel" type="Panel" parent="CenterContainer" unique_id=136998490]
 custom_minimum_size = Vector2(980, 420)
 layout_mode = 2
-offset_top = -5
 theme_override_styles/panel = SubResource("StyleBoxFlat_1v3q1")
 
 [node name="MarginContainer" type="MarginContainer" parent="CenterContainer/RewardPanel" unique_id=1485608600]
@@ -46,23 +44,23 @@ theme_override_constants/margin_bottom = 24
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/RewardPanel/MarginContainer" unique_id=1924314246]
 layout_mode = 2
-alignment = 1
 theme_override_constants/separation = 18
+alignment = 1
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer" unique_id=1598734408]
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 32
 text = "Choose a Card Reward"
 horizontal_alignment = 1
 vertical_alignment = 1
-theme_override_font_sizes/font_size = 32
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-custom_minimum_size = Vector2(0, 40)
 
 [node name="CardsScroll" type="ScrollContainer" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer" unique_id=1704675132]
+custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 300)
 horizontal_scroll_mode = 2
 vertical_scroll_mode = 0
 
@@ -74,6 +72,6 @@ theme_override_constants/separation = 20
 alignment = 1
 
 [node name="FooterContainer" type="CenterContainer" parent="CenterContainer/RewardPanel/MarginContainer/VBoxContainer" unique_id=1795639085]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 44)
