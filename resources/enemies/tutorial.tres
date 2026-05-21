@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://ce8f2iieui6uo"]
 
-[ext_resource type="Script" uid="uid://cg0t7peubmgaq" path="res://scripts/core/enemy/EnemyData.gd" id="1"]
+[ext_resource type="Script" uid="uid://bp0gdkxxuyr5v" path="res://scripts/core/enemy/EnemyData.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://bi2jq4ofb605c" path="res://assets/ui/white_2x2.svg" id="2"]
 
 [resource]

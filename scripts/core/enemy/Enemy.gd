@@ -21,8 +21,6 @@ var _start_pos: Vector2
 var target_world_pos: Vector2
 var turn_manager: TurnManager
 var combat_component: CombatComponent
-var is_boss: bool = false
-
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var health_bar: ProgressBar = $HealthBar
@@ -31,29 +29,24 @@ var is_boss: bool = false
 var _base_modulate: Color = Color(1, 1, 1, 1)
 var stats: CharacterStats
 var _target_tint: Color = Color(1.0, 0.6, 0.6, 1.0)
-var is_tutorial_enemy: bool = false
 
-const STANDARD_ENEMY_HP := 10
-const STANDARD_ENEMY_STRENGTH := 1
-const STANDARD_ENEMY_MAGIC := 0
-const STANDARD_ENEMY_DEX := 0
-const STANDARD_ENEMY_BASE_DAMAGE := 2
 
 func _ready():
-	stats = $Stats as CharacterStats
+	stats = get_node_or_null("Stats") as CharacterStats
+
+	if stats == null:
+		push_error("Enemy: Missing Stats node")
+		return
 
 	stats.died.connect(_on_died)
 	stats.hp_changed.connect(_on_hp_changed)
 	if enemy_data:
 		apply_enemy_data(enemy_data)
-	else:
-		_apply_standard_profile()
 
 	if sprite:
 		_base_modulate = sprite.modulate
 
 	if health_bar:
-		health_bar.visible = not is_tutorial_enemy
 		health_bar.max_value = stats.max_hp
 		health_bar.value = stats.current_hp
 
@@ -67,39 +60,76 @@ func setup(p_map: MapManager, p_player: PlayerMovement) -> void:
 		map_manager.register_actor(self, grid_pos, true)
 
 	_ensure_combat_component()
-	if enemy_data:
-		_apply_combat_from_data(enemy_data)
-	else:
-		_apply_standard_combat_profile()
+	_hydrate_combat_from_data()
 
-func _apply_standard_profile() -> void:
-	if stats == null:
+func get_enemy_data() -> EnemyData:
+	return enemy_data
+
+func _hydrate_combat_from_data() -> void:
+	if combat_component == null or enemy_data == null:
 		return
-	stats.max_hp = STANDARD_ENEMY_HP
-	stats.current_hp = STANDARD_ENEMY_HP
-	stats.strength = STANDARD_ENEMY_STRENGTH
-	stats.magic = STANDARD_ENEMY_MAGIC
-	stats.dexterity = STANDARD_ENEMY_DEX
+
+	if enemy_data.combat == null:
+		return
+
+	combat_component.base_damage = enemy_data.combat.base_damage
+	combat_component.attack_range = max(1, enemy_data.combat.attack_range)
+	combat_component.attack_stat = enemy_data.combat.attack_stat
+	combat_component.forced_miss_chance = clampf(enemy_data.combat.forced_miss_chance, 0.0, 1.0)
+
+func _hydrate_stats_from_data() -> void:
+	if enemy_data == null or stats == null:
+		return
+
+	stats.character_name = enemy_data.enemy_name
+
+	if enemy_data.stats == null:
+		return
+
+	stats.max_hp = max(1, enemy_data.stats.max_hp)
+	stats.current_hp = stats.max_hp
+
+	stats.strength = enemy_data.stats.strength
+	stats.magic = enemy_data.stats.magic
+	stats.dexterity = enemy_data.stats.dexterity
+
 	stats.strength_mod = 0
 	stats.magic_mod = 0
 	stats.dexterity_mod = 0
+
 	stats.hp_changed.emit(stats.current_hp, stats.max_hp)
 	stats.stats_changed.emit()
 
-func _apply_standard_combat_profile() -> void:
-	if combat_component == null:
-		return
-	combat_component.base_damage = STANDARD_ENEMY_BASE_DAMAGE
-	combat_component.attack_range = 1
-	combat_component.attack_stat = "strength"
 
-func _apply_combat_from_data(data: EnemyData) -> void:
-	if combat_component == null or data == null:
+func _hydrate_movement_from_data() -> void:
+	if enemy_data == null:
 		return
-	combat_component.base_damage = data.base_damage
-	combat_component.attack_range = max(1, data.attack_range)
-	combat_component.attack_stat = data.attack_stat
-	combat_component.forced_miss_chance = clampf(data.forced_miss_chance, 0.0, 1.0)
+
+	if enemy_data.combat == null:
+		return
+
+	step_time = max(0.01, enemy_data.combat.move_step_time)
+	movement_points = max(1, enemy_data.combat.movement)
+
+
+func _hydrate_visuals_from_data() -> void:
+	if enemy_data == null:
+		return
+
+	if enemy_data.visual == null:
+		return
+
+	if sprite and enemy_data.visual.sprite_texture:
+		sprite.texture = enemy_data.visual.sprite_texture
+
+	set_visual_tint(
+		enemy_data.visual.base_tint,
+		enemy_data.visual.target_tint
+	)
+
+	if health_bar and stats:
+		health_bar.max_value = stats.max_hp
+		health_bar.value = stats.current_hp
 
 func _ensure_combat_component() -> void:
 	if stats == null:
@@ -131,67 +161,24 @@ func _ensure_status_component() -> void:
 	if stats != null:
 		status_comp.setup(stats)
 
-func configure_profile(max_hp: int, base_damage: int, dex: int = 0, base_tint: Color = Color(0.7, 0.3, 0.9, 1.0), target_tint: Color = Color(1.0, 0.7, 1.0, 1.0)) -> void:
-	# Public helper to customize enemy stats and visuals (used for special enemy types)
-	if stats:
-		stats.max_hp = max_hp
-		stats.current_hp = max_hp
-		stats.dexterity = dex
-		stats.strength = 0
-		stats.magic = 0
-		stats.strength_mod = 0
-		stats.magic_mod = 0
-		stats.dexterity_mod = 0
-		if health_bar:
-			health_bar.max_value = stats.max_hp
-			health_bar.value = stats.current_hp
-
-	if combat_component:
-		combat_component.base_damage = base_damage
-
-	# Apply visual tint
-	set_visual_tint(base_tint, target_tint)
-
 func apply_enemy_data(data: EnemyData) -> void:
 	enemy_data = data
+
 	if enemy_data == null:
 		return
 
-	if stats:
-		stats.character_name = enemy_data.enemy_name
-		stats.max_hp = max(1, enemy_data.max_hp)
-		stats.current_hp = stats.max_hp
-		stats.strength = enemy_data.strength
-		stats.magic = enemy_data.magic
-		stats.dexterity = enemy_data.dexterity
-		stats.strength_mod = 0
-		stats.magic_mod = 0
-		stats.dexterity_mod = 0
-		stats.hp_changed.emit(stats.current_hp, stats.max_hp)
-		stats.stats_changed.emit()
-
-	step_time = max(0.01, enemy_data.move_step_time)
-	movement_points = max(1, enemy_data.movement)
-
-	if sprite and enemy_data.sprite_texture:
-		sprite.texture = enemy_data.sprite_texture
-
-	set_visual_tint(enemy_data.base_tint, enemy_data.target_tint)
-
-	if health_bar:
-		health_bar.max_value = stats.max_hp if stats else enemy_data.max_hp
-		health_bar.value = stats.current_hp if stats else enemy_data.max_hp
-
-	if enemy_data.enemy_id == "tutorial" or enemy_data.tags.has("tutorial"):
-		apply_tutorial_profile()
-
-	if combat_component:
-		_apply_combat_from_data(enemy_data)
+	_hydrate_stats_from_data()
+	_hydrate_movement_from_data()
+	_hydrate_visuals_from_data()
+	_hydrate_combat_from_data()
 
 func get_reward_gold() -> int:
 	if enemy_data:
 		return max(0, enemy_data.reward_gold)
-	return 5
+	return 0
+	
+func is_boss_enemy() -> bool:
+	return enemy_data != null and enemy_data.is_boss
 
 func get_combat_component() -> CombatComponent:
 	return combat_component
@@ -319,10 +306,11 @@ func _on_died():
 	queue_free()
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
-	if health_bar and not is_tutorial_enemy:
-		health_bar.max_value = max_hp
-		health_bar.value = current_hp
-		health_bar.visible = true
+	if health_bar == null:
+		return	
+	health_bar.max_value = max_hp
+	health_bar.value = current_hp
+	health_bar.visible = true
 
 func set_targeted(active: bool) -> void:
 	if health_bar:
@@ -339,13 +327,6 @@ func set_visual_tint(base_tint: Color, target_tint: Color = Color(0.7, 1.0, 0.7,
 	if sprite:
 		sprite.modulate = _base_modulate
 
-func apply_tutorial_profile() -> void:
-	is_tutorial_enemy = true
-	# Keep tutorial enemy in all default systems while making it forgiving.
-	collision_layer = 4
-	collision_mask = 0
-	if health_bar:
-		health_bar.visible = false
 
 func show_damage(amount: int, crit: bool = false) -> void:
 	_spawn_floating_text("-%d" % amount, Color(1, 0.2, 0.2), crit)
