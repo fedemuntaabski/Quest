@@ -126,13 +126,13 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 				boss_spawned = true
 				boss_enemy = enemy
 				enemy.name = "Boss_Purple_%d" % room_id
-				enemy.set("is_boss", true)
+				_set_enemy_boss_flag(enemy, true)
 			else:
-				enemy.set("is_boss", false)
+				_set_enemy_boss_flag(enemy, false)
 		elif selected_data and selected_data.is_boss:
-			enemy.set("is_boss", true)
+			_set_enemy_boss_flag(enemy, true)
 		else:
-			enemy.set("is_boss", false)
+			_set_enemy_boss_flag(enemy, false)
 
 		# 🔥 TRACKING
 		enemies.append(enemy)
@@ -192,6 +192,13 @@ func _get_random_floor_cell_in_room(
 
 func _on_enemy_defeated(enemy, room_id: int) -> void:
 	EnemyRewardService.process_enemy_defeat(self, enemy, room_id)
+
+
+func _set_enemy_boss_flag(enemy: Node, value: bool) -> void:
+	if enemy is Enemy:
+		(enemy as Enemy).is_boss = value
+		return
+	enemy.set("is_boss", value)
 
 
 func grant_and_reset_accumulated_gold() -> int:

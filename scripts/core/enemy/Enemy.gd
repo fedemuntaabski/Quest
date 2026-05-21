@@ -251,19 +251,10 @@ func _on_died():
 	queue_free()
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
-	if health_bar and not is_tutorial_enemy:
-		health_bar.max_value = max_hp
-		health_bar.value = current_hp
-		health_bar.visible = true
+	EnemyPresentationHelper.update_health_bar_on_hp_changed(health_bar, is_tutorial_enemy, current_hp, max_hp)
 
 func set_targeted(active: bool) -> void:
-	if health_bar:
-		health_bar.visible = active or health_bar.value < health_bar.max_value
-	if sprite:
-		if active:
-			sprite.modulate = _target_tint
-		else:
-			sprite.modulate = _base_modulate
+	EnemyPresentationHelper.set_targeted_state(health_bar, sprite, active, _target_tint, _base_modulate)
 
 func set_visual_tint(base_tint: Color, target_tint: Color = Color(0.7, 1.0, 0.7, 1.0)) -> void:
 	_base_modulate = base_tint
@@ -280,37 +271,13 @@ func apply_tutorial_profile() -> void:
 		health_bar.visible = false
 
 func show_damage(amount: int, crit: bool = false) -> void:
-	_spawn_floating_text("-%d" % amount, Color(1, 0.2, 0.2), crit)
-
-	# Request visual feedback (damage flash, particles, hit pause, small shake)
-	var vfs := get_tree().get_nodes_in_group("visual_feedback")
-	if vfs.size() > 0:
-		var vf := vfs[0]
-		vf.request_damage_flash(self, Color(1, 0.9, 0.9), 0.12)
-		vf.request_particles(global_position, Color(1.0, 0.6, 0.2), 6)
-		vf.request_hit_pause(0.04, 0.18)
-		vf.request_screen_shake(2.0, 0.12)
+	EnemyPresentationHelper.show_damage_feedback(self, amount, crit)
 
 func show_miss() -> void:
-	_spawn_floating_text("MISS", Color(0.9, 0.9, 0.9), false)
+	EnemyPresentationHelper.show_miss_feedback(self)
 
 func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
-	var label := Label.new()
-	label.text = text
-	label.modulate = color
-	label.z_index = 100
-	label.position = Vector2(-12, -28)
-	if crit:
-		label.scale = Vector2(1.2, 1.2)
-	add_child(label)
-
-	var tween := create_tween()
-	tween.tween_property(label, "position", label.position + Vector2(0, -18), 0.5)
-	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(label.queue_free)
+	EnemyPresentationHelper.spawn_floating_text(self, text, color, crit)
 
 func on_status_changed() -> void:
-	var indicator := get_node_or_null("StatusIndicator")
-	if indicator and indicator.has_method("refresh_statuses"):
-		var statuses := StatusRuntime._get_statuses(self)
-		indicator.refresh_statuses(statuses)
+	EnemyPresentationHelper.refresh_status_indicator(self)

@@ -7,9 +7,7 @@ static func process_enemy_defeat(manager: EnemyManager, enemy, room_id: int) -> 
 
 	manager.enemy_defeated_global.emit()
 
-	var is_boss: bool = false
-	if enemy:
-		is_boss = enemy.get("is_boss") == true
+	var is_boss := _is_boss_enemy(enemy)
 
 	var reward_gold := manager.COIN_REWARD_PER_ENEMY
 	if enemy and enemy.has_method("get_reward_gold"):
@@ -37,6 +35,13 @@ static func process_enemy_defeat(manager: EnemyManager, enemy, room_id: int) -> 
 	if manager._room_enemy_counts[room_id] <= 0:
 		manager._room_enemy_counts.erase(room_id)
 		manager.room_cleared.emit(room_id)
+
+static func _is_boss_enemy(enemy) -> bool:
+	if enemy == null:
+		return false
+	if enemy is Enemy:
+		return (enemy as Enemy).is_boss
+	return enemy.get("is_boss") == true
 
 static func grant_and_reset_accumulated_gold(manager: EnemyManager) -> int:
 	if manager == null:
