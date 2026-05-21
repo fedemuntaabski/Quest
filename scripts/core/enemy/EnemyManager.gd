@@ -10,6 +10,7 @@ const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
 const TUTORIAL_ENEMY_DATA = preload("res://resources/enemies/tutorial.tres")
 const GOBLIN_ENEMY_DATA = preload("res://resources/enemies/goblin.tres")
 const BOSS_ENEMY_DATA = preload("res://resources/enemies/boss.tres")
+var map_manager: MapManager = null
 
 @export var default_enemy_data: EnemyData
 @export var enemy_data_pool: Array[EnemyData] = []
@@ -21,16 +22,15 @@ var dungeon: DungeonGenerator = null
 var player: CharacterBody2D = null
 var player_torch: PointLight2D = null
 
-# 🔥 NUEVO
-var enemies: Array = []
+var enemies: Array[Enemy] = []
 var turn_manager: TurnManager
 var boss_spawned: bool = false
-var boss_enemy: Node = null
+var boss_enemy: Enemy = null
 var final_room_id: int = -1
 
 const COIN_REWARD_PER_ENEMY := 5
 
-# Deferred gold reward system: accumulate during run, grant at run-end
+
 var _run_accumulated_gold: int = 0
 
 
@@ -50,6 +50,7 @@ func setup(dungeon_ref: DungeonGenerator, player_ref: CharacterBody2D, tm: TurnM
 	dungeon = dungeon_ref
 	player = player_ref
 	turn_manager = tm
+	map_manager = get_parent() as MapManager
 
 	if player:
 		player_torch = player.get_node_or_null("PointLight2D") as PointLight2D
@@ -64,12 +65,11 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 		return
 
 	_room_enemy_counts.clear()
-	enemies.clear() # 🔥 importante
+	enemies.clear() 
 	_run_accumulated_gold = 0  # Reset accumulated gold for new run
 	boss_spawned = false
 	boss_enemy = null
 
-	var map_manager := get_parent() as MapManager
 	var occupied_spawn_cells: Dictionary = {}
 	var player_cell: Vector2i = Vector2i(-9999, -9999)
 	if map_manager and player:
@@ -99,19 +99,19 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 			continue
 
 		enemy.name = "Enemy_%d" % room_id
-		enemy.global_position = dungeon.grid_to_world_coords(spawn_cell)
-		enemy.my_room_id = room_id
-		enemy.dungeon_generator = dungeon
 		var selected_data := _select_enemy_data(room_id, final_room_id)
-		if selected_data and enemy.has_method("apply_enemy_data"):
-			enemy.apply_enemy_data(selected_data)
-			if selected_data.enemy_name != "":
-				enemy.name = "%s_%d" % [selected_data.enemy_name, room_id]
-		add_child(enemy)
-		occupied_spawn_cells[spawn_cell] = true
 
-		# Register every enemy through the same setup path after it is inside the scene tree.
-		enemy.setup(get_parent(), player)
+		add_child(enemy)
+
+		_configure_enemy(
+			enemy,
+			room_id,
+			spawn_cell,
+			selected_data,
+			map_manager
+		)
+
+		occupied_spawn_cells[spawn_cell] = true
 
 		# Register occupancy and repair room membership explicitly after setup
 		if map_manager:
@@ -122,17 +122,10 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 
 		# Boss spawn rules: only one boss per run, must spawn in final room.
 		if not boss_spawned and room_id == final_room_id:
-			if selected_data and selected_data.is_boss:
+			if selected_data and _is_boss_data(selected_data):
 				boss_spawned = true
 				boss_enemy = enemy
 				enemy.name = "Boss_Purple_%d" % room_id
-				enemy.set("is_boss", true)
-			else:
-				enemy.set("is_boss", false)
-		elif selected_data and selected_data.is_boss:
-			enemy.set("is_boss", true)
-		else:
-			enemy.set("is_boss", false)
 
 		# 🔥 TRACKING
 		enemies.append(enemy)
@@ -175,7 +168,7 @@ func _select_enemy_data(room_id: int, p_final_room_id: int) -> EnemyData:
 	for data in enemy_data_pool:
 		if data == null:
 			continue
-		if data.is_boss:
+		if _is_boss_data(data):
 			continue
 		if data.enemy_id == "tutorial":
 			continue
@@ -260,8 +253,8 @@ func _on_enemy_defeated(enemy, room_id: int) -> void:
 	enemy_defeated_global.emit()
 
 	var is_boss: bool = false
-	if enemy:
-		is_boss = enemy.get("is_boss") == true
+	if enemy and enemy.has_method("is_boss_enemy"):
+		is_boss = enemy.is_boss_enemy()
 
 	var reward_gold := COIN_REWARD_PER_ENEMY
 	if enemy and enemy.has_method("get_reward_gold"):
@@ -315,3 +308,26 @@ func grant_and_reset_accumulated_gold() -> int:
 	print("[EnemyManager] Run ended: granted accumulated gold +%dg" % amount)
 	_run_accumulated_gold = 0
 	return amount
+
+func _is_boss_data(data: EnemyData) -> bool:
+	return data != null and data.is_boss
+
+func _configure_enemy(
+	enemy: Enemy,
+	room_id: int,
+	spawn_cell: Vector2i,
+	selected_data: EnemyData,
+	map_manager: MapManager
+) -> void:
+
+	enemy.global_position = dungeon.grid_to_world_coords(spawn_cell)
+	enemy.my_room_id = room_id
+	enemy.dungeon_generator = dungeon
+
+	if selected_data:
+		enemy.apply_enemy_data(selected_data)
+
+		if selected_data.enemy_name != "":
+			enemy.name = "%s_%d" % [selected_data.enemy_name, room_id]
+
+	enemy.setup(map_manager, player)
