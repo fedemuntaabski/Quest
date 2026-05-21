@@ -40,8 +40,6 @@ func _ready():
 
 	stats.died.connect(_on_died)
 	stats.hp_changed.connect(_on_hp_changed)
-	if enemy_data:
-		apply_enemy_data(enemy_data)
 
 	if sprite:
 		_base_modulate = sprite.modulate
@@ -105,11 +103,11 @@ func _hydrate_movement_from_data() -> void:
 	if enemy_data == null:
 		return
 
-	if enemy_data.combat == null:
+	if enemy_data.stats == null:
 		return
 
-	step_time = max(0.01, enemy_data.combat.move_step_time)
-	movement_points = max(1, enemy_data.combat.movement)
+	step_time = max(0.01, enemy_data.stats.move_step_time)
+	movement_points = max(1, enemy_data.stats.movement)
 
 
 func _hydrate_visuals_from_data() -> void:

@@ -1,17 +1,18 @@
-[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://ce8f2iieui6uo"]
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://bn7q4d2drtobb"]
 
 [ext_resource type="Script" uid="uid://bp0gdkxxuyr5v" path="res://scripts/core/enemy/EnemyData.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://bi2jq4ofb605c" path="res://assets/ui/white_2x2.svg" id="2"]
+
+[sub_resource type="Resource" id="EnemyCombatData_1"]
+
+[sub_resource type="Resource" id="EnemyStatsData_1"]
+
+[sub_resource type="Resource" id="EnemyVisualData_1"]
 
 [resource]
 script = ExtResource("1")
 enemy_id = "tutorial"
 enemy_name = "Tutorial"
-max_hp = 1
-strength = 0
-base_damage = 0
-forced_miss_chance = 1.0
-reward_gold = 0
-sprite_texture = ExtResource("2")
-target_tint = Color(0.92, 0.92, 0.92, 1)
+combat = SubResource("EnemyCombatData_1")
+stats = SubResource("EnemyStatsData_1")
+visual = SubResource("EnemyVisualData_1")
 tags = Array[String](["tutorial"])
