@@ -46,8 +46,6 @@ func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 		return
 	if combat_card_system and not combat_card_system.card_played.is_connected(_on_card_played):
 		combat_card_system.card_played.connect(_on_card_played)
-	# Bind HUD via CardSystemController
-	card_system_controller.bind_hud()
 
 
 # Input is now handled by InputHandler child; keep handlers here for delegation

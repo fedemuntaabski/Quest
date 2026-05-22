@@ -5,6 +5,7 @@ class_name CharacterStats
 # BASIC INFO
 # -------------------------
 var character_name: String = "Unnamed"
+var potions_owned: int = 1
 
 signal hp_changed(current, max)
 signal died
@@ -86,6 +87,15 @@ func take_damage(amount: int) -> void:
 func heal(amount: int) -> void:
 	current_hp = min(current_hp + amount, max_hp)
 	hp_changed.emit(current_hp, max_hp)
+
+func use_potion() -> bool:
+	if potions_owned <= 0 or current_hp >= max_hp:
+		return false
+	var heal_amount = int(ceil(float(max_hp) * 0.5))
+	heal(heal_amount)
+	potions_owned -= 1
+	stats_changed.emit()
+	return true
 
 func is_alive() -> bool:
 	return current_hp > 0

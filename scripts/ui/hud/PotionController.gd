@@ -4,11 +4,8 @@ class_name PotionController
 var potion_button: Button = null
 var potion_count_label: Label = null
 var potion_icon: Control = null
-var _potion_used: bool = false
 var _game_state_manager: GameStateManager = null
 var _bound_stats: CharacterStats = null
-
-const POTION_HEAL_RATIO: float = 0.5
 
 func setup(button: Button, count_label: Label, icon: Control) -> void:
 	potion_button = button
@@ -20,7 +17,26 @@ func setup(button: Button, count_label: Label, icon: Control) -> void:
 	refresh()
 
 func bind_stats(stats: CharacterStats) -> void:
+	if _bound_stats == stats:
+		return
+	if _bound_stats:
+		if _bound_stats.hp_changed.is_connected(_on_hp_changed):
+			_bound_stats.hp_changed.disconnect(_on_hp_changed)
+		if _bound_stats.stats_changed.is_connected(_on_stats_changed):
+			_bound_stats.stats_changed.disconnect(_on_stats_changed)
+	
 	_bound_stats = stats
+	if _bound_stats:
+		if not _bound_stats.hp_changed.is_connected(_on_hp_changed):
+			_bound_stats.hp_changed.connect(_on_hp_changed)
+		if not _bound_stats.stats_changed.is_connected(_on_stats_changed):
+			_bound_stats.stats_changed.connect(_on_stats_changed)
+	refresh()
+
+func _on_hp_changed(_current: int, _max: int) -> void:
+	refresh()
+
+func _on_stats_changed() -> void:
 	refresh()
 
 func _bind_game_state() -> void:
@@ -32,8 +48,6 @@ func _on_game_state_changed(_new_state: GameStateManager.State, _old_state: Game
 	refresh()
 
 func _on_potion_pressed() -> void:
-	if _potion_used:
-		return
 	if not _can_use_potion_now():
 		return
 	if _bound_stats == null:
@@ -43,17 +57,9 @@ func _on_potion_pressed() -> void:
 		_bound_stats = ps.stats
 	if _bound_stats == null:
 		return
-	var stats: CharacterStats = _bound_stats
-	var heal_amount: int = int(ceil(float(stats.max_hp) * POTION_HEAL_RATIO))
-	if heal_amount <= 0:
-		return
-	stats.heal(heal_amount)
-	_potion_used = true
-	refresh()
+	_bound_stats.use_potion()
 
 func _can_use_potion_now() -> bool:
-	if _potion_used:
-		return false
 	if _game_state_manager and not _game_state_manager.is_active():
 		return false
 	if _bound_stats == null:
@@ -63,14 +69,23 @@ func _can_use_potion_now() -> bool:
 		_bound_stats = ps.stats
 	if _bound_stats == null:
 		return false
-	var stats: CharacterStats = _bound_stats
-	return stats.current_hp < stats.max_hp
+	return _bound_stats.potions_owned > 0 and _bound_stats.current_hp < _bound_stats.max_hp
 
 func refresh() -> void:
+	var can_use := _can_use_potion_now()
+	var owned := 0
+	if _bound_stats:
+		owned = _bound_stats.potions_owned
+	else:
+		var ps = get_node_or_null("/root/PlayerStats")
+		if ps and ps.stats:
+			_bound_stats = ps.stats
+			owned = _bound_stats.potions_owned
+
 	if potion_button:
-		potion_button.disabled = not _can_use_potion_now()
-		potion_button.text = "Usar" if not _potion_used else "Usada"
+		potion_button.disabled = not can_use
+		potion_button.text = "Usar" if owned > 0 else "Usada"
 	if potion_count_label:
-		potion_count_label.text = "x0" if _potion_used else "x1"
+		potion_count_label.text = "x%d" % owned
 	if potion_icon:
-		potion_icon.modulate = Color(1, 1, 1, 1) if not _potion_used else Color(0.5, 0.5, 0.5, 0.8)
+		potion_icon.modulate = Color(1, 1, 1, 1) if owned > 0 else Color(0.5, 0.5, 0.5, 0.8)

@@ -151,6 +151,12 @@ func _connect_ui() -> void:
 	if game_state_manager and not game_state_manager.victory_entered.is_connected(Callable(self, "_on_victory_entered")):
 		game_state_manager.victory_entered.connect(Callable(self, "_on_victory_entered"))
 
+	var player_node := map_manager.get_node_or_null("Player") as PlayerMovement
+	if player_node and hud:
+		var card_sys = player_node.action_controller.card_system_controller
+		if card_sys:
+			hud.hud_ready.connect(card_sys.bind_hud_external.bind(hud))
+
 # ─────────────────────────────────────────────
 # TUTORIAL 
 # ─────────────────────────────────────────────

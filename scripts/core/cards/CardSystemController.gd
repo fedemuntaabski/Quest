@@ -92,25 +92,7 @@ func tick_cooldowns() -> void:
 	if card_manager:
 		card_manager.tick_cooldowns()
 
-func bind_hud() -> void:
-	var hud := get_tree().get_first_node_in_group("hud") as HUDController
-	if hud == null:
-		# HUD not ready yet; defer the binding
-		call_deferred("bind_hud")
-		return
-	
-	# HUD is ready; connect to hud_ready if not already done
-	# (This ensures HUD is fully initialized before card system uses it)
-	if not hud.hud_ready.is_connected(Callable(self, "_on_hud_ready")):
-		hud.hud_ready.connect(Callable(self, "_on_hud_ready"))
-	
-	# If HUD already emitted hud_ready, call our handler directly
-	# (Otherwise, _on_hud_ready will be called automatically)
-	call_deferred("_on_hud_ready")
-
-func _on_hud_ready() -> void:
-	# Bind card manager to HUD
-	var hud := get_tree().get_first_node_in_group("hud") as HUDController
+func bind_hud_external(hud: HUDController) -> void:
 	if hud == null or card_manager == null:
 		return
 	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
