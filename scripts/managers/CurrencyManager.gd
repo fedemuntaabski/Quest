@@ -13,9 +13,7 @@ func add_gold(amount: int, world_pos: Vector2 = Vector2.ZERO) -> void:
 	var save_mgr := get_node_or_null("/root/SaveManager")
 	if save_mgr == null:
 		return
-	save_mgr.gold += max(amount, 0)
-	save_mgr.save_game()
-	gold_changed.emit(save_mgr.gold)
+	_commit_gold(save_mgr, save_mgr.gold + max(amount, 0))
 	if world_pos != Vector2.ZERO:
 		_spawn_gold_text(amount, world_pos)
 
@@ -25,10 +23,22 @@ func spend_gold(amount: int) -> bool:
 		return false
 	if save_mgr.gold < amount:
 		return false
-	save_mgr.gold -= amount
+	_commit_gold(save_mgr, save_mgr.gold - amount)
+	return true
+
+func set_gold(amount: int) -> void:
+	var save_mgr := get_node_or_null("/root/SaveManager")
+	if save_mgr == null:
+		return
+	_commit_gold(save_mgr, amount)
+
+func reset() -> void:
+	set_gold(0)
+
+func _commit_gold(save_mgr: Node, amount: int) -> void:
+	save_mgr.gold = max(0, amount)
 	save_mgr.save_game()
 	gold_changed.emit(save_mgr.gold)
-	return true
 
 func _spawn_gold_text(amount: int, world_pos: Vector2) -> void:
 	if amount <= 0:

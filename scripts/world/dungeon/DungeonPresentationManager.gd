@@ -3,9 +3,10 @@ class_name DungeonPresentationManager
 
 var map_renderer: DungeonMapRenderer
 var fog_manager: FogOfWarManager
-var fog_controller: DungeonFogController
+var generator: DungeonGenerator
 
 func setup(parent: Node, generator: DungeonGenerator) -> void:
+	self.generator = generator
 	map_renderer = DungeonTileRenderer.new()
 	map_renderer.name = "TileRenderer"
 	parent.add_child(map_renderer)
@@ -13,9 +14,8 @@ func setup(parent: Node, generator: DungeonGenerator) -> void:
 	fog_manager = FogOfWarManager.new()
 	add_child(fog_manager)
 
-	fog_controller = DungeonFogController.new()
-	add_child(fog_controller)
-	fog_controller.setup(generator, fog_manager)
+	if generator and not generator.room_changed.is_connected(Callable(self, "_on_room_changed")):
+		generator.room_changed.connect(Callable(self, "_on_room_changed"))
 
 	# Add visual feedback manager to the presentation layer so camera and actors can use it
 	# VisualFeedback authority: use UI layer implementation (scripts/ui/visual/VisualFeedback.gd)
@@ -24,7 +24,20 @@ func setup(parent: Node, generator: DungeonGenerator) -> void:
 	vf.name = "VisualFeedback"
 	add_child(vf)
 
-func build(generator: DungeonGenerator, tileset: TileSet, wall_texture: Texture2D) -> void:
+func _on_room_changed(room_id: int) -> void:
+	if fog_manager == null:
+		return
+
+	if generator == null:
+		return
+
+	fog_manager.update_room_state(generator.room_infos, room_id)
+
+func build(tileset: TileSet, wall_texture: Texture2D) -> void:
+	if generator == null:
+		push_error("DungeonPresentationManager: generator is missing.")
+		return
+
 	if generator.room_factory == null:
 		push_error("DungeonPresentationManager: room_factory is missing.")
 		return

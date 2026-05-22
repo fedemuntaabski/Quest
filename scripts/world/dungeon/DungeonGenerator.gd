@@ -195,7 +195,7 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 		add_child(presentation)
 
 	presentation.setup(self, self)
-	presentation.build(self, floor_tileset, wall_texture)
+	presentation.build(floor_tileset, wall_texture)
 
 	if player:
 		_spawned_player = player
