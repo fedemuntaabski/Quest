@@ -285,4 +285,3 @@ func request_set_active_index(index: int) -> void:
 		push_error("[CardSystemController] request_set_active_index: card_manager is NULL")
 		return
 	card_manager.set_active_index(index)
-	update_hotbar_ui()

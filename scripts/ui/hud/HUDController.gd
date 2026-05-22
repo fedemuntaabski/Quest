@@ -32,7 +32,6 @@ signal hud_ready  # warning-ignore:unused_signal # Emitted after full HUD initia
 @onready var enemies_label: Label = get_node_or_null("Control/EnemiesLabel") as Label
 
 var player_stats: CharacterStats
-var base_stats := {}
 var hotbar_slots: Array = []
 var _bound_card_manager: CardManager = null
 var _roll_label_tween: Tween = null
@@ -116,13 +115,6 @@ func _bind_player_stats(ps: PlayerStats) -> void:
 	if not ps.stats_changed.is_connected(_on_player_stats_changed):
 		ps.stats_changed.connect(_on_player_stats_changed)
 
-	base_stats = {
-		"hp": ps.base_hp,
-		"strength": ps.base_str,
-		"magic": ps.base_mag,
-		"dexterity": ps.base_dex
-	}
-
 	if ps.stats:
 		_on_player_stats_changed(ps.stats)
 
@@ -140,7 +132,7 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 
 func _on_stats_changed(stats: CharacterStats) -> void:
 	player_stats = stats
-	stat_panel.update_stats(stats, base_stats)
+	stat_panel.update_stats(stats)
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	if stat_panel:

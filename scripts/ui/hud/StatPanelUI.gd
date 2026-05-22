@@ -6,7 +6,7 @@ class_name StatPanelUI
 @onready var label_magic: Label = $StatRowMagic/LabelMagic
 @onready var label_dexterity: Label = $StatRowDexterity/LabelDexterity
 
-func update_stats(stats: CharacterStats, _base: Dictionary) -> void:
+func update_stats(stats: CharacterStats) -> void:
 	if stats == null:
 		return
 
