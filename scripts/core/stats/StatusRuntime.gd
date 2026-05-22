@@ -16,7 +16,7 @@ static func apply_status(target_actor: Node, target_stats: CharacterStats, paylo
 	var magnitude: int = max(1, int(payload.get("magnitude", 1)))
 
 	# Try to use StatusComponent first (new pattern)
-	var status_component := target_actor.get_node_or_null("StatusComponent") as StatusComponent
+	var status_component := _get_status_component(target_actor)
 	if status_component != null:
 		# Calculate damage_on_tick for status effects that tick
 		var damage_on_tick: int = 0
@@ -63,7 +63,7 @@ static func process_turn_start(actor: Node, stats: CharacterStats) -> Dictionary
 		return result
 
 	# Try to use StatusComponent first (new pattern)
-	var status_component := actor.get_node_or_null("StatusComponent") as StatusComponent
+	var status_component := _get_status_component(actor)
 	if status_component != null:
 		return status_component.process_turn_start(actor, stats)
 	
@@ -98,7 +98,7 @@ static func process_turn_start(actor: Node, stats: CharacterStats) -> Dictionary
 static func get_statuses(actor: Node) -> Dictionary:
 	if actor == null:
 		return {}
-	var status_component := actor.get_node_or_null("StatusComponent") as StatusComponent
+	var status_component := _get_status_component(actor)
 	if status_component != null:
 		return status_component.get_active_statuses()
 	return _get_statuses(actor)
@@ -119,7 +119,7 @@ static func remove_status(actor: Node, status_id: String) -> void:
 	if actor == null:
 		return
 
-	var status_component := actor.get_node_or_null("StatusComponent") as StatusComponent
+	var status_component := _get_status_component(actor)
 
 	if status_component != null:
 		status_component.remove_status(status_id)
@@ -177,3 +177,8 @@ static func _get_statuses(actor: Node) -> Dictionary:
 	if statuses is Dictionary:
 		return statuses
 	return {}
+
+static func _get_status_component(actor: Node) -> StatusComponent:
+	if actor == null:
+		return null
+	return actor.get_node_or_null("StatusComponent") as StatusComponent
