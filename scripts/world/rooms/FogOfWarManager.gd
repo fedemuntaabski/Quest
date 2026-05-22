@@ -86,10 +86,12 @@ func update_room_state(room_infos: Array, active_room_id: int) -> void:
 		return
 
 	for room_info in room_infos:
-		var room_id: int = room_info["id"]
-		var room_cells: Array = room_info["floor_cells"]
+		var room_id: int = int(room_info.get("id", -1))
+		var room_cells: Array = room_info.get("floor_cells", [])
 		var is_active: bool = room_id == active_room_id
 		var is_visited: bool = room_info.get("visited", false)
+		if room_cells.is_empty():
+			continue
 
 		for cell in room_cells:
 			if is_active:
