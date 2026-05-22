@@ -42,7 +42,7 @@ func _compute_card_validation(card: CardData, target: Node) -> Dictionary:
 		return result
 
 	if card.target_type == "enemy":
-		var target_component := _resolve_target_component(target)
+		var target_component: CombatComponent = _resolve_target_component(target)
 		if target_component == null:
 			result["reason"] = "no_target"
 			return result
@@ -135,7 +135,7 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 		var reason := str(validation.get("reason", "invalid"))
 		card_failed.emit(card, reason)
 		return {"hit": false, "damage": 0, "reason": reason}
-	var target_component := _resolve_target_component(target)
+	var target_component: CombatComponent = _resolve_target_component(target)
 	if target_component == null or target_component.stats == null:
 		card_failed.emit(card, "no_target")
 		return {"hit": false, "damage": 0, "reason": "no_target"}
@@ -165,7 +165,7 @@ func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 			return {"hit": false, "damage": 0, "reason": "stale_snapshot", "stale": true}
 
 	# Use resolved target component without re-repair
-	var target_component := _resolve_target_component(target)
+	var target_component: CombatComponent = _resolve_target_component(target)
 	if target_component == null or target_component.stats == null:
 		card_failed.emit(card, "no_target_component")
 		return {"hit": false, "damage": 0, "reason": "no_target_component"}
@@ -252,8 +252,15 @@ func _get_hover_or_reference_cell(reference: Node) -> Variant:
 func _resolve_target_component(target: Node) -> CombatComponent:
 	if target == null:
 		return null
+
+	if target == self:
+		return combat_component
+
 	if target is CombatComponent:
 		return target
+
 	if target.has_method("get_combat_component"):
 		return target.get_combat_component() as CombatComponent
+
 	return target.get_node_or_null("CombatComponent") as CombatComponent
+

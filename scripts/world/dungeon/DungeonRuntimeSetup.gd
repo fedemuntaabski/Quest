@@ -36,8 +36,8 @@ func _ensure_managers(generator: DungeonGenerator) -> void:
 		generator.add_child(generator.room_system)
 		generator.room_system.setup(generator)
 
-		if not generator.room_system.room_changed.is_connected(generator._on_room_changed_proxy):
-			generator.room_system.room_changed.connect(generator._on_room_changed_proxy)
+		if not generator.room_system.room_changed.is_connected(Callable(generator, "_set_active_room").bind(true)):
+			generator.room_system.room_changed.connect(Callable(generator, "_set_active_room").bind(true))
 
 	if generator.room_camera_controller == null:
 		generator.room_camera_controller = RoomCameraController.new()

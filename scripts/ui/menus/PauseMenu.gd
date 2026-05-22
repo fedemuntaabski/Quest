@@ -83,7 +83,7 @@ func _ready() -> void:
 	_set_panel(0)
 	_update_gold_labels()
 
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var currency := _get_currency_manager()
 	if currency and not currency.gold_changed.is_connected(_on_gold_changed):
 		currency.gold_changed.connect(_on_gold_changed)
 
@@ -239,7 +239,7 @@ func _update_store():
 	if not save_mgr:
 		return
 
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var currency := _get_currency_manager()
 	var current_gold := currency.get_gold() if currency else save_mgr.gold
 	gold_label.text = "Oro: %d" % current_gold
 	
@@ -282,7 +282,7 @@ func _update_store():
 			]
 
 func _update_gold_labels() -> void:
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var currency := _get_currency_manager()
 	var current_gold := currency.get_gold() if currency else (save_mgr.gold if save_mgr else 0)
 	if pause_gold_label:
 		pause_gold_label.text = "Oro: %d" % current_gold
@@ -309,7 +309,7 @@ func _on_upgrade_pressed(stat: String):
 	var level := player_stats.get_upgrade_level(stat_name)
 	var cost := _get_upgrade_cost(level)
 	
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var currency := _get_currency_manager()
 	if currency == null:
 		return
 	
@@ -344,3 +344,6 @@ func _show_error_message(message: String) -> void:
 
 func _get_game_state_manager() -> GameStateManager:
 	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+
+func _get_currency_manager() -> CurrencyManager:
+	return get_node_or_null("/root/CurrencyManager") as CurrencyManager

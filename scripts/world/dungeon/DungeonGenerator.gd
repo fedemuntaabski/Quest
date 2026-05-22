@@ -77,8 +77,8 @@ func _ensure_managers() -> void:
 		add_child(room_system)
 		room_system.setup(self)
 
-		if not room_system.room_changed.is_connected(_on_room_changed_proxy):
-			room_system.room_changed.connect(_on_room_changed_proxy)
+		if not room_system.room_changed.is_connected(Callable(self, "_set_active_room").bind(true)):
+			room_system.room_changed.connect(Callable(self, "_set_active_room").bind(true))
 
 	if not room_camera_controller:
 		room_camera_controller = RoomCameraController.new()
@@ -142,10 +142,6 @@ func get_room_spawn_forbidden_cells(room_id: int) -> Dictionary:
 					forbidden[neighbor] = true
 
 	return forbidden
-
-
-func _on_room_changed_proxy(room_id: int) -> void:
-	_set_active_room(room_id, true)
 
 
 func _ensure_scene_roots() -> void:

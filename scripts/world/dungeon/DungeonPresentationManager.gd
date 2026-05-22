@@ -14,8 +14,8 @@ func setup(parent: Node, generator: DungeonGenerator) -> void:
 	fog_manager = FogOfWarManager.new()
 	add_child(fog_manager)
 
-	if generator and not generator.room_changed.is_connected(Callable(self, "_on_room_changed")):
-		generator.room_changed.connect(Callable(self, "_on_room_changed"))
+	if generator and generator.room_system and not generator.room_system.room_changed.is_connected(Callable(self, "_on_room_changed")):
+		generator.room_system.room_changed.connect(Callable(self, "_on_room_changed"))
 
 	# Add visual feedback manager to the presentation layer so camera and actors can use it
 	# VisualFeedback authority: use UI layer implementation (scripts/ui/visual/VisualFeedback.gd)
