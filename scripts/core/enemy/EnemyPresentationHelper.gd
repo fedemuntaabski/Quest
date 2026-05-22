@@ -60,5 +60,10 @@ static func refresh_status_indicator(host: Node) -> void:
 		return
 	var indicator := host.get_node_or_null("StatusIndicator")
 	if indicator and indicator.has_method("refresh_statuses"):
-		var statuses := StatusRuntime._get_statuses(host)
+		var statuses: Dictionary = {}
+		var status_comp := host.get_node_or_null("StatusComponent") as StatusComponent
+		if status_comp != null:
+			statuses = status_comp.statuses.duplicate(true)
+		else:
+			statuses = StatusRuntime._get_statuses(host)
 		indicator.refresh_statuses(statuses)
