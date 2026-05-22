@@ -205,3 +205,38 @@ func _remove_card_from_pool(pool: Array[CardData], card: CardData) -> void:
 	var index := pool.find(card)
 	if index >= 0:
 		pool.remove_at(index)
+
+# -----------------------------
+# Safe accessors (defensive copies)
+# -----------------------------
+func get_deck_list() -> Array:
+	return deck.duplicate()
+
+func get_draw_pile_list() -> Array:
+	return draw_pile.duplicate()
+
+func get_discard_pile_list() -> Array:
+	return discard_pile.duplicate()
+
+func get_equipped_list() -> Array:
+	return equipped.duplicate()
+
+func get_cooldowns_map() -> Dictionary:
+	return _cooldowns.duplicate(true)
+
+func is_card_equipped(card: CardData) -> bool:
+	return equipped.has(card)
+
+func remove_card_from_all_pools(card: CardData) -> void:
+	if card == null:
+		return
+	_remove_card_from_pool(deck, card)
+	_remove_card_from_pool(draw_pile, card)
+	_remove_card_from_pool(discard_pile, card)
+	# if equipped, replace with null to preserve slot indexing
+	for i in range(equipped.size()):
+		if equipped[i] == card:
+			equipped[i] = null
+	_cooldowns.erase(card)
+	equipped_changed.emit()
+	_emit_ui_state()
