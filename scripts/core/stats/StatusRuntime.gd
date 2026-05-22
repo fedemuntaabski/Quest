@@ -65,28 +65,7 @@ static func process_turn_start(actor: Node, stats: CharacterStats) -> Dictionary
 	# Try to use StatusComponent first (new pattern)
 	var status_component := actor.get_node_or_null("StatusComponent") as StatusComponent
 	if status_component != null:
-		var tick_effects := status_component.tick_turn_start()
-		
-		# Apply damage from status effects
-		if tick_effects.get("damage", 0) > 0:
-			var damage: int = tick_effects["damage"]
-			stats.take_damage(damage)
-			if actor.has_method("show_damage"):
-				actor.show_damage(damage, false)
-			result["events"].append({
-				"status_id": "status_damage",
-				"damage": damage
-			})
-		
-		# Check for freeze (skip turn)
-		if status_component.is_frozen():
-			result["can_act"] = false
-			result["events"].append({
-				"status_id": "freeze",
-				"skip_turn": true
-			})
-		
-		return result
+		return status_component.process_turn_start(actor, stats)
 	
 	# Fallback to metadata system (legacy)
 	var statuses := _get_statuses(actor)

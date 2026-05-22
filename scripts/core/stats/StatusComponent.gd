@@ -70,6 +70,36 @@ func tick_turn_start() -> Dictionary:
 	return effects
 
 
+func process_turn_start(actor: Node, stats: CharacterStats) -> Dictionary:
+	var result := {
+		"can_act": true,
+		"events": []
+	}
+
+	if actor == null or stats == null:
+		return result
+
+	var tick_effects := tick_turn_start()
+	if tick_effects.get("damage", 0) > 0:
+		var damage: int = int(tick_effects["damage"])
+		stats.take_damage(damage)
+		if actor.has_method("show_damage"):
+			actor.show_damage(damage, false)
+		result["events"].append({
+			"status_id": "status_damage",
+			"damage": damage
+		})
+
+	if is_frozen():
+		result["can_act"] = false
+		result["events"].append({
+			"status_id": "freeze",
+			"skip_turn": true
+		})
+
+	return result
+
+
 ## Remove a specific status
 func remove_status(status_id: String) -> void:
 	if status_id in statuses:
