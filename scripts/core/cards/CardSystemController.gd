@@ -149,9 +149,9 @@ func update_hotbar_ui() -> void:
 							validated = true
 					# Predict nearest enemy in the room if no hovered target available
 					if not validated and map_manager and player:
-						var enemy_mgr := map_manager.core._enemy_manager() if map_manager.core else null
+						var enemy_mgr = _resolve_enemy_manager()
 						if enemy_mgr != null:
-							var enemies := enemy_mgr.get_enemies()
+							var enemies = enemy_mgr.get_enemies()
 							if enemies and enemies.size() > 0:
 								# Find nearest alive enemy by chebyshev distance
 								var player_cell = CardTargeting.get_actor_cell(player, map_manager)
@@ -261,3 +261,20 @@ func request_set_active_index(index: int) -> void:
 		push_error("[CardSystemController] request_set_active_index: card_manager is NULL")
 		return
 	card_manager.set_active_index(index)
+
+
+func _resolve_enemy_manager():
+	# Preferred accessor: MapManager.get_enemy_manager()
+	if map_manager == null:
+		return null
+	if map_manager.has_method("get_enemy_manager"):
+		var em = map_manager.get_enemy_manager()
+		if em != null:
+			return em
+
+	# Legacy fallback: reach into map_manager.core._enemy_manager() only if necessary
+	var core_val = map_manager.get("core")
+	if core_val != null and core_val.has_method("_enemy_manager"):
+		return core_val._enemy_manager()
+
+	return null
