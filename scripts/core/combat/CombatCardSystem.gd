@@ -52,7 +52,7 @@ func _compute_card_validation(card: CardData, target: Node) -> Dictionary:
 		if not target_component.stats.is_alive():
 			result["reason"] = "target_dead"
 			return result
-        
+
 		# PHASE 2: Enforce range validation for cards
 		if not CardTargeting.is_in_range(owner_actor, target, card.range, map_manager):
 			result["reason"] = "out_of_range"
@@ -60,9 +60,10 @@ func _compute_card_validation(card: CardData, target: Node) -> Dictionary:
 			result["max_range"] = card.range
 			return result
 
-	if card.target_type == "self" and not combat_component.stats.is_alive():
-		result["reason"] = "source_dead"
-		return result
+	if card.target_type == "self":
+		if not combat_component.stats.is_alive():
+			result["reason"] = "source_dead"
+			return result
 
 	result["valid"] = true
 	result["reason"] = "ok"

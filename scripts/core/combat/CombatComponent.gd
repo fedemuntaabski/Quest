@@ -31,45 +31,7 @@ func setup(p_owner: Node, p_stats: CharacterStats, p_map_manager: MapManager) ->
 	stats = p_stats
 
 func get_attack_validation(target: Node) -> Dictionary:
-	var result := {
-		"valid": false,
-		"reason": "invalid"
-	}
-
-	var target_component := _resolve_target_component(target)
-	if target_component == null:
-		result["reason"] = "no_target"
-		return result
-
-	if stats == null or target_component.stats == null:
-		result["reason"] = "missing_stats"
-		return result
-
-	if not stats.is_alive():
-		result["reason"] = "source_dead"
-		return result
-
-	if not target_component.stats.is_alive():
-		result["reason"] = "target_dead"
-		return result
-
-	if actor_owner and actor_owner.has_method("sync_to_grid"):
-		actor_owner.sync_to_grid()
-	if target_component.actor_owner and target_component.actor_owner.has_method("sync_to_grid"):
-		target_component.actor_owner.sync_to_grid()
-
-	if map_manager and not map_manager.can_actors_engage(actor_owner, target_component.actor_owner):
-		result["reason"] = "not_in_same_room"
-		return result
-
-	if not _is_in_range(target_component):
-		result["reason"] = "out_of_range"
-		return result
-
-	result["valid"] = true
-	result["reason"] = "ok"
-	result["target_component"] = target_component
-	return result
+	return CombatValidation.validate_target(self, target, map_manager, attack_range, true)
 
 func can_attack(target: Node) -> bool:
 	return bool(get_attack_validation(target).get("valid", false))
@@ -170,16 +132,4 @@ func _get_actor_cell(actor: Node) -> Variant:
 	return null
 
 func _resolve_target_component(target: Node) -> CombatComponent:
-	if target == null:
-		return null
-
-	if target == self:
-		return self
-
-	if target is CombatComponent:
-		return target
-
-	if target.has_method("get_combat_component"):
-		return target.get_combat_component() as CombatComponent
-
-	return target.get_node_or_null("CombatComponent") as CombatComponent
+	return CombatValidation.resolve_target_component(target)
