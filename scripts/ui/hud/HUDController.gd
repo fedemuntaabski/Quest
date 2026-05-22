@@ -212,6 +212,9 @@ func hide_card_tooltip() -> void:
 		card_tooltip.visible = false
 		card_tooltip.set_card(null)
 
+func show_combat_result(result: Dictionary) -> void:
+	set_roll_label_from_result(result)
+
 func set_roll_label_from_result(result: Dictionary) -> void:
 	if roll_label == null:
 		return

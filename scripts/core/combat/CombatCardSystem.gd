@@ -193,7 +193,7 @@ func _finalize_card_execution(card: CardData, target: Node, target_component: Co
 		if owner_actor and owner_actor.is_in_group("player"):
 			var hud := get_tree().get_first_node_in_group("hud") as HUDController
 			if hud:
-				hud.set_roll_label_from_result(result)
+				hud.show_combat_result(result)
 
 		var damage := int(result.get("damage", 0))
 		if result.get("hit", false) and damage > 0:

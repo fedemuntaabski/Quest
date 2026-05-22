@@ -114,7 +114,7 @@ func attack(target: Node) -> Dictionary:
 	if actor_owner and actor_owner.is_in_group("player"):
 		var hud := get_tree().get_first_node_in_group("hud") as HUDController
 		if hud:
-			hud.set_roll_label_from_result(result)
+			hud.show_combat_result(result)
 
 	if result.get("hit", false):
 		target_component.receive_damage(
