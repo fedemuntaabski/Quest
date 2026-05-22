@@ -235,10 +235,6 @@ func _select_card(index: int) -> void:
 func _on_hotbar_slot_pressed(index: int) -> void:
 	_select_card(index)
 
-func _on_active_index_changed(_index: int) -> void:
-	if card_system_controller:
-		card_system_controller.update_hotbar_ui()
-
 func clear_card_targeting_state() -> void:
 	_clear_card_targeting_state()
 
