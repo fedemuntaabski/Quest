@@ -31,16 +31,12 @@ signal hud_ready  # warning-ignore:unused_signal # Emitted after full HUD initia
 @onready var current_room_label: Label = get_node_or_null("Control/CurrentRoomLabel") as Label
 @onready var enemies_label: Label = get_node_or_null("Control/EnemiesLabel") as Label
 
-var player_stats: CharacterStats
 var hotbar_slots: Array = []
 var _bound_card_manager: CardManager = null
 var _roll_label_tween: Tween = null
-var _game_state_manager: GameStateManager = null
 var _potion_controller = null
 var _bound_stats: CharacterStats = null
 # Tooltip debounce is owned by CardTooltip. HUDController delegates tooltip timing.
-
-const POTION_HEAL_RATIO: float = 0.5
 
 func _ready() -> void:
 	add_to_group("hud")
@@ -131,7 +127,6 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 	_on_stats_changed(stats)
 
 func _on_stats_changed(stats: CharacterStats) -> void:
-	player_stats = stats
 	stat_panel.update_stats(stats)
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
