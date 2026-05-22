@@ -50,15 +50,9 @@ static func resolve_attack(attacker: CharacterStats, target: CharacterStats, sta
 	}
 
 static func _get_stat_value(stats: CharacterStats, stat_key: String) -> int:
-	match stat_key:
-		"strength":
-			return stats.get_total_strength()
-		"magic":
-			return stats.get_total_magic()
-		"dexterity":
-			return stats.get_total_dexterity()
-		_:
-			return stats.get_total_strength()
+	if stats == null:
+		return 0
+	return stats.get_total_stat(stat_key)
 
 static func _dex_to_dodge(dex: int) -> float:
 	# Scale dodge chance linearly: dex 1 -> 2.5%, dex 10 -> 25%

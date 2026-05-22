@@ -26,12 +26,6 @@ func apply(source_stats: CharacterStats, target_stats: CharacterStats, _context:
 	return result
 
 func _get_stat_value(stats: CharacterStats, key: String) -> int:
-	match key:
-		"strength":
-			return stats.get_total_strength()
-		"magic":
-			return stats.get_total_magic()
-		"dexterity":
-			return stats.get_total_dexterity()
-		_:
-			return stats.get_total_strength()
+	if stats == null:
+		return 0
+	return stats.get_total_stat(key)

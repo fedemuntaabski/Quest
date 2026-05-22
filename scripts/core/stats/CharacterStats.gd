@@ -62,6 +62,23 @@ func reset_runtime_modifiers() -> void:
 # -------------------------
 # TOTAL STATS
 # -------------------------
+func get_total_stat(stat_key: String, fallback_key: String = "strength") -> int:
+	match stat_key.to_lower():
+		"strength":
+			return get_total_strength()
+		"magic":
+			return get_total_magic()
+		"dexterity":
+			return get_total_dexterity()
+		_:
+			match fallback_key.to_lower():
+				"magic":
+					return get_total_magic()
+				"dexterity":
+					return get_total_dexterity()
+				_:
+					return get_total_strength()
+
 func get_total_strength() -> int:
 	_ensure_stacks()
 	return strength_stack.get_total()
