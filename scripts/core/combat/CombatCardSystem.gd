@@ -223,33 +223,6 @@ func _finalize_card_execution(card: CardData, target: Node, target_component: Co
 				card_manager.set_active_index(-1)
 		return result
 
-func _resolve_movement_direction(receiver: Node, reference: Node, movement_mode: String) -> Vector2i:
-	var receiver_cell: Vector2i = CardTargeting.get_actor_cell(receiver, map_manager)
-	if receiver_cell == null:
-		return Vector2i.ZERO
-
-	var destination: Vector2i = _get_hover_or_reference_cell(reference)
-	if destination == null:
-		return Vector2i.ZERO
-
-	var delta: Vector2i = destination - receiver_cell
-	var direction := Vector2i(signi(delta.x), signi(delta.y))
-
-	match movement_mode:
-		"pull":
-			return -direction
-		"knockback":
-			return -direction
-		_:
-			return direction
-
-func _get_hover_or_reference_cell(reference: Node) -> Variant:
-	if map_manager and map_manager.hovered_cell != Vector2i(-999, -999):
-		return map_manager.hovered_cell
-	if reference:
-		return CardTargeting.get_actor_cell(reference, map_manager)
-	return null
-
 func _resolve_target_component(target: Node) -> CombatComponent:
 	if target == null:
 		return null

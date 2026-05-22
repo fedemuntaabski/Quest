@@ -83,7 +83,7 @@ func _apply_movement_effect(move_data: Dictionary, target_component: CombatCompo
 	var move_cells: int = max(1, int(move_data.get("move_cells", 1)))
 	var movement_mode: String = str(move_data.get("movement_mode", "dash"))
 	var reference := target_actor if receiver == owner_actor else owner_actor
-	var direction := _resolve_movement_direction(receiver, reference, movement_mode, map_manager)
+	var direction := CombatEffectHelper.resolve_movement_direction(receiver, reference, movement_mode, map_manager)
 	if direction == Vector2i.ZERO:
 		return false
 
@@ -126,34 +126,6 @@ func _apply_status_effect(status_data: Dictionary, target_component: CombatCompo
 	StatusRuntime.apply_status(receiver_actor, receiver_component.stats, status_data)
 
 	return true
-
-func _resolve_movement_direction(receiver: Node, reference: Node, movement_mode: String, map_manager: Node) -> Vector2i:
-	var receiver_cell: Vector2i = CardTargeting.get_actor_cell(receiver, map_manager)
-	if receiver_cell == null:
-		return Vector2i.ZERO
-
-	var destination: Vector2i = _get_hover_or_reference_cell(reference, map_manager)
-	if destination == null:
-		return Vector2i.ZERO
-
-	var delta: Vector2i = destination - receiver_cell
-	var direction := Vector2i(signi(delta.x), signi(delta.y))
-
-	match movement_mode:
-		"pull":
-			return -direction
-		"knockback":
-			return -direction
-		_:
-			return direction
-
-func _get_hover_or_reference_cell(reference: Node, map_manager: Node) -> Variant:
-	if map_manager and map_manager.hovered_cell != Vector2i(-999, -999):
-		return map_manager.hovered_cell
-	if reference:
-		return CardTargeting.get_actor_cell(reference, map_manager)
-	return null
-
 func _rb_set_actor_pos(actor: Node, grid_pos: Vector2i, map_manager: Node) -> void:
 	if actor == null or map_manager == null:
 		return
