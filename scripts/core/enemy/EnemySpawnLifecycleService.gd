@@ -71,10 +71,11 @@ static func _spawn_enemy_for_room(
 	enemy.setup(manager.get_parent(), manager.player)
 
 	if map_manager:
-		var grid_pos := map_manager.world_to_grid_coords(enemy.global_position)
-		map_manager.update_actor_cell(enemy, grid_pos)
 		if map_manager.core:
 			map_manager.core.repair_actor_room(enemy)
+		else:
+			var grid_pos := map_manager.world_to_grid_coords(enemy.global_position)
+			map_manager.update_actor_cell(enemy, grid_pos)
 
 	if not manager.boss_spawned and room_id == manager.final_room_id:
 		if selected_data and selected_data.is_boss:
