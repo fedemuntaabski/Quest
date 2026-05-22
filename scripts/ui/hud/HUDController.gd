@@ -112,6 +112,8 @@ func _bind_player_stats(ps: PlayerStats) -> void:
 		ps.stats_changed.connect(_on_player_stats_changed)
 
 	if ps.stats:
+		if _potion_controller and _potion_controller.has_method("bind_stats"):
+			_potion_controller.bind_stats(ps.stats)
 		_on_player_stats_changed(ps.stats)
 
 func _on_player_stats_changed(stats: CharacterStats) -> void:
@@ -123,6 +125,8 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 		_bound_stats = stats
 		if not stats.hp_changed.is_connected(_on_hp_changed):
 			stats.hp_changed.connect(_on_hp_changed)
+		if _potion_controller and _potion_controller.has_method("bind_stats"):
+			_potion_controller.bind_stats(stats)
 
 	_on_stats_changed(stats)
 

@@ -19,6 +19,10 @@ func setup(button: Button, count_label: Label, icon: Control) -> void:
 	_bind_game_state()
 	refresh()
 
+func bind_stats(stats: CharacterStats) -> void:
+	_bound_stats = stats
+	refresh()
+
 func _bind_game_state() -> void:
 	_game_state_manager = get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
 	if _game_state_manager and not _game_state_manager.state_changed.is_connected(_on_game_state_changed):
@@ -32,10 +36,14 @@ func _on_potion_pressed() -> void:
 		return
 	if not _can_use_potion_now():
 		return
-	var ps = get_node_or_null("/root/PlayerStats")
-	if ps == null or ps.stats == null:
+	if _bound_stats == null:
+		var ps = get_node_or_null("/root/PlayerStats")
+		if ps == null or ps.stats == null:
+			return
+		_bound_stats = ps.stats
+	if _bound_stats == null:
 		return
-	var stats: CharacterStats = ps.stats
+	var stats: CharacterStats = _bound_stats
 	var heal_amount: int = int(ceil(float(stats.max_hp) * POTION_HEAL_RATIO))
 	if heal_amount <= 0:
 		return
@@ -48,10 +56,14 @@ func _can_use_potion_now() -> bool:
 		return false
 	if _game_state_manager and not _game_state_manager.is_active():
 		return false
-	var ps = get_node_or_null("/root/PlayerStats")
-	if ps == null or ps.stats == null:
+	if _bound_stats == null:
+		var ps = get_node_or_null("/root/PlayerStats")
+		if ps == null or ps.stats == null:
+			return false
+		_bound_stats = ps.stats
+	if _bound_stats == null:
 		return false
-	var stats: CharacterStats = ps.stats
+	var stats: CharacterStats = _bound_stats
 	return stats.current_hp < stats.max_hp
 
 func refresh() -> void:
