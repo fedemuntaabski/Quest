@@ -1,6 +1,11 @@
 extends Node
 class_name CardManager
 
+# CardManager: single authoritative owner of a player's deck, draw/discard piles,
+# equipped hotbar and cooldown state. Other systems should treat this object
+# as the canonical data source for card ownership and query via its public API
+# (signals and methods) rather than mutating internal arrays directly.
+
 signal equipped_changed
 signal active_index_changed(index: int)
 signal cooldowns_changed
