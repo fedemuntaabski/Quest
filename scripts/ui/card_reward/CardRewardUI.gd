@@ -265,12 +265,6 @@ func _get_category_color(category: String) -> Color:
 		_:
 			return Color(0.8, 0.8, 0.8, 1.0)  # Gray
 
-func _build_card_stats_text(card: CardData) -> String:
-	var stats: Array[String] = []
-	stats.append("DMG: %d (×%.1f)" % [card.base_damage, card.damage_scaling])
-	stats.append("Range: %d" % card.range)
-	stats.append("Cooldown: %d" % card.cooldown)
-	return " | ".join(stats)
 
 func _show_replace_selection() -> void:
 	# Clear and transition to slot selection

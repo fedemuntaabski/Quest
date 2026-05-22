@@ -154,8 +154,3 @@ func _on_mouse_exited() -> void:
 	t.tween_property(self, "scale", target_scale, 0.08)
 	if tooltip_host:
 		tooltip_host.request_hide()
-		target_scale = Vector2(1.04, 1.04)
-	var d = create_tween()
-	d.tween_property(self, "scale", target_scale, 0.08)
-	if tooltip_host:
-		tooltip_host.request_hide()
