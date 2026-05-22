@@ -16,7 +16,7 @@ func set_active_room(room_id: int, animate: bool) -> void:
 	# Delegate authoritative active-room assignment to RoomSystem if present
 	if dungeon.room_system:
 		# ask RoomSystem to set the active room (it will update dungeon.active_room_id and emit)
-		dungeon.room_system._set_active_room(room_id)
+		dungeon.room_system.set_active_room(room_id)
 
 	# Update visuals and visited state based on the canonical dungeon.active_room_id
 	for index in range(dungeon.room_infos.size()):

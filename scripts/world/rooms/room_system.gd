@@ -47,6 +47,9 @@ func update_player_cell(grid_pos: Vector2i) -> void:
 		_set_active_room(int(room_info.get("id", -1)), false)
 		return
 
+func set_active_room(room_id: int, enforce_connectivity: bool = true) -> void:
+	_set_active_room(room_id, enforce_connectivity)
+
 func _set_active_room(room_id: int, enforce_connectivity: bool = true) -> void:
 	if room_id == active_room_id:
 		return
