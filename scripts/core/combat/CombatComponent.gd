@@ -11,12 +11,10 @@ const CombatResolverScript = preload("res://scripts/core/combat/CombatResolver.g
 var actor_owner: Node = null
 var stats: CharacterStats = null
 var map_manager: MapManager = null
-var occupancy: OccupancyManager = null
 
 func setup(p_owner: Node, p_stats: CharacterStats, p_map_manager: MapManager) -> void:
 	actor_owner = p_owner
 	map_manager = p_map_manager
-	occupancy = map_manager.occupancy_manager if map_manager else null
 
 	if p_stats == null and actor_owner:
 		p_stats = actor_owner.get_node_or_null("Stats") as CharacterStats
@@ -98,38 +96,6 @@ func receive_damage(amount: int, crit: bool = false) -> void:
 	stats.take_damage(amount)
 	if actor_owner and actor_owner.has_method("show_damage"):
 		actor_owner.show_damage(amount, crit)
-
-func _is_in_range(target_component: CombatComponent) -> bool:
-	var my_cell: Variant = _get_actor_cell(actor_owner)
-	var target_cell: Variant = _get_actor_cell(target_component.actor_owner)
-
-	if my_cell == null or target_cell == null:
-		return false
-
-	var dx := absi(my_cell.x - target_cell.x)
-	var dy := absi(my_cell.y - target_cell.y)
-	var chebyshev: int = max(dx, dy)
-
-	var result: bool = chebyshev <= attack_range
-
-	return result
-
-func _get_actor_cell(actor: Node) -> Variant:
-	if actor == null:
-		return null
-
-	if actor.get("grid_pos") != null:
-		return actor.get("grid_pos")
-
-	if occupancy:
-		var cell: Variant = occupancy.get_actor_cell(actor)
-		if cell != null:
-			return cell
-
-	if map_manager:
-		return map_manager.world_to_grid_coords(actor.global_position)
-
-	return null
 
 func _resolve_target_component(target: Node) -> CombatComponent:
 	return CombatValidation.resolve_target_component(target)
