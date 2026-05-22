@@ -35,16 +35,18 @@ func _ensure_managers(generator: DungeonGenerator) -> void:
 		generator.room_system = RoomSystem.new()
 		generator.room_system.name = "RoomSystem"
 		generator.add_child(generator.room_system)
-		generator.room_system.setup(generator)
 
-		if not generator.room_system.room_changed.is_connected(Callable(generator, "_set_active_room").bind(true)):
-			generator.room_system.room_changed.connect(Callable(generator, "_set_active_room").bind(true))
+	generator.room_system.setup(generator)
+	var room_changed_cb := Callable(generator, "_set_active_room").bind(true)
+	if not generator.room_system.room_changed.is_connected(room_changed_cb):
+		generator.room_system.room_changed.connect(room_changed_cb)
 
 	if generator.room_camera_controller == null:
 		generator.room_camera_controller = RoomCameraController.new()
 		generator.room_camera_controller.name = "RoomCameraController"
 		generator.add_child(generator.room_camera_controller)
-		generator.room_camera_controller.setup(generator)
+
+	generator.room_camera_controller.setup(generator)
 
 func _ensure_scene_roots(generator: DungeonGenerator) -> void:
 	if generator.scene_helper:

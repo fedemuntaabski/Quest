@@ -7,22 +7,29 @@ var generator: DungeonGenerator
 
 func setup(parent: Node, generator: DungeonGenerator) -> void:
 	self.generator = generator
-	map_renderer = DungeonTileRenderer.new()
-	map_renderer.name = "TileRenderer"
-	parent.add_child(map_renderer)
+	map_renderer = parent.get_node_or_null("TileRenderer") as DungeonMapRenderer
+	if map_renderer == null:
+		map_renderer = DungeonTileRenderer.new()
+		map_renderer.name = "TileRenderer"
+		parent.add_child(map_renderer)
 
-	fog_manager = FogOfWarManager.new()
-	add_child(fog_manager)
+	fog_manager = get_node_or_null("FogOfWarManager") as FogOfWarManager
+	if fog_manager == null:
+		fog_manager = FogOfWarManager.new()
+		fog_manager.name = "FogOfWarManager"
+		add_child(fog_manager)
 
 	if generator and generator.room_system and not generator.room_system.room_changed.is_connected(Callable(self, "_on_room_changed")):
 		generator.room_system.room_changed.connect(Callable(self, "_on_room_changed"))
 
 	# Add visual feedback manager to the presentation layer so camera and actors can use it
 	# VisualFeedback authority: use UI layer implementation (scripts/ui/visual/VisualFeedback.gd)
-	var VisualFeedbackClass = preload("res://scripts/ui/visual/VisualFeedback.gd")
-	var vf = VisualFeedbackClass.new()
-	vf.name = "VisualFeedback"
-	add_child(vf)
+	var vf := get_node_or_null("VisualFeedback")
+	if vf == null:
+		var VisualFeedbackClass = preload("res://scripts/ui/visual/VisualFeedback.gd")
+		vf = VisualFeedbackClass.new()
+		vf.name = "VisualFeedback"
+		add_child(vf)
 
 func _on_room_changed(room_id: int) -> void:
 	if fog_manager == null:
