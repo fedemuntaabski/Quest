@@ -156,15 +156,7 @@ func update_hotbar(cards_payload: Array, active_index: int) -> void:
 		for i in range(hotbar_slots.size()):
 			var slot: HotbarSlot = hotbar_slots[i]
 			if i < cards_payload.size():
-				var card_dict = cards_payload[i]
-				# Convert dictionary payload to typed CardDisplayData
-				var display_data: CardDisplayData = null
-				if card_dict is Dictionary and not card_dict.is_empty():
-					# Extract CardData and runtime state from payload
-					var card_data = card_dict.get("card") as CardData
-					if card_data != null:
-						display_data = CardPresentationAdapter.create_display_data(card_data, card_dict)
-				
+				var display_data: CardDisplayData = CardPresentationAdapter.create_display_data_from_payload_entry(cards_payload[i])
 				if display_data != null:
 					slot.set_card(display_data)
 				else:
@@ -180,16 +172,8 @@ func update_hotbar(cards_payload: Array, active_index: int) -> void:
 func update_cards_panel(cards_payload: Array) -> void:
 	if card_panel:
 		var display_data_array: Array[CardDisplayData] = []
-		for card_dict in cards_payload:
-			if card_dict is Dictionary and not card_dict.is_empty():
-				var card_data = card_dict.get("card") as CardData
-				if card_data != null:
-					var display_data = CardPresentationAdapter.create_display_data(card_data, card_dict)
-					display_data_array.append(display_data)
-				else:
-					display_data_array.append(null)
-			else:
-				display_data_array.append(null)
+		for card_entry in cards_payload:
+			display_data_array.append(CardPresentationAdapter.create_display_data_from_payload_entry(card_entry))
 		card_panel.refresh(display_data_array)
 
 func show_card_tooltip(data: CardDisplayData) -> void:

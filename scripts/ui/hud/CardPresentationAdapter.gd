@@ -22,6 +22,20 @@ static func create_display_data(
 	"""
 	return CardDisplayData.from_card_data(card, runtime_state)
 
+## Create typed display data from an equipped-slot payload entry.
+## Returns null for empty or invalid entries so callers can preserve slot empties.
+static func create_display_data_from_payload_entry(payload: Variant) -> CardDisplayData:
+	if payload is CardDisplayData:
+		return payload as CardDisplayData
+	if payload is Dictionary:
+		var payload_dict := payload as Dictionary
+		if payload_dict.is_empty():
+			return null
+		var card_data := payload_dict.get("card") as CardData
+		if card_data != null:
+			return create_display_data(card_data, payload_dict)
+	return null
+
 ## Create display data for multiple cards at once
 static func create_batch(
 	cards: Array[CardData],
