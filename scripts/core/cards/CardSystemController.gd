@@ -126,12 +126,9 @@ func _on_hud_ready() -> void:
 	
 	# Connect card manager signals to update UI
 	var cooldowns_cb := Callable(self, "update_hotbar_ui")
-	var active_idx_cb := Callable(self, "on_active_index_changed")
 	var equipped_cb := Callable(self, "update_hotbar_ui")
 	if not card_manager.cooldowns_changed.is_connected(cooldowns_cb):
 		card_manager.cooldowns_changed.connect(cooldowns_cb)
-	if not card_manager.active_index_changed.is_connected(active_idx_cb):
-		card_manager.active_index_changed.connect(active_idx_cb)
 	if not card_manager.equipped_changed.is_connected(equipped_cb):
 		card_manager.equipped_changed.connect(equipped_cb)
 	
@@ -240,9 +237,6 @@ func on_hotbar_slot_pressed(index: int) -> void:
 		card_manager.set_active_index(-1)
 	else:
 		card_manager.set_active_index(index)
-	update_hotbar_ui()
-
-func on_active_index_changed(_index: int) -> void:
 	update_hotbar_ui()
 
 
