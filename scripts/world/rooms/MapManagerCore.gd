@@ -121,6 +121,50 @@ func is_within_bounds(grid_pos: Vector2i) -> bool:
 	var nav: MapNavigationHelper = _nav()
 	return nav.is_within_bounds(grid_pos) if nav else false
 
+func find_path(start: Vector2i, goal: Vector2i, actor: Node = null) -> Array[Vector2i]:
+	var nav: MapNavigationHelper = _nav()
+	if nav == null:
+		return []
+
+	var room_rect := _get_actor_room_rect(actor)
+	var use_room := room_rect.size != Vector2i.ZERO
+	if use_room:
+		if not room_rect.has_point(start) or not room_rect.has_point(goal):
+			return []
+
+	return nav.find_path_preferred(start, goal, false, room_rect, use_room)
+
+func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null) -> Array[Vector2i]:
+	var nav: MapNavigationHelper = _nav()
+	if nav == null:
+		return []
+
+	var best_path: Array[Vector2i] = []
+	var room_rect := _get_actor_room_rect(actor)
+	var use_room := room_rect.size != Vector2i.ZERO
+	if use_room and not room_rect.has_point(start):
+		return []
+
+	var neighbors: Array[Vector2i] = [
+		target + Vector2i.UP,
+		target + Vector2i.DOWN,
+		target + Vector2i.LEFT,
+		target + Vector2i.RIGHT
+	]
+
+	for cell in neighbors:
+		if not is_walkable_cell_for_actor(cell, actor):
+			continue
+
+		var path := nav.find_path_preferred(start, cell, false, room_rect, use_room)
+		if path.is_empty():
+			continue
+
+		if best_path.is_empty() or path.size() < best_path.size():
+			best_path = path
+
+	return best_path
+
 func _get_room_rect(room_id: int) -> Rect2i:
 	var dungeon: DungeonGenerator = _dungeon()
 	if dungeon == null:
