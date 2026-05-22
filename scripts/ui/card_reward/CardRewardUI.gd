@@ -143,28 +143,15 @@ func _create_card_button(card: CardData) -> Control:
 	margin.add_child(vbox)
 	
 	# Title - larger, bold appearance
-	var _cvm_script = load("res://scripts/ui/hud/CardViewModel.gd")
-	var view := {}
-	if _cvm_script and _cvm_script.has_method("from_card"):
-		view = _cvm_script.from_card(card)
-	elif _cvm_script and _cvm_script.has_method("build_reward_effects_text"):
-		view = {
-			"display_name": card.display_name,
-			"description": card.description,
-			"icon": card.icon,
-			"category": card.category,
-			"stats_summary": "%s x%.2f | D:%d | R:%d | CD:%d" % [StatTypes.get_label(card.stat_key), card.damage_scaling, card.base_damage, card.range, card.cooldown],
-			"effects_summary": _cvm_script.build_reward_effects_text(card)
-		}
-	else:
-		view = {
-			"display_name": card.display_name,
-			"description": card.description,
-			"icon": card.icon,
-			"category": card.category,
-			"stats_summary": "%s x%.2f | D:%d | R:%d | CD:%d" % [StatTypes.get_label(card.stat_key), card.damage_scaling, card.base_damage, card.range, card.cooldown],
-			"effects_summary": ""
-		}
+	var display_data := CardPresentationAdapter.create_display_data(card)
+	var view := {
+		"display_name": display_data.display_name,
+		"description": display_data.description,
+		"icon": display_data.icon,
+		"category": display_data.category,
+		"stats_summary": CardPresentationAdapter.get_stats_summary(display_data),
+		"effects_summary": CardPresentationAdapter.get_effects_summary(card)
+	}
 	var name_label := Label.new()
 	name_label.text = view.get("display_name")
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

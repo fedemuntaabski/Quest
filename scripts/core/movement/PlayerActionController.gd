@@ -172,7 +172,6 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 func on_player_turn_started() -> void:
 	if card_system_controller:
 		card_system_controller.tick_cooldowns()
-		card_system_controller.update_hotbar_ui()
 
 func _on_card_played(_card: CardData, _target: Node, _result: Dictionary) -> void:
 	_clear_card_targeting_state()
@@ -184,8 +183,6 @@ func _clear_card_targeting_state() -> void:
 		if card_manager:
 			card_manager.set_active_index(-1)
 	_clear_hover_targeting_state()
-	if card_system_controller:
-		card_system_controller.update_hotbar_ui()
 
 func _clear_hover_targeting_state() -> void:
 	if hovered_enemy and hovered_enemy.has_method("set_targeted"):
@@ -234,8 +231,6 @@ func _select_card(index: int) -> void:
 			card_system_controller.request_set_active_index(index)
 		else:
 			card_manager.set_active_index(index)
-	if card_system_controller:
-		card_system_controller.update_hotbar_ui()
 
 func _on_hotbar_slot_pressed(index: int) -> void:
 	_select_card(index)

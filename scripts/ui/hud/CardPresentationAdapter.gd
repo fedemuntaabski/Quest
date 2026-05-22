@@ -100,6 +100,37 @@ static func get_playability_color(display_data: CardDisplayData) -> Color:
 		return Color(1.0, 0.8, 0.4, 1.0)  # Yellow - restricted
 	return Color(0.4, 0.8, 0.4, 1.0)  # Green - fully playable
 
+static func get_effects_summary(card: Resource) -> String:
+	"""Get a readable comma-separated effect summary for reward and card detail UI."""
+	if card == null:
+		return ""
+
+	var effects_arr: Array = []
+	if "effects" in card:
+		effects_arr = card.effects
+
+	var effects_texts: Array[String] = []
+	for effect in effects_arr:
+		if effect == null:
+			continue
+		var desc := ""
+		if typeof(effect) == TYPE_DICTIONARY:
+			desc = str(effect.get("description", ""))
+		elif effect is CardEffect:
+			desc = str(effect.get_description())
+		elif typeof(effect) == TYPE_OBJECT:
+			var candidate = effect.get("description")
+			if candidate != null and str(candidate) != "":
+				desc = str(candidate)
+		else:
+			var text := str(effect)
+			if text != "" and not (text.begins_with("res://") or text.begins_with("user://")):
+				desc = text
+		if desc != "":
+			effects_texts.append(desc)
+
+	return ", ".join(effects_texts)
+
 ## --- Migration Helper ---
 ## Use this during transition from dictionary payloads to typed data
 

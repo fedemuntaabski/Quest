@@ -87,12 +87,14 @@ func _setup_reward_ui() -> void:
 		card_reward_ui.card_replace_selected.connect(_on_reward_card_replace_selected)
 
 func _init_potion_controller() -> void:
-	# Create and attach a PotionController to own potion UI/behavior
 	if _potion_controller != null:
 		return
-	var PotionController = preload("res://scripts/ui/hud/PotionController.gd")
-	_potion_controller = PotionController.new()
-	add_child(_potion_controller)
+	_potion_controller = get_node_or_null("PotionController")
+	if _potion_controller == null:
+		# Fallback for older scenes that do not yet include the node.
+		var PotionController = preload("res://scripts/ui/hud/PotionController.gd")
+		_potion_controller = PotionController.new()
+		add_child(_potion_controller)
 	# Provide HUD nodes (they may be null if scene differs)
 	_potion_controller.setup(potion_button, potion_count_label, potion_icon)
 
