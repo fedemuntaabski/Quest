@@ -129,7 +129,7 @@ func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) 
 		"occ_version": occ_ver
 	}
 
-	var action := CardAction.new(self, card, snapshot)
+	var action = CardAction.new(self, card, snapshot)
 	turn_manager.action_queue.queue_action(action)
 	return true
 
@@ -145,13 +145,7 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 		return {"hit": false, "damage": 0, "reason": "no_target"}
 
 	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
-	# Debug: log resolved result and involved stats to trace damage application
-	print("[CombatCardSystem] execute_card: resolved result=", result)
-	if combat_component and combat_component.stats:
-		print("[CombatCardSystem] execute_card: source_stats total_strength=", combat_component.stats.get_total_stat(card.stat_key))
-	if target_component and target_component.stats:
-		print("[CombatCardSystem] execute_card: target_stats hp=", target_component.stats.current_hp, ", total_defense_info dex=", target_component.stats.get_total_stat("dexterity"))
-	# Use default occ_version when executing live path
+	return await _finalize_card_execution(card, target, target_component, result)
 	return await _finalize_card_execution(card, target, target_component, result)
 
 
@@ -172,13 +166,11 @@ func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 		var current_ver := map_manager.occupancy_manager.get_version()
 		var snap_ver := int(snapshot.get("occ_version", -1))
 		if snap_ver != -1 and snap_ver != current_ver:
-			print("[CombatCardSystem] execute_card_snapshot: stale snapshot (snap=%d cur=%d), attempting live re-validation" % [snap_ver, current_ver])
 			# Try a live re-validation: if the live state still allows the play,
 			# proceed; otherwise fail with stale_snapshot. This avoids brittle
 			# failures when occupancy changed but target is still valid.
 			var live_val := get_card_validation(card, target)
 			if not bool(live_val.get("valid", false)):
-				print("[CombatCardSystem] execute_card_snapshot: live validation rejected reason=", live_val.get("reason", ""))
 				card_failed.emit(card, "stale_snapshot")
 				return {"hit": false, "damage": 0, "reason": "stale_snapshot", "stale": true}
 			# else: continue execution using live state
@@ -186,23 +178,17 @@ func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 	# Use resolved target component without re-repair
 	var target_component: CombatComponent = CombatValidation.resolve_target_component(target)
 	if target_component == null or target_component.stats == null:
-		print("[CombatCardSystem] execute_card_snapshot: no_target_component for target=", target)
 		card_failed.emit(card, "no_target_component")
 		return {"hit": false, "damage": 0, "reason": "no_target_component"}
 
 	var validation := get_card_validation(card, target)
 	if not bool(validation.get("valid", false)):
 		var reason := str(validation.get("reason", "invalid"))
-		print("[CombatCardSystem] execute_card_snapshot: validation failed reason=", reason)
 		card_failed.emit(card, reason)
 		return {"hit": false, "damage": 0, "reason": reason}
 
 	var distance := int(validation.get("distance", -1))
-	if card.target_type == "enemy":
-		print("[CombatCardSystem] Execute card '%s' at distance %d / range %d (occ_ver: %d)" % [card.display_name, distance, card.range, int(snapshot.get("occ_version", -1))])
-	print("[CombatCardSystem] execute_card_snapshot: calling CardResolver")
 	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
-	print("[CombatCardSystem] execute_card_snapshot: CardResolver returned=", result)
 	return await _finalize_card_execution(card, target, target_component, result, int(snapshot.get("occ_version", -1)))
 
 
@@ -219,9 +205,6 @@ func _finalize_card_execution(card: CardData, target: Node, target_component: Co
 
 		var damage := int(result.get("damage", 0))
 		# Debug: log finalization info
-		print("[CombatCardSystem] _finalize_card_execution: result=", result)
-		if target_component and target_component.actor_owner:
-			print("[CombatCardSystem] _finalize_card_execution: target_actor=", target_component.actor_owner.name, " target_hp=", target_component.stats.current_hp)
 		if result.get("hit", false) and damage > 0:
 			print("[CombatCardSystem] _finalize_card_execution: applying damage=", damage)
 			target_component.receive_damage(damage, result.get("crit", false))

@@ -51,7 +51,7 @@ func execute() -> void:
 	if card_system:
 		print("[CardAction] execute: awaiting card_system.execute_card_snapshot()")
 		res = await card_system.execute_card_snapshot(card_data, target)
-		print("[CardAction] execute: card_system.execute_card_snapshot() completed, result=", res)
+		print("[CardAction] execute: card_system.execute_card_snapshot() completed")
 	else:
 		print("[CardAction] execute: card_system is NULL")
 	print("[CardAction] execute: calling finish(result)")
