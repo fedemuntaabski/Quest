@@ -5,6 +5,7 @@ func ensure_runtime_nodes(generator: DungeonGenerator) -> void:
 	if generator == null:
 		return
 
+	# Helpers are RefCounted — create and setup without attaching to scene tree
 	if generator.scene_helper == null:
 		generator.scene_helper = DungeonSceneHelper.new()
 		generator.scene_helper.setup(generator)

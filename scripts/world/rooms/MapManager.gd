@@ -217,7 +217,7 @@ func find_path(start: Vector2i, goal: Vector2i, actor: Node = null) -> Array[Vec
 		if not room_rect.has_point(start) or not room_rect.has_point(goal):
 			return []
 
-	return navigation_helper.find_path(start, goal, false, room_rect, use_room)
+	return navigation_helper.find_path_preferred(start, goal, false, room_rect, use_room)
 
 func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null) -> Array[Vector2i]:
 	if navigation_helper == null:
@@ -239,7 +239,7 @@ func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null
 		if not is_walkable_cell_for_actor(cell, actor):
 			continue
 
-		var path := navigation_helper.find_path(start, cell, false, room_rect, use_room)
+		var path := navigation_helper.find_path_preferred(start, cell, false, room_rect, use_room)
 		if path.is_empty():
 			continue
 

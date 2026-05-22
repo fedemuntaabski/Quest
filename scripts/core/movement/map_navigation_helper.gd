@@ -196,3 +196,24 @@ func _reconstruct_path(came_from: Dictionary, current: Vector2i) -> Array[Vector
 		path.push_front(current)
 
 	return path
+
+
+# Centralized pathfinding API
+func find_path_preferred(
+    start: Vector2i,
+    goal: Vector2i,
+    allow_goal_occupied: bool = false,
+    allowed_rect: Rect2i = Rect2i(),
+    use_allowed_rect: bool = false,
+    mode: String = "auto"
+) -> Array[Vector2i]:
+	# For compatibility and safety, default to the existing A* implementation.
+	# This wrapper centralizes the public API so we can later switch
+	# between pathfinding backends (A* vs NavigationRegion) without
+	# changing callers.
+	# mode values: "auto" (default), "astar", "nav"
+	if mode == "astar" or mode == "auto":
+		return find_path(start, goal, allow_goal_occupied, allowed_rect, use_allowed_rect)
+	# Future: implement NavigationRegion-based pathfinding when requested.
+	# For now, fallback to A* to preserve existing behavior.
+	return find_path(start, goal, allow_goal_occupied, allowed_rect, use_allowed_rect)
