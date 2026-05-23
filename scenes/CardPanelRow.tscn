@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://cardpanelrow_scene"]
+
+[ext_resource type="Script" path="res://scripts/ui/hud/CardPanelRow.gd" id="1_card_panel_row_script"]
+
+[node name="CardPanelRow" type="HBoxContainer"]
+script = ExtResource("1_card_panel_row_script")
+theme_override_constants/separation = 12
+
+[node name="SlotLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(30, 0)
+text = "[1]"
+theme_override_font_sizes/font_size = 16
+
+[node name="IconRect" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(32, 32)
+expand_mode = 2
+stretch_mode = 5
+
+[node name="InfoVBox" type="VBoxContainer" parent="."]
+size_flags_horizontal = 3
+
+[node name="NameHBox" type="HBoxContainer" parent="InfoVBox"]
+
+[node name="NameLabel" type="Label" parent="InfoVBox/NameHBox"]
+text = "Card Name"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+
+[node name="CooldownLabel" type="Label" parent="InfoVBox/NameHBox"]
+visible = false
+text = "(CD: 0)"
+theme_override_colors/font_color = Color(0.9, 0.3, 0.3, 1)
+
+[node name="StateLabel" type="Label" parent="InfoVBox/NameHBox"]
+text = "[READY]"
+theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
+
+[node name="DescLabel" type="Label" parent="InfoVBox"]
+autowrap_mode = 3
+text = "Description"
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+
+[node name="StatsLabel" type="Label" parent="InfoVBox"]
+text = "STR x1.00 | D:0 | R:0 | CD:0"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.6, 0.8, 0.95, 1)
+
+[node name="SwapButton" type="Button" parent="InfoVBox"]
+text = "Swap (coming soon)"
+disabled = true
+size_flags_horizontal = 2
+
+[node name="Separator" type="HSeparator" parent="."]
+modulate = Color(1, 1, 1, 0.3)
