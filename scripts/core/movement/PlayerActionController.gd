@@ -150,16 +150,13 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 				return true
 		if _queue_basic_attack(enemy):
 			return true
-		_move_towards_enemy(enemy)
+		if player.request_path_to_adjacent(enemy.grid_pos):
+			return true
 		return true
 
 
-	var path: Array[Vector2i] = map_manager.find_path(player.grid_pos, target_cell, player)
-
-	if path.is_empty():
+	if not player.request_path_to_cell(target_cell):
 		return true
-
-	player.set_path(path)
 	
 	# Clear path preview overlay once movement is confirmed/queued
 	var highlighter := get_tree().get_first_node_in_group("tile_highlighter") as TileHighlighter
@@ -288,18 +285,6 @@ func _queue_basic_attack(target: Node) -> bool:
 	var action := PRELOAD_ATTACK_ACTION.new(player_combat, target)
 	player.turn_manager.action_queue.queue_action(action)
 	return true
-
-func _move_towards_enemy(enemy: Node) -> void:
-	if player == null or map_manager == null:
-		return
-	if enemy == null or enemy.get("grid_pos") == null:
-		return
-
-	var enemy_cell: Vector2i = enemy.get("grid_pos")
-	var path := map_manager.find_path_to_adjacent(player.grid_pos, enemy_cell, player)
-	if path.is_empty():
-		return
-	player.set_path(path)
 
 func _has_card_dependencies() -> bool:
 	if card_system_controller == null:

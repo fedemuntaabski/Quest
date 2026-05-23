@@ -103,6 +103,29 @@ func get_combat_component() -> CombatComponent:
 func request_move(dir: Vector2i) -> bool:
 	return turn_bridge.request_move(dir) if turn_bridge else false
 
+# Path planning
+func request_path_to_cell(target_cell: Vector2i) -> bool:
+	if map_manager == null:
+		return false
+
+	var path: Array[Vector2i] = map_manager.find_path(grid_pos, target_cell, self)
+	if path.is_empty():
+		return false
+
+	set_path(path)
+	return true
+
+func request_path_to_adjacent(target_cell: Vector2i) -> bool:
+	if map_manager == null:
+		return false
+
+	var path: Array[Vector2i] = map_manager.find_path_to_adjacent(grid_pos, target_cell, self)
+	if path.is_empty():
+		return false
+
+	set_path(path)
+	return true
+
 # ─────────────────────────────────────────────
 func _start_move_to(next: Vector2i) -> void:
 	_start_pos = global_position
