@@ -17,7 +17,6 @@ enum WorkflowState {
 	COMPLETE           # User confirmed selection; workflow finished
 }
 
-signal state_changed(new_state: WorkflowState, old_state: WorkflowState)
 signal reward_flow_completed(selected_card: CardData, slot_index: int)
 
 var current_state: WorkflowState = WorkflowState.IDLE
@@ -77,20 +76,11 @@ func skip_reward() -> void:
 
 ## Query methods for presentation layer.
 
-func is_showing_rewards() -> bool:
-	return current_state == WorkflowState.SHOWING_REWARDS
-
 func is_awaiting_slot_selection() -> bool:
 	return current_state == WorkflowState.SLOT_PENDING
 
 func is_complete() -> bool:
 	return current_state == WorkflowState.COMPLETE
-
-func get_pending_card() -> CardData:
-	return _pending_card
-
-func requires_replacement() -> bool:
-	return _requires_replace
 
 func get_replacement_slots() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -111,10 +101,7 @@ func _transition_to(new_state: WorkflowState) -> void:
 	if new_state == current_state:
 		return
 	
-	var old_state := current_state
 	current_state = new_state
-	print("[RewardFlowState] Transition: %s → %s" % [WorkflowState.keys()[old_state], WorkflowState.keys()[new_state]])
-	state_changed.emit(new_state, old_state)
 
 func _reset_state() -> void:
 	_pending_card = null
