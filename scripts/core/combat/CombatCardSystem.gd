@@ -146,7 +146,6 @@ func execute_card(card: CardData, target: Node) -> Dictionary:
 
 	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
 	return await _finalize_card_execution(card, target, target_component, result)
-	return await _finalize_card_execution(card, target, target_component, result)
 
 
 func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:

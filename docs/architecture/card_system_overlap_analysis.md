@@ -217,7 +217,7 @@ Files:
 
 ### 1) Reward card sourcing still has two sources of truth
 
-`CardRewardManager` dynamically scans `resources/cards` first and only falls back to `CardLibrary` if discovery returns nothing. `CardSystemController`, by contrast, uses `CardLibrary.get_starter_deck()` as the source for the player deck. That means reward sourcing and starter-deck sourcing are not aligned on a single canonical data provider.
+`CardRewardManager` dynamically scans `resources/cards` first and falls back to `CardLibrary` if discovery returns nothing. `CardSystemController`, by contrast, uses `CardLibrary.get_starter_deck()` as the source for the player deck. The two systems still have different primary sources, but they now share the same curated fallback library at `resources/cards/card_library.tres`.
 
 Risk: medium. This is a classic partial-refactor symptom: both paths are valid independently, but they are not converged.
 
@@ -268,7 +268,7 @@ These are deliberately small and reversible. They are not rewrite proposals.
 2. Make `CardManager` expose a clearer distinction between cooldown availability and full playability, or rename the current field to reflect its actual scope.
 3. Assign one layer as the sole writer for `active_index`. The least risky choice is `CardSystemController`; `PlayerActionController` should only request changes.
 4. Keep `MapManager` as the source of hover position and let `TileHighlighter` own only presentation caches, not its own notion of hover identity.
-5. Align reward sourcing so `CardRewardManager` and `CardSystemController` read the same canonical card source instead of mixing directory discovery with library lookup.
+5. Consider aligning reward sourcing so `CardRewardManager` and `CardSystemController` read the same canonical card source instead of mixing directory discovery with library lookup.
 6. Remove or explicitly document unused helpers like `CardTargeting.is_valid_target()` if they are not part of the live runtime.
 
 ## Risk Summary
