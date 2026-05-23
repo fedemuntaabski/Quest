@@ -1,5 +1,8 @@
 extends Node2D
 
+# Top-level runtime orchestrator for the main gameplay scene.
+# Keeps scene wiring and high-level flow, while delegating presentation and state details.
+
 # ─────────────────────────────────────────────
 # NODES
 # ─────────────────────────────────────────────
@@ -338,7 +341,7 @@ func _on_player_died() -> void:
 		run_gold = max(0, int(currency.get_gold() - _run_gold_start))
 
 	if death_handler:
-		death_handler.handle_player_died(enemies_killed, rooms_cleared, run_gold)
+		death_handler.show_death_screen(enemies_killed, rooms_cleared, run_gold)
 
 func _on_boss_defeated(enemy) -> void:
 	if _victory_triggered:
