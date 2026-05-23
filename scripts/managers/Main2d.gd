@@ -230,11 +230,9 @@ func _on_room_changed(room_id: int) -> void:
 
 func _on_room_cleared(_room_id: int) -> void:
 	rooms_cleared += 1
-	print("[ROOM_CLEARED] Room %d cleared, _victory_triggered=%s" % [_room_id, _victory_triggered])
 
 	# If victory already triggered (boss died), skip reward flow
 	if _victory_triggered:
-		print("[ROOM_CLEARED] Victory already triggered, skipping rewards")
 		return
 
 	if _is_dead:
@@ -243,7 +241,6 @@ func _on_room_cleared(_room_id: int) -> void:
 	# Guard: Skip reward generation if we're in the boss/final room
 	# (room_cleared may fire before _on_boss_defeated sets _victory_triggered)
 	if enemy_manager and _room_id == enemy_manager.final_room_id:
-		print("[ROOM_CLEARED] Boss room cleared, but _victory_triggered not yet set. Skipping rewards.")
 		return
 
 	if card_reward_manager and game_state_manager and game_state_manager.is_active():
@@ -337,12 +334,10 @@ func _update_room_timer_ui(status: Dictionary) -> void:
 func _request_room_reward(room_id: int, reward_cards: Array[CardData]) -> void:
 	# Keep the pacing and duplicate-request guard close to Main2d orchestration.
 	if _reward_pending:
-		print("[ROOM_CLEARED] Reward already pending, skipping duplicate request")
 		return
 
 	_reward_pending = true
 	if enemy_manager and room_id == enemy_manager.final_room_id:
-		print("[ROOM_CLEARED] Final room cleared — requesting reward immediately")
 		game_state_manager.request_reward(reward_cards)
 		return
 
@@ -350,24 +345,19 @@ func _request_room_reward(room_id: int, reward_cards: Array[CardData]) -> void:
 
 ## Applies the post-room-clear pacing delay without moving reward ownership out of Main2d.
 func _request_room_reward_after_delay(room_id: int, reward_cards: Array[CardData]) -> void:
-	print("[ROOM_CLEARED] Delaying reward by 1.0s for pacing")
 	await get_tree().create_timer(1.0).timeout
 
 	if _victory_triggered or _is_dead:
-		print("[ROOM_CLEARED] Post-delay abort: victory or death detected")
 		_clear_reward_pending()
 		return
 
 	if enemy_manager and enemy_manager.get_enemies_in_room(room_id) > 0:
-		print("[ROOM_CLEARED] Post-delay abort: enemies reappeared in room %d" % room_id)
 		_clear_reward_pending()
 		return
 
 	if game_state_manager and game_state_manager.is_active():
-		print("[ROOM_CLEARED] Requesting reward with %d cards" % reward_cards.size())
 		game_state_manager.request_reward(reward_cards)
 	else:
-		print("[ROOM_CLEARED] Post-delay abort: game state not active")
 		_clear_reward_pending()
 
 func _on_reward_completed(selected_card: CardData) -> void:
@@ -453,7 +443,6 @@ func _update_hotbar_display() -> void:
 			# Refresh through the actual CardSystemController location:
 			# Player -> PlayerActionController -> CardSystemController
 			if controller.card_system_controller and controller.card_system_controller.has_method("update_hotbar_ui"):
-				print("[MAIN_2D] _update_hotbar_display: refreshing hotbar UI only (no targeting clear)")
 				controller.card_system_controller.update_hotbar_ui()
 
 func _on_reward_entered(cards: Array) -> void:

@@ -36,7 +36,6 @@ func _ready() -> void:
 	# Create workflow state handler
 	_flow_state = RewardFlowState.new()
 	add_child(_flow_state)
-	_flow_state.state_changed.connect(_on_flow_state_changed)
 	_flow_state.reward_flow_completed.connect(_on_reward_flow_completed)
 
 func show_reward(cards: Array, requires_replace: bool = false, equipped_slots: Array = []) -> void:
@@ -224,8 +223,8 @@ func _on_card_selected(card: CardData, button: Control = null) -> void:
 	# Delegate workflow state to RewardFlowState
 	_flow_state.select_card(card)
 	
-	# If replacement is required, RewardFlowState will transition to SLOT_PENDING
-	# and we'll receive _on_flow_state_changed() signal to show slot selection UI
+	# If replacement is required, RewardFlowState transitions to SLOT_PENDING and
+	# this UI switches into its slot-selection presentation path.
 	if _flow_state.is_awaiting_slot_selection():
 		await get_tree().create_timer(0.15).timeout
 		_show_replace_selection()
@@ -376,20 +375,6 @@ func _on_skip_pressed() -> void:
 	_flow_state.skip_reward()
 	hide_reward()
 	reward_skipped.emit()
-
-## Flow state signal handlers
-
-func _on_flow_state_changed(new_state: int, _old_state: int) -> void:
-	# Presentation updates based on workflow state changes
-	# RewardFlowState owns the state; UI reacts to it
-	match RewardFlowState.WorkflowState.values()[new_state]:
-		RewardFlowState.WorkflowState.SHOWING_REWARDS:
-			print("[CardRewardUI] Flow state: showing rewards")
-		RewardFlowState.WorkflowState.SLOT_PENDING:
-			print("[CardRewardUI] Flow state: awaiting slot selection")
-		RewardFlowState.WorkflowState.COMPLETE:
-			print("[CardRewardUI] Flow state: complete (transitioning to idle)")
-
 func _on_reward_flow_completed(selected_card: CardData, slot_index: int) -> void:
 	# Forward the completed workflow event to upstream handlers
 	if slot_index >= 0:
