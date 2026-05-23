@@ -1,6 +1,9 @@
 extends Node
 class_name PlayerActionController
 
+# Routes player input into movement requests and combat targeting while keeping
+# the actual movement state and turn handling inside PlayerMovement.
+
 const PRELOAD_ATTACK_ACTION = preload("res://scripts/core/combat/AttackAction.gd")
 
 @export var card_library: CardLibrary

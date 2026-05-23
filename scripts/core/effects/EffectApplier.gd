@@ -4,6 +4,7 @@ class_name EffectApplier
 # Applies runtime effects (movement, status) using a provided EffectContext.
 # This class centralizes MapManager/StatusRuntime usage so CombatCardSystem
 # no longer directly manipulates map or status metadata.
+# The shared movement step contract lives in MovementStepService.
 
 
 
@@ -79,8 +80,6 @@ func _apply_movement_effect(move_data: Dictionary, target_component: CombatCompo
 	var target_actor := target_component.actor_owner
 	var receiver := owner_actor if str(move_data.get("target", "source")) == "source" else target_actor
 	if receiver == null:
-		return false
-	if not receiver.has_method("begin_step_move") or not receiver.has_method("wait_for_step"):
 		return false
 
 	var move_cells: int = max(1, int(move_data.get("move_cells", 1)))
