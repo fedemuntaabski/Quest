@@ -287,10 +287,7 @@ func _on_player_died() -> void:
 	
 	# Show death overlay
 	# Compute run-earned gold (do not double-add gold here)
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
-	var run_gold := 0
-	if currency:
-		run_gold = max(0, int(currency.get_gold() - _run_gold_start))
+	var run_gold := _get_run_gold_earned()
 
 	if death_handler:
 		death_handler.show_death_screen(enemies_killed, rooms_cleared, run_gold)
@@ -326,18 +323,7 @@ func _on_victory_entered() -> void:
 	if enemy_manager:
 		enemy_manager.grant_and_reset_accumulated_gold()
 	
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
-	var run_gold := 0
-	if currency:
-		run_gold = max(0, int(currency.get_gold() - _run_gold_start))
-
-		# Removed SceneTree metadata writes. VictoryOverlay is authoritative and
-		# will be shown directly via `show_victory(...)`.
-
-	if victory_overlay:
-		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
-	else:
-		push_error("[MAIN_2D] Victory overlay node is missing from Main2D.tscn")
+	_show_victory_overlay(_get_run_gold_earned())
 
 func _update_room_timer_ui(status: Dictionary) -> void:
 	if hud == null or room_timer == null or status == null:
@@ -379,6 +365,26 @@ func _request_room_reward(room_id: int, reward_cards: Array[CardData]) -> void:
 	else:
 		print("[ROOM_CLEARED] Post-delay abort: game state not active")
 		_reward_pending = false
+
+func _on_reward_completed(selected_card: CardData) -> void:
+	# Close the reward state and refresh the hotbar through the current card system.
+	if game_state_manager:
+		game_state_manager.close_reward(selected_card)
+	_update_hotbar_display()
+
+func _get_run_gold_earned() -> int:
+	# Computes the gold earned during this run without mutating currency state.
+	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	if currency:
+		return max(0, int(currency.get_gold() - _run_gold_start))
+	return 0
+
+func _show_victory_overlay(run_gold: int) -> void:
+	# VictoryOverlay owns presentation; Main2d only supplies the run summary.
+	if victory_overlay:
+		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
+	else:
+		push_error("[MAIN_2D] Victory overlay node is missing from Main2D.tscn")
 
 
 # ─────────────────────────────────────────────
@@ -424,20 +430,6 @@ func _on_tutorial_finished() -> void:
 
 func _get_game_state_manager() -> GameStateManager:
 	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
-
-# ─────────────────────────────────────────────
-# REWARD HANDLERS
-# ─────────────────────────────────────────────
-func _on_reward_completed(_selected_card: CardData) -> void:
-	# Reward completed, return to active state via GameStateManager
-	print("[MAIN_2D] _on_reward_completed called with card: %s" % (_selected_card.display_name if _selected_card else "null"))
-	if game_state_manager:
-		print("[MAIN_2D] Calling game_state_manager.close_reward()")
-		game_state_manager.close_reward(_selected_card)
-	else:
-		print("[MAIN_2D] ERROR: game_state_manager is null!")
-	_update_hotbar_display()
-	print("[MAIN_2D] Hotbar display updated")
 
 func _update_hotbar_display() -> void:
 	if map_manager:
