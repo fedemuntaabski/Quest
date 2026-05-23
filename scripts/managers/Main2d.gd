@@ -124,11 +124,12 @@ func _connect_player() -> void:
 
 func _connect_ui() -> void:
 	_connect_menu_ui()
+	_connect_victory_ui()
 	_connect_reward_ui()
 	_connect_state_ui()
 	_connect_hud_card_system_binding()
 
-## Connects pause/victory overlay controls to the top-level scene flow.
+## Connects pause menu controls to the top-level scene flow.
 func _connect_menu_ui() -> void:
 	if retry_button and not retry_button.pressed.is_connected(Callable(self, "_on_retry_pressed")):
 		retry_button.pressed.connect(Callable(self, "_on_retry_pressed"))
@@ -136,16 +137,22 @@ func _connect_menu_ui() -> void:
 	if exit_button and not exit_button.pressed.is_connected(Callable(self, "_on_return_pressed")):
 		exit_button.pressed.connect(Callable(self, "_on_return_pressed"))
 
-	if victory_overlay and not victory_overlay.retry_requested.is_connected(Callable(self, "_on_retry_pressed")):
-		victory_overlay.retry_requested.connect(Callable(self, "_on_retry_pressed"))
-	if victory_overlay and not victory_overlay.exit_requested.is_connected(Callable(self, "_on_return_pressed")):
-		victory_overlay.exit_requested.connect(Callable(self, "_on_return_pressed"))
-
 	if pause_menu and pause_menu.has_method("close_menu"):
 		pause_menu.close_menu()
 
 	if pause_menu and not pause_menu.exit_requested.is_connected(Callable(self, "_on_pause_exit_requested")):
 		pause_menu.exit_requested.connect(Callable(self, "_on_pause_exit_requested"))
+
+
+## Connects the victory overlay actions without mixing them into pause menu setup.
+func _connect_victory_ui() -> void:
+	if victory_overlay == null:
+		return
+
+	if not victory_overlay.retry_requested.is_connected(Callable(self, "_on_retry_pressed")):
+		victory_overlay.retry_requested.connect(Callable(self, "_on_retry_pressed"))
+	if not victory_overlay.exit_requested.is_connected(Callable(self, "_on_return_pressed")):
+		victory_overlay.exit_requested.connect(Callable(self, "_on_return_pressed"))
 
 
 ## Bridges reward UI events from the HUD into Main2d orchestration.
@@ -280,8 +287,7 @@ func _on_player_died() -> void:
 		return
 	
 	_is_dead = true
-	if victory_overlay:
-		victory_overlay.hide_victory()
+	_hide_victory_overlay()
 	
 	# Grant accumulated gold from defeated enemies before showing death screen
 	if enemy_manager:
@@ -317,6 +323,7 @@ func _on_boss_defeated(enemy) -> void:
 
 	if death_overlay:
 		death_overlay.visible = false
+	_hide_victory_overlay()
 
 	var gsm := _get_game_state_manager()
 	if gsm:
@@ -395,6 +402,12 @@ func _show_victory_overlay(run_gold: int) -> void:
 		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
 	else:
 		push_error("[MAIN_2D] Victory overlay node is missing from Main2D.tscn")
+
+
+## Keeps victory state cleanup in one place so the overlay remains scene-owned.
+func _hide_victory_overlay() -> void:
+	if victory_overlay:
+		victory_overlay.hide_victory()
 
 
 # ─────────────────────────────────────────────
