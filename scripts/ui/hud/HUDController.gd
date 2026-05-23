@@ -139,6 +139,7 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	if _potion_controller:
 		_potion_controller.refresh()
 
+## Forwards the room timer display to the dedicated TimerUI leaf.
 func update_room_timer(time_left: float, _total: float, color: Color) -> void:
 	if timer_ui:
 		timer_ui.set_time(time_left, color)
@@ -303,10 +304,12 @@ func bind_card_manager(manager: CardManager) -> void:
 func _on_card_ui_state_changed(cards_payload: Array, active_index: int) -> void:
 	update_hotbar(cards_payload, active_index)
 
+## Opens the reward overlay and leaves workflow details to CardRewardUI.
 func show_reward_selection(cards: Array, requires_replace: bool = false, equipped_slots: Array = []) -> void:
 	if card_reward_ui:
 		card_reward_ui.show_reward(cards, requires_replace, equipped_slots)
 
+## Closes the reward overlay through the dedicated reward scene.
 func hide_reward_selection() -> void:
 	if card_reward_ui:
 		card_reward_ui.hide_reward()

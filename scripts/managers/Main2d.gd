@@ -346,6 +346,10 @@ func _request_room_reward(room_id: int, reward_cards: Array[CardData]) -> void:
 		game_state_manager.request_reward(reward_cards)
 		return
 
+	_request_room_reward_after_delay(room_id, reward_cards)
+
+## Applies the post-room-clear pacing delay without moving reward ownership out of Main2d.
+func _request_room_reward_after_delay(room_id: int, reward_cards: Array[CardData]) -> void:
 	print("[ROOM_CLEARED] Delaying reward by 1.0s for pacing")
 	await get_tree().create_timer(1.0).timeout
 

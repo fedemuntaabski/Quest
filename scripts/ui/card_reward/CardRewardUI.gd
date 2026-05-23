@@ -403,9 +403,6 @@ func _on_reward_flow_completed(selected_card: CardData, slot_index: int) -> void
 	else:
 		card_selected.emit(selected_card)
 
-func _build_reward_description(card: CardData) -> String:
-	return card.description
-
 func _build_card_style(border_color: Color = NORMAL_COLOR) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.08, 0.08, 0.1, 0.98)
