@@ -16,7 +16,7 @@ class_name CardSystemController
 ## - PlayerActionController.setup() creates CardSystemController as child
 ## - CardSystemController.setup(player, map_manager, card_library) is called
 ## - _ensure_card_system() creates CardManager and CombatCardSystem as Player children
-## - _get_starter_deck() loads deck from CardLibrary (res://resources/cards/card_library.tres)
+## - _get_starter_deck() loads the curated starter deck from CardLibrary when needed
 ## - bind_hud() connects CardManager signals to HUDController for hotbar updates
 ##
 ## CardLibrary Usage:
@@ -43,8 +43,7 @@ func setup(p_player: PlayerMovement, p_map_manager: MapManager, p_card_library: 
 	_ensure_card_system()
 
 func _get_starter_deck() -> Array[CardData]:
-	# CardLibrary provides the curated starter deck used when the scene does not
-	# inject an explicit library resource.
+	# Use the injected library first, then fall back to the curated on-disk library.
 	if card_library == null:
 		card_library = load("res://resources/cards/card_library.tres") as CardLibrary
 	if card_library:
