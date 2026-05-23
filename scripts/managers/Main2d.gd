@@ -197,23 +197,11 @@ func _process(delta: float) -> void:
 		if tutorial_layer == null or not is_instance_valid(tutorial_layer):
 			_room_timer_paused = false
 		else:
-			if hud and room_timer:
-				var status := room_timer.get_status()
-				hud.update_room_timer(
-					status["remaining"],
-					Main2dRoomTimer.ROOM_TIMER_SECONDS,
-					status["color"]
-				)
+			_update_room_timer_ui(room_timer.get_status())
 			return
 
 	var tick_data := room_timer.tick(delta)
-
-	if hud:
-		hud.update_room_timer(
-			tick_data["remaining"],
-			Main2dRoomTimer.ROOM_TIMER_SECONDS,
-			tick_data["color"]
-		)
+	_update_room_timer_ui(tick_data)
 
 	if tick_data["expired"]:
 		push_warning("Room timer reached zero - triggering death state")
@@ -259,46 +247,10 @@ func _on_room_cleared(_room_id: int) -> void:
 		return
 
 	if card_reward_manager and game_state_manager and game_state_manager.is_active():
-		# Prevent overlapping reward requests
-		if _reward_pending:
-			print("[ROOM_CLEARED] Reward already pending, skipping duplicate request")
-			return
-
 		var reward_cards: Array[CardData] = card_reward_manager.generate_reward_options(3)
 		if reward_cards.is_empty():
 			return
-
-		# If this is the final room (boss), request reward immediately is guarded above;
-		# otherwise delay slightly for pacing. Capture room id locally for the await scope.
-		var captured_room_id: int = _room_id
-		_reward_pending = true
-		# If this room is the final room id and victory might be triggered, skip delay
-		if enemy_manager and captured_room_id == enemy_manager.final_room_id:
-			print("[ROOM_CLEARED] Final room cleared — requesting reward immediately")
-			game_state_manager.request_reward(reward_cards)
-			return
-
-		# Non-boss delay to improve pacing. Re-check guards after the delay.
-		print("[ROOM_CLEARED] Delaying reward by 1.0s for pacing")
-		await get_tree().create_timer(1.0).timeout
-
-		# Post-delay validation: abort if victory/death triggered or game state not active
-		if _victory_triggered or _is_dead:
-			print("[ROOM_CLEARED] Post-delay abort: victory or death detected")
-			_reward_pending = false
-			return
-
-		if enemy_manager and enemy_manager.get_enemies_in_room(captured_room_id) > 0:
-			print("[ROOM_CLEARED] Post-delay abort: enemies reappeared in room %d" % captured_room_id)
-			_reward_pending = false
-			return
-
-		if game_state_manager and game_state_manager.is_active():
-			print("[ROOM_CLEARED] Requesting reward with %d cards" % reward_cards.size())
-			game_state_manager.request_reward(reward_cards)
-		else:
-			print("[ROOM_CLEARED] Post-delay abort: game state not active")
-			_reward_pending = false
+		_request_room_reward(_room_id, reward_cards)
 
 func _on_enemy_defeated() -> void:
 	enemies_killed += 1
@@ -386,6 +338,47 @@ func _on_victory_entered() -> void:
 		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
 	else:
 		push_error("[MAIN_2D] Victory overlay node is missing from Main2D.tscn")
+
+func _update_room_timer_ui(status: Dictionary) -> void:
+	if hud == null or room_timer == null or status == null:
+		return
+	hud.update_room_timer(
+		status.get("remaining", 0.0),
+		Main2dRoomTimer.ROOM_TIMER_SECONDS,
+		status.get("color", Color.WHITE)
+	)
+
+func _request_room_reward(room_id: int, reward_cards: Array[CardData]) -> void:
+	# Keep the pacing and duplicate-request guard close to Main2d orchestration.
+	if _reward_pending:
+		print("[ROOM_CLEARED] Reward already pending, skipping duplicate request")
+		return
+
+	_reward_pending = true
+	if enemy_manager and room_id == enemy_manager.final_room_id:
+		print("[ROOM_CLEARED] Final room cleared — requesting reward immediately")
+		game_state_manager.request_reward(reward_cards)
+		return
+
+	print("[ROOM_CLEARED] Delaying reward by 1.0s for pacing")
+	await get_tree().create_timer(1.0).timeout
+
+	if _victory_triggered or _is_dead:
+		print("[ROOM_CLEARED] Post-delay abort: victory or death detected")
+		_reward_pending = false
+		return
+
+	if enemy_manager and enemy_manager.get_enemies_in_room(room_id) > 0:
+		print("[ROOM_CLEARED] Post-delay abort: enemies reappeared in room %d" % room_id)
+		_reward_pending = false
+		return
+
+	if game_state_manager and game_state_manager.is_active():
+		print("[ROOM_CLEARED] Requesting reward with %d cards" % reward_cards.size())
+		game_state_manager.request_reward(reward_cards)
+	else:
+		print("[ROOM_CLEARED] Post-delay abort: game state not active")
+		_reward_pending = false
 
 
 # ─────────────────────────────────────────────
