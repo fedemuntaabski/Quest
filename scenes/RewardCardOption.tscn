@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://rewardcardoption_scene"]
+
+[ext_resource type="Script" path="res://scripts/ui/card_reward/RewardCardOption.gd" id="1_reward_card_option_script"]
+
+[node name="RewardCardOption" type="PanelContainer"]
+custom_minimum_size = Vector2(220, 280)
+mouse_filter = 0
+focus_mode = 0
+script = ExtResource("1_reward_card_option_script")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+theme_override_constants/separation = 8
+
+[node name="NameLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+horizontal_alignment = 1
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 20
+text = "Reward Card"
+max_lines_visible = 2
+
+[node name="CategoryLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 11
+text = "[CATEGORY]"
+
+[node name="Icon" type="TextureRect" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(188, 100)
+expand_mode = 1
+stretch_mode = 5
+size_flags_horizontal = 3
+
+[node name="StatsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
+custom_minimum_size = Vector2(188, 40)
+
+[node name="EffectsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(188, 80)
+size_flags_vertical = 3
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="EffectsLabel" type="Label" parent="MarginContainer/VBoxContainer/EffectsScroll"]
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.78, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 11
+custom_minimum_size = Vector2(180, 0)
+size_flags_vertical = 1
+
+[node name="SelectButton" type="Button" parent="MarginContainer/VBoxContainer"]
+text = "SELECT"
+custom_minimum_size = Vector2(188, 36)

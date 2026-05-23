@@ -9,6 +9,8 @@ signal card_selected(card: CardData)
 signal reward_skipped
 signal card_replace_selected(card: CardData, slot_index: int)
 
+const RewardCardOptionScene := preload("res://scenes/RewardCardOption.tscn")
+
 @onready var panel: Panel = $CenterContainer/RewardPanel
 @onready var cards_container: HBoxContainer = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/CardsScroll/CardsContainer
 @onready var footer_container: CenterContainer = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/FooterContainer
@@ -16,7 +18,7 @@ signal card_replace_selected(card: CardData, slot_index: int)
 
 var _reward_cards: Array[CardData] = []
 var _is_active: bool = false  # Local UI visibility state
-var _selected_card_button: Control = null  # Local visual feedback tracking
+var _selected_card_button: RewardCardOption = null  # Local visual feedback tracking
 var _flow_state: RewardFlowState = null  # Owns workflow state
 
 # Style constants for visual feedback
@@ -87,7 +89,10 @@ func _create_card_buttons() -> void:
 		if card == null:
 			continue
 		var card_button := _create_card_button(card)
+		if card_button == null:
+			continue
 		cards_container.add_child(card_button)
+		card_button.setup(card)
 
 func _add_skip_button() -> void:
 	var skip_button := Button.new()
@@ -99,116 +104,29 @@ func _add_skip_button() -> void:
 	else:
 		cards_container.add_child(skip_button)
 
-func _create_card_button(card: CardData) -> Control:
-	var container := PanelContainer.new()
-	container.custom_minimum_size = Vector2(CARD_BUTTON_WIDTH, CARD_BUTTON_HEIGHT)
-	container.mouse_filter = Control.MOUSE_FILTER_STOP
-	container.focus_mode = Control.FOCUS_NONE
-	
-	# Store card reference for later access
-	container.set_meta("card_data", card)
-	
-	# Setup hover/selection feedback
-	var hover_style := _build_card_style(NORMAL_COLOR)
-	container.add_theme_stylebox_override("panel", hover_style)
-	
-	# Mouse enter/exit for hover effect
-	container.mouse_entered.connect(func(): _on_card_button_hover_enter(container))
-	container.mouse_exited.connect(func(): _on_card_button_hover_exit(container))
-	
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 14)
-	margin.add_theme_constant_override("margin_top", 14)
-	margin.add_theme_constant_override("margin_right", 14)
-	margin.add_theme_constant_override("margin_bottom", 14)
-	container.add_child(margin)
+func _create_card_button(card: CardData) -> RewardCardOption:
+	var option := RewardCardOptionScene.instantiate() as RewardCardOption
+	if option == null:
+		return null
+	if not option.selected.is_connected(_on_card_option_selected):
+		option.selected.connect(_on_card_option_selected)
+	return option
 
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
-	margin.add_child(vbox)
-	
-	# Title - larger, bold appearance
-	var display_data := CardPresentationAdapter.create_display_data(card)
-	var view := {
-		"display_name": display_data.display_name,
-		"description": display_data.description,
-		"icon": display_data.icon,
-		"category": display_data.category,
-		"stats_summary": CardPresentationAdapter.get_stats_summary(display_data),
-		"effects_summary": CardPresentationAdapter.get_effects_summary(card)
-	}
-	var name_label := Label.new()
-	name_label.text = view.get("display_name")
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name_label.add_theme_font_size_override("font_size", 20)
-	name_label.max_lines_visible = 2
-	name_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
-	vbox.add_child(name_label)
-	
-	# Category badge
-	var category_label := Label.new()
-	category_label.text = "[%s]" % str(view.get("category", "")).to_upper()
-	category_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	category_label.add_theme_font_size_override("font_size", 11)
-	var category_color := CardPresentationAdapter.get_category_color(card.category)
-	category_label.add_theme_color_override("font_color", category_color)
-	vbox.add_child(category_label)
-	
-	# Icon with proper sizing
-	var icon := TextureRect.new()
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.custom_minimum_size = Vector2(188, 100)
-	icon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if view.get("icon"):
-		icon.texture = view.get("icon")
-	vbox.add_child(icon)
-	
-	# Stats summary (damage, range, cooldown)
-	var stats_label := Label.new()
-	stats_label.text = str(view.get("stats_summary", ""))
-	stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	stats_label.add_theme_font_size_override("font_size", 12)
-	stats_label.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9, 1.0))
-	stats_label.custom_minimum_size = Vector2(188, 40)
-	vbox.add_child(stats_label)
-	
-	# Effects description inside a vertical ScrollContainer to constrain height
-	var effects_scroll := ScrollContainer.new()
-	# Use the vertical size flags property on Controls
-	effects_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	effects_scroll.custom_minimum_size = Vector2(188, 80)
+func _on_card_option_selected(option: RewardCardOption) -> void:
+	if option == null:
+		return
+	_on_card_selected(option.get_card(), option)
 
-	var effects_label := Label.new()
-	effects_label.text = str(view.get("effects_summary", ""))
-	effects_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	effects_label.add_theme_color_override("font_color", Color(0.78, 0.9, 1.0, 1))
-	effects_label.add_theme_font_size_override("font_size", 11)
-	effects_label.custom_minimum_size = Vector2(180, 0)
-	effects_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	effects_scroll.add_child(effects_label)
-	vbox.add_child(effects_scroll)
-	
-	# Select button with visual feedback
-	var select_btn := Button.new()
-	select_btn.text = "SELECT"
-	select_btn.custom_minimum_size = Vector2(188, 36)
-	select_btn.pressed.connect(_on_card_selected.bind(card, container))
-	vbox.add_child(select_btn)
-	return container
-
-func _on_card_selected(card: CardData, button: Control = null) -> void:
+func _on_card_selected(card: CardData, button: RewardCardOption = null) -> void:
 	if not _is_active:
 		return
 	
 	# Visual feedback: highlight selected card
 	if _selected_card_button != null and _selected_card_button != button:
-		_on_card_button_hover_exit(_selected_card_button)
+		_selected_card_button.set_selected(false)
 	_selected_card_button = button
 	if button:
-		var selected_style := _build_card_style(SELECTED_COLOR)
-		button.add_theme_stylebox_override("panel", selected_style)
+		button.set_selected(true)
 	
 	# Delegate workflow state to RewardFlowState
 	_flow_state.select_card(card)
@@ -221,20 +139,6 @@ func _on_card_selected(card: CardData, button: Control = null) -> void:
 		# Direct completion (no replacement needed)
 		hide_reward()
 		card_selected.emit(card)
-
-func _on_card_button_hover_enter(button: Control) -> void:
-	if button == _selected_card_button:
-		return  # Don't override selected state on hover
-	var hover_style := _build_card_style(HOVER_COLOR)
-	button.add_theme_stylebox_override("panel", hover_style)
-
-func _on_card_button_hover_exit(button: Control) -> void:
-	if button == _selected_card_button:
-		var selected_style := _build_card_style(SELECTED_COLOR)
-		button.add_theme_stylebox_override("panel", selected_style)
-		return
-	var normal_style := _build_card_style(NORMAL_COLOR)
-	button.add_theme_stylebox_override("panel", normal_style)
 
 func _show_replace_selection() -> void:
 	# Clear and transition to slot selection
@@ -380,17 +284,3 @@ func _on_reward_flow_completed(selected_card: CardData, slot_index: int) -> void
 		card_replace_selected.emit(selected_card, slot_index)
 	else:
 		card_selected.emit(selected_card)
-
-func _build_card_style(border_color: Color = NORMAL_COLOR) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.08, 0.1, 0.98)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = border_color
-	style.corner_radius_top_left = 10
-	style.corner_radius_top_right = 10
-	style.corner_radius_bottom_right = 10
-	style.corner_radius_bottom_left = 10
-	return style
