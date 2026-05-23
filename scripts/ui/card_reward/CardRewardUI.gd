@@ -15,12 +15,9 @@ signal card_replace_selected(card: CardData, slot_index: int)
 @onready var title_label: Label = $CenterContainer/RewardPanel/MarginContainer/VBoxContainer/TitleLabel
 
 var _reward_cards: Array[CardData] = []
-var _card_nodes: Array = []
 var _is_active: bool = false  # Local UI visibility state
 var _selected_card_button: Control = null  # Local visual feedback tracking
 var _flow_state: RewardFlowState = null  # Owns workflow state
-
-const CARD_REWARD_COUNT: int = 3
 
 # Style constants for visual feedback
 const HOVER_COLOR: Color = Color(0.4, 0.5, 0.7, 1.0)
@@ -52,7 +49,6 @@ func show_reward(cards: Array, requires_replace: bool = false, equipped_slots: A
 	# Store cards for presentation
 	_reward_cards.clear()
 	_reward_cards.assign(cards)
-	_card_nodes.clear()
 	
 	# Clear UI and prepare for animation
 	_clear_cards_container()
@@ -211,8 +207,6 @@ func _create_card_button(card: CardData) -> Control:
 	select_btn.custom_minimum_size = Vector2(188, 36)
 	select_btn.pressed.connect(_on_card_selected.bind(card, container))
 	vbox.add_child(select_btn)
-	
-	_card_nodes.append(container)
 	return container
 
 func _on_card_selected(card: CardData, button: Control = null) -> void:

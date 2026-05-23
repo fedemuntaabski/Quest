@@ -46,7 +46,6 @@ func _ready() -> void:
 	_setup_reward_ui()
 	# Initialize potion controller to own potion UI/logic
 	_init_potion_controller()
-	_setup_stat_tooltips()
 
 	# Tooltip debounce is handled by CardTooltip itself; HUDController delegates show/hide requests.
 
@@ -168,9 +167,6 @@ func update_hotbar(cards_payload: Array, active_index: int) -> void:
 			slot.set_selected(i == active_index)
 	
 	# Also update the Cards panel if present
-	update_cards_panel(cards_payload)
-
-func update_cards_panel(cards_payload: Array) -> void:
 	if card_panel:
 		var display_data_array: Array[CardDisplayData] = []
 		for card_entry in cards_payload:
@@ -279,11 +275,6 @@ func show_simple_tooltip(text: String, global_pos = null) -> void:
 func hide_simple_tooltip() -> void:
 	if stat_tooltip:
 		stat_tooltip.visible = false
-
-func _setup_stat_tooltips() -> void:
-	# Stat tooltips (HP, Strength, etc) are shown on hover
-	# Handled by separate StatIcon nodes that manage their own tooltips
-	pass
 
 ## Card Manager Binding
 ## Establishes the connection between CardManager and UI to receive card state updates
