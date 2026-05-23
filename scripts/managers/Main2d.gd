@@ -398,14 +398,21 @@ func _set_paused_state(paused: bool) -> void:
 			pause_menu.close_menu()
 
 func _on_return_pressed() -> void:
-	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	_go_to_main_menu()
 
 func _on_pause_exit_requested() -> void:
+	_go_to_main_menu()
+
+func _on_retry_pressed() -> void:
+	_reload_current_scene()
+
+func _go_to_main_menu() -> void:
+	# Shared exit path for pause and defeat flows.
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 
-func _on_retry_pressed() -> void:
+func _reload_current_scene() -> void:
+	# Shared retry path keeps scene reset behavior in one place.
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 
