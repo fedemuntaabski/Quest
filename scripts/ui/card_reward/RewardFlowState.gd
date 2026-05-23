@@ -24,9 +24,6 @@ var _pending_card: CardData = null
 var _requires_replace: bool = false
 var _replace_slots: Array = []
 
-func _ready() -> void:
-	add_to_group("reward_flow_state")
-
 ## Initialize a new reward session.
 ## Called by CardRewardUI when show_reward() is invoked.
 func start_reward_session(cards: Array, requires_replace: bool = false, equipped_slots: Array = []) -> void:

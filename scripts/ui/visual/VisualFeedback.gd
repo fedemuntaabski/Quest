@@ -80,9 +80,6 @@ func _find_sprite(target: Node) -> CanvasItem:
 		return target as CanvasItem
 	return null
 
-func _noop() -> void:
-	pass
-
 func _on_hit_pause_restore() -> void:
 	_hit_pause_stack -= 1
 	if _hit_pause_stack <= 0:
