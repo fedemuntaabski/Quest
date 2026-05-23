@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://visualparticle_scene"]
+
+[ext_resource type="Script" path="res://scripts/ui/visual/VisualParticle.gd" id="1_visual_particle_script"]
+
+[node name="VisualParticle" type="Node2D"]
+script = ExtResource("1_visual_particle_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+color = Color(1, 1, 1, 1)
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 4.0

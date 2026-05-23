@@ -3,6 +3,8 @@ class_name VisualFeedback
 
 signal screen_shake(intensity: float, duration: float)
 
+const VisualParticleScene := preload("res://scenes/VisualParticle.tscn")
+
 @export var particle_count: int = 6
 @export var particle_lifetime: float = 0.45
 @export var damage_flash_duration: float = 0.12
@@ -34,18 +36,12 @@ func request_particles(pos: Vector2, color: Color, count: int = -1) -> void:
 		count = particle_count
 
 	for i in range(count):
-		var rect := ColorRect.new()
-		rect.color = color
-		rect.size = Vector2.ONE * randi_range(4, 10)
-		var node := Node2D.new()
-		node.add_child(rect)
-		add_child(node)
-		node.global_position = pos + Vector2(randf_range(-8, 8), randf_range(-8, 8))
-
-		var tw := create_tween()
-		tw.tween_property(node, "scale", Vector2.ZERO, particle_lifetime)
-		tw.parallel().tween_property(rect, "modulate:a", 0.0, particle_lifetime)
-		tw.tween_callback(Callable(node, "queue_free"))
+		var particle := VisualParticleScene.instantiate() as VisualParticle
+		if particle == null:
+			continue
+		particle.position = pos + Vector2(randf_range(-8, 8), randf_range(-8, 8))
+		add_child(particle)
+		particle.setup(color, Vector2.ONE * randi_range(4, 10), particle_lifetime, 0.0)
 
 func request_hit_pause(duration: float = -1.0, timescale: float = -1.0) -> void:
 	if duration <= 0.0:
