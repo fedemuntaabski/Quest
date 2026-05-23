@@ -361,7 +361,7 @@ func _request_room_reward_after_delay(room_id: int, reward_cards: Array[CardData
 		_clear_reward_pending()
 
 func _on_reward_completed(selected_card: CardData) -> void:
-	# Close the reward state and refresh the hotbar through the current card system.
+	# Close the reward state and let the card system emit any UI refresh it owns.
 	if game_state_manager:
 		game_state_manager.close_reward(selected_card)
 
@@ -433,12 +433,16 @@ func _get_game_state_manager() -> GameStateManager:
 
 func _on_reward_entered(cards: Array) -> void:
 	if hud:
-		var requires_replace := false
-		var equipped_slots: Array = []
-		if card_reward_manager:
-			requires_replace = card_reward_manager.is_hotbar_full()
-			equipped_slots = card_reward_manager.get_equipped_cards_for_replace()
-		hud.show_reward_selection(cards, requires_replace, equipped_slots)
+		_show_reward_selection(cards)
+
+## Builds the HUD-facing reward presentation payload without moving ownership out of Main2d.
+func _show_reward_selection(cards: Array) -> void:
+	var requires_replace := false
+	var equipped_slots: Array = []
+	if card_reward_manager:
+		requires_replace = card_reward_manager.is_hotbar_full()
+		equipped_slots = card_reward_manager.get_equipped_cards_for_replace()
+	hud.show_reward_selection(cards, requires_replace, equipped_slots)
 
 func _on_reward_exited(_selected_card: CardData) -> void:
 	if hud:
