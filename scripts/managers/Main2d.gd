@@ -355,12 +355,12 @@ func _request_room_reward_after_delay(room_id: int, reward_cards: Array[CardData
 
 	if _victory_triggered or _is_dead:
 		print("[ROOM_CLEARED] Post-delay abort: victory or death detected")
-		_reward_pending = false
+		_clear_reward_pending()
 		return
 
 	if enemy_manager and enemy_manager.get_enemies_in_room(room_id) > 0:
 		print("[ROOM_CLEARED] Post-delay abort: enemies reappeared in room %d" % room_id)
-		_reward_pending = false
+		_clear_reward_pending()
 		return
 
 	if game_state_manager and game_state_manager.is_active():
@@ -368,7 +368,7 @@ func _request_room_reward_after_delay(room_id: int, reward_cards: Array[CardData
 		game_state_manager.request_reward(reward_cards)
 	else:
 		print("[ROOM_CLEARED] Post-delay abort: game state not active")
-		_reward_pending = false
+		_clear_reward_pending()
 
 func _on_reward_completed(selected_card: CardData) -> void:
 	# Close the reward state and refresh the hotbar through the current card system.
@@ -468,8 +468,8 @@ func _on_reward_entered(cards: Array) -> void:
 func _on_reward_exited(_selected_card: CardData) -> void:
 	if hud:
 		hud.hide_reward_selection()
-	# Clear pending flag so future rewards can be requested
-	_reward_pending = false
+	# Clear pending flag so future rewards can be requested.
+	_clear_reward_pending()
 
 func _on_reward_card_selected(selected_card: CardData) -> void:
 	if card_reward_manager == null:
@@ -485,3 +485,7 @@ func _on_reward_skipped() -> void:
 	if card_reward_manager == null:
 		return
 	card_reward_manager.skip_reward()
+
+## Clears the room-reward request guard once the reward flow is done or aborted.
+func _clear_reward_pending() -> void:
+	_reward_pending = false
