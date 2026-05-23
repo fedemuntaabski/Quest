@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CardLibrary" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/combat/CardLibrary.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/cards/strength/Corte Brutal.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/cards/strength/Golpe Pesado.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/cards/strength/Herida Profunda.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/cards/strength/rage.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/cards/agility/backstab.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/cards/agility/bow_card.tres" id="7"]
+[ext_resource type="Resource" path="res://resources/cards/agility/cripple_card.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/cards/agility/dash.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/cards/agility/double_strike.tres" id="10"]
+[ext_resource type="Resource" path="res://resources/cards/agility/evasion.tres" id="11"]
+[ext_resource type="Resource" path="res://resources/cards/agility/quickstep.tres" id="12"]
+[ext_resource type="Resource" path="res://resources/cards/magic/Descarga Arcana.tres" id="13"]
+[ext_resource type="Resource" path="res://resources/cards/magic/Marca de inestabilidad.tres" id="14"]
+[ext_resource type="Resource" path="res://resources/cards/magic/Prision Hielo.tres" id="15"]
+[ext_resource type="Resource" path="res://resources/cards/magic/Sobrecarga Mental.tres" id="16"]
+
+[resource]
+script = ExtResource("1")
+all_cards = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16")])
+starter_deck = Array[Resource]([ExtResource("7"), ExtResource("9"), ExtResource("12"), ExtResource("5"), ExtResource("8")])

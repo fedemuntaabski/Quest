@@ -20,10 +20,8 @@ class_name CardSystemController
 ## - bind_hud() connects CardManager signals to HUDController for hotbar updates
 ##
 ## CardLibrary Usage:
-## CardLibrary is the single source of truth for card data. It defines:
-## - all_cards: Array of all 21 card resources available in the game
-## - starter_deck: Default 5 cards the player starts with
-## - reward_pool: Cards eligible for random rewards
+## CardLibrary remains the curated fallback for starter-deck and reward-pool
+## loading when runtime discovery is not available.
 ## Location: res://resources/cards/card_library.tres
 ##
 ## Key Signals Connected:
@@ -45,9 +43,8 @@ func setup(p_player: PlayerMovement, p_map_manager: MapManager, p_card_library: 
 	_ensure_card_system()
 
 func _get_starter_deck() -> Array[CardData]:
-	# CardLibrary is the single source of truth for starter deck configuration.
-	# Located at: res://resources/cards/card_library.tres
-	# Starter deck: [sword_card, bow_card, fire_card, focus_card, cripple_card]
+	# CardLibrary provides the curated starter deck used when the scene does not
+	# inject an explicit library resource.
 	if card_library == null:
 		card_library = load("res://resources/cards/card_library.tres") as CardLibrary
 	if card_library:

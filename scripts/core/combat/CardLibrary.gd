@@ -10,6 +10,10 @@ func get_all_cards() -> Array[CardData]:
 func get_starter_deck() -> Array[CardData]:
 	return starter_deck
 
+func get_reward_cards() -> Array[CardData]:
+	# Reward discovery and curated library fallback share the same card pool.
+	return all_cards
+
 func get_cards_by_category(category: StringName) -> Array[CardData]:
 	var filtered: Array[CardData] = []
 	
