@@ -468,11 +468,13 @@ func _on_reward_exited(_selected_card: CardData) -> void:
 	_clear_reward_pending()
 
 func _on_reward_card_selected(selected_card: CardData) -> void:
-	if card_reward_manager == null:
-		return
-	card_reward_manager.apply_selected_reward(selected_card)
+	_apply_selected_reward(selected_card)
 
 func _on_reward_card_replace_selected(selected_card: CardData, slot_index: int) -> void:
+	_apply_selected_reward(selected_card, slot_index)
+
+## Applies the selected reward through the gameplay reward manager.
+func _apply_selected_reward(selected_card: CardData, slot_index: int = -1) -> void:
 	if card_reward_manager == null:
 		return
 	card_reward_manager.apply_selected_reward(selected_card, slot_index)
