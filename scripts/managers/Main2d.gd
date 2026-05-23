@@ -123,6 +123,13 @@ func _connect_player() -> void:
 		player_stats.player_died.connect(Callable(self, "_on_player_died"))
 
 func _connect_ui() -> void:
+	_connect_menu_ui()
+	_connect_reward_ui()
+	_connect_state_ui()
+	_connect_hud_card_system_binding()
+
+## Connects pause/victory overlay controls to the top-level scene flow.
+func _connect_menu_ui() -> void:
 	if retry_button and not retry_button.pressed.is_connected(Callable(self, "_on_retry_pressed")):
 		retry_button.pressed.connect(Callable(self, "_on_retry_pressed"))
 
@@ -140,6 +147,9 @@ func _connect_ui() -> void:
 	if pause_menu and not pause_menu.exit_requested.is_connected(Callable(self, "_on_pause_exit_requested")):
 		pause_menu.exit_requested.connect(Callable(self, "_on_pause_exit_requested"))
 
+
+## Bridges reward UI events from the HUD into Main2d orchestration.
+func _connect_reward_ui() -> void:
 	if hud and not hud.reward_card_selected.is_connected(Callable(self, "_on_reward_card_selected")):
 		hud.reward_card_selected.connect(Callable(self, "_on_reward_card_selected"))
 	if hud and not hud.reward_skipped.is_connected(Callable(self, "_on_reward_skipped")):
@@ -147,6 +157,9 @@ func _connect_ui() -> void:
 	if hud and not hud.reward_card_replace_selected.is_connected(Callable(self, "_on_reward_card_replace_selected")):
 		hud.reward_card_replace_selected.connect(Callable(self, "_on_reward_card_replace_selected"))
 
+
+## Connects state machine transitions that Main2d reacts to directly.
+func _connect_state_ui() -> void:
 	if game_state_manager and not game_state_manager.reward_entered.is_connected(Callable(self, "_on_reward_entered")):
 		game_state_manager.reward_entered.connect(Callable(self, "_on_reward_entered"))
 	if game_state_manager and not game_state_manager.reward_exited.is_connected(Callable(self, "_on_reward_exited")):
@@ -154,11 +167,15 @@ func _connect_ui() -> void:
 	if game_state_manager and not game_state_manager.victory_entered.is_connected(Callable(self, "_on_victory_entered")):
 		game_state_manager.victory_entered.connect(Callable(self, "_on_victory_entered"))
 
+
+## Defers HUD/card-system binding until both sides are in the tree.
+func _connect_hud_card_system_binding() -> void:
+
 	var player_node := map_manager.get_node_or_null("Player") as PlayerMovement
 	if player_node and hud:
-		var card_sys = player_node.action_controller.card_system_controller
-		if card_sys:
-			hud.hud_ready.connect(card_sys.bind_hud_external.bind(hud))
+		var action_controller := player_node.get_node_or_null("PlayerActionController") as PlayerActionController
+		if action_controller and action_controller.card_system_controller:
+			hud.hud_ready.connect(action_controller.card_system_controller.bind_hud_external.bind(hud))
 
 # ─────────────────────────────────────────────
 # TUTORIAL 

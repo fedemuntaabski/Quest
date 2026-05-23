@@ -151,7 +151,7 @@ func _create_card_button(card: CardData) -> Control:
 	category_label.text = "[%s]" % str(view.get("category", "")).to_upper()
 	category_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	category_label.add_theme_font_size_override("font_size", 11)
-	var category_color := _get_category_color(card.category)
+	var category_color := CardPresentationAdapter.get_category_color(card.category)
 	category_label.add_theme_color_override("font_color", category_color)
 	vbox.add_child(category_label)
 	
@@ -235,18 +235,6 @@ func _on_card_button_hover_exit(button: Control) -> void:
 		return
 	var normal_style := _build_card_style(NORMAL_COLOR)
 	button.add_theme_stylebox_override("panel", normal_style)
-
-func _get_category_color(category: String) -> Color:
-	match category:
-		"strength":
-			return Color(1.0, 0.6, 0.4, 1.0)  # Orange
-		"agility":
-			return Color(0.6, 1.0, 0.6, 1.0)  # Green
-		"magic":
-			return Color(0.8, 0.6, 1.0, 1.0)  # Purple
-		_:
-			return Color(0.8, 0.8, 0.8, 1.0)  # Gray
-
 
 func _show_replace_selection() -> void:
 	# Clear and transition to slot selection
