@@ -1,6 +1,8 @@
 extends CharacterBody2D
 class_name PlayerMovement
 
+# Owns the player's grid movement, step animation, and turn-facing movement state.
+
 # ─────────────────────────────────────────────
 # SIGNALS
 # ─────────────────────────────────────────────
@@ -26,6 +28,7 @@ var current_path: Array[Vector2i] = []
 var turn_manager: TurnManager
 var combat_component: CombatComponent
 var _is_dead: bool = false
+var turn_bridge: PlayerMovementTurnBridge
 
 # ─────────────────────────────────────────────
 # REFERENCES
@@ -47,6 +50,7 @@ func _ready() -> void:
 		map_manager.register_actor(self, grid_pos, true)
 
 	_ensure_combat_component()
+	_ensure_turn_bridge()
 
 	if action_controller:
 		action_controller.setup(self, map_manager)
@@ -59,6 +63,11 @@ func _ready() -> void:
 
 	_connect_game_state()
 
+func _ensure_turn_bridge() -> void:
+	if turn_bridge == null:
+		turn_bridge = PlayerMovementTurnBridge.new()
+	turn_bridge.setup(self, map_manager)
+
 func _connect_game_state() -> void:
 	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
 	if gsm == null:
@@ -68,8 +77,8 @@ func _connect_game_state() -> void:
 		gsm.state_changed.connect(_on_game_state_changed)
 
 func _on_game_state_changed(new_state: int, _old_state: int) -> void:
-	if new_state != GameStateManager.State.ACTIVE:
-		cancel_movement()
+	if turn_bridge:
+		turn_bridge.on_game_state_changed(new_state, _old_state)
 
 func _ensure_combat_component() -> void:
 	var comp := get_node_or_null("CombatComponent") as CombatComponent
@@ -92,33 +101,7 @@ func get_combat_component() -> CombatComponent:
 # PUBLIC API (llamado por TurnManager)
 # ─────────────────────────────────────────────
 func request_move(dir: Vector2i) -> bool:
-	if not can_accept_input():
-		return false
-
-	if is_moving_step:
-		return false
-
-	if map_manager == null:
-		return false
-
-	var next := grid_pos + dir
-
-	var walkable := map_manager.is_walkable_cell_for_actor(next, self)
-
-	if not walkable:
-		return false
-
-	if turn_manager == null or turn_manager.action_queue == null:
-		return false
-
-	var snapshot: Dictionary = {}
-	if map_manager and map_manager.occupancy_manager:
-		snapshot["occ_version"] = map_manager.occupancy_manager.get_version()
-	snapshot["owner_cell"] = grid_pos
-	snapshot["target_cell"] = next
-	var action: BaseAction = MoveAction.new(self, map_manager, next, false, snapshot)
-	turn_manager.action_queue.queue_action(action)
-	return true
+	return turn_bridge.request_move(dir) if turn_bridge else false
 
 # ─────────────────────────────────────────────
 func _start_move_to(next: Vector2i) -> void:
@@ -207,17 +190,8 @@ func cancel_movement() -> void:
 	current_path.clear()
 
 func begin_turn(tm: TurnManager) -> void:
-	turn_manager = tm
-	sync_to_grid()
-	if stats and stats.is_alive():
-		stats.process_runtime_modifiers_turn_start()
-		var status_result := StatusRuntime.process_turn_start(self, stats)
-		if status_result.get("can_act", true) != true:
-			if turn_manager and turn_manager.action_queue:
-				turn_manager.action_queue.queue_action(WaitAction.new(self, null))
-			return
-	if action_controller and action_controller.has_method("on_player_turn_started"):
-		action_controller.on_player_turn_started()
+	if turn_bridge:
+		turn_bridge.begin_turn(tm)
 
 func turn_interrupted() -> void:
 	# Clear any pending movement when turn is interrupted (e.g., on death)
@@ -230,14 +204,7 @@ func is_turn_active() -> bool:
 	return turn_manager.current_actor == self
 
 func can_accept_input() -> bool:
-	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
-	if gsm and not gsm.is_active():
-		return false
-	if not is_turn_active():
-		return false
-	if turn_manager and turn_manager.action_queue and turn_manager.action_queue.is_busy():
-		return false
-	return true
+	return turn_bridge.can_accept_input() if turn_bridge else false
 
 func begin_step_move(next: Vector2i) -> void:
 	_start_move_to(next)

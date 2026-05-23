@@ -1,12 +1,15 @@
 extends BaseAction
 class_name MoveAction
 
+# Queued move action that validates a target cell and executes the shared step contract.
+
 var map_manager: MapManager = null
 var target_cell: Vector2i = Vector2i.ZERO
 var use_pathfinding: bool = true
 var tween_pause_mode: bool = true
 var validation_reason: String = ""
 var validation_snapshot: Dictionary = {}
+
 
 func _init(
 	p_owner: Node = null,
@@ -37,6 +40,7 @@ func can_execute() -> bool:
 	return true
 
 func execute() -> void:
+	# Preserve the current move semantics: validate the path, then execute one step.
 	if not can_execute():
 		finish()
 		return
@@ -53,16 +57,9 @@ func execute() -> void:
 		finish()
 		return
 
-	if not owner.has_method("begin_step_move") or not owner.has_method("wait_for_step"):
+	if not await MovementStepService.move_actor_one_step(owner, next_cell, map_manager):
 		finish()
 		return
-
-	owner.begin_step_move(next_cell)
-	await owner.wait_for_step()
-	if map_manager:
-		map_manager.update_actor_cell(owner, next_cell)
-	if owner.has_method("update_room_state_from_grid"):
-		owner.update_room_state_from_grid()
 	finish()
 
 func get_execution_state_token() -> Dictionary:

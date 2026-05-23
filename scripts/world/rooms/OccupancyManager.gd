@@ -32,7 +32,7 @@ func unregister_actor(actor: Node) -> void:
 		if arr != null:
 			if arr is Array:
 				arr.erase(actor)
-				if arr.empty():
+				if arr.is_empty():
 					_cell_to_actor.erase(old_cell)
 				else:
 					_cell_to_actor[old_cell] = arr
@@ -98,7 +98,7 @@ func _update_actor_cell(actor: Node, grid_pos: Vector2i, allow_multi: bool = fal
 		if prev != null:
 			if prev is Array:
 				prev.erase(actor)
-				if prev.empty():
+				if prev.is_empty():
 					_cell_to_actor.erase(old_cell)
 				else:
 					_cell_to_actor[old_cell] = prev

@@ -5,6 +5,8 @@ class_name EffectApplier
 # This class centralizes MapManager/StatusRuntime usage so CombatCardSystem
 # no longer directly manipulates map or status metadata.
 
+
+
 func apply(result: Dictionary, target_component: CombatComponent, context: EffectContext) -> void:
 	print("[EffectApplier] apply: START result=%s, target=%s" % [result, target_component.actor_owner.name if target_component and target_component.actor_owner else "NULL"])
 	if result == null:
@@ -70,6 +72,7 @@ func apply(result: Dictionary, target_component: CombatComponent, context: Effec
 	print("[EffectApplier] apply: COMPLETE")
 
 func _apply_movement_effect(move_data: Dictionary, target_component: CombatComponent, owner_actor: Node, map_manager: Node, context: EffectContext) -> bool:
+	# Movement effects share the same one-step actor contract as queued move actions.
 	if map_manager == null:
 		return false
 
@@ -99,9 +102,8 @@ func _apply_movement_effect(move_data: Dictionary, target_component: CombatCompo
 		if context != null:
 			context.register_rollback(Callable(self, "_rb_set_actor_pos"), [receiver, from_cell, map_manager])
 
-		receiver.begin_step_move(next_cell)
-		await receiver.wait_for_step()
-		map_manager.update_actor_cell(receiver, next_cell)
+		if not await MovementStepService.move_actor_one_step(receiver, next_cell, map_manager):
+			return false
 
 	return true
 

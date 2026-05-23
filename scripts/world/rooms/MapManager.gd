@@ -78,6 +78,18 @@ func _ensure_helpers() -> void:
 		add_child(core)
 		core.setup(self)
 
+func get_occupancy_manager() -> OccupancyManager:
+	# Preferred accessor for external callers. Uses core if present, otherwise direct field.
+	if core != null and core.has_method("_occupancy"):
+		return core._occupancy()
+	return occupancy_manager
+
+func get_occupancy_version() -> int:
+	var occ := get_occupancy_manager()
+	if occ != null and occ.has_method("get_version"):
+		return occ.get_version()
+	return -1
+
 
 # ── Hover ─────────────────────────────────────────────────────────────────────
 func update_hover(world_pos: Vector2) -> void:
