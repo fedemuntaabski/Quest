@@ -36,29 +36,6 @@ static func create_display_data_from_payload_entry(payload: Variant) -> CardDisp
 			return create_display_data(card_data, payload_dict)
 	return null
 
-## Create display data for multiple cards at once
-static func create_batch(
-	cards: Array[CardData],
-	runtime_states: Dictionary = {}  # key: card.resource_path, value: state dict
-) -> Array[CardDisplayData]:
-	"""
-	Create display data for multiple cards efficiently.
-	
-	Args:
-		cards: Array of CardData resources
-		runtime_states: Map of card resource paths to runtime state dicts
-	
-	Returns:
-		Array of CardDisplayData objects
-	"""
-	var results: Array[CardDisplayData] = []
-	for card in cards:
-		if card == null:
-			continue
-		var state = runtime_states.get(card.resource_path, {})
-		results.append(create_display_data(card, state))
-	return results
-
 ## --- Formatting Helper Methods ---
 ## These are used by UI consumers to format display data consistently
 
@@ -145,18 +122,3 @@ static func get_effects_summary(card: Resource) -> String:
 
 	return ", ".join(effects_texts)
 
-## --- Migration Helper ---
-## Use this during transition from dictionary payloads to typed data
-
-static func normalize_payload(payload: Variant) -> CardDisplayData:
-	"""
-	Normalize any payload format (dict or CardDisplayData) into typed data.
-	Useful during migration when some parts use dicts and others use typed data.
-	"""
-	if payload is CardDisplayData:
-		return payload as CardDisplayData
-	elif payload is Dictionary:
-		return CardDisplayData.from_dictionary(payload as Dictionary)
-	else:
-		push_error("[CardPresentationAdapter] Cannot normalize payload of type %s" % typeof(payload))
-		return CardDisplayData.new()

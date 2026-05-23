@@ -54,7 +54,7 @@ func _ready() -> void:
 		_bind_player_stats(ps)
 	
 	# Signal that HUD is fully initialized and ready for card system binding
-	call_deferred("_emit_hud_ready")
+	call_deferred("emit_signal", "hud_ready")
 
 func _setup_hotbar() -> void:
 	if hotbar_bar == null:
@@ -126,10 +126,6 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 			stats.hp_changed.connect(_on_hp_changed)
 		if _potion_controller and _potion_controller.has_method("bind_stats"):
 			_potion_controller.bind_stats(stats)
-
-	_on_stats_changed(stats)
-
-func _on_stats_changed(stats: CharacterStats) -> void:
 	stat_panel.update_stats(stats)
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
@@ -304,7 +300,3 @@ func show_reward_selection(cards: Array, requires_replace: bool = false, equippe
 func hide_reward_selection() -> void:
 	if card_reward_ui:
 		card_reward_ui.hide_reward()
-
-
-func _emit_hud_ready() -> void:
-	hud_ready.emit()

@@ -22,21 +22,18 @@ func bind_stats(stats: CharacterStats) -> void:
 	if _bound_stats:
 		if _bound_stats.hp_changed.is_connected(_on_hp_changed):
 			_bound_stats.hp_changed.disconnect(_on_hp_changed)
-		if _bound_stats.stats_changed.is_connected(_on_stats_changed):
-			_bound_stats.stats_changed.disconnect(_on_stats_changed)
+		if _bound_stats.stats_changed.is_connected(refresh):
+			_bound_stats.stats_changed.disconnect(refresh)
 	
 	_bound_stats = stats
 	if _bound_stats:
 		if not _bound_stats.hp_changed.is_connected(_on_hp_changed):
 			_bound_stats.hp_changed.connect(_on_hp_changed)
-		if not _bound_stats.stats_changed.is_connected(_on_stats_changed):
-			_bound_stats.stats_changed.connect(_on_stats_changed)
+		if not _bound_stats.stats_changed.is_connected(refresh):
+			_bound_stats.stats_changed.connect(refresh)
 	refresh()
 
 func _on_hp_changed(_current: int, _max: int) -> void:
-	refresh()
-
-func _on_stats_changed() -> void:
 	refresh()
 
 func _bind_game_state() -> void:
