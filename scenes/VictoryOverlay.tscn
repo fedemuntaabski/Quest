@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://uipe5cbrkn5j"]
 
-[ext_resource type="Script" uid="uid://q2o7vsbcvo8o" path="res://scripts/ui/overlays/VictoryOverlay.gd" id="1_victory_script"]
+[ext_resource type="Script" uid="uid://c0bvq7jxdbux7" path="res://scripts/ui/overlays/VictoryOverlay.gd" id="1_victory_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_victory_left"]
 bg_color = Color(0.08, 0.08, 0.1, 0.96)
