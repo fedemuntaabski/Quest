@@ -364,7 +364,6 @@ func _on_reward_completed(selected_card: CardData) -> void:
 	# Close the reward state and refresh the hotbar through the current card system.
 	if game_state_manager:
 		game_state_manager.close_reward(selected_card)
-	_update_hotbar_display()
 
 func _get_run_gold_earned() -> int:
 	# Computes the gold earned during this run without mutating currency state.
@@ -431,19 +430,6 @@ func _on_tutorial_finished() -> void:
 
 func _get_game_state_manager() -> GameStateManager:
 	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
-
-func _update_hotbar_display() -> void:
-	if map_manager:
-		var player := map_manager.get_node_or_null("Player") as PlayerMovement
-		if player:
-			var controller := player.get_node_or_null("PlayerActionController") as PlayerActionController
-			if controller == null:
-				return
-
-			# Refresh through the actual CardSystemController location:
-			# Player -> PlayerActionController -> CardSystemController
-			if controller.card_system_controller and controller.card_system_controller.has_method("update_hotbar_ui"):
-				controller.card_system_controller.update_hotbar_ui()
 
 func _on_reward_entered(cards: Array) -> void:
 	if hud:

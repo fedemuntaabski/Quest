@@ -61,22 +61,12 @@ func show_reward(cards: Array, requires_replace: bool = false, equipped_slots: A
 	_is_active = true
 	title_label.text = "Choose a Card Reward" if not requires_replace else "Choose a Card (then replace a slot)"
 	
-	# Entrance animation
-	if panel:
-		var tw = create_tween()
-		tw.tween_property(panel, "modulate:a", 1.0, 0.18)
-		tw.tween_property(panel, "scale", Vector2(1, 1), 0.15)
+	_play_show_animation()
 
 func hide_reward() -> void:
 	if not visible:
 		return
-	# Exit animation, then finalize hide
-	if panel:
-		var tw = create_tween()
-		tw.tween_property(panel, "modulate:a", 0.0, 0.12)
-		tw.tween_callback(func(): _finalize_hide())
-	else:
-		_finalize_hide()
+	_play_hide_animation()
 
 func _finalize_hide() -> void:
 	visible = false
@@ -226,8 +216,7 @@ func _on_card_selected(card: CardData, button: Control = null) -> void:
 	# If replacement is required, RewardFlowState transitions to SLOT_PENDING and
 	# this UI switches into its slot-selection presentation path.
 	if _flow_state.is_awaiting_slot_selection():
-		await get_tree().create_timer(0.15).timeout
-		_show_replace_selection()
+		_queue_replace_selection()
 	elif _flow_state.is_complete():
 		# Direct completion (no replacement needed)
 		hide_reward()
@@ -273,6 +262,28 @@ func _show_replace_selection() -> void:
 		tw.tween_property(panel, "modulate:a", 1.0, 0.1)
 	else:
 		_refresh_slot_selection()
+
+## Plays the entrance animation for the reward panel.
+func _play_show_animation() -> void:
+	if panel == null:
+		return
+	var tw = create_tween()
+	tw.tween_property(panel, "modulate:a", 1.0, 0.18)
+	tw.tween_property(panel, "scale", Vector2(1, 1), 0.15)
+
+## Plays the exit animation and finalizes visibility once it completes.
+func _play_hide_animation() -> void:
+	if panel == null:
+		_finalize_hide()
+		return
+	var tw = create_tween()
+	tw.tween_property(panel, "modulate:a", 0.0, 0.12)
+	tw.tween_callback(func(): _finalize_hide())
+
+## Defers the slot-selection swap so the reward panel can settle before the next UI state.
+func _queue_replace_selection() -> void:
+	await get_tree().create_timer(0.15).timeout
+	_show_replace_selection()
 
 func _refresh_slot_selection() -> void:
 	title_label.text = "Hotbar Full - Select Slot to Replace"

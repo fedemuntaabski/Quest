@@ -148,26 +148,33 @@ func update_enemies_remaining(count: int) -> void:
 		enemies_label.text = "Enemies: %d" % count
 
 func update_hotbar(cards_payload: Array, active_index: int) -> void:
-	if not hotbar_slots.is_empty():
-		for i in range(hotbar_slots.size()):
-			var slot: HotbarSlot = hotbar_slots[i]
-			if i < cards_payload.size():
-				var display_data: CardDisplayData = CardPresentationAdapter.create_display_data_from_payload_entry(cards_payload[i])
-				if display_data != null:
-					slot.set_card(display_data)
-				else:
-					slot.set_card(null)
-			else:
-				slot.set_card(null)
+	_refresh_hotbar_slots(cards_payload, active_index)
+	_refresh_card_panel(cards_payload)
 
-			slot.set_selected(i == active_index)
-	
-	# Also update the Cards panel if present
-	if card_panel:
-		var display_data_array: Array[CardDisplayData] = []
-		for card_entry in cards_payload:
-			display_data_array.append(CardPresentationAdapter.create_display_data_from_payload_entry(card_entry))
-		card_panel.refresh(display_data_array)
+## Updates the visible hotbar slots from the authoritative card payload.
+func _refresh_hotbar_slots(cards_payload: Array, active_index: int) -> void:
+	if hotbar_slots.is_empty():
+		return
+
+	for i in range(hotbar_slots.size()):
+		var slot: HotbarSlot = hotbar_slots[i]
+		if i < cards_payload.size():
+			var display_data: CardDisplayData = CardPresentationAdapter.create_display_data_from_payload_entry(cards_payload[i])
+			slot.set_card(display_data)
+		else:
+			slot.set_card(null)
+
+		slot.set_selected(i == active_index)
+
+## Mirrors the same payload into the detailed card panel when that view is present.
+func _refresh_card_panel(cards_payload: Array) -> void:
+	if card_panel == null:
+		return
+
+	var display_data_array: Array[CardDisplayData] = []
+	for card_entry in cards_payload:
+		display_data_array.append(CardPresentationAdapter.create_display_data_from_payload_entry(card_entry))
+	card_panel.refresh(display_data_array)
 
 func show_card_tooltip(data: CardDisplayData) -> void:
 	# Delegate tooltip presentation (debounce + show) to CardTooltip to clarify ownership
