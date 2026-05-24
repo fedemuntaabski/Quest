@@ -70,7 +70,12 @@ func _compute_card_validation(card: CardData, target: Node) -> Dictionary:
 
 	result["valid"] = true
 	result["reason"] = "ok"
-	result["distance"] = _get_card_distance(card, target)
+	var owner_cell : Variant = CardTargeting.get_actor_cell(owner_actor, map_manager)
+	var target_cell : Variant = CardTargeting.get_actor_cell(target, map_manager)
+	if owner_cell == null or target_cell == null:
+		result["distance"] = -1
+	else:
+		result["distance"] = CardTargeting.get_chebyshev_distance(owner_cell, target_cell)
 	return result
 
 
@@ -83,18 +88,6 @@ func get_card_validation(card: CardData, target: Node) -> Dictionary:
 
 func can_play(card: CardData, target: Node) -> bool:
 	return bool(get_card_validation(card, target).get("valid", false))
-
-
-func _get_card_distance(card: CardData, target: Node) -> int:
-	# Returns distance from owner to target (Chebyshev distance)
-	if card == null or target == null or owner_actor == null:
-		return -1
-	var owner_cell : Variant = CardTargeting.get_actor_cell(owner_actor, map_manager)
-	var target_cell : Variant = CardTargeting.get_actor_cell(target, map_manager)
-	if owner_cell == null or target_cell == null:
-		return -1
-	return CardTargeting.get_chebyshev_distance(owner_cell, target_cell)
-
 
 func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) -> bool:
 	if card == null:
@@ -185,8 +178,6 @@ func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 		var reason := str(validation.get("reason", "invalid"))
 		card_failed.emit(card, reason)
 		return {"hit": false, "damage": 0, "reason": reason}
-
-	var distance := int(validation.get("distance", -1))
 	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
 	return await _finalize_card_execution(card, target, target_component, result, int(snapshot.get("occ_version", -1)))
 

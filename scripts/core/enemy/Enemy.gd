@@ -107,9 +107,6 @@ func _ensure_status_component() -> void:
 		status_comp = StatusComponent.new()
 		status_comp.name = "StatusComponent"
 		add_child(status_comp)
-	
-	if stats != null:
-		status_comp.setup(stats)
 
 func configure_profile(max_hp: int, base_damage: int, dex: int = 0, base_tint: Color = Color(0.7, 0.3, 0.9, 1.0), target_tint: Color = Color(1.0, 0.7, 1.0, 1.0)) -> void:
 	# Public helper to customize enemy stats and visuals (used for special enemy types)

@@ -22,6 +22,9 @@ static func validate_target(source_component: CombatComponent, target: Node, map
 		result["reason"] = "missing_target_stats"
 		return result
 
+	var source_cell: Variant = CardTargeting.get_actor_cell(source_component.actor_owner, map_manager)
+	var target_cell: Variant = CardTargeting.get_actor_cell(target_component.actor_owner, map_manager)
+
 	if not source_component.stats.is_alive():
 		result["reason"] = "source_dead"
 		return result
@@ -39,8 +42,6 @@ static func validate_target(source_component: CombatComponent, target: Node, map
 		return result
 
 	if check_range and range_limit >= 0:
-		var source_cell: Variant = CardTargeting.get_actor_cell(source_component.actor_owner, map_manager)
-		var target_cell: Variant = CardTargeting.get_actor_cell(target_component.actor_owner, map_manager)
 		if source_cell == null or target_cell == null:
 			result["reason"] = "out_of_range"
 			result["distance"] = -1
@@ -55,11 +56,10 @@ static func validate_target(source_component: CombatComponent, target: Node, map
 	result["valid"] = true
 	result["reason"] = "ok"
 	result["target_component"] = target_component
-	result["distance"] = CardTargeting.get_chebyshev_distance(
-		CardTargeting.get_actor_cell(source_component.actor_owner, map_manager),
-		CardTargeting.get_actor_cell(target_component.actor_owner, map_manager)
-
-	)
+	if source_cell == null or target_cell == null:
+		result["distance"] = -1
+	else:
+		result["distance"] = CardTargeting.get_chebyshev_distance(source_cell, target_cell)
 	return result
 
 static func resolve_target_component(target: Node) -> CombatComponent:

@@ -17,9 +17,11 @@ static func decide(enemy: Enemy) -> Dictionary:
 
 	if enemy.stats and enemy.stats.is_alive():
 		enemy.stats.process_runtime_modifiers_turn_start()
-		var status_result := StatusRuntime.process_turn_start(enemy, enemy.stats)
-		if status_result.get("can_act", true) != true:
-			return {"decision": Decision.WAIT}
+		var status_component := enemy.get_node_or_null("StatusComponent") as StatusComponent
+		if status_component != null:
+			var status_result := status_component.process_turn_start(enemy, enemy.stats)
+			if status_result.get("can_act", true) != true:
+				return {"decision": Decision.WAIT}
 
 	if enemy.map_manager == null or enemy.player == null:
 		return {"decision": Decision.WAIT}

@@ -2,7 +2,6 @@ extends Node
 class_name TurnManager
 
 const PRELOAD_ACTION_QUEUE = preload("res://scripts/core/actions/ActionQueue.gd")
-const PRELOAD_BASE_ACTION = preload("res://scripts/core/actions/BaseAction.gd")
 
 var actors: Array = []
 var pending_actors: int = 0

@@ -58,5 +58,6 @@ static func refresh_status_indicator(host: Node) -> void:
 		return
 	if not indicator.has_method("refresh_statuses"):
 		return
-	var statuses := StatusRuntime.get_statuses(host)
+	var status_component := host.get_node_or_null("StatusComponent") as StatusComponent
+	var statuses := status_component.get_active_statuses() if status_component else {}
 	indicator.refresh_statuses(statuses)

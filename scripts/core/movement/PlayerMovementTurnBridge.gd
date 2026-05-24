@@ -65,11 +65,13 @@ func begin_turn(tm: TurnManager) -> void:
 
 	if player.stats and player.stats.is_alive():
 		player.stats.process_runtime_modifiers_turn_start()
-		var status_result := StatusRuntime.process_turn_start(player, player.stats)
-		if status_result.get("can_act", true) != true:
-			if player.turn_manager and player.turn_manager.action_queue:
-				player.turn_manager.action_queue.queue_action(PRELOAD_WAIT_ACTION.new(player, null))
-			return
+		var status_component := player.get_node_or_null("StatusComponent") as StatusComponent
+		if status_component != null:
+			var status_result := status_component.process_turn_start(player, player.stats)
+			if status_result.get("can_act", true) != true:
+				if player.turn_manager and player.turn_manager.action_queue:
+					player.turn_manager.action_queue.queue_action(PRELOAD_WAIT_ACTION.new(player, null))
+				return
 
 	if player.action_controller and player.action_controller.has_method("on_player_turn_started"):
 		player.action_controller.on_player_turn_started()

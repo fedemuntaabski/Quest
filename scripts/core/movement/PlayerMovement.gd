@@ -256,7 +256,8 @@ func on_status_changed() -> void:
 		return
 	if not indicator.has_method("refresh_statuses"):
 		return
-	var statuses := StatusRuntime.get_statuses(self)
+	var status_component := get_node_or_null("StatusComponent") as StatusComponent
+	var statuses := status_component.get_active_statuses() if status_component else {}
 	indicator.refresh_statuses(statuses)
 
 func wait_for_step() -> void:

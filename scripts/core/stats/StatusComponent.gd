@@ -7,18 +7,6 @@ class_name StatusComponent
 signal statuses_changed(statuses: Dictionary)
 
 var statuses: Dictionary = {} # status_id -> {stacks, turns_remaining, damage_on_tick}
-var owner_stats: CharacterStats
-
-func _ready() -> void:
-	var parent_node := get_parent()
-
-	if parent_node == null:
-		return
-
-	owner_stats = parent_node.get_node_or_null("Stats") as CharacterStats
-
-func setup(stats: CharacterStats) -> void:
-	owner_stats = stats
 
 func apply_status(
 	status_id: String,

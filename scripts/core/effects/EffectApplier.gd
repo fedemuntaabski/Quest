@@ -2,7 +2,7 @@ extends Node
 class_name EffectApplier
 
 # Applies runtime effects (movement, status) using a provided EffectContext.
-# This class centralizes MapManager/StatusRuntime usage so CombatCardSystem
+# This class centralizes MapManager and status application so CombatCardSystem
 # no longer directly manipulates map or status metadata.
 # The shared movement step contract lives in MovementStepService.
 
@@ -123,7 +123,20 @@ func _apply_status_effect(status_data: Dictionary, target_component: CombatCompo
 	var prev_comp := status_component.statuses.duplicate(true)
 	context.register_rollback(Callable(self, "_rb_restore_status_component"), [status_component, prev_comp])
 
-	StatusRuntime.apply_status(receiver_actor, receiver_component.stats, status_data)
+	var status_id := str(status_data.get("status_id", "")).to_lower()
+	if status_id.is_empty():
+		return false
+
+	var duration: int = max(1, int(status_data.get("duration", 1)))
+	var stacks: int = max(1, int(status_data.get("stacks", 1)))
+	var magnitude: int = max(1, int(status_data.get("magnitude", 1)))
+	var damage_on_tick: int = 0
+
+	match status_id:
+		"poison", "burn":
+			damage_on_tick = stacks * magnitude
+
+	status_component.apply_status(status_id, stacks, duration, damage_on_tick)
 
 	return true
 func _rb_set_actor_pos(actor: Node, grid_pos: Vector2i, map_manager: Node) -> void:
