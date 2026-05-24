@@ -9,7 +9,6 @@ class_name CardManager
 signal equipped_changed
 signal active_index_changed(index: int)
 signal cooldowns_changed
-signal ui_state_changed(cards_payload: Array, active_index: int)
 
 const CardData = preload("res://scripts/core/cards/CardData.gd")
 

@@ -9,7 +9,7 @@ class_name CardSystemController
 ## Responsibilities:
 ## 1. Creates and initializes CardManager (manages player deck state: equipped, cooldowns, etc.)
 ## 2. Creates and initializes CombatCardSystem (handles card play, validation, execution)
-## 3. Binds CardManager to HUDController for UI state updates
+## 3. Binds HUDController for hotbar input and direct UI refresh
 ## 4. Coordinates cooldown ticking and hotbar UI refresh
 ##
 ## Initialization Flow:
@@ -17,7 +17,7 @@ class_name CardSystemController
 ## - CardSystemController.setup(player, map_manager, card_library) is called
 ## - _ensure_card_system() creates CardManager and CombatCardSystem as Player children
 ## - _get_starter_deck() loads the curated starter deck from CardLibrary when needed
-## - bind_hud() connects CardManager signals to HUDController for hotbar updates
+## - bind_hud() connects HUD input and stores the HUD reference for refreshes
 ##
 ## CardLibrary Usage:
 ## CardLibrary remains the curated fallback for starter-deck and reward-pool
@@ -35,6 +35,7 @@ var map_manager: MapManager = null
 var card_library: CardLibrary = null
 var card_manager: CardManager = null
 var combat_card_system: CombatCardSystem = null	
+var _bound_hud: HUDController = null
 
 func setup(p_player: PlayerMovement, p_map_manager: MapManager, p_card_library: CardLibrary = null) -> void:
 	player = p_player
@@ -91,11 +92,10 @@ func tick_cooldowns() -> void:
 func bind_hud_external(hud: HUDController) -> void:
 	if hud == null or card_manager == null:
 		return
+	_bound_hud = hud
 	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
 	if game_state_manager and not game_state_manager.state_changed.is_connected(Callable(self, "_on_game_state_changed")):
 		game_state_manager.state_changed.connect(Callable(self, "_on_game_state_changed"))
-	
-	hud.bind_card_manager(card_manager)
 	
 	# Connect HUD hotbar presses to controller
 	var hotbar_cb := Callable(self, "on_hotbar_slot_pressed")
@@ -185,7 +185,8 @@ func update_hotbar_ui() -> void:
 			entry["playability_reason_readable"] = readable_reason
 			payload[i] = entry
 
-		card_manager.ui_state_changed.emit(payload, card_manager.active_index)
+		if _bound_hud:
+			_bound_hud.update_hotbar(payload, card_manager.active_index)
 
 func clear_targeting_state() -> void:
 	print("[CardSystemController] clear_targeting_state()")

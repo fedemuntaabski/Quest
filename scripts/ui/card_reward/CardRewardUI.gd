@@ -81,7 +81,7 @@ func _create_card_buttons() -> void:
 	for card in _reward_cards:
 		if card == null:
 			continue
-		var card_button := _create_card_button(card)
+		var card_button := _create_card_button()
 		if card_button == null:
 			continue
 		cards_container.add_child(card_button)
@@ -97,7 +97,7 @@ func _add_skip_button() -> void:
 	else:
 		cards_container.add_child(skip_button)
 
-func _create_card_button(_card: CardData) -> RewardCardOption:
+func _create_card_button() -> RewardCardOption:
 	var option := RewardCardOptionScene.instantiate() as RewardCardOption
 	if option == null:
 		return null
@@ -205,7 +205,7 @@ func _refresh_slot_selection() -> void:
 		# Icon with background
 		var icon_bg := PanelContainer.new()
 		icon_bg.custom_minimum_size = Vector2(48, 48)
-		icon_bg.add_theme_stylebox_override("panel", _build_slot_icon_style())
+		icon_bg.add_theme_stylebox_override("panel", ThemeManager.build_slot_icon_style())
 		var icon := TextureRect.new()
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -241,9 +241,6 @@ func _refresh_slot_selection() -> void:
 		cards_container.add_child(h)
 	
 	_add_skip_button()
-
-func _build_slot_icon_style() -> StyleBoxFlat:
-	return ThemeManager.build_slot_icon_style()
 
 func _on_replace_slot_selected(slot_index: int) -> void:
 	if not _is_active:

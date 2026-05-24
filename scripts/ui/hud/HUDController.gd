@@ -29,7 +29,6 @@ signal hud_ready  # warning-ignore:unused_signal # Emitted after full HUD initia
 @onready var enemies_label: Label = get_node_or_null("Control/EnemiesLabel") as Label
 
 var hotbar_slots: Array = []
-var _bound_card_manager: CardManager = null
 var _roll_label_tween: Tween = null
 var _potion_controller: PotionController = null
 var _bound_stats: CharacterStats = null
@@ -163,9 +162,6 @@ func hide_card_tooltip() -> void:
 	card_tooltip.request_hide()
 
 func show_combat_result(result: Dictionary) -> void:
-	set_roll_label_from_result(result)
-
-func set_roll_label_from_result(result: Dictionary) -> void:
 	if roll_label == null:
 		return
 	if result == null or result.is_empty():
@@ -243,24 +239,5 @@ func show_simple_tooltip(text: String, global_pos = null) -> void:
 func hide_simple_tooltip() -> void:
 	if stat_tooltip:
 		stat_tooltip.visible = false
-
-## Card Manager Binding
-## Establishes the connection between CardManager and UI to receive card state updates
-
-func bind_card_manager(manager: CardManager) -> void:
-	if manager == null:
-		return
-	if _bound_card_manager != null:
-		if _bound_card_manager.ui_state_changed.is_connected(_on_card_ui_state_changed):
-			_bound_card_manager.ui_state_changed.disconnect(_on_card_ui_state_changed)
-	
-	_bound_card_manager = manager
-	if not _bound_card_manager.ui_state_changed.is_connected(_on_card_ui_state_changed):
-		_bound_card_manager.ui_state_changed.connect(_on_card_ui_state_changed)
-	
-	_on_card_ui_state_changed(_bound_card_manager.get_equipped_payload(), _bound_card_manager.active_index)
-
-func _on_card_ui_state_changed(cards_payload: Array, active_index: int) -> void:
-	update_hotbar(cards_payload, active_index)
 
 ## Opens the reward overlay and leaves workflow details to CardRewardUI.
