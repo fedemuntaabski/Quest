@@ -275,6 +275,3 @@ func show_miss() -> void:
 
 func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 	EnemyPresentationHelper.spawn_floating_text(self, text, color, crit)
-
-func on_status_changed() -> void:
-	EnemyPresentationHelper.refresh_status_indicator(self)

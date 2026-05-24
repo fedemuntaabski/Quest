@@ -53,7 +53,7 @@ func tick_turn_start() -> Dictionary:
 
 		# Tick damage
 		if int(status.get("damage_on_tick", 0)) > 0:
-			effects["damage_events"] = int(effects.get("damage", 0)) + int(status["damage_on_tick"])
+			effects["damage"] = int(effects.get("damage", 0)) + int(status["damage_on_tick"])
 
 		# Duration decay
 		status["turns_remaining"] -= 1

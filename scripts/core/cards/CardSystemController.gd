@@ -268,9 +268,4 @@ func _resolve_enemy_manager():
 		if em != null:
 			return em
 
-	# Legacy fallback: reach into map_manager.core._enemy_manager() only if necessary
-	var core_val = map_manager.get("core")
-	if core_val != null and core_val.has_method("_enemy_manager"):
-		return core_val._enemy_manager()
-
 	return null

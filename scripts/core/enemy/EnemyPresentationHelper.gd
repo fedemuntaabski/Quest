@@ -49,15 +49,3 @@ static func show_damage_feedback(host: Node2D, amount: int, crit: bool = false) 
 static func show_miss_feedback(host: Node2D) -> void:
 	var palette := ThemeManager.get_combat_feedback_palette()
 	spawn_floating_text(host, "MISS", palette["miss_text"], false)
-
-static func refresh_status_indicator(host: Node) -> void:
-	if host == null:
-		return
-	var indicator := host.get_node_or_null("StatusIndicator")
-	if indicator == null:
-		return
-	if not indicator.has_method("refresh_statuses"):
-		return
-	var status_component := host.get_node_or_null("StatusComponent") as StatusComponent
-	var statuses := status_component.get_active_statuses() if status_component else {}
-	indicator.refresh_statuses(statuses)

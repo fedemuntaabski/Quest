@@ -32,9 +32,6 @@ static func get_currency_manager() -> Node:
 static func get_player_stats() -> Node:
     return _find_child_by_name("PlayerStats")
 
-static func get_theme_manager() -> Node:
-    return _find_child_by_name("ThemeManager")
-
 static func get_floating_text_manager() -> Node:
     var ml = Engine.get_main_loop()
     if not (ml and ml is SceneTree):
@@ -57,12 +54,6 @@ static func get_floating_text_manager() -> Node:
     mgr.name = "FloatingTextManager"
     parent.add_child(mgr)
     return mgr
-
-static func get_game_state_manager() -> Node:
-    var ml = Engine.get_main_loop()
-    if ml and ml is SceneTree:
-        return ml.get_first_node_in_group("game_state_manager")
-    return null
 
 static func flush_saves() -> void:
     var currency := get_currency_manager()

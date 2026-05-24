@@ -250,16 +250,6 @@ func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 		push_warning("FloatingTextManager not present - skipping floating text: %s" % text)
 		return
 
-func on_status_changed() -> void:
-	var indicator := get_node_or_null("StatusIndicator")
-	if indicator == null:
-		return
-	if not indicator.has_method("refresh_statuses"):
-		return
-	var status_component := get_node_or_null("StatusComponent") as StatusComponent
-	var statuses := status_component.get_active_statuses() if status_component else {}
-	indicator.refresh_statuses(statuses)
-
 func wait_for_step() -> void:
 	while is_moving_step:
 		# Use a shorter timeout approach to prevent infinite hang

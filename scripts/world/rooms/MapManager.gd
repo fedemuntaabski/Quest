@@ -95,6 +95,9 @@ func get_occupancy_manager() -> OccupancyManager:
 		return core._occupancy()
 	return occupancy_manager
 
+func get_enemy_manager() -> EnemyManager:
+	return enemy_manager
+
 func get_occupancy_version() -> int:
 	var occ := get_occupancy_manager()
 	if occ != null and occ.has_method("get_version"):
