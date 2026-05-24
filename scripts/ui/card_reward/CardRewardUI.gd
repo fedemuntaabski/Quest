@@ -101,14 +101,8 @@ func _create_card_button() -> RewardCardOption:
 	var option := RewardCardOptionScene.instantiate() as RewardCardOption
 	if option == null:
 		return null
-	if not option.selected.is_connected(_on_card_option_selected):
-		option.selected.connect(_on_card_option_selected)
+	option.selected.connect(_on_card_selected.bind(option))
 	return option
-
-func _on_card_option_selected(option: RewardCardOption) -> void:
-	if option == null:
-		return
-	_on_card_selected(option.get_card(), option)
 
 func _on_card_selected(card: CardData, button: RewardCardOption = null) -> void:
 	if not _is_active:
@@ -126,9 +120,9 @@ func _on_card_selected(card: CardData, button: RewardCardOption = null) -> void:
 	
 	# If replacement is required, RewardFlowState transitions to SLOT_PENDING and
 	# this UI switches into its slot-selection presentation path.
-	if _flow_state.is_awaiting_slot_selection():
+	if _flow_state.current_state == RewardFlowState.WorkflowState.SLOT_PENDING:
 		_queue_replace_selection()
-	elif _flow_state.is_complete():
+	elif _flow_state.current_state == RewardFlowState.WorkflowState.COMPLETE:
 		# Direct completion (no replacement needed)
 		hide_reward()
 		card_selected.emit(card)

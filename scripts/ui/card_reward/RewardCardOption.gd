@@ -4,7 +4,7 @@ class_name RewardCardOption
 ## RewardCardOption owns the visual structure for one reward card tile.
 ## CardRewardUI feeds it data and listens for selection, but the tile owns hover and selected feedback.
 
-signal selected(option: RewardCardOption)
+signal selected(card: CardData)
 
 @onready var name_label: Label = $MarginContainer/VBoxContainer/NameLabel
 @onready var category_label: Label = $MarginContainer/VBoxContainer/CategoryLabel
@@ -52,16 +52,13 @@ func setup(card: CardData) -> void:
 		effects_label.text = CardPresentationAdapter.get_effects_summary(card)
 
 ## Returns the card assigned to this option.
-func get_card() -> CardData:
-	return _card
-
 ## Allows the parent scene to keep the selected state in sync.
 func set_selected(is_selected: bool) -> void:
 	_is_selected = is_selected
 	_apply_visual_state()
 
 func _on_select_pressed() -> void:
-	selected.emit(self)
+	selected.emit(_card)
 
 func _on_mouse_entered() -> void:
 	_is_hovered = true
@@ -73,12 +70,9 @@ func _on_mouse_exited() -> void:
 
 func _apply_visual_state() -> void:
 	if _is_selected:
-		add_theme_stylebox_override("panel", _build_card_style(SELECTED_COLOR))
+		add_theme_stylebox_override("panel", ThemeManager.build_reward_card_style(SELECTED_COLOR))
 	elif _is_hovered:
-		add_theme_stylebox_override("panel", _build_card_style(HOVER_COLOR))
+		add_theme_stylebox_override("panel", ThemeManager.build_reward_card_style(HOVER_COLOR))
 	else:
-		add_theme_stylebox_override("panel", _build_card_style(NORMAL_COLOR))
-
-func _build_card_style(border_color: Color = NORMAL_COLOR) -> StyleBoxFlat:
-	return ThemeManager.build_reward_card_style(border_color)
+		add_theme_stylebox_override("panel", ThemeManager.build_reward_card_style(NORMAL_COLOR))
 

@@ -34,7 +34,7 @@ func start_reward_session(cards: Array, requires_replace: bool = false, equipped
 	_reset_state()
 	_requires_replace = requires_replace
 	_replace_slots = equipped_slots.duplicate()
-	_transition_to(WorkflowState.SHOWING_REWARDS)
+	current_state = WorkflowState.SHOWING_REWARDS
 
 ## User selected a reward card.
 func select_card(card: CardData) -> void:
@@ -45,7 +45,7 @@ func select_card(card: CardData) -> void:
 	if _requires_replace:
 		# Store the card and wait for slot selection
 		_pending_card = card
-		_transition_to(WorkflowState.SLOT_PENDING)
+		current_state = WorkflowState.SLOT_PENDING
 	else:
 		# Direct completion: no replacement needed
 		_complete_reward_flow(card, -1)
@@ -69,15 +69,7 @@ func skip_reward() -> void:
 		return
 	
 	_reset_state()
-	_transition_to(WorkflowState.IDLE)
-
-## Query methods for presentation layer.
-
-func is_awaiting_slot_selection() -> bool:
-	return current_state == WorkflowState.SLOT_PENDING
-
-func is_complete() -> bool:
-	return current_state == WorkflowState.COMPLETE
+	current_state = WorkflowState.IDLE
 
 func get_replacement_slots() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -89,16 +81,10 @@ func get_replacement_slots() -> Array[Dictionary]:
 ## Internal state management.
 
 func _complete_reward_flow(card: CardData, slot_index: int = -1) -> void:
-	_transition_to(WorkflowState.COMPLETE)
+	current_state = WorkflowState.COMPLETE
 	reward_flow_completed.emit(card, slot_index)
 	_reset_state()
-	_transition_to(WorkflowState.IDLE)
-
-func _transition_to(new_state: WorkflowState) -> void:
-	if new_state == current_state:
-		return
-	
-	current_state = new_state
+	current_state = WorkflowState.IDLE
 
 func _reset_state() -> void:
 	_pending_card = null
