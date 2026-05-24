@@ -261,9 +261,12 @@ func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 
 func on_status_changed() -> void:
 	var indicator := get_node_or_null("StatusIndicator")
-	if indicator and indicator.has_method("refresh_statuses"):
-		var statuses := StatusRuntime._get_statuses(self)
-		indicator.refresh_statuses(statuses)
+	if indicator == null:
+		return
+	if not indicator.has_method("refresh_statuses"):
+		return
+	var statuses := StatusRuntime.get_statuses(self)
+	indicator.refresh_statuses(statuses)
 
 func wait_for_step() -> void:
 	while is_moving_step:

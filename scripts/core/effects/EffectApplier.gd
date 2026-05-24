@@ -138,15 +138,21 @@ func _rb_set_actor_pos(actor: Node, grid_pos: Vector2i, map_manager: Node) -> vo
 	if map_manager and map_manager.has_method("update_actor_cell"):
 		map_manager.update_actor_cell(actor, grid_pos)
 
-func _rb_restore_status_meta(actor: Node, prev_meta: Dictionary) -> void:
+func _rb_restore_status_state(actor: Node, prev_statuses: Dictionary) -> void:
 	if actor == null:
 		return
-	if prev_meta == null:
-		actor.set_meta(StatusRuntime.META_KEY, {})
-	else:
-		actor.set_meta(StatusRuntime.META_KEY, prev_meta)
-	if is_instance_valid(actor) and actor.has_method("on_status_changed"):
-		actor.call_deferred("on_status_changed")
+	var status_component := actor.get_node_or_null("StatusComponent") as StatusComponent
+	if status_component == null:
+		return
+	status_component.clear_all()
+	for status_id in prev_statuses.keys():
+		var status: Dictionary = prev_statuses[status_id]
+		status_component.apply_status(
+			status_id,
+			int(status.get("stacks", 1)),
+			int(status.get("duration", 1)),
+			int(status.get("damage_on_tick", 0))
+		)
 
 func _rb_restore_status_component(status_component: StatusComponent, prev_statuses: Dictionary) -> void:
 	if status_component == null:
