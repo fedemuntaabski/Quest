@@ -2,9 +2,6 @@ extends CanvasLayer
 class_name HUDController
 
 signal hotbar_slot_pressed(index: int)
-signal reward_card_selected(card: CardData)
-signal reward_skipped
-signal reward_card_replace_selected(card: CardData, slot_index: int)
 signal hud_ready  # warning-ignore:unused_signal # Emitted after full HUD initialization (used by CardSystemController for deferred binding)
 
 @onready var stat_panel: StatPanelUI = $Control/StatsHUD/MarginContainer/StatPanelUI
@@ -43,7 +40,6 @@ func _ready() -> void:
 	# Allow HUD to continue processing while the SceneTree is paused (reward/victory overlays still interactive)
 	# (pause behavior is handled by scene pause settings)
 	_setup_hotbar()
-	_setup_reward_ui()
 	# Initialize potion controller to own potion UI/logic
 	_init_potion_controller()
 
@@ -69,17 +65,6 @@ func _setup_hotbar() -> void:
 			if not child.slot_pressed.is_connected(_on_hotbar_slot_pressed):
 				child.slot_pressed.connect(_on_hotbar_slot_pressed)
 
-func _setup_reward_ui() -> void:
-	if card_reward_ui == null:
-		return
-	# Ensure reward UI processes during paused state (if configured in-scene)
-	if not card_reward_ui.card_selected.is_connected(_on_reward_card_selected):
-		card_reward_ui.card_selected.connect(_on_reward_card_selected)
-	if not card_reward_ui.reward_skipped.is_connected(_on_reward_skipped):
-		card_reward_ui.reward_skipped.connect(_on_reward_skipped)
-	if not card_reward_ui.card_replace_selected.is_connected(_on_reward_card_replace_selected):
-		card_reward_ui.card_replace_selected.connect(_on_reward_card_replace_selected)
-
 func _init_potion_controller() -> void:
 	if _potion_controller != null:
 		return
@@ -92,15 +77,6 @@ func _init_potion_controller() -> void:
 
 func _on_hotbar_slot_pressed(index: int) -> void:
 	hotbar_slot_pressed.emit(index)
-
-func _on_reward_card_selected(card: CardData) -> void:
-	reward_card_selected.emit(card)
-
-func _on_reward_skipped() -> void:
-	reward_skipped.emit()
-
-func _on_reward_card_replace_selected(card: CardData, slot_index: int) -> void:
-	reward_card_replace_selected.emit(card, slot_index)
 
 func _bind_player_stats(ps: PlayerStats) -> void:
 	if ps == null:

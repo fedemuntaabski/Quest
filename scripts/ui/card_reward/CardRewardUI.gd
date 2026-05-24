@@ -21,13 +21,6 @@ var _is_active: bool = false  # Local UI visibility state
 var _selected_card_button: RewardCardOption = null  # Local visual feedback tracking
 var _flow_state: RewardFlowState = null  # Owns workflow state
 
-# Style constants for visual feedback
-const HOVER_COLOR: Color = QuestPalette.UI_PANEL_BORDER_HOVER
-const NORMAL_COLOR: Color = QuestPalette.UI_PANEL_BORDER
-const SELECTED_COLOR: Color = QuestPalette.UI_PANEL_BORDER_SELECTED
-const CARD_BUTTON_WIDTH: float = 220.0
-const CARD_BUTTON_HEIGHT: float = 280.0
-
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false

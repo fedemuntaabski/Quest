@@ -160,12 +160,15 @@ func _connect_victory_ui() -> void:
 
 ## Bridges reward UI events from the HUD into Main2d orchestration.
 func _connect_reward_ui() -> void:
-	if hud and not hud.reward_card_selected.is_connected(Callable(self, "_on_reward_card_selected")):
-		hud.reward_card_selected.connect(Callable(self, "_on_reward_card_selected"))
-	if hud and not hud.reward_skipped.is_connected(Callable(self, "_on_reward_skipped")):
-		hud.reward_skipped.connect(Callable(self, "_on_reward_skipped"))
-	if hud and not hud.reward_card_replace_selected.is_connected(Callable(self, "_on_reward_card_replace_selected")):
-		hud.reward_card_replace_selected.connect(Callable(self, "_on_reward_card_replace_selected"))
+	if hud == null or hud.card_reward_ui == null:
+		return
+	var reward_ui := hud.card_reward_ui
+	if not reward_ui.card_selected.is_connected(Callable(self, "_on_reward_card_selected")):
+		reward_ui.card_selected.connect(Callable(self, "_on_reward_card_selected"))
+	if not reward_ui.reward_skipped.is_connected(Callable(self, "_on_reward_skipped")):
+		reward_ui.reward_skipped.connect(Callable(self, "_on_reward_skipped"))
+	if not reward_ui.card_replace_selected.is_connected(Callable(self, "_on_reward_card_replace_selected")):
+		reward_ui.card_replace_selected.connect(Callable(self, "_on_reward_card_replace_selected"))
 
 
 ## Connects state machine transitions that Main2d reacts to directly.
