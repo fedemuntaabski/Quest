@@ -140,6 +140,7 @@ func get_equipped_payload() -> Array:
 		if card == null:
 			payload.append({})
 			continue
+		var cooldown_ok := can_play_card(card)
 		payload.append({
 			"name": card.display_name,
 			"description": card.description,
@@ -150,10 +151,10 @@ func get_equipped_payload() -> Array:
 			"range": card.range,
 			"cooldown": card.cooldown,
 			"cooldown_remaining": get_cooldown_remaining(card),
-			"cooldown_ok": can_play_card(card),
-			"full_playable": can_play_card(card),
+			"cooldown_ok": cooldown_ok,
+			"full_playable": cooldown_ok,
 			"playability_reason": null,
-			"state": "available" if can_play_card(card) else "blocked",
+			"state": "available" if cooldown_ok else "blocked",
 			"icon": card.icon,
 			"card": card
 		})

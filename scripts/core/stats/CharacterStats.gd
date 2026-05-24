@@ -36,10 +36,6 @@ var dexterity_mod: int = 0
 # -------------------------
 # RUNTIME MODIFIER TRACKING
 # -------------------------
-# Legacy-compatible runtime cache for UI/debugging.
-# Actual runtime values are owned by ModifierStack.
-var _runtime_modifiers: Dictionary = {}
-
 # -------------------------
 # MODIFIER STACKS
 # -------------------------
@@ -71,8 +67,6 @@ func reset_modifiers() -> void:
 	stats_changed.emit()
 
 func reset_runtime_modifiers() -> void:
-	_runtime_modifiers.clear()
-
 	if strength_stack != null:
 		strength_stack.clear_runtime_modifiers()
 
@@ -231,13 +225,6 @@ func apply_runtime_modifier(
 		source
 	)
 
-	_runtime_modifiers[modifier_id] = {
-		"stat": stat_key,
-		"value": int(value),
-		"remaining_turns": max(1, int(duration_turns)),
-		"source": source
-	}
-
 	stats_changed.emit()
 
 	return modifier_id
@@ -272,17 +259,9 @@ func process_runtime_modifiers_turn_start() -> Dictionary:
 		changed = true
 
 		for entry in expired:
-			var modifier_id := str(entry.get("id", ""))
-
-			if modifier_id.is_empty():
-				continue
-
-			if _runtime_modifiers.has(modifier_id):
-				result["expired"].append(
-					_runtime_modifiers[modifier_id].duplicate(true)
-				)
-
-				_runtime_modifiers.erase(modifier_id)
+			var payload = entry.duplicate(true)
+			payload["stat"] = stat_key
+			result["expired"].append(payload)
 
 	if changed:
 		result["changed"] = true
