@@ -53,3 +53,34 @@ static func get_combat_feedback_timing() -> Dictionary:
 		"screen_shake_intensity": 2.0,
 		"screen_shake_duration": 0.12,
 	}
+
+static func tactical_hover_color(is_walkable: bool) -> Color:
+	if is_walkable:
+		return QuestPalette.with_alpha(QuestPalette.MOSS, 0.20)
+	return QuestPalette.with_alpha(QuestPalette.BLOOD_LIGHT, 0.20)
+
+static func tactical_path_fill_color(alpha: float) -> Color:
+	return QuestPalette.with_alpha(QuestPalette.CARD_NEUTRAL, alpha)
+
+static func tactical_path_border_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.22)
+
+static func tactical_path_line_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.55)
+
+static func tactical_range_fill_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.BLOOD, 0.18)
+
+static func tactical_range_border_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.BLOOD_LIGHT, 0.95)
+
+static func tactical_range_inner_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.PARCHMENT_FADED, 0.18)
+
+static func tactical_hover_actor_color(in_range: bool) -> Color:
+	if in_range:
+		return QuestPalette.with_alpha(QuestPalette.MOSS, 0.20)
+	return QuestPalette.with_alpha(QuestPalette.BLOOD_LIGHT, 0.20)
+
+static func tactical_arrow_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.85)
