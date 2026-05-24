@@ -239,7 +239,7 @@ func show_miss() -> void:
 	_spawn_floating_text("MISS", QuestPalette.COMBAT_TEXT_MISS, false)
 
 func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
-	var text_mgr := get_tree().get_first_node_in_group("floating_text_manager") as FloatingTextManager
+	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr:
 		text_mgr.spawn_text_from_host(self, text, color, crit, Vector2(-12, -28), 18.0, 0.5)
 		return
