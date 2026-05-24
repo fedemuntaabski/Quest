@@ -22,9 +22,9 @@ var _selected_card_button: RewardCardOption = null  # Local visual feedback trac
 var _flow_state: RewardFlowState = null  # Owns workflow state
 
 # Style constants for visual feedback
-const HOVER_COLOR: Color = Color(0.4, 0.5, 0.7, 1.0)
-const NORMAL_COLOR: Color = Color(0.3, 0.32, 0.38, 1.0)
-const SELECTED_COLOR: Color = Color(0.6, 0.8, 1.0, 1.0)
+const HOVER_COLOR: Color = QuestPalette.UI_PANEL_BORDER_HOVER
+const NORMAL_COLOR: Color = QuestPalette.UI_PANEL_BORDER
+const SELECTED_COLOR: Color = QuestPalette.UI_PANEL_BORDER_SELECTED
 const CARD_BUTTON_WIDTH: float = 220.0
 const CARD_BUTTON_HEIGHT: float = 280.0
 
@@ -104,7 +104,7 @@ func _add_skip_button() -> void:
 	else:
 		cards_container.add_child(skip_button)
 
-func _create_card_button(card: CardData) -> RewardCardOption:
+func _create_card_button(_card: CardData) -> RewardCardOption:
 	var option := RewardCardOptionScene.instantiate() as RewardCardOption
 	if option == null:
 		return null
@@ -185,7 +185,7 @@ func _refresh_slot_selection() -> void:
 	header.text = "Which card will you replace?"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	header.add_theme_font_size_override("font_size", 16)
-	header.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.9))
+	header.add_theme_color_override("font_color", QuestPalette.UI_TEXT_PRIMARY)
 	header.custom_minimum_size = Vector2(0, 30)
 	cards_container.add_child(header)
 	
@@ -234,7 +234,7 @@ func _refresh_slot_selection() -> void:
 		card_name.text = "[%s]" % slot_name
 		card_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		card_name.add_theme_font_size_override("font_size", 13)
-		card_name.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 0.8))
+		card_name.add_theme_color_override("font_color", QuestPalette.UI_TEXT_SECONDARY)
 		card_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		h.add_child(card_name)
 		
@@ -250,18 +250,7 @@ func _refresh_slot_selection() -> void:
 	_add_skip_button()
 
 func _build_slot_icon_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.15, 0.18, 0.8)
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
-	style.border_color = Color(0.3, 0.32, 0.38, 1.0)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_right = 6
-	style.corner_radius_bottom_left = 6
-	return style
+	return ThemeManager.build_slot_icon_style()
 
 func _on_replace_slot_selected(slot_index: int) -> void:
 	if not _is_active:

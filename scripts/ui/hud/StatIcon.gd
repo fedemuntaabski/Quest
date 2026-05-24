@@ -10,15 +10,15 @@ var icon_type: String = "hp":
 		queue_redraw()
 
 const BASE_COLORS := {
-	"hp": Color(0.92, 0.22, 0.25),
-	"strength": Color(0.82, 0.84, 0.9),
-	"magic": Color(0.45, 0.65, 1.0),
-	"dexterity": Color(0.92, 0.92, 0.92),
-	"potion": Color(0.82, 0.3, 0.6)
+	"hp": QuestPalette.BLOOD,
+	"strength": QuestPalette.BLOOD_LIGHT,
+	"magic": QuestPalette.VIOLET,
+	"dexterity": QuestPalette.STEEL,
+	"potion": QuestPalette.GOLD
 }
 
-const OUTLINE_COLOR := Color(0.08, 0.08, 0.08, 0.9)
-const SHADOW_COLOR := Color(0.0, 0.0, 0.0, 0.22)
+const OUTLINE_COLOR = Color(0.05, 0.03, 0.02, 0.9)
+const SHADOW_COLOR = Color(0.08, 0.07, 0.06, 0.22)
 
 @export_range(0.0, 8.0, 0.5)
 var outline_size: float = 2.0:
@@ -46,7 +46,7 @@ func _notification(what: int) -> void:
 
 func _draw() -> void:
 	var draw_size: Vector2 = size.max(Vector2.ONE)
-	var color: Color = BASE_COLORS.get(icon_type, Color.WHITE)
+	var color: Color = BASE_COLORS.get(icon_type, QuestPalette.PARCHMENT_LIGHT)
 
 	if enable_shadow:
 		_draw_icon(draw_size, SHADOW_COLOR, shadow_offset)
@@ -137,7 +137,7 @@ func _draw_orb(draw_size: Vector2, color: Color, offset: Vector2, expand: float)
 	draw_circle(
 		center - Vector2(radius * 0.22, radius * 0.22),
 		radius * 0.45,
-		Color(1, 1, 1, 0.22)
+			QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.22)
 	)
 
 	draw_arc(
@@ -146,7 +146,7 @@ func _draw_orb(draw_size: Vector2, color: Color, offset: Vector2, expand: float)
 		deg_to_rad(210),
 		deg_to_rad(330),
 		20,
-		Color(1, 1, 1, 0.35),
+		QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.35),
 		max(1.0, outline_size * 0.5),
 		true
 	)

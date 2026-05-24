@@ -21,10 +21,10 @@ func _draw_hover(canvas: Node2D, tile_size: float, hovered_cell: Vector2i, playe
         Vector2.ONE * tile_size
     )
 
-    var color := Color(0.25, 1.0, 0.45, 0.20)
+    var color := QuestPalette.with_alpha(QuestPalette.MOSS, 0.20)
 
     if player and not map_manager.is_walkable_cell_for_actor(hovered_cell, player):
-        color = Color(1.0, 0.25, 0.25, 0.20)
+        color = QuestPalette.with_alpha(QuestPalette.BLOOD_LIGHT, 0.20)
 
     canvas.draw_rect(rect, color, true)
     canvas.draw_rect(rect, color.lightened(0.3), false, 2.0)
@@ -47,14 +47,13 @@ func _draw_path_preview(canvas: Node2D, tile_size: float, path_preview: Array[Ve
 
         var alpha = lerp(0.06, 0.18, float(i) / max(1.0, path_preview.size() - 1))
 
-        var fill_color := Color(0.85, 0.85, 0.9, 0.10)
-        fill_color.a = alpha
+        var fill_color := QuestPalette.with_alpha(QuestPalette.CARD_NEUTRAL, alpha)
 
         canvas.draw_rect(rect, fill_color, true)
-        canvas.draw_rect(rect, Color(1.0, 1.0, 1.0, 0.22), false, 1.0)
+        canvas.draw_rect(rect, QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.22), false, 1.0)
 
         if i > 0:
-            canvas.draw_line(previous_pos, world_pos, Color(1.0, 1.0, 1.0, 0.55), 2.0, true)
+            canvas.draw_line(previous_pos, world_pos, QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.55), 2.0, true)
 
         previous_pos = world_pos
 
@@ -74,9 +73,9 @@ func _draw_range_preview(canvas: Node2D, tile_size: float, cached_range: Array[V
             world_pos - Vector2.ONE * tile_size * 0.5,
             Vector2.ONE * tile_size
         )
-        canvas.draw_rect(rect, Color(1.0, 0.2, 0.2, 0.18), true)
-        canvas.draw_rect(rect, Color(1.0, 0.35, 0.35, 0.95), false, 2.0)
-        canvas.draw_rect(rect.grow(-2.0), Color(1.0, 0.7, 0.7, 0.18), false, 1.0)
+        canvas.draw_rect(rect, QuestPalette.with_alpha(QuestPalette.BLOOD, 0.18), true)
+        canvas.draw_rect(rect, QuestPalette.with_alpha(QuestPalette.BLOOD_LIGHT, 0.95), false, 2.0)
+        canvas.draw_rect(rect.grow(-2.0), QuestPalette.with_alpha(QuestPalette.PARCHMENT_FADED, 0.18), false, 1.0)
 
     var hover_actor: Node = map_manager.get_actor_at_cell(hovered_cell)
     if hover_actor and hover_actor != player:
@@ -86,7 +85,7 @@ func _draw_range_preview(canvas: Node2D, tile_size: float, cached_range: Array[V
             hover_pos - Vector2.ONE * tile_size * 0.5,
             Vector2.ONE * tile_size
         )
-        var color = Color(0.25, 1.0, 0.45, 0.20) if in_range else Color(1.0, 0.25, 0.25, 0.20)
+        var color = QuestPalette.with_alpha(QuestPalette.MOSS, 0.20) if in_range else QuestPalette.with_alpha(QuestPalette.BLOOD_LIGHT, 0.20)
         canvas.draw_rect(hover_rect, color, true)
 
 
@@ -96,5 +95,5 @@ func _draw_arrow(canvas: Node2D, from_pos: Vector2, to_pos: Vector2) -> void:
     var arrow_size := 6.0
     var left := (tip - dir * arrow_size + Vector2(-dir.y, dir.x) * (arrow_size * 0.7))
     var right := (tip - dir * arrow_size + Vector2(dir.y, -dir.x) * (arrow_size * 0.7))
-    canvas.draw_line(tip, left, Color(1.0, 1.0, 1.0, 0.85), 2.0, true)
-    canvas.draw_line(tip, right, Color(1.0, 1.0, 1.0, 0.85), 2.0, true)
+    canvas.draw_line(tip, left, QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.85), 2.0, true)
+    canvas.draw_line(tip, right, QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.85), 2.0, true)

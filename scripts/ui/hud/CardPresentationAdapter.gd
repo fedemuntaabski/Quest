@@ -75,21 +75,21 @@ static func get_category_color(category: String) -> Color:
 	"""Get display color for a card category."""
 	match category.to_lower():
 		"strength":
-			return Color(1.0, 0.6, 0.4, 1.0)  # Orange
+			return QuestPalette.CARD_STRENGTH
 		"agility":
-			return Color(0.6, 1.0, 0.6, 1.0)  # Green
+			return QuestPalette.CARD_AGILITY
 		"magic":
-			return Color(0.8, 0.6, 1.0, 1.0)  # Purple
+			return QuestPalette.CARD_MAGIC
 		_:
-			return Color(0.8, 0.8, 0.8, 1.0)  # Gray
+			return QuestPalette.CARD_NEUTRAL
 
 static func get_playability_color(display_data: CardDisplayData) -> Color:
 	"""Get color indicator for playability state."""
 	if not display_data.is_usable:
-		return Color(0.8, 0.3, 0.3, 1.0)  # Red - not usable
+		return QuestPalette.UI_TEXT_BLOCKED
 	if not display_data.full_playable:
-		return Color(1.0, 0.8, 0.4, 1.0)  # Yellow - restricted
-	return Color(0.4, 0.8, 0.4, 1.0)  # Green - fully playable
+		return QuestPalette.UI_TEXT_WARN
+	return QuestPalette.UI_TEXT_READY
 
 static func get_effects_summary(card: Resource) -> String:
 	"""Get a readable comma-separated effect summary for reward and card detail UI."""

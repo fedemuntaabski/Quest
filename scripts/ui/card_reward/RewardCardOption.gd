@@ -17,9 +17,9 @@ var _card: CardData = null
 var _is_selected: bool = false
 var _is_hovered: bool = false
 
-const HOVER_COLOR: Color = Color(0.4, 0.5, 0.7, 1.0)
-const NORMAL_COLOR: Color = Color(0.3, 0.32, 0.38, 1.0)
-const SELECTED_COLOR: Color = Color(0.6, 0.8, 1.0, 1.0)
+const HOVER_COLOR: Color = QuestPalette.UI_PANEL_BORDER_HOVER
+const NORMAL_COLOR: Color = QuestPalette.UI_PANEL_BORDER
+const SELECTED_COLOR: Color = QuestPalette.UI_PANEL_BORDER_SELECTED
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -56,8 +56,8 @@ func get_card() -> CardData:
 	return _card
 
 ## Allows the parent scene to keep the selected state in sync.
-func set_selected(selected: bool) -> void:
-	_is_selected = selected
+func set_selected(is_selected: bool) -> void:
+	_is_selected = is_selected
 	_apply_visual_state()
 
 func _on_select_pressed() -> void:
@@ -80,15 +80,5 @@ func _apply_visual_state() -> void:
 		add_theme_stylebox_override("panel", _build_card_style(NORMAL_COLOR))
 
 func _build_card_style(border_color: Color = NORMAL_COLOR) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.08, 0.1, 0.98)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.border_color = border_color
-	style.corner_radius_top_left = 10
-	style.corner_radius_top_right = 10
-	style.corner_radius_bottom_right = 10
-	style.corner_radius_bottom_left = 10
-	return style
+	return ThemeManager.build_reward_card_style(border_color)
+

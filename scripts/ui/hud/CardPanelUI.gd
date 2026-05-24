@@ -26,7 +26,7 @@ func _update_display() -> void:
 	if _card_entries.is_empty():
 		var empty_label := Label.new()
 		empty_label.text = "No cards equipped."
-		empty_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6, 1))
+		empty_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_MUTED)
 		cards_container.add_child(empty_label)
 		return
 	

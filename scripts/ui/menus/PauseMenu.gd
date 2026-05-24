@@ -1,7 +1,7 @@
 extends CanvasLayer
 class_name PauseMenu
 
-const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
+const StatBalanceScript = preload("res://scripts/core/stats/StatBalance.gd")
 
 signal exit_requested
 signal store_opened
@@ -78,6 +78,8 @@ func _ready() -> void:
 	if exit_confirm_dialog:
 		exit_confirm_dialog.ok_button_text = "OK"
 		exit_confirm_dialog.cancel_button_text = "Cancelar"
+
+	_apply_theme()
 
 	_set_panel(0)
 	_update_gold_labels()
@@ -252,11 +254,11 @@ func _update_store():
 		var config: Dictionary = UPGRADES.get(key, {})
 		var stat_name: String = str(config.get("stat", ""))
 		var level := 0
-		var max_level := StatBalance.MAX_UPGRADE_LEVEL
+		var max_level := StatBalanceScript.MAX_UPGRADE_LEVEL
 		if player_stats:
 			level = player_stats.get_upgrade_level(stat_name)
 			max_level = player_stats.get_max_upgrade_level()
-		var cost := StatBalance.get_upgrade_cost(level)
+		var cost := StatBalanceScript.get_upgrade_cost(level)
 		var can_upgrade := player_stats != null and player_stats.can_upgrade_stat(stat_name)
 		var affordable := save_mgr.gold >= cost
 		var button: Button = upgrade_buttons[i]
@@ -306,7 +308,7 @@ func _on_upgrade_pressed(stat: String):
 		return
 
 	var level := player_stats.get_upgrade_level(stat_name)
-	var cost := StatBalance.get_upgrade_cost(level)
+	var cost := StatBalanceScript.get_upgrade_cost(level)
 	
 	var currency := _get_currency_manager()
 	if currency == null:
@@ -343,3 +345,41 @@ func _get_game_state_manager() -> GameStateManager:
 
 func _get_currency_manager() -> CurrencyManager:
 	return get_node_or_null("/root/CurrencyManager") as CurrencyManager
+
+func _apply_theme() -> void:
+	if pause_panel:
+		pause_panel.add_theme_stylebox_override("panel", ThemeManager.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 20))
+	if pause_gold_label:
+		pause_gold_label.add_theme_color_override("font_color", QuestPalette.GOLD)
+	if gold_label:
+		gold_label.add_theme_color_override("font_color", QuestPalette.GOLD)
+	if options_button:
+		_style_button(options_button)
+	if store_button:
+		_style_button(store_button)
+	if store_back_button:
+		_style_button(store_back_button)
+	if exit_button:
+		_style_button(exit_button, true)
+
+func _style_button(button: Button, danger: bool = false) -> void:
+	if button == null:
+		return
+
+	var border_base: Color = QuestPalette.BLOOD if danger else QuestPalette.GOLD_DARK
+	var border_hover: Color = QuestPalette.BLOOD_LIGHT if danger else QuestPalette.GOLD_LIGHT
+	var text_base: Color = QuestPalette.PARCHMENT
+	var text_hover: Color = QuestPalette.PARCHMENT_LIGHT
+	var text_pressed: Color = QuestPalette.GOLD if not danger else QuestPalette.BLOOD_LIGHT
+
+	button.add_theme_color_override("font_color", text_base)
+	button.add_theme_color_override("font_focus_color", text_hover)
+	button.add_theme_color_override("font_hover_color", text_hover)
+	button.add_theme_color_override("font_pressed_color", text_pressed)
+	button.add_theme_color_override("font_outline_color", QuestPalette.INK)
+	button.add_theme_constant_override("outline_size", 3)
+
+	button.add_theme_stylebox_override("normal", ThemeManager.build_panel_style(QuestPalette.DUNGEON_MUD, border_base, 3, 16, 16))
+	button.add_theme_stylebox_override("pressed", ThemeManager.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, border_base, 3, 16, 16))
+	button.add_theme_stylebox_override("hover", ThemeManager.build_panel_style(QuestPalette.DUNGEON_MUD, border_hover, 3, 16, 16))
+	button.add_theme_stylebox_override("focus", ThemeManager.build_panel_style(QuestPalette.DUNGEON_MUD, QuestPalette.PARCHMENT_LIGHT, 4, 16, 16))

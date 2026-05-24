@@ -48,7 +48,7 @@ func set_selected(selected: bool) -> void:
 		selection_border.visible = selected
 	# Restore full opacity when deselected
 	if not selected:
-		modulate = Color(1, 1, 1, 1)
+		modulate = Color(0.95, 0.95, 0.92, 1.0)
 	# subtle scale feedback
 	if selected:
 		var t = create_tween()
@@ -58,21 +58,21 @@ func set_selected(selected: bool) -> void:
 		t2.tween_property(self, "scale", Vector2(1, 1), 0.12)
 
 func set_usable(usable: bool) -> void:
-	modulate = Color(1, 1, 1, 1) if usable else Color(0.8, 0.6, 0.6, 0.9)
+	modulate = Color(0.95, 0.95, 0.92, 1.0) if usable else Color(0.82, 0.64, 0.64, 0.92)
 	if state_label:
 		state_label.visible = false
 		state_label.text = ""
 	# Color-code borders when blocked to provide a stronger visual cue
 	if not usable:
 		if hover_border:
-			hover_border.modulate = Color(1.0, 0.45, 0.45)
+			hover_border.modulate = QuestPalette.BLOOD_LIGHT
 		if selection_border:
-			selection_border.modulate = Color(1.0, 0.45, 0.45)
+			selection_border.modulate = QuestPalette.BLOOD_LIGHT
 	else:
 		if hover_border:
-			hover_border.modulate = Color(1, 1, 1, 1)
+			hover_border.modulate = QuestPalette.PARCHMENT_LIGHT
 		if selection_border:
-			selection_border.modulate = Color(1, 1, 1, 1)
+			selection_border.modulate = QuestPalette.PARCHMENT_LIGHT
 
 func set_state_label(_state: String) -> void:
 	if state_label == null:

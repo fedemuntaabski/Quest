@@ -20,7 +20,7 @@ func setup_card(slot_num: int, data: CardDisplayData) -> void:
 	visible = true
 	if slot_label:
 		slot_label.text = "[%d]" % slot_num
-		slot_label.add_theme_color_override("font_color", Color(0.95, 0.85, 0.62, 1))
+		slot_label.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
 	if icon_rect:
 		icon_rect.texture = data.icon
 	if name_label:
@@ -30,7 +30,7 @@ func setup_card(slot_num: int, data: CardDisplayData) -> void:
 		cooldown_label.text = "(CD: %d)" % data.cooldown_remaining
 	if state_label:
 		state_label.text = "[READY]" if data.is_usable else "[BLOCKED]"
-		state_label.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4, 1.0) if data.is_usable else Color(1.0, 0.45, 0.45, 1.0))
+		state_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_READY if data.is_usable else QuestPalette.UI_TEXT_BLOCKED)
 	if desc_label:
 		desc_label.text = data.description
 	if stats_label:
@@ -38,13 +38,13 @@ func setup_card(slot_num: int, data: CardDisplayData) -> void:
 	if swap_button:
 		swap_button.disabled = true
 	if separator:
-		separator.modulate = Color(1, 1, 1, 0.3)
+		separator.modulate = Color(QuestPalette.UI_TEXT_PRIMARY.r, QuestPalette.UI_TEXT_PRIMARY.g, QuestPalette.UI_TEXT_PRIMARY.b, 0.30)
 
 func setup_empty(slot_num: int) -> void:
 	visible = true
 	if slot_label:
 		slot_label.text = "[%d]" % slot_num
-		slot_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+		slot_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_MUTED)
 	if icon_rect:
 		icon_rect.texture = null
 	if name_label:
@@ -60,4 +60,4 @@ func setup_empty(slot_num: int) -> void:
 	if swap_button:
 		swap_button.visible = false
 	if separator:
-		separator.modulate = Color(1, 1, 1, 0.2)
+		separator.modulate = Color(QuestPalette.UI_TEXT_PRIMARY.r, QuestPalette.UI_TEXT_PRIMARY.g, QuestPalette.UI_TEXT_PRIMARY.b, 0.20)

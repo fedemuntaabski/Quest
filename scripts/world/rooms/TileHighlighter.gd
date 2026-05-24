@@ -7,18 +7,18 @@ class_name TileHighlighter
 
 const INVALID_CELL := Vector2i(-999, -999)
 
-const COLOR_PATH_FILL := Color(0.85, 0.85, 0.9, 0.10)
-const COLOR_PATH_BORDER := Color(1.0, 1.0, 1.0, 0.22)
+const COLOR_PATH_FILL := Color(0.80, 0.78, 0.72, 0.10)
+const COLOR_PATH_BORDER := Color(0.95, 0.95, 0.92, 0.22)
 
-const COLOR_VALID := Color(0.25, 1.0, 0.45, 0.20)
-const COLOR_INVALID := Color(1.0, 0.25, 0.25, 0.20)
+const COLOR_VALID := Color(0.62, 0.80, 0.62, 0.20)
+const COLOR_INVALID := Color(0.95, 0.35, 0.32, 0.20)
 
-const COLOR_RANGE_FILL := Color(1.0, 0.2, 0.2, 0.18)
-const COLOR_RANGE_BORDER := Color(1.0, 0.35, 0.35, 0.95)
-const COLOR_RANGE_INNER := Color(1.0, 0.7, 0.7, 0.18)
+const COLOR_RANGE_FILL := Color(0.78, 0.26, 0.24, 0.18)
+const COLOR_RANGE_BORDER := Color(0.95, 0.35, 0.32, 0.95)
+const COLOR_RANGE_INNER := Color(0.80, 0.78, 0.72, 0.18)
 
-const COLOR_LINE := Color(1.0, 1.0, 1.0, 0.55)
-const COLOR_ARROW := Color(1.0, 1.0, 1.0, 0.85)
+const COLOR_LINE := Color(0.95, 0.95, 0.92, 0.55)
+const COLOR_ARROW := Color(0.95, 0.95, 0.92, 0.85)
 
 const PATH_LINE_WIDTH := 2.0
 const HOVER_BORDER_WIDTH := 2.0
