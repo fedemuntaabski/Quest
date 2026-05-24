@@ -233,10 +233,10 @@ func begin_step_move(next: Vector2i) -> void:
 	_start_move_to(next)
 
 func show_damage(amount: int, crit: bool = false) -> void:
-	_spawn_floating_text("-%d" % amount, Color(1, 0.4, 0.3), crit)
+	_spawn_floating_text("-%d" % amount, QuestPalette.COMBAT_TEXT_DAMAGE, crit)
 
 func show_miss() -> void:
-	_spawn_floating_text("MISS", Color(0.9, 0.9, 0.9), false)
+	_spawn_floating_text("MISS", QuestPalette.COMBAT_TEXT_MISS, false)
 
 func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 	var label := Label.new()

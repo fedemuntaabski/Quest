@@ -30,7 +30,7 @@ var is_boss: bool = false
 
 var _base_modulate: Color = Color(1, 1, 1, 1)
 var stats: CharacterStats
-var _target_tint: Color = Color(1.0, 0.6, 0.6, 1.0)
+var _target_tint: Color = QuestPalette.COMBAT_TARGET_TINT_DEFAULT
 var is_tutorial_enemy: bool = false
 
 const STANDARD_ENEMY_HP := 10
@@ -256,7 +256,7 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 func set_targeted(active: bool) -> void:
 	EnemyPresentationHelper.set_targeted_state(health_bar, sprite, active, _target_tint, _base_modulate)
 
-func set_visual_tint(base_tint: Color, target_tint: Color = Color(0.7, 1.0, 0.7, 1.0)) -> void:
+func set_visual_tint(base_tint: Color, target_tint: Color = QuestPalette.COMBAT_TARGET_TINT_DEFAULT) -> void:
 	_base_modulate = base_tint
 	_target_tint = target_tint
 	if sprite:

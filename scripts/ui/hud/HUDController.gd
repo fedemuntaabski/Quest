@@ -215,15 +215,15 @@ func set_roll_label_from_result(result: Dictionary) -> void:
 	var multiplier: float = float(result.get("damage_multiplier", 0.0))
 
 	var text := ""
-	var color := Color(0.95, 0.95, 0.95, 1.0)
+	var color := QuestPalette.UI_TEXT_PRIMARY
 
 	if hit:
 		if crit:
 			text = "CRÍTICO"
-			color = Color(1.0, 0.9, 0.45, 1.0)
+			color = QuestPalette.COMBAT_ROLL_CRIT
 		else:
 			text = "IMPACTO"
-			color = Color(0.62, 1.0, 0.62, 1.0)
+			color = QuestPalette.COMBAT_ROLL_HIT
 
 		if damage > 0:
 			text += " · %d DAÑO" % damage
@@ -233,7 +233,7 @@ func set_roll_label_from_result(result: Dictionary) -> void:
 
 	else:
 		text = "FALLO"
-		color = Color(1.0, 0.55, 0.55, 1.0)
+		color = QuestPalette.COMBAT_ROLL_FAIL
 
 		if not reason.is_empty() and reason != "null":
 			text += "\n%s" % reason.capitalize()

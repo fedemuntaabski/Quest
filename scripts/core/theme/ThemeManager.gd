@@ -27,3 +27,29 @@ static func build_reward_card_style(border_color: Color) -> StyleBoxFlat:
 
 static func build_slot_icon_style() -> StyleBoxFlat:
 	return build_panel_style(QuestPalette.UI_PANEL_BG_SOFT, QuestPalette.UI_PANEL_BORDER, 1, 6)
+
+static func get_combat_feedback_palette() -> Dictionary:
+	return {
+		"damage_text": QuestPalette.COMBAT_TEXT_DAMAGE,
+		"miss_text": QuestPalette.COMBAT_TEXT_MISS,
+		"flash_tint": QuestPalette.COMBAT_FLASH_TINT,
+		"particle": QuestPalette.COMBAT_PARTICLE_SPARK,
+		"target_tint": QuestPalette.COMBAT_TARGET_TINT_DEFAULT,
+		"roll_hit": QuestPalette.COMBAT_ROLL_HIT,
+		"roll_crit": QuestPalette.COMBAT_ROLL_CRIT,
+		"roll_fail": QuestPalette.COMBAT_ROLL_FAIL,
+		"timer_normal": QuestPalette.TIMER_NORMAL,
+		"timer_warning": QuestPalette.TIMER_WARNING,
+		"timer_critical": QuestPalette.TIMER_CRITICAL,
+		"gold_popup": QuestPalette.CURRENCY_GOLD_POPUP,
+	}
+
+static func get_combat_feedback_timing() -> Dictionary:
+	return {
+		"damage_flash_duration": 0.12,
+		"particle_count": 6,
+		"hit_pause_duration": 0.04,
+		"hit_pause_scale": 0.18,
+		"screen_shake_intensity": 2.0,
+		"screen_shake_duration": 0.12,
+	}

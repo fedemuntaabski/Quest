@@ -39,6 +39,22 @@ const UI_TEXT_READY: Color = Color(0.62, 1.00, 0.62, 1.0)
 const UI_TEXT_WARN: Color = Color(1.00, 0.90, 0.45, 1.0)
 const UI_TEXT_BLOCKED: Color = Color(1.00, 0.55, 0.55, 1.0)
 
+const COMBAT_TEXT_DAMAGE: Color = Color(1.00, 0.40, 0.30, 1.0)
+const COMBAT_TEXT_MISS: Color = Color(0.90, 0.90, 0.90, 1.0)
+const COMBAT_FLASH_TINT: Color = Color(1.00, 0.90, 0.90, 1.0)
+const COMBAT_PARTICLE_SPARK: Color = Color(1.00, 0.60, 0.20, 1.0)
+const COMBAT_TARGET_TINT_DEFAULT: Color = Color(1.00, 0.60, 0.60, 1.0)
+
+const COMBAT_ROLL_HIT: Color = Color(0.62, 1.00, 0.62, 1.0)
+const COMBAT_ROLL_CRIT: Color = Color(1.00, 0.90, 0.45, 1.0)
+const COMBAT_ROLL_FAIL: Color = Color(1.00, 0.55, 0.55, 1.0)
+
+const TIMER_NORMAL: Color = Color(1.00, 1.00, 1.00, 1.0)
+const TIMER_WARNING: Color = Color(1.00, 0.85, 0.20, 1.0)
+const TIMER_CRITICAL: Color = Color(1.00, 0.24, 0.20, 1.0)
+
+const CURRENCY_GOLD_POPUP: Color = Color(1.00, 0.84, 0.10, 1.0)
+
 const CARD_STRENGTH: Color = BLOOD_LIGHT
 const CARD_AGILITY: Color = STEEL
 const CARD_MAGIC: Color = VIOLET

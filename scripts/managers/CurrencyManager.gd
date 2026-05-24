@@ -45,4 +45,4 @@ func _spawn_gold_text(amount: int, world_pos: Vector2) -> void:
 		return
 	var text_mgr := get_tree().get_first_node_in_group("floating_text_manager") as FloatingTextManager
 	if text_mgr:
-		text_mgr.spawn_text(world_pos, "+%d g" % amount, Color(1, 0.84, 0.1))
+		text_mgr.spawn_text(world_pos, "+%d g" % amount, QuestPalette.CURRENCY_GOLD_POPUP)

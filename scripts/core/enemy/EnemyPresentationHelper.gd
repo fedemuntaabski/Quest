@@ -42,18 +42,21 @@ static func spawn_floating_text(host: Node, text: String, color: Color, crit: bo
 static func show_damage_feedback(host: Node2D, amount: int, crit: bool = false) -> void:
 	if host == null:
 		return
-	spawn_floating_text(host, "-%d" % amount, Color(1, 0.2, 0.2), crit)
+	var palette := ThemeManager.get_combat_feedback_palette()
+	var timing := ThemeManager.get_combat_feedback_timing()
+	spawn_floating_text(host, "-%d" % amount, palette["damage_text"], crit)
 
 	var vfs := host.get_tree().get_nodes_in_group("visual_feedback")
 	if vfs.size() > 0:
 		var vf := vfs[0]
-		vf.request_damage_flash(host, Color(1, 0.9, 0.9), 0.12)
-		vf.request_particles(host.global_position, Color(1.0, 0.6, 0.2), 6)
-		vf.request_hit_pause(0.04, 0.18)
-		vf.request_screen_shake(2.0, 0.12)
+		vf.request_damage_flash(host, palette["flash_tint"], float(timing["damage_flash_duration"]))
+		vf.request_particles(host.global_position, palette["particle"], int(timing["particle_count"]))
+		vf.request_hit_pause(float(timing["hit_pause_duration"]), float(timing["hit_pause_scale"]))
+		vf.request_screen_shake(float(timing["screen_shake_intensity"]), float(timing["screen_shake_duration"]))
 
 static func show_miss_feedback(host: Node2D) -> void:
-	spawn_floating_text(host, "MISS", Color(0.9, 0.9, 0.9), false)
+	var palette := ThemeManager.get_combat_feedback_palette()
+	spawn_floating_text(host, "MISS", palette["miss_text"], false)
 
 static func refresh_status_indicator(host: Node) -> void:
 	if host == null:

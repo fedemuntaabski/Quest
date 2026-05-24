@@ -35,7 +35,7 @@ func get_status() -> Dictionary:
 
 func _get_timer_color() -> Color:
 	if remaining <= CRITICAL_SECONDS:
-		return Color(1, 0.24, 0.2)
+		return QuestPalette.TIMER_CRITICAL
 	elif remaining <= WARNING_SECONDS:
-		return Color(1, 0.85, 0.2)
-	return Color.WHITE
+		return QuestPalette.TIMER_WARNING
+	return QuestPalette.TIMER_NORMAL
