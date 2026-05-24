@@ -108,6 +108,8 @@ func bind_hud_external(hud: HUDController) -> void:
 		card_manager.cooldowns_changed.connect(refresh_cb)
 	if not card_manager.equipped_changed.is_connected(refresh_cb):
 		card_manager.equipped_changed.connect(refresh_cb)
+	if not card_manager.active_index_changed.is_connected(refresh_cb):
+		card_manager.active_index_changed.connect(refresh_cb)
 	
 	# Initial UI refresh
 	update_hotbar_ui()
@@ -192,7 +194,6 @@ func clear_targeting_state() -> void:
 	var action_controller := get_parent() as PlayerActionController
 	if action_controller and action_controller.has_method("clear_hover_targeting_state"):
 		action_controller.clear_hover_targeting_state()
-	update_hotbar_ui()
 
 func _on_game_state_changed(new_state: GameStateManager.State, _old_state: GameStateManager.State) -> void:
 	print("[CardSystemController] _on_game_state_changed: %s -> %s" % [GameStateManager.State.keys()[_old_state], GameStateManager.State.keys()[new_state]])
@@ -214,7 +215,6 @@ func on_hotbar_slot_pressed(index: int) -> void:
 		card_manager.set_active_index(-1)
 	else:
 		card_manager.set_active_index(index)
-	update_hotbar_ui()
 
 
 func _human_readable_playability_reason(reason: String) -> String:

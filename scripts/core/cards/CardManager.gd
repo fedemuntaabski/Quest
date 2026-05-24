@@ -107,7 +107,6 @@ func set_active_index(index: int) -> void:
 		return
 	active_index = index
 	active_index_changed.emit(index)
-	ui_state_changed.emit(get_equipped_payload(), active_index)
 
 func can_play_card(card: CardData) -> bool:
 	if card == null:

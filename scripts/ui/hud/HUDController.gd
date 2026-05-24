@@ -178,21 +178,13 @@ func show_card_tooltip(data: CardDisplayData) -> void:
 	# Delegate tooltip presentation (debounce + show) to CardTooltip to clarify ownership
 	if card_tooltip == null:
 		return
-	if card_tooltip.has_method("request_show"):
-		card_tooltip.request_show(data)
-	else:
-		# Fallback: immediate show
-		card_tooltip.set_card(data)
+	card_tooltip.request_show(data)
 
 func hide_card_tooltip() -> void:
 	# Delegate hide to CardTooltip
 	if card_tooltip == null:
 		return
-	if card_tooltip.has_method("request_hide"):
-		card_tooltip.request_hide()
-	else:
-		card_tooltip.visible = false
-		card_tooltip.set_card(null)
+	card_tooltip.request_hide()
 
 func show_combat_result(result: Dictionary) -> void:
 	set_roll_label_from_result(result)
@@ -210,7 +202,6 @@ func set_roll_label_from_result(result: Dictionary) -> void:
 	var damage: int = int(result.get("damage", 0))
 	var reason: String = str(result.get("reason", ""))
 	var dice_roll: int = int(result.get("dice_roll", 0))
-	var multiplier: float = float(result.get("damage_multiplier", 0.0))
 
 	var text := ""
 	var color := QuestPalette.UI_TEXT_PRIMARY
