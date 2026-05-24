@@ -67,14 +67,6 @@ func on_start_button_pressed() -> void:
 	if flow:
 		flow.start_pressed()
 
-func _on_slot_back_pressed() -> void:
-	if flow:
-		flow.handle_slot_back()
-
-func _on_slot_selected(slot_id: int) -> void:
-	if flow:
-		flow.handle_slot_selected(slot_id)
-
 func on_exit_button_pressed() -> void:
 	if flow:
 		flow.exit_pressed()
