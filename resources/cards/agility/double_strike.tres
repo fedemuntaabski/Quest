@@ -7,14 +7,14 @@
 script = ExtResource("2")
 base_damage = 1
 stat_key = "dexterity"
-damage_scaling = 0.55
+damage_scaling = 0.5
 description = "First quick strike."
 
 [sub_resource type="Resource" id="2"]
 script = ExtResource("2")
 base_damage = 1
 stat_key = "dexterity"
-damage_scaling = 0.55
+damage_scaling = 0.5
 description = "Second quick strike."
 
 [resource]
@@ -27,7 +27,7 @@ card_type = "melee"
 target_type = "enemy"
 stat_key = "dexterity"
 base_damage = 2
-damage_scaling = 1.1
+damage_scaling = 1.0
 range = 1
 cooldown = 2
 effects = Array[Resource]([SubResource("1"), SubResource("2")])

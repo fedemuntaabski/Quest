@@ -32,7 +32,7 @@ func save_game(slot: int = current_slot) -> void:
 		cfg.set_value(SAVE_SECTION, "base_dex", player_stats_autoload.base_dex)
 		cfg.set_value(SAVE_SECTION, "active_upgrades", player_stats_autoload.active_upgrades)
 	else:
-		cfg.set_value(SAVE_SECTION, "base_hp", 20)
+		cfg.set_value(SAVE_SECTION, "base_hp", StatBalance.PLAYER_BASE_HP)
 		cfg.set_value(SAVE_SECTION, "base_str", 1)
 		cfg.set_value(SAVE_SECTION, "base_mag", 1)
 		cfg.set_value(SAVE_SECTION, "base_dex", 1)

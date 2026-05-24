@@ -16,8 +16,8 @@ signal stats_changed
 # -------------------------
 # HEALTH
 # -------------------------
-var max_hp: int = 20
-var current_hp: int = 20
+var max_hp: int = StatBalance.PLAYER_BASE_HP
+var current_hp: int = StatBalance.PLAYER_BASE_HP
 
 # -------------------------
 # CORE STATS (BASE)

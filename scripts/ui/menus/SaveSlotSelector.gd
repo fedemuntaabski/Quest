@@ -1,6 +1,8 @@
 extends Control
 class_name SaveSlotSelector
 
+const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
+
 signal slot_selected(slot_id: int)
 signal back_pressed
 
@@ -193,6 +195,7 @@ func _on_slot_hovered(slot_id: int) -> void:
 
 	var gold = cfg.get_value(SAVE_SECTION, "gold", 0)
 	var contracts = cfg.get_value(SAVE_SECTION, "contracts_completed", 0)
+	var s_hp = cfg.get_value(SAVE_SECTION, "base_hp", StatBalance.PLAYER_BASE_HP)
 	var s_str = cfg.get_value(SAVE_SECTION, "base_str", 0)
 	var s_mag = cfg.get_value(SAVE_SECTION, "base_mag", 0)
 	var s_dex = cfg.get_value(SAVE_SECTION, "base_dex", 0)
@@ -206,7 +209,7 @@ func _on_slot_hovered(slot_id: int) -> void:
 		max_stat_val = s_dex
 		max_stat_name = "Destreza"
 
-	_info_text = "Datos de la ranura %d:\n\nOro total: %d\nEtapa de contrato: %d\nMejor atributo: %s (+%d)" % [slot_id, gold, contracts, max_stat_name, max_stat_val]
+	_info_text = "Datos de la ranura %d:\n\nOro total: %d\nEtapa de contrato: %d\nVida base: %d/%d\nMejor atributo: %s (+%d)" % [slot_id, gold, contracts, s_hp, StatBalance.PLAYER_MAX_HP, max_stat_name, max_stat_val]
 	_info_visible = true
 
 	if _hover_panel:
