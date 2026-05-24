@@ -4,7 +4,6 @@ class_name PauseMenu
 const StatBalanceScript = preload("res://scripts/core/stats/StatBalance.gd")
 
 signal exit_requested
-signal store_opened
 
 const UPGRADES = {
 	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+2 Vida maxima (cap 40)", "value": 2},
@@ -142,8 +141,6 @@ func _set_panel(i: int) -> void:
 	if options_menu:
 		options_menu.close()
 	panels[i].visible = true
-	if i == 2:
-		store_opened.emit()
 
 # ---------------- CONNECT ----------------
 

@@ -41,12 +41,6 @@ func build_slot_selector(start_button: Button) -> void:
 	if not slot_selector.back_pressed.is_connected(_on_slot_back_pressed):
 		slot_selector.back_pressed.connect(_on_slot_back_pressed)
 
-func handle_slot_selected(slot_id: int) -> void:
-	_on_slot_selected(slot_id)
-
-func handle_slot_back() -> void:
-	_on_slot_back_pressed()
-
 func show_main_menu() -> void:
 	if center_container:
 		center_container.visible = true

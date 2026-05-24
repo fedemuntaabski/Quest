@@ -19,7 +19,6 @@ extends Node2D
 
 var game_state_manager: GameStateManager
 var card_reward_manager: CardRewardManager
-var presentation_flow: Main2dPresentationFlow
 
 # ─────────────────────────────────────────────
 # STATE
@@ -48,8 +47,6 @@ func _ready() -> void:
 	room_timer = Main2dRoomTimer.new()
 	death_handler = Main2dDeathHandler.new()
 	death_handler.setup(self, death_overlay, death_gold_label)
-	presentation_flow = Main2dPresentationFlow.new()
-	presentation_flow.setup(hud, pause_menu, victory_overlay)
 
 	_setup_managers()
 	_connect_signals()
@@ -404,22 +401,27 @@ func _get_run_gold_earned() -> int:
 
 func _show_victory_overlay(run_gold: int) -> void:
 	# VictoryOverlay owns presentation; Main2d only supplies the run summary.
-	if presentation_flow:
-		presentation_flow.show_victory_overlay(enemies_killed, rooms_cleared, run_gold)
+	if victory_overlay:
+		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
 
 
 ## Keeps victory state cleanup in one place so the overlay remains scene-owned.
 func _hide_victory_overlay() -> void:
-	if presentation_flow:
-		presentation_flow.hide_victory_overlay()
+	if victory_overlay:
+		victory_overlay.hide_victory()
 
 
 # ─────────────────────────────────────────────
 # PAUSE
 # ─────────────────────────────────────────────
 func _set_paused_state(paused: bool) -> void:
-	if presentation_flow:
-		presentation_flow.set_paused_state(paused)
+	if pause_menu == null:
+		return
+
+	if paused and pause_menu.has_method("open_menu"):
+		pause_menu.open_menu()
+	elif not paused and pause_menu.has_method("close_menu"):
+		pause_menu.close_menu()
 
 func _on_return_pressed() -> void:
 	_go_to_main_menu()
@@ -463,16 +465,18 @@ func _get_game_state_manager() -> GameStateManager:
 	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
 
 func _on_reward_entered(cards: Array) -> void:
-	_show_reward_selection(cards)
-
-## Builds the HUD-facing reward presentation payload without moving ownership out of Main2d.
-func _show_reward_selection(cards: Array) -> void:
-	if presentation_flow:
-		presentation_flow.show_reward_selection(cards, card_reward_manager)
+	if hud:
+		var requires_replace := false
+		var equipped_slots: Array = []
+		if card_reward_manager:
+			requires_replace = card_reward_manager.is_hotbar_full()
+			equipped_slots = card_reward_manager.get_equipped_cards_for_replace()
+		if hud.card_reward_ui:
+			hud.card_reward_ui.show_reward(cards, requires_replace, equipped_slots)
 
 func _on_reward_exited(_selected_card: CardData) -> void:
-	if presentation_flow:
-		presentation_flow.hide_reward_selection()
+	if hud and hud.card_reward_ui:
+		hud.card_reward_ui.hide_reward()
 	# Clear pending flag so future rewards can be requested.
 	_clear_reward_pending()
 
