@@ -8,6 +8,9 @@ const CRITICAL_SECONDS: float = 15.0
 var remaining: float = ROOM_TIMER_SECONDS
 var expired_logged: bool = false
 
+# Main2dRoomTimer: simple countdown timer used by `Main2d` to pace rooms.
+# - Provides `tick(delta)` and `get_status()` that return payloads consumable by HUD.
+
 func reset() -> void:
 	remaining = ROOM_TIMER_SECONDS
 	expired_logged = false

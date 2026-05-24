@@ -1,14 +1,19 @@
 extends Node
 class_name EffectApplier
 
-# Applies runtime effects (movement, status) using a provided EffectContext.
-# This class centralizes MapManager and status application so CombatCardSystem
-# no longer directly manipulates map or status metadata.
-# The shared movement step contract lives in MovementStepService.
+# EffectApplier: applies movement and status effects produced by card
+# resolution. Uses an `EffectContext` transaction to register rollback
+# operations and ensure consistent state when applying multi-step effects.
+# Responsibilities:
+# - Execute movement steps via `MovementStepService`.
+# - Apply runtime statuses through `StatusComponent` and register
+#   rollback handlers on the context.
+# - Commit or rollback context based on success.
 
 
 
 func apply(result: Dictionary, target_component: CombatComponent, context: EffectContext) -> void:
+	# Entry point for applying an already-resolved `result` payload.
 	print("[EffectApplier] apply: START result=%s, target=%s" % [result, target_component.actor_owner.name if target_component and target_component.actor_owner else "NULL"])
 	if result == null:
 		print("[EffectApplier] apply: result is NULL")

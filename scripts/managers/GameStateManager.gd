@@ -1,6 +1,13 @@
 extends Node
 class_name GameStateManager
 
+## GameStateManager: global gameplay state machine and gate keeper.
+## Responsibilities:
+## - Represent high-level modes (ACTIVE, PAUSED, DEAD, VICTORY, REWARD).
+## - Provide `can_process_*` helpers used throughout to pause game logic.
+## - Emit state transition signals so UI and orchestration (Main2d, TurnManager)
+##   can react without tight coupling.
+
 enum State {
 	ACTIVE,
 	PAUSED,

@@ -1,6 +1,9 @@
 extends Node
 class_name DiceSystem
 
+# DiceSystem: small pure-logic helper for random rolls and damage multipliers.
+# Keep deterministic-seed considerations external when used in tests.
+
 static func roll_d6() -> int:
 	return randi_range(1, 6)
 

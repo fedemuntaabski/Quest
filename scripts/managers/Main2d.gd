@@ -1,7 +1,11 @@
 extends Node2D
 
-# Top-level runtime orchestrator for the main gameplay scene.
-# Keeps scene wiring and high-level flow, while delegating presentation and state details.
+# Main2d: scene-level orchestrator for the gameplay scene.
+# Responsibilities:
+# - Instantiate and wire managers (GameStateManager, CardRewardManager, etc.)
+# - Connect UI (HUD / overlays) to gameplay signals and mediate reward/death flows.
+# - Act as the canonical owner for room/timer, enemy manager and top-level
+#   presentation concerns. Avoid adding gameplay logic here; prefer managers.
 
 # ─────────────────────────────────────────────
 # NODES

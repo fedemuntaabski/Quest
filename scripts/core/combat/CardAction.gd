@@ -5,6 +5,11 @@ var card_system: CombatCardSystem
 var card_data: CardData
 var validation_reason: String = ""
 
+# CardAction: wraps a card play into the `ActionQueue` contract.
+# - Stores a snapshot or target reference and defers execution to
+#   `CombatCardSystem.execute_card_snapshot` so card effects run within
+#   the queued action lifecycle.
+
 func _init(p_system: CombatCardSystem, p_card: CardData, p_target: Variant) -> void:
 	card_system = p_system
 	card_data = p_card

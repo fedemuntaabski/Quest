@@ -11,9 +11,19 @@ var action_queue: ActionQueue
 var _active: bool = true
 var _waiting_for_state: bool = false
 
+# TurnManager: orchestrates per-actor turn sequencing.
+# Responsibilities:
+# - Register/unregister actors that participate in the turn loop.
+# - Drive `begin_turn` on each actor and rely on `ActionQueue` to execute
+#   their actions. Uses `pending_actors` to track per-round completion.
+# - Integrates with `GameStateManager` to pause/resume turn processing.
+
 func _ready() -> void:
 	_ensure_action_queue()
 	_bind_game_state()
+
+	# `_ready` wires the action queue and subscribes to game-state changes so
+	# turn processing honors global pause/death/reward states.
 
 func _bind_game_state() -> void:
 	var tree := get_tree()

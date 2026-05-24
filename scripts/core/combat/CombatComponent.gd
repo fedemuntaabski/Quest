@@ -3,6 +3,14 @@ class_name CombatComponent
 
 const CombatResolverScript = preload("res://scripts/core/combat/CombatResolver.gd")
 
+# CombatComponent: per-actor combat API owned by an actor node.
+# Responsibilities:
+# - Hold references to owner actor, stats and map manager.
+# - Provide high-level attack/receive_damage methods that delegate
+#   math to CombatResolver and validation to CombatValidation.
+# Runtime ownership: typically created/attached by movement or enemy/player
+# setup code and lives under the actor node.
+
 @export var attack_range: int = 1
 @export var attack_stat: String = "strength"
 @export var base_damage: int = 0
@@ -13,6 +21,8 @@ var stats: CharacterStats = null
 var map_manager: MapManager = null
 
 func setup(p_owner: Node, p_stats: CharacterStats, p_map_manager: MapManager) -> void:
+	# Called during actor initialization to bind runtime owners and
+	# infer missing `Stats` nodes when necessary.
 	actor_owner = p_owner
 	map_manager = p_map_manager
 
@@ -29,12 +39,15 @@ func setup(p_owner: Node, p_stats: CharacterStats, p_map_manager: MapManager) ->
 	stats = p_stats
 
 func get_attack_validation(target: Node) -> Dictionary:
+	# Convenience wrapper: returns validation dict used by UI and callers.
 	return CombatValidation.validate_target(self, target, map_manager, attack_range, true)
 
 func can_attack(target: Node) -> bool:
 	return bool(get_attack_validation(target).get("valid", false))
 
 func attack(target: Node) -> Dictionary:
+	# Perform validation, resolve target, run resolve_attack and apply
+	# damage via `receive_damage`. HUD update occurs for player-owned actors.
 	var validation := get_attack_validation(target)
 	if not bool(validation.get("valid", false)):
 		return {

@@ -6,6 +6,11 @@ signal action_finished(action: BaseAction, result: Dictionary)
 var _queue: Array[BaseAction] = []
 var _is_busy: bool = false
 
+# ActionQueue: serial executor for `BaseAction` instances.
+# - Ensures only one action executes at a time and emits `action_finished`.
+# - Tracks execution state tokens to detect state changes during action execution
+#   and includes this information in the emitted result for callers like TurnManager.
+
 func _describe_action(action: BaseAction) -> String:
 	if action == null:
 		return "NULL"
@@ -39,6 +44,8 @@ func process_next() -> void:
 		return
 
 	var action: BaseAction = _queue.pop_front()
+	# Pop and execute the next queued action; await its `completed` signal
+	# if it is asynchronous.
 	if action == null:
 		print("[ActionQueue] process_next: popped NULL action, recursing")
 		process_next()

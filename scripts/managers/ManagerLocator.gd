@@ -1,6 +1,11 @@
 extends Object
 class_name ManagerLocator
 
+# ManagerLocator: convenience helper to find common manager singletons
+# in the scene tree. NOTE: this is an aggressive helper in places
+# (e.g. `get_floating_text_manager`) and may create a manager at runtime
+# if none exists; callers should treat results as possibly-created nodes.
+
 static func _get_root() -> Node:
     var ml = Engine.get_main_loop()
     if ml == null:

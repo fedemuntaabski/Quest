@@ -3,6 +3,10 @@ class_name CombatResolver
 
 const CombatFormula = preload("res://scripts/core/combat/CombatFormula.gd")
 
+# CombatResolver: pure resolution logic for individual attacks.
+# - Stateless helper that wraps `CombatFormula` to produce a result
+#   dictionary consumed by CombatComponent and HUD presentation.
+
 static func resolve_attack(
 	attacker: CharacterStats,
 	target: CharacterStats,
@@ -11,6 +15,7 @@ static func resolve_attack(
 	damage_scaling: float = 1.0
 ) -> Dictionary:
 
+	# Validate inputs and return a consistent failure payload when missing.
 	if attacker == null or target == null:
 		return {
 			"hit": false,

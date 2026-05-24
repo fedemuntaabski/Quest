@@ -2,9 +2,15 @@ extends Node
 class_name CombatCardSystem
 
 # CombatCardSystem: per-actor coordinator responsible for validating,
-# queuing, executing and finalizing card plays. It delegates target validation
-# and damage resolution to `CombatValidation` and `CombatResolver` respectively,
-# and delegates runtime effect application to `EffectApplier`/`EffectContext`.
+# queuing, executing and finalizing card plays.
+# Responsibilities:
+# - Public API: `get_card_validation`, `can_play`, `queue_card_action`.
+# - Snapshot-aware execution via `execute_card_snapshot` to avoid stale
+#   occupancy races; verifies `occ_version` then resolves and finalizes
+#   effects through `EffectApplier` and `EffectContext`.
+# Signals:
+# - `card_played(card, target, result)` emitted after successful execution.
+# - `card_failed(card, reason)` emitted for user-visible rejections.
 
 signal card_played(card: CardData, target: Node, result: Dictionary)
 signal card_failed(card: CardData, reason: String)
@@ -20,6 +26,10 @@ func setup(p_owner: Node, p_map: MapManager, p_card_manager: CardManager, p_comb
 	card_manager = p_card_manager
 	combat_component = p_combat
 	add_to_group("combat_card_system")
+
+	# Note: `setup` is expected to be called once during actor initialization.
+	# The system intentionally does not mutate card_manager state directly;
+	# ownership of decks/cooldowns remains with CardManager.
 
 func _compute_card_validation(card: CardData, target: Node) -> Dictionary:
 	# Internal consolidated validator. Keep logic identical to the previous

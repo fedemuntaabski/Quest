@@ -11,6 +11,12 @@ var _committed: bool = false
 var _rolled_back: bool = false
 var _rollback_ops: Array = [] # array of {callable: Callable, args: Array}
 
+# EffectContext: transactional context used by EffectApplier to
+# register rollback operations when applying multi-step effects.
+# - `begin()` must be called before registering rollback ops.
+# - `commit()` clears rollback ops on success; `rollback()` runs them in
+#   reverse order on failure.
+
 func _init(_owner: Node = null, _map: Node = null, _card_manager: Node = null, _combat_comp: CombatComponent = null) -> void:
 	owner_actor = _owner
 	map_manager = _map

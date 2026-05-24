@@ -4,6 +4,12 @@ class_name StatusComponent
 ## Centralized runtime status handler.
 ## Owns active statuses, ticking, duration decay and UI refresh.
 
+# StatusComponent: stores and ticks per-actor statuses (poison, freeze, etc.).
+# Responsibilities:
+# - Maintain `statuses` map with stacks, duration and damage_on_tick.
+# - Expose `process_turn_start`/`tick_turn_start` to be called by turn flow.
+# - Emit `statuses_changed` and call owner `StatusIndicator` refresh where present.
+
 signal statuses_changed(statuses: Dictionary)
 
 var statuses: Dictionary = {} # status_id -> {stacks, turns_remaining, damage_on_tick}
@@ -37,6 +43,7 @@ func apply_status(
 
 	_on_status_changed()
 
+
 func tick_turn_start() -> Dictionary:
 	var effects: Dictionary = {}
 	var expired_statuses: Array[String] = []
@@ -64,6 +71,9 @@ func tick_turn_start() -> Dictionary:
 	return effects
 
 func process_turn_start(actor: Node, stats: CharacterStats) -> Dictionary:
+	# Called at the start of an actor's turn by turn-processing logic.
+	# Returns a dictionary `{'can_act': bool, 'events': [...]}` to allow
+	# the caller to handle damage ticks or skip-turn semantics.
 	var result := {
 		"can_act": true,
 		"events": []

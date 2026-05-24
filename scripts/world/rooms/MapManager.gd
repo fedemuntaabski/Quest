@@ -1,6 +1,13 @@
 extends Node2D
 class_name MapManager
 
+# MapManager: scene-level manager responsible for the dungeon grid, occupancy,
+# pathfinding and actor registration. Acts as the canonical owner for
+# `OccupancyManager`, `MapManagerCore`, `EnemyManager` and the per-scene
+# `TurnManager` wiring (created during `_setup_turn_manager`).
+# Important lifecycle: `_ready()` generates the dungeon, sets up helpers and
+# calls `_setup_turn_manager()` so turns can be processed by actors in this map.
+
 const PRELOAD_MAP_TURN_SETUP = preload("res://scripts/world/rooms/MapTurnSetup.gd")
 
 @onready var dungeon_generator: DungeonGenerator = $DungeonGenerator

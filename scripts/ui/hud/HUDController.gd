@@ -4,6 +4,12 @@ class_name HUDController
 signal hotbar_slot_pressed(index: int)
 signal hud_ready  # warning-ignore:unused_signal # Emitted after full HUD initialization (used by CardSystemController for deferred binding)
 
+# HUDController: presentation layer for player HUD and hotbar.
+# Responsibilities:
+# - Consume `CardManager` payloads to render hotbar and card panels.
+# - Subscribe to `PlayerStats` and expose `update_room_timer`, `update_enemies_remaining`.
+# - Emit `hud_ready` for deferred binding from `PlayerActionController`/`CardSystemController`.
+
 @onready var stat_panel: StatPanelUI = $Control/StatsHUD/MarginContainer/StatPanelUI
 @onready var stats_hud_panel: PanelContainer = $Control/StatsHUD
 

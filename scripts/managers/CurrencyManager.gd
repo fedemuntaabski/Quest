@@ -5,6 +5,11 @@ signal gold_changed(amount: int)
 var _save_dirty: bool = false
 var _save_timer: Timer = null
 
+# CurrencyManager: thin facade around `SaveManager.gold`.
+# Responsibilities:
+# - Provide debounced persistence when gold changes and emit `gold_changed`.
+# - Spawn floating text feedback via `FloatingTextManager` when appropriate.
+
 func _ready() -> void:
 	add_to_group("currency_manager")
 

@@ -1,7 +1,10 @@
 extends Node
 class_name MapManagerCore
 
-# Lightweight helper for MapManager: grid conversions, walkability and occupancy helpers
+## Lightweight helper for MapManager: grid conversions, walkability and occupancy helpers
+# Notes:
+# - This module exposes readonly helpers and does not perform side-effectful
+#   repairs unless an explicit `repair_actor_room` call is used by the caller.
 var map_manager: MapManager = null
 
 func setup(map_mgr: MapManager) -> void:

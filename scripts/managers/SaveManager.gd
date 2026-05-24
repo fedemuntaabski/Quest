@@ -3,7 +3,13 @@ extends Node
 const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
 
 ## SaveManager — Autoload singleton
-## Handles save slot logic using ConfigFile.
+## Responsibilities:
+## - Persist player progression (base stats, upgrades) and run metadata.
+## - Expose `first_time_player`, `gold` and simple save-slot helpers.
+## Notes:
+## - This module is a small disk-backed holder and is used by `CurrencyManager`
+##   and other systems to read/write runtime values; it is *not* the owner
+##   of gameplay logic.
 
 const SAVE_PATH_TEMPLATE = "user://slot_%d.cfg"
 const SAVE_SECTION = "save_data"

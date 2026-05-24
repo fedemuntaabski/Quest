@@ -1,7 +1,17 @@
 extends RefCounted
 class_name CombatValidation
 
+# CombatValidation: small utility for validating combat targets and
+# resolving CombatComponent instances. Used by CombatComponent,
+# CombatCardSystem and other gameplay systems that need to check
+# reachability, alive state, room engagement and distance calculations.
+
 static func validate_target(source_component: CombatComponent, target: Node, map_manager: MapManager, range_limit: int = -1, check_range: bool = true, check_engagement: bool = true) -> Dictionary:
+	# Returns a dictionary with keys: `valid` (bool), `reason` (String),
+	# optional `distance` and `max_range`, and `target_component` when valid.
+	# Responsibilities:
+	# - Ensure source/target CombatComponent and Stats exist and are alive.
+	# - Optionally verify room engagement and range using CardTargeting helpers.
 	var result := {
 		"valid": false,
 		"reason": "invalid"
@@ -63,6 +73,9 @@ static func validate_target(source_component: CombatComponent, target: Node, map
 	return result
 
 static func resolve_target_component(target: Node) -> CombatComponent:
+	# Resolve a target Node to its `CombatComponent`.
+	# Supports: direct CombatComponent instances, nodes exposing
+	# `get_combat_component()` or a child node named "CombatComponent".
 	if target == null:
 		return null
 

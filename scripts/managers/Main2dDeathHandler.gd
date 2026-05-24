@@ -1,8 +1,9 @@
 extends RefCounted
 class_name Main2dDeathHandler
 
-# Owns the death overlay presentation for Main2d.
-# Main2d gathers run stats and delegates the actual screen setup and fade-in here.
+# Main2dDeathHandler: presentation helper for death overlay.
+# Responsibilities:
+# - Show death UI and populate run summary labels; does not perform state changes.
 
 var owner: Node = null
 var death_overlay: CanvasLayer = null

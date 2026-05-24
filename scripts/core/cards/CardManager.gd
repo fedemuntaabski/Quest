@@ -1,10 +1,13 @@
 extends Node
 class_name CardManager
 
-# CardManager: single authoritative owner of a player's deck, draw/discard piles,
-# equipped hotbar and cooldown state. Other systems should treat this object
-# as the canonical data source for card ownership and query via its public API
-# (signals and methods) rather than mutating internal arrays directly.
+# CardManager: authoritative owner for a player's card data, equipped hotbar,
+# draw/discard piles and cooldown bookkeeping.
+# Responsibilities:
+# - Emit `equipped_changed`, `active_index_changed`, `cooldowns_changed` for UI.
+# - Provide safe accessors and maintain internal cooldown map `_cooldowns`.
+# Runtime ownership: attached to player actor nodes (or player container) and
+# expected to be the single source of truth for equipped cards and cooldowns.
 
 signal equipped_changed
 signal active_index_changed(index: int)
