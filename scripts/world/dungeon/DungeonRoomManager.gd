@@ -20,11 +20,11 @@ func set_active_room(room_id: int, animate: bool) -> void:
 
 	# Update visuals and visited state based on the canonical dungeon.active_room_id
 	for index in range(dungeon.room_infos.size()):
-		var room_info: Dictionary = dungeon.room_infos[index]
-		var info_room_id: int = int(room_info["id"])
+		var info_room_id: int = int(dungeon.room_infos[index].get("id", index))
 		var is_active: bool = info_room_id == dungeon.active_room_id
-		var is_visited: bool = bool(room_info.get("visited", false))
-		var visual_root: Node2D = room_info.get("visual_root", null) as Node2D
+		var is_visited: bool = dungeon.is_room_visited(info_room_id)
+		var presentation: Dictionary = dungeon.get_room_presentation(info_room_id)
+		var visual_root: Node2D = presentation.get("visual_root", null) as Node2D
 
 		# Visible if active or previously visited
 		if visual_root:
@@ -34,15 +34,13 @@ func set_active_room(room_id: int, animate: bool) -> void:
 		if is_active:
 			if visual_root:
 				visual_root.modulate = Color(1, 1, 1, 1)
-			room_info["visited"] = true
+			dungeon.set_room_visited(info_room_id, true)
 		elif is_visited:
 			if visual_root:
 				visual_root.modulate = Color(0.6, 0.6, 0.7, 1)
 		else:
 			if visual_root:
 				visual_root.modulate = Color(1, 1, 1, 1)
-
-		dungeon.room_infos[index] = room_info
 
 	tween_room_lights(animate)
 
@@ -55,11 +53,11 @@ func tween_room_lights(animate: bool) -> void:
 	var tween := dungeon.create_tween()
 	tween.set_parallel(true)
 
-	for rinfo in dungeon.room_infos:
-		var room_info: Dictionary = rinfo
-		var room_light: PointLight2D = room_info.get("light", null) as PointLight2D
-		var is_active: bool = int(room_info["id"]) == dungeon.active_room_id
-		var is_visited: bool = bool(room_info.get("visited", false))
+	for i in range(dungeon.room_infos.size()):
+		var info_room_id: int = int(dungeon.room_infos[i].get("id", i))
+		var room_light: PointLight2D = dungeon.get_room_presentation(info_room_id).get("light", null) as PointLight2D
+		var is_active: bool = info_room_id == dungeon.active_room_id
+		var is_visited: bool = dungeon.is_room_visited(info_room_id)
 
 		var target_energy := 0.0
 		if is_active:

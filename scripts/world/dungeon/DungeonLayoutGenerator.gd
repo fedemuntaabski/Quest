@@ -4,6 +4,13 @@ class_name DungeonLayoutGenerator
 var dungeon: DungeonGenerator
 var dungeon_graph: DungeonGraph = null
 
+# Working buffers used while generating a candidate layout.
+var _working_floor_cells: Dictionary = {}
+var _working_corridor_cells: Dictionary = {}
+var _working_room_infos: Array[Dictionary] = []
+var _working_graph: DungeonGraph = null
+
+
 func setup(p_dungeon: DungeonGenerator) -> void:
 	dungeon = p_dungeon
 	if dungeon_graph == null:
@@ -18,20 +25,16 @@ func get_dungeon_graph() -> DungeonGraph:
 	return dungeon_graph
 
 
-func generate() -> bool:
+# Generates pure layout data and does not mutate DungeonGenerator runtime arrays.
+# DungeonGenerator is responsible for applying the returned data.
+func generate() -> DungeonLayoutData:
 	const LAYOUT_RETRIES := 32
 
 	for _retry in range(LAYOUT_RETRIES):
-		dungeon._clear_generated_content()
-		dungeon.floor_cells.clear()
-		dungeon.wall_cells.clear()
-		dungeon.wall_nodes.clear()
-		dungeon.room_infos.clear()
-		get_dungeon_graph().clear()
-
+		_begin_working_layout()
 		var attempts := dungeon.room_count * 90
 
-		while dungeon.room_infos.size() < dungeon.room_count and attempts > 0:
+		while _working_room_infos.size() < dungeon.room_count and attempts > 0:
 			attempts -= 1
 
 			var room_size := _roll_room_size()
@@ -54,13 +57,35 @@ func generate() -> bool:
 
 			_register_room(room_rect)
 
-		if dungeon.room_infos.size() == dungeon.room_count:
+		if _working_room_infos.size() == dungeon.room_count:
 			_connect_rooms_with_corridors()
 			if not _validate_graph():
 				continue
-			return true
+			return _build_layout_data()
 
-	return false
+	return null
+
+
+func _begin_working_layout() -> void:
+	_working_floor_cells.clear()
+	_working_corridor_cells.clear()
+	_working_room_infos.clear()
+	_working_graph = DungeonGraph.new()
+
+
+func _build_layout_data() -> DungeonLayoutData:
+	var layout := DungeonLayoutData.new()
+	layout.floor_cells = _working_floor_cells.duplicate(true)
+	layout.corridor_cells = _working_corridor_cells.duplicate(true)
+	layout.room_infos = _working_room_infos.duplicate(true)
+	layout.graph = _working_graph
+	layout.metadata = {
+		"room_count": _working_room_infos.size(),
+		"main_path_branching": dungeon.main_path_branching
+	}
+	# Keep graph accessor compatibility for existing systems.
+	dungeon_graph = _working_graph
+	return layout
 
 
 func _roll_room_size() -> Vector2i:
@@ -87,7 +112,7 @@ func _roll_room_size() -> Vector2i:
 func _room_overlaps_existing(candidate: Rect2i) -> bool:
 	var expanded := candidate.grow(dungeon.room_padding)
 
-	for room_info in dungeon.room_infos:
+	for room_info in _working_room_infos:
 		var other: Rect2i = room_info["rect"]
 		if expanded.intersects(other):
 			return true
@@ -96,7 +121,7 @@ func _room_overlaps_existing(candidate: Rect2i) -> bool:
 
 
 func _register_room(room_rect: Rect2i) -> void:
-	var room_id := dungeon.room_infos.size()
+	var room_id := _working_room_infos.size()
 	var room_template := _get_room_template(room_id)
 
 	var room_cells: Array[Vector2i] = []
@@ -104,7 +129,7 @@ func _register_room(room_rect: Rect2i) -> void:
 	for x in range(room_rect.position.x, room_rect.end.x):
 		for y in range(room_rect.position.y, room_rect.end.y):
 			var cell := Vector2i(x, y)
-			dungeon.floor_cells[cell] = true
+			_working_floor_cells[cell] = true
 			room_cells.append(cell)
 
 	var center_cell := Vector2i(
@@ -112,19 +137,16 @@ func _register_room(room_rect: Rect2i) -> void:
 		room_rect.position.y + int(room_rect.size.y * 0.5)
 	)
 
-	dungeon.room_infos.append({
+	# Keep room_infos procedural only: no runtime/presentation references.
+	_working_room_infos.append({
 		"id": room_id,
 		"rect": room_rect,
 		"center_cell": center_cell,
 		"floor_cells": room_cells,
-		"visited": false,
-		"template": room_template,
-		"visual_root": null,
-		"light": null,
-		"area": null
+		"template": room_template
 	})
 
-	get_dungeon_graph().add_room(room_id, {
+	_working_graph.add_room(room_id, {
 		"rect": room_rect,
 		"center_cell": center_cell,
 		"template": room_template
@@ -132,10 +154,10 @@ func _register_room(room_rect: Rect2i) -> void:
 
 
 func _connect_rooms_with_corridors() -> void:
-	if dungeon.room_infos.size() <= 1:
+	if _working_room_infos.size() <= 1:
 		return
 
-	var unvisited_rooms := dungeon.room_infos.duplicate()
+	var unvisited_rooms := _working_room_infos.duplicate()
 	var main_path: Array[Dictionary] = []
 
 	var current_room: Dictionary = unvisited_rooms[0]
@@ -154,7 +176,7 @@ func _connect_rooms_with_corridors() -> void:
 		var from_cell: Vector2i = current_room["center_cell"]
 		var to_cell: Vector2i = nearest_room["center_cell"]
 
-		if not get_dungeon_graph().has_edge(from_room_id, to_room_id):
+		if not _working_graph.has_edge(from_room_id, to_room_id):
 			var corridor_cells := _carve_corridor(from_cell, to_cell)
 			_register_connection(from_room_id, to_room_id, corridor_cells)
 
@@ -217,15 +239,16 @@ func _add_corridor_cell(cell: Vector2i) -> bool:
 	if not dungeon.is_within_bounds(cell):
 		return false
 
-	if dungeon.floor_cells.has(cell):
+	if _working_floor_cells.has(cell):
 		return false
 
-	dungeon.floor_cells[cell] = true
+	_working_floor_cells[cell] = true
+	_working_corridor_cells[cell] = true
 	return true
 
 
 func _register_connection(room_a: int, room_b: int, corridor_cells: Array[Vector2i]) -> void:
-	get_dungeon_graph().add_edge(room_a, room_b, corridor_cells)
+	_working_graph.add_edge(room_a, room_b, corridor_cells)
 
 
 func get_connected_room_ids(room_id: int) -> Array[int]:
@@ -266,7 +289,7 @@ func _connect_to_nearest_main_path_room(room_info: Dictionary, main_path: Array[
 	var from_cell: Vector2i = room_info["center_cell"]
 	var to_cell: Vector2i = nearest_main["center_cell"]
 
-	if not get_dungeon_graph().has_edge(from_room_id, to_room_id):
+	if not _working_graph.has_edge(from_room_id, to_room_id):
 		var corridor_cells := _carve_corridor(from_cell, to_cell)
 		_register_connection(from_room_id, to_room_id, corridor_cells)
 
@@ -282,8 +305,7 @@ func _get_room_template(room_id: int) -> String:
 
 
 func _validate_graph() -> bool:
-	var graph := get_dungeon_graph()
-	var result: Dictionary = graph.validate(dungeon.room_count, true)
+	var result: Dictionary = _working_graph.validate(dungeon.room_count, true)
 	if bool(result.get("valid", false)):
 		return true
 

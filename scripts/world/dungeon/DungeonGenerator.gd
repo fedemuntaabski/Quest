@@ -32,8 +32,11 @@ var light_texture: Texture2D = preload(LIGHT_TEXTURE_PATH)
 var grid_origin: Vector2 = Vector2.ZERO
 var floor_cells: Dictionary = {}
 var wall_cells: Dictionary = {}
+var corridor_cells: Dictionary = {}
 var wall_nodes: Dictionary = {}
 var room_infos: Array[Dictionary] = []
+var room_runtime: Dictionary = {}
+var room_presentation: Dictionary = {}
 var active_room_id: int = -1
 var dungeon_graph: DungeonGraph = null
 
@@ -94,7 +97,71 @@ func get_spawned_player() -> CharacterBody2D:
 func get_room_info(room_id: int) -> Dictionary:
 	if room_id < 0 or room_id >= room_infos.size():
 		return {}
-	return room_infos[room_id]
+	# Compatibility shim: merge procedural room data with runtime/presentation state.
+	var base_info: Dictionary = room_infos[room_id].duplicate(true)
+	base_info["visited"] = is_room_visited(room_id)
+	var presentation := get_room_presentation(room_id)
+	base_info["visual_root"] = presentation.get("visual_root", null)
+	base_info["light"] = presentation.get("light", null)
+	base_info["area"] = presentation.get("area", null)
+	return base_info
+
+
+func get_room_infos_with_runtime() -> Array[Dictionary]:
+	# Produces merged dictionaries for compatibility with systems that still
+	# expect room runtime/presentation fields in room_info.
+	var result: Array[Dictionary] = []
+	for index in range(room_infos.size()):
+		var room_id: int = int(room_infos[index].get("id", index))
+		result.append(get_room_info(room_id))
+	return result
+
+
+func _initialize_room_state() -> void:
+	room_runtime.clear()
+	room_presentation.clear()
+	for info in room_infos:
+		var room_id := int(info.get("id", -1))
+		if room_id < 0:
+			continue
+		room_runtime[room_id] = {
+			"visited": false
+		}
+		room_presentation[room_id] = {
+			"visual_root": null,
+			"light": null,
+			"area": null
+		}
+
+
+func is_room_visited(room_id: int) -> bool:
+	var runtime: Dictionary = room_runtime.get(room_id, {})
+	return bool(runtime.get("visited", false))
+
+
+func set_room_visited(room_id: int, value: bool) -> void:
+	if not room_runtime.has(room_id):
+		room_runtime[room_id] = {}
+	var runtime: Dictionary = room_runtime[room_id]
+	runtime["visited"] = value
+	room_runtime[room_id] = runtime
+
+
+func get_room_presentation(room_id: int) -> Dictionary:
+	return room_presentation.get(room_id, {
+		"visual_root": null,
+		"light": null,
+		"area": null
+	})
+
+
+func set_room_presentation(room_id: int, presentation: Dictionary) -> void:
+	if room_id < 0:
+		return
+	var current: Dictionary = get_room_presentation(room_id).duplicate(true)
+	for key in presentation.keys():
+		current[key] = presentation[key]
+	room_presentation[room_id] = current
 
 
 func get_connected_room_ids(room_id: int) -> Array[int]:
@@ -163,8 +230,11 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 
 	floor_cells.clear()
 	wall_cells.clear()
+	corridor_cells.clear()
 	wall_nodes.clear()
 	room_infos.clear()
+	room_runtime.clear()
+	room_presentation.clear()
 
 	active_room_id = -1
 	dungeon_graph = null
@@ -175,12 +245,14 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	)
 
 	is_ready = true
+	_ensure_runtime_nodes()
 
-	if not layout_generator.generate():
+	var layout_data := layout_generator.generate()
+	if layout_data == null or not layout_data.is_valid(room_count):
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
 		return
 
-	dungeon_graph = layout_generator.get_dungeon_graph()
+	_apply_layout_data(layout_data)
 
 	wall_manager.generate_walls_from_floor()
 
@@ -201,6 +273,15 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 
 	if not room_infos.is_empty():
 		_set_active_room(int(room_infos[0]["id"]), false)
+
+
+func _apply_layout_data(layout_data: DungeonLayoutData) -> void:
+	# Runtime authority commits generated layout data in one place.
+	floor_cells = layout_data.floor_cells.duplicate(true)
+	corridor_cells = layout_data.corridor_cells.duplicate(true)
+	room_infos = layout_data.room_infos.duplicate(true)
+	dungeon_graph = layout_data.graph
+	_initialize_room_state()
 
 
 func place_player_in_start_room(player: CharacterBody2D) -> void:

@@ -5,8 +5,8 @@ var map_renderer: DungeonMapRenderer
 var fog_manager: FogOfWarManager
 var generator: DungeonGenerator
 
-func setup(parent: Node, generator: DungeonGenerator) -> void:
-	self.generator = generator
+func setup(parent: Node, dg: DungeonGenerator) -> void:
+	self.generator = dg
 	map_renderer = parent.get_node_or_null("TileRenderer") as DungeonMapRenderer
 	if map_renderer == null:
 		map_renderer = DungeonTileRenderer.new()
@@ -38,7 +38,8 @@ func _on_room_changed(room_id: int) -> void:
 	if generator == null:
 		return
 
-	fog_manager.update_room_state(generator.room_infos, room_id)
+	# Use the merged view (procedural + runtime/presentation) for fog updates
+	fog_manager.update_room_state(generator.get_room_infos_with_runtime(), room_id)
 
 func build(tileset: TileSet, wall_texture: Texture2D) -> void:
 	if generator == null:
@@ -56,16 +57,19 @@ func build(tileset: TileSet, wall_texture: Texture2D) -> void:
 
 	for index in range(generator.room_infos.size()):
 		var room_info: Dictionary = generator.room_infos[index]
+		var room_id: int = int(room_info.get("id", index))
 		var room_nodes := generator.room_factory.create_room_nodes(
 			room_info,
 			generator.rooms_root,
 			generator.room_lights_root,
 			generator.room_detectors_root
 		)
-		room_info["visual_root"] = room_nodes.get("visual_root", null)
-		room_info["light"] = room_nodes.get("light", null)
-		room_info["area"] = room_nodes.get("area", null)
-		generator.room_infos[index] = room_info
+		# Move presentation references into the dedicated presentation store
+		generator.set_room_presentation(room_id, {
+			"visual_root": room_nodes.get("visual_root", null),
+			"light": room_nodes.get("light", null),
+			"area": room_nodes.get("area", null)
+		})
 
 	for edge_info in graph.get_edge_records_sorted():
 		var corridor_node := generator.room_factory.create_corridor_entity(edge_info, generator.corridors_root)
