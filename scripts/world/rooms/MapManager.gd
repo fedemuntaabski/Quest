@@ -64,9 +64,13 @@ func _ensure_helpers() -> void:
 		add_child(occupancy_manager)
 
 	if floating_text_manager == null:
-		floating_text_manager = FloatingTextManager.new()
-		floating_text_manager.name = "FloatingTextManager"
-		add_child(floating_text_manager)
+		var existing_ft := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+		if existing_ft:
+			floating_text_manager = existing_ft
+		else:
+			floating_text_manager = FloatingTextManager.new()
+			floating_text_manager.name = "FloatingTextManager"
+			add_child(floating_text_manager)
 
 	if navigation_helper:
 		navigation_helper.set_occupancy_manager(occupancy_manager)

@@ -244,20 +244,11 @@ func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 		text_mgr.spawn_text_from_host(self, text, color, crit, Vector2(-12, -28), 18.0, 0.5)
 		return
 
-	# Fallback path keeps behavior if FloatingTextManager is unavailable.
-	var label := Label.new()
-	label.text = text
-	label.modulate = color
-	label.z_index = 100
-	label.position = Vector2(-12, -28)
-	if crit:
-		label.scale = Vector2(1.2, 1.2)
-	add_child(label)
-
-	var tween := create_tween()
-	tween.tween_property(label, "position", label.position + Vector2(0, -18), 0.5)
-	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(label.queue_free)
+	# If floating text manager is not available, skip creating ephemeral labels.
+	# This enforces a single source of truth for floating text presentation.
+	if not text_mgr:
+		push_warning("FloatingTextManager not present - skipping floating text: %s" % text)
+		return
 
 func on_status_changed() -> void:
 	var indicator := get_node_or_null("StatusIndicator")

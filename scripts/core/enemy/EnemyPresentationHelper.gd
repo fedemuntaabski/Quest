@@ -33,20 +33,11 @@ static func spawn_floating_text(host: Node, text: String, color: Color, crit: bo
 		text_mgr.spawn_text_from_host(host_2d, text, color, crit, Vector2(-12, -28), 18.0, 0.5)
 		return
 
-	# Fallback path keeps behavior if FloatingTextManager is unavailable.
-	var label := Label.new()
-	label.text = text
-	label.modulate = color
-	label.z_index = 100
-	label.position = Vector2(-12, -28)
-	if crit:
-		label.scale = Vector2(1.2, 1.2)
-	host.add_child(label)
 
-	var tween := host.create_tween()
-	tween.tween_property(label, "position", label.position + Vector2(0, -18), 0.5)
-	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(label.queue_free)
+	# Aggressive mode: do not create fallback labels; prefer consistent presentation.
+	if not text_mgr:
+		push_warning("FloatingTextManager not present - skipping floating text: %s" % text)
+		return
 
 static func show_damage_feedback(host: Node2D, amount: int, crit: bool = false) -> void:
 	if host == null:

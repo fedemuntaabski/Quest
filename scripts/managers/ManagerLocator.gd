@@ -32,9 +32,26 @@ static func get_theme_manager() -> Node:
 
 static func get_floating_text_manager() -> Node:
     var ml = Engine.get_main_loop()
-    if ml and ml is SceneTree:
-        return ml.get_first_node_in_group("floating_text_manager")
-    return null
+    if not (ml and ml is SceneTree):
+        return null
+
+    var existing = ml.get_first_node_in_group("floating_text_manager")
+    if existing:
+        return existing
+
+    # Aggressive helper: create a FloatingTextManager if none exists.
+    var parent: Node = null
+    var map_nodes = ml.get_nodes_in_group("map_manager")
+    if map_nodes.size() > 0:
+        parent = map_nodes[0]
+    else:
+        parent = ml.get_root()
+
+    var fscene := preload("res://scripts/ui/visual/FloatingTextManager.gd")
+    var mgr := fscene.new()
+    mgr.name = "FloatingTextManager"
+    parent.add_child(mgr)
+    return mgr
 
 static func get_game_state_manager() -> Node:
     var ml = Engine.get_main_loop()

@@ -2,8 +2,22 @@ extends Node
 
 signal gold_changed(amount: int)
 
+var _save_dirty: bool = false
+var _save_timer: Timer = null
+
 func _ready() -> void:
 	add_to_group("currency_manager")
+
+	# Debounced save timer to avoid synchronous disk writes on every gold change
+	if not has_node("SaveTimer"):
+		var t := Timer.new()
+		t.name = "SaveTimer"
+		t.wait_time = 1.0
+		t.one_shot = true
+		add_child(t)
+		t.timeout.connect(Callable(self, "_on_save_timer_timeout"))
+
+	_save_timer = get_node("SaveTimer") as Timer
 
 func get_gold() -> int:
 	var save_mgr := ManagerLocator.get_save_manager()
@@ -36,9 +50,14 @@ func reset() -> void:
 	set_gold(0)
 
 func _commit_gold(save_mgr: Node, amount: int) -> void:
+	# Update runtime value and notify listeners immediately.
 	save_mgr.gold = max(0, amount)
-	save_mgr.save_game()
 	gold_changed.emit(save_mgr.gold)
+
+	# Mark dirty and schedule a debounced save to persist to disk.
+	_save_dirty = true
+	if _save_timer:
+		_save_timer.start()
 
 func _spawn_gold_text(amount: int, world_pos: Vector2) -> void:
 	if amount <= 0:
@@ -46,3 +65,11 @@ func _spawn_gold_text(amount: int, world_pos: Vector2) -> void:
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr:
 		text_mgr.spawn_text(world_pos, "+%d g" % amount, QuestPalette.CURRENCY_GOLD_POPUP)
+
+func _on_save_timer_timeout() -> void:
+	if not _save_dirty:
+		return
+	var save_mgr := ManagerLocator.get_save_manager()
+	if save_mgr:
+		save_mgr.save_game()
+		_save_dirty = false
