@@ -78,7 +78,9 @@ func _on_slot_back_pressed() -> void:
 	show_main_menu()
 
 func _on_slot_selected(slot_id: int) -> void:
-	SaveManager.load_game(slot_id)
+	var save_mgr = ManagerLocator.get_save_manager()
+	if save_mgr:
+		save_mgr.load_game(slot_id)
 
 	if owner == null:
 		return

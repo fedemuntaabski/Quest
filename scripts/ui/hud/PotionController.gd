@@ -48,7 +48,7 @@ func _on_potion_pressed() -> void:
 	if not _can_use_potion_now():
 		return
 	if _bound_stats == null:
-		var ps = get_node_or_null("/root/PlayerStats")
+		var ps = ManagerLocator.get_player_stats()
 		if ps == null or ps.stats == null:
 			return
 		_bound_stats = ps.stats
@@ -60,7 +60,7 @@ func _can_use_potion_now() -> bool:
 	if _game_state_manager and not _game_state_manager.is_active():
 		return false
 	if _bound_stats == null:
-		var ps = get_node_or_null("/root/PlayerStats")
+		var ps = ManagerLocator.get_player_stats()
 		if ps == null or ps.stats == null:
 			return false
 		_bound_stats = ps.stats
@@ -74,7 +74,7 @@ func refresh() -> void:
 	if _bound_stats:
 		owned = _bound_stats.potions_owned
 	else:
-		var ps = get_node_or_null("/root/PlayerStats")
+		var ps = ManagerLocator.get_player_stats()
 		if ps and ps.stats:
 			_bound_stats = ps.stats
 			owned = _bound_stats.potions_owned

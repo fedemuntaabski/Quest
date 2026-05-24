@@ -63,9 +63,9 @@ func _ready() -> void:
 	hover_sfx.stream = load("res://assets/audio/hover.mp3")
 
 	if save_mgr == null:
-		save_mgr = get_node_or_null("/root/SaveManager") as SaveManager
+		save_mgr = ManagerLocator.get_save_manager() as SaveManager
 	if player_stats == null:
-		player_stats = get_node_or_null("/root/PlayerStats") as PlayerStats
+		player_stats = ManagerLocator.get_player_stats() as PlayerStats
 
 	_connect()
 	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
@@ -341,7 +341,7 @@ func _get_game_state_manager() -> GameStateManager:
 	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
 
 func _get_currency_manager() -> CurrencyManager:
-	return get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	return ManagerLocator.get_currency_manager() as CurrencyManager
 
 func _apply_theme() -> void:
 	if pause_panel:

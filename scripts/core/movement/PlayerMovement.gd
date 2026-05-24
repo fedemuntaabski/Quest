@@ -56,7 +56,7 @@ func _ready() -> void:
 		action_controller.setup(self, map_manager)
 		action_controller.set_process_input(true)
 
-	var player_stats := get_node_or_null("/root/PlayerStats") as PlayerStats
+	var player_stats := ManagerLocator.get_player_stats() as PlayerStats
 	var player_stats_component := get_node_or_null("Stats") as CharacterStats
 	if player_stats and player_stats_component:
 		player_stats.register(player_stats_component)

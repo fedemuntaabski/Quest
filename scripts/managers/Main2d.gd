@@ -55,7 +55,7 @@ func _ready() -> void:
 	_reset_room_timer()
 
 	# Capture starting gold for this run to compute run-earned gold later
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var currency := ManagerLocator.get_currency_manager() as CurrencyManager
 	if currency:
 		_run_gold_start = int(currency.get_gold())
 
@@ -117,7 +117,7 @@ func _connect_dungeon() -> void:
 		enemy_manager.boss_defeated.connect(Callable(self, "_on_boss_defeated"))
 
 func _connect_player() -> void:
-	var player_stats = get_node_or_null("/root/PlayerStats")
+	var player_stats = ManagerLocator.get_player_stats()
 
 	if player_stats and not player_stats.player_died.is_connected(Callable(self, "_on_player_died")):
 		player_stats.player_died.connect(Callable(self, "_on_player_died"))
@@ -191,7 +191,7 @@ func _connect_hud_card_system_binding() -> void:
 # TUTORIAL 
 # ─────────────────────────────────────────────
 func _load_tutorial_if_needed() -> void:
-	var save_mgr = get_node_or_null("/root/SaveManager")
+	var save_mgr = ManagerLocator.get_save_manager()
 	if not save_mgr or not save_mgr.first_time_player:
 		return
 
@@ -394,7 +394,7 @@ func _on_reward_completed(selected_card: CardData) -> void:
 
 func _get_run_gold_earned() -> int:
 	# Computes the gold earned during this run without mutating currency state.
-	var currency := get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var currency := ManagerLocator.get_currency_manager() as CurrencyManager
 	if currency:
 		return max(0, int(currency.get_gold() - _run_gold_start))
 	return 0

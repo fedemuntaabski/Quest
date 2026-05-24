@@ -44,7 +44,7 @@ func _ready() -> void:
 
 	# Tooltip debounce is handled by CardTooltip itself; HUDController delegates show/hide requests.
 
-	var ps = get_node_or_null("/root/PlayerStats")
+	var ps = ManagerLocator.get_player_stats()
 	if ps:
 		_bind_player_stats(ps)
 	

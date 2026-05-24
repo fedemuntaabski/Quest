@@ -23,7 +23,7 @@ func get_save_path(slot: int) -> String:
 func save_game(slot: int = current_slot) -> void:
 	var cfg = ConfigFile.new()
 	
-	var player_stats_autoload = get_node_or_null("/root/PlayerStats")
+	var player_stats_autoload = ManagerLocator.get_player_stats()
 	if player_stats_autoload:
 		var hp_state = StatBalance.clamp_player_hp(player_stats_autoload.base_hp, player_stats_autoload.base_hp)
 		cfg.set_value(SAVE_SECTION, "base_hp", int(hp_state.get("max_hp", player_stats_autoload.base_hp)))
@@ -53,7 +53,7 @@ func load_game(slot: int = current_slot) -> void:
 	var cfg = ConfigFile.new()
 	var err = cfg.load(get_save_path(slot))
 	
-	var player_stats_autoload = get_node_or_null("/root/PlayerStats")
+	var player_stats_autoload = ManagerLocator.get_player_stats()
 	
 	if err == OK:
 		print("SaveManager: Loaded save from slot %d." % slot)

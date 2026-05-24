@@ -39,6 +39,7 @@ func refresh() -> void:
 func _build_ui() -> void:
 	var previous_info_text := _info_text
 	var previous_info_visible := _info_visible
+	var save_mgr := ManagerLocator.get_save_manager()
 
 	for child in get_children():
 		child.queue_free()
@@ -85,7 +86,7 @@ func _build_ui() -> void:
 		var btn := Button.new()
 		btn.custom_minimum_size = Vector2(400, 100)
 		btn.text = "RANURA %d" % i
-		if SaveManager.has_save(i):
+		if save_mgr and save_mgr.has_save(i):
 			btn.text += " (GUARDADA)"
 		else:
 			btn.text += " (VACIA)"
@@ -106,7 +107,7 @@ func _build_ui() -> void:
 		del_btn.pressed.connect(_on_slot_deleted.bind(i))
 		del_btn.mouse_entered.connect(_play_hover)
 
-		if not SaveManager.has_save(i):
+		if not (save_mgr and save_mgr.has_save(i)):
 			del_btn.disabled = true
 			del_btn.modulate.a = 0.5
 
@@ -179,17 +180,20 @@ func _play_hover() -> void:
 
 func _on_slot_deleted(slot_id: int) -> void:
 	_play_click()
-	SaveManager.delete_save(slot_id)
+	var save_mgr := ManagerLocator.get_save_manager()
+	if save_mgr:
+		save_mgr.delete_save(slot_id)
 	_info_text = ""
 	_info_visible = false
 	refresh()
 
 func _on_slot_hovered(slot_id: int) -> void:
-	if not SaveManager.has_save(slot_id):
+	var save_mgr := ManagerLocator.get_save_manager()
+	if not save_mgr or not save_mgr.has_save(slot_id):
 		return
 
 	var cfg = ConfigFile.new()
-	var err = cfg.load(SaveManager.get_save_path(slot_id))
+	var err = cfg.load(save_mgr.get_save_path(slot_id))
 	if err != OK:
 		return
 

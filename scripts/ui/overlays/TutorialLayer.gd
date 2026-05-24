@@ -44,7 +44,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 
-	var save_mgr = get_node_or_null("/root/SaveManager")
+	var save_mgr = ManagerLocator.get_save_manager()
 	if save_mgr and save_mgr.first_time_player:
 		call_deferred("_start_tutorial")
 	else:
@@ -114,7 +114,7 @@ func _finish_tutorial() -> void:
 	visible = false
 	tutorial_finished.emit()
 
-	var save_mgr = get_node_or_null("/root/SaveManager")
+	var save_mgr = ManagerLocator.get_save_manager()
 	if save_mgr:
 		save_mgr.first_time_player = false
 		save_mgr.save_game()

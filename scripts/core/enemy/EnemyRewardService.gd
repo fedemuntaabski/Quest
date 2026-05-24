@@ -50,7 +50,7 @@ static func grant_and_reset_accumulated_gold(manager: EnemyManager) -> int:
 	if manager._run_accumulated_gold <= 0:
 		return 0
 
-	var currency := manager.get_node_or_null("/root/CurrencyManager") as CurrencyManager
+	var currency := ManagerLocator.get_currency_manager() as CurrencyManager
 	if currency == null:
 		push_warning("[EnemyManager] Cannot grant accumulated gold: CurrencyManager not found")
 		var temp := manager._run_accumulated_gold
