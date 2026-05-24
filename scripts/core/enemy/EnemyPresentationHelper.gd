@@ -25,6 +25,15 @@ static func set_targeted_state(
 static func spawn_floating_text(host: Node, text: String, color: Color, crit: bool) -> void:
 	if host == null:
 		return
+	var host_2d := host as Node2D
+	if host_2d == null:
+		return
+	var text_mgr := host.get_tree().get_first_node_in_group("floating_text_manager") as FloatingTextManager
+	if text_mgr:
+		text_mgr.spawn_text_from_host(host_2d, text, color, crit, Vector2(-12, -28), 18.0, 0.5)
+		return
+
+	# Fallback path keeps behavior if FloatingTextManager is unavailable.
 	var label := Label.new()
 	label.text = text
 	label.modulate = color
