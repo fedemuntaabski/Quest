@@ -13,15 +13,6 @@ func _init(_base: int = 0) -> void:
 func get_total() -> int:
 	return base_value + permanent_mod + runtime_total
 
-func set_base(v: int) -> void:
-	base_value = int(v)
-
-func add_permanent(value: int) -> void:
-	permanent_mod += int(value)
-
-func add_runtime_total_delta(value: int) -> void:
-	runtime_total += int(value)
-
 func add_runtime_modifier(value: int, duration_turns: int = 1, source: String = "") -> String:
 	_serial += 1
 	var id := "rs_%d" % _serial
@@ -49,6 +40,3 @@ func tick_turn_start() -> Array:
 func clear_runtime_modifiers() -> void:
 	_runtime_modifiers.clear()
 	runtime_total = 0
-
-func get_runtime_modifiers() -> Dictionary:
-	return _runtime_modifiers.duplicate(true)

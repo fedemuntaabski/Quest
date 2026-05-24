@@ -117,12 +117,11 @@ func _apply_status_effect(status_data: Dictionary, target_component: CombatCompo
 
 	# Save previous status state for rollback
 	var status_component := receiver_actor.get_node_or_null("StatusComponent") as StatusComponent
-	if status_component != null:
-		var prev_comp := status_component.statuses.duplicate(true)
-		context.register_rollback(Callable(self, "_rb_restore_status_component"), [status_component, prev_comp])
-	else:
-		var prev_meta := StatusRuntime.get_statuses(receiver_actor).duplicate(true)
-		context.register_rollback(Callable(self, "_rb_restore_status_meta"), [receiver_actor, prev_meta])
+	if status_component == null:
+		return false
+
+	var prev_comp := status_component.statuses.duplicate(true)
+	context.register_rollback(Callable(self, "_rb_restore_status_component"), [status_component, prev_comp])
 
 	StatusRuntime.apply_status(receiver_actor, receiver_component.stats, status_data)
 
@@ -137,22 +136,6 @@ func _rb_set_actor_pos(actor: Node, grid_pos: Vector2i, map_manager: Node) -> vo
 		actor.global_position = world
 	if map_manager and map_manager.has_method("update_actor_cell"):
 		map_manager.update_actor_cell(actor, grid_pos)
-
-func _rb_restore_status_state(actor: Node, prev_statuses: Dictionary) -> void:
-	if actor == null:
-		return
-	var status_component := actor.get_node_or_null("StatusComponent") as StatusComponent
-	if status_component == null:
-		return
-	status_component.clear_all()
-	for status_id in prev_statuses.keys():
-		var status: Dictionary = prev_statuses[status_id]
-		status_component.apply_status(
-			status_id,
-			int(status.get("stacks", 1)),
-			int(status.get("duration", 1)),
-			int(status.get("damage_on_tick", 0))
-		)
 
 func _rb_restore_status_component(status_component: StatusComponent, prev_statuses: Dictionary) -> void:
 	if status_component == null:

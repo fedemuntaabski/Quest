@@ -39,16 +39,27 @@ static func validate_target(source_component: CombatComponent, target: Node, map
 		return result
 
 	if check_range and range_limit >= 0:
-		if not is_in_range(source_component.actor_owner, target_component.actor_owner, range_limit, map_manager):
+		var source_cell: Variant = CardTargeting.get_actor_cell(source_component.actor_owner, map_manager)
+		var target_cell: Variant = CardTargeting.get_actor_cell(target_component.actor_owner, map_manager)
+		if source_cell == null or target_cell == null:
 			result["reason"] = "out_of_range"
-			result["distance"] = get_distance(source_component.actor_owner, target_component.actor_owner, map_manager)
+			result["distance"] = -1
+			result["max_range"] = range_limit
+			return result
+		if CardTargeting.get_chebyshev_distance(source_cell, target_cell) > range_limit:
+			result["reason"] = "out_of_range"
+			result["distance"] = CardTargeting.get_chebyshev_distance(source_cell, target_cell)
 			result["max_range"] = range_limit
 			return result
 
 	result["valid"] = true
 	result["reason"] = "ok"
 	result["target_component"] = target_component
-	result["distance"] = get_distance(source_component.actor_owner, target_component.actor_owner, map_manager)
+	result["distance"] = CardTargeting.get_chebyshev_distance(
+		CardTargeting.get_actor_cell(source_component.actor_owner, map_manager),
+		CardTargeting.get_actor_cell(target_component.actor_owner, map_manager)
+
+	)
 	return result
 
 static func resolve_target_component(target: Node) -> CombatComponent:
@@ -62,23 +73,3 @@ static func resolve_target_component(target: Node) -> CombatComponent:
 		return target.get_combat_component() as CombatComponent
 
 	return target.get_node_or_null("CombatComponent") as CombatComponent
-
-static func get_distance(source: Node, target: Node, map_manager: MapManager) -> int:
-	var source_cell: Variant = CardTargeting.get_actor_cell(source, map_manager)
-	var target_cell: Variant = CardTargeting.get_actor_cell(target, map_manager)
-	if source_cell == null or target_cell == null:
-		return -1
-	return CardTargeting.get_chebyshev_distance(source_cell, target_cell)
-
-static func get_actor_cell(actor: Node, map_manager: MapManager) -> Variant:
-	return CardTargeting.get_actor_cell(actor, map_manager)
-
-static func get_chebyshev_distance(a: Vector2i, b: Vector2i) -> int:
-	return CardTargeting.get_chebyshev_distance(a, b)
-
-static func is_in_range(source: Node, target: Node, range_value: int, map_manager: MapManager) -> bool:
-	var source_cell: Variant = CardTargeting.get_actor_cell(source, map_manager)
-	var target_cell: Variant = CardTargeting.get_actor_cell(target, map_manager)
-	if source_cell == null or target_cell == null:
-		return false
-	return CardTargeting.get_chebyshev_distance(source_cell, target_cell) <= range_value
