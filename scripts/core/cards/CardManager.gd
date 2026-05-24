@@ -37,7 +37,6 @@ func set_deck(cards: Array[CardData]) -> void:
 		_initialize_empty_hotbar()
 	_update_cooldown_cache()
 	equipped_changed.emit()
-	_emit_ui_state()
 	_shuffle_draw_pile()
 
 func _initialize_empty_hotbar() -> void:
@@ -57,7 +56,6 @@ func equip_card(card: CardData, slot_index: int) -> void:
 	if active_index >= equipped.size():
 		active_index = -1
 	equipped_changed.emit()
-	_emit_ui_state()
 
 func replace_equipped_card(card: CardData, slot_index: int) -> void:
 	if card == null:
@@ -84,7 +82,6 @@ func replace_equipped_card(card: CardData, slot_index: int) -> void:
 		active_index_changed.emit(-1)
 	
 	equipped_changed.emit()
-	_emit_ui_state()
 
 func register_new_card(card: CardData) -> void:
 	if card == null:
@@ -102,7 +99,6 @@ func set_active_index(index: int) -> void:
 	if index == -1:
 		active_index = -1
 		active_index_changed.emit(-1)
-		_emit_ui_state()
 		return
 	
 	if index < 0 or index >= equipped.size():
@@ -111,7 +107,7 @@ func set_active_index(index: int) -> void:
 		return
 	active_index = index
 	active_index_changed.emit(index)
-	_emit_ui_state()
+	ui_state_changed.emit(get_equipped_payload(), active_index)
 
 func can_play_card(card: CardData) -> bool:
 	if card == null:
@@ -123,7 +119,6 @@ func start_cooldown(card: CardData) -> void:
 		return
 	_cooldowns[card] = max(card.cooldown, 0)
 	cooldowns_changed.emit()
-	_emit_ui_state()
 
 func tick_cooldowns() -> void:
 	var changed := false
@@ -134,7 +129,6 @@ func tick_cooldowns() -> void:
 			changed = true
 	if changed:
 		cooldowns_changed.emit()
-		_emit_ui_state()
 
 func get_cooldown_remaining(card: CardData) -> int:
 	return int(_cooldowns.get(card, 0))
@@ -198,9 +192,6 @@ func _update_cooldown_cache() -> void:
 	for card in deck:
 		_cooldowns[card] = 0
 
-func _emit_ui_state() -> void:
-	ui_state_changed.emit(get_equipped_payload(), active_index)
-
 func _remove_card_from_pool(pool: Array[CardData], card: CardData) -> void:
 	var index := pool.find(card)
 	if index >= 0:
@@ -239,4 +230,3 @@ func remove_card_from_all_pools(card: CardData) -> void:
 			equipped[i] = null
 	_cooldowns.erase(card)
 	equipped_changed.emit()
-	_emit_ui_state()

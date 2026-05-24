@@ -9,7 +9,6 @@ extends Control
 @onready var click_sound: AudioStreamPlayer = $click
 @onready var hover_sound: AudioStreamPlayer = $hover
 
-var slot_selector: SaveSlotSelector = null
 var flow: MainMenuFlow = null
 
 func _ready() -> void:
@@ -19,15 +18,11 @@ func _ready() -> void:
 	flow = MainMenuFlow.new()
 	flow.setup(self, center_container, main_vbox, options_menu, click_sound, hover_sound)
 	flow.build_slot_selector(start_button)
-	slot_selector = flow.slot_selector
 
 	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
 		options_menu.closed.connect(_on_options_menu_closed)
 	if options_menu:
 		options_menu.close()
-
-func _build_slot_selector() -> void:
-	pass
 
 func _setup_content_scaling() -> void:
 	var root_window: Window = get_tree().root
@@ -61,10 +56,6 @@ func _on_options_button_pressed() -> void:
 	_show_options_menu()
 
 func _on_options_menu_closed() -> void:
-	if flow:
-		flow.show_main_menu()
-
-func _show_main_menu() -> void:
 	if flow:
 		flow.show_main_menu()
 

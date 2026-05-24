@@ -103,12 +103,11 @@ func bind_hud_external(hud: HUDController) -> void:
 		hud.hotbar_slot_pressed.connect(hotbar_cb)
 	
 	# Connect card manager signals to update UI
-	var cooldowns_cb := Callable(self, "update_hotbar_ui")
-	var equipped_cb := Callable(self, "update_hotbar_ui")
-	if not card_manager.cooldowns_changed.is_connected(cooldowns_cb):
-		card_manager.cooldowns_changed.connect(cooldowns_cb)
-	if not card_manager.equipped_changed.is_connected(equipped_cb):
-		card_manager.equipped_changed.connect(equipped_cb)
+	var refresh_cb := Callable(self, "update_hotbar_ui")
+	if not card_manager.cooldowns_changed.is_connected(refresh_cb):
+		card_manager.cooldowns_changed.connect(refresh_cb)
+	if not card_manager.equipped_changed.is_connected(refresh_cb):
+		card_manager.equipped_changed.connect(refresh_cb)
 	
 	# Initial UI refresh
 	update_hotbar_ui()

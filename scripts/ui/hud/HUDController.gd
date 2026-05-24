@@ -34,7 +34,7 @@ signal hud_ready  # warning-ignore:unused_signal # Emitted after full HUD initia
 var hotbar_slots: Array = []
 var _bound_card_manager: CardManager = null
 var _roll_label_tween: Tween = null
-var _potion_controller = null
+var _potion_controller: PotionController = null
 var _bound_stats: CharacterStats = null
 # Tooltip debounce is owned by CardTooltip. HUDController delegates tooltip timing.
 
@@ -83,13 +83,11 @@ func _setup_reward_ui() -> void:
 func _init_potion_controller() -> void:
 	if _potion_controller != null:
 		return
-	_potion_controller = get_node_or_null("PotionController")
+	_potion_controller = get_node_or_null("PotionController") as PotionController
 	if _potion_controller == null:
-		# Fallback for older scenes that do not yet include the node.
-		var PotionController = preload("res://scripts/ui/hud/PotionController.gd")
-		_potion_controller = PotionController.new()
-		add_child(_potion_controller)
-	# Provide HUD nodes (they may be null if scene differs)
+		push_error("[HUDController] PotionController node is missing from the HUD scene")
+		return
+	# Provide HUD nodes if present.
 	_potion_controller.setup(potion_button, potion_count_label, potion_icon)
 
 func _on_hotbar_slot_pressed(index: int) -> void:
@@ -111,7 +109,7 @@ func _bind_player_stats(ps: PlayerStats) -> void:
 		ps.stats_changed.connect(_on_player_stats_changed)
 
 	if ps.stats:
-		if _potion_controller and _potion_controller.has_method("bind_stats"):
+		if _potion_controller:
 			_potion_controller.bind_stats(ps.stats)
 		_on_player_stats_changed(ps.stats)
 
@@ -124,7 +122,7 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 		_bound_stats = stats
 		if not stats.hp_changed.is_connected(_on_hp_changed):
 			stats.hp_changed.connect(_on_hp_changed)
-		if _potion_controller and _potion_controller.has_method("bind_stats"):
+		if _potion_controller:
 			_potion_controller.bind_stats(stats)
 	stat_panel.update_stats(stats)
 
