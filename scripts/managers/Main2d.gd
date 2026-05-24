@@ -434,11 +434,15 @@ func _on_retry_pressed() -> void:
 
 func _go_to_main_menu() -> void:
 	# Shared exit path for pause and defeat flows.
+	# Ensure pending saves are flushed before leaving the scene.
+	ManagerLocator.flush_saves()
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 
 func _reload_current_scene() -> void:
 	# Shared retry path keeps scene reset behavior in one place.
+	# Flush any pending saves before reloading.
+	ManagerLocator.flush_saves()
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 

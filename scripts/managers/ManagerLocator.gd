@@ -58,3 +58,8 @@ static func get_game_state_manager() -> Node:
     if ml and ml is SceneTree:
         return ml.get_first_node_in_group("game_state_manager")
     return null
+
+static func flush_saves() -> void:
+    var currency := get_currency_manager()
+    if currency and currency.has_method("flush_save"):
+        currency.flush_save()

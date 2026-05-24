@@ -72,13 +72,15 @@ func exit_pressed() -> void:
 	if owner == null:
 		return
 	await owner.get_tree().create_timer(0.15).timeout
+	# Flush pending saves before quitting the application.
+	ManagerLocator.flush_saves()
 	owner.get_tree().quit()
 
 func _on_slot_back_pressed() -> void:
 	show_main_menu()
 
 func _on_slot_selected(slot_id: int) -> void:
-	var save_mgr = ManagerLocator.get_save_manager()
+	var save_mgr := ManagerLocator.get_save_manager()
 	if save_mgr:
 		save_mgr.load_game(slot_id)
 
@@ -86,6 +88,8 @@ func _on_slot_selected(slot_id: int) -> void:
 		return
 
 	await owner.get_tree().create_timer(0.15).timeout
+	# Ensure pending saves are flushed before scene change.
+	ManagerLocator.flush_saves()
 	owner.get_tree().change_scene_to_file("res://scenes/Main2d.tscn")
 
 func _play_click() -> void:

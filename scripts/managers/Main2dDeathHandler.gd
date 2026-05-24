@@ -33,6 +33,4 @@ func show_death_screen(_enemies_killed: int, _rooms_cleared: int, run_gold: int)
 			t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 			t.tween_property(color_rect, "modulate:a", 1.0, 2.0)
 
-func handle_player_died(enemies_killed: int, rooms_cleared: int, run_gold: int) -> void:
-	# Backward-compatible wrapper for callers that still use the older name.
-	show_death_screen(enemies_killed, rooms_cleared, run_gold)
+### Removed legacy wrapper `handle_player_died()` — no callers detected.

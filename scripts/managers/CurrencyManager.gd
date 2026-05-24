@@ -73,3 +73,14 @@ func _on_save_timer_timeout() -> void:
 	if save_mgr:
 		save_mgr.save_game()
 		_save_dirty = false
+
+func flush_save() -> void:
+	# Immediately persist pending gold changes.
+	if not _save_dirty:
+		return
+	if _save_timer:
+		_save_timer.stop()
+	var save_mgr := ManagerLocator.get_save_manager()
+	if save_mgr:
+		save_mgr.save_game()
+	_save_dirty = false
