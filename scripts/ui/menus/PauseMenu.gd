@@ -1,18 +1,17 @@
 extends CanvasLayer
 class_name PauseMenu
 
+const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
+
 signal exit_requested
 signal store_opened
 
 const UPGRADES = {
-	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+2 Vida maxima", "value": 2},
+	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+2 Vida maxima (cap 40)", "value": 2},
 	"str": {"stat": "strength", "label": "Fuerza", "effect": "+1 dano fisico", "value": 1},
 	"mag": {"stat": "magic", "label": "Magia", "effect": "+1 energia para habilidades", "value": 1},
-	"dex": {"stat": "dexterity", "label": "Agilidad", "effect": "+1 prob. de esquivar", "value": 1}
+	"dex": {"stat": "dexterity", "label": "Agilidad", "effect": "+1 agilidad (curva suavizada)", "value": 1}
 }
-
-const BASE_UPGRADE_COST := 50
-const UPGRADE_COST_STEP := 25
 
 @export var save_mgr: SaveManager
 @export var player_stats: PlayerStats
@@ -253,11 +252,11 @@ func _update_store():
 		var config: Dictionary = UPGRADES.get(key, {})
 		var stat_name: String = str(config.get("stat", ""))
 		var level := 0
-		var max_level := 10
+		var max_level := StatBalance.MAX_UPGRADE_LEVEL
 		if player_stats:
 			level = player_stats.get_upgrade_level(stat_name)
 			max_level = player_stats.get_max_upgrade_level()
-		var cost := _get_upgrade_cost(level)
+		var cost := StatBalance.get_upgrade_cost(level)
 		var can_upgrade := player_stats != null and player_stats.can_upgrade_stat(stat_name)
 		var affordable := save_mgr.gold >= cost
 		var button: Button = upgrade_buttons[i]
@@ -307,7 +306,7 @@ func _on_upgrade_pressed(stat: String):
 		return
 
 	var level := player_stats.get_upgrade_level(stat_name)
-	var cost := _get_upgrade_cost(level)
+	var cost := StatBalance.get_upgrade_cost(level)
 	
 	var currency := _get_currency_manager()
 	if currency == null:
@@ -333,9 +332,6 @@ func _on_upgrade_pressed(stat: String):
 
 	_update_gold_labels()
 	_update_store()
-
-func _get_upgrade_cost(level: int) -> int:
-	return BASE_UPGRADE_COST + (max(level, 0) * UPGRADE_COST_STEP)
 
 func _show_error_message(message: String) -> void:
 	# PHASE 2: Display error feedback temporarily

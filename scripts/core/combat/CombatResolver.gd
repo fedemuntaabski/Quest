@@ -2,8 +2,9 @@ extends Node
 class_name CombatResolver
 
 const DiceSystem = preload("res://scripts/managers/DiceSystem.gd")
+const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
 
-static func resolve_attack(attacker: CharacterStats, target: CharacterStats, stat_key: String = "strength", base_damage: int = 0) -> Dictionary:
+static func resolve_attack(attacker: CharacterStats, target: CharacterStats, stat_key: String = "strength", base_damage: int = 0, damage_scaling: float = 1.0) -> Dictionary:
 	if attacker == null or target == null:
 		return {
 			"hit": false,
@@ -14,13 +15,14 @@ static func resolve_attack(attacker: CharacterStats, target: CharacterStats, sta
 
 	# Calculate dodge chance from target's dexterity and apply dodge check
 	var attack_stat: int = _get_stat_value(attacker, stat_key)
-	var base_total: int = base_damage + attack_stat
+	var attack_bonus: int = StatBalance.get_scaled_stat_bonus(stat_key, attack_stat, damage_scaling)
+	var base_total: int = base_damage + attack_bonus
 
 	var target_dex: int = 0
 	if target != null:
 		target_dex = target.get_total_dexterity()
 
-	var dodge_chance: float = _dex_to_dodge(target_dex)
+	var dodge_chance: float = StatBalance.get_dexterity_dodge_chance(target_dex)
 	if randf() < dodge_chance:
 		return {
 			"hit": false,
@@ -45,6 +47,7 @@ static func resolve_attack(attacker: CharacterStats, target: CharacterStats, sta
 		"base_total": base_total,
 		"stat_key": stat_key,
 		"stat_value": attack_stat,
+		"attack_bonus": attack_bonus,
 		"dodge_chance": dodge_chance,
 		"target_dex": target_dex
 	}
@@ -53,12 +56,3 @@ static func _get_stat_value(stats: CharacterStats, stat_key: String) -> int:
 	if stats == null:
 		return 0
 	return stats.get_total_stat(stat_key)
-
-static func _dex_to_dodge(dex: int) -> float:
-	# Scale dodge chance linearly: dex 1 -> 2.5%, dex 10 -> 25%
-	if dex <= 1:
-		return 0.025
-	if dex >= 10:
-		return 0.25
-	var t: float = float(dex - 1) / float(9) # normalized 0..1
-	return lerp(0.025, 0.25, t)

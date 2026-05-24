@@ -1,5 +1,7 @@
 extends Node
 
+const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
+
 ## SaveManager — Autoload singleton
 ## Handles save slot logic using ConfigFile.
 
@@ -23,7 +25,8 @@ func save_game(slot: int = current_slot) -> void:
 	
 	var player_stats_autoload = get_node_or_null("/root/PlayerStats")
 	if player_stats_autoload:
-		cfg.set_value(SAVE_SECTION, "base_hp", player_stats_autoload.base_hp)
+		var hp_state = StatBalance.clamp_player_hp(player_stats_autoload.base_hp, player_stats_autoload.base_hp)
+		cfg.set_value(SAVE_SECTION, "base_hp", int(hp_state.get("max_hp", player_stats_autoload.base_hp)))
 		cfg.set_value(SAVE_SECTION, "base_str", player_stats_autoload.base_str)
 		cfg.set_value(SAVE_SECTION, "base_mag", player_stats_autoload.base_mag)
 		cfg.set_value(SAVE_SECTION, "base_dex", player_stats_autoload.base_dex)
@@ -59,7 +62,9 @@ func load_game(slot: int = current_slot) -> void:
 		contracts_completed = cfg.get_value(SAVE_SECTION, "contracts_completed", 0)
 		
 		if player_stats_autoload:
-			player_stats_autoload.base_hp = cfg.get_value(SAVE_SECTION, "base_hp", 20)
+			var loaded_base_hp := int(cfg.get_value(SAVE_SECTION, "base_hp", StatBalance.PLAYER_BASE_HP))
+			var hp_state := StatBalance.clamp_player_hp(loaded_base_hp, loaded_base_hp)
+			player_stats_autoload.base_hp = int(hp_state.get("max_hp", StatBalance.PLAYER_BASE_HP))
 			player_stats_autoload.base_str = cfg.get_value(SAVE_SECTION, "base_str", 1)
 			player_stats_autoload.base_mag = cfg.get_value(SAVE_SECTION, "base_mag", 1)
 			player_stats_autoload.base_dex = cfg.get_value(SAVE_SECTION, "base_dex", 1)
@@ -71,7 +76,7 @@ func load_game(slot: int = current_slot) -> void:
 		gold = 0
 		contracts_completed = 0
 		if player_stats_autoload:
-			player_stats_autoload.base_hp = 20
+			player_stats_autoload.base_hp = StatBalance.PLAYER_BASE_HP
 			player_stats_autoload.base_str = 1
 			player_stats_autoload.base_mag = 1
 			player_stats_autoload.base_dex = 1

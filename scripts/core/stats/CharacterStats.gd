@@ -1,6 +1,8 @@
 extends Node
 class_name CharacterStats
 
+const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
+
 # -------------------------
 # BASIC INFO
 # -------------------------
@@ -135,8 +137,9 @@ func apply_modifier(stat: String, value: int) -> void:
 			if dexterity_stack != null:
 				dexterity_stack.permanent_mod = dexterity_mod
 		"hp":
-			max_hp = max(1, max_hp + value)
-			current_hp = min(current_hp + value, max_hp)
+			var hp_state := StatBalance.apply_hp_delta(max_hp, current_hp, value)
+			max_hp = int(hp_state.get("max_hp", max_hp))
+			current_hp = int(hp_state.get("current_hp", current_hp))
 		_:
 			push_warning("Unknown stat: %s" % stat)
 

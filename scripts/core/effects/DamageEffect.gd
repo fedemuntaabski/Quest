@@ -18,10 +18,7 @@ func apply(source_stats: CharacterStats, target_stats: CharacterStats, _context:
 			"reason": "missing_stats"
 		}
 
-	var stat_value := _get_stat_value(source_stats, stat_key)
-	var scaled_bonus := int(round(float(stat_value) * damage_scaling))
-	var resolved_base := base_damage + scaled_bonus
-	var result := CombatResolverScript.resolve_attack(source_stats, target_stats, stat_key, resolved_base)
+	var result := CombatResolverScript.resolve_attack(source_stats, target_stats, stat_key, base_damage, damage_scaling)
 	result["effect"] = "damage"
 	return result
 
