@@ -5,7 +5,6 @@ signal action_finished(action: BaseAction, result: Dictionary)
 
 var _queue: Array[BaseAction] = []
 var _is_busy: bool = false
-var _current_action: BaseAction = null
 
 func _describe_action(action: BaseAction) -> String:
 	if action == null:
@@ -47,7 +46,6 @@ func process_next() -> void:
 
 	print("[ActionQueue] process_next: executing action, type=%s" % _describe_action(action))
 	_is_busy = true
-	_current_action = action
 	var start_token: Dictionary = action.get_execution_state_token() if action else {}
 
 	if not action.can_execute():
@@ -56,7 +54,6 @@ func process_next() -> void:
 		var res : Dictionary = {"status":"cannot_execute", "consumes_turn": false, "reason": failure_reason if failure_reason != "" else "can_execute_false"}
 		action.finish(res)
 		_is_busy = false
-		_current_action = null
 		action_finished.emit(action, res)
 		process_next()
 		return
@@ -80,14 +77,12 @@ func process_next() -> void:
 
 	print("[ActionQueue] process_next: action finished, type=%s queue_size_remaining=%d" % [_describe_action(action), _queue.size()])
 	_is_busy = false
-	_current_action = null
 	action_finished.emit(action, res)
 	process_next()
 
 func clear() -> void:
 	_queue.clear()
 	_is_busy = false
-	_current_action = null
 
 func is_busy() -> bool:
 	return _is_busy

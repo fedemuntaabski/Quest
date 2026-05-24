@@ -96,6 +96,3 @@ func receive_damage(amount: int, crit: bool = false) -> void:
 	stats.take_damage(amount)
 	if actor_owner and actor_owner.has_method("show_damage"):
 		actor_owner.show_damage(amount, crit)
-
-func _resolve_target_component(target: Node) -> CombatComponent:
-	return CombatValidation.resolve_target_component(target)

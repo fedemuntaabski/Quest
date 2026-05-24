@@ -126,21 +126,6 @@ func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) 
 	turn_manager.action_queue.queue_action(action)
 	return true
 
-func execute_card(card: CardData, target: Node) -> Dictionary:
-	var validation := get_card_validation(card, target)
-	if not bool(validation.get("valid", false)):
-		var reason := str(validation.get("reason", "invalid"))
-		card_failed.emit(card, reason)
-		return {"hit": false, "damage": 0, "reason": reason}
-	var target_component: CombatComponent = CombatValidation.resolve_target_component(target)
-	if target_component == null or target_component.stats == null:
-		card_failed.emit(card, "no_target")
-		return {"hit": false, "damage": 0, "reason": "no_target"}
-
-	var result := CardResolver.resolve_card(card, combat_component.stats, target_component.stats)
-	return await _finalize_card_execution(card, target, target_component, result)
-
-
 func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 	# Snapshot-aware execution: validate occupancy version and avoid re-repairing
 	print("[CombatCardSystem] execute_card_snapshot: START card=", card.display_name if card else "NULL", " snapshot=", snapshot)
