@@ -27,38 +27,61 @@ var magic: int = 1
 var dexterity: int = 1
 
 # -------------------------
-# MODIFIERS (FROM UPGRADES)
+# PERMANENT MODIFIERS
 # -------------------------
 var strength_mod: int = 0
 var magic_mod: int = 0
 var dexterity_mod: int = 0
 
 # -------------------------
-# MODIFIERS (FROM TEMP BUFFS)
+# RUNTIME MODIFIER TRACKING
 # -------------------------
+# Legacy-compatible runtime cache for UI/debugging.
+# Actual runtime values are owned by ModifierStack.
 var _runtime_modifiers: Dictionary = {}
 
-# Modifier stacks (gradual migration)
+# -------------------------
+# MODIFIER STACKS
+# -------------------------
 var strength_stack: ModifierStack = null
 var magic_stack: ModifierStack = null
 var dexterity_stack: ModifierStack = null
 
+# -------------------------
+# RESET
+# -------------------------
 func reset_modifiers() -> void:
 	strength_mod = 0
 	magic_mod = 0
 	dexterity_mod = 0
 
+	max_hp = StatBalance.PLAYER_BASE_HP
+	current_hp = min(current_hp, max_hp)
+
+	if strength_stack != null:
+		strength_stack.permanent_mod = 0
+
+	if magic_stack != null:
+		magic_stack.permanent_mod = 0
+
+	if dexterity_stack != null:
+		dexterity_stack.permanent_mod = 0
+
+	hp_changed.emit(current_hp, max_hp)
+	stats_changed.emit()
+
 func reset_runtime_modifiers() -> void:
-	if _runtime_modifiers.is_empty():
-		return
 	_runtime_modifiers.clear()
-	# Clear stacks if present
-	if strength_stack:
+
+	if strength_stack != null:
 		strength_stack.clear_runtime_modifiers()
-	if magic_stack:
+
+	if magic_stack != null:
 		magic_stack.clear_runtime_modifiers()
-	if dexterity_stack:
+
+	if dexterity_stack != null:
 		dexterity_stack.clear_runtime_modifiers()
+
 	stats_changed.emit()
 
 # -------------------------
@@ -68,16 +91,21 @@ func get_total_stat(stat_key: String, fallback_key: String = "strength") -> int:
 	match stat_key.to_lower():
 		"strength":
 			return get_total_strength()
+
 		"magic":
 			return get_total_magic()
+
 		"dexterity":
 			return get_total_dexterity()
+
 		_:
 			match fallback_key.to_lower():
 				"magic":
 					return get_total_magic()
+
 				"dexterity":
 					return get_total_dexterity()
+
 				_:
 					return get_total_strength()
 
@@ -97,112 +125,164 @@ func get_total_dexterity() -> int:
 # HEALTH SYSTEM
 # -------------------------
 func take_damage(amount: int) -> void:
-	current_hp = max(current_hp - amount, 0)
+	current_hp = max(current_hp - max(amount, 0), 0)
+
 	hp_changed.emit(current_hp, max_hp)
 
 	if current_hp <= 0:
 		died.emit()
 
 func heal(amount: int) -> void:
-	current_hp = min(current_hp + amount, max_hp)
+	current_hp = min(current_hp + max(amount, 0), max_hp)
 	hp_changed.emit(current_hp, max_hp)
 
 func use_potion() -> bool:
-	if potions_owned <= 0 or current_hp >= max_hp:
+	if potions_owned <= 0:
 		return false
-	var heal_amount = int(ceil(float(max_hp) * 0.5))
+
+	if current_hp >= max_hp:
+		return false
+
+	var heal_amount := int(ceil(float(max_hp) * 0.5))
+
 	heal(heal_amount)
+
 	potions_owned -= 1
+
 	stats_changed.emit()
+
 	return true
 
 func is_alive() -> bool:
 	return current_hp > 0
 
 # -------------------------
-# MODIFIERS
+# PERMANENT MODIFIERS
 # -------------------------
 func apply_modifier(stat: String, value: int) -> void:
-	match stat:
+	var stat_key := stat.to_lower()
+
+	match stat_key:
 		"strength":
 			strength_mod += value
+
 			if strength_stack != null:
 				strength_stack.permanent_mod = strength_mod
+
 		"magic":
 			magic_mod += value
+
 			if magic_stack != null:
 				magic_stack.permanent_mod = magic_mod
+
 		"dexterity":
 			dexterity_mod += value
+
 			if dexterity_stack != null:
 				dexterity_stack.permanent_mod = dexterity_mod
+
 		"hp":
 			var hp_state := StatBalance.apply_hp_delta(max_hp, current_hp, value)
+
 			max_hp = int(hp_state.get("max_hp", max_hp))
 			current_hp = int(hp_state.get("current_hp", current_hp))
+
+			hp_changed.emit(current_hp, max_hp)
+
 		_:
-			push_warning("Unknown stat: %s" % stat)
+			push_warning("Unknown stat: %s" % stat_key)
+			return
 
 	stats_changed.emit()
 
-func apply_runtime_modifier(stat: String, value: int, duration_turns: int = 1, source: String = "") -> String:
+# -------------------------
+# RUNTIME MODIFIERS
+# -------------------------
+func apply_runtime_modifier(
+	stat: String,
+	value: int,
+	duration_turns: int = 1,
+	source: String = ""
+) -> String:
+
 	var stat_key := stat.to_lower()
+
 	_ensure_stacks()
+
 	var stack: ModifierStack = null
+
 	match stat_key:
 		"strength":
 			stack = strength_stack
+
 		"magic":
 			stack = magic_stack
+
 		"dexterity":
 			stack = dexterity_stack
+
 		_:
-			push_warning("Unknown runtime stat: %s" % stat)
+			push_warning("Unknown runtime stat: %s" % stat_key)
 			return ""
 
-	var modifier_id := stack.add_runtime_modifier(value, duration_turns, source)
-	# Store mapping for legacy inspection and removal
+	var modifier_id := stack.add_runtime_modifier(
+		value,
+		duration_turns,
+		source
+	)
+
 	_runtime_modifiers[modifier_id] = {
 		"stat": stat_key,
-		"value": value,
-		"remaining_turns": max(1, duration_turns),
-		"source": source,
+		"value": int(value),
+		"remaining_turns": max(1, int(duration_turns)),
+		"source": source
 	}
-	# Sync via stats_changed for observers
+
 	stats_changed.emit()
+
 	return modifier_id
 
 func process_runtime_modifiers_turn_start() -> Dictionary:
 	var result := {
 		"changed": false,
-		"expired": [],
+		"expired": []
 	}
 
 	_ensure_stacks()
-	# Tick each stack and collect expired modifiers
+
 	var changed := false
+
 	var stacks := {
 		"strength": strength_stack,
 		"magic": magic_stack,
-		"dexterity": dexterity_stack,
+		"dexterity": dexterity_stack
 	}
 
 	for stat_key in stacks.keys():
-		var s: ModifierStack = stacks[stat_key]
-		if s == null:
-			continue
-		var expired = s.tick_turn_start()
-		if expired.size() > 0:
-			changed = true
-			for e in expired:
-				# e contains {id, value, source}
-				var mid: String = e.get("id", "")
-				var record: Dictionary = _runtime_modifiers.get(mid, null)
-				if record != null:
-					result["expired"].append(record.duplicate(true))
-					_runtime_modifiers.erase(mid)
+		var stack: ModifierStack = stacks[stat_key]
 
-	# No legacy runtime fields to sync; observers react to `stats_changed` when changed
+		if stack == null:
+			continue
+
+		var expired := stack.tick_turn_start()
+
+		if expired.is_empty():
+			continue
+
+		changed = true
+
+		for entry in expired:
+			var modifier_id := str(entry.get("id", ""))
+
+			if modifier_id.is_empty():
+				continue
+
+			if _runtime_modifiers.has(modifier_id):
+				result["expired"].append(
+					_runtime_modifiers[modifier_id].duplicate(true)
+				)
+
+				_runtime_modifiers.erase(modifier_id)
 
 	if changed:
 		result["changed"] = true
@@ -210,27 +290,23 @@ func process_runtime_modifiers_turn_start() -> Dictionary:
 
 	return result
 
-# legacy shim removed: runtime modifiers are managed exclusively via ModifierStack
-
+# -------------------------
+# STACK INITIALIZATION
+# -------------------------
 func _ensure_stacks() -> void:
 	if strength_stack == null:
 		strength_stack = ModifierStack.new(strength)
-		strength_stack.permanent_mod = strength_mod
+
 	if magic_stack == null:
 		magic_stack = ModifierStack.new(magic)
-		magic_stack.permanent_mod = magic_mod
+
 	if dexterity_stack == null:
 		dexterity_stack = ModifierStack.new(dexterity)
-		dexterity_stack.permanent_mod = dexterity_mod
 
-func register_stack_modifier(stat: String, modifier_id: String, value: int, remaining_turns: int = 1, source: String = "") -> void:
-	# Record a mapping for stack-created modifiers so expiration reporting is unified.
-	if modifier_id == "" or stat == "":
-		return
-	_runtime_modifiers[modifier_id] = {
-		"stat": stat.to_lower(),
-		"value": int(value),
-		"remaining_turns": max(1, int(remaining_turns)),
-		"source": source,
-	}
-	stats_changed.emit()
+	strength_stack.base_value = strength
+	magic_stack.base_value = magic
+	dexterity_stack.base_value = dexterity
+
+	strength_stack.permanent_mod = strength_mod
+	magic_stack.permanent_mod = magic_mod
+	dexterity_stack.permanent_mod = dexterity_mod

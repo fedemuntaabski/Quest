@@ -17,9 +17,6 @@ func _ready() -> void:
 
 	owner_stats = parent_node.get_node_or_null("Stats") as CharacterStats
 
-	if owner_stats == null and parent_node is CharacterBody2D:
-		owner_stats = parent_node.get_node_or_null("Stats")
-
 func setup(stats: CharacterStats) -> void:
 	owner_stats = stats
 
@@ -37,10 +34,12 @@ func apply_status(
 
 	if statuses.has(status_id):
 		statuses[status_id]["stacks"] += stacks
+
 		statuses[status_id]["turns_remaining"] = max(
 			int(statuses[status_id]["turns_remaining"]),
 			turns_remaining
 		)
+		statuses[status_id]["damage_on_tick"] += damage_on_tick
 	else:
 		statuses[status_id] = {
 			"stacks": stacks,
@@ -59,7 +58,7 @@ func tick_turn_start() -> Dictionary:
 
 		# Tick damage
 		if int(status.get("damage_on_tick", 0)) > 0:
-			effects["damage"] = int(effects.get("damage", 0)) + int(status["damage_on_tick"])
+			effects["damage_events"] = int(effects.get("damage", 0)) + int(status["damage_on_tick"])
 
 		# Duration decay
 		status["turns_remaining"] -= 1
@@ -165,9 +164,6 @@ func _on_status_changed() -> void:
 
 	# Optional owner callback
 	var parent_node := get_parent()
-
-	if parent_node != null and parent_node.has_method("on_status_changed"):
-		parent_node.on_status_changed()
 
 	# Auto-refresh indicator
 	if parent_node != null:
