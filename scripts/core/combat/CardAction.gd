@@ -36,9 +36,10 @@ func can_execute() -> bool:
 		validation_reason = "no_target"
 		print("[CardAction] can_execute: reject reason=no_target card=%s" % [card_data.display_name])
 		return false
-	var ok: bool = card_system.can_play(card_data, real_target)
+	var validation := card_system.get_card_validation(card_data, real_target)
+	var ok: bool = bool(validation.get("valid", false))
 	if not ok:
-		validation_reason = str(card_system.get_card_validation(card_data, real_target).get("reason", "invalid"))
+		validation_reason = str(validation.get("reason", "invalid"))
 		print("[CardAction] can_execute: reject reason=can_play_false card=%s target=%s" % [card_data.display_name, real_target.name if real_target else "NULL"])
 	else:
 		validation_reason = ""

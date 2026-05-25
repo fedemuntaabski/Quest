@@ -113,9 +113,11 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 				return true
 			var ccs := _get_combat_card_system()
 			if ccs:
-				var queued_self := ccs.queue_card_action(active_card, player, player.turn_manager)
-				if queued_self and card_system_controller:
-					_clear_card_targeting_state()
+				var self_validation := ccs.get_card_validation(active_card, player)
+				if bool(self_validation.get("valid", false)):
+					var queued_self := ccs.queue_card_action(active_card, player, player.turn_manager)
+					if queued_self and card_system_controller:
+						_clear_card_targeting_state()
 			return true
 
 		if active_card.target_type == "enemy":
@@ -124,9 +126,11 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 				return true
 			var ccs := _get_combat_card_system()
 			if ccs:
-				var queued_enemy := ccs.queue_card_action(active_card, enemy_card_target, player.turn_manager)
-				if queued_enemy and card_system_controller:
-					_clear_card_targeting_state()
+				var enemy_validation := ccs.get_card_validation(active_card, enemy_card_target)
+				if bool(enemy_validation.get("valid", false)):
+					var queued_enemy := ccs.queue_card_action(active_card, enemy_card_target, player.turn_manager)
+					if queued_enemy and card_system_controller:
+						_clear_card_targeting_state()
 			return true
 
 	if target_cell == player.grid_pos:
@@ -134,7 +138,8 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 		if ccs and card_manager:
 			var self_card := card_manager.get_active_card()
 			if self_card and self_card.target_type == "self":
-				if ccs.can_play(self_card, player):
+				var self_validation := ccs.get_card_validation(self_card, player)
+				if bool(self_validation.get("valid", false)):
 					var queued := ccs.queue_card_action(self_card, player, player.turn_manager)
 					if queued and card_system_controller:
 						_clear_card_targeting_state()
@@ -146,10 +151,10 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 		var ccs := _get_combat_card_system()
 		if ccs and card_manager:
 			var card := card_manager.get_active_card()
-			if card and ccs.can_play(card, enemy):
+			if card and bool(ccs.get_card_validation(card, enemy).get("valid", false)):
 				var queued := ccs.queue_card_action(card, enemy, player.turn_manager)
 				if queued:
-						_clear_card_targeting_state()
+					_clear_card_targeting_state()
 				return true
 		if _queue_basic_attack(enemy):
 			return true
@@ -282,7 +287,7 @@ func _queue_basic_attack(target: Node) -> bool:
 	var player_combat := player.get_combat_component()
 	if player_combat == null:
 		return false
-	if not player_combat.can_attack(target):
+	if not bool(CombatValidation.validate_target(player_combat, target, player_combat.map_manager, player_combat.attack_range, true).get("valid", false)):
 		return false
 
 	var action := PRELOAD_ATTACK_ACTION.new(player_combat, target)

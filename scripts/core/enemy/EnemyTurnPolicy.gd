@@ -37,7 +37,7 @@ static func decide(enemy: Enemy) -> Dictionary:
 
 	enemy.sync_to_grid()
 
-	if enemy.combat_component and enemy.combat_component.can_attack(enemy.player as Node):
+	if enemy.combat_component and bool(CombatValidation.validate_target(enemy.combat_component, enemy.player as Node, enemy.map_manager, enemy.combat_component.attack_range, true).get("valid", false)):
 		if enemy.map_manager and not enemy.map_manager.can_actors_engage(enemy, enemy.player as Node):
 			return {"decision": Decision.WAIT}
 		return {

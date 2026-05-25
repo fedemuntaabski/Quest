@@ -23,7 +23,7 @@ func can_execute() -> bool:
 			validation_reason = "stale_snapshot"
 			return false
 	validation_reason = ""
-	return combat_component.can_attack(target)
+	return bool(CombatValidation.validate_target(combat_component, target, combat_component.map_manager, combat_component.attack_range, true).get("valid", false))
 
 func execute() -> void:
 

@@ -38,9 +38,6 @@ func setup(p_owner: Node, p_stats: CharacterStats, p_map_manager: MapManager) ->
 
 	stats = p_stats
 
-func can_attack(target: Node) -> bool:
-	return bool(CombatValidation.validate_target(self, target, map_manager, attack_range, true).get("valid", false))
-
 func attack(target: Node) -> Dictionary:
 	# Perform validation, resolve target, run resolve_attack and apply
 	# damage via `receive_damage`. HUD update occurs for player-owned actors.
