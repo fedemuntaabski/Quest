@@ -42,11 +42,6 @@ static func validate_target(source_component: CombatComponent, target: Node, map
 		result["reason"] = "target_dead"
 		return result
 
-	if source_component.actor_owner and source_component.actor_owner.has_method("sync_to_grid"):
-		source_component.actor_owner.sync_to_grid()
-	if target_component.actor_owner and target_component.actor_owner.has_method("sync_to_grid"):
-		target_component.actor_owner.sync_to_grid()
-
 	if check_engagement and map_manager and not map_manager.can_actors_engage(source_component.actor_owner, target_component.actor_owner):
 		result["reason"] = "not_in_same_room"
 		return result
