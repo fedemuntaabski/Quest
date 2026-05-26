@@ -26,9 +26,50 @@ func can_execute() -> bool:
 	return bool(CombatValidation.validate_target(combat_component, target, combat_component.map_manager, combat_component.attack_range, true).get("valid", false))
 
 func execute() -> void:
-
 	if combat_component:
+		var owner_actor = combat_component.actor_owner
+		
+		# 1. 🌟 COMPORTAMIENTO SI EL ATACANTE ES EL JUGADOR
+		if owner_actor is PlayerMovement and owner_actor.sprite:
+			# 🎯 MODIFICA ESTE NÚMERO para calibrar el desfase exclusivo de la animación de ataque:
+			var AJUSTE_OFFSET_ATAQUE: int = 8 
+			
+			# Validamos la dirección X respecto al objetivo para girar el sprite correctamente
+			if "grid_pos" in target:
+				var dir_x = target.grid_pos.x - owner_actor.grid_pos.x
+				if dir_x != 0:
+					if dir_x < 0:
+						owner_actor.sprite.scale.x = -abs(owner_actor.sprite.scale.x)
+						owner_actor.sprite.offset.x = AJUSTE_OFFSET_ATAQUE
+					else:
+						owner_actor.sprite.scale.x = abs(owner_actor.sprite.scale.x)
+						owner_actor.sprite.offset.x = 0
+			
+			# Llamamos a la función del Player para congelar el Idle/Run y atacar
+			owner_actor.play_attack_animation()
+			
+		# 2. 🌟 COMPORTAMIENTO SI EL ATACANTE ES UN ENEMIGO
+		elif owner_actor is Enemy and owner_actor.has_method("play_attack_animation"):
+			# Orientamos dinámicamente al enemigo hacia el jugador antes de golpear
+			if "grid_pos" in target and "grid_pos" in owner_actor:
+				var dir_x = target.grid_pos.x - owner_actor.grid_pos.x
+				if owner_actor.sprite and dir_x != 0:
+					if dir_x < 0:
+						owner_actor.sprite.scale.x = -abs(owner_actor.sprite.scale.x)
+						if owner_actor.enemy_data:
+							owner_actor.sprite.offset.x = owner_actor.enemy_data.extra_stats.get("offset_izq_idle", 4)
+					else:
+						owner_actor.sprite.scale.x = abs(owner_actor.sprite.scale.x)
+						owner_actor.sprite.offset.x = 0
+						
+			owner_actor.play_attack_animation()
+
+		# Ejecución nativa del ataque y daño
 		var result = combat_component.attack(target)
+		
+		# 3. 🛡️ PROTECCIÓN DE RENDER: Evita que el cambio de turno pise la animación instantáneamente
+		if owner_actor and owner_actor.is_inside_tree():
+			await owner_actor.get_tree().create_timer(0.15).timeout
 
 	finish()
 

@@ -10,9 +10,10 @@ static func update_health_bar_on_hp_changed(health_bar: ProgressBar, is_tutorial
 	health_bar.value = current_hp
 	health_bar.visible = true
 
+# 🌟 CORREGIDO: Ahora acepta AnimatedSprite2D como segundo argumento
 static func set_targeted_state(
 	health_bar: ProgressBar,
-	sprite: Sprite2D,
+	sprite: AnimatedSprite2D,
 	active: bool,
 	target_tint: Color,
 	base_modulate: Color
@@ -32,7 +33,6 @@ static func spawn_floating_text(host: Node, text: String, color: Color, crit: bo
 	if text_mgr:
 		text_mgr.spawn_text_from_host(host_2d, text, color, crit, Vector2(-12, -28), 18.0, 0.5)
 		return
-
 
 	# Aggressive mode: do not create fallback labels; prefer consistent presentation.
 	if not text_mgr:

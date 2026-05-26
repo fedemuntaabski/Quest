@@ -184,7 +184,6 @@ func _connect_state_ui() -> void:
 
 ## Defers HUD/card-system binding until both sides are in the tree.
 func _connect_hud_card_system_binding() -> void:
-
 	var player_node := map_manager.get_node_or_null("Player") as PlayerMovement
 	if player_node and hud:
 		var action_controller := player_node.get_node_or_null("PlayerActionController") as PlayerActionController
@@ -214,7 +213,6 @@ func _load_tutorial_if_needed() -> void:
 	if tutorial_layer.has_signal("tutorial_finished"):
 		tutorial_layer.connect("tutorial_finished", _on_tutorial_finished)
 
-	# 🔥 Delegamos toda la lógica al propio tutorial
 	if tutorial_layer.has_method("setup"):
 		tutorial_layer.setup(_dg())
 
@@ -236,7 +234,16 @@ func _process(delta: float) -> void:
 
 	if tick_data["expired"]:
 		push_warning("Room timer reached zero - triggering death state")
-		_on_player_died()
+		_room_timer_paused = true
+		_trigger_timeout_death_flow()
+
+func _trigger_timeout_death_flow() -> void:
+	var player_node := get_tree().get_first_node_in_group("player") as PlayerMovement
+	if player_node and player_node.has_method("trigger_time_out_death"):
+		player_node.trigger_time_out_death()
+	
+	await get_tree().create_timer(1.2).timeout
+	_on_player_died()
 
 func _input(event: InputEvent) -> void:
 	if tutorial_layer and is_instance_valid(tutorial_layer) and tutorial_layer.visible:
@@ -262,15 +269,12 @@ func _on_room_changed(room_id: int) -> void:
 func _on_room_cleared(_room_id: int) -> void:
 	rooms_cleared += 1
 
-	# If victory already triggered (boss died), skip reward flow
 	if _victory_triggered:
 		return
 
 	if _is_dead:
 		return
 
-	# Guard: Skip reward generation if we're in the boss/final room
-	# (room_cleared may fire before _on_boss_defeated sets _victory_triggered)
 	if enemy_manager and _room_id == enemy_manager.final_room_id:
 		return
 
@@ -296,24 +300,19 @@ func _on_player_died() -> void:
 	_is_dead = true
 	_hide_victory_overlay()
 	
-	# Grant accumulated gold from defeated enemies before showing death screen
 	if enemy_manager:
 		enemy_manager.grant_and_reset_accumulated_gold()
 	
-	# Use GameStateManager to handle death state
 	var gsm := _get_game_state_manager()
 	if gsm:
 		gsm.request_death()
 	else:
-		# Fallback to old method
 		if map_manager and map_manager.turn_manager:
 			map_manager.turn_manager.stop()
 		if pause_menu and pause_menu.has_method("close_menu"):
 			pause_menu.close_menu()
 		get_tree().paused = true
 	
-	# Show death overlay
-	# Compute run-earned gold (do not double-add gold here)
 	var run_gold := _get_run_gold_earned()
 
 	if death_handler:
@@ -322,11 +321,10 @@ func _on_player_died() -> void:
 func _on_boss_defeated(enemy) -> void:
 	if _victory_triggered:
 		return
-	# Rely on the explicit `is_boss` flag rather than fragile name prefixes
 	if enemy == null or enemy.get("is_boss") != true:
 		return
 
-	_victory_triggered = true  # Set FIRST to guard against room_cleared signal
+	_victory_triggered = true
 
 	if death_overlay:
 		death_overlay.visible = false
@@ -338,7 +336,6 @@ func _on_boss_defeated(enemy) -> void:
 	else:
 		_on_victory_entered()
 
-	# Clear any pending reward flags to avoid accidental reward UIs
 	_reward_pending = false
 
 
@@ -347,7 +344,6 @@ func _on_victory_entered() -> void:
 	if tree == null:
 		return
 	
-	# Grant accumulated gold from defeated enemies before showing victory screen
 	if enemy_manager:
 		enemy_manager.grant_and_reset_accumulated_gold()
 	
@@ -363,7 +359,6 @@ func _update_room_timer_ui(status: Dictionary) -> void:
 	)
 
 func _request_room_reward(room_id: int, reward_cards: Array[CardData]) -> void:
-	# Keep the pacing and duplicate-request guard close to Main2d orchestration.
 	if _reward_pending:
 		return
 
@@ -374,7 +369,6 @@ func _request_room_reward(room_id: int, reward_cards: Array[CardData]) -> void:
 
 	_request_room_reward_after_delay(room_id, reward_cards)
 
-## Applies the post-room-clear pacing delay without moving reward ownership out of Main2d.
 func _request_room_reward_after_delay(room_id: int, reward_cards: Array[CardData]) -> void:
 	await get_tree().create_timer(1.0).timeout
 
@@ -392,28 +386,22 @@ func _request_room_reward_after_delay(room_id: int, reward_cards: Array[CardData
 		_clear_reward_pending()
 
 func _on_reward_completed(selected_card: CardData) -> void:
-	# Close the reward state and let the card system emit any UI refresh it owns.
 	if game_state_manager:
 		game_state_manager.close_reward(selected_card)
 
 func _get_run_gold_earned() -> int:
-	# Computes the gold earned during this run without mutating currency state.
 	var currency := ManagerLocator.get_currency_manager() as CurrencyManager
 	if currency:
 		return max(0, int(currency.get_gold() - _run_gold_start))
 	return 0
 
 func _show_victory_overlay(run_gold: int) -> void:
-	# VictoryOverlay owns presentation; Main2d only supplies the run summary.
 	if victory_overlay:
 		victory_overlay.show_victory(enemies_killed, rooms_cleared, run_gold)
 
-
-## Keeps victory state cleanup in one place so the overlay remains scene-owned.
 func _hide_victory_overlay() -> void:
 	if victory_overlay:
 		victory_overlay.hide_victory()
-
 
 # ─────────────────────────────────────────────
 # PAUSE
@@ -437,15 +425,11 @@ func _on_retry_pressed() -> void:
 	_reload_current_scene()
 
 func _go_to_main_menu() -> void:
-	# Shared exit path for pause and defeat flows.
-	# Ensure pending saves are flushed before leaving the scene.
 	ManagerLocator.flush_saves()
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 
 func _reload_current_scene() -> void:
-	# Shared retry path keeps scene reset behavior in one place.
-	# Flush any pending saves before reloading.
 	ManagerLocator.flush_saves()
 	get_tree().paused = false
 	get_tree().reload_current_scene()
@@ -485,7 +469,6 @@ func _on_reward_entered(cards: Array) -> void:
 func _on_reward_exited(_selected_card: CardData) -> void:
 	if hud and hud.card_reward_ui:
 		hud.card_reward_ui.hide_reward()
-	# Clear pending flag so future rewards can be requested.
 	_clear_reward_pending()
 
 func _on_reward_card_selected(selected_card: CardData) -> void:
@@ -494,7 +477,6 @@ func _on_reward_card_selected(selected_card: CardData) -> void:
 func _on_reward_card_replace_selected(selected_card: CardData, slot_index: int) -> void:
 	_apply_selected_reward(selected_card, slot_index)
 
-## Applies the selected reward through the gameplay reward manager.
 func _apply_selected_reward(selected_card: CardData, slot_index: int = -1) -> void:
 	if card_reward_manager == null:
 		return
@@ -505,6 +487,5 @@ func _on_reward_skipped() -> void:
 		return
 	card_reward_manager.skip_reward()
 
-## Clears the room-reward request guard once the reward flow is done or aborted.
 func _clear_reward_pending() -> void:
 	_reward_pending = false

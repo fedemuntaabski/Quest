@@ -19,7 +19,10 @@ class_name EnemyData
 @export var reward_gold: int = 5
 
 @export var ai_type: String = "melee_chase"
-@export var sprite_texture: Texture2D
+
+# 🌟 LA CLAVE: Cambiamos Texture2D por PackedScene para guiar el recurso a su escena heredada (.tscn)
+@export var enemy_scene: PackedScene
+
 @export var base_tint: Color = Color(1, 1, 1, 1)
 @export var target_tint: Color = Color(1.0, 0.6, 0.6, 1.0)
 

@@ -64,7 +64,9 @@ func attack(target: Node) -> Dictionary:
 			"hit": false,
 			"crit": false,
 			"damage": 0,
-			"reason": "forced_miss"
+			"reason": "forced_miss",
+			"gold": 0,
+			"gold_earned": 0
 		}
 		var forced_target_actor := target_component.actor_owner
 		if forced_target_actor and forced_target_actor.has_method("show_miss"):
@@ -77,20 +79,40 @@ func attack(target: Node) -> Dictionary:
 		attack_stat,
 		base_damage
 	)
-	if actor_owner and actor_owner.is_in_group("player"):
-		var hud := get_tree().get_first_node_in_group("hud") as HUDController
-		if hud:
-			hud.show_combat_result(result)
 
+	# 🌟 MODIFICACIÓN: Calculamos y añadimos el oro antes de enviar el resultado al HUD
 	if result.get("hit", false):
+		var target_actor := target_component.actor_owner
+		var damage_applied := int(result.get("damage", 0))
+		
+		# Verificamos si este golpe vacía la vida del enemigo (letal)
+		var is_fatal := (target_component.stats.current_hp - damage_applied) <= 0
+		
+		if is_fatal and target_actor and target_actor.has_method("get_reward_gold"):
+			var reward := int(target_actor.get_reward_gold())
+			result["gold"] = reward
+			result["gold_earned"] = reward
+		else:
+			result["gold"] = 0
+			result["gold_earned"] = 0
+
+		# Aplicamos el daño real en las estadísticas del objetivo
 		target_component.receive_damage(
-			result.get("damage", 0),
+			damage_applied,
 			result.get("crit", false)
 		)
 	else:
 		var target_actor := target_component.actor_owner
 		if target_actor and target_actor.has_method("show_miss"):
 			target_actor.show_miss()
+		result["gold"] = 0
+		result["gold_earned"] = 0
+
+	# 🌟 MODIFICACIÓN: El HUD se actualiza al final de la lógica para capturar el oro cargado
+	if actor_owner and actor_owner.is_in_group("player"):
+		var hud := get_tree().get_first_node_in_group("hud") as HUDController
+		if hud:
+			hud.show_combat_result(result)
 
 	return result
 

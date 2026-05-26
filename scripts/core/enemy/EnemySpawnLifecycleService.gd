@@ -4,9 +4,8 @@ class_name EnemySpawnLifecycleService
 static func spawn_enemies(manager: EnemyManager, room_infos: Array, wall_cells: Dictionary) -> void:
 	if manager == null:
 		return
-	if manager._enemy_scene == null:
-		push_error("EnemyManager: Enemy scene not loaded.")
-		return
+		
+	# 🌟 MODIFICADO: Eliminamos el chequeo de manager._enemy_scene ya que ahora es dinámico
 
 	manager._room_enemy_counts.clear()
 	manager.enemies.clear()
@@ -52,7 +51,13 @@ static func _spawn_enemy_for_room(
 	if spawn_cell == Vector2i(-1, -1):
 		return
 
-	var enemy := manager._enemy_scene.instantiate()
+	# 🌟 MODIFICADO: Solicitamos de forma dinámica la escena específica (Boss, Skeleton, etc.) al manager
+	var enemy_scene: PackedScene = manager.get_enemy_scene_for_room(room_id)
+	if enemy_scene == null:
+		push_error("EnemySpawnLifecycleService: No se pudo obtener una escena válida para la habitación %d" % room_id)
+		return
+		
+	var enemy := enemy_scene.instantiate()
 	if enemy == null:
 		return
 
@@ -60,11 +65,13 @@ static func _spawn_enemy_for_room(
 	enemy.global_position = manager.dungeon.grid_to_world_coords(spawn_cell)
 	enemy.my_room_id = room_id
 	enemy.dungeon_generator = manager.dungeon
+	
 	var selected_data := manager._select_enemy_data(room_id, manager.final_room_id)
 	if selected_data and enemy.has_method("apply_enemy_data"):
 		enemy.apply_enemy_data(selected_data)
 		if selected_data.enemy_name != "":
 			enemy.name = "%s_%d" % [selected_data.enemy_name, room_id]
+			
 	manager.add_child(enemy)
 	occupied_spawn_cells[spawn_cell] = true
 

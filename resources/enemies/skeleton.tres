@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://cap5ow371gbcg"]
+
+[ext_resource type="PackedScene" uid="uid://bre6eprs2ain7" path="res://scenes/SkeletonEnemy.tscn" id="1_yxr72"]
+[ext_resource type="Script" uid="uid://bp0gdkxxuyr5v" path="res://scripts/core/enemy/EnemyData.gd" id="2_7hthy"]
+
+[resource]
+script = ExtResource("2_7hthy")
+enemy_id = "goblin"
+enemy_name = "Goblin"
+reward_gold = 60
+enemy_scene = ExtResource("1_yxr72")

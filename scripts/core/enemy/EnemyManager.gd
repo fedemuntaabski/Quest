@@ -6,15 +6,15 @@ signal enemy_defeated_global
 signal enemy_defeated_with_reward(enemy, reward_position: Vector2)
 signal boss_defeated(enemy)
 
-const ENEMY_SCENE_PATH := "res://scenes/Enemy.tscn"
+# 🌟 MODIFICADO: Eliminamos la constante fija y las referencias ahora se manejan dinámicamente
 const TUTORIAL_ENEMY_DATA = preload("res://resources/enemies/tutorial.tres")
-const GOBLIN_ENEMY_DATA = preload("res://resources/enemies/goblin.tres")
+const SKELETON_ENEMY_DATA = preload("res://resources/enemies/skeleton.tres")
 const BOSS_ENEMY_DATA = preload("res://resources/enemies/boss.tres")
 
 @export var default_enemy_data: EnemyData
 @export var enemy_data_pool: Array[EnemyData] = []
 
-var _enemy_scene: PackedScene = null
+# 🌟 MODIFICADO: Ya no pre-cargamos una escena única al inicio
 var _room_enemy_counts: Dictionary = {}
 
 var dungeon: DungeonGenerator = null
@@ -36,12 +36,12 @@ var _run_accumulated_gold: int = 0
 
 func _ready() -> void:
 	if default_enemy_data == null:
-		default_enemy_data = GOBLIN_ENEMY_DATA
+		default_enemy_data = SKELETON_ENEMY_DATA
 
 	if enemy_data_pool.is_empty():
 		enemy_data_pool = [
 			TUTORIAL_ENEMY_DATA,
-			GOBLIN_ENEMY_DATA,
+			SKELETON_ENEMY_DATA,
 			BOSS_ENEMY_DATA,
 		]
 
@@ -54,12 +54,29 @@ func setup(dungeon_ref: DungeonGenerator, player_ref: CharacterBody2D, tm: TurnM
 	if player:
 		player_torch = player.get_node_or_null("PointLight2D") as PointLight2D
 
-	if _enemy_scene == null:
-		_enemy_scene = load(ENEMY_SCENE_PATH) as PackedScene
-
 
 func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
+	# Pasamos el control al servicio del ciclo de vida
 	EnemySpawnLifecycleService.spawn_enemies(self, room_infos, wall_cells)
+
+
+# 🌟 NUEVO MÉTODO DINÁMICO:
+# Este método intercepta la petición de instanciación del 'EnemySpawnLifecycleService'.
+# En lugar de devolver siempre 'Enemy.tscn', busca qué datos corresponden a la sala
+# y devuelve la escena específica guardada en su .tres (BossEnemy.tscn, SkeletonEnemy.tscn, etc.)
+func get_enemy_scene_for_room(room_id: int) -> PackedScene:
+	var chosen_data: EnemyData = _select_enemy_data(room_id, final_room_id)
+	
+	if chosen_data and chosen_data.enemy_scene:
+		return chosen_data.enemy_scene
+		
+	# Resguardo de emergencia por si olvidaste asignar la escena en algún recurso .tres
+	push_warning("[EnemyManager] El EnemyData asignado no tiene una escena seteada. Usando fallback.")
+	if default_enemy_data and default_enemy_data.enemy_scene:
+		return default_enemy_data.enemy_scene
+		
+	return load("res://scenes/Enemy.tscn") as PackedScene
+
 
 func _select_enemy_data(room_id: int, p_final_room_id: int) -> EnemyData:
 	return EnemyDataSelector.select_enemy_data(room_id, p_final_room_id, enemy_data_pool, default_enemy_data)
@@ -106,6 +123,4 @@ func _set_enemy_boss_flag(enemy: Node, value: bool) -> void:
 
 
 func grant_and_reset_accumulated_gold() -> int:
-	# Grant all accumulated gold at run-end and return the amount granted.
-	# This is called by Main2d when victory or defeat screen appears.
 	return EnemyRewardService.grant_and_reset_accumulated_gold(self)

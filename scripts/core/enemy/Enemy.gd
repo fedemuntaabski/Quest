@@ -17,27 +17,47 @@ var step_timer: float = 0.0
 var step_time: float = 0.12
 var movement_points: int = 1
 
+# 🌟 NUEVO: Control de retraso para evitar que la animación de run se corte abruptamente
+@export var idle_delay_time: float = 0.2
+var _idle_delay_timer: float = 0.0
+
 var _start_pos: Vector2
 var target_world_pos: Vector2
 var turn_manager: TurnManager
 var combat_component: CombatComponent
 var is_boss: bool = false
 
-
-@onready var sprite: Sprite2D = $Sprite2D
+# 🌟 BÚSQUEDA INTELIGENTE: Asegura el enlace del nodo animado
+@onready var sprite: AnimatedSprite2D = _find_animated_sprite()
 @onready var health_bar: ProgressBar = $HealthBar
-
 
 var _base_modulate: Color = Color(1, 1, 1, 1)
 var stats: CharacterStats
 var _target_tint: Color = QuestPalette.COMBAT_TARGET_TINT_DEFAULT
 var is_tutorial_enemy: bool = false
 
+# Estados internos de control para la máquina de animaciones
+var _is_animating_attack: bool = false
+var _is_dead: bool = false
+
 const STANDARD_ENEMY_HP := 10
 const STANDARD_ENEMY_STRENGTH := 1
 const STANDARD_ENEMY_MAGIC := 0
 const STANDARD_ENEMY_DEX := 0
 const STANDARD_ENEMY_BASE_DAMAGE := 2
+
+# Función auxiliar para forzar el enganche del AnimatedSprite2D en escenas heredadas
+func _find_animated_sprite() -> AnimatedSprite2D:
+	if has_node("AnimatedSprite2D"):
+		return $AnimatedSprite2D as AnimatedSprite2D
+	
+	# Búsqueda de emergencia por tipo de clase en los nodos hijos
+	for child in get_children():
+		if child is AnimatedSprite2D:
+			return child as AnimatedSprite2D
+			
+	push_warning("[Enemy Warning] No se detectó un nodo directo llamado 'AnimatedSprite2D' en: " + name)
+	return null
 
 func _ready():
 	stats = $Stats as CharacterStats
@@ -51,6 +71,15 @@ func _ready():
 
 	if sprite:
 		_base_modulate = sprite.modulate
+		# Conectamos la señal para saber cuándo termina un ataque o la muerte
+		if not sprite.animation_finished.is_connected(_on_sprite_animation_finished):
+			sprite.animation_finished.connect(_on_sprite_animation_finished)
+		
+		# 🌟 MODIFICADO: Forzar visibilidad y asegurar la reproducción inicial sin bucles
+		sprite.visible = true
+		if sprite.sprite_frames and sprite.sprite_frames.has_animation("idle"):
+			sprite.autoplay = "idle"
+			sprite.play("idle")
 
 	if health_bar:
 		health_bar.visible = not is_tutorial_enemy
@@ -97,9 +126,7 @@ func _ensure_combat_component() -> void:
 	comp.setup(self, stats, map_manager)
 	combat_component = comp
 	
-	# Ensure StatusComponent exists
 	_ensure_status_component()
-
 
 func _ensure_status_component() -> void:
 	var status_comp := get_node_or_null("StatusComponent") as StatusComponent
@@ -109,7 +136,6 @@ func _ensure_status_component() -> void:
 		add_child(status_comp)
 
 func configure_profile(max_hp: int, base_damage: int, dex: int = 0, base_tint: Color = Color(0.7, 0.3, 0.9, 1.0), target_tint: Color = Color(1.0, 0.7, 1.0, 1.0)) -> void:
-	# Public helper to customize enemy stats and visuals (used for special enemy types)
 	if stats:
 		stats.max_hp = max_hp
 		stats.current_hp = max_hp
@@ -126,7 +152,6 @@ func configure_profile(max_hp: int, base_damage: int, dex: int = 0, base_tint: C
 	if combat_component:
 		combat_component.base_damage = base_damage
 
-	# Apply visual tint
 	set_visual_tint(base_tint, target_tint)
 
 func apply_enemy_data(data: EnemyData) -> void:
@@ -159,6 +184,8 @@ func sync_to_grid():
 		map_manager.update_actor_cell(self, grid_pos)
 
 func begin_turn(tm: TurnManager) -> void:
+	if _is_dead: return 
+	
 	turn_manager = tm
 	var decision := EnemyTurnPolicy.decide(self)
 	match int(decision.get("decision", EnemyTurnPolicy.Decision.WAIT)):
@@ -177,30 +204,41 @@ func _skip_turn(reason: String = "") -> void:
 	if turn_manager == null:
 		return
 	print("[Enemy] _skip_turn: enemy=%s reason=%s" % [name, reason])
-	# Defer to avoid nested turn-manager recursion within begin_turn()
 	turn_manager.call_deferred("end_turn")
 
 func _start_move_to(next: Vector2i) -> void:
+	if sprite and next.x != grid_pos.x:
+		if next.x < grid_pos.x:
+			sprite.scale.x = -abs(sprite.scale.x)
+			sprite.offset.x = enemy_data.extra_stats.get("offset_izq_idle", 4) if enemy_data else 4
+		else:
+			sprite.scale.x = abs(sprite.scale.x) 
+			sprite.offset.x = 0
+
 	_start_pos = global_position
 	grid_pos = next
 	target_world_pos = map_manager.grid_to_world_coords(next)
 
 	is_moving_step = true
 	step_timer = 0.0
+	_idle_delay_timer = 0.0 # 🌟 RESET DELAY: Evita que se limpie la caminata a mitad de paso
 
 func _physics_process(delta: float) -> void:
+	# 🌟 MODIFICADO: Incremento consistente del temporizador si se frena
 	if not is_moving_step:
-		return
+		_idle_delay_timer += delta
+	else:
+		step_timer += delta
+		var t := step_timer / step_time
+		t = clamp(t, 0.0, 1.0)
 
-	step_timer += delta
-	var t := step_timer / step_time
-	t = clamp(t, 0.0, 1.0)
+		global_position = _start_pos.lerp(target_world_pos, t)
 
-	global_position = _start_pos.lerp(target_world_pos, t)
+		if t >= 1.0:
+			global_position = target_world_pos
+			is_moving_step = false
 
-	if t >= 1.0:
-		global_position = target_world_pos
-		is_moving_step = false
+	_update_animations()
 
 func wait_for_step() -> void:
 	while is_moving_step:
@@ -241,9 +279,28 @@ func _queue_attack_action(target: Node) -> void:
 	var action: BaseAction = AttackAction.new(combat_component, target, snapshot)
 	turn_manager.action_queue.queue_action(action)
 
+# Protección de muerte contra nulos de sprite y recursos
 func _on_died():
+	if _is_dead: return
+	_is_dead = true
+	
 	if map_manager:
 		map_manager.unregister_actor(self)
+	
+	if health_bar:
+		health_bar.visible = false
+		
+	if sprite and sprite.sprite_frames and sprite.sprite_frames.has_animation("death"):
+		sprite.play("death")
+	else:
+		_finish_death_lifecycle()
+
+# 🌟 MODIFICADO: Libera de forma segura la cola de acciones del TurnManager antes de destruirse
+func _finish_death_lifecycle() -> void:
+	if turn_manager:
+		if turn_manager.has_method("end_turn"):
+			turn_manager.call_deferred("end_turn")
+			
 	enemy_defeated.emit(self)
 	queue_free()
 
@@ -254,14 +311,18 @@ func set_targeted(active: bool) -> void:
 	EnemyPresentationHelper.set_targeted_state(health_bar, sprite, active, _target_tint, _base_modulate)
 
 func set_visual_tint(base_tint: Color, target_tint: Color = QuestPalette.COMBAT_TARGET_TINT_DEFAULT) -> void:
+	# 🌟 MODIFICADO: Si el Alpha viene en 0 por error del archivo Resource (.tres), lo restauramos a visible
+	if base_tint.a == 0:
+		base_tint.a = 1.0
+		
 	_base_modulate = base_tint
 	_target_tint = target_tint
 	if sprite:
 		sprite.modulate = _base_modulate
+		sprite.visible = true
 
 func apply_tutorial_profile() -> void:
 	is_tutorial_enemy = true
-	# Keep tutorial enemy in all default systems while making it forgiving.
 	collision_layer = 4
 	collision_mask = 0
 	if health_bar:
@@ -275,3 +336,65 @@ func show_miss() -> void:
 
 func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 	EnemyPresentationHelper.spawn_floating_text(self, text, color, crit)
+
+# ─────────────────────────────────────────────
+# 🌟 MÁQUINA DE ANIMACIONES PROTEGIDA DE EXCEPCIONES
+# ─────────────────────────────────────────────
+func _update_animations() -> void:
+	if sprite == null or sprite.sprite_frames == null:
+		return
+		
+	var frames: SpriteFrames = sprite.sprite_frames
+		
+	if _is_dead:
+		if sprite.animation != "death" and frames.has_animation("death"):
+			sprite.play("death")
+		return
+		
+	if _is_animating_attack:
+		if sprite.animation != "attack" and frames.has_animation("attack"):
+			sprite.play("attack")
+		return
+		
+	# 🌟 MODIFICADO: Control dinámico de caminata suavizada (Gracia de 0.5s)
+	if is_moving_step:
+		_idle_delay_timer = 0.0
+		if sprite.animation != "run" and frames.has_animation("run"):
+			sprite.play("run")
+	else:
+		if _idle_delay_timer >= idle_delay_time:
+			if sprite.animation != "idle" and frames.has_animation("idle"):
+				sprite.play("idle")
+		else:
+			# Conserva el estado dinámico "run" dentro de la ventana de amortiguación
+			if sprite.animation != "run" and frames.has_animation("run"):
+				sprite.play("run")
+
+# Resguardos anti-null para la ejecución de ataques
+func play_attack_animation() -> void:
+	if _is_dead or sprite == null or sprite.sprite_frames == null: 
+		return
+		
+	_is_animating_attack = true
+	_idle_delay_timer = 0.0 # Reiniciamos el buffer al atacar
+	if sprite.sprite_frames.has_animation("attack"):
+		sprite.play("attack")
+		
+		var frames_count = sprite.sprite_frames.get_frame_count("attack")
+		var anim_fps = sprite.sprite_frames.get_animation_speed("attack")
+		if anim_fps > 0:
+			var duration = float(frames_count) / float(anim_fps)
+			get_tree().create_timer(duration).timeout.connect(func():
+				if sprite and sprite.animation == "attack":
+					_is_animating_attack = false
+			)
+	else:
+		_is_animating_attack = false
+
+func _on_sprite_animation_finished() -> void:
+	if sprite == null: return
+	
+	if sprite.animation == "attack":
+		_is_animating_attack = false
+	elif sprite.animation == "death":
+		_finish_death_lifecycle()

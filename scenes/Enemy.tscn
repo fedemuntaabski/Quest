@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://cgup7a33rkxmi" path="res://scripts/core/enemy/Enemy.gd" id="1_55jtl"]
 [ext_resource type="Script" uid="uid://bmcr7emtpkrow" path="res://scripts/core/stats/CharacterStats.gd" id="3_mpr68"]
-[ext_resource type="Texture2D" uid="uid://bi2jq4ofb605c" path="res://assets/ui/white_2x2.svg" id="3_texture"]
 [ext_resource type="PackedScene" uid="uid://kcs0b06asf7v" path="res://scenes/StatusIndicator.tscn" id="4_status_indicator"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mpr68"]
@@ -26,11 +25,11 @@ corner_radius_bottom_left = 3
 collision_layer = 4
 script = ExtResource("1_55jtl")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1634982355]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=722939410]
+visible = false
 modulate = Color(0.85, 0.15, 0.15, 1)
 z_index = 2
 scale = Vector2(12, 12)
-texture = ExtResource("3_texture")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=786141695]
 shape = SubResource("RectangleShape2D_mpr68")

@@ -14,6 +14,8 @@ signal movement_ended
 # ─────────────────────────────────────────────
 @export var tile_size: int = 16
 @export var step_time: float = 0.12
+# 🌟 CORRECCIÓN IDLE: Tiempo de espera para pasar a IDLE (0.5 segundos)
+@export var idle_delay_time: float = 0.2 
 
 var grid_pos: Vector2i
 var target_world_pos: Vector2
@@ -21,6 +23,8 @@ var _start_pos: Vector2
 
 var is_moving_step: bool = false
 var step_timer: float = 0.0
+# Temporizador interno para controlar el retraso del IDLE
+var _idle_delay_timer: float = 0.0 
 
 var map_manager: MapManager
 var current_path: Array[Vector2i] = []
@@ -30,12 +34,17 @@ var combat_component: CombatComponent
 var _is_dead: bool = false
 var turn_bridge: PlayerMovementTurnBridge
 
+# 🌟 NUEVO: Estado interno para asegurar que la animación de ataque no sea interrumpida por idle/run
+var _is_animating_attack: bool = false
+
 # ─────────────────────────────────────────────
 # REFERENCES
 # ─────────────────────────────────────────────
 @onready var action_controller := $PlayerActionController
-@onready var sprite: Sprite2D = $Sprite2D
 @onready var stats: CharacterStats = $Stats
+
+# 🌟 REFERENCIA: Tu AnimatedSprite2D
+@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	add_to_group("player")
@@ -62,6 +71,14 @@ func _ready() -> void:
 		player_stats.register(player_stats_component)
 
 	_connect_game_state()
+	
+	# 🌟 NUEVO: Conexión automática al sistema de salud para reproducir la muerte
+	if stats:
+		stats.died.connect(_on_player_died)
+	
+	# 🌟 NUEVO: Detectar cuándo termina el golpe o la muerte para devolver el control o congelar
+	if sprite:
+		sprite.animation_finished.connect(_on_sprite_animation_finished)
 
 func _ensure_turn_bridge() -> void:
 	if turn_bridge == null:
@@ -101,11 +118,22 @@ func get_combat_component() -> CombatComponent:
 # PUBLIC API (llamado por TurnManager)
 # ─────────────────────────────────────────────
 func request_move(dir: Vector2i) -> bool:
+	if _is_dead: return false
+	
+	# 🌟 SOLUCIÓN ORIENTACIÓN Y DESFASE: Tu calibración manual mantenida de forma idéntica
+	if sprite and dir.x != 0:
+		if dir.x < 0:
+			sprite.scale.x = -abs(sprite.scale.x) # Mira a la izquierda
+			sprite.offset.x = 8                    # Tu desfase personalizado para centrar
+		else:
+			sprite.scale.x = abs(sprite.scale.x)  # Mira a la derecha
+			sprite.offset.x = 0                     # Posición original
+		
 	return turn_bridge.request_move(dir) if turn_bridge else false
 
 # Path planning
 func request_path_to_cell(target_cell: Vector2i) -> bool:
-	if map_manager == null:
+	if _is_dead or map_manager == null:
 		return false
 
 	var path: Array[Vector2i] = map_manager.find_path(grid_pos, target_cell, self)
@@ -116,7 +144,7 @@ func request_path_to_cell(target_cell: Vector2i) -> bool:
 	return true
 
 func request_path_to_adjacent(target_cell: Vector2i) -> bool:
-	if map_manager == null:
+	if _is_dead or map_manager == null:
 		return false
 
 	var path: Array[Vector2i] = map_manager.find_path_to_adjacent(grid_pos, target_cell, self)
@@ -128,12 +156,15 @@ func request_path_to_adjacent(target_cell: Vector2i) -> bool:
 
 # ─────────────────────────────────────────────
 func _start_move_to(next: Vector2i) -> void:
+	if _is_dead: return
+	
 	_start_pos = global_position
 	grid_pos = next
 	target_world_pos = map_manager.grid_to_world(next)
 
 	is_moving_step = true
 	step_timer = 0.0
+	_idle_delay_timer = 0.0 
 	
 	# Emit signal: movement animation started
 	movement_started.emit()
@@ -146,6 +177,10 @@ func _start_move_to(next: Vector2i) -> void:
 
 # ─────────────────────────────────────────────
 func _physics_process(delta: float) -> void:
+	if _is_dead:
+		_update_animations(delta)
+		return
+		
 	_process_step_move(delta)
 
 	# 🔥 SOLO si es tu turno
@@ -154,8 +189,10 @@ func _physics_process(delta: float) -> void:
 		var dir := next_cell - grid_pos
 		request_move(dir)
 
+	# Control de animaciones con delta
+	_update_animations(delta)
 
-		
+
 func _process_step_move(delta: float) -> void:
 	if not is_moving_step:
 		return
@@ -203,6 +240,7 @@ func update_room_state_from_grid() -> void:
 		dungeon.room_system.update_player_cell(grid_pos)
 
 func set_path(path: Array[Vector2i]) -> void:
+	if _is_dead: return
 	current_path = path.duplicate()
 
 	# remover el primer nodo si es la celda actual
@@ -213,11 +251,11 @@ func cancel_movement() -> void:
 	current_path.clear()
 
 func begin_turn(tm: TurnManager) -> void:
+	if _is_dead: return
 	if turn_bridge:
 		turn_bridge.begin_turn(tm)
 
 func turn_interrupted() -> void:
-	# Clear any pending movement when turn is interrupted (e.g., on death)
 	cancel_movement()
 	_is_dead = true
 
@@ -227,6 +265,7 @@ func is_turn_active() -> bool:
 	return turn_manager.current_actor == self
 
 func can_accept_input() -> bool:
+	if _is_dead: return false
 	return turn_bridge.can_accept_input() if turn_bridge else false
 
 func begin_step_move(next: Vector2i) -> void:
@@ -244,13 +283,86 @@ func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 		text_mgr.spawn_text_from_host(self, text, color, crit, Vector2(-12, -28), 18.0, 0.5)
 		return
 
-	# If floating text manager is not available, skip creating ephemeral labels.
-	# This enforces a single source of truth for floating text presentation.
 	if not text_mgr:
 		push_warning("FloatingTextManager not present - skipping floating text: %s" % text)
 		return
 
 func wait_for_step() -> void:
 	while is_moving_step:
-		# Use a shorter timeout approach to prevent infinite hang
 		await get_tree().create_timer(0.016, true, true).timeout
+
+# 🌟 MODIFICADO: Escucha la muerte del nodo Stats o el colapso por tiempo
+func _on_player_died() -> void:
+	if _is_dead: return
+	_is_dead = true
+	
+	cancel_movement()
+	
+	# Desactivamos controladores de inputs y físicas para congelar al PJ
+	if action_controller:
+		action_controller.set_process_input(false)
+		
+	# Desactivamos capas de colisión para evitar bloqueos/ataques fantasmas
+	collision_layer = 0
+	collision_mask = 0
+	set_physics_process(false)
+	
+	# Forzamos la reproducción de muerte
+	if sprite and sprite.sprite_frames.has_animation("death"):
+		sprite.play("death")
+
+# 🌟 CORREGIDO: Ejecuta el flujo seguro de muerte e inmovilización sin tocar variables de vida
+func trigger_time_out_death() -> void:
+	if _is_dead: return
+	_on_player_died()
+
+# ─────────────────────────────────────────────
+# 🌟 SISTEMA DE ANIMACIONES CORREGIDO (CON SOPORTE DE ATAQUE Y MUERTE)
+# ─────────────────────────────────────────────
+func _update_animations(delta: float) -> void:
+	if sprite == null:
+		return
+		
+	# 0. Prioridad absoluta: Muerte
+	if _is_dead:
+		if sprite.animation != "death" and sprite.sprite_frames.has_animation("death"):
+			sprite.play("death")
+		return
+		
+	# 1. Si la acción de combate activó un ataque, congelamos el flujo aquí hasta que termine
+	if _is_animating_attack:
+		if sprite.animation != "attack":
+			sprite.play("attack")
+		return
+		
+	# 2. Control de movimiento y delay de quietud
+	if is_moving_step:
+		_idle_delay_timer = 0.0 
+		if sprite.animation != "run":
+			sprite.play("run")
+	else:
+		_idle_delay_timer += delta
+		if _idle_delay_timer >= idle_delay_time:
+			if sprite.animation != "idle":
+				sprite.play("idle")
+		else:
+			# Mantiene la animación de run durante la ventana de espera de 0.5s
+			if sprite.animation != "run":
+				sprite.play("run")
+
+# 🌟 MODIFICADO: Se ejecuta al finalizar el ataque o la animación de muerte (si loop está en false)
+func _on_sprite_animation_finished() -> void:
+	if sprite.animation == "attack":
+		_is_animating_attack = false # Devuelve el control a los estados normales
+	elif sprite.animation == "death":
+		# Mantenemos el sprite congelado exactamente en el último frame de la caída
+		sprite.stop()
+		sprite.frame = sprite.sprite_frames.get_frame_count("death") - 1
+
+# 🌟 NUEVO: Interfaz pública que llama AttackAction para iniciar la animación
+func play_attack_animation() -> void:
+	if _is_dead: return
+	_is_animating_attack = true
+	_idle_delay_timer = 0.0
+	if sprite:
+		sprite.play("attack")

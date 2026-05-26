@@ -36,10 +36,11 @@ static func apply_combat_from_data(combat_component: CombatComponent, data: Enem
 	combat_component.attack_stat = data.attack_stat
 	combat_component.forced_miss_chance = clampf(data.forced_miss_chance, 0.0, 1.0)
 
+# 🌟 CORREGIDO: Ahora acepta AnimatedSprite2D como tercer argumento
 static func apply_enemy_data(
 	data: EnemyData,
 	stats: CharacterStats,
-	sprite: Sprite2D,
+	sprite: AnimatedSprite2D,
 	health_bar: ProgressBar,
 	combat_component: CombatComponent,
 	set_visual_tint: Callable,
@@ -64,8 +65,9 @@ static func apply_enemy_data(
 	var next_step_time = max(0.01, data.move_step_time)
 	var next_movement_points = max(1, data.movement)
 
-	if sprite and data.sprite_texture:
-		sprite.texture = data.sprite_texture
+	# 🌟 MODIFICADO: Se comenta esta línea porque la textura ahora la maneja el SpriteFrames de las animaciones
+	# if sprite and data.sprite_texture:
+	# 	sprite.texture = data.sprite_texture
 
 	if set_visual_tint.is_valid():
 		set_visual_tint.call(data.base_tint, data.target_tint)

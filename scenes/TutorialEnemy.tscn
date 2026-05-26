@@ -1,0 +1,214 @@
+[gd_scene format=3 uid="uid://c6vngad4dohpd"]
+
+[ext_resource type="PackedScene" uid="uid://b7yguhd58c6y1" path="res://scenes/Enemy.tscn" id="1_g00fr"]
+[ext_resource type="Texture2D" uid="uid://cgmo34gwgst6k" path="res://Sprites/Goblin/Attack.png" id="2_w0ps1"]
+[ext_resource type="Texture2D" uid="uid://d2crg0pisdl84" path="res://Sprites/Goblin/Death.png" id="3_ud8w7"]
+[ext_resource type="Texture2D" uid="uid://cqq7gcvwqhqqh" path="res://Sprites/Goblin/Idle.png" id="4_d4j83"]
+[ext_resource type="Texture2D" uid="uid://4rhochbavubv" path="res://Sprites/Goblin/Run.png" id="5_7cre5"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rquju"]
+atlas = ExtResource("2_w0ps1")
+region = Rect2(0, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q0hr2"]
+atlas = ExtResource("2_w0ps1")
+region = Rect2(150, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fknji"]
+atlas = ExtResource("2_w0ps1")
+region = Rect2(300, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8hr2m"]
+atlas = ExtResource("2_w0ps1")
+region = Rect2(450, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dni41"]
+atlas = ExtResource("2_w0ps1")
+region = Rect2(600, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wgdg6"]
+atlas = ExtResource("2_w0ps1")
+region = Rect2(750, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_67w23"]
+atlas = ExtResource("2_w0ps1")
+region = Rect2(900, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m74dy"]
+atlas = ExtResource("2_w0ps1")
+region = Rect2(1050, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_atvqb"]
+atlas = ExtResource("3_ud8w7")
+region = Rect2(0, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_untld"]
+atlas = ExtResource("3_ud8w7")
+region = Rect2(150, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tfs6q"]
+atlas = ExtResource("3_ud8w7")
+region = Rect2(300, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fso3p"]
+atlas = ExtResource("3_ud8w7")
+region = Rect2(450, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qjeti"]
+atlas = ExtResource("4_d4j83")
+region = Rect2(0, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s24ad"]
+atlas = ExtResource("4_d4j83")
+region = Rect2(150, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pup54"]
+atlas = ExtResource("4_d4j83")
+region = Rect2(300, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jpp27"]
+atlas = ExtResource("4_d4j83")
+region = Rect2(450, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yom17"]
+atlas = ExtResource("5_7cre5")
+region = Rect2(0, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yl8r6"]
+atlas = ExtResource("5_7cre5")
+region = Rect2(150, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ys1x2"]
+atlas = ExtResource("5_7cre5")
+region = Rect2(300, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jv218"]
+atlas = ExtResource("5_7cre5")
+region = Rect2(450, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6lxlb"]
+atlas = ExtResource("5_7cre5")
+region = Rect2(600, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4sxt2"]
+atlas = ExtResource("5_7cre5")
+region = Rect2(750, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ku4vy"]
+atlas = ExtResource("5_7cre5")
+region = Rect2(900, 0, 150, 150)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mwhjl"]
+atlas = ExtResource("5_7cre5")
+region = Rect2(1050, 0, 150, 150)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_jfkwp"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rquju")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q0hr2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fknji")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8hr2m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dni41")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wgdg6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_67w23")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m74dy")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_atvqb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_untld")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tfs6q")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fso3p")
+}],
+"loop": false,
+"name": &"death",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qjeti")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s24ad")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pup54")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jpp27")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yom17")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yl8r6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ys1x2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jv218")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6lxlb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4sxt2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ku4vy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mwhjl")
+}],
+"loop": true,
+"name": &"run",
+"speed": 8.0
+}]
+
+[node name="Enemy" unique_id=644052857 instance=ExtResource("1_g00fr")]
+
+[node name="AnimatedSprite2D" parent="." index="0" unique_id=722939410]
+visible = true
+modulate = Color(1, 1, 1, 1)
+position = Vector2(0, -12)
+scale = Vector2(0.75, 0.75)
+sprite_frames = SubResource("SpriteFrames_jfkwp")
+animation = &"death"
+frame = 3
+frame_progress = 1.0
+
+[node name="HealthBar" parent="." index="3" unique_id=1776289430]
+offset_top = -26.0
+offset_bottom = -21.0
