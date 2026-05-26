@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://dw1g5rbp50njp"]
 
 [ext_resource type="Script" uid="uid://bp0gdkxxuyr5v" path="res://scripts/core/enemy/EnemyData.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://dakale2rufyo0" path="res://scenes/BossEnemy.tscn" id="1_h3ops"]
+[ext_resource type="PackedScene" path="res://scenes/BossEnemy.tscn" id="1_h3ops"]
 
 [resource]
 script = ExtResource("1")
