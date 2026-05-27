@@ -14,7 +14,7 @@ func set_default_multi_mode(enabled: bool) -> void:
 	_default_multi_mode = enabled
 
 func register_actor(actor: Node, grid_pos: Vector2i, blocks: bool = true, allow_multi: bool = false) -> void:
-	if actor == null:
+	if actor == null or not is_instance_valid(actor):
 		return
 
 	_blocking_actors[actor] = blocks
@@ -23,7 +23,7 @@ func register_actor(actor: Node, grid_pos: Vector2i, blocks: bool = true, allow_
 	_update_actor_cell(actor, grid_pos, multi)
 
 func unregister_actor(actor: Node) -> void:
-	if actor == null:
+	if actor == null or not is_instance_valid(actor):
 		return
 
 	var old_cell: Variant = _actor_to_cell.get(actor, null)
@@ -43,7 +43,7 @@ func unregister_actor(actor: Node) -> void:
 	_blocking_actors.erase(actor)
 
 func update_actor_cell(actor: Node, grid_pos: Vector2i) -> void:
-	if actor == null:
+	if actor == null or not is_instance_valid(actor):
 		return
 
 	# preserve previous multi-mode for this actor if present
@@ -62,12 +62,21 @@ func get_actor_at_cell(grid_pos: Vector2i) -> Node:
 	if entry is Array:
 		# prefer a blocking actor if present
 		for a in entry:
+			if not is_instance_valid(a):
+				continue
 			if _blocking_actors.get(a, true):
 				return a
-		return entry[0] if entry.size() > 0 else null
+		for a in entry:
+			if is_instance_valid(a):
+				return a
+		return null
+	if not is_instance_valid(entry):
+		return null
 	return entry
 
 func get_actor_cell(actor: Node) -> Variant:
+	if actor == null or not is_instance_valid(actor):
+		return null
 	return _actor_to_cell.get(actor, null)
 
 func is_cell_occupied(grid_pos: Vector2i) -> bool:
@@ -80,6 +89,8 @@ func is_cell_blocked(grid_pos: Vector2i, requester: Node = null) -> bool:
 	var entry: Variant = _cell_to_actor[grid_pos]
 	if entry is Array:
 		for actor in entry:
+			if not is_instance_valid(actor):
+				continue
 			if requester != null and actor == requester:
 				continue
 			if _blocking_actors.get(actor, true):
@@ -87,11 +98,16 @@ func is_cell_blocked(grid_pos: Vector2i, requester: Node = null) -> bool:
 		return false
 	else:
 		var actor: Node = entry
+		if not is_instance_valid(actor):
+			return false
 		if requester != null and actor == requester:
 			return false
 		return _blocking_actors.get(actor, true)
 
 func _update_actor_cell(actor: Node, grid_pos: Vector2i, allow_multi: bool = false) -> void:
+	if actor == null or not is_instance_valid(actor):
+		return
+
 	var old_cell: Variant = _actor_to_cell.get(actor, null)
 	if old_cell != null:
 		var prev: Variant = _cell_to_actor.get(old_cell, null)
@@ -123,7 +139,7 @@ func _update_actor_cell(actor: Node, grid_pos: Vector2i, allow_multi: bool = fal
 
 	_actor_to_cell[actor] = grid_pos
 	# Ensure actor's local grid_pos reflects canonical occupancy state
-	if actor != null and "grid_pos" in actor:
+	if is_instance_valid(actor) and "grid_pos" in actor:
 		actor.grid_pos = grid_pos
 
 	# Bump internal occupancy version and emit change

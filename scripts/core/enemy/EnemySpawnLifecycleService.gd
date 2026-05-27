@@ -73,6 +73,7 @@ static func _spawn_enemy_for_room(
 			enemy.name = "%s_%d" % [selected_data.enemy_name, room_id]
 			
 	manager.add_child(enemy)
+	_apply_cycle_hp_scaling_if_needed(enemy, selected_data)
 	occupied_spawn_cells[spawn_cell] = true
 
 	enemy.setup(manager.get_parent(), manager.player)
@@ -105,8 +106,10 @@ static func _spawn_enemy_for_room(
 	var captured_player := manager.player
 	var captured_torch := manager.player_torch
 	enemy.ready.connect(func():
-		enemy.player = captured_player
-		enemy.player_torch = captured_torch
+		if not is_instance_valid(enemy):
+			return
+		enemy.player = captured_player if is_instance_valid(captured_player) else null
+		enemy.player_torch = captured_torch if is_instance_valid(captured_torch) else null
 	, CONNECT_ONE_SHOT)
 
 	manager._room_enemy_counts[room_id] = manager._room_enemy_counts.get(room_id, 0) + 1
@@ -115,3 +118,44 @@ static func _spawn_enemy_for_room(
 	enemy.enemy_defeated.connect(func(e):
 		manager._on_enemy_defeated(e, captured_room_id)
 	, CONNECT_ONE_SHOT)
+
+static func _apply_cycle_hp_scaling_if_needed(enemy: Node, selected_data: EnemyData) -> void:
+	if enemy == null or selected_data == null:
+		return
+	if not selected_data.allow_cycle_scaling:
+		return
+
+	var save_mgr = ManagerLocator.get_save_manager()
+	if save_mgr == null or not save_mgr.has_method("get_run_cycle"):
+		return
+
+	var cycle := int(save_mgr.get_run_cycle())
+	if cycle <= 0:
+		return
+
+	var apply_scaling := func() -> void:
+		var stats := enemy.get_node_or_null("Stats") as CharacterStats
+		if stats == null:
+			return
+
+		var base_hp = max(1, int(stats.max_hp))
+		var multiplier := 1.0 + (float(cycle) * 0.10)
+		var scaled_hp = max(1, int(round(float(base_hp) * multiplier)))
+
+		stats.max_hp = scaled_hp
+		stats.current_hp = scaled_hp
+		stats.hp_changed.emit(stats.current_hp, stats.max_hp)
+
+		var health_bar := enemy.get_node_or_null("HealthBar") as ProgressBar
+		if health_bar:
+			health_bar.max_value = stats.max_hp
+			health_bar.value = stats.current_hp
+
+	if enemy.is_node_ready():
+		apply_scaling.call()
+	else:
+		enemy.ready.connect(func() -> void:
+			if not is_instance_valid(enemy):
+				return
+			apply_scaling.call()
+		, CONNECT_ONE_SHOT)

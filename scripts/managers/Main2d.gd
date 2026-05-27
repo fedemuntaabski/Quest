@@ -40,6 +40,7 @@ var _victory_triggered: bool = false
 var tutorial_layer: Node = null
 var _run_gold_start: int = 0
 var _reward_pending: bool = false
+var post_victory_popup: PostVictoryPopup = null
 
 # ─────────────────────────────────────────────
 # INIT
@@ -55,6 +56,7 @@ func _ready() -> void:
 	_setup_managers()
 	_connect_signals()
 	_load_tutorial_if_needed()
+	_load_post_victory_popup_if_needed()
 
 	_reset_room_timer()
 
@@ -343,6 +345,11 @@ func _on_victory_entered() -> void:
 	var tree := get_tree()
 	if tree == null:
 		return
+
+	var save_mgr := ManagerLocator.get_save_manager()
+	if save_mgr:
+		save_mgr.increment_run_cycle()
+		save_mgr.post_victory_popup_pending = true
 	
 	if enemy_manager:
 		enemy_manager.grant_and_reset_accumulated_gold()
@@ -448,9 +455,10 @@ func _on_tutorial_started() -> void:
 		gsm.request_pause()
 
 func _on_tutorial_finished() -> void:
-	_room_timer_paused = false
+	var popup_shown := _load_post_victory_popup_if_needed()
+	_room_timer_paused = popup_shown
 	var gsm := _get_game_state_manager()
-	if gsm:
+	if gsm and not popup_shown:
 		gsm.request_resume()
 
 func _get_game_state_manager() -> GameStateManager:
@@ -489,3 +497,56 @@ func _on_reward_skipped() -> void:
 
 func _clear_reward_pending() -> void:
 	_reward_pending = false
+
+func _load_post_victory_popup_if_needed() -> bool:
+	if post_victory_popup and is_instance_valid(post_victory_popup):
+		return true
+
+	if tutorial_layer and is_instance_valid(tutorial_layer) and tutorial_layer.visible:
+		return false
+
+	var save_mgr := ManagerLocator.get_save_manager()
+	if save_mgr == null:
+		return false
+	if not save_mgr.post_victory_popup_pending:
+		return false
+	if save_mgr.get_run_cycle() <= 0:
+		return false
+
+	var scene := load("res://scenes/PostVictoryPopup.tscn")
+	if scene == null:
+		return false
+
+	var popup_instance := scene.instantiate() as PostVictoryPopup
+	if popup_instance == null:
+		return false
+
+	post_victory_popup = popup_instance
+	post_victory_popup.process_mode = Node.PROCESS_MODE_ALWAYS
+	if not post_victory_popup.continue_pressed.is_connected(Callable(self, "_on_post_victory_popup_continue_pressed")):
+		post_victory_popup.continue_pressed.connect(Callable(self, "_on_post_victory_popup_continue_pressed"))
+
+	add_child(post_victory_popup)
+	post_victory_popup.show_popup(save_mgr.get_run_cycle())
+
+	_room_timer_paused = true
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.request_pause()
+
+	return true
+
+func _on_post_victory_popup_continue_pressed() -> void:
+	var save_mgr := ManagerLocator.get_save_manager()
+	if save_mgr:
+		save_mgr.post_victory_popup_pending = false
+		save_mgr.save_game()
+
+	if post_victory_popup and is_instance_valid(post_victory_popup):
+		post_victory_popup.queue_free()
+	post_victory_popup = null
+
+	_room_timer_paused = false
+	var gsm := _get_game_state_manager()
+	if gsm:
+		gsm.request_resume()

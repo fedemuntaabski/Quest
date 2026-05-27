@@ -73,13 +73,13 @@ func _handle_keyboard(_event: InputEvent = null) -> bool:
 
 	var dir := Vector2i.ZERO
 
-	if Input.is_action_just_pressed("ui_up"):
+	if Input.is_action_just_pressed("move_up"):
 		dir = Vector2i.UP
-	elif Input.is_action_just_pressed("ui_down"):
+	elif Input.is_action_just_pressed("move_down"):
 		dir = Vector2i.DOWN
-	elif Input.is_action_just_pressed("ui_left"):
+	elif Input.is_action_just_pressed("move_left"):
 		dir = Vector2i.LEFT
-	elif Input.is_action_just_pressed("ui_right"):
+	elif Input.is_action_just_pressed("move_right"):
 		dir = Vector2i.RIGHT
 
 	if dir != Vector2i.ZERO:

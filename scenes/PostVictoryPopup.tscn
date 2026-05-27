@@ -1,0 +1,81 @@
+[gd_scene format=3 uid="uid://ex2b2wigmbhw"]
+
+[ext_resource type="Script" uid="uid://ddh7acve65aa6" path="res://scripts/ui/overlays/PostVictoryPopup.gd" id="1_popup_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_popup_panel"]
+bg_color = Color(0.05, 0.07, 0.1, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.36, 0.69, 0.89, 0.95)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="PostVictoryPopup" type="CanvasLayer" unique_id=66634608]
+layer = 110
+script = ExtResource("1_popup_script")
+
+[node name="Control" type="Control" parent="." unique_id=1050365837]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="Control" unique_id=641498879]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.84)
+
+[node name="CenterContainer" type="CenterContainer" parent="Control" unique_id=1560364379]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Control/CenterContainer" unique_id=1738573697]
+custom_minimum_size = Vector2(720, 320)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_popup_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/CenterContainer/PanelContainer" unique_id=1232997871]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/CenterContainer/PanelContainer/MarginContainer" unique_id=670268473]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="TitleLabel" type="Label" parent="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1824191872]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 44
+text = "Contrato Renovado"
+horizontal_alignment = 1
+
+[node name="BodyLabel" type="Label" parent="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=716152816]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.76, 0.87, 0.95, 1)
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ContinueButton" type="Button" parent="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=114562954]
+custom_minimum_size = Vector2(220, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Continue"

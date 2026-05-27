@@ -19,6 +19,8 @@ var first_time_player: bool = true
 
 var gold: int = 0
 var contracts_completed: int = 0
+var run_cycle: int = 0
+var post_victory_popup_pending: bool = false
 
 func _ready() -> void:
 	print("SaveManager initialized.")
@@ -28,6 +30,7 @@ func get_save_path(slot: int) -> String:
 
 func save_game(slot: int = current_slot) -> void:
 	var cfg = ConfigFile.new()
+	_sync_cycle_aliases_from_contracts()
 	
 	var player_stats_autoload = ManagerLocator.get_player_stats()
 	if player_stats_autoload:
@@ -47,6 +50,8 @@ func save_game(slot: int = current_slot) -> void:
 	cfg.set_value(SAVE_SECTION, "first_time_player", first_time_player)
 	cfg.set_value(SAVE_SECTION, "gold", gold)
 	cfg.set_value(SAVE_SECTION, "contracts_completed", contracts_completed)
+	cfg.set_value(SAVE_SECTION, "run_cycle", run_cycle)
+	cfg.set_value(SAVE_SECTION, "post_victory_popup_pending", post_victory_popup_pending)
 	
 	var err = cfg.save(get_save_path(slot))
 	if err == OK:
@@ -65,7 +70,13 @@ func load_game(slot: int = current_slot) -> void:
 		print("SaveManager: Loaded save from slot %d." % slot)
 		first_time_player = cfg.get_value(SAVE_SECTION, "first_time_player", false)
 		gold = cfg.get_value(SAVE_SECTION, "gold", 0)
-		contracts_completed = cfg.get_value(SAVE_SECTION, "contracts_completed", 0)
+		var loaded_contracts := int(cfg.get_value(SAVE_SECTION, "contracts_completed", 0))
+		var loaded_cycle := loaded_contracts
+		if cfg.has_section_key(SAVE_SECTION, "run_cycle"):
+			loaded_cycle = int(cfg.get_value(SAVE_SECTION, "run_cycle", loaded_contracts))
+		run_cycle = max(0, loaded_cycle)
+		contracts_completed = run_cycle
+		post_victory_popup_pending = bool(cfg.get_value(SAVE_SECTION, "post_victory_popup_pending", false))
 		
 		if player_stats_autoload:
 			var loaded_base_hp := int(cfg.get_value(SAVE_SECTION, "base_hp", StatBalance.PLAYER_BASE_HP))
@@ -81,6 +92,8 @@ func load_game(slot: int = current_slot) -> void:
 		first_time_player = true
 		gold = 0
 		contracts_completed = 0
+		run_cycle = 0
+		post_victory_popup_pending = false
 		if player_stats_autoload:
 			player_stats_autoload.base_hp = StatBalance.PLAYER_BASE_HP
 			player_stats_autoload.base_str = 1
@@ -88,6 +101,21 @@ func load_game(slot: int = current_slot) -> void:
 			player_stats_autoload.base_dex = 1
 			player_stats_autoload.active_upgrades = []
 			player_stats_autoload.refresh_stats()
+
+func get_run_cycle() -> int:
+	_sync_cycle_aliases_from_contracts()
+	return run_cycle
+
+func set_run_cycle(value: int) -> void:
+	run_cycle = max(0, value)
+	contracts_completed = run_cycle
+
+func increment_run_cycle() -> int:
+	set_run_cycle(get_run_cycle() + 1)
+	return run_cycle
+
+func _sync_cycle_aliases_from_contracts() -> void:
+	run_cycle = max(0, contracts_completed)
 
 func has_save(slot: int) -> bool:
 	var file = FileAccess.open(get_save_path(slot), FileAccess.READ)

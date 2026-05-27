@@ -2,12 +2,23 @@
 
 [ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
 [ext_resource type="Script" uid="uid://di03ffuiig3v2" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+[ext_resource type="Script" uid="uid://cnrvf2qrt0ie4" path="res://scripts/core/effects/StatusEffect.gd" id="3"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 base_damage = 3
 damage_scaling = 0.7
 description = "Daño directo que escala con tu Fuerza."
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("3")
+status_id = "brutal_cut"
+duration_turns = 2
+stacks = 1
+magnitude = 0
+max_stacks = 1
+stack_behavior = "refresh"
+status_tags = Array[String](["visual", "contrast"])
 
 [resource]
 script = ExtResource("1")
@@ -22,7 +33,7 @@ base_damage = 3
 damage_scaling = 0.7
 range = 1
 cooldown = 2
-effects = Array[Resource]([SubResource("1")])
+effects = Array[Resource]([SubResource("1"), SubResource("2")])
 tags = Array[String](["strength", "damage"])
 resource_cost = 1
 keywords = Array[String](["corte", "melee"])

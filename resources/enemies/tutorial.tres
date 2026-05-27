@@ -14,4 +14,5 @@ forced_miss_chance = 1.0
 reward_gold = 0
 enemy_scene = ExtResource("1_id02e")
 target_tint = Color(0.92, 0.92, 0.92, 1)
+allow_cycle_scaling = false
 tags = Array[String](["tutorial"])

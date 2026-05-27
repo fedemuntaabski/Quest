@@ -27,5 +27,6 @@ class_name EnemyData
 @export var target_tint: Color = Color(1.0, 0.6, 0.6, 1.0)
 
 @export var is_boss: bool = false
+@export var allow_cycle_scaling: bool = true
 @export var tags: Array[String] = []
 @export var extra_stats: Dictionary = {}
