@@ -37,9 +37,13 @@ var turn_bridge: PlayerMovementTurnBridge
 # 🌟 NUEVO: Estado interno para asegurar que la animación de ataque no sea interrumpida por idle/run
 var _is_animating_attack: bool = false
 var _is_control_disabled: bool = false
+var _is_exposed_marked: bool = false
+var _has_reflexes: bool = false
 var _base_modulate: Color = Color(1, 1, 1, 1)
 
 const CONTROL_DISABLED_TINT := Color(0.72, 0.76, 0.82, 1.0)
+const EXPOSED_TINT := Color(1.0, 0.80, 0.38, 1.0)
+const REFLEXES_TINT := Color(0.62, 0.76, 1.0, 1.0)
 
 # ─────────────────────────────────────────────
 # REFERENCES
@@ -274,7 +278,13 @@ func process_turn_end() -> void:
 
 func _on_statuses_changed(statuses: Dictionary) -> void:
 	_is_control_disabled = false
+	_is_exposed_marked = false
+	_has_reflexes = false
 	for status_id in statuses.keys():
+		if str(status_id).to_lower() == "exposed":
+			_is_exposed_marked = true
+		if str(status_id).to_lower() == "reflexes":
+			_has_reflexes = true
 		if StatusComponent.status_skips_turn(str(status_id)):
 			_is_control_disabled = true
 			break
@@ -288,6 +298,10 @@ func _refresh_visual_state() -> void:
 	var modulate_color := _base_modulate
 	if _is_control_disabled:
 		modulate_color = _base_modulate.lerp(CONTROL_DISABLED_TINT, 0.7)
+	elif _is_exposed_marked:
+		modulate_color = _base_modulate.lerp(EXPOSED_TINT, 0.42)
+	elif _has_reflexes:
+		modulate_color = _base_modulate.lerp(REFLEXES_TINT, 0.34)
 
 	sprite.modulate = modulate_color
 	sprite.visible = true

@@ -24,6 +24,7 @@ func refresh_statuses(statuses: Dictionary) -> void:
 	for key in statuses.keys():
 		var info: Dictionary = statuses[key] as Dictionary
 		var duration: int = int(info.get("duration", 0))
+		var stacks: int = int(info.get("stacks", 1))
 		var status_id := str(key).to_lower()
 		if status_id == "arcane_mark":
 			var mark_chip := ColorRect.new()
@@ -41,6 +42,28 @@ func refresh_statuses(statuses: Dictionary) -> void:
 			stun_lbl.text = str(duration)
 			stun_lbl.add_theme_font_size_override("font_size", 12)
 			icons_container.add_child(stun_lbl)
+			continue
+		if status_id == "reflexes":
+			var dodge_chip := ColorRect.new()
+			dodge_chip.custom_minimum_size = Vector2(24, 24)
+			dodge_chip.color = Color(0.50, 0.66, 0.95, 0.95)
+			icons_container.add_child(dodge_chip)
+
+			var dodge_lbl := Label.new()
+			dodge_lbl.text = "%d|%d" % [stacks, duration]
+			dodge_lbl.add_theme_font_size_override("font_size", 12)
+			icons_container.add_child(dodge_lbl)
+			continue
+		if status_id == "exposed":
+			var exposed_chip := ColorRect.new()
+			exposed_chip.custom_minimum_size = Vector2(24, 24)
+			exposed_chip.color = Color(0.97, 0.72, 0.25, 0.95)
+			icons_container.add_child(exposed_chip)
+
+			var exposed_lbl := Label.new()
+			exposed_lbl.text = str(duration)
+			exposed_lbl.add_theme_font_size_override("font_size", 12)
+			icons_container.add_child(exposed_lbl)
 			continue
 		if status_id == "brutal_cut":
 			var contrast_chip := ColorRect.new()
@@ -84,6 +107,10 @@ func _status_icon_path(status_id: String) -> String:
 			return ""
 		"freeze":
 			return "res://assets/ui/status/status_freeze.svg"
+		"reflexes":
+			return ""
+		"exposed":
+			return ""
 		"arcane_shield":
 			return "res://assets/ui/status/status_arcane_shield.svg"
 		_:

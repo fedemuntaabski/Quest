@@ -17,6 +17,7 @@ func apply(source_stats: CharacterStats, target_stats: CharacterStats, _context:
 			"reason": "missing_stats"
 		}
 
-	var result := CombatResolverScript.resolve_attack(source_stats, target_stats, stat_key, base_damage, damage_scaling)
+	var target_actor := _context.get("target_actor", null) as Node
+	var result := CombatResolverScript.resolve_attack(source_stats, target_stats, stat_key, base_damage, damage_scaling, target_actor)
 	result["effect"] = "damage"
 	return result

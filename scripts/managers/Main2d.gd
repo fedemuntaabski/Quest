@@ -258,7 +258,8 @@ func _input(event: InputEvent) -> void:
 # GAME EVENTS
 # ─────────────────────────────────────────────
 func _on_room_changed(room_id: int) -> void:
-	_reset_room_timer()
+	if _should_reset_room_timer(room_id):
+		_reset_room_timer()
 
 	if room_id not in visited_rooms:
 		visited_rooms.append(room_id)
@@ -268,6 +269,15 @@ func _on_room_changed(room_id: int) -> void:
 
 	if hud and enemy_manager:
 		hud.update_enemies_remaining(enemy_manager.get_enemies_in_room(room_id))
+
+func _should_reset_room_timer(room_id: int) -> bool:
+	if room_id < 0:
+		return false
+	if room_id in visited_rooms:
+		return false
+	if enemy_manager == null:
+		return false
+	return enemy_manager.get_enemies_in_room(room_id) > 0
 
 func _on_room_cleared(_room_id: int) -> void:
 	rooms_cleared += 1

@@ -132,6 +132,8 @@ func update_hotbar_ui() -> void:
 			if combat_card_system and card != null:
 				if card.target_type == "self":
 					var validation := combat_card_system.get_card_validation(card, player)
+					if card.targeting_profile == "dash" and not bool(validation.get("valid", false)):
+						validation = combat_card_system.get_card_validation(card, player)
 					full_playable = bool(validation.get("valid", false))
 					playability_reason = validation.get("reason", null)
 				elif card.target_type == "enemy":
@@ -244,6 +246,8 @@ func _human_readable_playability_reason(reason: String) -> String:
 			return "Estadísticas faltantes"
 		"stale_snapshot":
 			return "Instantánea obsoleta"
+		"invalid_destination":
+			return "Destino inválido"
 		_:
 			return str(reason)
 

@@ -82,6 +82,9 @@ func _compute_card_validation(card: CardData, target: Node) -> Dictionary:
 			result["reason"] = "source_dead"
 			return result
 
+	if card.targeting_profile == "dash":
+		return _validate_dash_destination(card, map_manager.hovered_cell if map_manager else Vector2i(-999, -999))
+
 	result["valid"] = true
 	result["reason"] = "ok"
 	var owner_cell : Variant = CardTargeting.get_actor_cell(owner_actor, map_manager)
@@ -99,8 +102,57 @@ func get_card_validation(card: CardData, target: Node) -> Dictionary:
 	# internal helper and we have a single place to extend validation behaviour.
 	return _compute_card_validation(card, target)
 
+func validate_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
+	if card == null:
+		return {"valid": false, "reason": "missing_card"}
+	if card.targeting_profile != "dash":
+		return get_card_validation(card, snapshot.get("target", null) as Node)
+	var destination_cell: Variant = snapshot.get("destination_cell", Vector2i(-999, -999))
+	return _validate_dash_destination(card, destination_cell)
 
-func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) -> bool:
+func _validate_dash_destination(card: CardData, destination_cell: Variant) -> Dictionary:
+	var result := {
+		"valid": false,
+		"reason": "invalid"
+	}
+	if card == null:
+		result["reason"] = "missing_card"
+		return result
+	if owner_actor == null or map_manager == null:
+		result["reason"] = "missing_destination"
+		return result
+	if destination_cell == null or destination_cell == Vector2i(-999, -999):
+		result["reason"] = "invalid_destination"
+		return result
+
+	var source_cell = CardTargeting.get_actor_cell(owner_actor, map_manager)
+	if source_cell == null:
+		result["reason"] = "invalid_destination"
+		return result
+	if destination_cell == source_cell:
+		result["reason"] = "invalid_destination"
+		return result
+	if CardTargeting.get_chebyshev_distance(source_cell, destination_cell) > card.range:
+		result["reason"] = "out_of_range"
+		result["distance"] = CardTargeting.get_chebyshev_distance(source_cell, destination_cell)
+		result["max_range"] = card.range
+		return result
+	if not map_manager.is_walkable_cell_for_actor(destination_cell, owner_actor):
+		result["reason"] = "invalid_destination"
+		return result
+	var path := map_manager.find_path(source_cell, destination_cell, owner_actor)
+	if path.is_empty() or path.size() - 1 > card.range:
+		result["reason"] = "invalid_destination"
+		return result
+
+	result["valid"] = true
+	result["reason"] = "ok"
+	result["distance"] = CardTargeting.get_chebyshev_distance(source_cell, destination_cell)
+	result["destination_cell"] = destination_cell
+	return result
+
+
+func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager, extra_snapshot: Dictionary = {}) -> bool:
 	if card == null:
 		card_failed.emit(card, "missing_card")
 		return false
@@ -132,6 +184,8 @@ func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager) 
 		"room_id": map_manager.get_actor_room_id(target) if map_manager else -1,
 		"occ_version": occ_ver
 	}
+	for key in extra_snapshot.keys():
+		snapshot[key] = extra_snapshot[key]
 
 	var action = CardAction.new(self, card, snapshot)
 	turn_manager.action_queue.queue_action(action)
@@ -157,7 +211,7 @@ func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 			# Try a live re-validation: if the live state still allows the play,
 			# proceed; otherwise fail with stale_snapshot. This avoids brittle
 			# failures when occupancy changed but target is still valid.
-			var live_val := get_card_validation(card, target)
+			var live_val := validate_card_snapshot(card, snapshot) if card.targeting_profile == "dash" else get_card_validation(card, target)
 			if not bool(live_val.get("valid", false)):
 				card_failed.emit(card, "stale_snapshot")
 				return {"hit": false, "damage": 0, "reason": "stale_snapshot", "stale": true}
@@ -169,18 +223,18 @@ func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 		card_failed.emit(card, "no_target_component")
 		return {"hit": false, "damage": 0, "reason": "no_target_component"}
 
-	var validation := get_card_validation(card, target)
+	var validation := validate_card_snapshot(card, snapshot) if card.targeting_profile == "dash" else get_card_validation(card, target)
 	if not bool(validation.get("valid", false)):
 		var reason := str(validation.get("reason", "invalid"))
 		card_failed.emit(card, reason)
 		return {"hit": false, "damage": 0, "reason": reason}
-	var result := _resolve_card_result(card, combat_component.stats, target_component.stats)
-	return await _finalize_card_execution(card, target, target_component, result, int(snapshot.get("occ_version", -1)))
+	var result := _resolve_card_result(card, combat_component.stats, target_component.stats, target_component.actor_owner)
+	return await _finalize_card_execution(card, target, target_component, result, snapshot, int(snapshot.get("occ_version", -1)))
 
 
 ## Runtime application moved to EffectApplier.gd (EffectContext)
 
-func _finalize_card_execution(card: CardData, target: Node, target_component: CombatComponent, result: Dictionary, _occ_version: int = -1) -> Dictionary:
+func _finalize_card_execution(card: CardData, target: Node, target_component: CombatComponent, result: Dictionary, snapshot: Dictionary, _occ_version: int = -1) -> Dictionary:
 		# Shared finalization logic for card execution paths. Performs HUD update,
 		# damage/miss handling, effect application (awaited), cooldown and signal
 		# emission, and active_index reset for player-owned actors.
@@ -206,6 +260,8 @@ func _finalize_card_execution(card: CardData, target: Node, target_component: Co
 				push_warning("CombatCardSystem._finalize_card_execution: target actor invalid, skipping runtime effects")
 			else:
 				var ctx := EffectContext.new(owner_actor, map_manager, card_manager, combat_component)
+				ctx.extra["destination_cell"] = snapshot.get("destination_cell", null)
+				ctx.extra["target_actor"] = target_component.actor_owner
 				var applier := EffectApplier.new()
 				await applier.apply(result, target_component, ctx)
 
@@ -255,7 +311,7 @@ func _is_arcane_projectile_card(card: CardData) -> bool:
 
 	return combined_tags.has("arcane_projectile") or combined_tags.has("arcane")
 
-func _resolve_card_result(card: CardData, source_stats: CharacterStats, target_stats: CharacterStats) -> Dictionary:
+func _resolve_card_result(card: CardData, source_stats: CharacterStats, target_stats: CharacterStats, target_actor: Node = null) -> Dictionary:
 	var results: Array = []
 	var has_damage := false
 	print("[CombatCardSystem] resolve_card: START card=%s effects=%d" % [card.display_name if card else "NULL", card.effects.size() if card else 0])
@@ -269,7 +325,7 @@ func _resolve_card_result(card: CardData, source_stats: CharacterStats, target_s
 		fallback_damage.base_damage = card.base_damage
 		fallback_damage.stat_key = card.stat_key
 		fallback_damage.damage_scaling = card.damage_scaling
-		var damage_result := fallback_damage.apply(source_stats, target_stats, {"card": card})
+		var damage_result := fallback_damage.apply(source_stats, target_stats, {"card": card, "target_actor": target_actor})
 		results.append(damage_result)
 		has_damage = true
 	else:
@@ -278,7 +334,7 @@ func _resolve_card_result(card: CardData, source_stats: CharacterStats, target_s
 				continue
 			if not effect.has_method("apply"):
 				continue
-			var effect_result: Variant = effect.apply(source_stats, target_stats, {"card": card})
+			var effect_result: Variant = effect.apply(source_stats, target_stats, {"card": card, "target_actor": target_actor})
 			if effect_result is Dictionary:
 				results.append(effect_result)
 				if effect is PRELOAD_DAMAGE_EFFECT or str(effect_result.get("effect", "")) == "damage":

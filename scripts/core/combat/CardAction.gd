@@ -19,8 +19,10 @@ func _init(p_system: CombatCardSystem, p_card: CardData, p_target: Variant) -> v
 
 func can_execute() -> bool:
 	var real_target: Node = null
+	var snapshot: Dictionary = {}
 	if typeof(target) == TYPE_DICTIONARY and target.has("target") and target["target"] is Node:
 		real_target = target["target"] as Node
+		snapshot = target as Dictionary
 	elif target is Node:
 		real_target = target as Node
 
@@ -36,7 +38,7 @@ func can_execute() -> bool:
 		validation_reason = "no_target"
 		print("[CardAction] can_execute: reject reason=no_target card=%s" % [card_data.display_name])
 		return false
-	var validation := card_system.get_card_validation(card_data, real_target)
+	var validation := card_system.get_card_validation(card_data, real_target) if snapshot.is_empty() else card_system.validate_card_snapshot(card_data, snapshot)
 	var ok: bool = bool(validation.get("valid", false))
 	if not ok:
 		validation_reason = str(validation.get("reason", "invalid"))

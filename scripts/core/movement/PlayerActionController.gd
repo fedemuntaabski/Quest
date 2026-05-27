@@ -109,6 +109,17 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 	var active_card := card_manager.get_active_card() if card_manager else null
 	if active_card:
 		if active_card.target_type == "self":
+			if active_card.targeting_profile == "dash":
+				if target_cell == player.grid_pos:
+					return true
+				var ccs_dash := _get_combat_card_system()
+				if ccs_dash:
+					var dash_validation := ccs_dash.get_card_validation(active_card, player)
+					if bool(dash_validation.get("valid", false)):
+						var queued_dash := ccs_dash.queue_card_action(active_card, player, player.turn_manager, {"destination_cell": target_cell})
+						if queued_dash and card_system_controller:
+							_clear_card_targeting_state()
+				return true
 			if target_cell != player.grid_pos:
 				return true
 			var ccs := _get_combat_card_system()

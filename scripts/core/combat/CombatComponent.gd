@@ -77,7 +77,9 @@ func attack(target: Node) -> Dictionary:
 		stats,
 		target_component.stats,
 		attack_stat,
-		base_damage
+		base_damage,
+		1.0,
+		target_component.actor_owner
 	)
 
 	# 🌟 MODIFICACIÓN: Calculamos y añadimos el oro antes de enviar el resultado al HUD

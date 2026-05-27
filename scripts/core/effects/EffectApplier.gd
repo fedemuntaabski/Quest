@@ -89,6 +89,29 @@ func _apply_movement_effect(move_data: Dictionary, target_component: CombatCompo
 
 	var move_cells: int = max(1, int(move_data.get("move_cells", 1)))
 	var movement_mode: String = str(move_data.get("movement_mode", "dash"))
+	var destination_cell: Variant = context.extra.get("destination_cell", null) if context else null
+	if destination_cell is Vector2i:
+		var receiver_cell: Variant = CardTargeting.get_actor_cell(receiver, map_manager)
+		if receiver_cell == null:
+			return false
+		var path: Array[Vector2i] = map_manager.find_path(receiver_cell, destination_cell, receiver)
+		if path.is_empty() or path.size() < 2:
+			return false
+		if path.size() - 1 > move_cells:
+			return false
+
+		for step_index in range(1, path.size()):
+			var next_cell := path[step_index]
+			var from_cell : Vector2i = CardTargeting.get_actor_cell(receiver, map_manager)
+			if from_cell == null:
+				return false
+			if not map_manager.is_walkable_cell_for_actor(next_cell, receiver):
+				return false
+			if context != null:
+				context.register_rollback(Callable(self, "_rb_set_actor_pos"), [receiver, from_cell, map_manager])
+			if not await MovementStepService.move_actor_one_step(receiver, next_cell, map_manager):
+				return false
+		return true
 	var reference := target_actor if receiver == owner_actor else owner_actor
 	var direction := CombatEffectHelper.resolve_movement_direction(receiver, reference, movement_mode, map_manager)
 	if direction == Vector2i.ZERO:

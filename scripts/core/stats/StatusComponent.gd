@@ -162,6 +162,22 @@ func remove_status(status_id: String) -> void:
 	statuses.erase(status_id)
 	_on_status_changed()
 
+func consume_status_stack(status_id: String, amount: int = 1) -> bool:
+	status_id = normalize_status_id(status_id)
+	if amount <= 0 or not statuses.has(status_id):
+		return false
+
+	var status: Dictionary = statuses[status_id]
+	var stacks := int(status.get("stacks", 0)) - amount
+	if stacks <= 0:
+		statuses.erase(status_id)
+	else:
+		status["stacks"] = stacks
+		statuses[status_id] = status
+
+	_on_status_changed()
+	return true
+
 func clear_all() -> void:
 	if statuses.is_empty():
 		return

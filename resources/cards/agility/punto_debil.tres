@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/core/effects/StatusEffect.gd" id="3"]
+
+[sub_resource type="Resource" id="1"]
+script = ExtResource("2")
+base_damage = 1
+damage_scaling = 0.3
+stat_key = "dexterity"
+description = "Golpe ligero que abre una ventana de daño ampliado."
+
+[sub_resource type="Resource" id="2"]
+script = ExtResource("3")
+status_id = "exposed"
+duration_turns = 2
+stacks = 1
+magnitude = 0
+max_stacks = 1
+refresh_duration_on_reapply = true
+stack_behavior = "refresh"
+apply_to_source = false
+status_tags = Array[String](["setup", "exposed"])
+
+[resource]
+script = ExtResource("1")
+id = "punto_debil"
+display_name = "Punto Débil"
+description = "Marca al enemigo como expuesto: el siguiente golpe recibe 50% más daño."
+category = "agility"
+rarity = "common"
+card_type = "debuff"
+target_type = "enemy"
+stat_key = "dexterity"
+base_damage = 1
+damage_scaling = 0.3
+range = 2
+cooldown = 3
+resource_cost = 1
+effects = Array[Resource]([SubResource("1"), SubResource("2")])
+tags = Array[String](["agility", "setup", "exposed", "damage"])
+keywords = Array[String](["expuesto", "combo", "daño"])
+archetype = "setup"
+combo_tags = Array[String](["setup", "burst"])

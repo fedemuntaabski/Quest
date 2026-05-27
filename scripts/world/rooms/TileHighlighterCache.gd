@@ -19,6 +19,24 @@ func update_range_cache(highlighter: TileHighlighter) -> void:
         highlighter.queue_redraw()
         return
 
+    if card.targeting_profile == "dash" and card.target_type == "self":
+        if card.range <= 0:
+            highlighter.queue_redraw()
+            return
+
+        var candidate_cells := CardTargeting.get_range_cells(highlighter._player.grid_pos, card.range, highlighter.map_manager)
+        for cell in candidate_cells:
+            if cell == highlighter._player.grid_pos:
+                continue
+            if not highlighter.map_manager.is_walkable_cell_for_actor(cell, highlighter._player):
+                continue
+            var path := highlighter.map_manager.find_path(highlighter._player.grid_pos, cell, highlighter._player)
+            if path.is_empty() or path.size() - 1 > card.range:
+                continue
+            highlighter._cached_range_cells.append(cell)
+        highlighter.queue_redraw()
+        return
+
     if card.target_type != "enemy":
         highlighter.queue_redraw()
         return
