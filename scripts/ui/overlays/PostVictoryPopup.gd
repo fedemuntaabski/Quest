@@ -18,7 +18,7 @@ func show_popup(run_cycle: int) -> void:
 	if title_label:
 		title_label.text = "Contrato renovado."
 	if body_label:
-		body_label.text = "Jefe neutralizado en run anterior.\nNuevo contrato iniciado.\nEntidades hostiles han evolucionado.\nNivel de amenaza aumentado: Ciclo %d." % max(0, run_cycle)
+		body_label.text = "Jefe neutralizado en run anterior.\nNuevo contrato iniciado.\nNivel de amenaza aumentado: Ciclo %d." % max(0, run_cycle)
 	if continue_button:
 		continue_button.grab_focus()
 

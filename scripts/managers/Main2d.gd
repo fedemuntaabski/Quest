@@ -258,9 +258,10 @@ func _input(event: InputEvent) -> void:
 # GAME EVENTS
 # ─────────────────────────────────────────────
 func _on_room_changed(room_id: int) -> void:
+	_reset_room_timer()
+
 	if room_id not in visited_rooms:
 		visited_rooms.append(room_id)
-		_reset_room_timer()
 
 	if hud:
 		hud.update_current_room(room_id)

@@ -5,19 +5,19 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-status_id = "shock"
+status_id = "arcane_mark"
 duration_turns = 3
 stacks = 1
 magnitude = 1
 apply_to_source = false
 
-description = "El objetivo queda inestable, amplificando daño eléctrico."
+description = "Marca al objetivo. El siguiente proyectil arcano que lo golpee consume la marca y causa +2 daño."
 
 [resource]
 script = ExtResource("1")
 id = "marca_inestabilidad"
 display_name = "Marca de Inestabilidad"
-description = "Marca al enemigo para futuros combos eléctricos."
+description = "Marca a un enemigo para preparar el siguiente impacto arcano."
 category = "magic"
 card_type = "magic"
 target_type = "enemy"
@@ -27,4 +27,6 @@ damage_scaling = 0
 range = 3
 cooldown = 2
 effects = Array[Resource]([SubResource("1")])
-tags = Array[String](["magic", "status", "setup"])
+tags = Array[String](["magic", "status", "setup", "arcane_mark"])
+keywords = Array[String](["marca", "setup", "arcano"])
+combo_tags = Array[String](["arcane_mark"])

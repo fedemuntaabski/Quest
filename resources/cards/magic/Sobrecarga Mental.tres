@@ -8,16 +8,16 @@ script = ExtResource("2")
 
 stat_key = "magic"
 value = 2
-duration_turns = 2
+duration_turns = 3
 apply_to_source = true
 
-description = "Aumenta tu poder mágico temporalmente."
+description = "Aumenta tu Magic en +2 durante 3 turnos."
 
 [resource]
 script = ExtResource("1")
 id = "sobrecarga_mental"
 display_name = "Sobrecarga Mental"
-description = "Amplifica tu capacidad arcana a costa de estabilidad."
+description = "Potencia tu magia con un aumento temporal de +2 Magic."
 category = "magic"
 card_type = "buff"
 target_type = "self"
@@ -25,4 +25,5 @@ stat_key = "magic"
 range = 0
 cooldown = 3
 effects = Array[Resource]([SubResource("1")])
-tags = Array[String](["magic", "buff", "scaling"])
+tags = Array[String](["magic", "buff", "self", "scaling"])
+keywords = Array[String](["magic +2", "buff", "duración"])

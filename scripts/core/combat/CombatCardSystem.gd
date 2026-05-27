@@ -2,6 +2,8 @@ extends Node
 class_name CombatCardSystem
 
 const PRELOAD_DAMAGE_EFFECT = preload("res://scripts/core/effects/DamageEffect.gd")
+const ARCANE_MARK_STATUS_ID := "arcane_mark"
+const ARCANE_MARK_BONUS_DAMAGE := 2
 
 # CombatCardSystem: per-actor coordinator responsible for validating,
 # queuing, executing and finalizing card plays.
@@ -182,6 +184,8 @@ func _finalize_card_execution(card: CardData, target: Node, target_component: Co
 		# Shared finalization logic for card execution paths. Performs HUD update,
 		# damage/miss handling, effect application (awaited), cooldown and signal
 		# emission, and active_index reset for player-owned actors.
+		_apply_arcane_mark_bonus(card, target_component, result)
+
 		if owner_actor and owner_actor.is_in_group("player"):
 			var hud := get_tree().get_first_node_in_group("hud") as HUDController
 			if hud:
@@ -215,6 +219,41 @@ func _finalize_card_execution(card: CardData, target: Node, target_component: Co
 			else:
 				card_manager.set_active_index(-1)
 		return result
+
+func _apply_arcane_mark_bonus(card: CardData, target_component: CombatComponent, result: Dictionary) -> void:
+	if card == null or target_component == null or result == null:
+		return
+	if not bool(result.get("hit", false)):
+		return
+	if int(result.get("damage", 0)) <= 0:
+		return
+	if not _is_arcane_projectile_card(card):
+		return
+
+	var target_actor := target_component.actor_owner
+	if target_actor == null:
+		return
+
+	var status_component := target_actor.get_node_or_null("StatusComponent") as StatusComponent
+	if status_component == null:
+		return
+	if not status_component.has_status(ARCANE_MARK_STATUS_ID):
+		return
+
+	result["damage"] = int(result.get("damage", 0)) + ARCANE_MARK_BONUS_DAMAGE
+	status_component.remove_status(ARCANE_MARK_STATUS_ID)
+
+func _is_arcane_projectile_card(card: CardData) -> bool:
+	if card == null:
+		return false
+
+	var combined_tags: Array[String] = []
+	for raw_tag in card.tags:
+		combined_tags.append(str(raw_tag).to_lower())
+	for raw_combo_tag in card.combo_tags:
+		combined_tags.append(str(raw_combo_tag).to_lower())
+
+	return combined_tags.has("arcane_projectile") or combined_tags.has("arcane")
 
 func _resolve_card_result(card: CardData, source_stats: CharacterStats, target_stats: CharacterStats) -> Dictionary:
 	var results: Array = []

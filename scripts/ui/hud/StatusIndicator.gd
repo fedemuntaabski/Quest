@@ -25,6 +25,17 @@ func refresh_statuses(statuses: Dictionary) -> void:
 		var info: Dictionary = statuses[key] as Dictionary
 		var duration: int = int(info.get("duration", 0))
 		var status_id := str(key).to_lower()
+		if status_id == "arcane_mark":
+			var mark_chip := ColorRect.new()
+			mark_chip.custom_minimum_size = Vector2(24, 24)
+			mark_chip.color = Color(0.45, 0.74, 1.0, 0.95)
+			icons_container.add_child(mark_chip)
+
+			var mark_lbl := Label.new()
+			mark_lbl.text = str(duration)
+			mark_lbl.add_theme_font_size_override("font_size", 12)
+			icons_container.add_child(mark_lbl)
+			continue
 		if owner_is_enemy and status_id == "stun":
 			var stun_lbl := Label.new()
 			stun_lbl.text = str(duration)
@@ -68,6 +79,8 @@ func _status_icon_path(status_id: String) -> String:
 		"stun":
 			return "res://assets/ui/status/status_stun.svg"
 		"brutal_cut":
+			return ""
+		"arcane_mark":
 			return ""
 		"freeze":
 			return "res://assets/ui/status/status_freeze.svg"
