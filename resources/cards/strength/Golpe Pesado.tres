@@ -8,28 +8,33 @@
 script = ExtResource("2")
 base_damage = 2
 damage_scaling = 0.5
-description = "Impacto pesado que desestabiliza."
+description = "Impacto pesado que abre paso al control."
 
 [sub_resource type="Resource" id="2"]
 script = ExtResource("3")
-status_id = "stagger"
+status_id = "stun"
+duration_turns = 2
 magnitude = 1
 max_stacks = 3
 stack_behavior = "refresh"
-status_tags = Array[String](["control", "physical"])
+status_tags = Array[String](["control", "stun"])
 
 [resource]
 script = ExtResource("1")
 id = "golpe_pesado"
 display_name = "Golpe Pesado"
-description = "Desestabiliza al enemigo con un impacto brutal."
+description = "Golpea con fuerza y aturde al enemigo durante 2 turnos."
+category = "strength"
+rarity = "common"
+card_type = "debuff"
+target_type = "enemy"
 base_damage = 2
 damage_scaling = 0.5
 cooldown = 3
 range = 1
 effects = Array[Resource]([SubResource("1"), SubResource("2")])
-tags = Array[String](["strength", "control"])
+tags = Array[String](["strength", "control", "stun"])
 resource_cost = 1
-keywords = Array[String](["stagger", "control"])
+keywords = Array[String](["stun", "control", "melee"])
 archetype = "pressure"
-combo_tags = Array[String](["stagger", "setup"])
+combo_tags = Array[String](["stun", "setup"])

@@ -10,7 +10,7 @@ signal selected(card: CardData)
 @onready var category_label: Label = $MarginContainer/VBoxContainer/CategoryLabel
 @onready var icon_rect: TextureRect = $MarginContainer/VBoxContainer/Icon
 @onready var stats_label: Label = $MarginContainer/VBoxContainer/StatsLabel
-@onready var effects_label: Label = $MarginContainer/VBoxContainer/EffectsScroll/EffectsLabel
+@onready var description_label: Label = $MarginContainer/VBoxContainer/DescriptionLabel
 @onready var select_button: Button = $MarginContainer/VBoxContainer/SelectButton
 
 var _card: CardData = null
@@ -45,11 +45,12 @@ func setup(card: CardData) -> void:
 		category_label.text = "[%s]" % str(display_data.category).to_upper()
 		category_label.add_theme_color_override("font_color", CardPresentationAdapter.get_category_color(display_data.category))
 	if icon_rect:
-		icon_rect.texture = display_data.icon
+		icon_rect.visible = false
+		icon_rect.texture = null
 	if stats_label:
 		stats_label.text = CardPresentationAdapter.get_stats_summary(display_data)
-	if effects_label:
-		effects_label.text = CardPresentationAdapter.get_effects_summary(card)
+	if description_label:
+		description_label.text = display_data.description
 
 ## Returns the card assigned to this option.
 ## Allows the parent scene to keep the selected state in sync.

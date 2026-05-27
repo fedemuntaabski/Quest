@@ -30,6 +30,9 @@ func refresh_statuses(statuses: Dictionary) -> void:
 		var icon := TextureRect.new()
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.custom_minimum_size = Vector2(24,24)
+		if str(key).to_lower() == "stun":
+			icon.custom_minimum_size = Vector2(28, 28)
+			icon.modulate = Color(0.92, 0.92, 0.95, 1.0)
 		if tex:
 			icon.texture = tex
 		icons_container.add_child(icon)
@@ -45,6 +48,8 @@ func _status_icon_path(status_id: String) -> String:
 			return "res://assets/ui/status/status_poison.svg"
 		"burn":
 			return "res://assets/ui/status/status_burn.svg"
+		"stun":
+			return "res://assets/ui/status/status_stun.svg"
 		"freeze":
 			return "res://assets/ui/status/status_freeze.svg"
 		"arcane_shield":

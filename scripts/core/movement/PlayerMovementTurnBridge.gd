@@ -64,7 +64,6 @@ func begin_turn(tm: TurnManager) -> void:
 	player.sync_to_grid()
 
 	if player.stats and player.stats.is_alive():
-		player.stats.process_runtime_modifiers_turn_start()
 		var status_component := player.get_node_or_null("StatusComponent") as StatusComponent
 		if status_component != null:
 			var status_result := status_component.process_turn_start(player, player.stats)

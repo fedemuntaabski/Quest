@@ -39,6 +39,10 @@ var is_tutorial_enemy: bool = false
 # Estados internos de control para la máquina de animaciones
 var _is_animating_attack: bool = false
 var _is_dead: bool = false
+var _is_targeted: bool = false
+var _is_control_disabled: bool = false
+
+const CONTROL_DISABLED_TINT := Color(0.58, 0.76, 1.0, 1.0)
 
 const STANDARD_ENEMY_HP := 10
 const STANDARD_ENEMY_STRENGTH := 1
@@ -135,6 +139,11 @@ func _ensure_status_component() -> void:
 		status_comp.name = "StatusComponent"
 		add_child(status_comp)
 
+	if status_comp and not status_comp.statuses_changed.is_connected(_on_statuses_changed):
+		status_comp.statuses_changed.connect(_on_statuses_changed)
+
+	_on_statuses_changed(status_comp.get_active_statuses())
+
 func configure_profile(max_hp: int, base_damage: int, dex: int = 0, base_tint: Color = Color(0.7, 0.3, 0.9, 1.0), target_tint: Color = Color(1.0, 0.7, 1.0, 1.0)) -> void:
 	if stats:
 		stats.max_hp = max_hp
@@ -199,6 +208,13 @@ func begin_turn(tm: TurnManager) -> void:
 			_queue_move_action(next_cell)
 		_:
 			_queue_wait_action()
+
+func process_turn_end() -> void:
+	if stats:
+		stats.process_runtime_modifiers_turn_end()
+	var status_component := get_node_or_null("StatusComponent") as StatusComponent
+	if status_component != null and stats != null:
+		status_component.process_turn_end()
 
 func _skip_turn(reason: String = "") -> void:
 	if turn_manager == null:
@@ -308,7 +324,9 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	EnemyPresentationHelper.update_health_bar_on_hp_changed(health_bar, is_tutorial_enemy, current_hp, max_hp)
 
 func set_targeted(active: bool) -> void:
+	_is_targeted = active
 	EnemyPresentationHelper.set_targeted_state(health_bar, sprite, active, _target_tint, _base_modulate)
+	_refresh_visual_state()
 
 func set_visual_tint(base_tint: Color, target_tint: Color = QuestPalette.COMBAT_TARGET_TINT_DEFAULT) -> void:
 	# 🌟 MODIFICADO: Si el Alpha viene en 0 por error del archivo Resource (.tres), lo restauramos a visible
@@ -317,9 +335,29 @@ func set_visual_tint(base_tint: Color, target_tint: Color = QuestPalette.COMBAT_
 		
 	_base_modulate = base_tint
 	_target_tint = target_tint
-	if sprite:
-		sprite.modulate = _base_modulate
-		sprite.visible = true
+	_refresh_visual_state()
+
+func _on_statuses_changed(statuses: Dictionary) -> void:
+	_is_control_disabled = false
+	for status_id in statuses.keys():
+		if StatusComponent.status_skips_turn(str(status_id)):
+			_is_control_disabled = true
+			break
+
+	_refresh_visual_state()
+
+func _refresh_visual_state() -> void:
+	if sprite == null:
+		return
+
+	var modulate_color := _base_modulate
+	if _is_control_disabled:
+		modulate_color = _base_modulate.lerp(CONTROL_DISABLED_TINT, 0.7)
+	elif _is_targeted:
+		modulate_color = _target_tint
+
+	sprite.modulate = modulate_color
+	sprite.visible = true
 
 func apply_tutorial_profile() -> void:
 	is_tutorial_enemy = true

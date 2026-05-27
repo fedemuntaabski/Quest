@@ -7,13 +7,17 @@
 script = ExtResource("2")
 base_damage = 3
 damage_scaling = 0.7
-description = "Un golpe brutal y confiable."
+description = "Daño directo que escala con tu Fuerza."
 
 [resource]
 script = ExtResource("1")
 id = "corte_brutal"
 display_name = "Corte Brutal"
-description = "Un ataque pesado y directo."
+description = "Golpea con fuerza bruta y escala con tu Fuerza."
+category = "strength"
+rarity = "common"
+card_type = "melee"
+target_type = "enemy"
 base_damage = 3
 damage_scaling = 0.7
 range = 1
@@ -21,6 +25,6 @@ cooldown = 2
 effects = Array[Resource]([SubResource("1")])
 tags = Array[String](["strength", "damage"])
 resource_cost = 1
-keywords = Array[String](["golpe", "melee"])
+keywords = Array[String](["corte", "melee"])
 archetype = "pressure"
 combo_tags = Array[String](["starter"])

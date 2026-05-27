@@ -36,6 +36,10 @@ var turn_bridge: PlayerMovementTurnBridge
 
 # 🌟 NUEVO: Estado interno para asegurar que la animación de ataque no sea interrumpida por idle/run
 var _is_animating_attack: bool = false
+var _is_control_disabled: bool = false
+var _base_modulate: Color = Color(1, 1, 1, 1)
+
+const CONTROL_DISABLED_TINT := Color(0.72, 0.76, 0.82, 1.0)
 
 # ─────────────────────────────────────────────
 # REFERENCES
@@ -78,7 +82,13 @@ func _ready() -> void:
 	
 	# 🌟 NUEVO: Detectar cuándo termina el golpe o la muerte para devolver el control o congelar
 	if sprite:
+		_base_modulate = sprite.modulate
 		sprite.animation_finished.connect(_on_sprite_animation_finished)
+
+	var status_component := get_node_or_null("StatusComponent") as StatusComponent
+	if status_component and not status_component.statuses_changed.is_connected(_on_statuses_changed):
+		status_component.statuses_changed.connect(_on_statuses_changed)
+		_on_statuses_changed(status_component.get_active_statuses())
 
 func _ensure_turn_bridge() -> void:
 	if turn_bridge == null:
@@ -254,6 +264,33 @@ func begin_turn(tm: TurnManager) -> void:
 	if _is_dead: return
 	if turn_bridge:
 		turn_bridge.begin_turn(tm)
+
+func process_turn_end() -> void:
+	if stats:
+		stats.process_runtime_modifiers_turn_end()
+	var status_component := get_node_or_null("StatusComponent") as StatusComponent
+	if status_component != null and stats != null:
+		status_component.process_turn_end()
+
+func _on_statuses_changed(statuses: Dictionary) -> void:
+	_is_control_disabled = false
+	for status_id in statuses.keys():
+		if StatusComponent.status_skips_turn(str(status_id)):
+			_is_control_disabled = true
+			break
+
+	_refresh_visual_state()
+
+func _refresh_visual_state() -> void:
+	if sprite == null:
+		return
+
+	var modulate_color := _base_modulate
+	if _is_control_disabled:
+		modulate_color = _base_modulate.lerp(CONTROL_DISABLED_TINT, 0.7)
+
+	sprite.modulate = modulate_color
+	sprite.visible = true
 
 func turn_interrupted() -> void:
 	cancel_movement()

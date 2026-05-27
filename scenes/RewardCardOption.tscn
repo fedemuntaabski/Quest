@@ -37,6 +37,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 expand_mode = 1
 stretch_mode = 5
+visible = false
 
 [node name="StatsLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=2107399340]
 custom_minimum_size = Vector2(188, 40)
@@ -44,6 +45,14 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
 theme_override_font_sizes/font_size = 12
 autowrap_mode = 3
+
+[node name="DescriptionLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1938342617]
+custom_minimum_size = Vector2(188, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.93, 0.96, 1)
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 3
+text = "Card description"
 
 [node name="SelectButton" type="Button" parent="MarginContainer/VBoxContainer" unique_id=1902548043]
 custom_minimum_size = Vector2(188, 36)

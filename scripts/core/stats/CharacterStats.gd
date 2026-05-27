@@ -230,6 +230,9 @@ func apply_runtime_modifier(
 	return modifier_id
 
 func process_runtime_modifiers_turn_start() -> Dictionary:
+	return process_runtime_modifiers_turn_end()
+
+func process_runtime_modifiers_turn_end() -> Dictionary:
 	var result := {
 		"changed": false,
 		"expired": []
@@ -251,7 +254,7 @@ func process_runtime_modifiers_turn_start() -> Dictionary:
 		if stack == null:
 			continue
 
-		var expired := stack.tick_turn_start()
+		var expired = stack.tick_turn_end()
 
 		if expired.is_empty():
 			continue

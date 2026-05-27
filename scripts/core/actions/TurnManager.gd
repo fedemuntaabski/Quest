@@ -128,6 +128,8 @@ func _begin_actor_turn() -> void:
 # CONTROL DE TURNO
 # ─────────────────────────────────────────────
 func end_turn() -> void:
+	if current_actor != null and current_actor.has_method("process_turn_end"):
+		current_actor.process_turn_end()
 	_actor_finished()
 
 func stop() -> void:

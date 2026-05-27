@@ -16,15 +16,22 @@ func get_total() -> int:
 func add_runtime_modifier(value: int, duration_turns: int = 1, source: String = "") -> String:
 	_serial += 1
 	var id := "rs_%d" % _serial
-	_runtime_modifiers[id] = {"value": int(value), "remaining": max(1, int(duration_turns)), "source": source}
+	_runtime_modifiers[id] = {"value": int(value), "remaining": max(1, int(duration_turns)), "source": source, "fresh": true}
 	runtime_total += int(value)
 	return id
 
 func tick_turn_start() -> Array:
+	return tick_turn_end()
+
+func tick_turn_end() -> Array:
 	var expired: Array = []
 	var remove_keys: Array = []
 	for key in _runtime_modifiers.keys():
 		var m: Dictionary = _runtime_modifiers[key]
+		if bool(m.get("fresh", false)):
+			m["fresh"] = false
+			_runtime_modifiers[key] = m
+			continue
 		m["remaining"] -= 1
 		if m["remaining"] <= 0:
 			expired.append({"id": key, "value": m["value"], "source": m.get("source", "")})

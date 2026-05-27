@@ -16,12 +16,14 @@ static func decide(enemy: Enemy) -> Dictionary:
 		enemy.map_manager.core.repair_actor_room(enemy)
 
 	if enemy.stats and enemy.stats.is_alive():
-		enemy.stats.process_runtime_modifiers_turn_start()
 		var status_component := enemy.get_node_or_null("StatusComponent") as StatusComponent
 		if status_component != null:
 			var status_result := status_component.process_turn_start(enemy, enemy.stats)
 			if status_result.get("can_act", true) != true:
-				return {"decision": Decision.WAIT}
+				return {
+					"decision": Decision.SKIP,
+					"reason": str(status_result.get("events", []).front().get("status_id", "status_control")) if status_result.get("events", []).size() > 0 else "status_control"
+				}
 
 	if enemy.map_manager == null or enemy.player == null:
 		return {"decision": Decision.WAIT}

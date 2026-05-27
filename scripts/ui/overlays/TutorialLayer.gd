@@ -12,7 +12,7 @@ var prompts = [
 	"Paso 2/8 - Cámara y exploración: avanza por las habitaciones. La cámara sigue tu posición dentro de la sala actual.",
 	"Paso 3/8 - Combate básico: acércate a un enemigo y haciendo click sobre ellos al estar en rango. Cada acción consume turnos.",
 	"Paso 4/8 - Sistema de cartas: usa las teclas 1, 2 y 3 para cambiar tu carta activa y ver su rango de acción.",
-	"Paso 5/8 - Estados: algunos ataques aplican efectos como Burn, Freeze o Poison. Estos afectan al enemigo por varios turnos.",
+	"Paso 5/8 - Estados: algunos ataques aplican efectos como stun, bleed, burn, freeze o poison. Estos pueden inmovilizar, dañar o debilitar al enemigo por varios turnos.",
 	"Paso 6/8 - Recursos: los enemigos pueden soltar oro. Este oro se usa para mejoras entre combates.",
 	"Paso 7/8 - HUD: tu vida, estadisticas y estados actuales siempre se muestran en la interfaz superior.",
 	"Paso 8/8 - Progresión: limpia habitaciones para avanzar. Al derrotar enemigos avanzas hacia el jefe final."

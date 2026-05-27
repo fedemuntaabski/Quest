@@ -128,7 +128,7 @@ func _apply_status_effect(status_data: Dictionary, target_component: CombatCompo
 	var prev_comp := status_component.statuses.duplicate(true)
 	context.register_rollback(Callable(self, "_rb_restore_status_component"), [status_component, prev_comp])
 
-	var status_id := str(status_data.get("status_id", "")).to_lower()
+	var status_id := StatusComponent.normalize_status_id(str(status_data.get("status_id", "")))
 	if status_id.is_empty():
 		return false
 
@@ -137,13 +137,13 @@ func _apply_status_effect(status_data: Dictionary, target_component: CombatCompo
 	var magnitude: int = max(1, int(status_data.get("magnitude", 1)))
 	var damage_on_tick: int = 0
 
-	match status_id:
-		"poison", "burn":
-			damage_on_tick = stacks * magnitude
+	if StatusComponent.status_deals_turn_damage(status_id):
+		damage_on_tick = stacks * magnitude
 
 	status_component.apply_status(status_id, stacks, duration, damage_on_tick)
 
 	return true
+
 func _rb_set_actor_pos(actor: Node, grid_pos: Vector2i, map_manager: Node) -> void:
 	if actor == null or map_manager == null:
 		return
