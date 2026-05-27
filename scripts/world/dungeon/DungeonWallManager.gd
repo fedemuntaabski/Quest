@@ -81,27 +81,11 @@ func _spawn_wall(cell: Vector2i) -> void:
 	wall.collision_layer = 1
 	wall.collision_mask = 1
 
-	var wall_sprite := Sprite2D.new()
-	wall_sprite.texture = dungeon.wall_texture
-	wall_sprite.modulate = Color(0.2, 0.18, 0.16, 1)
-	wall_sprite.scale = Vector2(dungeon.tile_size / 2.0, dungeon.tile_size / 2.0)
-	wall.add_child(wall_sprite)
-
 	var collision_shape := CollisionShape2D.new()
 	var rectangle := RectangleShape2D.new()
 	rectangle.size = Vector2(dungeon.tile_size, dungeon.tile_size)
 	collision_shape.shape = rectangle
 	wall.add_child(collision_shape)
-
-	var occluder := LightOccluder2D.new()
-	var occ_polygon := OccluderPolygon2D.new()
-	var hs := dungeon.tile_size / 2.0
-	occ_polygon.polygon = PackedVector2Array([
-		Vector2(-hs, -hs), Vector2(hs, -hs),
-		Vector2(hs, hs), Vector2(-hs, hs)
-	])
-	occluder.occluder = occ_polygon
-	wall.add_child(occluder)
 
 	dungeon.walls_root.add_child(wall)
 	dungeon.wall_nodes[cell] = wall

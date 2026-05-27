@@ -39,12 +39,15 @@ func build_room_instance(room_info: Dictionary, rooms_root: Node2D = null) -> Di
 	if snapshot.is_empty():
 		snapshot = room_prefab_adapter.inspect_scene(template.room_scene)
 
+	var marker_refs := room_prefab_adapter.resolve_marker_references(room_root)
+
 	return {
 		"visual_root": room_root,
 		"template": template,
 		"snapshot": snapshot,
 		"connectors": snapshot.get("connectors", []),
 		"spawn_markers": snapshot.get("spawn_markers", []),
+		"marker_refs": marker_refs,
 		"local_floor_cells": snapshot.get("local_floor_cells", room_info.get("local_floor_cells", [])),
 		"room_role": _room_role_for_info(room_info),
 		"prefab_scene_path": template.room_scene.resource_path if template.room_scene else "",

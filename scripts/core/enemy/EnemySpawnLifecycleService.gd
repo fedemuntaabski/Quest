@@ -40,16 +40,26 @@ static func _spawn_enemy_for_room(
 ) -> void:
 	var room_id: int = room_info["id"]
 
-	var spawn_cell := manager._get_random_floor_cell_in_room(
-		room_info,
-		wall_cells,
-		room_id == 0,
-		player_cell,
-		occupied_spawn_cells
-	)
+	var spawn_world_position: Vector2 = Vector2.INF
+	var spawn_cell: Vector2i = Vector2i(-1, -1)
+	if room_id == 0 and manager.dungeon != null:
+		var tutorial_spawn_marker := manager.dungeon.get_room_tutorial_spawn_marker_ref(room_id)
+		if tutorial_spawn_marker:
+			spawn_world_position = tutorial_spawn_marker.global_position
 
-	if spawn_cell == Vector2i(-1, -1):
-		return
+	if spawn_world_position == Vector2.INF:
+		spawn_cell = manager._get_random_floor_cell_in_room(
+			room_info,
+			wall_cells,
+			room_id == 0,
+			player_cell,
+			occupied_spawn_cells
+		)
+
+		if spawn_cell == Vector2i(-1, -1):
+			return
+
+		spawn_world_position = manager.dungeon.grid_to_world_coords(spawn_cell) if manager.dungeon else Vector2.ZERO
 
 	# 🌟 MODIFICADO: Solicitamos de forma dinámica la escena específica (Boss, Skeleton, etc.) al manager
 	var enemy_scene: PackedScene = manager.get_enemy_scene_for_room(room_id)
@@ -62,7 +72,7 @@ static func _spawn_enemy_for_room(
 		return
 
 	enemy.name = "Enemy_%d" % room_id
-	enemy.global_position = manager.dungeon.grid_to_world_coords(spawn_cell)
+	enemy.global_position = spawn_world_position
 	enemy.my_room_id = room_id
 	enemy.dungeon_generator = manager.dungeon
 	
@@ -74,7 +84,12 @@ static func _spawn_enemy_for_room(
 			
 	manager.add_child(enemy)
 	_apply_cycle_hp_scaling_if_needed(enemy, selected_data)
-	occupied_spawn_cells[spawn_cell] = true
+	if map_manager:
+		spawn_cell = map_manager.world_to_grid_coords(enemy.global_position)
+	elif manager.dungeon != null:
+		spawn_cell = manager.dungeon.world_to_grid_coords(enemy.global_position)
+	if spawn_cell != Vector2i(-1, -1):
+		occupied_spawn_cells[spawn_cell] = true
 
 	enemy.setup(manager.get_parent(), manager.player)
 

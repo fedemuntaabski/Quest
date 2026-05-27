@@ -232,9 +232,25 @@ func get_room_presentation(room_id: int) -> Dictionary:
 		return {
 			"visual_root": null,
 			"light": null,
-			"area": null
+			"area": null,
+			"marker_refs": {}
 		}
 	return presentation_state.to_dictionary()
+
+
+func get_room_marker_ref(room_id: int, marker_name: String) -> Node2D:
+	var presentation_state := get_room_presentation_state(room_id)
+	if presentation_state == null:
+		return null
+	return presentation_state.get_marker_ref(marker_name)
+
+
+func get_room_spawn_marker_ref(room_id: int) -> Node2D:
+	return get_room_marker_ref(room_id, "SpawnJugador")
+
+
+func get_room_tutorial_spawn_marker_ref(room_id: int) -> Node2D:
+	return get_room_marker_ref(room_id, "SpawnTutorial")
 
 
 func set_room_presentation(room_id: int, presentation: Dictionary) -> void:
@@ -250,6 +266,8 @@ func set_room_presentation(room_id: int, presentation: Dictionary) -> void:
 		presentation_state.light = presentation.get("light", null)
 	if presentation.has("area"):
 		presentation_state.area = presentation.get("area", null)
+	if presentation.has("marker_refs"):
+		presentation_state.set_marker_refs(presentation.get("marker_refs", {}))
 
 
 func get_connected_room_ids(room_id: int) -> Array[int]:
@@ -395,8 +413,13 @@ func place_player_in_start_room(player: CharacterBody2D) -> void:
 		return
 
 	var start_room := room_infos[0]
-	var center_cell: Vector2i = start_room["center_cell"]
-	player.position = grid_to_world_coords(center_cell)
+	var marker := get_room_spawn_marker_ref(int(start_room.get("id", 0)))
+	if marker:
+		player.global_position = marker.global_position
+	else:
+		push_warning("DungeonGenerator: SpawnJugador marker not found in start room; falling back to room center.")
+		var center_cell: Vector2i = start_room["center_cell"]
+		player.global_position = grid_to_world_coords(center_cell)
 	if player.has_method("sync_to_grid"):
 		player.sync_to_grid()
 

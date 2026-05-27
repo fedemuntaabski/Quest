@@ -69,16 +69,13 @@ func build(tileset: TileSet, wall_texture: Texture2D) -> void:
 		generator.set_room_presentation(room_id, {
 			"visual_root": room_nodes.get("visual_root", null),
 			"light": room_nodes.get("light", null),
-			"area": room_nodes.get("area", null)
+			"area": room_nodes.get("area", null),
+			"marker_refs": room_nodes.get("marker_refs", {})
 		})
 
 	for edge_info in graph.get_edge_records_sorted():
 		var corridor_node := generator.room_factory.create_corridor_entity(edge_info, generator.corridors_root)
 		graph.set_edge_runtime_node(int(edge_info.get("room_a", -1)), int(edge_info.get("room_b", -1)), corridor_node)
-
-	map_renderer.setup(generator, tileset, generator.grid_origin)
-	map_renderer.set_data(generator.floor_cells, generator.wall_cells)
-	map_renderer.build()
 
 	fog_manager.setup(
 		generator,

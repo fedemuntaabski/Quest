@@ -119,6 +119,31 @@ func extract_spawn_markers_from_scene_root(room_root: Node, tile_size: float = 1
 	return connectors
 
 
+func get_entrada_marker(room_root: Node) -> Node2D:
+	return _find_marker_by_names(room_root, ["Entrada", "entrada", "puerta_entrada", "door_entry"])
+
+
+func get_salida_marker(room_root: Node) -> Node2D:
+	return _find_marker_by_names(room_root, ["Salida", "salida", "puerta_salida", "door_exit"])
+
+
+func get_spawn_jugador_marker(room_root: Node) -> Node2D:
+	return _find_marker_by_names(room_root, ["SpawnJugador", "Spawn_jugador", "spawn_jugador", "spawnjugador"])
+
+
+func get_spawn_tutorial_marker(room_root: Node) -> Node2D:
+	return _find_marker_by_names(room_root, ["SpawnTutorial", "Spawn_tutorial", "spawn_tutorial", "spawntutorial"])
+
+
+func resolve_marker_references(room_root: Node) -> Dictionary:
+	return {
+		"Entrada": get_entrada_marker(room_root),
+		"Salida": get_salida_marker(room_root),
+		"SpawnJugador": get_spawn_jugador_marker(room_root),
+		"SpawnTutorial": get_spawn_tutorial_marker(room_root)
+	}
+
+
 func extract_room_bounds_from_scene_root(room_root: Node) -> Rect2i:
 	var floor_cell_map := extract_local_floor_cell_map(room_root)
 	if floor_cell_map.is_empty():
@@ -264,6 +289,38 @@ func _looks_like_spawn_marker(marker: Marker2D) -> bool:
 
 	var normalized := marker.name.to_lower()
 	return normalized.contains("spawn") or normalized.contains("spawnenemigos") or normalized.contains("spawn_jugador") or normalized.contains("spawn_tutorial")
+
+
+func _find_marker_by_names(room_root: Node, candidate_names: Array[String]) -> Node2D:
+	if room_root == null:
+		return null
+
+	var wanted: Array[String] = []
+	for candidate in candidate_names:
+		wanted.append(candidate.to_lower())
+
+	var marker_nodes: Array[Node] = []
+	_collect_markers_by_name(room_root, marker_nodes, wanted)
+	if marker_nodes.is_empty():
+		return null
+
+	return marker_nodes[0] as Node2D
+
+
+func _collect_markers_by_name(node: Node, result: Array[Node], wanted_names: Array[String]) -> void:
+	if node == null:
+		return
+
+	if node is Node2D:
+		var normalized := node.name.to_lower()
+		for wanted_name in wanted_names:
+			if normalized == wanted_name or normalized.contains(wanted_name):
+				result.append(node)
+				break
+
+	for child in node.get_children():
+		if child is Node:
+			_collect_markers_by_name(child, result, wanted_names)
 
 
 func _scene_cache_key(scene: PackedScene) -> String:

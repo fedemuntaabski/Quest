@@ -25,8 +25,6 @@ func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_ro
 		push_warning("DungeonRoomFactory: prefab room instancing failed for room %d; falling back to legacy placeholder." % room_id)
 		room_root = _create_legacy_room_root(room_info, rooms_root, room_rect)
 		used_prefab = false
-	else:
-		room_root.visible = false
 
 	room_root.set_meta("room_rect", room_rect)
 	room_root.set_meta("room_local_bounds", Rect2i(Vector2i.ZERO, room_rect.size))
@@ -34,12 +32,16 @@ func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_ro
 	room_root.set_meta("room_connectors", prefab_room.get("connectors", room_info.get("connectors", [])))
 	room_root.set_meta("room_local_floor_cells", prefab_room.get("local_floor_cells", room_info.get("local_floor_cells", [])))
 	room_root.set_meta("room_spawn_markers", prefab_room.get("spawn_markers", room_info.get("spawn_markers", [])))
+	room_root.set_meta("room_marker_refs", prefab_room.get("marker_refs", {}))
 	room_root.set_meta("room_template", room_info.get("template", ""))
 	room_root.set_meta("room_prefab_ready", used_prefab)
 	if used_prefab and modular_room_assembler != null:
 		room_root.set_meta("room_role", prefab_room.get("room_role", "normal"))
 		room_root.set_meta("room_scene_path", prefab_room.get("prefab_scene_path", ""))
 		room_root.set_meta("room_prefab_snapshot", prefab_room.get("snapshot", {}))
+		if OS.is_debug_build():
+			var marker_refs: Dictionary = prefab_room.get("marker_refs", {})
+			print("DungeonRoomFactory: room %d prefab origin=%s markers=%s" % [room_id, room_root.global_position, marker_refs.keys()])
 
 	var room_light := create_room_light(room_rect, center_cell, room_id)
 	if room_lights_root:
@@ -67,7 +69,6 @@ func _create_legacy_room_root(room_info: Dictionary, rooms_root: Node2D, room_re
 	var room_id := int(room_info.get("id", -1))
 	var room_root := Node2D.new()
 	room_root.name = "RoomVisual_%d" % room_id
-	room_root.visible = false
 	# The legacy placeholder path remains as a fallback while prefab rooms are
 	# introduced incrementally.
 	if rooms_root:
