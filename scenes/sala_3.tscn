@@ -1041,8 +1041,8 @@ tile_map_data = PackedByteArray("AAAEAAEAAAAdAAcAAAAEAAIAAAAdAAgAAAAEAAMAAAAdAAk
 tile_set = SubResource("TileSet_tqpc7")
 
 [node name="Entrada" type="Marker2D" parent="." unique_id=528109985]
-position = Vector2(310, 145)
+position = Vector2(146, 248)
+rotation = 1.5707964
 
 [node name="Salida" type="Marker2D" parent="." unique_id=542863061]
-position = Vector2(145, 240)
-rotation = 1.5707964
+position = Vector2(309, 145)

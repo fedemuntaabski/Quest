@@ -35,7 +35,7 @@ func setup_enemy_manager(map_manager: MapManager) -> void:
 		map_manager.enemy_manager.room_cleared.connect(map_manager._on_room_cleared_from_enemies)
 
 	map_manager.enemy_manager.spawn_enemies(
-		map_manager.dungeon_generator.room_infos,
+		map_manager.dungeon_generator.get_room_layout_infos(),
 		map_manager.dungeon_generator.wall_cells
 	)
 

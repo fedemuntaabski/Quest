@@ -3,10 +3,12 @@ class_name DungeonRoomFactory
 
 var dungeon: DungeonGenerator = null
 var room_system: RoomSystem = null
+var room_prefab_adapter: RoomPrefabAdapter = null
 
-func setup(p_dungeon: DungeonGenerator, p_room_system: RoomSystem) -> void:
+func setup(p_dungeon: DungeonGenerator, p_room_system: RoomSystem, p_room_prefab_adapter: RoomPrefabAdapter = null) -> void:
 	dungeon = p_dungeon
 	room_system = p_room_system
+	room_prefab_adapter = p_room_prefab_adapter
 
 
 func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_root: Node2D, room_detectors_root: Node2D) -> Dictionary:
@@ -17,6 +19,16 @@ func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_ro
 	var room_root := Node2D.new()
 	room_root.name = "RoomVisual_%d" % room_id
 	room_root.visible = false
+	room_root.set_meta("room_rect", room_rect)
+	room_root.set_meta("room_local_bounds", Rect2i(Vector2i.ZERO, room_rect.size))
+	room_root.set_meta("room_world_origin_cell", room_rect.position)
+	# Room nodes carry metadata so future prefab-backed pipelines can inspect
+	# the room contract without needing to ask the generator to re-derive it.
+	room_root.set_meta("room_connectors", room_info.get("connectors", []))
+	room_root.set_meta("room_local_floor_cells", room_info.get("local_floor_cells", []))
+	room_root.set_meta("room_spawn_markers", room_info.get("spawn_markers", []))
+	room_root.set_meta("room_template", room_info.get("template", ""))
+	room_root.set_meta("room_prefab_ready", room_prefab_adapter != null)
 	if rooms_root:
 		rooms_root.add_child(room_root)
 

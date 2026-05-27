@@ -38,8 +38,9 @@ func _on_room_changed(room_id: int) -> void:
 	if generator == null:
 		return
 
-	# Use the merged view (procedural + runtime/presentation) for fog updates
-	fog_manager.update_room_state(generator.get_room_infos_with_runtime(), room_id)
+	# Fog uses explicit layout + runtime state. Presentation node references stay
+	# out of this contract boundary.
+	fog_manager.update_room_state(generator.get_room_layout_infos(), generator.get_room_runtime_states(), room_id)
 
 func build(tileset: TileSet, wall_texture: Texture2D) -> void:
 	if generator == null:
@@ -55,16 +56,16 @@ func build(tileset: TileSet, wall_texture: Texture2D) -> void:
 		push_error("DungeonPresentationManager: dungeon graph is missing.")
 		return
 
-	for index in range(generator.room_infos.size()):
-		var room_info: Dictionary = generator.room_infos[index]
-		var room_id: int = int(room_info.get("id", index))
+	for room_info in generator.get_room_layout_infos():
+		var room_id: int = int(room_info.get("id", -1))
 		var room_nodes := generator.room_factory.create_room_nodes(
 			room_info,
 			generator.rooms_root,
 			generator.room_lights_root,
 			generator.room_detectors_root
 		)
-		# Move presentation references into the dedicated presentation store
+		# Move presentation references into the dedicated presentation store.
+		# Node references belong to presentation state, not layout data.
 		generator.set_room_presentation(room_id, {
 			"visual_root": room_nodes.get("visual_root", null),
 			"light": room_nodes.get("light", null),

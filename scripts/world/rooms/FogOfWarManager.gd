@@ -80,16 +80,21 @@ func _configure_fog_layer(layer: TileMapLayer, tint: Color) -> void:
 # ─────────────────────────────────────────────
 # UPDATE VISIBILITY
 # ─────────────────────────────────────────────
-func update_room_state(room_infos: Array, active_room_id: int) -> void:
+func update_room_state(room_layout_infos: Array, room_runtime_states: Array, active_room_id: int) -> void:
 	if fog_of_war == null or visited_fog == null:
 		push_error("FogOfWarManager no inicializado (fog_of_war null). Llamá setup() + build() primero.")
 		return
 
-	for room_info in room_infos:
+	for index in range(room_layout_infos.size()):
+		var room_info: Dictionary = room_layout_infos[index]
+		var runtime_state: DungeonRoomRuntimeState = null
+		if index < room_runtime_states.size():
+			runtime_state = room_runtime_states[index]
+
 		var room_id: int = int(room_info.get("id", -1))
 		var room_cells: Array = room_info.get("floor_cells", [])
 		var is_active: bool = room_id == active_room_id
-		var is_visited: bool = room_info.get("visited", false)
+		var is_visited: bool = runtime_state != null and runtime_state.visited
 		if room_cells.is_empty():
 			continue
 

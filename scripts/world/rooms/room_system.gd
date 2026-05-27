@@ -39,7 +39,7 @@ func update_player_cell(grid_pos: Vector2i) -> void:
 	if dungeon == null:
 		return
 
-	for room_info in dungeon.room_infos:
+	for room_info in dungeon.get_room_layout_infos():
 		var room_rect: Rect2i = room_info.get("rect", Rect2i())
 		if not room_rect.has_point(grid_pos):
 			continue

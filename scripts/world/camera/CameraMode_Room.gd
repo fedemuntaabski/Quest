@@ -42,7 +42,7 @@ func update_camera(
 	if room_id < 0:
 		return false
 	
-	var room_info: Dictionary = dg.get_room_info(room_id)
+	var room_info: Dictionary = dg.get_room_layout_info(room_id)
 	if room_info.is_empty():
 		return false
 	

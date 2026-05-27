@@ -34,7 +34,10 @@ var floor_cells: Dictionary = {}
 var wall_cells: Dictionary = {}
 var corridor_cells: Dictionary = {}
 var wall_nodes: Dictionary = {}
+# Layout data is the compile-time contract. It must remain free of runtime node
+# references and mutable presentation flags.
 var room_infos: Array[Dictionary] = []
+var room_layouts: Array[DungeonRoomLayoutState] = []
 var room_runtime: Dictionary = {}
 var room_presentation: Dictionary = {}
 var active_room_id: int = -1
@@ -54,6 +57,7 @@ var layout_generator: DungeonLayoutGenerator
 var room_manager: DungeonRoomManager = null
 var wall_manager: DungeonWallManager = null
 var room_factory: DungeonRoomFactory = null
+var room_prefab_adapter: RoomPrefabAdapter = null
 var scene_helper: DungeonSceneHelper = null
 
 var tile_renderer: DungeonTileRenderer = null
@@ -94,22 +98,87 @@ func get_spawned_player() -> CharacterBody2D:
 	return _spawned_player
 
 
+func get_room_layout_infos() -> Array[Dictionary]:
+	return room_infos
+
+
+func get_room_layout_info(room_id: int) -> Dictionary:
+	if room_id < 0 or room_id >= room_infos.size():
+		return {}
+	return room_infos[room_id]
+
+
+func get_room_layout_state(room_id: int) -> DungeonRoomLayoutState:
+	if room_id < 0 or room_id >= room_layouts.size():
+		return null
+	return room_layouts[room_id]
+
+
+func get_room_connectors(room_id: int) -> Array[RoomConnectorData]:
+	var layout_state := get_room_layout_state(room_id)
+	if layout_state == null:
+		return []
+	return layout_state.connectors.duplicate(true)
+
+
+func get_room_local_floor_cells(room_id: int) -> Array[Vector2i]:
+	var layout_state := get_room_layout_state(room_id)
+	if layout_state == null:
+		return []
+	return layout_state.local_floor_cells.duplicate(true)
+
+
+func get_room_runtime_state(room_id: int) -> DungeonRoomRuntimeState:
+	return room_runtime.get(room_id, null)
+
+
+func get_room_runtime_states() -> Array[DungeonRoomRuntimeState]:
+	var states: Array[DungeonRoomRuntimeState] = []
+	for info in room_infos:
+		var room_id := int(info.get("id", -1))
+		states.append(get_room_runtime_state(room_id))
+	return states
+
+
+func get_room_layout_states() -> Array[DungeonRoomLayoutState]:
+	return room_layouts
+
+
+func get_room_presentation_states() -> Array[DungeonRoomPresentationState]:
+	var states: Array[DungeonRoomPresentationState] = []
+	for info in room_infos:
+		var room_id := int(info.get("id", -1))
+		states.append(get_room_presentation_state(room_id))
+	return states
+
+
+func get_room_presentation_state(room_id: int) -> DungeonRoomPresentationState:
+	return room_presentation.get(room_id, null)
+
+
+func get_room_prefab_adapter() -> RoomPrefabAdapter:
+	return room_prefab_adapter
+
+
 func get_room_info(room_id: int) -> Dictionary:
 	if room_id < 0 or room_id >= room_infos.size():
 		return {}
-	# Compatibility shim: merge procedural room data with runtime/presentation state.
+	# Legacy compatibility shim: returns merged room data for older callers.
 	var base_info: Dictionary = room_infos[room_id].duplicate(true)
-	base_info["visited"] = is_room_visited(room_id)
-	var presentation := get_room_presentation(room_id)
-	base_info["visual_root"] = presentation.get("visual_root", null)
-	base_info["light"] = presentation.get("light", null)
-	base_info["area"] = presentation.get("area", null)
+	var runtime_state := get_room_runtime_state(room_id)
+	if runtime_state != null:
+		base_info["visited"] = runtime_state.visited
+	var presentation_state := get_room_presentation_state(room_id)
+	if presentation_state != null:
+		base_info["visual_root"] = presentation_state.visual_root
+		base_info["light"] = presentation_state.light
+		base_info["area"] = presentation_state.area
 	return base_info
 
 
 func get_room_infos_with_runtime() -> Array[Dictionary]:
-	# Produces merged dictionaries for compatibility with systems that still
-	# expect room runtime/presentation fields in room_info.
+	# Legacy compatibility surface for consumers that still expect merged room
+	# dictionaries. Prefer the explicit layout/runtime/presentation accessors.
 	var result: Array[Dictionary] = []
 	for index in range(room_infos.size()):
 		var room_id: int = int(room_infos[index].get("id", index))
@@ -120,48 +189,66 @@ func get_room_infos_with_runtime() -> Array[Dictionary]:
 func _initialize_room_state() -> void:
 	room_runtime.clear()
 	room_presentation.clear()
+	room_layouts.clear()
 	for info in room_infos:
 		var room_id := int(info.get("id", -1))
 		if room_id < 0:
 			continue
-		room_runtime[room_id] = {
-			"visited": false
-		}
-		room_presentation[room_id] = {
+		var room_local_cells: Array = info.get("local_floor_cells", [])
+		var room_connectors: Array = info.get("connectors", [])
+		var layout_state := DungeonRoomLayoutState.new(
+			room_id,
+			info.get("rect", Rect2i()),
+			info.get("floor_cells", []),
+			room_local_cells,
+			room_connectors,
+			info.get("corridor_connections", []),
+			info.get("connected_room_ids", []),
+			str(info.get("template", "")),
+			info.get("topology_metadata", {})
+		)
+		room_layouts.append(layout_state)
+		room_runtime[room_id] = DungeonRoomRuntimeState.new(room_id)
+		room_presentation[room_id] = DungeonRoomPresentationState.new(room_id)
+
+
+func is_room_visited(room_id: int) -> bool:
+	var runtime_state := get_room_runtime_state(room_id)
+	return runtime_state != null and runtime_state.visited
+
+
+func set_room_visited(room_id: int, value: bool) -> void:
+	var runtime_state := get_room_runtime_state(room_id)
+	if runtime_state == null:
+		runtime_state = DungeonRoomRuntimeState.new(room_id)
+		room_runtime[room_id] = runtime_state
+	runtime_state.visited = value
+
+
+func get_room_presentation(room_id: int) -> Dictionary:
+	var presentation_state := get_room_presentation_state(room_id)
+	if presentation_state == null:
+		return {
 			"visual_root": null,
 			"light": null,
 			"area": null
 		}
-
-
-func is_room_visited(room_id: int) -> bool:
-	var runtime: Dictionary = room_runtime.get(room_id, {})
-	return bool(runtime.get("visited", false))
-
-
-func set_room_visited(room_id: int, value: bool) -> void:
-	if not room_runtime.has(room_id):
-		room_runtime[room_id] = {}
-	var runtime: Dictionary = room_runtime[room_id]
-	runtime["visited"] = value
-	room_runtime[room_id] = runtime
-
-
-func get_room_presentation(room_id: int) -> Dictionary:
-	return room_presentation.get(room_id, {
-		"visual_root": null,
-		"light": null,
-		"area": null
-	})
+	return presentation_state.to_dictionary()
 
 
 func set_room_presentation(room_id: int, presentation: Dictionary) -> void:
 	if room_id < 0:
 		return
-	var current: Dictionary = get_room_presentation(room_id).duplicate(true)
-	for key in presentation.keys():
-		current[key] = presentation[key]
-	room_presentation[room_id] = current
+	var presentation_state := get_room_presentation_state(room_id)
+	if presentation_state == null:
+		presentation_state = DungeonRoomPresentationState.new(room_id)
+		room_presentation[room_id] = presentation_state
+	if presentation.has("visual_root"):
+		presentation_state.visual_root = presentation.get("visual_root", null)
+	if presentation.has("light"):
+		presentation_state.light = presentation.get("light", null)
+	if presentation.has("area"):
+		presentation_state.area = presentation.get("area", null)
 
 
 func get_connected_room_ids(room_id: int) -> Array[int]:
@@ -233,6 +320,7 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	corridor_cells.clear()
 	wall_nodes.clear()
 	room_infos.clear()
+	room_layouts.clear()
 	room_runtime.clear()
 	room_presentation.clear()
 
@@ -277,11 +365,28 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 
 func _apply_layout_data(layout_data: DungeonLayoutData) -> void:
 	# Runtime authority commits generated layout data in one place.
+	# The layout handoff uses typed arrays, but duplicate(true) can erase the
+	# type information at runtime, so normalize the copies before assignment.
+	room_layouts = _copy_room_layouts(layout_data.room_layouts)
 	floor_cells = layout_data.floor_cells.duplicate(true)
 	corridor_cells = layout_data.corridor_cells.duplicate(true)
-	room_infos = layout_data.room_infos.duplicate(true)
+	room_infos = _copy_room_infos(layout_data.room_infos)
 	dungeon_graph = layout_data.graph
 	_initialize_room_state()
+
+
+func _copy_room_layouts(source: Array[DungeonRoomLayoutState]) -> Array[DungeonRoomLayoutState]:
+	var copy: Array[DungeonRoomLayoutState] = []
+	for room_layout in source:
+		copy.append(room_layout)
+	return copy
+
+
+func _copy_room_infos(source: Array[Dictionary]) -> Array[Dictionary]:
+	var copy: Array[Dictionary] = []
+	for room_info in source:
+		copy.append(room_info.duplicate(true))
+	return copy
 
 
 func place_player_in_start_room(player: CharacterBody2D) -> void:

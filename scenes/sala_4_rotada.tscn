@@ -1045,3 +1045,4 @@ position = Vector2(405, 160)
 
 [node name="Salida" type="Marker2D" parent="." unique_id=1924685105]
 position = Vector2(18, 162)
+rotation = 3.1415927

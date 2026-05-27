@@ -1,9 +1,9 @@
 [gd_scene format=4 uid="uid://ckh6w1wx4g01r"]
 
-[ext_resource type="Texture2D" uid="uid://cyt1u8txum1eq" path="res://assets/texture/enviorment/mainlevbuild.png" id="1_vnc34"]
+[ext_resource type="Texture2D" uid="uid://cyt1u8txum1eq" path="res://assets/texture/enviorment/mainlevbuild.png" id="1_mk7qc"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jrk5h"]
-texture = ExtResource("1_vnc34")
+texture = ExtResource("1_mk7qc")
 40:0/0 = 0
 41:0/0 = 0
 42:0/0 = 0
@@ -1045,4 +1045,4 @@ position = Vector2(50, 10)
 rotation = 4.712389
 
 [node name="Salida" type="Marker2D" parent="." unique_id=534415687]
-position = Vector2(160, 90)
+position = Vector2(165, 125)

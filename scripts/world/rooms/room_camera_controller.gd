@@ -95,7 +95,7 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	if room_id < 0:
 		return
 
-	var room_info: Dictionary = dungeon.get_room_info(room_id)
+	var room_info: Dictionary = dungeon.get_room_layout_info(room_id)
 	if room_info.is_empty():
 		return
 
@@ -185,7 +185,7 @@ func _is_player_in_corridor() -> bool:
 	var player_grid: Vector2i = dungeon.world_to_grid_coords(player.global_position)
 
 	# Check if player is within any room's bounds
-	for room_info in dungeon.room_infos:
+	for room_info in dungeon.get_room_layout_infos():
 		var room_rect: Rect2i = room_info["rect"]
 		if room_rect.has_point(player_grid):
 			return false

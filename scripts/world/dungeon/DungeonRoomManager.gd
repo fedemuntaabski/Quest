@@ -11,7 +11,7 @@ func setup(p_dungeon: DungeonGenerator) -> void:
 func set_active_room(room_id: int, animate: bool) -> void:
 	if dungeon == null:
 		return
-	if room_id < 0 or room_id >= dungeon.room_infos.size():
+	if room_id < 0 or room_id >= dungeon.get_room_layout_infos().size():
 		return
 	# Delegate authoritative active-room assignment to RoomSystem if present
 	if dungeon.room_system:
@@ -19,12 +19,12 @@ func set_active_room(room_id: int, animate: bool) -> void:
 		dungeon.room_system.set_active_room(room_id)
 
 	# Update visuals and visited state based on the canonical dungeon.active_room_id
-	for index in range(dungeon.room_infos.size()):
-		var info_room_id: int = int(dungeon.room_infos[index].get("id", index))
+	for room_info in dungeon.get_room_layout_infos():
+		var info_room_id: int = int(room_info.get("id", -1))
 		var is_active: bool = info_room_id == dungeon.active_room_id
 		var is_visited: bool = dungeon.is_room_visited(info_room_id)
-		var presentation: Dictionary = dungeon.get_room_presentation(info_room_id)
-		var visual_root: Node2D = presentation.get("visual_root", null) as Node2D
+		var presentation: DungeonRoomPresentationState = dungeon.get_room_presentation_state(info_room_id)
+		var visual_root: Node2D = presentation.visual_root if presentation else null
 
 		# Visible if active or previously visited
 		if visual_root:
@@ -53,9 +53,10 @@ func tween_room_lights(animate: bool) -> void:
 	var tween := dungeon.create_tween()
 	tween.set_parallel(true)
 
-	for i in range(dungeon.room_infos.size()):
-		var info_room_id: int = int(dungeon.room_infos[i].get("id", i))
-		var room_light: PointLight2D = dungeon.get_room_presentation(info_room_id).get("light", null) as PointLight2D
+	for room_info in dungeon.get_room_layout_infos():
+		var info_room_id: int = int(room_info.get("id", -1))
+		var presentation: DungeonRoomPresentationState = dungeon.get_room_presentation_state(info_room_id)
+		var room_light: PointLight2D = presentation.light if presentation else null
 		var is_active: bool = info_room_id == dungeon.active_room_id
 		var is_visited: bool = dungeon.is_room_visited(info_room_id)
 

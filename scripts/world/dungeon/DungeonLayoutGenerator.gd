@@ -5,6 +5,7 @@ var dungeon: DungeonGenerator
 var dungeon_graph: DungeonGraph = null
 
 # Working buffers used while generating a candidate layout.
+var _working_room_layouts: Array[DungeonRoomLayoutState] = []
 var _working_floor_cells: Dictionary = {}
 var _working_corridor_cells: Dictionary = {}
 var _working_room_infos: Array[Dictionary] = []
@@ -67,6 +68,7 @@ func generate() -> DungeonLayoutData:
 
 
 func _begin_working_layout() -> void:
+	_working_room_layouts.clear()
 	_working_floor_cells.clear()
 	_working_corridor_cells.clear()
 	_working_room_infos.clear()
@@ -75,9 +77,12 @@ func _begin_working_layout() -> void:
 
 func _build_layout_data() -> DungeonLayoutData:
 	var layout := DungeonLayoutData.new()
+	# duplicate(true) returns an untyped Array in Godot, so rebuild typed copies
+	# here to keep the layout contract stable without changing the data shape.
+	layout.room_layouts = _copy_room_layouts(_working_room_layouts)
 	layout.floor_cells = _working_floor_cells.duplicate(true)
 	layout.corridor_cells = _working_corridor_cells.duplicate(true)
-	layout.room_infos = _working_room_infos.duplicate(true)
+	layout.room_infos = _copy_room_infos(_working_room_infos)
 	layout.graph = _working_graph
 	layout.metadata = {
 		"room_count": _working_room_infos.size(),
@@ -86,6 +91,20 @@ func _build_layout_data() -> DungeonLayoutData:
 	# Keep graph accessor compatibility for existing systems.
 	dungeon_graph = _working_graph
 	return layout
+
+
+func _copy_room_layouts(source: Array[DungeonRoomLayoutState]) -> Array[DungeonRoomLayoutState]:
+	var copy: Array[DungeonRoomLayoutState] = []
+	for room_layout in source:
+		copy.append(room_layout)
+	return copy
+
+
+func _copy_room_infos(source: Array[Dictionary]) -> Array[Dictionary]:
+	var copy: Array[Dictionary] = []
+	for room_info in source:
+		copy.append(room_info.duplicate(true))
+	return copy
 
 
 func _roll_room_size() -> Vector2i:
@@ -136,19 +155,53 @@ func _register_room(room_rect: Rect2i) -> void:
 		room_rect.position.x + int(room_rect.size.x * 0.5),
 		room_rect.position.y + int(room_rect.size.y * 0.5)
 	)
+	# Room-local cells are the future geometry source. The absolute grid cells
+	# remain available for compatibility, but we also emit a room-local version
+	# so prefab-backed rooms can later be placed and rotated without re-deriving
+	# the geometry from rectangles.
+	var local_floor_cells := RoomConnectorAdapter.local_floor_cells_from_world_cells(room_cells, room_rect.position)
+	# Synthetic connectors keep the current procedural generator connector-aware
+	# without changing corridor carving. They describe the room perimeter in a
+	# future prefab-friendly way while the live generator still uses centers.
+	var connectors: Array[RoomConnectorData] = RoomConnectorAdapter.build_rect_connectors(room_id, room_rect, dungeon.tile_size)
+
+	var room_layout := DungeonRoomLayoutState.new(
+		room_id,
+		room_rect,
+		room_cells,
+		local_floor_cells,
+		connectors,
+		[],
+		[],
+		room_template,
+		{
+			"is_main_path": false
+		}
+	)
+	_working_room_layouts.append(room_layout)
 
 	# Keep room_infos procedural only: no runtime/presentation references.
 	_working_room_infos.append({
 		"id": room_id,
 		"rect": room_rect,
+		"local_bounds": Rect2i(Vector2i.ZERO, room_rect.size),
 		"center_cell": center_cell,
 		"floor_cells": room_cells,
+		"local_floor_cells": local_floor_cells,
+		"connectors": connectors,
+		"spawn_markers": [],
+		"corridor_connections": [],
+		"connected_room_ids": [],
 		"template": room_template
 	})
 
 	_working_graph.add_room(room_id, {
 		"rect": room_rect,
+		"local_bounds": Rect2i(Vector2i.ZERO, room_rect.size),
 		"center_cell": center_cell,
+		"local_floor_cells": local_floor_cells,
+		"connectors": connectors,
+		"spawn_markers": [],
 		"template": room_template
 	})
 
@@ -186,6 +239,9 @@ func _connect_rooms_with_corridors() -> void:
 
 	for room_info in main_path:
 		room_info["is_main_path"] = true
+		var main_room_id := int(room_info.get("id", -1))
+		if main_room_id >= 0 and main_room_id < _working_room_layouts.size():
+			_working_room_layouts[main_room_id].topology_metadata["is_main_path"] = true
 
 	if dungeon.main_path_branching and unvisited_rooms.size() > 0:
 		for room_info in unvisited_rooms:
@@ -249,6 +305,19 @@ func _add_corridor_cell(cell: Vector2i) -> bool:
 
 func _register_connection(room_a: int, room_b: int, corridor_cells: Array[Vector2i]) -> void:
 	_working_graph.add_edge(room_a, room_b, corridor_cells)
+	_append_room_connection(room_a, room_b, corridor_cells)
+	_append_room_connection(room_b, room_a, corridor_cells)
+
+
+func _append_room_connection(room_id: int, connected_room_id: int, corridor_cells: Array[Vector2i]) -> void:
+	if room_id < 0 or room_id >= _working_room_layouts.size():
+		return
+
+	var room_layout: DungeonRoomLayoutState = _working_room_layouts[room_id]
+	room_layout.add_connection(connected_room_id, corridor_cells)
+	if room_id < _working_room_infos.size():
+		_working_room_infos[room_id]["corridor_connections"] = room_layout.corridor_connections.duplicate(true)
+		_working_room_infos[room_id]["connected_room_ids"] = room_layout.connected_room_ids.duplicate(true)
 
 
 func get_connected_room_ids(room_id: int) -> Array[int]:

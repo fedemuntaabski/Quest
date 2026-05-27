@@ -172,16 +172,16 @@ func _get_room_rect(room_id: int) -> Rect2i:
 	var dungeon: DungeonGenerator = _dungeon()
 	if dungeon == null:
 		return Rect2i()
-	if room_id < 0 or room_id >= dungeon.room_infos.size():
+	if room_id < 0 or room_id >= dungeon.get_room_layout_infos().size():
 		return Rect2i()
-	var info: Dictionary = dungeon.room_infos[room_id]
+	var info: Dictionary = dungeon.get_room_layout_info(room_id)
 	return info.get("rect", Rect2i())
 
 func get_room_id_for_cell(grid_pos: Vector2i) -> int:
 	var dungeon: DungeonGenerator = _dungeon()
 	if dungeon == null:
 		return -1
-	for info in dungeon.room_infos:
+	for info in dungeon.get_room_layout_infos():
 		var rect: Rect2i = info.get("rect", Rect2i())
 		if rect.has_point(grid_pos):
 			return int(info.get("id", -1))

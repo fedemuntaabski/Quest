@@ -59,6 +59,8 @@ func show_options_menu() -> void:
 
 func start_pressed() -> void:
 	_play_click()
+	# Keep the runtime slot-selector flow intact; this path should not invoke
+	# any editor-style file chooser behavior during gameplay startup.
 	if center_container:
 		center_container.visible = false
 	if main_vbox:
