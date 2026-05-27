@@ -374,6 +374,7 @@ func _create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
 func _set_active_room(room_id: int, animate: bool) -> void:
 	if room_manager:
 		room_manager.set_active_room(room_id, animate)
+		emit_signal("room_changed", room_id)
 
 
 func _tween_room_lights(animate: bool) -> void:
