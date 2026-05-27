@@ -56,6 +56,7 @@ var room_camera_controller: RoomCameraController = null
 var layout_generator: DungeonLayoutGenerator
 var room_manager: DungeonRoomManager = null
 var wall_manager: DungeonWallManager = null
+var modular_room_assembler: ModularRoomAssembler = null
 var room_factory: DungeonRoomFactory = null
 var room_prefab_adapter: RoomPrefabAdapter = null
 var scene_helper: DungeonSceneHelper = null

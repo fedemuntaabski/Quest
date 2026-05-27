@@ -26,11 +26,15 @@ func ensure_runtime_nodes(generator: DungeonGenerator) -> void:
 		generator.room_prefab_adapter = RoomPrefabAdapter.new()
 		generator.room_prefab_adapter.setup(generator)
 
+	if generator.modular_room_assembler == null:
+		generator.modular_room_assembler = ModularRoomAssembler.new()
+		generator.modular_room_assembler.setup(generator, generator.room_prefab_adapter)
+
 	_ensure_managers(generator)
 
 	if generator.room_factory == null:
 		generator.room_factory = DungeonRoomFactory.new()
-		generator.room_factory.setup(generator, generator.room_system, generator.room_prefab_adapter)
+		generator.room_factory.setup(generator, generator.room_system, generator.room_prefab_adapter, generator.modular_room_assembler)
 
 	_ensure_scene_roots(generator)
 

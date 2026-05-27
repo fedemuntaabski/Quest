@@ -4,11 +4,13 @@ class_name DungeonRoomFactory
 var dungeon: DungeonGenerator = null
 var room_system: RoomSystem = null
 var room_prefab_adapter: RoomPrefabAdapter = null
+var modular_room_assembler: ModularRoomAssembler = null
 
-func setup(p_dungeon: DungeonGenerator, p_room_system: RoomSystem, p_room_prefab_adapter: RoomPrefabAdapter = null) -> void:
+func setup(p_dungeon: DungeonGenerator, p_room_system: RoomSystem, p_room_prefab_adapter: RoomPrefabAdapter = null, p_modular_room_assembler: ModularRoomAssembler = null) -> void:
 	dungeon = p_dungeon
 	room_system = p_room_system
 	room_prefab_adapter = p_room_prefab_adapter
+	modular_room_assembler = p_modular_room_assembler
 
 
 func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_root: Node2D, room_detectors_root: Node2D) -> Dictionary:
@@ -16,21 +18,28 @@ func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_ro
 	var room_rect: Rect2i = room_info.get("rect", Rect2i())
 	var center_cell: Vector2i = room_info.get("center_cell", Vector2i.ZERO)
 
-	var room_root := Node2D.new()
-	room_root.name = "RoomVisual_%d" % room_id
-	room_root.visible = false
+	var prefab_room := _create_prefab_room(room_info, rooms_root, room_rect)
+	var room_root: Node2D = prefab_room.get("visual_root", null)
+	var used_prefab := room_root != null
+	if room_root == null:
+		push_warning("DungeonRoomFactory: prefab room instancing failed for room %d; falling back to legacy placeholder." % room_id)
+		room_root = _create_legacy_room_root(room_info, rooms_root, room_rect)
+		used_prefab = false
+	else:
+		room_root.visible = false
+
 	room_root.set_meta("room_rect", room_rect)
 	room_root.set_meta("room_local_bounds", Rect2i(Vector2i.ZERO, room_rect.size))
 	room_root.set_meta("room_world_origin_cell", room_rect.position)
-	# Room nodes carry metadata so future prefab-backed pipelines can inspect
-	# the room contract without needing to ask the generator to re-derive it.
-	room_root.set_meta("room_connectors", room_info.get("connectors", []))
-	room_root.set_meta("room_local_floor_cells", room_info.get("local_floor_cells", []))
-	room_root.set_meta("room_spawn_markers", room_info.get("spawn_markers", []))
+	room_root.set_meta("room_connectors", prefab_room.get("connectors", room_info.get("connectors", [])))
+	room_root.set_meta("room_local_floor_cells", prefab_room.get("local_floor_cells", room_info.get("local_floor_cells", [])))
+	room_root.set_meta("room_spawn_markers", prefab_room.get("spawn_markers", room_info.get("spawn_markers", [])))
 	room_root.set_meta("room_template", room_info.get("template", ""))
-	room_root.set_meta("room_prefab_ready", room_prefab_adapter != null)
-	if rooms_root:
-		rooms_root.add_child(room_root)
+	room_root.set_meta("room_prefab_ready", used_prefab)
+	if used_prefab and modular_room_assembler != null:
+		room_root.set_meta("room_role", prefab_room.get("room_role", "normal"))
+		room_root.set_meta("room_scene_path", prefab_room.get("prefab_scene_path", ""))
+		room_root.set_meta("room_prefab_snapshot", prefab_room.get("snapshot", {}))
 
 	var room_light := create_room_light(room_rect, center_cell, room_id)
 	if room_lights_root:
@@ -45,6 +54,25 @@ func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_ro
 		"light": room_light,
 		"area": room_area
 	}
+
+
+func _create_prefab_room(room_info: Dictionary, rooms_root: Node2D, room_rect: Rect2i) -> Dictionary:
+	if modular_room_assembler == null:
+		return {}
+
+	return modular_room_assembler.build_room_instance(room_info, rooms_root)
+
+
+func _create_legacy_room_root(room_info: Dictionary, rooms_root: Node2D, room_rect: Rect2i) -> Node2D:
+	var room_id := int(room_info.get("id", -1))
+	var room_root := Node2D.new()
+	room_root.name = "RoomVisual_%d" % room_id
+	room_root.visible = false
+	# The legacy placeholder path remains as a fallback while prefab rooms are
+	# introduced incrementally.
+	if rooms_root:
+		rooms_root.add_child(room_root)
+	return room_root
 
 
 func create_corridor_entity(edge_data: Dictionary, corridors_root: Node2D) -> Node2D:
