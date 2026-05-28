@@ -128,19 +128,24 @@ func get_salida_marker(room_root: Node) -> Node2D:
 
 
 func get_spawn_jugador_marker(room_root: Node) -> Node2D:
-	return _find_marker_by_names(room_root, ["SpawnJugador", "Spawn_jugador", "spawn_jugador", "spawnjugador"])
+	return _find_marker_by_names(room_root, ["Spawn_Jugador", "Spawn_jugador", "spawn_jugador", "spawn_jugador"])
 
 
 func get_spawn_tutorial_marker(room_root: Node) -> Node2D:
-	return _find_marker_by_names(room_root, ["SpawnTutorial", "Spawn_tutorial", "spawn_tutorial", "spawntutorial"])
+	return _find_marker_by_names(room_root, ["Spawn_Tutorial", "Spawn_tutorial", "spawn_tutorial", "spawntutorial"])
+
+
+func get_spawn_enemigos_marker(room_root: Node) -> Node2D:
+	return _find_marker_by_names(room_root, ["SpawnEnemigos", "Spawn_Enemigos", "spawn_enemigos", "spawnenemigos"])
 
 
 func resolve_marker_references(room_root: Node) -> Dictionary:
 	return {
 		"Entrada": get_entrada_marker(room_root),
 		"Salida": get_salida_marker(room_root),
-		"SpawnJugador": get_spawn_jugador_marker(room_root),
-		"SpawnTutorial": get_spawn_tutorial_marker(room_root)
+		"Spawn_Jugador": get_spawn_jugador_marker(room_root),
+		"Spawn_Tutorial": get_spawn_tutorial_marker(room_root),
+		"SpawnEnemigos": get_spawn_enemigos_marker(room_root)
 	}
 
 
@@ -172,6 +177,19 @@ func extract_local_floor_cells_from_scene_root(room_root: Node, tile_size: float
 	return floor_cells
 
 
+func build_world_floor_cells_from_local_cells(local_floor_cells: Array, room_origin_cell: Vector2i, room_size: Vector2i, rotation_degrees: int = 0) -> Array[Vector2i]:
+	var world_floor_cells: Array[Vector2i] = []
+	for raw_cell in local_floor_cells:
+		var local_cell := Vector2i(raw_cell)
+		world_floor_cells.append(local_cell_to_world_cell(local_cell, room_origin_cell, room_size, rotation_degrees))
+	return world_floor_cells
+
+
+func extract_world_floor_cells_from_scene_root(room_root: Node, room_origin_cell: Vector2i, room_size: Vector2i, rotation_degrees: int = 0) -> Array[Vector2i]:
+	var local_floor_cells := extract_local_floor_cells_from_scene_root(room_root)
+	return build_world_floor_cells_from_local_cells(local_floor_cells, room_origin_cell, room_size, rotation_degrees)
+
+
 func extract_local_floor_cell_map(room_root: Node) -> Dictionary:
 	var floor_cell_map: Dictionary = {}
 	if room_root == null:
@@ -182,8 +200,20 @@ func extract_local_floor_cell_map(room_root: Node) -> Dictionary:
 	for layer in tile_layers:
 		if layer == null:
 			continue
+		var found_custom_data := false
 		for raw_cell in layer.get_used_cells():
-			floor_cell_map[Vector2i(raw_cell)] = true
+			var cell := Vector2i(raw_cell)
+			var tile_data := layer.get_cell_tile_data(cell)
+			if tile_data == null:
+				continue
+
+			found_custom_data = true
+			if tile_data.get_custom_data("caminable") == true:
+				floor_cell_map[cell] = true
+
+		if not found_custom_data:
+			for raw_cell in layer.get_used_cells():
+				floor_cell_map[Vector2i(raw_cell)] = true
 
 	if floor_cell_map.is_empty():
 		# Compatibility fallback: if a room has no tile cells yet, treat known
@@ -231,6 +261,11 @@ func _inspect_scene_root(room_root: Node, scene_path: String) -> Dictionary:
 	var floor_cells: Array[Vector2i] = []
 	for raw_cell in floor_cell_map.keys():
 		floor_cells.append(raw_cell)
+	floor_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		if a.y == b.y:
+			return a.x < b.x
+		return a.y < b.y
+	)
 
 	return {
 		"scene_path": scene_path,

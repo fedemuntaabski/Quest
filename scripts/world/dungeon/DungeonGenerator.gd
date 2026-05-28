@@ -57,6 +57,7 @@ var layout_generator: DungeonLayoutGenerator
 var room_manager: DungeonRoomManager = null
 var wall_manager: DungeonWallManager = null
 var modular_room_assembler: ModularRoomAssembler = null
+var dungeon_assembler: DungeonAssembler = null
 var room_factory: DungeonRoomFactory = null
 var room_prefab_adapter: RoomPrefabAdapter = null
 var scene_helper: DungeonSceneHelper = null
@@ -129,6 +130,54 @@ func get_room_local_floor_cells(room_id: int) -> Array[Vector2i]:
 	return layout_state.local_floor_cells.duplicate(true)
 
 
+func get_room_floor_cells(room_id: int) -> Array[Vector2i]:
+	var room_info := get_room_layout_info(room_id)
+	if room_info.is_empty():
+		return []
+	var room_cells: Array = room_info.get("floor_cells", [])
+	if room_cells.is_empty():
+		var layout_state := get_room_layout_state(room_id)
+		if layout_state != null:
+			room_cells = layout_state.floor_cells
+	var result: Array[Vector2i] = []
+	for raw_cell in room_cells:
+		result.append(Vector2i(raw_cell))
+	return result
+
+
+func get_room_floor_bounds(room_id: int) -> Rect2i:
+	var cells: Array = get_room_floor_cells(room_id)
+	if cells.is_empty():
+		return Rect2i()
+	return _rect_from_cells(cells)
+
+
+func _rect_from_cells(cells: Array[Vector2i]) -> Rect2i:
+	if cells.is_empty():
+		return Rect2i()
+
+	var min_cell := cells[0]
+	var max_cell := cells[0]
+	for cell in cells:
+		min_cell.x = mini(min_cell.x, cell.x)
+		min_cell.y = mini(min_cell.y, cell.y)
+		max_cell.x = maxi(max_cell.x, cell.x)
+		max_cell.y = maxi(max_cell.y, cell.y)
+	return Rect2i(min_cell, (max_cell - min_cell) + Vector2i.ONE)
+
+
+func room_contains_cell(room_id: int, grid_pos: Vector2i) -> bool:
+	var cells: Array = get_room_floor_cells(room_id)
+	if cells.is_empty():
+		var room_info := get_room_layout_info(room_id)
+		var room_rect: Rect2i = room_info.get("rect", Rect2i())
+		return room_rect.has_point(grid_pos)
+	for cell in cells:
+		if cell == grid_pos:
+			return true
+	return false
+
+
 func get_room_runtime_state(room_id: int) -> DungeonRoomRuntimeState:
 	return room_runtime.get(room_id, null)
 
@@ -159,6 +208,10 @@ func get_room_presentation_state(room_id: int) -> DungeonRoomPresentationState:
 
 func get_room_prefab_adapter() -> RoomPrefabAdapter:
 	return room_prefab_adapter
+
+
+func get_dungeon_assembler() -> DungeonAssembler:
+	return dungeon_assembler
 
 
 func get_room_info(room_id: int) -> Dictionary:
@@ -246,11 +299,11 @@ func get_room_marker_ref(room_id: int, marker_name: String) -> Node2D:
 
 
 func get_room_spawn_marker_ref(room_id: int) -> Node2D:
-	return get_room_marker_ref(room_id, "SpawnJugador")
+	return get_room_marker_ref(room_id, "Spawn_Jugador")
 
 
 func get_room_tutorial_spawn_marker_ref(room_id: int) -> Node2D:
-	return get_room_marker_ref(room_id, "SpawnTutorial")
+	return get_room_marker_ref(room_id, "Spawn_Tutorial")
 
 
 func set_room_presentation(room_id: int, presentation: Dictionary) -> void:
@@ -331,7 +384,6 @@ func _on_room_cleared(room_id: int) -> void:
 
 
 func generate_dungeon(player: CharacterBody2D = null) -> void:
-	randomize()
 	_clear_generated_content()
 
 	floor_cells.clear()
@@ -354,14 +406,18 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	is_ready = true
 	_ensure_runtime_nodes()
 
-	var layout_data := layout_generator.generate()
-	if layout_data == null or not layout_data.is_valid(room_count):
-		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
+	var layout_data: DungeonLayoutData = null
+	if dungeon_assembler != null:
+		layout_data = dungeon_assembler.assemble_hardcoded_slice(rooms_root, corridors_root)
+	elif layout_generator != null:
+		randomize()
+		layout_data = layout_generator.generate()
+
+	if layout_data == null:
+		push_error("DungeonGenerator: Failed to assemble prefab-native dungeon slice.")
 		return
 
 	_apply_layout_data(layout_data)
-
-	wall_manager.generate_walls_from_floor()
 
 	var presentation := get_node_or_null("PresentationManager") as DungeonPresentationManager
 	if presentation == null:
@@ -371,6 +427,10 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 
 	presentation.setup(self, self)
 	presentation.build(floor_tileset, wall_texture)
+
+	# Legacy procedural wall derivation is disabled in this migration slice.
+	# Prefab-backed rooms now own the visible geometry, so the runtime wall pass
+	# stays inactive while the bridge data remains available for compatibility.
 
 	if player:
 		_spawned_player = player
@@ -394,6 +454,37 @@ func _apply_layout_data(layout_data: DungeonLayoutData) -> void:
 	_initialize_room_state()
 
 
+func commit_runtime_floor_cells_from_room_infos() -> void:
+	floor_cells.clear()
+	for room_info in room_infos:
+		var room_id := int(room_info.get("id", -1))
+		if room_id < 0:
+			continue
+
+		var room_cells: Array = room_info.get("floor_cells", [])
+		if room_cells.is_empty():
+			var layout_state := get_room_layout_state(room_id)
+			if layout_state != null:
+				room_cells = layout_state.floor_cells
+
+		var normalized_room_cells: Array[Vector2i] = []
+		for raw_cell in room_cells:
+			var cell := Vector2i(raw_cell)
+			normalized_room_cells.append(cell)
+			floor_cells[cell] = true
+
+		if room_id >= 0 and room_id < room_layouts.size():
+			room_layouts[room_id].floor_cells = normalized_room_cells
+			room_layouts[room_id].local_floor_cells = _copy_room_local_cells(room_info.get("local_floor_cells", room_layouts[room_id].local_floor_cells))
+
+		room_info["floor_cells"] = normalized_room_cells.duplicate(true)
+
+	print("DungeonGenerator: committed prefab floor cells for %d rooms (%d cells)." % [room_infos.size(), floor_cells.size()])
+	if OS.is_debug_build() and not room_infos.is_empty():
+		var first_room: Dictionary = room_infos[0]
+		print("DungeonGenerator: room %d committed floor_cells=%d local_floor_cells=%d rect=%s" % [int(first_room.get("id", -1)), int(first_room.get("floor_cells", []).size()), int(first_room.get("local_floor_cells", []).size()), str(first_room.get("rect", Rect2i()))])
+
+
 func _copy_room_layouts(source: Array[DungeonRoomLayoutState]) -> Array[DungeonRoomLayoutState]:
 	var copy: Array[DungeonRoomLayoutState] = []
 	for room_layout in source:
@@ -408,6 +499,13 @@ func _copy_room_infos(source: Array[Dictionary]) -> Array[Dictionary]:
 	return copy
 
 
+func _copy_room_local_cells(source: Array) -> Array[Vector2i]:
+	var copy: Array[Vector2i] = []
+	for cell in source:
+		copy.append(Vector2i(cell))
+	return copy
+
+
 func place_player_in_start_room(player: CharacterBody2D) -> void:
 	if room_infos.is_empty() or player == null:
 		return
@@ -417,11 +515,24 @@ func place_player_in_start_room(player: CharacterBody2D) -> void:
 	if marker:
 		player.global_position = marker.global_position
 	else:
-		push_warning("DungeonGenerator: SpawnJugador marker not found in start room; falling back to room center.")
-		var center_cell: Vector2i = start_room["center_cell"]
-		player.global_position = grid_to_world_coords(center_cell)
+		push_warning("DungeonGenerator: Spawn_Jugador marker not found in start room; falling back to a prefab floor cell.")
+		var fallback_cell := _get_first_room_floor_cell(start_room)
+		if fallback_cell != Vector2i(-1, -1):
+			player.global_position = grid_to_world_coords(fallback_cell)
+		else:
+			var center_cell: Vector2i = start_room["center_cell"]
+			player.global_position = grid_to_world_coords(center_cell)
 	if player.has_method("sync_to_grid"):
 		player.sync_to_grid()
+	if OS.is_debug_build():
+		print("DungeonGenerator: player spawn cell=%s world=%s" % [str(world_to_grid_coords(player.global_position)), str(player.global_position)])
+
+
+func _get_first_room_floor_cell(room_info: Dictionary) -> Vector2i:
+	var room_cells: Array = room_info.get("floor_cells", [])
+	if room_cells.is_empty():
+		return Vector2i(-1, -1)
+	return Vector2i(room_cells[0])
 
 
 func is_cell_walkable(world_position: Vector2) -> bool:
@@ -518,3 +629,14 @@ func _is_room_entrance_cell(cell: Vector2i, room_cell_set: Dictionary) -> bool:
 			return true
 
 	return false
+
+
+func get_room_id_for_cell(grid_pos: Vector2i) -> int:
+	# Returns the room id that contains the given grid cell, or -1 if none.
+	for info in room_infos:
+		var room_id := int(info.get("id", -1))
+		if room_id < 0:
+			continue
+		if room_contains_cell(room_id, grid_pos):
+			return room_id
+	return -1

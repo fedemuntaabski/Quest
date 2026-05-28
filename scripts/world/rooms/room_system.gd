@@ -39,13 +39,9 @@ func update_player_cell(grid_pos: Vector2i) -> void:
 	if dungeon == null:
 		return
 
-	for room_info in dungeon.get_room_layout_infos():
-		var room_rect: Rect2i = room_info.get("rect", Rect2i())
-		if not room_rect.has_point(grid_pos):
-			continue
-
-		_set_active_room(int(room_info.get("id", -1)), false)
-		return
+	var room_id = dungeon.get_room_id_for_cell(grid_pos)
+	if room_id != -1:
+		_set_active_room(room_id, false)
 
 func set_active_room(room_id: int, enforce_connectivity: bool = true) -> void:
 	_set_active_room(room_id, enforce_connectivity)

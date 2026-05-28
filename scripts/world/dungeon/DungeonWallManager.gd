@@ -12,6 +12,11 @@ func generate_walls_from_floor() -> void:
 	if dungeon == null:
 		return
 
+	# Disabled legacy wall derivation.
+	# This used the old rectangle/floor-cell dungeon to infer walls at runtime.
+	# Prefab rooms are the intended replacement, so this pass now stays inert.
+	return
+
 	var directions: Array[Vector2i] = [
 		Vector2i(1, 0),
 		Vector2i(-1, 0),

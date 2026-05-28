@@ -73,6 +73,7 @@ func get_edge_records_sorted() -> Array[Dictionary]:
 			"room_a": int(edge.get("room_a", -1)),
 			"room_b": int(edge.get("room_b", -1)),
 			"corridor_cells": edge.get("corridor_cells", []),
+			"runtime_node": edge.get("runtime_node", null),
 			"template": edge.get("template", TEMPLATE_CORRIDOR)
 		})
 

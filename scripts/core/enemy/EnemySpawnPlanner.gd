@@ -9,6 +9,12 @@ static func get_random_floor_cell_in_room(
 	occupied_spawn_cells: Dictionary,
 	dungeon: DungeonGenerator
 ) -> Vector2i:
+	# If the authored prefab exposes an explicit enemy spawn marker, prefer it.
+	var marker_refs: Dictionary = room_info.get("marker_refs", {})
+	var spawn_marker: Node2D = marker_refs.get("SpawnEnemigos", null)
+	if spawn_marker != null and dungeon != null:
+		return dungeon.world_to_grid_coords((spawn_marker as Node2D).global_position)
+
 	var room_cells: Array = room_info["floor_cells"]
 	var center_cell: Vector2i = room_info["center_cell"]
 	var forbidden_spawn_cells: Dictionary = {}

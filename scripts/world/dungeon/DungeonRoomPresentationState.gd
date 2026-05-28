@@ -42,8 +42,8 @@ func get_salida_marker() -> Node2D:
 
 
 func get_spawn_jugador_marker() -> Node2D:
-	return get_marker_ref("SpawnJugador")
+	return get_marker_ref("Spawn_Jugador")
 
 
 func get_spawn_tutorial_marker() -> Node2D:
-	return get_marker_ref("SpawnTutorial")
+	return get_marker_ref("Spawn_Tutorial")

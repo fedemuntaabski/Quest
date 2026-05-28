@@ -115,8 +115,15 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	_switch_camera_mode(false)
 	_last_was_corridor = false
 
-	var room_rect: Rect2i = room_info["rect"]
-	var center_cell: Vector2i = room_info["center_cell"]
+	var room_rect: Rect2i = dungeon.get_room_floor_bounds(room_id)
+	if room_rect == Rect2i():
+		room_rect = room_info.get("rect", Rect2i())
+	var center_cell: Vector2i = room_info.get("center_cell", Vector2i.ZERO)
+	if room_rect != Rect2i():
+		center_cell = Vector2i(
+			room_rect.position.x + int(room_rect.size.x * 0.5),
+			room_rect.position.y + int(room_rect.size.y * 0.5)
+		)
 
 	var target_pos: Vector2 = dungeon.grid_to_world_coords(center_cell)
 
@@ -184,11 +191,8 @@ func _is_player_in_corridor() -> bool:
 
 	var player_grid: Vector2i = dungeon.world_to_grid_coords(player.global_position)
 
-	# Check if player is within any room's bounds
-	for room_info in dungeon.get_room_layout_infos():
-		var room_rect: Rect2i = room_info["rect"]
-		if room_rect.has_point(player_grid):
-			return false
+	if dungeon.get_room_id_for_cell(player_grid) != -1:
+		return false
 
 	# If not in any room, player is in a corridor
 	return true

@@ -19,29 +19,35 @@ func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_ro
 	var center_cell: Vector2i = room_info.get("center_cell", Vector2i.ZERO)
 
 	var prefab_room := _create_prefab_room(room_info, rooms_root, room_rect)
-	var room_root: Node2D = prefab_room.get("visual_root", null)
+	var room_root: Node2D = room_info.get("visual_root", prefab_room.get("visual_root", null))
 	var used_prefab := room_root != null
 	if room_root == null:
 		push_warning("DungeonRoomFactory: prefab room instancing failed for room %d; falling back to legacy placeholder." % room_id)
 		room_root = _create_legacy_room_root(room_info, rooms_root, room_rect)
 		used_prefab = false
+	else:
+		prefab_room = room_info
 
 	room_root.set_meta("room_rect", room_rect)
-	room_root.set_meta("room_local_bounds", Rect2i(Vector2i.ZERO, room_rect.size))
+	room_root.set_meta("room_local_bounds", room_info.get("local_bounds", Rect2i(Vector2i.ZERO, room_rect.size)))
 	room_root.set_meta("room_world_origin_cell", room_rect.position)
 	room_root.set_meta("room_connectors", prefab_room.get("connectors", room_info.get("connectors", [])))
 	room_root.set_meta("room_local_floor_cells", prefab_room.get("local_floor_cells", room_info.get("local_floor_cells", [])))
+	room_root.set_meta("room_floor_cells", prefab_room.get("floor_cells", room_info.get("floor_cells", [])))
+	room_root.set_meta("room_prefab_local_bounds", prefab_room.get("snapshot", room_info.get("room_prefab_snapshot", {})).get("local_bounds", Rect2i()))
 	room_root.set_meta("room_spawn_markers", prefab_room.get("spawn_markers", room_info.get("spawn_markers", [])))
-	room_root.set_meta("room_marker_refs", prefab_room.get("marker_refs", {}))
+	room_root.set_meta("room_marker_refs", prefab_room.get("marker_refs", room_info.get("marker_refs", {})))
 	room_root.set_meta("room_template", room_info.get("template", ""))
 	room_root.set_meta("room_prefab_ready", used_prefab)
-	if used_prefab and modular_room_assembler != null:
+	if used_prefab:
 		room_root.set_meta("room_role", prefab_room.get("room_role", "normal"))
 		room_root.set_meta("room_scene_path", prefab_room.get("prefab_scene_path", ""))
-		room_root.set_meta("room_prefab_snapshot", prefab_room.get("snapshot", {}))
+		room_root.set_meta("room_prefab_snapshot", prefab_room.get("snapshot", room_info.get("room_prefab_snapshot", {})))
 		if OS.is_debug_build():
 			var marker_refs: Dictionary = prefab_room.get("marker_refs", {})
-			print("DungeonRoomFactory: room %d prefab origin=%s markers=%s" % [room_id, room_root.global_position, marker_refs.keys()])
+			var floor_cells: Array = prefab_room.get("floor_cells", [])
+			var local_floor_cells: Array = prefab_room.get("local_floor_cells", [])
+			print("DungeonRoomFactory: room %d prefab origin=%s rect=%s prefab_bounds=%s floor_cells=%d local_floor_cells=%d markers=%s scene=%s" % [room_id, room_root.global_position, str(room_rect), str(room_root.get_meta("room_prefab_local_bounds")), floor_cells.size(), local_floor_cells.size(), marker_refs.keys(), prefab_room.get("prefab_scene_path", "")])
 
 	var room_light := create_room_light(room_rect, center_cell, room_id)
 	if room_lights_root:
@@ -79,12 +85,16 @@ func _create_legacy_room_root(room_info: Dictionary, rooms_root: Node2D, room_re
 func create_corridor_entity(edge_data: Dictionary, corridors_root: Node2D) -> Node2D:
 	var room_a := int(edge_data.get("room_a", -1))
 	var room_b := int(edge_data.get("room_b", -1))
-	var corridor := Node2D.new()
-	corridor.name = "Corridor_%d_%d" % [room_a, room_b]
+	var corridor: Node2D = edge_data.get("runtime_node", null)
+	if corridor == null:
+		corridor = Node2D.new()
+		corridor.name = "Corridor_%d_%d" % [room_a, room_b]
+	else:
+		corridor.name = corridor.name if corridor.name != "" else "Corridor_%d_%d" % [room_a, room_b]
 	corridor.set_meta("room_a", room_a)
 	corridor.set_meta("room_b", room_b)
 	corridor.set_meta("corridor_cells", edge_data.get("corridor_cells", []))
-	if corridors_root:
+	if corridors_root and corridor.get_parent() == null:
 		corridors_root.add_child(corridor)
 	return corridor
 

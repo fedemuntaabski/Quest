@@ -71,18 +71,16 @@ func is_cell_allowed_for_actor(grid_pos: Vector2i, actor: Node) -> bool:
 	if actor is PlayerMovement or actor.is_in_group("player"):
 		if not _is_player_room_locked():
 			return true
-		var room_rect := _get_room_rect(dungeon.active_room_id)
 		var player_pos: Vector2i = actor.grid_pos if "grid_pos" in actor else Vector2i.ZERO
-		if not room_rect.has_point(player_pos):
+		if not _room_contains_cell(dungeon.active_room_id, player_pos):
 			return true
-		return room_rect.has_point(grid_pos)
+		return _room_contains_cell(dungeon.active_room_id, grid_pos)
 
 	if actor is Enemy:
 		var enemy: Enemy = actor
 		if enemy.my_room_id < 0:
 			return true
-		var enemy_rect := _get_room_rect(enemy.my_room_id)
-		return enemy_rect.has_point(grid_pos)
+		return _room_contains_cell(enemy.my_room_id, grid_pos)
 
 	return true
 
@@ -129,13 +127,16 @@ func find_path(start: Vector2i, goal: Vector2i, actor: Node = null) -> Array[Vec
 	if nav == null:
 		return []
 
-	var room_rect := _get_actor_room_rect(actor)
-	var use_room := room_rect.size != Vector2i.ZERO
+	var room_id := get_actor_room_id(actor)
+	var use_room := room_id != -1 and not _get_room_cells(room_id).is_empty()
 	if use_room:
-		if not room_rect.has_point(start) or not room_rect.has_point(goal):
+		if not _room_contains_cell(room_id, start) or not _room_contains_cell(room_id, goal):
 			return []
 
-	return nav.find_path_preferred(start, goal, false, room_rect, use_room)
+	var path := nav.find_path_preferred(start, goal, false, Rect2i(), false)
+	if use_room and not _path_respects_room_cells(path, room_id):
+		return []
+	return path
 
 func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null) -> Array[Vector2i]:
 	var nav: MapNavigationHelper = _nav()
@@ -143,9 +144,9 @@ func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null
 		return []
 
 	var best_path: Array[Vector2i] = []
-	var room_rect := _get_actor_room_rect(actor)
-	var use_room := room_rect.size != Vector2i.ZERO
-	if use_room and not room_rect.has_point(start):
+	var room_id := get_actor_room_id(actor)
+	var use_room := room_id != -1 and not _get_room_cells(room_id).is_empty()
+	if use_room and not _room_contains_cell(room_id, start):
 		return []
 
 	var neighbors: Array[Vector2i] = [
@@ -159,8 +160,10 @@ func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null
 		if not is_walkable_cell_for_actor(cell, actor):
 			continue
 
-		var path := nav.find_path_preferred(start, cell, false, room_rect, use_room)
+		var path := nav.find_path_preferred(start, cell, false, Rect2i(), false)
 		if path.is_empty():
+			continue
+		if use_room and not _path_respects_room_cells(path, room_id):
 			continue
 
 		if best_path.is_empty() or path.size() < best_path.size():
@@ -176,6 +179,36 @@ func _get_room_rect(room_id: int) -> Rect2i:
 		return Rect2i()
 	var info: Dictionary = dungeon.get_room_layout_info(room_id)
 	return info.get("rect", Rect2i())
+
+
+func _get_room_cells(room_id: int) -> Dictionary:
+	var dungeon: DungeonGenerator = _dungeon()
+	var cells: Dictionary = {}
+	if dungeon == null or room_id < 0:
+		return cells
+	for cell in dungeon.get_room_floor_cells(room_id):
+		cells[cell] = true
+	return cells
+
+
+func _room_contains_cell(room_id: int, grid_pos: Vector2i) -> bool:
+	var cells := _get_room_cells(room_id)
+	if cells.has(grid_pos):
+		return true
+	var rect := _get_room_rect(room_id)
+	return rect.has_point(grid_pos)
+
+
+func _path_respects_room_cells(path: Array[Vector2i], room_id: int) -> bool:
+	if path.is_empty():
+		return false
+	var cells := _get_room_cells(room_id)
+	if cells.is_empty():
+		return true
+	for cell in path:
+		if not cells.has(cell):
+			return false
+	return true
 
 func get_room_id_for_cell(grid_pos: Vector2i) -> int:
 	var dungeon: DungeonGenerator = _dungeon()

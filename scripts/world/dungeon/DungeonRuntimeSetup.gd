@@ -26,6 +26,10 @@ func ensure_runtime_nodes(generator: DungeonGenerator) -> void:
 		generator.room_prefab_adapter = RoomPrefabAdapter.new()
 		generator.room_prefab_adapter.setup(generator)
 
+	if generator.dungeon_assembler == null:
+		generator.dungeon_assembler = DungeonAssembler.new()
+		generator.dungeon_assembler.setup(generator, generator.room_prefab_adapter)
+
 	if generator.modular_room_assembler == null:
 		generator.modular_room_assembler = ModularRoomAssembler.new()
 		generator.modular_room_assembler.setup(generator, generator.room_prefab_adapter)

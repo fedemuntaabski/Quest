@@ -46,6 +46,10 @@ static func _spawn_enemy_for_room(
 		var tutorial_spawn_marker := manager.dungeon.get_room_tutorial_spawn_marker_ref(room_id)
 		if tutorial_spawn_marker:
 			spawn_world_position = tutorial_spawn_marker.global_position
+		else:
+			# Critical: tutorial spawn must come from the authored marker.
+			push_warning("EnemySpawnLifecycleService: Spawn_Tutorial marker missing in tutorial room; skipping tutorial enemy spawn.")
+			return
 
 	if spawn_world_position == Vector2.INF:
 		spawn_cell = manager._get_random_floor_cell_in_room(

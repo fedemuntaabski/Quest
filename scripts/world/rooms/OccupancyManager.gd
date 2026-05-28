@@ -21,6 +21,8 @@ func register_actor(actor: Node, grid_pos: Vector2i, blocks: bool = true, allow_
 	# allow_multi explicit OR global default
 	var multi: bool = allow_multi or _default_multi_mode
 	_update_actor_cell(actor, grid_pos, multi)
+	if OS.is_debug_build():
+		print("OccupancyManager: registered actor=%s cell=%s blocks=%s multi=%s" % [str(actor), str(grid_pos), str(blocks), str(multi)])
 
 func unregister_actor(actor: Node) -> void:
 	if actor == null or not is_instance_valid(actor):
@@ -145,6 +147,9 @@ func _update_actor_cell(actor: Node, grid_pos: Vector2i, allow_multi: bool = fal
 	# Bump internal occupancy version and emit change
 	_version += 1
 	occupancy_changed.emit(grid_pos, actor)
+
+	if OS.is_debug_build():
+		print("OccupancyManager: actor=%s cell=%s blocks=%s multi=%s" % [str(actor), str(grid_pos), str(_blocking_actors.get(actor, true)), str(allow_multi)])
 
 
 func get_version() -> int:
