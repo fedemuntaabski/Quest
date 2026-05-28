@@ -63,38 +63,54 @@ func _debug_probe_connector_walkability() -> void:
 			var marker := marker_refs.get(marker_name, null) as Node2D
 			if marker == null:
 				continue
-			var cell := world_to_grid_coords(marker.global_position)
-			var world_pos := marker.global_position
-			var owner_room := dungeon_generator.get_room_id_for_cell(cell)
-			var in_floor := dungeon_generator.floor_cells.has(cell)
-			var in_wall := dungeon_generator.wall_cells.has(cell)
-			var actor := get_actor_at_cell(cell)
-			var actor_name = actor.name if actor != null else "none"
-			var blocked := occupancy_manager.is_cell_blocked(cell) if occupancy_manager else false
-			var room_role := String(room_info.get("room_role", ""))
-			var scene_path := String(room_info.get("prefab_scene_path", ""))
-			var reason := "ok"
-			if not in_floor:
-				reason = "missing_floor_registration"
-			elif owner_room == -1:
-				reason = "missing_room_ownership"
-			elif blocked:
-				reason = "occupied_blocked"
-			print("MapManager: seam probe room=%d role=%s scene=%s marker=%s world=%s cell=%s owner_room=%d walkable=%s blocked=%s actor=%s in_floor=%s in_wall=%s reason=%s" % [
-				int(room_info.get("id", -1)),
-				room_role,
-				scene_path,
-				marker_name,
-				str(world_pos),
-				str(cell),
-				owner_room,
-				str(is_walkable_cell(cell)),
-				str(blocked),
-				actor_name,
-				str(in_floor),
-				str(in_wall),
-				reason
-			])
+			_debug_probe_marker_transition_cells(room_info, marker_name, marker)
+
+
+func _debug_probe_marker_transition_cells(room_info: Dictionary, marker_name: String, marker: Node2D) -> void:
+	if marker == null:
+		return
+
+	var seam_cell := world_to_grid_coords(marker.global_position)
+	var probe_cells: Dictionary = {seam_cell: true}
+	for direction in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]:
+		var neighbor = seam_cell + direction
+		if dungeon_generator.floor_cells.has(neighbor):
+			probe_cells[neighbor] = true
+
+	for raw_cell in probe_cells.keys():
+		var probe_cell = Vector2i(raw_cell)
+		var owner_room := dungeon_generator.get_room_id_for_cell(probe_cell)
+		var owner_room_core := core.get_room_id_for_cell(probe_cell) if core != null else owner_room
+		var in_floor := dungeon_generator.floor_cells.has(probe_cell)
+		var in_wall := dungeon_generator.wall_cells.has(probe_cell)
+		var actor := get_actor_at_cell(probe_cell)
+		var actor_name = actor.name if actor != null else "none"
+		var blocked := occupancy_manager.is_cell_blocked(probe_cell) if occupancy_manager else false
+		var room_role := String(room_info.get("room_role", ""))
+		var scene_path := String(room_info.get("prefab_scene_path", ""))
+		var reason := "ok"
+		if not in_floor:
+			reason = "missing_floor_registration"
+		elif owner_room == -1:
+			reason = "missing_room_ownership"
+		elif blocked:
+			reason = "occupied_blocked"
+		print("MapManager: seam probe room=%d role=%s scene=%s marker=%s world=%s cell=%s owner_room=%d owner_room_core=%d walkable=%s blocked=%s actor=%s in_floor=%s in_wall=%s reason=%s" % [
+			int(room_info.get("id", -1)),
+			room_role,
+			scene_path,
+			marker_name,
+			str(marker.global_position),
+			str(probe_cell),
+			owner_room,
+			owner_room_core,
+			str(is_walkable_cell(probe_cell)),
+			str(blocked),
+			actor_name,
+			str(in_floor),
+			str(in_wall),
+			reason
+		])
 
 
 # 🔥 NUEVO

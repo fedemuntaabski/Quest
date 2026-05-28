@@ -507,8 +507,89 @@ func commit_runtime_floor_cells_from_room_infos() -> void:
 
 	print("DungeonGenerator: committed prefab floor cells for %d rooms (%d cells)." % [room_infos.size(), floor_cells.size()])
 	if OS.is_debug_build() and not room_infos.is_empty():
-		var first_room: Dictionary = room_infos[0]
-		print("DungeonGenerator: room %d committed floor_cells=%d local_floor_cells=%d rect=%s" % [int(first_room.get("id", -1)), int(first_room.get("floor_cells", []).size()), int(first_room.get("local_floor_cells", []).size()), str(first_room.get("rect", Rect2i()))])
+		for room_info in room_infos:
+			print("DungeonGenerator: committed room id=%d scene=%s origin=%s floor_cells=%d local_floor_cells=%d rect=%s role=%s template=%s" % [
+				int(room_info.get("id", -1)),
+				String(room_info.get("prefab_scene_path", "")),
+				str((room_info.get("visual_root", null) as Node2D).global_position if room_info.get("visual_root", null) else Vector2.ZERO),
+				int(room_info.get("floor_cells", []).size()),
+				int(room_info.get("local_floor_cells", []).size()),
+				str(room_info.get("rect", Rect2i())),
+				String(room_info.get("room_role", "")),
+				String(room_info.get("template", ""))
+			])
+		_debug_trace_tutorial_corridor_sala1_registration()
+
+
+func _debug_trace_tutorial_corridor_sala1_registration() -> void:
+	var tutorial_info := _find_room_info_by_scene_hint("sala_tutorial")
+	var corridor_info := _find_room_info_by_scene_hint("pasillo_1")
+	var sala_1_info := _find_room_info_by_scene_hint("sala_1")
+	if tutorial_info.is_empty() and corridor_info.is_empty() and sala_1_info.is_empty():
+		return
+
+	if not sala_1_info.is_empty():
+		print("DungeonGenerator: sala_1 registration scene=%s floor_cells=%d rect=%s in_global_floor=%d role=%s" % [
+			String(sala_1_info.get("prefab_scene_path", "")),
+			int(sala_1_info.get("floor_cells", []).size()),
+			str(sala_1_info.get("rect", Rect2i())),
+			_count_cells_registered_in_global_floor(sala_1_info.get("floor_cells", [])),
+			String(sala_1_info.get("room_role", ""))
+		])
+
+	for room_info in [tutorial_info, corridor_info, sala_1_info]:
+		if room_info.is_empty():
+			continue
+		for marker_name in ["Salida", "Entrada"]:
+			for probe_cell in _collect_marker_probe_cells(room_info, marker_name):
+				print("DungeonGenerator: ownership probe room=%d scene=%s marker=%s cell=%s owner_room=%d in_floor=%s in_corridor=%s" % [
+					int(room_info.get("id", -1)),
+					String(room_info.get("prefab_scene_path", "")),
+					marker_name,
+					str(probe_cell),
+					get_room_id_for_cell(probe_cell),
+					str(floor_cells.has(probe_cell)),
+					str(corridor_cells.has(probe_cell))
+				])
+
+
+func _find_room_info_by_scene_hint(scene_hint: String) -> Dictionary:
+	var normalized_hint := scene_hint.to_lower()
+	for room_info in room_infos:
+		var scene_path := String(room_info.get("prefab_scene_path", "")).to_lower()
+		if scene_path.contains(normalized_hint):
+			return room_info
+	return {}
+
+
+func _count_cells_registered_in_global_floor(cells: Array) -> int:
+	var count := 0
+	for raw_cell in cells:
+		if floor_cells.has(Vector2i(raw_cell)):
+			count += 1
+	return count
+
+
+func _collect_marker_probe_cells(room_info: Dictionary, marker_name: String) -> Array[Vector2i]:
+	var probes: Dictionary = {}
+	if room_info.is_empty():
+		return []
+	var marker_refs: Dictionary = room_info.get("marker_refs", {})
+	var marker := marker_refs.get(marker_name, null) as Node2D
+	if marker == null:
+		return []
+
+	var seam_cell := world_to_grid_coords(marker.global_position)
+	probes[seam_cell] = true
+	for direction in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]:
+		var neighbor = seam_cell + direction
+		if floor_cells.has(neighbor):
+			probes[neighbor] = true
+
+	var result: Array[Vector2i] = []
+	for raw_probe in probes.keys():
+		result.append(Vector2i(raw_probe))
+	return result
 
 
 func _copy_room_layouts(source: Array[DungeonRoomLayoutState]) -> Array[DungeonRoomLayoutState]:

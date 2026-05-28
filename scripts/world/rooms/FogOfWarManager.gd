@@ -85,6 +85,8 @@ func update_room_state(room_layout_infos: Array, room_runtime_states: Array, act
 		push_error("FogOfWarManager no inicializado (fog_of_war null). Llamá setup() + build() primero.")
 		return
 
+	var preload_visible_set := _compute_preload_visible_set(room_layout_infos, active_room_id)
+
 	for index in range(room_layout_infos.size()):
 		var room_info: Dictionary = room_layout_infos[index]
 		var runtime_state: DungeonRoomRuntimeState = null
@@ -94,6 +96,7 @@ func update_room_state(room_layout_infos: Array, room_runtime_states: Array, act
 		var room_id: int = int(room_info.get("id", -1))
 		var room_cells: Array = room_info.get("floor_cells", [])
 		var is_active: bool = room_id == active_room_id
+		var is_preload_visible: bool = preload_visible_set.has(room_id)
 		var is_visited: bool = runtime_state != null and runtime_state.visited
 		if room_cells.is_empty():
 			continue
@@ -102,9 +105,45 @@ func update_room_state(room_layout_infos: Array, room_runtime_states: Array, act
 			if is_active:
 				fog_of_war.erase_cell(cell)
 				visited_fog.erase_cell(cell)
+			elif is_preload_visible:
+				fog_of_war.erase_cell(cell)
+				visited_fog.erase_cell(cell)
 			elif is_visited:
 				fog_of_war.erase_cell(cell)
 				visited_fog.set_cell(cell, 0, Vector2i.ZERO, 0)
 			else:
 				fog_of_war.set_cell(cell, 0, Vector2i.ZERO, 0)
 				visited_fog.erase_cell(cell)
+
+
+func _compute_preload_visible_set(room_layout_infos: Array, active_room_id: int) -> Dictionary:
+	var result: Dictionary = {}
+	if active_room_id < 0:
+		return result
+
+	var room_by_id: Dictionary = {}
+	for room_info in room_layout_infos:
+		room_by_id[int(room_info.get("id", -1))] = room_info
+
+	result[active_room_id] = true
+	var active_info: Dictionary = room_by_id.get(active_room_id, {})
+	for connected_id in active_info.get("connected_room_ids", []):
+		var neighbor_id := int(connected_id)
+		result[neighbor_id] = true
+		var neighbor_info: Dictionary = room_by_id.get(neighbor_id, {})
+		if not _is_corridor_room_info(neighbor_info):
+			continue
+		for corridor_neighbor_id in neighbor_info.get("connected_room_ids", []):
+			result[int(corridor_neighbor_id)] = true
+
+	return result
+
+
+func _is_corridor_room_info(room_info: Dictionary) -> bool:
+	if room_info.is_empty():
+		return false
+	var role := String(room_info.get("room_role", "")).to_lower()
+	var room_type := String(room_info.get("room_type", "")).to_lower()
+	var template := String(room_info.get("template", "")).to_lower()
+	var scene_path := String(room_info.get("prefab_scene_path", "")).to_lower()
+	return role == "corridor" or room_type == "corridor" or template.contains("corridor") or template.contains("pasillo") or scene_path.contains("/pasillo_")

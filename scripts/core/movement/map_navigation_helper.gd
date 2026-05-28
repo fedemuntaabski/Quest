@@ -60,10 +60,16 @@ func bake_navigation_region() -> void:
 		if String(room_info.get("room_role", "")).to_lower() != "corridor":
 			continue
 		var seam_cells: Dictionary = room_info.get("seam_cells", {})
+		var room_floor_set := _cells_to_set(room_info.get("floor_cells", []))
+		var transition_cells := _collect_transition_cells(seam_cells, room_floor_set)
 		for raw_cell in seam_cells.keys():
 			var seam_cell := Vector2i(raw_cell)
 			if not floor_cells.has(seam_cell):
 				seam_warnings.append("room=%d seam=%s missing_from_floor" % [int(room_info.get("id", -1)), str(seam_cell)])
+		for raw_transition_cell in transition_cells.keys():
+			var transition_cell := Vector2i(raw_transition_cell)
+			if not floor_cells.has(transition_cell):
+				seam_warnings.append("room=%d transition=%s missing_from_floor" % [int(room_info.get("id", -1)), str(transition_cell)])
 
 	nav_poly.make_polygons_from_outlines()
 
@@ -77,6 +83,25 @@ func bake_navigation_region() -> void:
 			print("MapNavigationHelper: seam validation passed for corridor cells")
 		else:
 			print("MapNavigationHelper: seam warnings -> %s" % str(seam_warnings))
+
+
+func _collect_transition_cells(seam_cells: Dictionary, room_floor_set: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	for raw_cell in seam_cells.keys():
+		var seam_cell := Vector2i(raw_cell)
+		result[seam_cell] = true
+		for direction in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]:
+			var neighbor = seam_cell + direction
+			if room_floor_set.has(neighbor):
+				result[neighbor] = true
+	return result
+
+
+func _cells_to_set(cells: Array) -> Dictionary:
+	var result: Dictionary = {}
+	for raw_cell in cells:
+		result[Vector2i(raw_cell)] = true
+	return result
 
 
 # ── Passability checks ────────────────────────────────────────────────────────

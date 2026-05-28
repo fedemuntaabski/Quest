@@ -4,6 +4,7 @@ class_name DungeonAssembler
 const TUTORIAL_ROOM_SCENE := preload("res://scenes/sala_tutorial.tscn")
 const CORRIDOR_SCENE := preload("res://scenes/pasillo_1.tscn")
 const ROOM_1_SCENE := preload("res://scenes/sala_1.tscn")
+const TUTORIAL_CORRIDOR_DOWN_OFFSET_TILES := 5
 
 var dungeon: DungeonGenerator = null
 var room_prefab_adapter: RoomPrefabAdapter = null
@@ -86,13 +87,7 @@ func assemble_hardcoded_slice(rooms_root: Node2D = null, corridors_root: Node2D 
 		print("DungeonAssembler: corridor-room seam resolved corridor_cells=%d floor_cells=%d" % [c_cells.size(), c_before])
 	if OS.is_debug_build():
 		print("DungeonAssembler: room %d %s origin=%s markers=%s scene=%s" % [int(room_1.get("id", -1)), String(room_1.get("template", "")), str((room_1.get("visual_root", null) as Node2D).global_position if room_1.get("visual_root", null) else Vector2.ZERO), room_1.get("marker_refs", {}).keys(), room_1.get("prefab_scene_path", "")])
-		print("DungeonAssembler: connectivity trace tutorial->corridor->sala_1 tutorial_id=%d corridor=%d->%d room1_id=%d seams=%s" % [
-			int(tutorial_room.get("id", -1)),
-			int(corridor.get("room_a", -1)),
-			int(corridor.get("room_b", -1)),
-			int(room_1.get("id", -1)),
-			str((corridor.get("seam_cells", {}) as Dictionary).keys())
-		])
+		_debug_trace_tutorial_connectivity(tutorial_room, corridor, room_1)
 
 	var room_records: Array[Dictionary] = [tutorial_room, room_1, corridor_room]
 	for room_record in room_records:
@@ -212,8 +207,13 @@ func _assemble_room_against_marker(
 	var room_root := instance as Node2D
 	var target_marker := _get_marker_from_record(anchor_room, anchor_marker_name)
 	var own_marker := _get_marker_for_room(room_root, own_marker_name)
+	var own_marker_before_snap := own_marker.global_position if own_marker != null else Vector2.ZERO
 	if target_marker != null and own_marker != null:
 		room_root.global_position += target_marker.global_position - own_marker.global_position
+		room_root.set_meta("debug_own_marker_before_snap", own_marker_before_snap)
+		room_root.set_meta("debug_anchor_marker_before_snap", target_marker.global_position)
+		if OS.is_debug_build():
+			print("DungeonAssembler: room snap resolved room=%d scene=%s anchor_marker=%s own_marker_before=%s own_marker_after=%s final_origin=%s" % [room_id, scene.resource_path, str(target_marker.global_position), str(own_marker_before_snap), str(own_marker.global_position), str(room_root.global_position)])
 
 	return _build_room_record_from_instance(room_id, room_root, scene, template_name, spawn_profile, is_tutorial)
 
@@ -236,11 +236,18 @@ func _assemble_corridor(
 	var entry_marker := _get_marker_for_room(corridor_root, "Entrada")
 	var exit_marker := _get_marker_for_room(corridor_root, "Salida")
 	var anchor_exit := _get_marker_from_record(anchor_room, "Salida")
+	var corridor_origin_before_snap := corridor_root.global_position
+	var entry_marker_before_snap := entry_marker.global_position if entry_marker != null else Vector2.ZERO
+	var exit_marker_before_snap := exit_marker.global_position if exit_marker != null else Vector2.ZERO
 	var marker_rotation_delta := 0.0
 	if anchor_exit != null and entry_marker != null:
 		marker_rotation_delta = wrapf(anchor_exit.global_rotation_degrees - entry_marker.global_rotation_degrees, -180.0, 180.0)
 	if anchor_exit != null and entry_marker != null:
 		corridor_root.global_position += anchor_exit.global_position - entry_marker.global_position
+		if int(anchor_room.get("id", -1)) == 0:
+			corridor_root.global_position += Vector2(0, float(dungeon.tile_size) * float(TUTORIAL_CORRIDOR_DOWN_OFFSET_TILES))
+			if OS.is_debug_build():
+				print("DungeonAssembler: tutorial corridor seam nudge applied room=%d offset_tiles=%d new_origin=%s" % [int(anchor_room.get("id", -1)), TUTORIAL_CORRIDOR_DOWN_OFFSET_TILES, str(corridor_root.global_position)])
 		# Keep marker snap as absolute seam authority in prefab-native mode.
 		# Overlap is resolved via cell ownership reconciliation instead of post-snap
 		# translation that can desync connector seams by one tile.
@@ -254,7 +261,11 @@ func _assemble_corridor(
 		seam_cells[dungeon.world_to_grid_coords(exit_marker.global_position)] = true
 
 	var corridor_floor_cells := _extract_world_floor_cells(corridor_root)
-	corridor_floor_cells = _remove_overlap_cells_except_seams(corridor_floor_cells, anchor_room.get("floor_cells", []), seam_cells)
+	var corridor_transformed_floor_count := corridor_floor_cells.size()
+	var corridor_floor_set := _cells_to_set(corridor_floor_cells)
+	var anchor_floor_set := _cells_to_set(anchor_room.get("floor_cells", []))
+	var protected_seam_cells := _expand_seam_cells_with_transition_support(seam_cells, corridor_floor_set, anchor_floor_set)
+	corridor_floor_cells = _remove_overlap_cells_except_seams(corridor_floor_cells, anchor_room.get("floor_cells", []), protected_seam_cells)
 	var room_rect := _rect_from_cells(corridor_floor_cells)
 	var center_cell := _center_cell_from_rect(room_rect)
 	var corridor_cells := corridor_floor_cells.duplicate(true)
@@ -273,7 +284,12 @@ func _assemble_corridor(
 		"center_cell": center_cell,
 		"entry_marker": entry_marker,
 		"exit_marker": exit_marker,
-		"seam_cells": seam_cells.duplicate(true),
+		"seam_cells": protected_seam_cells.duplicate(true),
+		"transformed_floor_cell_count": corridor_transformed_floor_count,
+		"origin_before_snap": corridor_origin_before_snap,
+		"origin_after_snap": corridor_root.global_position,
+		"entry_marker_before_snap": entry_marker_before_snap,
+		"exit_marker_before_snap": exit_marker_before_snap,
 		"room_role": "corridor",
 		"room_type": "corridor",
 		"template": DungeonGraph.TEMPLATE_CORRIDOR,
@@ -282,7 +298,7 @@ func _assemble_corridor(
 	}
 	if OS.is_debug_build():
 		print("DungeonAssembler: connector resolved room=%d marker=Salida -> corridor=Entrada anchor=%s entry=%s rot_delta=%.1f seam=%s" % [int(anchor_room.get("id", -1)), str(anchor_exit.global_position if anchor_exit else Vector2.ZERO), str(entry_marker.global_position if entry_marker else Vector2.ZERO), marker_rotation_delta, str(seam_cells.keys())])
-		print("DungeonAssembler: corridor placement world_origin=%s rect=%s floor_cells=%d" % [str(corridor_root.global_position), str(room_rect), corridor_floor_cells.size()])
+		print("DungeonAssembler: corridor placement pre_snap_origin=%s post_snap_origin=%s entry_before=%s entry_after=%s exit_before=%s exit_after=%s transformed_floor=%d registered_floor=%d rect=%s scene=%s" % [str(corridor_origin_before_snap), str(corridor_root.global_position), str(entry_marker_before_snap), str(entry_marker.global_position if entry_marker else Vector2.ZERO), str(exit_marker_before_snap), str(exit_marker.global_position if exit_marker else Vector2.ZERO), corridor_transformed_floor_count, corridor_floor_cells.size(), str(room_rect), String(scene.resource_path)])
 
 	_assembled_corridors[_edge_key(room_a, room_b)] = corridor_root
 	return corridor_record
@@ -343,6 +359,12 @@ func _build_room_record_from_instance(
 	var floor_cells := _extract_world_floor_cells(room_root)
 	var room_rect := _rect_from_cells(floor_cells)
 	var center_cell := _center_cell_from_rect(room_rect)
+	if OS.is_debug_build():
+		var marker_log: Array = []
+		for marker_name in ["Entrada", "Salida", "Spawn_Jugador", "Spawn_Tutorial", "SpawnEnemigos"]:
+			var marker = marker_refs.get(marker_name, null)
+			marker_log.append("%s=%s" % [marker_name, str(marker.global_position if marker else Vector2.ZERO)])
+		print("DungeonAssembler: prefab floor extract room=%d template=%s scene=%s origin=%s local_floor=%d world_floor=%d bounds=%s markers=%s" % [room_id, String(template_name), scene.resource_path, str(room_root.global_position), local_floor_cells.size(), floor_cells.size(), str(room_rect), marker_log])
 
 	var room_record := {
 		"id": room_id,
@@ -396,10 +418,13 @@ func _extract_world_floor_cells(room_root: Node2D) -> Array[Vector2i]:
 	if room_root == null or dungeon == null:
 		return floor_cells
 	if room_prefab_adapter != null:
-		return room_prefab_adapter.extract_world_floor_cells_with_tilemap_transforms(
+		var extracted := room_prefab_adapter.extract_world_floor_cells_with_tilemap_transforms(
 			room_root,
 			Callable(dungeon, "world_to_grid_coords")
 		)
+		if OS.is_debug_build():
+			print("DungeonAssembler: world floor extract room=%s scene=%s origin=%s count=%d sample=%s" % [room_root.name if room_root else "NULL", str(room_root.get_path() if room_root else NodePath()), str(room_root.global_position if room_root else Vector2.ZERO), extracted.size(), str(extracted.slice(0, mini(10, extracted.size())))])
+		return extracted
 
 	# Prefab-authored TileMap geometry is authoritative here. Use the
 	# RoomPrefabAdapter extraction which prioritizes the `caminable` custom
@@ -409,6 +434,8 @@ func _extract_world_floor_cells(room_root: Node2D) -> Array[Vector2i]:
 		var local_cell := Vector2i(raw_cell)
 		var world_position := room_root.to_global(Vector2(local_cell) * dungeon.tile_size)
 		floor_cells.append(dungeon.world_to_grid_coords(world_position))
+	if OS.is_debug_build():
+		print("DungeonAssembler: fallback world floor extract room=%s scene=%s local_floor=%d world_floor=%d sample=%s" % [room_root.name if room_root else "NULL", str(room_root.get_path() if room_root else NodePath()), local_floor_cells.size(), floor_cells.size(), str(floor_cells.slice(0, mini(10, floor_cells.size())))])
 
 	return floor_cells
 
@@ -448,17 +475,68 @@ func _reconcile_corridor_room_overlap(corridor_record: Dictionary, room_record: 
 	for cell in corridor_cells:
 		if room_floor_set.has(cell):
 			overlap_cells.append(cell)
-	var resolved := _remove_overlap_cells_except_seams(corridor_cells, room_floor, seam_cells)
+	var corridor_floor_set := _cells_to_set(corridor_cells)
+	var protected_seam_cells := _expand_seam_cells_with_transition_support(seam_cells, corridor_floor_set, room_floor_set)
+	var resolved := _remove_overlap_cells_except_seams(corridor_cells, room_floor, protected_seam_cells)
 	corridor_record["corridor_cells"] = resolved
 	corridor_record["floor_cells"] = resolved.duplicate(true)
 	corridor_record["rect"] = _rect_from_cells(resolved)
 	corridor_record["center_cell"] = _center_cell_from_rect(corridor_record["rect"])
-	corridor_record["seam_cells"] = seam_cells
+	corridor_record["seam_cells"] = protected_seam_cells
 
 	if OS.is_debug_build():
-		print("DungeonAssembler: overlap reconcile room=%d corridor=%d->%d seams=%s" % [int(room_record.get("id", -1)), before, resolved.size(), str(seam_cells.keys())])
+		print("DungeonAssembler: overlap reconcile room=%d corridor=%d->%d protected_seams=%s" % [int(room_record.get("id", -1)), before, resolved.size(), str(protected_seam_cells.keys())])
 		if not overlap_cells.is_empty():
 			print("DungeonAssembler: overlap detail room=%d overlap_cells=%d sample=%s" % [int(room_record.get("id", -1)), overlap_cells.size(), str(overlap_cells.slice(0, mini(10, overlap_cells.size())))])
+
+
+func _expand_seam_cells_with_transition_support(seam_cells: Dictionary, corridor_floor_set: Dictionary, room_floor_set: Dictionary) -> Dictionary:
+	var result := seam_cells.duplicate(true)
+	for raw_cell in seam_cells.keys():
+		var seam_cell := Vector2i(raw_cell)
+		result[seam_cell] = true
+		for direction in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]:
+			var neighbor = seam_cell + direction
+			if corridor_floor_set.has(neighbor) or room_floor_set.has(neighbor):
+				result[neighbor] = true
+	return result
+
+
+func _debug_trace_tutorial_connectivity(tutorial_room: Dictionary, corridor: Dictionary, room_1: Dictionary) -> void:
+	var tutorial_origin := (tutorial_room.get("visual_root", null) as Node2D).global_position if tutorial_room.get("visual_root", null) else Vector2.ZERO
+	var tutorial_exit_marker := _get_marker_from_record(tutorial_room, "Salida")
+	var tutorial_exit_cell := dungeon.world_to_grid_coords(tutorial_exit_marker.global_position) if tutorial_exit_marker != null and dungeon != null else Vector2i(-1, -1)
+
+	var corridor_origin_before = corridor.get("origin_before_snap", Vector2.ZERO)
+	var corridor_origin_after = corridor.get("origin_after_snap", Vector2.ZERO)
+	var corridor_entry_marker := corridor.get("entry_marker", null) as Node2D
+	var corridor_exit_marker := corridor.get("exit_marker", null) as Node2D
+	var corridor_entry_cell := dungeon.world_to_grid_coords(corridor_entry_marker.global_position) if corridor_entry_marker != null and dungeon != null else Vector2i(-1, -1)
+	var corridor_exit_cell := dungeon.world_to_grid_coords(corridor_exit_marker.global_position) if corridor_exit_marker != null and dungeon != null else Vector2i(-1, -1)
+
+	var room_1_root := room_1.get("visual_root", null) as Node2D
+	var room_1_marker_before = room_1_root.get_meta("debug_own_marker_before_snap", Vector2.ZERO) if room_1_root != null else Vector2.ZERO
+	var room_1_entry_marker := _get_marker_from_record(room_1, "Entrada")
+	var room_1_entry_cell := dungeon.world_to_grid_coords(room_1_entry_marker.global_position) if room_1_entry_marker != null and dungeon != null else Vector2i(-1, -1)
+
+	print("DungeonAssembler: connectivity trace tutorial room_origin=%s salida_global=%s seam_cell=%s" % [str(tutorial_origin), str(tutorial_exit_marker.global_position if tutorial_exit_marker else Vector2.ZERO), str([tutorial_exit_cell])])
+	print("DungeonAssembler: connectivity trace corridor origin_before=%s origin_after=%s entrada_global=%s salida_global=%s transformed_floor=%d registered_floor=%d seam_cells=%s" % [
+		str(corridor_origin_before),
+		str(corridor_origin_after),
+		str(corridor_entry_marker.global_position if corridor_entry_marker else Vector2.ZERO),
+		str(corridor_exit_marker.global_position if corridor_exit_marker else Vector2.ZERO),
+		int(corridor.get("transformed_floor_cell_count", 0)),
+		int(corridor.get("floor_cells", []).size()),
+		str((corridor.get("seam_cells", {}) as Dictionary).keys())
+	])
+	print("DungeonAssembler: connectivity trace sala_1 entrada_before_snap=%s final_origin=%s transformed_floor=%d registered_floor=%d bounds=%s seam_cells=%s" % [
+		str(room_1_marker_before),
+		str(room_1_root.global_position if room_1_root else Vector2.ZERO),
+		int(room_1.get("room_prefab_snapshot", {}).get("local_floor_cells", []).size()),
+		int(room_1.get("floor_cells", []).size()),
+		str(room_1.get("rect", Rect2i())),
+		str([tutorial_exit_cell, corridor_entry_cell, corridor_exit_cell, room_1_entry_cell])
+	])
 
 
 func _cells_to_set(cells: Array) -> Dictionary:

@@ -190,7 +190,9 @@ func extract_world_floor_cells_with_tilemap_transforms(room_root: Node, world_to
 
 		var included_local_cells: Dictionary = {}
 		var found_custom_data := false
+		var used_cell_count := 0
 		for raw_cell in layer.get_used_cells():
+			used_cell_count += 1
 			var cell := Vector2i(raw_cell)
 			var tile_data := layer.get_cell_tile_data(cell)
 			if tile_data == null:
@@ -213,9 +215,42 @@ func extract_world_floor_cells_with_tilemap_transforms(room_root: Node, world_to
 				grid_cell = Vector2i(world_to_grid.call(world_position))
 			result_map[grid_cell] = true
 
+		if OS.is_debug_build():
+			var local_cells: Array[Vector2i] = []
+			for raw_local_cell in included_local_cells.keys():
+				local_cells.append(Vector2i(raw_local_cell))
+			local_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+				if a.y == b.y:
+					return a.x < b.x
+				return a.y < b.y
+			)
+			var world_cells: Array[Vector2i] = []
+			for raw_world_cell in result_map.keys():
+				world_cells.append(Vector2i(raw_world_cell))
+			world_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+				if a.y == b.y:
+					return a.x < b.x
+				return a.y < b.y
+			)
+			var sample_local := local_cells.slice(0, mini(8, local_cells.size()))
+			var sample_world := world_cells.slice(0, mini(8, world_cells.size()))
+			print("RoomPrefabAdapter: tile layer extract room=%s layer=%s used=%d included=%d custom_data=%s sample_local=%s sample_world=%s" % [room_root.name if room_root else "NULL", layer.name, used_cell_count, included_local_cells.size(), str(found_custom_data), str(sample_local), str(sample_world)])
+
 	var floor_cells: Array[Vector2i] = []
 	for raw_cell in result_map.keys():
 		floor_cells.append(Vector2i(raw_cell))
+	if OS.is_debug_build():
+		var extracted_bounds := Rect2i()
+		if not floor_cells.is_empty():
+			var min_cell := floor_cells[0]
+			var max_cell := floor_cells[0]
+			for cell in floor_cells:
+				min_cell.x = mini(min_cell.x, cell.x)
+				min_cell.y = mini(min_cell.y, cell.y)
+				max_cell.x = maxi(max_cell.x, cell.x)
+				max_cell.y = maxi(max_cell.y, cell.y)
+			extracted_bounds = Rect2i(min_cell, (max_cell - min_cell) + Vector2i.ONE)
+		print("RoomPrefabAdapter: world floor extract room=%s count=%d bounds=%s sample=%s" % [room_root.name if room_root else "NULL", floor_cells.size(), str(extracted_bounds), str(floor_cells.slice(0, mini(8, floor_cells.size())))])
 	return floor_cells
 
 
@@ -243,7 +278,9 @@ func extract_local_floor_cell_map(room_root: Node) -> Dictionary:
 		if layer == null:
 			continue
 		var found_custom_data := false
+		var used_cell_count := 0
 		for raw_cell in layer.get_used_cells():
+			used_cell_count += 1
 			var cell := Vector2i(raw_cell)
 			var tile_data := layer.get_cell_tile_data(cell)
 			if tile_data == null:
@@ -257,11 +294,25 @@ func extract_local_floor_cell_map(room_root: Node) -> Dictionary:
 			for raw_cell in layer.get_used_cells():
 				floor_cell_map[Vector2i(raw_cell)] = true
 
+		if OS.is_debug_build():
+			var local_cells: Array[Vector2i] = []
+			for raw_local_cell in floor_cell_map.keys():
+				local_cells.append(Vector2i(raw_local_cell))
+			local_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+				if a.y == b.y:
+					return a.x < b.x
+				return a.y < b.y
+			)
+			var sample_local := local_cells.slice(0, mini(8, local_cells.size()))
+			print("RoomPrefabAdapter: local floor extract room=%s layer=%s used=%d floor=%d custom_data=%s sample=%s" % [room_root.name if room_root else "NULL", layer.name, used_cell_count, floor_cell_map.size(), str(found_custom_data), str(sample_local)])
+
 	if floor_cell_map.is_empty():
 		# Compatibility fallback: if a room has no tile cells yet, treat known
 		# marker cells as a minimal geometry hint so the adapter can still report
 		# a stable local footprint for inspection and future migration work.
 		_collect_marker_cells(room_root, floor_cell_map)
+		if OS.is_debug_build():
+			print("RoomPrefabAdapter: marker fallback room=%s floor=%d" % [room_root.name if room_root else "NULL", floor_cell_map.size()])
 
 	return floor_cell_map
 
