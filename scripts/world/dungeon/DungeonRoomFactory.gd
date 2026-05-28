@@ -98,6 +98,8 @@ func create_corridor_entity(edge_data: Dictionary, corridors_root: Node2D) -> No
 		corridor.name = corridor.name if corridor.name != "" else "Corridor_%d_%d" % [room_a, room_b]
 	corridor.set_meta("room_a", room_a)
 	corridor.set_meta("room_b", room_b)
+	corridor.set_meta("room_role", "corridor")
+	corridor.set_meta("room_type", "corridor")
 	corridor.set_meta("corridor_cells", edge_data.get("corridor_cells", []))
 	if corridors_root and corridor.get_parent() == null:
 		corridors_root.add_child(corridor)

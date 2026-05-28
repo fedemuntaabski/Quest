@@ -49,15 +49,27 @@ func set_active_room(room_id: int, enforce_connectivity: bool = true) -> void:
 func _set_active_room(room_id: int, enforce_connectivity: bool = true) -> void:
 	if room_id == active_room_id:
 		return
+	if room_id < 0:
+		if OS.is_debug_build():
+			print("RoomSystem: ignoring invalid room activation request room_id=%d" % room_id)
+		return
 
 	if enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0 and not dungeon.are_rooms_connected(dungeon.active_room_id, room_id):
-		print("RoomSystem: rejected activation of room %d because it's not connected to active room %d" % [room_id, dungeon.active_room_id])
+		if OS.is_debug_build():
+			var player := get_tree().get_first_node_in_group("player") as Node2D
+			var player_cell := dungeon.world_to_grid_coords(player.global_position) if player else Vector2i(-1, -1)
+			print("RoomSystem: rejected activation target=%d active=%d connected=false enforce=true player_cell=%s" % [room_id, dungeon.active_room_id, str(player_cell)])
 		return
 
 	if not enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0 and not dungeon.are_rooms_connected(dungeon.active_room_id, room_id):
-		print("RoomSystem: accepting non-adjacent room sync from player position room %d -> %d" % [dungeon.active_room_id, room_id])
+		if OS.is_debug_build():
+			var player := get_tree().get_first_node_in_group("player") as Node2D
+			var player_cell := dungeon.world_to_grid_coords(player.global_position) if player else Vector2i(-1, -1)
+			print("RoomSystem: accepting non-adjacent sync active=%d target=%d player_cell=%s" % [dungeon.active_room_id, room_id, str(player_cell)])
 
 	active_room_id = room_id
 	if dungeon:
+		if OS.is_debug_build():
+			print("RoomSystem: activation accepted target=%d previous=%d connected=%s" % [room_id, dungeon.active_room_id, str(dungeon.are_rooms_connected(dungeon.active_room_id, room_id) if dungeon.active_room_id >= 0 else true)])
 		dungeon.active_room_id = room_id
 	emit_signal("room_changed", room_id)

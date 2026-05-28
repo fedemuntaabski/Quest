@@ -42,6 +42,9 @@ func set_active_room(room_id: int, animate: bool) -> void:
 			if visual_root:
 				visual_root.modulate = Color(1, 1, 1, 1)
 
+		if OS.is_debug_build():
+			print("DungeonRoomManager: room=%d active=%s visited=%s has_visual=%s visible=%s" % [info_room_id, str(is_active), str(is_visited), str(visual_root != null), str(visual_root.visible if visual_root else false)])
+
 	tween_room_lights(animate)
 
 

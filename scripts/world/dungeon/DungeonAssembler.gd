@@ -74,20 +74,44 @@ func assemble_hardcoded_slice(rooms_root: Node2D = null, corridors_root: Node2D 
 	)
 	if room_1.is_empty():
 		return null
+
+	_reconcile_corridor_room_overlap(corridor, tutorial_room, ["Entrada", "Salida"])
+	_reconcile_corridor_room_overlap(corridor, room_1, ["Salida", "Entrada"])
+	var corridor_room := _build_corridor_room_record(2, corridor)
+	if corridor_room.is_empty():
+		return null
+	if OS.is_debug_build():
+		var c_before := int(corridor.get("floor_cells", []).size())
+		var c_cells := _cells_to_set(corridor.get("corridor_cells", []))
+		print("DungeonAssembler: corridor-room seam resolved corridor_cells=%d floor_cells=%d" % [c_cells.size(), c_before])
 	if OS.is_debug_build():
 		print("DungeonAssembler: room %d %s origin=%s markers=%s scene=%s" % [int(room_1.get("id", -1)), String(room_1.get("template", "")), str((room_1.get("visual_root", null) as Node2D).global_position if room_1.get("visual_root", null) else Vector2.ZERO), room_1.get("marker_refs", {}).keys(), room_1.get("prefab_scene_path", "")])
+		print("DungeonAssembler: connectivity trace tutorial->corridor->sala_1 tutorial_id=%d corridor=%d->%d room1_id=%d seams=%s" % [
+			int(tutorial_room.get("id", -1)),
+			int(corridor.get("room_a", -1)),
+			int(corridor.get("room_b", -1)),
+			int(room_1.get("id", -1)),
+			str((corridor.get("seam_cells", {}) as Dictionary).keys())
+		])
 
-	var room_records: Array[Dictionary] = [tutorial_room, room_1]
+	var room_records: Array[Dictionary] = [tutorial_room, room_1, corridor_room]
 	for room_record in room_records:
 		graph.add_room(int(room_record.get("id", -1)), room_record)
 
-	graph.add_edge(0, 1, corridor.get("corridor_cells", []))
-	graph.set_edge_runtime_node(0, 1, corridor.get("visual_root", null))
+	graph.add_edge(0, 2, corridor.get("corridor_cells", []))
+	graph.add_edge(2, 1, corridor.get("corridor_cells", []))
+	graph.set_edge_runtime_node(0, 2, corridor.get("visual_root", null))
+	graph.set_edge_runtime_node(2, 1, corridor.get("visual_root", null))
 
-	tutorial_room["connected_room_ids"] = [1]
-	tutorial_room["corridor_connections"] = [{"room_id": 1, "corridor_cells": corridor.get("corridor_cells", []).duplicate(true)}]
-	room_1["connected_room_ids"] = [0]
-	room_1["corridor_connections"] = [{"room_id": 0, "corridor_cells": corridor.get("corridor_cells", []).duplicate(true)}]
+	tutorial_room["connected_room_ids"] = [2]
+	tutorial_room["corridor_connections"] = [{"room_id": 2, "corridor_cells": corridor.get("corridor_cells", []).duplicate(true)}]
+	room_1["connected_room_ids"] = [2]
+	room_1["corridor_connections"] = [{"room_id": 2, "corridor_cells": corridor.get("corridor_cells", []).duplicate(true)}]
+	corridor_room["connected_room_ids"] = [0, 1]
+	corridor_room["corridor_connections"] = [
+		{"room_id": 0, "corridor_cells": corridor.get("corridor_cells", []).duplicate(true)},
+		{"room_id": 1, "corridor_cells": corridor.get("corridor_cells", []).duplicate(true)}
+	]
 
 	var room_layouts: Array[DungeonRoomLayoutState] = []
 	for room_record in room_records:
@@ -111,7 +135,7 @@ func assemble_hardcoded_slice(rooms_root: Node2D = null, corridors_root: Node2D 
 	layout.graph = graph
 	layout.metadata = {
 		"assembly_mode": "prefab_native_hardcoded",
-		"path": [0, 1],
+		"path": [0, 2, 1],
 		"room_count": room_records.size()
 	}
 
@@ -212,16 +236,32 @@ func _assemble_corridor(
 	var entry_marker := _get_marker_for_room(corridor_root, "Entrada")
 	var exit_marker := _get_marker_for_room(corridor_root, "Salida")
 	var anchor_exit := _get_marker_from_record(anchor_room, "Salida")
+	var marker_rotation_delta := 0.0
+	if anchor_exit != null and entry_marker != null:
+		marker_rotation_delta = wrapf(anchor_exit.global_rotation_degrees - entry_marker.global_rotation_degrees, -180.0, 180.0)
 	if anchor_exit != null and entry_marker != null:
 		corridor_root.global_position += anchor_exit.global_position - entry_marker.global_position
+		# Keep marker snap as absolute seam authority in prefab-native mode.
+		# Overlap is resolved via cell ownership reconciliation instead of post-snap
+		# translation that can desync connector seams by one tile.
+		if OS.is_debug_build():
+			print("DungeonAssembler: seam lock preserved; corridor post-snap nudge skipped for connector stability")
+
+	var seam_cells: Dictionary = {}
+	if entry_marker != null:
+		seam_cells[dungeon.world_to_grid_coords(entry_marker.global_position)] = true
+	if exit_marker != null:
+		seam_cells[dungeon.world_to_grid_coords(exit_marker.global_position)] = true
 
 	var corridor_floor_cells := _extract_world_floor_cells(corridor_root)
+	corridor_floor_cells = _remove_overlap_cells_except_seams(corridor_floor_cells, anchor_room.get("floor_cells", []), seam_cells)
 	var room_rect := _rect_from_cells(corridor_floor_cells)
 	var center_cell := _center_cell_from_rect(room_rect)
 	var corridor_cells := corridor_floor_cells.duplicate(true)
 	var snapshot := room_prefab_adapter.inspect_scene(scene)
 
 	var corridor_record := {
+		"id": room_b,
 		"room_a": room_a,
 		"room_b": room_b,
 		"visual_root": corridor_root,
@@ -233,13 +273,54 @@ func _assemble_corridor(
 		"center_cell": center_cell,
 		"entry_marker": entry_marker,
 		"exit_marker": exit_marker,
+		"seam_cells": seam_cells.duplicate(true),
+		"room_role": "corridor",
+		"room_type": "corridor",
 		"template": DungeonGraph.TEMPLATE_CORRIDOR,
 		"prefab_scene_path": scene.resource_path,
 		"prefab_rotation_degrees": int(corridor_root.rotation_degrees)
 	}
+	if OS.is_debug_build():
+		print("DungeonAssembler: connector resolved room=%d marker=Salida -> corridor=Entrada anchor=%s entry=%s rot_delta=%.1f seam=%s" % [int(anchor_room.get("id", -1)), str(anchor_exit.global_position if anchor_exit else Vector2.ZERO), str(entry_marker.global_position if entry_marker else Vector2.ZERO), marker_rotation_delta, str(seam_cells.keys())])
+		print("DungeonAssembler: corridor placement world_origin=%s rect=%s floor_cells=%d" % [str(corridor_root.global_position), str(room_rect), corridor_floor_cells.size()])
 
 	_assembled_corridors[_edge_key(room_a, room_b)] = corridor_root
 	return corridor_record
+
+
+func _build_corridor_room_record(room_id: int, corridor_record: Dictionary) -> Dictionary:
+	if corridor_record.is_empty():
+		return {}
+
+	var floor_cells: Array = corridor_record.get("floor_cells", [])
+	var room_rect: Rect2i = corridor_record.get("rect", Rect2i())
+	var local_floor_cells := RoomConnectorAdapter.local_floor_cells_from_world_cells(floor_cells, room_rect.position)
+	return {
+		"id": room_id,
+		"rect": room_rect,
+		"local_bounds": corridor_record.get("snapshot", {}).get("local_bounds", Rect2i(Vector2i.ZERO, room_rect.size)),
+		"center_cell": corridor_record.get("center_cell", _center_cell_from_rect(room_rect)),
+		"floor_cells": floor_cells.duplicate(true),
+		"local_floor_cells": local_floor_cells,
+		"connectors": corridor_record.get("snapshot", {}).get("connectors", []),
+		"spawn_markers": corridor_record.get("snapshot", {}).get("spawn_markers", []),
+		"corridor_connections": corridor_record.get("corridor_connections", []).duplicate(true),
+		"connected_room_ids": corridor_record.get("connected_room_ids", []).duplicate(true),
+		"template": String(corridor_record.get("template", DungeonGraph.TEMPLATE_CORRIDOR)),
+		"room_role": "corridor",
+		"room_type": "corridor",
+		"visual_root": corridor_record.get("visual_root", null),
+		"marker_refs": corridor_record.get("marker_refs", {}).duplicate(true),
+		"prefab_scene_path": String(corridor_record.get("prefab_scene_path", "")),
+		"prefab_rotation_degrees": int(corridor_record.get("prefab_rotation_degrees", 0)),
+		"room_prefab_snapshot": corridor_record.get("snapshot", {}).duplicate(true),
+		"spawn_profile": "corridor",
+		"seam_cells": corridor_record.get("seam_cells", {}).duplicate(true),
+		"topology_metadata": {
+			"assembly_mode": "prefab_native_hardcoded",
+			"is_main_path": true
+		}
+	}
 
 
 func _build_room_record_from_instance(
@@ -314,6 +395,11 @@ func _extract_world_floor_cells(room_root: Node2D) -> Array[Vector2i]:
 	var floor_cells: Array[Vector2i] = []
 	if room_root == null or dungeon == null:
 		return floor_cells
+	if room_prefab_adapter != null:
+		return room_prefab_adapter.extract_world_floor_cells_with_tilemap_transforms(
+			room_root,
+			Callable(dungeon, "world_to_grid_coords")
+		)
 
 	# Prefab-authored TileMap geometry is authoritative here. Use the
 	# RoomPrefabAdapter extraction which prioritizes the `caminable` custom
@@ -325,6 +411,69 @@ func _extract_world_floor_cells(room_root: Node2D) -> Array[Vector2i]:
 		floor_cells.append(dungeon.world_to_grid_coords(world_position))
 
 	return floor_cells
+
+
+func _remove_overlap_cells_except_seams(source_cells: Array[Vector2i], other_cells: Array, seam_cells: Dictionary) -> Array[Vector2i]:
+	var other_set := _cells_to_set(other_cells)
+	if other_set.is_empty():
+		return source_cells
+
+	var result: Array[Vector2i] = []
+	for raw_cell in source_cells:
+		var cell := Vector2i(raw_cell)
+		if other_set.has(cell) and not seam_cells.has(cell):
+			continue
+		result.append(cell)
+	return result
+
+
+func _reconcile_corridor_room_overlap(corridor_record: Dictionary, room_record: Dictionary, seam_marker_names: Array[String]) -> void:
+	if corridor_record.is_empty() or room_record.is_empty():
+		return
+
+	var corridor_cells: Array[Vector2i] = []
+	for raw_cell in corridor_record.get("corridor_cells", []):
+		corridor_cells.append(Vector2i(raw_cell))
+
+	var room_floor = room_record.get("floor_cells", [])
+	var seam_cells: Dictionary = corridor_record.get("seam_cells", {}).duplicate(true)
+	for marker_name in seam_marker_names:
+		var marker := _get_marker_from_record(room_record, marker_name)
+		if marker != null and dungeon != null:
+			seam_cells[dungeon.world_to_grid_coords(marker.global_position)] = true
+
+	var before := corridor_cells.size()
+	var overlap_cells: Array[Vector2i] = []
+	var room_floor_set := _cells_to_set(room_floor)
+	for cell in corridor_cells:
+		if room_floor_set.has(cell):
+			overlap_cells.append(cell)
+	var resolved := _remove_overlap_cells_except_seams(corridor_cells, room_floor, seam_cells)
+	corridor_record["corridor_cells"] = resolved
+	corridor_record["floor_cells"] = resolved.duplicate(true)
+	corridor_record["rect"] = _rect_from_cells(resolved)
+	corridor_record["center_cell"] = _center_cell_from_rect(corridor_record["rect"])
+	corridor_record["seam_cells"] = seam_cells
+
+	if OS.is_debug_build():
+		print("DungeonAssembler: overlap reconcile room=%d corridor=%d->%d seams=%s" % [int(room_record.get("id", -1)), before, resolved.size(), str(seam_cells.keys())])
+		if not overlap_cells.is_empty():
+			print("DungeonAssembler: overlap detail room=%d overlap_cells=%d sample=%s" % [int(room_record.get("id", -1)), overlap_cells.size(), str(overlap_cells.slice(0, mini(10, overlap_cells.size())))])
+
+
+func _cells_to_set(cells: Array) -> Dictionary:
+	var result: Dictionary = {}
+	for raw_cell in cells:
+		result[Vector2i(raw_cell)] = true
+	return result
+
+
+func _count_overlap(source_cells: Array[Vector2i], set_b: Dictionary) -> int:
+	var overlap := 0
+	for cell in source_cells:
+		if set_b.has(Vector2i(cell)):
+			overlap += 1
+	return overlap
 
 
 func _collect_tile_layers(node: Node, result: Array[TileMapLayer]) -> void:

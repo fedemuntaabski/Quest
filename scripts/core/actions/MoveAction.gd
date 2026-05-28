@@ -54,6 +54,19 @@ func execute() -> void:
 		next_cell = path[1] if path.size() > 1 else path[0]
 
 	if not map_manager.is_walkable_cell_for_actor(next_cell, owner):
+		validation_reason = "target_not_walkable_for_actor"
+		if OS.is_debug_build() and map_manager.core:
+			var state := map_manager.core.describe_cell_state_for_actor(next_cell, owner)
+			print("MoveAction: rejected next=%s reason=%s nav_walkable=%s blocked=%s allowed=%s room_id=%d active_room=%d room_locked=%s" % [
+				str(state.get("cell", next_cell)),
+				String(state.get("reason", validation_reason)),
+				str(state.get("nav_walkable", false)),
+				str(state.get("blocked", false)),
+				str(state.get("allowed_for_actor", false)),
+				int(state.get("room_id", -1)),
+				int(state.get("active_room", -1)),
+				str(state.get("room_locked", false))
+			])
 		finish()
 		return
 

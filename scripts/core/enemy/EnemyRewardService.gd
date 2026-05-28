@@ -25,6 +25,10 @@ static func process_enemy_defeat(manager: EnemyManager, enemy, room_id: int) -> 
 	if manager.turn_manager:
 		manager.turn_manager.unregister_actor(enemy)
 
+	var map_manager := manager.get_parent() as MapManager
+	if map_manager and enemy != null:
+		map_manager.unregister_actor(enemy)
+
 	manager.enemies.erase(enemy)
 
 	if not manager._room_enemy_counts.has(room_id):

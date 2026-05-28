@@ -1030,6 +1030,8 @@ texture = ExtResource("1_5gaeo")
 14:33/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_tqpc7"]
+custom_data_layer_0/name = "caminable"
+custom_data_layer_0/type = 1
 sources/0 = SubResource("TileSetAtlasSource_jrk5h")
 
 [node name="Node2D" type="Node2D" unique_id=937879274]

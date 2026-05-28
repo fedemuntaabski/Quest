@@ -31,6 +31,8 @@ func bake_navigation_region() -> void:
 		return
 
 	var nav_poly := NavigationPolygon.new()
+	var seam_warnings: Array[String] = []
+	var corridor_cell_count := dungeon_generator.corridor_cells.size()
 
 	# Ajuste fino para evitar problemas de bordes
 	var inset: float = 2.0
@@ -54,13 +56,27 @@ func bake_navigation_region() -> void:
 
 		nav_poly.add_outline(verts)
 
+	for room_info in dungeon_generator.get_room_layout_infos():
+		if String(room_info.get("room_role", "")).to_lower() != "corridor":
+			continue
+		var seam_cells: Dictionary = room_info.get("seam_cells", {})
+		for raw_cell in seam_cells.keys():
+			var seam_cell := Vector2i(raw_cell)
+			if not floor_cells.has(seam_cell):
+				seam_warnings.append("room=%d seam=%s missing_from_floor" % [int(room_info.get("id", -1)), str(seam_cell)])
+
 	nav_poly.make_polygons_from_outlines()
 
 	# Limpiar y asignar
 	nav_region.navigation_polygon = null
 	nav_region.navigation_polygon = nav_poly
 
-	print("MapNavigationHelper: NavigationRegion2D baked with %d floor cells." % floor_cells.size())
+	print("MapNavigationHelper: NavigationRegion2D baked with floor_cells=%d corridor_cells=%d nav_polygon_sources=%d" % [floor_cells.size(), corridor_cell_count, floor_cells.size()])
+	if OS.is_debug_build():
+		if seam_warnings.is_empty():
+			print("MapNavigationHelper: seam validation passed for corridor cells")
+		else:
+			print("MapNavigationHelper: seam warnings -> %s" % str(seam_warnings))
 
 
 # ── Passability checks ────────────────────────────────────────────────────────

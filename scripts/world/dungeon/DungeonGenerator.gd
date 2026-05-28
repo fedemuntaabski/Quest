@@ -123,6 +123,18 @@ func get_room_connectors(room_id: int) -> Array[RoomConnectorData]:
 	return layout_state.connectors.duplicate(true)
 
 
+func is_corridor_cell(grid_pos: Vector2i) -> bool:
+	return corridor_cells.has(grid_pos)
+
+
+func get_corridor_room_id() -> int:
+	for info in room_infos:
+		if not _is_corridor_room_info(info):
+			continue
+		return int(info.get("id", -1))
+	return -1
+
+
 func get_room_local_floor_cells(room_id: int) -> Array[Vector2i]:
 	var layout_state := get_room_layout_state(room_id)
 	if layout_state == null:
@@ -332,6 +344,8 @@ func set_room_presentation(room_id: int, presentation: Dictionary) -> void:
 
 
 func get_connected_room_ids(room_id: int) -> Array[int]:
+	if dungeon_graph != null:
+		return dungeon_graph.get_connected_room_ids(room_id)
 	if layout_generator == null:
 		return []
 
@@ -339,6 +353,8 @@ func get_connected_room_ids(room_id: int) -> Array[int]:
 
 
 func are_rooms_connected(room_a: int, room_b: int) -> bool:
+	if dungeon_graph != null:
+		return dungeon_graph.are_rooms_connected(room_a, room_b)
 	if layout_generator == null:
 		return false
 
@@ -480,6 +496,8 @@ func commit_runtime_floor_cells_from_room_infos() -> void:
 			var cell := Vector2i(raw_cell)
 			normalized_room_cells.append(cell)
 			floor_cells[cell] = true
+			if _is_corridor_room_info(room_info):
+				corridor_cells[cell] = true
 
 		if room_id >= 0 and room_id < room_layouts.size():
 			room_layouts[room_id].floor_cells = normalized_room_cells
@@ -644,10 +662,36 @@ func _is_room_entrance_cell(cell: Vector2i, room_cell_set: Dictionary) -> bool:
 
 func get_room_id_for_cell(grid_pos: Vector2i) -> int:
 	# Returns the room id that contains the given grid cell, or -1 if none.
+	if corridor_cells.has(grid_pos):
+		var corridor_room_id := get_corridor_room_id()
+		if corridor_room_id != -1:
+			return corridor_room_id
+
 	for info in room_infos:
+		if not _is_corridor_room_info(info):
+			continue
 		var room_id := int(info.get("id", -1))
 		if room_id < 0:
 			continue
 		if room_contains_cell(room_id, grid_pos):
 			return room_id
+
+	for info in room_infos:
+		var room_id := int(info.get("id", -1))
+		if room_id < 0:
+			continue
+		if _is_corridor_room_info(info):
+			continue
+		if room_contains_cell(room_id, grid_pos):
+			return room_id
 	return -1
+
+
+func _is_corridor_room_info(room_info: Dictionary) -> bool:
+	if room_info.is_empty():
+		return false
+	var role := String(room_info.get("room_role", "")).to_lower()
+	var room_type := String(room_info.get("room_type", "")).to_lower()
+	var template := String(room_info.get("template", "")).to_lower()
+	var scene_path := String(room_info.get("prefab_scene_path", "")).to_lower()
+	return role == "corridor" or room_type == "corridor" or template.contains("corridor") or template.contains("pasillo") or scene_path.contains("/pasillo_")

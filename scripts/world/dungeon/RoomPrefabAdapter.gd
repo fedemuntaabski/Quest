@@ -177,6 +177,48 @@ func extract_local_floor_cells_from_scene_root(room_root: Node, tile_size: float
 	return floor_cells
 
 
+func extract_world_floor_cells_with_tilemap_transforms(room_root: Node, world_to_grid: Callable) -> Array[Vector2i]:
+	var result_map: Dictionary = {}
+	if room_root == null:
+		return []
+
+	var tile_layers: Array[TileMapLayer] = []
+	_collect_tile_layers(room_root, tile_layers)
+	for layer in tile_layers:
+		if layer == null:
+			continue
+
+		var included_local_cells: Dictionary = {}
+		var found_custom_data := false
+		for raw_cell in layer.get_used_cells():
+			var cell := Vector2i(raw_cell)
+			var tile_data := layer.get_cell_tile_data(cell)
+			if tile_data == null:
+				continue
+			found_custom_data = true
+			if tile_data.get_custom_data("caminable") == true:
+				included_local_cells[cell] = true
+
+		if not found_custom_data:
+			for raw_cell in layer.get_used_cells():
+				included_local_cells[Vector2i(raw_cell)] = true
+
+		for local_cell_variant in included_local_cells.keys():
+			var local_cell := Vector2i(local_cell_variant)
+			# TileMapLayer transform is authoritative; map_to_local returns tile-space
+			# center in layer-local coordinates, then to_global applies full transform.
+			var world_position := layer.to_global(layer.map_to_local(local_cell))
+			var grid_cell := Vector2i(local_cell)
+			if world_to_grid.is_valid():
+				grid_cell = Vector2i(world_to_grid.call(world_position))
+			result_map[grid_cell] = true
+
+	var floor_cells: Array[Vector2i] = []
+	for raw_cell in result_map.keys():
+		floor_cells.append(Vector2i(raw_cell))
+	return floor_cells
+
+
 func build_world_floor_cells_from_local_cells(local_floor_cells: Array, room_origin_cell: Vector2i, room_size: Vector2i, rotation_degrees: int = 0) -> Array[Vector2i]:
 	var world_floor_cells: Array[Vector2i] = []
 	for raw_cell in local_floor_cells:

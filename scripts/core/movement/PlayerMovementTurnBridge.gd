@@ -43,6 +43,18 @@ func request_move(dir: Vector2i) -> bool:
 
 	var next := player.grid_pos + dir
 	if not map_manager.is_walkable_cell_for_actor(next, player):
+		if OS.is_debug_build() and map_manager.core:
+			var state := map_manager.core.describe_cell_state_for_actor(next, player)
+			print("PlayerMovementTurnBridge: move rejected next=%s reason=%s nav_walkable=%s blocked=%s allowed=%s room_id=%d active_room=%d room_locked=%s" % [
+				str(state.get("cell", next)),
+				String(state.get("reason", "unknown")),
+				str(state.get("nav_walkable", false)),
+				str(state.get("blocked", false)),
+				str(state.get("allowed_for_actor", false)),
+				int(state.get("room_id", -1)),
+				int(state.get("active_room", -1)),
+				str(state.get("room_locked", false))
+			])
 		return false
 	if player.turn_manager == null or player.turn_manager.action_queue == null:
 		return false

@@ -61,6 +61,39 @@ func is_walkable_cell_for_actor(grid_pos: Vector2i, actor: Node) -> bool:
 		return false
 	return is_cell_allowed_for_actor(grid_pos, actor)
 
+func describe_cell_state_for_actor(grid_pos: Vector2i, actor: Node) -> Dictionary:
+	var nav: MapNavigationHelper = _nav()
+	var occ: OccupancyManager = _occupancy()
+	var dungeon: DungeonGenerator = _dungeon()
+
+	var world_pos := grid_to_world_coords(grid_pos)
+	var nav_walkable := nav != null and nav.is_cell_walkable(world_pos)
+	var blocked := occ != null and occ.is_cell_blocked(grid_pos, actor)
+	var allowed := is_cell_allowed_for_actor(grid_pos, actor)
+	var room_id := get_room_id_for_cell(grid_pos)
+	var active_room := dungeon.active_room_id if dungeon else -1
+	var room_locked := _is_player_room_locked()
+
+	var reason := "ok"
+	if not nav_walkable:
+		reason = "not_walkable_floor"
+	elif blocked:
+		reason = "occupied_blocked"
+	elif not allowed:
+		reason = "room_lock_restriction"
+
+	return {
+		"cell": grid_pos,
+		"world": world_pos,
+		"reason": reason,
+		"nav_walkable": nav_walkable,
+		"blocked": blocked,
+		"allowed_for_actor": allowed,
+		"room_id": room_id,
+		"active_room": active_room,
+		"room_locked": room_locked,
+	}
+
 func is_cell_allowed_for_actor(grid_pos: Vector2i, actor: Node) -> bool:
 	var dungeon: DungeonGenerator = _dungeon()
 	if dungeon == null:
@@ -214,11 +247,7 @@ func get_room_id_for_cell(grid_pos: Vector2i) -> int:
 	var dungeon: DungeonGenerator = _dungeon()
 	if dungeon == null:
 		return -1
-	for info in dungeon.get_room_layout_infos():
-		var rect: Rect2i = info.get("rect", Rect2i())
-		if rect.has_point(grid_pos):
-			return int(info.get("id", -1))
-	return -1
+	return dungeon.get_room_id_for_cell(grid_pos)
 
 func _resolve_actor_cell(actor: Node) -> Variant:
 	if actor == null:
