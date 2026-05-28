@@ -46,6 +46,8 @@ func assemble_hardcoded_slice(rooms_root: Node2D = null, corridors_root: Node2D 
 	)
 	if tutorial_room.is_empty():
 		return null
+	if OS.is_debug_build():
+		print("DungeonAssembler: room %d %s origin=%s markers=%s scene=%s" % [int(tutorial_room.get("id", -1)), String(tutorial_room.get("template", "")), str((tutorial_room.get("visual_root", null) as Node2D).global_position if tutorial_room.get("visual_root", null) else Vector2.ZERO), tutorial_room.get("marker_refs", {}).keys(), tutorial_room.get("prefab_scene_path", "")])
 
 	var corridor := _assemble_corridor(
 		0,
@@ -56,6 +58,8 @@ func assemble_hardcoded_slice(rooms_root: Node2D = null, corridors_root: Node2D 
 	)
 	if corridor.is_empty():
 		return null
+	if OS.is_debug_build():
+		print("DungeonAssembler: corridor %d->%d origin=%s markers=%s scene=%s" % [int(corridor.get("room_a", -1)), int(corridor.get("room_b", -1)), str((corridor.get("visual_root", null) as Node2D).global_position if corridor.get("visual_root", null) else Vector2.ZERO), [corridor.get("entry_marker", null).name if corridor.get("entry_marker", null) else "", corridor.get("exit_marker", null).name if corridor.get("exit_marker", null) else ""], corridor.get("snapshot", {}).get("scene_path", "")])
 
 	var room_1 := _assemble_room_against_marker(
 		1,
@@ -70,6 +74,8 @@ func assemble_hardcoded_slice(rooms_root: Node2D = null, corridors_root: Node2D 
 	)
 	if room_1.is_empty():
 		return null
+	if OS.is_debug_build():
+		print("DungeonAssembler: room %d %s origin=%s markers=%s scene=%s" % [int(room_1.get("id", -1)), String(room_1.get("template", "")), str((room_1.get("visual_root", null) as Node2D).global_position if room_1.get("visual_root", null) else Vector2.ZERO), room_1.get("marker_refs", {}).keys(), room_1.get("prefab_scene_path", "")])
 
 	var room_records: Array[Dictionary] = [tutorial_room, room_1]
 	for room_record in room_records:
@@ -282,6 +288,9 @@ func _build_room_record_from_instance(
 		}
 	}
 
+	if OS.is_debug_build():
+		print("DungeonAssembler: assembled room %d template=%s origin=%s markers=%s scene=%s" % [room_id, String(template_name), room_root.global_position, marker_refs.keys(), scene.resource_path])
+
 	_assembled_rooms[room_id] = room_record.duplicate(true)
 	_assembled_marker_refs[room_id] = marker_refs.duplicate(true)
 	return room_record
@@ -298,7 +307,7 @@ func _build_room_layout_state(room_record: Dictionary) -> DungeonRoomLayoutState
 		room_record.get("connected_room_ids", []),
 		String(room_record.get("template", "")),
 		room_record.get("topology_metadata", {})
-	)
+	)		
 
 
 func _extract_world_floor_cells(room_root: Node2D) -> Array[Vector2i]:

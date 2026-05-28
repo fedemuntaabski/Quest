@@ -44,6 +44,9 @@ static func _spawn_enemy_for_room(
 	var spawn_cell: Vector2i = Vector2i(-1, -1)
 	if room_id == 0 and manager.dungeon != null:
 		var tutorial_spawn_marker := manager.dungeon.get_room_tutorial_spawn_marker_ref(room_id)
+		if tutorial_spawn_marker == null:
+			var room_info_marker_refs: Dictionary = room_info.get("marker_refs", {})
+			tutorial_spawn_marker = room_info_marker_refs.get("Spawn_Tutorial", room_info_marker_refs.get("Spawn_tutorial", null))
 		if tutorial_spawn_marker:
 			spawn_world_position = tutorial_spawn_marker.global_position
 		else:

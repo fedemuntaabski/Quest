@@ -8,10 +8,9 @@ var generator: DungeonGenerator
 func setup(parent: Node, dg: DungeonGenerator) -> void:
 	self.generator = dg
 	map_renderer = parent.get_node_or_null("TileRenderer") as DungeonMapRenderer
-	if map_renderer == null:
-		map_renderer = DungeonTileRenderer.new()
-		map_renderer.name = "TileRenderer"
-		parent.add_child(map_renderer)
+	# Legacy procedural tile rendering is disabled in the prefab-native slice.
+	# Keep any pre-existing renderer node if one is already present, but do not
+	# create a new TileMap layer here.
 
 	fog_manager = get_node_or_null("FogOfWarManager") as FogOfWarManager
 	if fog_manager == null:

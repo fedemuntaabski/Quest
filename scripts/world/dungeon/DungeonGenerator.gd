@@ -293,9 +293,17 @@ func get_room_presentation(room_id: int) -> Dictionary:
 
 func get_room_marker_ref(room_id: int, marker_name: String) -> Node2D:
 	var presentation_state := get_room_presentation_state(room_id)
-	if presentation_state == null:
+	if presentation_state != null:
+		var presentation_marker := presentation_state.get_marker_ref(marker_name)
+		if presentation_marker != null:
+			return presentation_marker
+
+	if room_id < 0 or room_id >= room_infos.size():
 		return null
-	return presentation_state.get_marker_ref(marker_name)
+
+	var room_info: Dictionary = room_infos[room_id]
+	var marker_refs: Dictionary = room_info.get("marker_refs", {})
+	return marker_refs.get(marker_name, null)
 
 
 func get_room_spawn_marker_ref(room_id: int) -> Node2D:
@@ -511,7 +519,8 @@ func place_player_in_start_room(player: CharacterBody2D) -> void:
 		return
 
 	var start_room := room_infos[0]
-	var marker := get_room_spawn_marker_ref(int(start_room.get("id", 0)))
+	var start_room_id := int(start_room.get("id", 0))
+	var marker := get_room_spawn_marker_ref(start_room_id)
 	if marker:
 		player.global_position = marker.global_position
 	else:
@@ -522,10 +531,12 @@ func place_player_in_start_room(player: CharacterBody2D) -> void:
 		else:
 			var center_cell: Vector2i = start_room["center_cell"]
 			player.global_position = grid_to_world_coords(center_cell)
+	if player.has_method("cancel_movement"):
+		player.cancel_movement()
 	if player.has_method("sync_to_grid"):
 		player.sync_to_grid()
 	if OS.is_debug_build():
-		print("DungeonGenerator: player spawn cell=%s world=%s" % [str(world_to_grid_coords(player.global_position)), str(player.global_position)])
+		print("DungeonGenerator: player spawn room=%d marker=%s cell=%s world=%s" % [start_room_id, marker.name if marker else "fallback", str(world_to_grid_coords(player.global_position)), str(player.global_position)])
 
 
 func _get_first_room_floor_cell(room_info: Dictionary) -> Vector2i:

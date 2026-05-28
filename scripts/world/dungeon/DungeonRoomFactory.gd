@@ -18,36 +18,41 @@ func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_ro
 	var room_rect: Rect2i = room_info.get("rect", Rect2i())
 	var center_cell: Vector2i = room_info.get("center_cell", Vector2i.ZERO)
 
-	var prefab_room := _create_prefab_room(room_info, rooms_root, room_rect)
-	var room_root: Node2D = room_info.get("visual_root", prefab_room.get("visual_root", null))
+	var prefab_room: Dictionary = {}
+	var room_root: Node2D = room_info.get("visual_root", null)
 	var used_prefab := room_root != null
 	if room_root == null:
-		push_warning("DungeonRoomFactory: prefab room instancing failed for room %d; falling back to legacy placeholder." % room_id)
-		room_root = _create_legacy_room_root(room_info, rooms_root, room_rect)
-		used_prefab = false
+		prefab_room = _create_prefab_room(room_info, rooms_root, room_rect)
+		room_root = prefab_room.get("visual_root", null)
+		used_prefab = room_root != null
+		if room_root == null:
+			push_warning("DungeonRoomFactory: prefab room instancing failed for room %d; falling back to legacy placeholder." % room_id)
+			room_root = _create_legacy_room_root(room_info, rooms_root, room_rect)
+			used_prefab = false
 	else:
 		prefab_room = room_info
 
+	var metadata_source: Dictionary = prefab_room if not prefab_room.is_empty() else room_info
 	room_root.set_meta("room_rect", room_rect)
 	room_root.set_meta("room_local_bounds", room_info.get("local_bounds", Rect2i(Vector2i.ZERO, room_rect.size)))
 	room_root.set_meta("room_world_origin_cell", room_rect.position)
-	room_root.set_meta("room_connectors", prefab_room.get("connectors", room_info.get("connectors", [])))
-	room_root.set_meta("room_local_floor_cells", prefab_room.get("local_floor_cells", room_info.get("local_floor_cells", [])))
-	room_root.set_meta("room_floor_cells", prefab_room.get("floor_cells", room_info.get("floor_cells", [])))
-	room_root.set_meta("room_prefab_local_bounds", prefab_room.get("snapshot", room_info.get("room_prefab_snapshot", {})).get("local_bounds", Rect2i()))
-	room_root.set_meta("room_spawn_markers", prefab_room.get("spawn_markers", room_info.get("spawn_markers", [])))
-	room_root.set_meta("room_marker_refs", prefab_room.get("marker_refs", room_info.get("marker_refs", {})))
+	room_root.set_meta("room_connectors", metadata_source.get("connectors", []))
+	room_root.set_meta("room_local_floor_cells", metadata_source.get("local_floor_cells", room_info.get("local_floor_cells", [])))
+	room_root.set_meta("room_floor_cells", metadata_source.get("floor_cells", room_info.get("floor_cells", [])))
+	room_root.set_meta("room_prefab_local_bounds", metadata_source.get("snapshot", room_info.get("room_prefab_snapshot", {})).get("local_bounds", Rect2i()))
+	room_root.set_meta("room_spawn_markers", metadata_source.get("spawn_markers", room_info.get("spawn_markers", [])))
+	room_root.set_meta("room_marker_refs", metadata_source.get("marker_refs", room_info.get("marker_refs", {})))
 	room_root.set_meta("room_template", room_info.get("template", ""))
 	room_root.set_meta("room_prefab_ready", used_prefab)
 	if used_prefab:
-		room_root.set_meta("room_role", prefab_room.get("room_role", "normal"))
-		room_root.set_meta("room_scene_path", prefab_room.get("prefab_scene_path", ""))
-		room_root.set_meta("room_prefab_snapshot", prefab_room.get("snapshot", room_info.get("room_prefab_snapshot", {})))
+		room_root.set_meta("room_role", metadata_source.get("room_role", "normal"))
+		room_root.set_meta("room_scene_path", metadata_source.get("prefab_scene_path", ""))
+		room_root.set_meta("room_prefab_snapshot", metadata_source.get("snapshot", room_info.get("room_prefab_snapshot", {})))
 		if OS.is_debug_build():
-			var marker_refs: Dictionary = prefab_room.get("marker_refs", {})
-			var floor_cells: Array = prefab_room.get("floor_cells", [])
-			var local_floor_cells: Array = prefab_room.get("local_floor_cells", [])
-			print("DungeonRoomFactory: room %d prefab origin=%s rect=%s prefab_bounds=%s floor_cells=%d local_floor_cells=%d markers=%s scene=%s" % [room_id, room_root.global_position, str(room_rect), str(room_root.get_meta("room_prefab_local_bounds")), floor_cells.size(), local_floor_cells.size(), marker_refs.keys(), prefab_room.get("prefab_scene_path", "")])
+			var marker_refs: Dictionary = metadata_source.get("marker_refs", {})
+			var floor_cells: Array = metadata_source.get("floor_cells", [])
+			var local_floor_cells: Array = metadata_source.get("local_floor_cells", [])
+			print("DungeonRoomFactory: room %d using %s root origin=%s rect=%s prefab_bounds=%s floor_cells=%d local_floor_cells=%d markers=%s scene=%s" % [room_id, "existing" if room_info.get("visual_root", null) != null else "instanced", room_root.global_position, str(room_rect), str(room_root.get_meta("room_prefab_local_bounds")), floor_cells.size(), local_floor_cells.size(), marker_refs.keys(), metadata_source.get("prefab_scene_path", "")])
 
 	var room_light := create_room_light(room_rect, center_cell, room_id)
 	if room_lights_root:

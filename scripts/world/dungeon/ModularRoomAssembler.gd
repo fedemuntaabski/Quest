@@ -27,6 +27,22 @@ func build_room_instance(room_info: Dictionary, rooms_root: Node2D = null) -> Di
 	var template := _resolve_room_template(room_info)
 	if template == null or room_prefab_adapter == null:
 		return {}
+	var existing_root: Node2D = room_info.get("visual_root", null)
+	if existing_root != null:
+		var existing_snapshot := room_prefab_adapter.inspect_room_root(existing_root, str(room_info.get("prefab_scene_path", "")))
+		return {
+			"visual_root": existing_root,
+			"template": _resolve_room_template(room_info),
+			"snapshot": existing_snapshot,
+			"connectors": existing_snapshot.get("connectors", []),
+			"spawn_markers": existing_snapshot.get("spawn_markers", []),
+			"marker_refs": room_prefab_adapter.resolve_marker_references(existing_root),
+			"local_floor_cells": existing_snapshot.get("local_floor_cells", []),
+			"floor_cells": room_info.get("floor_cells", []),
+			"room_role": _room_role_for_info(room_info),
+			"prefab_scene_path": str(room_info.get("prefab_scene_path", "")),
+			"prefab_rotation_degrees": int(room_info.get("prefab_rotation_degrees", 0))
+		}
 
 	var room_rect: Rect2i = room_info.get("rect", Rect2i())
 	var room_origin_world := _room_origin_world(room_rect)
