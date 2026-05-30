@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DungeonRoomTemplateCatalog" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/dungeon/DungeonRoomTemplateCatalog.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/dungeon/room_templates/tutorial_room_template.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/dungeon/room_templates/small_room_template.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/dungeon/room_templates/medium_room_template.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/dungeon/room_templates/large_room_template.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/dungeon/room_templates/boss_room_template.tres" id="6"]
+
+[resource]
+script = ExtResource("1")
+profiles = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])

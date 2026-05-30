@@ -64,8 +64,8 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 # Este método intercepta la petición de instanciación del 'EnemySpawnLifecycleService'.
 # En lugar de devolver siempre 'Enemy.tscn', busca qué datos corresponden a la sala
 # y devuelve la escena específica guardada en su .tres (BossEnemy.tscn, SkeletonEnemy.tscn, etc.)
-func get_enemy_scene_for_room(room_id: int) -> PackedScene:
-	var chosen_data: EnemyData = _select_enemy_data(room_id, final_room_id)
+func get_enemy_scene_for_room(room_id: int, room_template: String = "", room_role: String = "") -> PackedScene:
+	var chosen_data: EnemyData = _select_enemy_data(room_id, final_room_id, room_template, room_role)
 	
 	if chosen_data and chosen_data.enemy_scene:
 		return chosen_data.enemy_scene
@@ -78,8 +78,8 @@ func get_enemy_scene_for_room(room_id: int) -> PackedScene:
 	return load("res://scenes/Enemy.tscn") as PackedScene
 
 
-func _select_enemy_data(room_id: int, p_final_room_id: int) -> EnemyData:
-	return EnemyDataSelector.select_enemy_data(room_id, p_final_room_id, enemy_data_pool, default_enemy_data)
+func _select_enemy_data(room_id: int, p_final_room_id: int, room_template: String = "", room_role: String = "") -> EnemyData:
+	return EnemyDataSelector.select_enemy_data_with_template(room_id, room_template, room_role, p_final_room_id, enemy_data_pool, default_enemy_data)
 
 
 func _find_enemy_data_by_id(enemy_id: String) -> EnemyData:

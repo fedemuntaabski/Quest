@@ -80,11 +80,13 @@ func _spawn_wall(cell: Vector2i) -> void:
 	wall.position = dungeon.grid_to_world_coords(cell)
 	wall.collision_layer = 1
 	wall.collision_mask = 1
+	var wall_profile: Dictionary = dungeon.get_wall_theme_profile() if dungeon.has_method("get_wall_theme_profile") else {}
 
 	var wall_sprite := Sprite2D.new()
-	wall_sprite.texture = dungeon.wall_texture
-	wall_sprite.modulate = Color(0.2, 0.18, 0.16, 1)
-	wall_sprite.scale = Vector2(dungeon.tile_size / 2.0, dungeon.tile_size / 2.0)
+	wall_sprite.texture = wall_profile.get("texture", dungeon.wall_texture)
+	wall_sprite.modulate = wall_profile.get("modulate", dungeon.wall_modulate)
+	var scale_mult := maxf(0.01, float(wall_profile.get("texture_scale_multiplier", dungeon.wall_texture_scale_multiplier)))
+	wall_sprite.scale = Vector2(dungeon.tile_size * scale_mult, dungeon.tile_size * scale_mult)
 	wall.add_child(wall_sprite)
 
 	var collision_shape := CollisionShape2D.new()

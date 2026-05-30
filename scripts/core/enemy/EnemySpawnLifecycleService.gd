@@ -25,6 +25,12 @@ static func spawn_enemies(manager: EnemyManager, room_infos: Array, wall_cells: 
 		_spawn_enemy_for_room(manager, room_info, wall_cells, map_manager, player_cell, occupied_spawn_cells)
 
 static func _compute_final_room_id(room_infos: Array) -> int:
+	for ri in room_infos:
+		var template := String(ri.get("template", ""))
+		var room_role := String(ri.get("room_role", ""))
+		if template == DungeonGraph.TEMPLATE_BOSS or room_role == DungeonGraph.ROOM_ROLE_BOSS:
+			return int(ri.get("id", -1))
+
 	var computed := -1
 	for ri in room_infos:
 		computed = max(computed, ri.get("id", -1))
@@ -39,6 +45,8 @@ static func _spawn_enemy_for_room(
 	occupied_spawn_cells: Dictionary
 ) -> void:
 	var room_id: int = room_info["id"]
+	var room_template: String = String(room_info.get("template", ""))
+	var room_role: String = String(room_info.get("room_role", ""))
 
 	var spawn_cell := manager._get_random_floor_cell_in_room(
 		room_info,
@@ -52,7 +60,7 @@ static func _spawn_enemy_for_room(
 		return
 
 	# 🌟 MODIFICADO: Solicitamos de forma dinámica la escena específica (Boss, Skeleton, etc.) al manager
-	var enemy_scene: PackedScene = manager.get_enemy_scene_for_room(room_id)
+	var enemy_scene: PackedScene = manager.get_enemy_scene_for_room(room_id, room_template, room_role)
 	if enemy_scene == null:
 		push_error("EnemySpawnLifecycleService: No se pudo obtener una escena válida para la habitación %d" % room_id)
 		return
@@ -66,7 +74,7 @@ static func _spawn_enemy_for_room(
 	enemy.my_room_id = room_id
 	enemy.dungeon_generator = manager.dungeon
 	
-	var selected_data := manager._select_enemy_data(room_id, manager.final_room_id)
+	var selected_data := manager._select_enemy_data(room_id, manager.final_room_id, room_template, room_role)
 	if selected_data and enemy.has_method("apply_enemy_data"):
 		enemy.apply_enemy_data(selected_data)
 		if selected_data.enemy_name != "":

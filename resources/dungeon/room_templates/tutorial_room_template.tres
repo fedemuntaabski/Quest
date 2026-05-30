@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DungeonRoomTemplateProfile" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/dungeon/DungeonRoomTemplateProfile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+template_id = "tutorial_room"
+room_role = "tutorial"
+size_category = "medium"
+min_size = Vector2i(10, 8)
+max_size = Vector2i(14, 10)
+tags = PackedStringArray(["tutorial", "start"])

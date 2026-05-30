@@ -2,9 +2,21 @@ extends RefCounted
 class_name DungeonGraph
 
 const TEMPLATE_NORMAL := "normal_room"
+const TEMPLATE_TUTORIAL := "tutorial_room"
+const TEMPLATE_SMALL := "small_room"
+const TEMPLATE_MEDIUM := "medium_room"
+const TEMPLATE_LARGE := "large_room"
 const TEMPLATE_CORRIDOR := "corridor_room"
 const TEMPLATE_BOSS := "boss_room"
 const TEMPLATE_CUSTOM := "custom_layout_room"
+
+const ROOM_ROLE_NORMAL := "normal"
+const ROOM_ROLE_TUTORIAL := "tutorial"
+const ROOM_ROLE_BOSS := "boss"
+
+const SIZE_CATEGORY_SMALL := "small"
+const SIZE_CATEGORY_MEDIUM := "medium"
+const SIZE_CATEGORY_LARGE := "large"
 
 var rooms: Dictionary = {}
 var edges: Dictionary = {}
@@ -165,7 +177,9 @@ func _build_room_record(room_id: int, room_info: Dictionary) -> Dictionary:
 		"id": room_id,
 		"rect": room_info.get("rect", Rect2i()),
 		"center_cell": room_info.get("center_cell", Vector2i.ZERO),
-		"template": room_info.get("template", TEMPLATE_NORMAL)
+		"template": room_info.get("template", TEMPLATE_NORMAL),
+		"size_category": room_info.get("size_category", SIZE_CATEGORY_MEDIUM),
+		"room_role": room_info.get("room_role", ROOM_ROLE_NORMAL)
 	}
 
 

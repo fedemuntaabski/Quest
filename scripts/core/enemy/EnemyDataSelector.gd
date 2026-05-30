@@ -2,6 +2,30 @@ extends RefCounted
 class_name EnemyDataSelector
 
 static func select_enemy_data(room_id: int, final_room_id: int, enemy_data_pool: Array[EnemyData], default_enemy_data: EnemyData) -> EnemyData:
+	return select_enemy_data_with_template(room_id, "", "", final_room_id, enemy_data_pool, default_enemy_data)
+
+
+static func select_enemy_data_with_template(
+	room_id: int,
+	room_template: String,
+	room_role: String,
+	final_room_id: int,
+	enemy_data_pool: Array[EnemyData],
+	default_enemy_data: EnemyData
+) -> EnemyData:
+	if room_template == DungeonGraph.TEMPLATE_TUTORIAL or room_role == DungeonGraph.ROOM_ROLE_TUTORIAL:
+		var template_tutorial := find_enemy_data_by_id(enemy_data_pool, "tutorial")
+		if template_tutorial:
+			return template_tutorial
+
+	if room_template == DungeonGraph.TEMPLATE_BOSS or room_role == DungeonGraph.ROOM_ROLE_BOSS:
+		var template_boss_candidates: Array[EnemyData] = []
+		for data in enemy_data_pool:
+			if data and data.is_boss:
+				template_boss_candidates.append(data)
+		if not template_boss_candidates.is_empty():
+			return template_boss_candidates[randi() % template_boss_candidates.size()]
+
 	if room_id == 0:
 		var tutorial := find_enemy_data_by_id(enemy_data_pool, "tutorial")
 		if tutorial:

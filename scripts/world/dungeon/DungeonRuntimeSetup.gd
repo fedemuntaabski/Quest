@@ -1,6 +1,8 @@
 extends RefCounted
 class_name DungeonRuntimeSetup
 
+const DungeonLayoutGeneratorClass = preload("res://scripts/world/dungeon/DungeonLayoutGenerator.gd")
+
 func ensure_runtime_nodes(generator: DungeonGenerator) -> void:
 	if generator == null:
 		return
@@ -11,7 +13,7 @@ func ensure_runtime_nodes(generator: DungeonGenerator) -> void:
 		generator.scene_helper.setup(generator)
 
 	if generator.layout_generator == null:
-		generator.layout_generator = DungeonLayoutGenerator.new()
+		generator.layout_generator = DungeonLayoutGeneratorClass.new()
 		generator.layout_generator.setup(generator)
 
 	if generator.room_manager == null:

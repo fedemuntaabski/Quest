@@ -1,6 +1,9 @@
 extends Node2D
 class_name DungeonGenerator
 
+const DungeonRoomTemplateCatalogClass = preload("res://scripts/world/dungeon/DungeonRoomTemplateCatalog.gd")
+const DungeonLayoutGeneratorClass = preload("res://scripts/world/dungeon/DungeonLayoutGenerator.gd")
+
 @export var floor_tileset: TileSet = preload("res://assets/texture/enviorment/dungeon_tileset.tres")
 
 @warning_ignore("unused_signal")
@@ -17,17 +20,58 @@ const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
 @export var room_min_size: Vector2i = Vector2i(10, 8)
 @export var room_max_size: Vector2i = Vector2i(20, 14)
 @export var room_padding: int = 4
+@export var enable_tutorial_room: bool = true
+@export var enable_boss_room: bool = true
+@export var room_template_catalog: DungeonRoomTemplateCatalogClass
 
 @export var room_light_energy: float = 0.0
 @export var room_light_transition_seconds: float = 0.45
 
+@export var wall_texture: Texture2D = preload(WALL_TEXTURE_PATH)
+@export var light_texture: Texture2D = preload(LIGHT_TEXTURE_PATH)
+@export var wall_modulate: Color = Color(0.2, 0.18, 0.16, 1)
+@export var wall_texture_scale_multiplier: float = 0.5
+@export var wall_theme_profile: DungeonWallThemeProfile
+
 @export var corridor_min_length: int = 4
-@export var corridor_max_length: int = 10
+@export_range(1, 64, 1) var corridor_max_length: int = 5
+@export_range(1, 9, 1) var corridor_width: int = 3
+@export var enforce_corridor_max_length: bool = false
+
+@export_range(0.0, 1.0, 0.01) var room_small_selection_chance: float = 0.34
+@export_range(0.0, 1.0, 0.01) var room_medium_selection_chance: float = 0.33
+@export_range(0.0, 1.0, 0.01) var room_large_selection_chance: float = 0.33
+
+@export var room_small_min_size: Vector2i = Vector2i(8, 6)
+@export var room_small_max_size: Vector2i = Vector2i(12, 8)
+@export var room_medium_min_size: Vector2i = Vector2i(10, 8)
+@export var room_medium_max_size: Vector2i = Vector2i(20, 14)
+@export var room_large_min_size: Vector2i = Vector2i(16, 12)
+@export var room_large_max_size: Vector2i = Vector2i(28, 18)
 
 @export var main_path_branching: bool = false
 
-var wall_texture: Texture2D = preload(WALL_TEXTURE_PATH)
-var light_texture: Texture2D = preload(LIGHT_TEXTURE_PATH)
+@export var floor_main_tile: Vector2i = Vector2i(5, 10)
+@export var floor_tile_variations: Array[Vector2i] = [
+	Vector2i(3, 10),
+	Vector2i(10, 8),
+	Vector2i(7, 10),
+	Vector2i(1, 10),
+	Vector2i(2, 10)
+]
+@export var floor_edge_top_tile: Vector2i = Vector2i(5, 9)
+@export var floor_edge_top_right_tile: Vector2i = Vector2i(6, 9)
+@export var floor_edge_top_left_tile: Vector2i = Vector2i(4, 9)
+@export var floor_edge_bottom_tile: Vector2i = Vector2i(5, 11)
+@export var floor_edge_bottom_right_tile: Vector2i = Vector2i(6, 11)
+@export var floor_edge_bottom_left_tile: Vector2i = Vector2i(4, 11)
+@export var floor_edge_left_tile: Vector2i = Vector2i(4, 10)
+@export var floor_edge_right_tile: Vector2i = Vector2i(6, 10)
+@export_range(0.0, 1.0, 0.01) var floor_variation_chance: float = 0.3
+@export var floor_theme_profile: DungeonFloorThemeProfile
+
+@export_range(0.0, 1.0, 0.01) var room_small_threshold: float = 0.33
+@export_range(0.0, 1.0, 0.01) var room_medium_threshold: float = 0.66
 
 var grid_origin: Vector2 = Vector2.ZERO
 var floor_cells: Dictionary = {}
@@ -50,7 +94,7 @@ var room_lights_root: Node2D
 var enemies_root: Node2D
 var room_system: RoomSystem = null
 var room_camera_controller: RoomCameraController = null
-var layout_generator: DungeonLayoutGenerator
+var layout_generator: DungeonLayoutGeneratorClass
 var room_manager: DungeonRoomManager = null
 var wall_manager: DungeonWallManager = null
 var room_factory: DungeonRoomFactory = null
@@ -155,6 +199,73 @@ func get_room_presentation(room_id: int) -> Dictionary:
 	})
 
 
+func get_room_template(room_id: int) -> String:
+	if room_id < 0 or room_id >= room_infos.size():
+		return ""
+	return String(room_infos[room_id].get("template", ""))
+
+
+func get_room_role(room_id: int) -> String:
+	if room_id < 0 or room_id >= room_infos.size():
+		return ""
+	return String(room_infos[room_id].get("room_role", ""))
+
+
+func get_room_size_category(room_id: int) -> String:
+	if room_id < 0 or room_id >= room_infos.size():
+		return ""
+	return String(room_infos[room_id].get("size_category", ""))
+
+
+func get_room_generation_plan(room_id: int) -> Dictionary:
+	if room_id < 0:
+		return {}
+
+	var use_tutorial := enable_tutorial_room and room_id == 0
+	var use_boss := enable_boss_room and room_count > 1 and room_id == room_count - 1
+	var preferred_size_category := ""
+
+	if room_template_catalog != null:
+		if not use_tutorial and not use_boss:
+			preferred_size_category = _choose_standard_room_size_category()
+
+		var template_profile := room_template_catalog.get_profile_for_room(
+			room_id,
+			room_count,
+			enable_tutorial_room,
+			enable_boss_room,
+			preferred_size_category
+		)
+
+		if template_profile != null:
+			var normalized_min := Vector2i(
+				maxi(1, mini(template_profile.min_size.x, template_profile.max_size.x)),
+				maxi(1, mini(template_profile.min_size.y, template_profile.max_size.y))
+			)
+			var normalized_max := Vector2i(
+				maxi(normalized_min.x, maxi(template_profile.min_size.x, template_profile.max_size.x)),
+				maxi(normalized_min.y, maxi(template_profile.min_size.y, template_profile.max_size.y))
+			)
+
+			return {
+				"uses_catalog": true,
+				"template": String(template_profile.template_id),
+				"room_role": String(template_profile.room_role),
+				"size_category": String(template_profile.size_category),
+				"min_size": normalized_min,
+				"max_size": normalized_max
+			}
+
+	return {
+		"uses_catalog": false,
+		"template": _get_legacy_room_template(room_id),
+		"room_role": _get_legacy_room_role(room_id),
+		"size_category": "",
+		"min_size": room_min_size,
+		"max_size": room_max_size
+	}
+
+
 func set_room_presentation(room_id: int, presentation: Dictionary) -> void:
 	if room_id < 0:
 		return
@@ -247,7 +358,7 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	is_ready = true
 	_ensure_runtime_nodes()
 
-	var layout_data := layout_generator.generate()
+	var layout_data: DungeonLayoutData = layout_generator.generate()
 	if layout_data == null or not layout_data.is_valid(room_count):
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
 		return
@@ -375,6 +486,85 @@ func _set_active_room(room_id: int, animate: bool) -> void:
 	if room_manager:
 		room_manager.set_active_room(room_id, animate)
 		emit_signal("room_changed", room_id)
+
+
+func get_floor_tile_profile() -> Dictionary:
+	if floor_theme_profile != null:
+		return {
+			"main": floor_theme_profile.main_tile,
+			"variations": floor_theme_profile.tile_variations,
+			"edge_top": floor_theme_profile.edge_top_tile,
+			"edge_top_right": floor_theme_profile.edge_top_right_tile,
+			"edge_top_left": floor_theme_profile.edge_top_left_tile,
+			"edge_bottom": floor_theme_profile.edge_bottom_tile,
+			"edge_bottom_right": floor_theme_profile.edge_bottom_right_tile,
+			"edge_bottom_left": floor_theme_profile.edge_bottom_left_tile,
+			"edge_left": floor_theme_profile.edge_left_tile,
+			"edge_right": floor_theme_profile.edge_right_tile,
+			"variation_chance": floor_theme_profile.variation_chance
+		}
+
+	return {
+		"main": floor_main_tile,
+		"variations": floor_tile_variations,
+		"edge_top": floor_edge_top_tile,
+		"edge_top_right": floor_edge_top_right_tile,
+		"edge_top_left": floor_edge_top_left_tile,
+		"edge_bottom": floor_edge_bottom_tile,
+		"edge_bottom_right": floor_edge_bottom_right_tile,
+		"edge_bottom_left": floor_edge_bottom_left_tile,
+		"edge_left": floor_edge_left_tile,
+		"edge_right": floor_edge_right_tile,
+		"variation_chance": floor_variation_chance
+	}
+
+
+func get_wall_theme_profile() -> Dictionary:
+	if wall_theme_profile != null:
+		return {
+			"texture": wall_theme_profile.texture if wall_theme_profile.texture != null else wall_texture,
+			"modulate": wall_theme_profile.modulate,
+			"texture_scale_multiplier": wall_theme_profile.texture_scale_multiplier
+		}
+
+	return {
+		"texture": wall_texture,
+		"modulate": wall_modulate,
+		"texture_scale_multiplier": wall_texture_scale_multiplier
+	}
+
+
+func _choose_standard_room_size_category() -> String:
+	var total := maxf(0.0, room_small_selection_chance + room_medium_selection_chance + room_large_selection_chance)
+	if total <= 0.0:
+		return DungeonGraph.SIZE_CATEGORY_MEDIUM
+
+	var roll := randf() * total
+	if roll < room_small_selection_chance:
+		return DungeonGraph.SIZE_CATEGORY_SMALL
+	roll -= room_small_selection_chance
+	if roll < room_medium_selection_chance:
+		return DungeonGraph.SIZE_CATEGORY_MEDIUM
+	return DungeonGraph.SIZE_CATEGORY_LARGE
+
+
+func _get_legacy_room_template(room_id: int) -> String:
+	if enable_tutorial_room and room_id == 0:
+		return DungeonGraph.TEMPLATE_TUTORIAL
+
+	if enable_boss_room and room_count > 1 and room_id == room_count - 1:
+		return DungeonGraph.TEMPLATE_BOSS
+
+	return DungeonGraph.TEMPLATE_NORMAL
+
+
+func _get_legacy_room_role(room_id: int) -> String:
+	var template := _get_legacy_room_template(room_id)
+	if template == DungeonGraph.TEMPLATE_TUTORIAL:
+		return DungeonGraph.ROOM_ROLE_TUTORIAL
+	if template == DungeonGraph.TEMPLATE_BOSS:
+		return DungeonGraph.ROOM_ROLE_BOSS
+	return DungeonGraph.ROOM_ROLE_NORMAL
 
 
 func _tween_room_lights(animate: bool) -> void:
