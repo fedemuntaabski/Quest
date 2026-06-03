@@ -6,7 +6,7 @@
 script = ExtResource("1_visual_particle_script")
 
 [node name="ColorRect" type="ColorRect" parent="."]
-color = Color(1, 1, 1, 1)
+color = Color(0.75, 0.1, 0.1, 1.0)
 offset_left = -4.0
 offset_top = -4.0
 offset_right = 4.0
