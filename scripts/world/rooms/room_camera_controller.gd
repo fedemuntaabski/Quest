@@ -11,9 +11,9 @@ const CameraMode_Corridor = preload("res://scripts/world/camera/CameraMode_Corri
 
 @export var move_duration: float = 0.35
 @export var initial_delay: float = 0.08
-@export var margin_factor: float = 0.9
+@export var margin_factor: float = 0.5
 @export var min_zoom: float = 0.6
-@export var max_zoom: float = 2.5
+@export var max_zoom: float = 2
 
 var dungeon: DungeonGenerator = null
 var active_tween: Tween = null
@@ -130,12 +130,11 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
 
-	var zoom_x: float = viewport_size.x / room_size_px.x
-	var zoom_y: float = viewport_size.y / room_size_px.y
-	var base_zoom: float = (zoom_x + zoom_y) * 0.5
+	#var zoom_x: float = viewport_size.x / room_size_px.x
+	#var zoom_y: float = viewport_size.y / room_size_px.y
+	#var base_zoom: float = (zoom_x + zoom_y) * 0.5
 
-	var target_zoom_value: float = clamp(base_zoom * margin_factor, min_zoom, max_zoom)
-	var zoom_vec: Vector2 = Vector2(target_zoom_value, target_zoom_value)
+	var zoom_vec := Vector2(3.0, 3.0)
 
 	var base_margin: float = 3.0  # Room base margin
 	var margin_px: float = base_margin * dungeon.tile_size

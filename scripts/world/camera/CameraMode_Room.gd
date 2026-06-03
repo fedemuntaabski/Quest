@@ -6,9 +6,9 @@ class_name CameraMode_Room
 
 @export var base_margin_tiles: float = 3.0              ## Margin around room bounds (48px at 16px/tile)
 @export var follow_smoothing_factor: float = 0.8        ## Multiplier on Camera2D smoothing speed (0.8 = 80% of default)
-@export var margin_factor: float = 0.9                  ## Applied to calculated zoom
-@export var min_zoom: float = 0.6
-@export var max_zoom: float = 2.5
+@export var margin_factor: float = 0.65                  ## Applied to calculated zoom
+@export var min_zoom: float = 0.5
+@export var max_zoom: float = 2
 
 var dungeon: DungeonGenerator
 var last_room_id: int = -1
