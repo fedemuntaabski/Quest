@@ -22,7 +22,7 @@ const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
 @export var room_light_transition_seconds: float = 0.45
 
 @export var corridor_min_length: int = 4
-@export var corridor_max_length: int = 10
+@export var corridor_max_length: int = 8
 
 @export var main_path_branching: bool = false
 
