@@ -66,7 +66,6 @@ func build(tileset: TileSet, wall_texture: Texture2D) -> void:
 		# Move presentation references into the dedicated presentation store
 		generator.set_room_presentation(room_id, {
 			"visual_root": room_nodes.get("visual_root", null),
-			"light": room_nodes.get("light", null),
 			"area": room_nodes.get("area", null)
 		})
 

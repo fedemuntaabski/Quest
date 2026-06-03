@@ -199,7 +199,7 @@ func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 
 	var current := from_cell
 	var corridor_length := 0
-	if _add_corridor_cell(current):
+	if _add_corridor_cell(current, true):
 		corridor_cells.append(current)
 
 	var horizontal_first := randf() < 0.5
@@ -207,25 +207,31 @@ func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 	if horizontal_first:
 		while current.x != to_cell.x:
 			current.x += signi(to_cell.x - current.x)
-			if _add_corridor_cell(current):
+			if _add_corridor_cell(current,true):
 				corridor_cells.append(current)
 			corridor_length += 1
 
+		_add_corridor_cell(current, true)
+		_add_corridor_cell(current, false)
+
 		while current.y != to_cell.y:
 			current.y += signi(to_cell.y - current.y)
-			if _add_corridor_cell(current):
+			if _add_corridor_cell(current,false):
 				corridor_cells.append(current)
 			corridor_length += 1
 	else:
 		while current.y != to_cell.y:
 			current.y += signi(to_cell.y - current.y)
-			if _add_corridor_cell(current):
+			if _add_corridor_cell(current,false):
 				corridor_cells.append(current)
 			corridor_length += 1
 
+		_add_corridor_cell(current, true)
+		_add_corridor_cell(current, false)
+
 		while current.x != to_cell.x:
 			current.x += signi(to_cell.x - current.x)
-			if _add_corridor_cell(current):
+			if _add_corridor_cell(current,true):
 				corridor_cells.append(current)
 			corridor_length += 1
 
@@ -235,15 +241,26 @@ func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 	return corridor_cells
 
 
-func _add_corridor_cell(cell: Vector2i) -> bool:
+func _add_corridor_cell(cell: Vector2i, horizontal: bool) -> bool:
+
 	if not dungeon.is_within_bounds(cell):
 		return false
 
-	if _working_floor_cells.has(cell):
-		return false
+	var cells_to_add: Array[Vector2i] = [cell]
 
-	_working_floor_cells[cell] = true
-	_working_corridor_cells[cell] = true
+	if horizontal:
+		cells_to_add.append(cell + Vector2i(0, 1))
+	else:
+		cells_to_add.append(cell + Vector2i(1, 0))
+
+	for c in cells_to_add:
+
+		if not dungeon.is_within_bounds(c):
+			continue
+
+		_working_floor_cells[c] = true
+		_working_corridor_cells[c] = true
+
 	return true
 
 
@@ -259,7 +276,13 @@ func are_rooms_connected(room_a: int, room_b: int) -> bool:
 	return get_dungeon_graph().are_rooms_connected(room_a, room_b)
 
 
-func _find_nearest_room(from_center: Vector2i, candidates: Array[Dictionary]) -> Dictionary:
+func _find_nearest_room(
+	from_center: Vector2i,
+	candidates: Array[Dictionary]
+) -> Dictionary:
+
+	const MAX_ROOM_CONNECTION_DISTANCE := 40
+
 	if candidates.is_empty():
 		return {}
 
@@ -267,15 +290,19 @@ func _find_nearest_room(from_center: Vector2i, candidates: Array[Dictionary]) ->
 	var nearest_dist: float = INF
 
 	for room_info in candidates:
+
 		var room_center: Vector2i = room_info["center_cell"]
+
 		var dist := from_center.distance_squared_to(room_center)
+
+		if dist > MAX_ROOM_CONNECTION_DISTANCE * MAX_ROOM_CONNECTION_DISTANCE:
+			continue
 
 		if dist < nearest_dist:
 			nearest_dist = dist
 			nearest = room_info
 
 	return nearest
-
 
 func _connect_to_nearest_main_path_room(room_info: Dictionary, main_path: Array[Dictionary]) -> void:
 	var room_center: Vector2i = room_info["center_cell"]
@@ -313,3 +340,20 @@ func _validate_graph() -> bool:
 		push_error("DungeonLayoutGenerator: %s" % str(error_text))
 
 	return false
+
+func _fill_corner(cell: Vector2i) -> void:
+
+	var corner_cells := [
+		cell,
+		cell + Vector2i.RIGHT,
+		cell + Vector2i.DOWN,
+		cell + Vector2i(1, 1)
+	]
+
+	for c in corner_cells:
+
+		if not dungeon.is_within_bounds(c):
+			continue
+
+		_working_floor_cells[c] = true
+		_working_corridor_cells[c] = true
