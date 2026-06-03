@@ -13,6 +13,7 @@ var t: float = 0.0
 var noise := FastNoiseLite.new()
 var target_position: Vector2
 
+
 func _ready():
 	# Softer, wider torch range
 	texture_scale = 2.6

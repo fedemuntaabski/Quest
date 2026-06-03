@@ -84,3 +84,27 @@ static func tactical_hover_actor_color(in_range: bool) -> Color:
 
 static func tactical_arrow_color() -> Color:
 	return QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.85)
+
+static func tactical_path_dot_color() -> Color:
+	return QuestPalette.with_alpha(
+		QuestPalette.PARCHMENT_LIGHT,
+		0.9
+	)
+
+static func tactical_hover_border_color() -> Color:
+	return QuestPalette.with_alpha(
+		QuestPalette.PARCHMENT_LIGHT,
+		1.0
+	)
+
+static func tactical_enemy_ring_color() -> Color:
+	return QuestPalette.with_alpha(
+		QuestPalette.BLOOD_LIGHT,
+		0.95
+	)
+
+static func tactical_destination_color() -> Color:
+	return QuestPalette.with_alpha(
+		QuestPalette.GOLD_LIGHT,
+		1.0
+	)

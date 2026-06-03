@@ -143,14 +143,17 @@ func _process(_delta: float) -> void:
 	if _player == null or _card_manager == null:
 		_resolve_refs()
 
-	# Clear range grid if player moved
 	if _player and _player.grid_pos != _last_player_grid_pos:
 		_last_player_grid_pos = _player.grid_pos
+
 		if not _cached_range_cells.is_empty():
 			_cached_range_cells.clear()
 			queue_redraw()
 
 	_update_range_cache_if_needed()
+
+	if hovered_cell != INVALID_CELL:
+		queue_redraw()
 
 # =====================================================
 # DRAW
