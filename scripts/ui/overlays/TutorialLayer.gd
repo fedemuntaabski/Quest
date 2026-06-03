@@ -1,44 +1,87 @@
 extends CanvasLayer
+class_name TutorialLayer
 
-## TutorialLayer — Autonomo y desacoplado
+# =====================================================
+# SIGNALS
+# =====================================================
 
 signal tutorial_started
 signal tutorial_finished
 
-var step: int = 0
+# =====================================================
+# STEP MODEL
+# =====================================================
 
-var prompts = [
-	"Paso 1/8 - Movimiento: haz click en una casilla válida para moverte por la mazmorra. El movimiento consume un turno.",
-	"Paso 2/8 - Cámara y exploración: avanza por las habitaciones. La cámara sigue tu posición dentro de la sala actual.",
-	"Paso 3/8 - Combate básico: acércate a un enemigo y haciendo click sobre ellos al estar en rango. Cada acción consume turnos.",
-	"Paso 4/8 - Sistema de cartas: usa las teclas 1, 2 y 3 para cambiar tu carta activa y ver su rango de acción.",
-	"Paso 5/8 - Estados: algunos ataques aplican efectos como stun, bleed, burn, freeze o poison. Estos pueden inmovilizar, dañar o debilitar al enemigo por varios turnos.",
-	"Paso 6/8 - Recursos: los enemigos pueden soltar oro. Este oro se usa para mejoras entre combates.",
-	"Paso 7/8 - HUD: tu vida, estadisticas y estados actuales siempre se muestran en la interfaz superior.",
-	"Paso 8/8 - Progresión: limpia habitaciones para avanzar. Al derrotar enemigos avanzas hacia el jefe final."
+class TutorialStep:
+	var text: String
+	var wait_for_action: bool = false
+	var auto_advance: bool = false
+
+	func _init(_text: String, _wait_for_action := false, _auto := false):
+		text = _text
+		wait_for_action = _wait_for_action
+		auto_advance = _auto
+
+
+# =====================================================
+# CONFIG STEPS (DATA-DRIVEN)
+# =====================================================
+
+var steps: Array[TutorialStep] = [
+	TutorialStep.new("Paso 1/8 - Movimiento: haz click en una casilla válida para moverte por la mazmorra. El movimiento consume un turno.", true),
+	TutorialStep.new("Paso 2/8 - Cámara y exploración: avanza por las habitaciones. La cámara sigue tu posición dentro de la sala actual."),
+	TutorialStep.new("Paso 3/8 - Combate básico: acércate a un enemigo y haz click cuando estés en rango."),
+	TutorialStep.new("Paso 4/8 - Sistema de cartas: usa teclas 1, 2 y 3 para cambiar carta activa."),
+	TutorialStep.new("Paso 5/8 - Estados: efectos como stun, bleed, burn o poison alteran el combate."),
+	TutorialStep.new("Paso 6/8 - Recursos: los enemigos pueden soltar oro para mejoras."),
+	TutorialStep.new("Paso 7/8 - HUD: vida, stats y estados visibles siempre en interfaz superior."),
+	TutorialStep.new("Paso 8/8 - Progresión: limpia habitaciones para avanzar al jefe final.")
 ]
 
-var active_tween: Tween 
-var is_transitioning: bool = false
-var is_active: bool = false
+# =====================================================
+# STATE
+# =====================================================
+
+enum State {
+	IDLE,
+	SHOWING,
+	TRANSITIONING,
+	FINISHED
+}
+
+var state: State = State.IDLE
+var step_index: int = 0
 
 var dungeon_generator: DungeonGenerator = null
+
+# =====================================================
+# UI REFS
+# =====================================================
 
 @onready var label: Label = $Label
 @onready var bg: ColorRect = $ColorRect
 
-# ─────────────────────────────────────────────
-# SETUP (NUEVO)
-# ─────────────────────────────────────────────
+# =====================================================
+# TWEEN
+# =====================================================
+
+var tween: Tween
+
+# =====================================================
+# SETUP
+# =====================================================
+
 func setup(dg: DungeonGenerator) -> void:
 	dungeon_generator = dg
 
 	if dungeon_generator and not dungeon_generator.room_cleared.is_connected(_on_room_cleared):
 		dungeon_generator.room_cleared.connect(_on_room_cleared)
 
-# ─────────────────────────────────────────────
-# INIT
-# ─────────────────────────────────────────────
+
+# =====================================================
+# READY
+# =====================================================
+
 func _ready() -> void:
 	layer = 15
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -50,68 +93,103 @@ func _ready() -> void:
 	else:
 		queue_free()
 
-# ─────────────────────────────────────────────
+
+# =====================================================
 # INPUT
-# ─────────────────────────────────────────────
+# =====================================================
+
 func _input(event: InputEvent) -> void:
-	if visible and not is_transitioning:
-		if event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed):
-			_advance_tutorial()
-
-# ─────────────────────────────────────────────
-# FLOW
-# ─────────────────────────────────────────────
-func _start_tutorial() -> void:
-	is_active = true
-	visible = true
-	tutorial_started.emit()
-	_show_next_prompt()
-
-func _show_next_prompt() -> void:
-	if step >= prompts.size():
-		_finish_tutorial()
+	if state != State.SHOWING:
 		return
-	
-	label.text = "%s\n\n[Click izquierdo o Enter para continuar]" % prompts[step]
-	is_transitioning = false
-	
-	if active_tween:
-		active_tween.kill()
-		
-	active_tween = create_tween().set_parallel(true)
-	active_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	active_tween.tween_property(label, "modulate:a", 1.0, 0.5).from(0.0)
-	active_tween.tween_property(bg, "modulate:a", 0.6, 0.5).from(0.0)
 
-func _advance_tutorial() -> void:
-	is_transitioning = true
-	
-	if active_tween:
-		active_tween.kill()
-		
-	active_tween = create_tween().set_parallel(true)
-	active_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	active_tween.tween_property(label, "modulate:a", 0.0, 0.3)
-	active_tween.tween_property(bg, "modulate:a", 0.0, 0.3)
-	
-	await active_tween.finished
-	
-	step += 1
-	_show_next_prompt()
+	if event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed):
+		advance_step()
 
-# ─────────────────────────────────────────────
-# EVENTOS DEL JUEGO
-# ─────────────────────────────────────────────
+
+# =====================================================
+# FLOW
+# =====================================================
+
+func _start_tutorial() -> void:
+	state = State.SHOWING
+	visible = true
+
+	tutorial_started.emit()
+	show_step()
+
+
+func show_step() -> void:
+	if step_index >= steps.size():
+		finish_tutorial()
+		return
+
+	var step := steps[step_index]
+
+	label.text = step.text + "\n\n[Click o Enter para continuar]"
+	play_fade_in()
+
+
+# =====================================================
+# ADVANCE
+# =====================================================
+
+func advance_step() -> void:
+	if state != State.SHOWING:
+		return
+
+	state = State.TRANSITIONING
+	play_fade_out()
+
+	await tween.finished
+
+	step_index += 1
+	state = State.SHOWING
+	show_step()
+
+
+# =====================================================
+# ANIMATION
+# =====================================================
+
+func play_fade_in() -> void:
+	if tween:
+		tween.kill()
+
+	tween = create_tween().set_parallel(true)
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+
+	tween.tween_property(label, "modulate:a", 1.0, 0.25).from(0.0)
+	tween.tween_property(bg, "modulate:a", 0.6, 0.25).from(0.0)
+
+
+func play_fade_out() -> void:
+	if tween:
+		tween.kill()
+
+	tween = create_tween().set_parallel(true)
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+
+	tween.tween_property(label, "modulate:a", 0.0, 0.2)
+	tween.tween_property(bg, "modulate:a", 0.0, 0.2)
+
+
+# =====================================================
+# GAME EVENTS
+# =====================================================
+
 func _on_room_cleared(_room_id: int) -> void:
-	# 🔥 El tutorial decide qué hacer con este evento
-	_finish_tutorial()
+	# El tutorial puede decidir abortar según diseño
+	finish_tutorial()
 
-# ─────────────────────────────────────────────
-# FINALIZACIÓN
-# ─────────────────────────────────────────────
-func _finish_tutorial() -> void:
-	is_active = false
+
+# =====================================================
+# FINISH
+# =====================================================
+
+func finish_tutorial() -> void:
+	state = State.FINISHED
 	visible = false
+
 	tutorial_finished.emit()
 
 	var save_mgr = ManagerLocator.get_save_manager()
