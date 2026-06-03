@@ -134,7 +134,7 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	#var zoom_y: float = viewport_size.y / room_size_px.y
 	#var base_zoom: float = (zoom_x + zoom_y) * 0.5
 
-	var zoom_vec := Vector2(3.0, 3.0)
+	var zoom_vec := Vector2(3.3, 3.3)
 
 	var base_margin: float = 3.0  # Room base margin
 	var margin_px: float = base_margin * dungeon.tile_size
