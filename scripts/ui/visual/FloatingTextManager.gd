@@ -6,35 +6,69 @@ class_name FloatingTextManager
 
 const FloatingTextScene := preload("res://scenes/FloatingText.tscn")
 
+
 func _ready() -> void:
 	add_to_group("floating_text_manager")
 
-func spawn_text(world_pos: Vector2, text: String, color: Color, crit: bool = false) -> void:
-	var floating_text = FloatingTextScene.instantiate() as FloatingText
-	if floating_text == null:
-		return
-	floating_text.float_distance = float_distance
-	floating_text.float_time = float_time
-	floating_text.global_position = world_pos
-	add_child(floating_text)
-	floating_text.setup(text, color, crit)
 
+# =========================================================
+# 🎯 SIMPLE SPAWN (WORLD POSITION)
+# =========================================================
+func spawn_text(world_pos: Vector2, text: String, color: Color, crit: bool = false, intensity: float = 1.0) -> void:
+	var ft := _create_text()
+
+	if ft == null:
+		return
+
+	ft.float_distance = float_distance
+	ft.float_time = float_time
+	ft.global_position = world_pos
+
+	add_child(ft)
+
+	ft.setup(text, color, crit, intensity)
+
+
+# =========================================================
+# 🎯 HOST BASED SPAWN (ENEMIES / PLAYERS)
+# =========================================================
 func spawn_text_from_host(
 	host: Node2D,
 	text: String,
 	color: Color,
 	crit: bool = false,
 	local_offset: Vector2 = Vector2(-12, -28),
-	custom_float_distance: float = 18.0,
-	custom_float_time: float = 0.5
+	intensity: float = 1.0
 ) -> void:
+
 	if host == null:
 		return
-	var floating_text = FloatingTextScene.instantiate() as FloatingText
-	if floating_text == null:
+
+	var ft := _create_text()
+
+	if ft == null:
 		return
-	floating_text.float_distance = custom_float_distance
-	floating_text.float_time = custom_float_time
-	floating_text.global_position = host.global_position + local_offset
-	add_child(floating_text)
-	floating_text.setup(text, color, crit)
+
+	# Slight randomness for readability (roguelike feel)
+	var random_offset := Vector2(randf_range(-6, 6), randf_range(-3, 3))
+
+	ft.float_distance = float_distance
+	ft.float_time = float_time
+
+	ft.global_position = host.global_position + local_offset + random_offset
+
+	add_child(ft)
+
+	ft.setup(text, color, crit, intensity)
+
+
+# =========================================================
+# 🧠 INTERNAL CREATION
+# =========================================================
+func _create_text() -> FloatingText:
+	var instance := FloatingTextScene.instantiate()
+
+	if instance is FloatingText:
+		return instance
+
+	return null

@@ -31,7 +31,7 @@ static func spawn_floating_text(host: Node, text: String, color: Color, crit: bo
 		return
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr:
-		text_mgr.spawn_text_from_host(host_2d, text, color, crit, Vector2(-12, -28), 18.0, 0.5)
+		text_mgr.spawn_text_from_host(host_2d, text, color, crit, Vector2(-12, -28), 1.0)
 		return
 
 	# Aggressive mode: do not create fallback labels; prefer consistent presentation.

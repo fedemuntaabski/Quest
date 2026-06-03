@@ -331,7 +331,14 @@ func show_miss() -> void:
 func _spawn_floating_text(text: String, color: Color, crit: bool) -> void:
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr:
-		text_mgr.spawn_text_from_host(self, text, color, crit, Vector2(-12, -28), 18.0, 0.5)
+		text_mgr.spawn_text_from_host(
+	self,
+	text,
+	color,
+	crit,
+	Vector2(-12, -28),
+	1.0
+)
 		return
 
 	if not text_mgr:
