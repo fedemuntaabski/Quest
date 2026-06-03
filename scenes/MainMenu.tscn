@@ -171,6 +171,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "OPCIONES"
 
 [node name="CreditsButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1342937924]
+visible = false
 custom_minimum_size = Vector2(400, 100)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -217,4 +218,5 @@ hover_player_path = NodePath("../hover")
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/StartButton" to="." method="on_start_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/OptionsButton" to="." method="_on_options_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/CreditsButton" to="." method="_on_credits_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ExitMargin/ExitButton" to="." method="on_exit_button_pressed"]

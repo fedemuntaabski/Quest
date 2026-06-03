@@ -22,3 +22,7 @@ func _on_back_pressed() -> void:
 	get_tree().change_scene_to_file(
 		MAIN_MENU_SCENE
 	)
+
+
+func _on_back_button_pressed() -> void:
+	pass # Replace with function body.

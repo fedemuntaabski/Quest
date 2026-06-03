@@ -93,3 +93,5 @@ offset_top = -80.0
 offset_right = 100.0
 offset_bottom = -20.0
 text = "Volver"
+
+[connection signal="pressed" from="BackButton" to="." method="_on_back_button_pressed"]
