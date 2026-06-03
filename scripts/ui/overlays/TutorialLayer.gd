@@ -24,18 +24,35 @@ class TutorialStep:
 
 
 # =====================================================
-# CONFIG STEPS (DATA-DRIVEN)
+# CONFIG STEPS
 # =====================================================
 
 var steps: Array[TutorialStep] = [
-	TutorialStep.new("Paso 1/8 - Movimiento: haz click en una casilla válida para moverte por la mazmorra. El movimiento consume un turno.", true),
-	TutorialStep.new("Paso 2/8 - Cámara y exploración: avanza por las habitaciones. La cámara sigue tu posición dentro de la sala actual."),
-	TutorialStep.new("Paso 3/8 - Combate básico: acércate a un enemigo y haz click cuando estés en rango."),
-	TutorialStep.new("Paso 4/8 - Sistema de cartas: usa teclas 1, 2 y 3 para cambiar carta activa."),
-	TutorialStep.new("Paso 5/8 - Estados: efectos como stun, bleed, burn o poison alteran el combate."),
-	TutorialStep.new("Paso 6/8 - Recursos: los enemigos pueden soltar oro para mejoras."),
-	TutorialStep.new("Paso 7/8 - HUD: vida, stats y estados visibles siempre en interfaz superior."),
-	TutorialStep.new("Paso 8/8 - Progresión: limpia habitaciones para avanzar al jefe final.")
+	TutorialStep.new(
+		"Paso 1/8 - Movimiento: haz click en una casilla válida para moverte por la mazmorra. El movimiento consume un turno.",
+		true
+	),
+	TutorialStep.new(
+		"Paso 2/8 - Cámara y exploración: avanza por las habitaciones. La cámara sigue tu posición dentro de la sala actual."
+	),
+	TutorialStep.new(
+		"Paso 3/8 - Combate básico: acércate a un enemigo y haz click cuando estés en rango."
+	),
+	TutorialStep.new(
+		"Paso 4/8 - Sistema de cartas: usa teclas 1, 2 y 3 para cambiar carta activa."
+	),
+	TutorialStep.new(
+		"Paso 5/8 - Estados: efectos como stun, bleed, burn o poison alteran el combate."
+	),
+	TutorialStep.new(
+		"Paso 6/8 - Recursos: los enemigos pueden soltar oro para mejoras."
+	),
+	TutorialStep.new(
+		"Paso 7/8 - HUD: vida, stats y estados visibles siempre en interfaz superior."
+	),
+	TutorialStep.new(
+		"Paso 8/8 - Progresión: limpia habitaciones para avanzar al jefe final."
+	)
 ]
 
 # =====================================================
@@ -53,19 +70,26 @@ var state: State = State.IDLE
 var step_index: int = 0
 
 var dungeon_generator: DungeonGenerator = null
+var tween: Tween
 
 # =====================================================
 # UI REFS
 # =====================================================
 
-@onready var label: Label = $Label
-@onready var bg: ColorRect = $ColorRect
+@onready var dimmer: ColorRect = $Dimer
 
-# =====================================================
-# TWEEN
-# =====================================================
+@onready var tutorial_panel: PanelContainer = \
+	$RootControl/MarginContainer/TutorialPanel
 
-var tween: Tween
+@onready var title_label: Label = \
+	$RootControl/MarginContainer/TutorialPanel/Content/TitleLabel
+
+@onready var body_label: Label = \
+	$RootControl/MarginContainer/TutorialPanel/Content/BodyLabel
+
+@onready var hint_label: Label = \
+	$RootControl/MarginContainer/TutorialPanel/Content/HintLabel
+
 
 # =====================================================
 # SETUP
@@ -74,8 +98,12 @@ var tween: Tween
 func setup(dg: DungeonGenerator) -> void:
 	dungeon_generator = dg
 
-	if dungeon_generator and not dungeon_generator.room_cleared.is_connected(_on_room_cleared):
-		dungeon_generator.room_cleared.connect(_on_room_cleared)
+	if dungeon_generator \
+	and not dungeon_generator.room_cleared.is_connected(_on_room_cleared):
+
+		dungeon_generator.room_cleared.connect(
+			_on_room_cleared
+		)
 
 
 # =====================================================
@@ -88,6 +116,7 @@ func _ready() -> void:
 	visible = false
 
 	var save_mgr = ManagerLocator.get_save_manager()
+
 	if save_mgr and save_mgr.first_time_player:
 		call_deferred("_start_tutorial")
 	else:
@@ -99,10 +128,17 @@ func _ready() -> void:
 # =====================================================
 
 func _input(event: InputEvent) -> void:
+
 	if state != State.SHOWING:
 		return
 
-	if event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed):
+	if event.is_action_pressed("ui_accept"):
+		advance_step()
+		return
+
+	if event is InputEventMouseButton \
+	and event.pressed:
+
 		advance_step()
 
 
@@ -115,17 +151,22 @@ func _start_tutorial() -> void:
 	visible = true
 
 	tutorial_started.emit()
+
 	show_step()
 
 
 func show_step() -> void:
+
 	if step_index >= steps.size():
 		finish_tutorial()
 		return
 
 	var step := steps[step_index]
 
-	label.text = step.text + "\n\n[Click o Enter para continuar]"
+	title_label.text = "Tutorial"
+	body_label.text = step.text
+	hint_label.text = "[Click o Enter para continuar]"
+
 	play_fade_in()
 
 
@@ -134,16 +175,20 @@ func show_step() -> void:
 # =====================================================
 
 func advance_step() -> void:
+
 	if state != State.SHOWING:
 		return
 
 	state = State.TRANSITIONING
+
 	play_fade_out()
 
 	await tween.finished
 
 	step_index += 1
+
 	state = State.SHOWING
+
 	show_step()
 
 
@@ -152,25 +197,52 @@ func advance_step() -> void:
 # =====================================================
 
 func play_fade_in() -> void:
+
 	if tween:
 		tween.kill()
 
 	tween = create_tween().set_parallel(true)
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 
-	tween.tween_property(label, "modulate:a", 1.0, 0.25).from(0.0)
-	tween.tween_property(bg, "modulate:a", 0.6, 0.25).from(0.0)
+	tutorial_panel.modulate.a = 0.0
+	dimmer.modulate.a = 0.0
+
+	tween.tween_property(
+		tutorial_panel,
+		"modulate:a",
+		1.0,
+		0.25
+	)
+
+	tween.tween_property(
+		dimmer,
+		"modulate:a",
+		0.35,
+		0.25
+	)
 
 
 func play_fade_out() -> void:
+
 	if tween:
 		tween.kill()
 
 	tween = create_tween().set_parallel(true)
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 
-	tween.tween_property(label, "modulate:a", 0.0, 0.2)
-	tween.tween_property(bg, "modulate:a", 0.0, 0.2)
+	tween.tween_property(
+		tutorial_panel,
+		"modulate:a",
+		0.0,
+		0.20
+	)
+
+	tween.tween_property(
+		dimmer,
+		"modulate:a",
+		0.0,
+		0.20
+	)
 
 
 # =====================================================
@@ -178,7 +250,6 @@ func play_fade_out() -> void:
 # =====================================================
 
 func _on_room_cleared(_room_id: int) -> void:
-	# El tutorial puede decidir abortar según diseño
 	finish_tutorial()
 
 
@@ -187,12 +258,18 @@ func _on_room_cleared(_room_id: int) -> void:
 # =====================================================
 
 func finish_tutorial() -> void:
+
+	if state == State.FINISHED:
+		return
+
 	state = State.FINISHED
+
 	visible = false
 
 	tutorial_finished.emit()
 
 	var save_mgr = ManagerLocator.get_save_manager()
+
 	if save_mgr:
 		save_mgr.first_time_player = false
 		save_mgr.save_game()
