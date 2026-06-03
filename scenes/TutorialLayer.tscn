@@ -14,6 +14,7 @@ grow_vertical = 2
 color = Color(0, 0, 0, 0.35)
 
 [node name="Label" type="Label" parent="." unique_id=987654320]
+visible = false
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0

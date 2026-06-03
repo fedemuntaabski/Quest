@@ -170,6 +170,24 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "OPCIONES"
 
+[node name="CreditsButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1342937924]
+custom_minimum_size = Vector2(400, 100)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_colors/font_focus_color = Color(1, 0.88, 0.53, 1)
+theme_override_colors/font_pressed_color = Color(0.86, 0.67, 0.33, 1)
+theme_override_colors/font_hover_color = Color(1, 0.9, 0.58, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("4_ui_font")
+theme_override_font_sizes/font_size = 42
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+text = "CRÉDITOS
+"
+
 [node name="ExitMargin" type="MarginContainer" parent="CenterContainer/VBoxContainer" unique_id=1823456789]
 layout_mode = 2
 theme_override_constants/margin_top = 50

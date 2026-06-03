@@ -1,0 +1,95 @@
+[gd_scene format=3 uid="uid://i3p8oku6s7if"]
+
+[ext_resource type="Script" uid="uid://bq42kus1ahq3a" path="res://scripts/ui/menus/CreditScene.gd" id="1_jehhf"]
+
+[node name="CreditsScene" type="Control" unique_id=845254371]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jehhf")
+
+[node name="Background" type="ColorRect" parent="." unique_id=239182402]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.03, 0.03, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1158082035]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CreditsVBox" type="VBoxContainer" parent="CenterContainer" unique_id=712024331]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="StudioLabel" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1841627247]
+layout_mode = 2
+theme_override_font_sizes/font_size = 56
+text = "BAZINGA STUDIO"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="CenterContainer/CreditsVBox" unique_id=37419442]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="TeamTitle" type="Label" parent="CenterContainer/CreditsVBox" unique_id=536696623]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Integrantes"
+horizontal_alignment = 1
+
+[node name="Member1" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1113474171]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Federico"
+horizontal_alignment = 1
+
+[node name="Member2" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1891779486]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Integrante 2"
+horizontal_alignment = 1
+
+[node name="Member3" type="Label" parent="CenterContainer/CreditsVBox" unique_id=191809164]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Integrante 3"
+horizontal_alignment = 1
+
+[node name="Spacer2" type="Control" parent="CenterContainer/CreditsVBox" unique_id=1440560820]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+
+[node name="ThanksLabel" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1077303054]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Gracias por jugar"
+horizontal_alignment = 1
+
+[node name="EndLabel" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1407257425]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "2026"
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="." unique_id=1944250572]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -80.0
+offset_right = 100.0
+offset_bottom = -20.0
+text = "Volver"
