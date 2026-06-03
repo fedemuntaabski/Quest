@@ -14,7 +14,6 @@ func ensure_scene_roots() -> void:
 	dungeon.rooms_root = ensure_node("Rooms")
 	dungeon.walls_root = ensure_node("Walls")
 	dungeon.room_detectors_root = ensure_node("RoomDetectors")
-	dungeon.room_lights_root = ensure_node("RoomLights")
 	dungeon.enemies_root = ensure_node("Enemies")
 
 func ensure_node(node_name: String) -> Node2D:

@@ -61,7 +61,6 @@ func build(tileset: TileSet, wall_texture: Texture2D) -> void:
 		var room_nodes := generator.room_factory.create_room_nodes(
 			room_info,
 			generator.rooms_root,
-			generator.room_lights_root,
 			generator.room_detectors_root
 		)
 		# Move presentation references into the dedicated presentation store

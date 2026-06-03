@@ -42,35 +42,3 @@ func set_active_room(room_id: int, animate: bool) -> void:
 			if visual_root:
 				visual_root.modulate = Color(1, 1, 1, 1)
 
-	tween_room_lights(animate)
-
-
-func tween_room_lights(animate: bool) -> void:
-	if dungeon == null:
-		return
-
-	var tween_duration := dungeon.room_light_transition_seconds if animate else 0.0
-	var tween := dungeon.create_tween()
-	tween.set_parallel(true)
-
-	for i in range(dungeon.room_infos.size()):
-		var info_room_id: int = int(dungeon.room_infos[i].get("id", i))
-		var room_light: PointLight2D = dungeon.get_room_presentation(info_room_id).get("light", null) as PointLight2D
-		var is_active: bool = info_room_id == dungeon.active_room_id
-		var is_visited: bool = dungeon.is_room_visited(info_room_id)
-
-		var target_energy := 0.0
-		if is_active:
-			target_energy = dungeon.room_light_energy
-		elif is_visited:
-			target_energy = dungeon.room_light_energy * 0.45
-		else:
-			target_energy = 0.0
-
-		if room_light == null:
-			continue
-
-		if tween_duration <= 0.0:
-			room_light.energy = target_energy
-		else:
-			tween.tween_property(room_light, "energy", target_energy, tween_duration)

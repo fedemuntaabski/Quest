@@ -9,10 +9,10 @@ func setup(p_dungeon: DungeonGenerator, p_room_system: RoomSystem) -> void:
 	room_system = p_room_system
 
 
-func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_root: Node2D, room_detectors_root: Node2D) -> Dictionary:
+func create_room_nodes(room_info: Dictionary, rooms_root: Node2D,  room_detectors_root: Node2D) -> Dictionary:
 	var room_id := int(room_info.get("id", -1))
 	var room_rect: Rect2i = room_info.get("rect", Rect2i())
-	var center_cell: Vector2i = room_info.get("center_cell", Vector2i.ZERO)
+
 
 	var room_root := Node2D.new()
 	room_root.name = "RoomVisual_%d" % room_id
@@ -20,9 +20,6 @@ func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_ro
 	if rooms_root:
 		rooms_root.add_child(room_root)
 
-	var room_light := create_room_light(room_rect, center_cell, room_id)
-	if room_lights_root:
-		room_lights_root.add_child(room_light)
 
 	var room_area := create_room_area(room_id, room_rect)
 	if room_detectors_root:
@@ -30,7 +27,6 @@ func create_room_nodes(room_info: Dictionary, rooms_root: Node2D, room_lights_ro
 
 	return {
 		"visual_root": room_root,
-		"light": room_light,
 		"area": room_area
 	}
 
@@ -67,7 +63,7 @@ func create_room_area(room_id: int, room_rect: Rect2i) -> Area2D:
 
 	# Expand room detection by 1 tile in all directions to cover corridor connections
 	# This prevents players from getting stuck at room/corridor transition points
-	var expansion := 1
+	var expansion := 0
 	var expanded_size := Vector2(
 		(room_rect.size.x + expansion * 2) * dungeon.tile_size,
 		(room_rect.size.y + expansion * 2) * dungeon.tile_size
