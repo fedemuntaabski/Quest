@@ -143,22 +143,15 @@ func _draw_path_preview(
 	if path_preview.is_empty():
 		return
 
-	for i in range(path_preview.size()):
+	# Draw all intermediate points (NO last one)
+	for i in range(path_preview.size() - 1):
 
 		var pos: Vector2 = map_manager.grid_to_world_coords(
 			path_preview[i]
 		)
 
-        # For the last cell remove the circle 
-
-        
 		var color: Color = ThemeManager.tactical_path_dot_color()
-
 		var radius := tile_size * 0.12
-
-		if i == path_preview.size() - 1:
-			color = ThemeManager.tactical_destination_color()
-			radius = tile_size * 0.22
 
 		canvas.draw_circle(
 			pos,
@@ -166,6 +159,7 @@ func _draw_path_preview(
 			color
 		)
 
+	# Draw arrow only if path is valid
 	if path_preview.size() >= 2:
 
 		var from_pos: Vector2 = map_manager.grid_to_world_coords(

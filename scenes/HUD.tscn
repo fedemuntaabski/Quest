@@ -40,8 +40,8 @@ mouse_filter = 2
 layout_mode = 0
 offset_left = 18.0
 offset_top = 82.0
-offset_right = 250.0
-offset_bottom = 214.0
+offset_right = 240.0
+offset_bottom = 285.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat_panel")
 
@@ -165,10 +165,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -31.0
-offset_top = 43.0
-offset_right = 239.0
-offset_bottom = 92.0
+offset_left = -33.0
+offset_top = 33.0
+offset_right = 237.0
+offset_bottom = 82.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 30
 text = "Tiempo: 2:00"
@@ -188,13 +188,16 @@ grow_horizontal = 2
 theme_override_constants/separation = 12
 
 [node name="HotbarSlot1" parent="Control/HotbarBar" unique_id=1241558303 instance=ExtResource("5_hotbar_slot")]
+custom_minimum_size = Vector2(110, 110)
 layout_mode = 2
 
 [node name="HotbarSlot2" parent="Control/HotbarBar" unique_id=1476327411 instance=ExtResource("5_hotbar_slot")]
+custom_minimum_size = Vector2(110, 110)
 layout_mode = 2
 slot_index = 1
 
 [node name="HotbarSlot3" parent="Control/HotbarBar" unique_id=175439902 instance=ExtResource("5_hotbar_slot")]
+custom_minimum_size = Vector2(110, 110)
 layout_mode = 2
 slot_index = 2
 
