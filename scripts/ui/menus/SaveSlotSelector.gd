@@ -2,6 +2,8 @@ extends Control
 class_name SaveSlotSelector
 
 const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
+const EMPTY_SLOT_TEXT := "No hay datos guardados."
+
 
 signal slot_selected(slot_id: int)
 signal back_pressed
@@ -94,7 +96,9 @@ func _build_ui() -> void:
 		_apply_primary_button_style(btn)
 		btn.pressed.connect(_on_slot_selected.bind(i))
 		btn.mouse_entered.connect(_on_slot_hovered.bind(i))
+		btn.focus_entered.connect(_on_slot_hovered.bind(i))
 		btn.mouse_entered.connect(_play_hover)
+		btn.focus_entered.connect(_play_hover)
 		row.add_child(btn)
 
 		var del_btn := Button.new()
@@ -188,39 +192,20 @@ func _on_slot_deleted(slot_id: int) -> void:
 	refresh()
 
 func _on_slot_hovered(slot_id: int) -> void:
-	var save_mgr := ManagerLocator.get_save_manager()
-	if not save_mgr or not save_mgr.has_save(slot_id):
+
+	var summary := _get_slot_summary(slot_id)
+
+	if summary.is_empty():
 		return
 
-	var cfg = ConfigFile.new()
-	var err = cfg.load(save_mgr.get_save_path(slot_id))
-	if err != OK:
-		return
-
-	var gold = cfg.get_value(SAVE_SECTION, "gold", 0)
-	var contracts = cfg.get_value(SAVE_SECTION, "contracts_completed", 0)
-	var s_hp = cfg.get_value(SAVE_SECTION, "base_hp", StatBalance.PLAYER_BASE_HP)
-	var s_str = cfg.get_value(SAVE_SECTION, "base_str", 0)
-	var s_mag = cfg.get_value(SAVE_SECTION, "base_mag", 0)
-	var s_dex = cfg.get_value(SAVE_SECTION, "base_dex", 0)
-
-	var max_stat_val = s_str
-	var max_stat_name = "Fuerza"
-	if s_mag > max_stat_val:
-		max_stat_val = s_mag
-		max_stat_name = "Magia"
-	if s_dex > max_stat_val:
-		max_stat_val = s_dex
-		max_stat_name = "Destreza"
-
-	_info_text = "Datos de la ranura %d:\n\nOro total: %d\nEtapa de contrato: %d\nVida base: %d/%d\nMejor atributo: %s (+%d)" % [slot_id, gold, contracts, s_hp, StatBalance.PLAYER_MAX_HP, max_stat_name, max_stat_val]
+	_info_text = summary
 	_info_visible = true
 
 	if _hover_panel:
 		_hover_panel.visible = true
-	if _hover_label:
-		_hover_label.text = _info_text
 
+	if _hover_label:
+		_hover_label.text = summary
 func _on_slot_selected(slot_id: int) -> void:
 	_play_click()
 	slot_selected.emit(slot_id)
@@ -228,3 +213,97 @@ func _on_slot_selected(slot_id: int) -> void:
 func _on_slot_back_pressed() -> void:
 	_play_click()
 	back_pressed.emit()
+
+func _get_slot_summary(slot_id: int) -> String:
+
+	var save_mgr := ManagerLocator.get_save_manager()
+
+	if not save_mgr:
+		return ""
+
+	if not save_mgr.has_save(slot_id):
+		return EMPTY_SLOT_TEXT
+
+	var cfg := ConfigFile.new()
+
+	var err := cfg.load(
+		save_mgr.get_save_path(slot_id)
+	)
+
+	if err != OK:
+		return "No se pudieron leer los datos."
+
+	return _build_slot_summary(
+		slot_id,
+		cfg
+	)
+
+
+func _build_slot_summary(
+	slot_id: int,
+	cfg: ConfigFile
+) -> String:
+
+	var gold = cfg.get_value(
+		SAVE_SECTION,
+		"gold",
+		0
+	)
+
+	var contracts = cfg.get_value(
+		SAVE_SECTION,
+		"contracts_completed",
+		0
+	)
+
+	var s_hp = cfg.get_value(
+		SAVE_SECTION,
+		"base_hp",
+		StatBalance.PLAYER_BASE_HP
+	)
+
+	var s_str = cfg.get_value(
+		SAVE_SECTION,
+		"base_str",
+		0
+	)
+
+	var s_mag = cfg.get_value(
+		SAVE_SECTION,
+		"base_mag",
+		0
+	)
+
+	var s_dex = cfg.get_value(
+		SAVE_SECTION,
+		"base_dex",
+		0
+	)
+
+	var max_stat_name :	= "Fuerza"
+	var max_stat_val = s_str
+
+	if s_mag > max_stat_val:
+		max_stat_name = "Magia"
+		max_stat_val = s_mag
+
+	if s_dex > max_stat_val:
+		max_stat_name = "Destreza"
+		max_stat_val = s_dex
+
+	return (
+		"Datos de la ranura %d:\n\n" +
+		"Oro total: %d\n" +
+		"Etapa de contrato: %d\n" +
+		"Vida base: %d/%d\n" +
+		"Mejor atributo: %s (+%d)"
+	) % [
+		slot_id,
+		gold,
+		contracts,
+		s_hp,
+		StatBalance.PLAYER_MAX_HP,
+		max_stat_name,
+		max_stat_val
+	]
+

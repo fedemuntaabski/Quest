@@ -6,10 +6,10 @@ const StatBalanceScript = preload("res://scripts/core/stats/StatBalance.gd")
 signal exit_requested
 
 const UPGRADES = {
-	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+2 Vida maxima (cap 40)", "value": 2},
-	"str": {"stat": "strength", "label": "Fuerza", "effect": "+1 dano fisico", "value": 1},
-	"mag": {"stat": "magic", "label": "Magia", "effect": "+1 energia para habilidades", "value": 1},
-	"dex": {"stat": "dexterity", "label": "Agilidad", "effect": "+1 agilidad (curva suavizada)", "value": 1}
+	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+2 Vida maxima ", "value": 2},
+	"str": {"stat": "strength", "label": "Fuerza", "effect": "+1 Fuerza maxima", "value": 1},
+	"mag": {"stat": "magic", "label": "Magia", "effect": "+1 Magia Maxima", "value": 1},
+	"dex": {"stat": "dexterity", "label": "Agilidad", "effect": "+1 Agilidad Maxima", "value": 1}
 }
 
 @export var save_mgr: SaveManager
