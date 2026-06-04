@@ -69,9 +69,11 @@ func build(tileset: TileSet, wall_texture: Texture2D) -> void:
 			"area": room_nodes.get("area", null)
 		})
 
-	for edge_info in graph.get_edge_records_sorted():
-		var corridor_node := generator.room_factory.create_corridor_entity(edge_info, generator.corridors_root)
-		graph.set_edge_runtime_node(int(edge_info.get("room_a", -1)), int(edge_info.get("room_b", -1)), corridor_node)
+	for i in range(generator.room_infos.size() - 1):
+		var edge_info := graph.get_edge(i, i + 1)
+		if not edge_info.is_empty():
+			var corridor_node := generator.room_factory.create_corridor_entity(edge_info, generator.corridors_root)
+			graph.set_edge_runtime_node(i, i + 1, corridor_node)
 
 	map_renderer.setup(generator, tileset, generator.grid_origin)
 	map_renderer.set_data(generator.floor_cells, generator.wall_cells)
