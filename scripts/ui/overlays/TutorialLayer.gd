@@ -29,29 +29,34 @@ class TutorialStep:
 
 var steps: Array[TutorialStep] = [
 	TutorialStep.new(
-		"Paso 1/8 - Movimiento: haz click en una casilla válida para moverte por la mazmorra. El movimiento consume un turno.",
+		"Bienvenido a la mazmorra, cazarecompensas. Para sobrevivir a este contrato y reclamar tu oro. Recuerda: en QUEST, cada movimiento es una decisión de vida o muerte.",
 		true
 	),
 	TutorialStep.new(
-		"Paso 2/8 - Cámara y exploración: avanza por las habitaciones. La cámara sigue tu posición dentro de la sala actual."
+		"La mazmorra se rige por turnos. Verás un resaltador de casillas en el suelo: las casillas válidas para moverte se iluminarán al pasar el mouse. Haz clic izquierdo en una de ellas para desplazarte. Ten cuidado: cada paso consume un turno, lo que permite que los enemigos también actúen",
+		true
 	),
 	TutorialStep.new(
-		"Paso 3/8 - Combate básico: acércate a un enemigo y haz click cuando estés en rango."
+		"No temas a la oscuridad. A medida que avanzas por las habitaciones modulares, la cámara se ajustará automáticamente para seguir tu posición, manteniéndote siempre en el centro de la acción dentro de la sala actual.",
+		true
 	),
 	TutorialStep.new(
-		"Paso 4/8 - Sistema de cartas: usa teclas 1, 2 y 3 para cambiar carta activa."
+		"Cuando veas una criatura, no te lances a ciegas. Acércate lo suficiente y, cuando el enemigo esté dentro del rango de tu arma o habilidad, haz clic sobre él para iniciar el ataque. El éxito dependerá de tus estadísticas y de la suerte del dado 1d6."
 	),
 	TutorialStep.new(
-		"Paso 5/8 - Estados: efectos como stun, bleed, burn o poison alteran el combate."
+		"Cuentas con un mazo de hasta 3 cartas activas que puedes alternar con las teclas [1], [2] y [3]. Al eliminar a los enemigos de la sala, podrás elegir una carta nueva. Si ya tienes 3 cartas equipadas, el juego te permitirá reemplazar una de las actuales por la nueva o, si prefieres mantener tu equipo actual, puedes skipearla"
 	),
 	TutorialStep.new(
-		"Paso 6/8 - Recursos: los enemigos pueden soltar oro para mejoras."
+		"Al derrotar enemigos, estos soltarán oro que acumularás durante tu incursión. Sin embargo, este botín solo se entregará a tu inventario permanente al finalizar la partida (ya sea ganando o muriendo). Solo en ese momento podrás canjearlo en el menú para mejorar tus estadísticas."
 	),
 	TutorialStep.new(
-		"Paso 7/8 - HUD: vida, stats y estados visibles siempre en interfaz superior."
+		"Mantén un ojo en la interfaz superior. Allí verás tus puntos de vida (HP), estadísticas (Fuerza, Magia, Agilidad) y la poción de vida. Si tu vida baja, usa tu poción de unico	uso para recuperar el 50% de tu salud maxima."
 	),
 	TutorialStep.new(
-		"Paso 8/8 - Progresión: limpia habitaciones para avanzar al jefe final."
+		"Es obligatorio eliminar a todos los enemigos para que las puertas se abran y puedas avanzar. Pero no te demores: si el cronómetro de la sala llega a cero, la mazmorra te devorará, resultando en una muerte instantánea."
+	),
+	TutorialStep.new(
+		"Tu objetivo es superar 8 salas. Explora y gestiona tu tiempo. Al final del camino, el Enemigo Final aparecerá en la ultima sala; encuéntralo y derrótalo para cerrar el contrato y arrancar con uno nuevo, si te animas."
 	)
 ]
 
