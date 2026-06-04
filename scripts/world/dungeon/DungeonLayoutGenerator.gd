@@ -67,36 +67,16 @@ func generate() -> DungeonLayoutData:
 			placed_rects.append(room_rect)
 
 		if placed_rects.size() == dungeon.room_count:
-			# Sort rooms: start with the leftmost room to establish a logical flow,
-			# then perform a nearest-neighbor walk.
-			var unvisited := placed_rects.duplicate()
-			var ordered_rects: Array[Rect2i] = []
+			# Deterministic left-to-right ordering so room IDs match progression (0 -> 7).
+			placed_rects.sort_custom(func(a: Rect2i, b: Rect2i) -> bool:
+				var center_a := a.position + a.size / 2
+				var center_b := b.position + b.size / 2
+				if center_a.x != center_b.x:
+					return center_a.x < center_b.x
+				return center_a.y < center_b.y
+			)
 
-			var current_rect = unvisited[0]
-			for r in unvisited:
-				if r.position.x < current_rect.position.x:
-					current_rect = r
-			ordered_rects.append(current_rect)
-			unvisited.erase(current_rect)
-
-			while unvisited.size() > 0:
-				var current_center = current_rect.position + current_rect.size / 2
-				var nearest_rect: Rect2i
-				var nearest_dist := INF
-				for r in unvisited:
-					var r_center = r.position + r.size / 2
-					var dx = current_center.x - r_center.x
-					var dy = current_center.y - r_center.y
-					var dist = dx * dx + dy * dy
-					if dist < nearest_dist:
-						nearest_dist = dist
-						nearest_rect = r
-				ordered_rects.append(nearest_rect)
-				unvisited.erase(nearest_rect)
-				current_rect = nearest_rect
-
-			# Register rooms sequentially to align IDs with linear path
-			for room_rect in ordered_rects:
+			for room_rect in placed_rects:
 				_register_room(room_rect)
 
 			_connect_rooms_with_corridors()
@@ -122,7 +102,7 @@ func _build_layout_data() -> DungeonLayoutData:
 	layout.graph = _working_graph
 	layout.metadata = {
 		"room_count": _working_room_infos.size(),
-		"main_path_branching": dungeon.main_path_branching
+		"main_path_branching": false
 	}
 	# Keep graph accessor compatibility for existing systems.
 	dungeon_graph = _working_graph
@@ -290,7 +270,8 @@ func _add_corridor_cell(cell: Vector2i, horizontal: bool) -> bool:
 
 
 func _register_connection(room_a: int, room_b: int, corridor_cells: Array[Vector2i]) -> void:
-	_working_graph.add_edge(room_a, room_b, corridor_cells)
+	if not _working_graph.add_edge(room_a, room_b, corridor_cells):
+		push_error("DungeonLayoutGenerator: rejected non-linear edge %d -> %d" % [room_a, room_b])
 
 
 func get_connected_room_ids(room_id: int) -> Array[int]:

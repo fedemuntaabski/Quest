@@ -12,6 +12,7 @@ var potions_owned: int = 1
 signal hp_changed(current, max)
 signal died
 signal stats_changed
+signal potion_used(heal_amount: int, remaining: int)
 
 # -------------------------
 # HEALTH
@@ -142,7 +143,7 @@ func use_potion() -> bool:
 	heal(heal_amount)
 
 	potions_owned -= 1
-
+	potion_used.emit(heal_amount, potions_owned)
 	stats_changed.emit()
 
 	return true

@@ -112,13 +112,18 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 		return
 
 	if _bound_stats != stats:
-		if _bound_stats and _bound_stats.hp_changed.is_connected(_on_hp_changed):
-			_bound_stats.hp_changed.disconnect(_on_hp_changed)
+		if _bound_stats:
+			if _bound_stats.hp_changed.is_connected(_on_hp_changed):
+				_bound_stats.hp_changed.disconnect(_on_hp_changed)
+			if _bound_stats.potion_used.is_connected(_on_potion_used):
+				_bound_stats.potion_used.disconnect(_on_potion_used)
 
 		_bound_stats = stats
 
 		if not stats.hp_changed.is_connected(_on_hp_changed):
 			stats.hp_changed.connect(_on_hp_changed)
+		if not stats.potion_used.is_connected(_on_potion_used):
+			stats.potion_used.connect(_on_potion_used)
 
 		if _potion_controller:
 			_potion_controller.bind_stats(stats)
@@ -129,6 +134,14 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	if stat_panel:
 		stat_panel.update_hp(current_hp, max_hp)
+
+	if _potion_controller:
+		_potion_controller.refresh()
+
+
+func _on_potion_used(_heal_amount: int, _remaining: int) -> void:
+	if _bound_stats and stat_panel:
+		stat_panel.update_hp(_bound_stats.current_hp, _bound_stats.max_hp)
 
 	if _potion_controller:
 		_potion_controller.refresh()

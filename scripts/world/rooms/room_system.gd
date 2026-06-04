@@ -54,14 +54,26 @@ func _set_active_room(room_id: int, enforce_connectivity: bool = true) -> void:
 	if room_id == active_room_id:
 		return
 
-	if enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0 and not dungeon.are_rooms_connected(dungeon.active_room_id, room_id):
-		print("RoomSystem: rejected activation of room %d because it's not connected to active room %d" % [room_id, dungeon.active_room_id])
-		return
+	if enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0:
+		if not _is_valid_linear_transition(dungeon.active_room_id, room_id):
+			print("RoomSystem: rejected activation of room %d (not a linear neighbor of active room %d)" % [room_id, dungeon.active_room_id])
+			return
 
-	if not enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0 and not dungeon.are_rooms_connected(dungeon.active_room_id, room_id):
-		print("RoomSystem: accepting non-adjacent room sync from player position room %d -> %d" % [dungeon.active_room_id, room_id])
+	if not enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0:
+		if not _is_valid_linear_transition(dungeon.active_room_id, room_id):
+			print("RoomSystem: accepting non-adjacent room sync from player position room %d -> %d" % [dungeon.active_room_id, room_id])
 
 	active_room_id = room_id
 	if dungeon:
 		dungeon.active_room_id = room_id
+
 	emit_signal("room_changed", room_id)
+
+func _is_valid_linear_transition(from_id: int, to_id: int) -> bool:
+	if from_id < 0 or to_id < 0:
+		return false
+	if absi(to_id - from_id) != 1:
+		return false
+	if dungeon == null:
+		return true
+	return dungeon.are_rooms_connected(from_id, to_id)

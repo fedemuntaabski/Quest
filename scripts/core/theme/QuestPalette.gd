@@ -40,6 +40,7 @@ const UI_TEXT_WARN: Color = Color(1.00, 0.90, 0.45, 1.0)
 const UI_TEXT_BLOCKED: Color = Color(1.00, 0.55, 0.55, 1.0)
 
 const COMBAT_TEXT_DAMAGE: Color = Color(1.00, 0.40, 0.30, 1.0)
+const COMBAT_TEXT_HEAL: Color = Color(0.35, 1.00, 0.45, 1.0)
 const COMBAT_TEXT_MISS: Color = Color(0.90, 0.90, 0.90, 1.0)
 const COMBAT_FLASH_TINT: Color = Color(1.00, 0.90, 0.90, 1.0)
 const COMBAT_PARTICLE_SPARK: Color = Color(1.00, 0.60, 0.20, 1.0)

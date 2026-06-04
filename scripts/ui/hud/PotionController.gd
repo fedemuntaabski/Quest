@@ -24,16 +24,24 @@ func bind_stats(stats: CharacterStats) -> void:
 			_bound_stats.hp_changed.disconnect(_on_hp_changed)
 		if _bound_stats.stats_changed.is_connected(refresh):
 			_bound_stats.stats_changed.disconnect(refresh)
-	
+		if _bound_stats.potion_used.is_connected(_on_potion_used):
+			_bound_stats.potion_used.disconnect(_on_potion_used)
+
 	_bound_stats = stats
 	if _bound_stats:
 		if not _bound_stats.hp_changed.is_connected(_on_hp_changed):
 			_bound_stats.hp_changed.connect(_on_hp_changed)
 		if not _bound_stats.stats_changed.is_connected(refresh):
 			_bound_stats.stats_changed.connect(refresh)
+		if not _bound_stats.potion_used.is_connected(_on_potion_used):
+			_bound_stats.potion_used.connect(_on_potion_used)
 	refresh()
 
 func _on_hp_changed(_current: int, _max: int) -> void:
+	refresh()
+
+
+func _on_potion_used(_heal_amount: int, _remaining: int) -> void:
 	refresh()
 
 func _bind_game_state() -> void:
@@ -54,7 +62,8 @@ func _on_potion_pressed() -> void:
 		_bound_stats = ps.stats
 	if _bound_stats == null:
 		return
-	_bound_stats.use_potion()
+	if _bound_stats.use_potion():
+		refresh()
 
 func _can_use_potion_now() -> bool:
 	if _game_state_manager and not _game_state_manager.is_active():

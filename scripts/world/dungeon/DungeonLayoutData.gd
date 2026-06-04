@@ -17,4 +17,6 @@ func is_valid(expected_room_count: int) -> bool:
 		return false
 	if floor_cells.is_empty():
 		return false
-	return true
+
+	var validation: Dictionary = graph.validate(expected_room_count, true)
+	return bool(validation.get("valid", false))

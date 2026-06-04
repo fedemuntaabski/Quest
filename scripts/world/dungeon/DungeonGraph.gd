@@ -7,6 +7,9 @@ const TEMPLATE_BOSS := "boss"
 const TEMPLATE_CORRIDOR := "corridor"
 const TEMPLATE_CUSTOM := "custom_layout"
 
+const LINEAR_ROOM_COUNT := 8
+const MAX_CONNECTIONS_PER_ROOM := 2
+
 var rooms: Dictionary = {}
 var edges: Dictionary = {}
 var adjacency: Dictionary = {}
@@ -29,6 +32,14 @@ func add_room(room_id: int, room_info: Dictionary) -> void:
 
 func add_edge(room_a: int, room_b: int, corridor_cells: Array = []) -> bool:
 	if room_a < 0 or room_b < 0 or room_a == room_b:
+		return false
+
+	if not _is_valid_linear_edge(room_a, room_b):
+		return false
+
+	if get_connected_room_ids(room_a).size() >= MAX_CONNECTIONS_PER_ROOM:
+		return false
+	if get_connected_room_ids(room_b).size() >= MAX_CONNECTIONS_PER_ROOM:
 		return false
 
 	var key := get_edge_key(room_a, room_b)
@@ -145,19 +156,34 @@ func validate(expected_room_count: int = -1, require_connected: bool = true) -> 
 		errors.append("Expected %d rooms, found %d." % [expected_room_count, rooms.size()])
 
 	if expected_room_count >= 0 and rooms.size() == expected_room_count:
+		for edge_key_variant in edges.keys():
+			var edge: Dictionary = edges[String(edge_key_variant)]
+			var room_a := int(edge.get("room_a", -1))
+			var room_b := int(edge.get("room_b", -1))
+			if not _is_valid_linear_edge(room_a, room_b):
+				errors.append("Non-linear edge %d -> %d (must be adjacent room indices)." % [room_a, room_b])
+
 		for room_id_variant in rooms.keys():
 			var room_id := int(room_id_variant)
 			var connected := get_connected_room_ids(room_id)
-			
+
+			if connected.size() > MAX_CONNECTIONS_PER_ROOM:
+				errors.append("Room %d has %d connections (max %d)." % [room_id, connected.size(), MAX_CONNECTIONS_PER_ROOM])
+
 			var expected_connected: Array[int] = []
 			if room_id > 0:
 				expected_connected.append(room_id - 1)
 			if room_id < expected_room_count - 1:
 				expected_connected.append(room_id + 1)
 			expected_connected.sort()
-			
+
 			if connected != expected_connected:
 				errors.append("Room %d is connected to %s, expected %s for strict linear progression." % [room_id, str(connected), str(expected_connected)])
+
+			if room_id == 0 and connected != [1]:
+				errors.append("Room 0 must connect only to Room 1, found %s." % str(connected))
+			elif room_id == expected_room_count - 1 and connected != [expected_room_count - 2]:
+				errors.append("Room %d must connect only to Room %d, found %s." % [room_id, expected_room_count - 2, str(connected)])
 
 	if require_connected and rooms.size() > 0:
 		var reachable := _collect_reachable_rooms()
@@ -183,6 +209,10 @@ func _build_room_record(room_id: int, room_info: Dictionary) -> Dictionary:
 		"center_cell": room_info.get("center_cell", Vector2i.ZERO),
 		"template": room_info.get("template", TEMPLATE_NORMAL)
 	}
+
+
+func _is_valid_linear_edge(room_a: int, room_b: int) -> bool:
+	return absi(room_a - room_b) == 1
 
 
 func _add_adjacency(room_a: int, room_b: int) -> void:

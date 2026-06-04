@@ -79,6 +79,10 @@ func _ensure_helpers() -> void:
 			floating_text_manager.name = "FloatingTextManager"
 			add_child(floating_text_manager)
 
+	var ps := ManagerLocator.get_player_stats()
+	if ps and ps.stats and floating_text_manager:
+		floating_text_manager.bind_character_stats(ps.stats)
+
 	if navigation_helper:
 		navigation_helper.set_occupancy_manager(occupancy_manager)
 
