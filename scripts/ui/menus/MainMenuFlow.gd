@@ -2,7 +2,7 @@ extends RefCounted
 class_name MainMenuFlow
 
 const GAME_SCENE := "res://scenes/Main2d.tscn"
-const CREDITS_SCENE := "res://scenes/CreditsScene.tscn"
+const CREDITS_SCENE := "res://scenes/CreditMenu.tscn"
 
 
 var _SaveSlotSelector := preload(
@@ -189,30 +189,17 @@ func _play_click() -> void:
 		click_sound.play()
 
 func credits_pressed() -> void:
-
-	print("1")
-
 	if is_transitioning:
-		print("2")
 		return
 
 	is_transitioning = true
-
-	print("3")
 
 	_play_click()
 
 	await owner.get_tree().create_timer(0.15).timeout
 
-	print("4")
-
-	var err := owner.get_tree().change_scene_to_file(
-		CREDITS_SCENE
-	)
-
-	print("5", err)
-	print(FileAccess.file_exists(CREDITS_SCENE))
+	var err := owner.get_tree().change_scene_to_file(CREDITS_SCENE)
 
 	if err != OK:
-		push_error("No se pudo abrir CreditsScene.")
+		push_error("Failed to load CreditsScene: " + str(err))
 		is_transitioning = false
