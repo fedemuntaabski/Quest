@@ -29,12 +29,14 @@ func get_dungeon_graph() -> DungeonGraph:
 # DungeonGenerator is responsible for applying the returned data.
 func generate() -> DungeonLayoutData:
 	const LAYOUT_RETRIES := 32
+	dungeon.room_count = 8 # Force strict linear progression of exactly 8 rooms
 
 	for _retry in range(LAYOUT_RETRIES):
 		_begin_working_layout()
 		var attempts := dungeon.room_count * 90
+		var placed_rects: Array[Rect2i] = []
 
-		while _working_room_infos.size() < dungeon.room_count and attempts > 0:
+		while placed_rects.size() < dungeon.room_count and attempts > 0:
 			attempts -= 1
 
 			var room_size := _roll_room_size()
@@ -52,12 +54,51 @@ func generate() -> DungeonLayoutData:
 
 			var room_rect := Rect2i(room_pos, room_size)
 
-			if _room_overlaps_existing(room_rect):
+			var overlaps := false
+			var expanded := room_rect.grow(dungeon.room_padding)
+			for other in placed_rects:
+				if expanded.intersects(other):
+					overlaps = true
+					break
+
+			if overlaps:
 				continue
 
-			_register_room(room_rect)
+			placed_rects.append(room_rect)
 
-		if _working_room_infos.size() == dungeon.room_count:
+		if placed_rects.size() == dungeon.room_count:
+			# Sort rooms: start with the leftmost room to establish a logical flow,
+			# then perform a nearest-neighbor walk.
+			var unvisited := placed_rects.duplicate()
+			var ordered_rects: Array[Rect2i] = []
+
+			var current_rect = unvisited[0]
+			for r in unvisited:
+				if r.position.x < current_rect.position.x:
+					current_rect = r
+			ordered_rects.append(current_rect)
+			unvisited.erase(current_rect)
+
+			while unvisited.size() > 0:
+				var current_center = current_rect.position + current_rect.size / 2
+				var nearest_rect: Rect2i
+				var nearest_dist := INF
+				for r in unvisited:
+					var r_center = r.position + r.size / 2
+					var dx = current_center.x - r_center.x
+					var dy = current_center.y - r_center.y
+					var dist = dx * dx + dy * dy
+					if dist < nearest_dist:
+						nearest_dist = dist
+						nearest_rect = r
+				ordered_rects.append(nearest_rect)
+				unvisited.erase(nearest_rect)
+				current_rect = nearest_rect
+
+			# Register rooms sequentially to align IDs with linear path
+			for room_rect in ordered_rects:
+				_register_room(room_rect)
+
 			_connect_rooms_with_corridors()
 			if not _validate_graph():
 				continue
@@ -157,39 +198,23 @@ func _connect_rooms_with_corridors() -> void:
 	if _working_room_infos.size() <= 1:
 		return
 
-	var unvisited_rooms := _working_room_infos.duplicate()
-	var main_path: Array[Dictionary] = []
-
-	var current_room: Dictionary = unvisited_rooms[0]
-	main_path.append(current_room)
-	unvisited_rooms.erase(current_room)
-
-	while unvisited_rooms.size() > 0:
-		var current_center: Vector2i = current_room["center_cell"]
-		var nearest_room: Dictionary = _find_nearest_room(current_center, unvisited_rooms)
-
-		if nearest_room.is_empty():
-			break
+	# Connect rooms in a strict linear chain: Room 0 -> Room 1 -> Room 2 -> ... -> Room 7
+	for i in range(_working_room_infos.size() - 1):
+		var current_room := _working_room_infos[i]
+		var next_room := _working_room_infos[i + 1]
 
 		var from_room_id: int = current_room["id"]
-		var to_room_id: int = nearest_room["id"]
+		var to_room_id: int = next_room["id"]
 		var from_cell: Vector2i = current_room["center_cell"]
-		var to_cell: Vector2i = nearest_room["center_cell"]
+		var to_cell: Vector2i = next_room["center_cell"]
 
-		if not _working_graph.has_edge(from_room_id, to_room_id):
-			var corridor_cells := _carve_corridor(from_cell, to_cell)
-			_register_connection(from_room_id, to_room_id, corridor_cells)
+		var corridor_cells := _carve_corridor(from_cell, to_cell)
+		_register_connection(from_room_id, to_room_id, corridor_cells)
 
-		main_path.append(nearest_room)
-		unvisited_rooms.erase(nearest_room)
-		current_room = nearest_room
+		current_room["is_main_path"] = true
 
-	for room_info in main_path:
-		room_info["is_main_path"] = true
-
-	if dungeon.main_path_branching and unvisited_rooms.size() > 0:
-		for room_info in unvisited_rooms:
-			_connect_to_nearest_main_path_room(room_info, main_path)
+	# Set main path flag on the final room as well
+	_working_room_infos[_working_room_infos.size() - 1]["is_main_path"] = true
 
 
 func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
@@ -276,54 +301,9 @@ func are_rooms_connected(room_a: int, room_b: int) -> bool:
 	return get_dungeon_graph().are_rooms_connected(room_a, room_b)
 
 
-func _find_nearest_room(
-	from_center: Vector2i,
-	candidates: Array[Dictionary]
-) -> Dictionary:
-
-	const MAX_ROOM_CONNECTION_DISTANCE := 40
-
-	if candidates.is_empty():
-		return {}
-
-	var nearest: Dictionary = {}
-	var nearest_dist: float = INF
-
-	for room_info in candidates:
-
-		var room_center: Vector2i = room_info["center_cell"]
-
-		var dist := from_center.distance_squared_to(room_center)
-
-		if dist > MAX_ROOM_CONNECTION_DISTANCE * MAX_ROOM_CONNECTION_DISTANCE:
-			continue
-
-		if dist < nearest_dist:
-			nearest_dist = dist
-			nearest = room_info
-
-	return nearest
-
-func _connect_to_nearest_main_path_room(room_info: Dictionary, main_path: Array[Dictionary]) -> void:
-	var room_center: Vector2i = room_info["center_cell"]
-	var nearest_main: Dictionary = _find_nearest_room(room_center, main_path)
-
-	if nearest_main.is_empty():
-		return
-
-	var from_room_id: int = room_info["id"]
-	var to_room_id: int = nearest_main["id"]
-	var from_cell: Vector2i = room_info["center_cell"]
-	var to_cell: Vector2i = nearest_main["center_cell"]
-
-	if not _working_graph.has_edge(from_room_id, to_room_id):
-		var corridor_cells := _carve_corridor(from_cell, to_cell)
-		_register_connection(from_room_id, to_room_id, corridor_cells)
-
-
 func _get_room_template(room_id: int) -> String:
 	if room_id == 0:
-		return DungeonGraph.TEMPLATE_NORMAL
+		return DungeonGraph.TEMPLATE_TUTORIAL
 
 	if room_id == dungeon.room_count - 1:
 		return DungeonGraph.TEMPLATE_BOSS

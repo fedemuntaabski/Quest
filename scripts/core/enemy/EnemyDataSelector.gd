@@ -1,13 +1,13 @@
 extends RefCounted
 class_name EnemyDataSelector
 
-static func select_enemy_data(room_id: int, final_room_id: int, enemy_data_pool: Array[EnemyData], default_enemy_data: EnemyData) -> EnemyData:
-	if room_id == 0:
+static func select_enemy_data(room_template: String, enemy_data_pool: Array[EnemyData], default_enemy_data: EnemyData) -> EnemyData:
+	if room_template == "tutorial":
 		var tutorial := find_enemy_data_by_id(enemy_data_pool, "tutorial")
 		if tutorial:
 			return tutorial
 
-	if room_id == final_room_id:
+	if room_template == "boss":
 		var boss_candidates: Array[EnemyData] = []
 		for data in enemy_data_pool:
 			if data and data.is_boss:

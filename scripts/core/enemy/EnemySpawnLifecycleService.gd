@@ -19,16 +19,8 @@ static func spawn_enemies(manager: EnemyManager, room_infos: Array, wall_cells: 
 	if map_manager and manager.player:
 		player_cell = map_manager.world_to_grid_coords(manager.player.global_position)
 
-	manager.final_room_id = _compute_final_room_id(room_infos)
-
 	for room_info in room_infos:
 		_spawn_enemy_for_room(manager, room_info, wall_cells, map_manager, player_cell, occupied_spawn_cells)
-
-static func _compute_final_room_id(room_infos: Array) -> int:
-	var computed := -1
-	for ri in room_infos:
-		computed = max(computed, ri.get("id", -1))
-	return computed
 
 static func _spawn_enemy_for_room(
 	manager: EnemyManager,
@@ -43,7 +35,7 @@ static func _spawn_enemy_for_room(
 	var spawn_cell := manager._get_random_floor_cell_in_room(
 		room_info,
 		wall_cells,
-		room_id == 0,
+		room_info.get("template", "") == "tutorial",
 		player_cell,
 		occupied_spawn_cells
 	)
@@ -66,7 +58,7 @@ static func _spawn_enemy_for_room(
 	enemy.my_room_id = room_id
 	enemy.dungeon_generator = manager.dungeon
 	
-	var selected_data := manager._select_enemy_data(room_id, manager.final_room_id)
+	var selected_data := manager._select_enemy_data(room_id)
 	if selected_data and enemy.has_method("apply_enemy_data"):
 		enemy.apply_enemy_data(selected_data)
 		if selected_data.enemy_name != "":
@@ -85,7 +77,7 @@ static func _spawn_enemy_for_room(
 			var grid_pos := map_manager.world_to_grid_coords(enemy.global_position)
 			map_manager.update_actor_cell(enemy, grid_pos)
 
-	if not manager.boss_spawned and room_id == manager.final_room_id:
+	if not manager.boss_spawned and room_info.get("template", "") == "boss":
 		if selected_data and selected_data.is_boss:
 			manager.boss_spawned = true
 			manager.boss_enemy = enemy

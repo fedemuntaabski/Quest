@@ -1,10 +1,11 @@
 extends RefCounted
 class_name DungeonGraph
 
-const TEMPLATE_NORMAL := "normal_room"
-const TEMPLATE_CORRIDOR := "corridor_room"
-const TEMPLATE_BOSS := "boss_room"
-const TEMPLATE_CUSTOM := "custom_layout_room"
+const TEMPLATE_TUTORIAL := "tutorial"
+const TEMPLATE_NORMAL := "normal"
+const TEMPLATE_BOSS := "boss"
+const TEMPLATE_CORRIDOR := "corridor"
+const TEMPLATE_CUSTOM := "custom_layout"
 
 var rooms: Dictionary = {}
 var edges: Dictionary = {}
@@ -142,6 +143,21 @@ func validate(expected_room_count: int = -1, require_connected: bool = true) -> 
 
 	if expected_room_count >= 0 and rooms.size() != expected_room_count:
 		errors.append("Expected %d rooms, found %d." % [expected_room_count, rooms.size()])
+
+	if expected_room_count >= 0 and rooms.size() == expected_room_count:
+		for room_id_variant in rooms.keys():
+			var room_id := int(room_id_variant)
+			var connected := get_connected_room_ids(room_id)
+			
+			var expected_connected: Array[int] = []
+			if room_id > 0:
+				expected_connected.append(room_id - 1)
+			if room_id < expected_room_count - 1:
+				expected_connected.append(room_id + 1)
+			expected_connected.sort()
+			
+			if connected != expected_connected:
+				errors.append("Room %d is connected to %s, expected %s for strict linear progression." % [room_id, str(connected), str(expected_connected)])
 
 	if require_connected and rooms.size() > 0:
 		var reachable := _collect_reachable_rooms()

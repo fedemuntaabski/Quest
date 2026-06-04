@@ -21,12 +21,10 @@ var dungeon: DungeonGenerator = null
 var player: CharacterBody2D = null
 var player_torch: PointLight2D = null
 
-# 🔥 NUEVO
 var enemies: Array = []
 var turn_manager: TurnManager
 var boss_spawned: bool = false
 var boss_enemy: Node = null
-var final_room_id: int = -1
 
 const COIN_REWARD_PER_ENEMY := 5
 
@@ -65,7 +63,7 @@ func spawn_enemies(room_infos: Array, wall_cells: Dictionary) -> void:
 # En lugar de devolver siempre 'Enemy.tscn', busca qué datos corresponden a la sala
 # y devuelve la escena específica guardada en su .tres (BossEnemy.tscn, SkeletonEnemy.tscn, etc.)
 func get_enemy_scene_for_room(room_id: int) -> PackedScene:
-	var chosen_data: EnemyData = _select_enemy_data(room_id, final_room_id)
+	var chosen_data: EnemyData = _select_enemy_data(room_id)
 	
 	if chosen_data and chosen_data.enemy_scene:
 		return chosen_data.enemy_scene
@@ -78,8 +76,22 @@ func get_enemy_scene_for_room(room_id: int) -> PackedScene:
 	return load("res://scenes/Enemy.tscn") as PackedScene
 
 
-func _select_enemy_data(room_id: int, p_final_room_id: int) -> EnemyData:
-	return EnemyDataSelector.select_enemy_data(room_id, p_final_room_id, enemy_data_pool, default_enemy_data)
+func _select_enemy_data(room_id: int) -> EnemyData:
+	var room_template := ""
+	if dungeon:
+		var room_info := dungeon.get_room_info(room_id)
+		if not room_info.is_empty():
+			room_template = room_info.get("template", "")
+	
+	if room_template == "":
+		if room_id == 0:
+			room_template = "tutorial"
+		elif room_id == 7:
+			room_template = "boss"
+		else:
+			room_template = "normal"
+
+	return EnemyDataSelector.select_enemy_data(room_template, enemy_data_pool, default_enemy_data)
 
 
 func _find_enemy_data_by_id(enemy_id: String) -> EnemyData:

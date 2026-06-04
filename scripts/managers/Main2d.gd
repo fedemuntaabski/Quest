@@ -288,7 +288,14 @@ func _on_room_cleared(_room_id: int) -> void:
 	if _is_dead:
 		return
 
-	if enemy_manager and _room_id == enemy_manager.final_room_id:
+	var is_boss_room := false
+	var dg = _dg()
+	if dg:
+		var info := dg.get_room_info(_room_id)
+		if not info.is_empty() and info.get("template", "") == "boss":
+			is_boss_room = true
+
+	if enemy_manager and is_boss_room:
 		return
 
 	if card_reward_manager and game_state_manager and game_state_manager.is_active():
@@ -381,7 +388,14 @@ func _request_room_reward(room_id: int, reward_cards: Array[CardData]) -> void:
 		return
 
 	_reward_pending = true
-	if enemy_manager and room_id == enemy_manager.final_room_id:
+	var is_boss_room := false
+	var dg = _dg()
+	if dg:
+		var info := dg.get_room_info(room_id)
+		if not info.is_empty() and info.get("template", "") == "boss":
+			is_boss_room = true
+
+	if enemy_manager and is_boss_room:
 		game_state_manager.request_reward(reward_cards)
 		return
 
