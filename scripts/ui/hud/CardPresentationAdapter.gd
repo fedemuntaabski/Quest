@@ -1,48 +1,48 @@
 extends Node
 class_name CardPresentationAdapter
 
-## Converts raw CardData and runtime payloads into typed CardDisplayData.
-## Single point of truth for card display normalization.
-## This is the adapter between gameplay data and UI presentation contracts.
+## Adapter: converts gameplay data into UI-ready CardDisplayData.
+## This file ONLY handles transformation between layers.
+## Formatting logic is delegated to internal helpers.
 
-## Create typed display data from CardData and optional runtime state
+# =========================================================
+# PUBLIC API - CREATION
+# =========================================================
+
 static func create_display_data(
 	card: CardData,
 	runtime_state: Dictionary = {}
 ) -> CardDisplayData:
-	"""
-	Create a CardDisplayData from CardData and optional runtime state.
-	
-	Args:
-		card: Source CardData resource
-		runtime_state: Runtime state dict with keys like cooldown_remaining, is_usable, etc.
-	
-	Returns:
-		CardDisplayData with all fields populated and validated
-	"""
 	return CardDisplayData.from_card_data(card, runtime_state)
 
-## Create typed display data from an equipped-slot payload entry.
-## Returns null for empty or invalid entries so callers can preserve slot empties.
+
 static func create_display_data_from_payload_entry(payload: Variant) -> CardDisplayData:
+	if payload == null:
+		return null
+
 	if payload is CardDisplayData:
-		return payload as CardDisplayData
+		return payload
+
 	if payload is Dictionary:
 		var payload_dict := payload as Dictionary
 		if payload_dict.is_empty():
 			return null
-		var card_data := payload_dict.get("card") as CardData
-		if card_data != null:
+
+		var card_data = payload_dict.get("card")
+		if card_data is CardData:
 			return create_display_data(card_data, payload_dict)
+
 	return null
 
-## --- Formatting Helper Methods ---
-## These are used by UI consumers to format display data consistently
+
+# =========================================================
+# PUBLIC API - FORMATTING (UI SAFE)
+# =========================================================
 
 static func get_stats_summary(display_data: CardDisplayData) -> String:
-	"""Format stats summary line for tooltip or card display.
-	Example output: 'STR x1.50 | D:5 | R:2 | CD:3'
-	"""
+	if display_data == null:
+		return ""
+
 	return "%s x%.2f | D:%d | R:%d | CD:%d" % [
 		display_data.stat_label,
 		display_data.damage_scaling,
@@ -51,28 +51,34 @@ static func get_stats_summary(display_data: CardDisplayData) -> String:
 		display_data.cooldown
 	]
 
+
 static func get_cooldown_text(display_data: CardDisplayData) -> String:
-	"""Get cooldown display text for UI elements.
-	Returns: 'Ready', 'CD: X', or cooldown value.
-	"""
+	if display_data == null:
+		return ""
+
 	if display_data.cooldown <= 0:
 		return "Ready"
+
 	if display_data.cooldown_remaining > 0:
 		return "CD: %d" % display_data.cooldown_remaining
+
 	return "CD: %d" % display_data.cooldown
 
+
 static func get_playability_text(display_data: CardDisplayData) -> String:
-	"""Get playability indicator text.
-	Returns: Empty string if fully playable, otherwise reason.
-	"""
+	if display_data == null:
+		return ""
+
 	if not display_data.is_usable:
-		return display_data.playability_reason if not display_data.playability_reason.is_empty() else "Not usable"
+		return _safe_reason(display_data.playability_reason, "Not usable")
+
 	if not display_data.full_playable:
-		return display_data.playability_reason if not display_data.playability_reason.is_empty() else "Restricted"
+		return _safe_reason(display_data.playability_reason, "Restricted")
+
 	return ""
 
+
 static func get_category_color(category: String) -> Color:
-	"""Get display color for a card category."""
 	match category.to_lower():
 		"strength":
 			return QuestPalette.CARD_STRENGTH
@@ -83,42 +89,91 @@ static func get_category_color(category: String) -> Color:
 		_:
 			return QuestPalette.CARD_NEUTRAL
 
+
 static func get_playability_color(display_data: CardDisplayData) -> Color:
-	"""Get color indicator for playability state."""
+	if display_data == null:
+		return QuestPalette.UI_TEXT_BLOCKED
+
 	if not display_data.is_usable:
 		return QuestPalette.UI_TEXT_BLOCKED
+
 	if not display_data.full_playable:
 		return QuestPalette.UI_TEXT_WARN
+
 	return QuestPalette.UI_TEXT_READY
 
+
+# =========================================================
+# INTERNAL SAFE HELPERS
+# =========================================================
+
+static func _safe_reason(reason: String, fallback: String) -> String:
+	if reason == null:
+		return fallback
+
+	var r := str(reason)
+	if r.is_empty():
+		return fallback
+
+	return r
+
+
+# =========================================================
+# EFFECTS (refactored to avoid unsafe reflection)
+# =========================================================
+
 static func get_effects_summary(card: Resource) -> String:
-	"""Get a readable comma-separated effect summary for reward and card detail UI."""
 	if card == null:
 		return ""
 
 	var effects_arr: Array = []
-	if "effects" in card:
-		effects_arr = card.effects
 
-	var effects_texts: Array[String] = []
+	if card.has_method("get_effects"):
+		effects_arr = card.get_effects()
+	elif "effects" in card:
+		effects_arr = card.effects
+	else:
+		return ""
+
+	var out: Array[String] = []
+
 	for effect in effects_arr:
 		if effect == null:
 			continue
-		var desc := ""
-		if typeof(effect) == TYPE_DICTIONARY:
-			desc = str(effect.get("description", ""))
-		elif effect is CardEffect:
-			desc = str(effect.get_description())
-		elif typeof(effect) == TYPE_OBJECT:
-			var candidate = effect.get("description")
-			if candidate != null and str(candidate) != "":
-				desc = str(candidate)
-		else:
-			var text := str(effect)
-			if text != "" and not (text.begins_with("res://") or text.begins_with("user://")):
-				desc = text
+
+		var desc := _extract_effect_description(effect)
 		if desc != "":
-			effects_texts.append(desc)
+			out.append(desc)
 
-	return ", ".join(effects_texts)
+	return ", ".join(out)
 
+
+static func _extract_effect_description(effect: Variant) -> String:
+	# Typed effect object
+	if effect is CardEffect:
+		if effect.has_method("get_description"):
+			return str(effect.get_description())
+		return ""
+
+	# Dictionary effect
+	if effect is Dictionary:
+		return str(effect.get("description", ""))
+
+	# Generic object with method
+	if typeof(effect) == TYPE_OBJECT:
+		if effect.has_method("get_description"):
+			return str(effect.get_description())
+
+		if effect.has_method("get"):
+			var maybe = effect.get("description")
+			if maybe != null:
+				return str(maybe)
+
+		return ""
+
+	# Fallback safe string
+	var text := str(effect)
+	if text.begins_with("res://") or text.begins_with("user://"):
+		return ""
+
+	return text

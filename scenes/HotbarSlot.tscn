@@ -3,16 +3,16 @@
 [ext_resource type="Script" uid="uid://bjkx4feu10tob" path="res://scripts/ui/hud/HotbarSlot.gd" id="1_hotbar_slot_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot_base"]
-bg_color = Color(0.08, 0.08, 0.1, 0.85)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.35, 0.35, 0.4, 0.8)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+bg_color = Color(0.06, 0.05, 0.04, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.25, 0.22, 0.18, 1.0)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot_hover"]
 bg_color = Color(0, 0, 0, 0)
@@ -20,79 +20,62 @@ border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.75, 0.85, 1, 0.9)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+border_color = Color(0.85, 0.75, 0.45, 0.9)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot_selected"]
 bg_color = Color(0, 0, 0, 0)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.84, 0.2, 0.95)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.78, 0.25, 1.0)
 
-[node name="HotbarSlot" type="PanelContainer" unique_id=1354943843]
+[node name="HotbarSlot" type="PanelContainer"]
 custom_minimum_size = Vector2(90, 90)
-theme_override_styles/panel = SubResource("StyleBoxFlat_slot_base")
 script = ExtResource("1_hotbar_slot_script")
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot_base")
 
-[node name="VBox" type="VBoxContainer" parent="." unique_id=414310777]
-layout_mode = 2
+[node name="VBox" type="VBoxContainer" parent="."]
 theme_override_constants/separation = 2
 
-[node name="Icon" type="TextureRect" parent="VBox" unique_id=522403284]
+[node name="Icon" type="TextureRect" parent="VBox"]
 custom_minimum_size = Vector2(48, 48)
-layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Name" type="Label" parent="VBox" unique_id=1101253629]
-layout_mode = 2
+[node name="Name" type="Label" parent="VBox"]
 theme_override_font_sizes/font_size = 12
 text = "-"
 horizontal_alignment = 1
 
-[node name="Cooldown" type="Label" parent="VBox" unique_id=917690200]
-layout_mode = 2
+[node name="Cooldown" type="Label" parent="VBox"]
 theme_override_font_sizes/font_size = 11
 horizontal_alignment = 1
 
-[node name="State" type="Label" parent="VBox" unique_id=917690203]
+[node name="State" type="Label" parent="VBox"]
 visible = false
 modulate = Color(0.6, 0.6, 0.6, 1)
-layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "VACIO"
 horizontal_alignment = 1
 
-[node name="KeyLabel" type="Label" parent="VBox" unique_id=917690201]
+[node name="KeyLabel" type="Label" parent="VBox"]
 modulate = Color(0.8, 0.8, 0.8, 1)
-layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "1"
 horizontal_alignment = 2
 
-[node name="CooldownOverlay" type="ColorRect" parent="." unique_id=1895241212]
+[node name="CooldownOverlay" type="ColorRect" parent="."]
 visible = false
-layout_mode = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0.35)
 
-[node name="HoverBorder" type="Panel" parent="." unique_id=778994651]
+[node name="HoverBorder" type="Panel" parent="."]
 visible = false
-layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot_hover")
 
-[node name="SelectionBorder" type="Panel" parent="." unique_id=917690202]
+[node name="SelectionBorder" type="Panel" parent="."]
 visible = false
-layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot_selected")
