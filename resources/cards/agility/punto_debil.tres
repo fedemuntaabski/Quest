@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 base_damage = 1
-damage_scaling = 0.3
+damage_scaling = 0.1
 stat_key = "dexterity"
 description = "Golpe ligero que abre una ventana de daño ampliado."
 
@@ -27,14 +27,14 @@ status_tags = Array[String](["setup", "exposed"])
 script = ExtResource("1")
 id = "punto_debil"
 display_name = "Punto Débil"
-description = "Marca al enemigo como expuesto: el siguiente golpe recibe 50% más daño."
+description = "Marca al enemigo como expuesto: el siguiente golpe recibe 50% más daño de tus ataques normales."
 category = "agility"
 rarity = "common"
 card_type = "debuff"
 target_type = "enemy"
 stat_key = "dexterity"
 base_damage = 1
-damage_scaling = 0.3
+damage_scaling = 0.1
 range = 2
 cooldown = 3
 resource_cost = 1

@@ -48,5 +48,5 @@ static func get_scaled_stat_bonus(stat_key: String, stat_value: int, damage_scal
 	var effective_value := float(stat_value)
 	if normalized_key == "dexterity":
 		# Dex keeps a smaller linear piece plus a diminishing-returns tail.
-		effective_value = (float(stat_value) * DEX_DAMAGE_LINEAR_PORTION) + (sqrt(maxf(float(stat_value), 0.0)) * DEX_DAMAGE_ROOT_PORTION)
+		effective_value = (float(stat_value) * DEX_DAMAGE_LINEAR_PORTION * 0.7) + (sqrt(maxf(float(stat_value), 0.0)) * DEX_DAMAGE_ROOT_PORTION * 0.7)
 	return int(round(effective_value * damage_scaling))

@@ -14,7 +14,7 @@ description = "Corte preciso que deja una hemorragia sostenida."
 [sub_resource type="Resource" id="2"]
 script = ExtResource("3")
 status_id = "bleed"
-duration_turns = 4
+duration_turns = 5
 stacks = 1
 magnitude = 1
 max_stacks = 10
@@ -34,7 +34,7 @@ card_type = "debuff"
 target_type = "enemy"
 stat_key = "dexterity"
 base_damage = 1
-damage_scaling = 0.2
+damage_scaling = 0.4
 range = 2
 cooldown = 4
 resource_cost = 1
