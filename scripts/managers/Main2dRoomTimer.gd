@@ -1,8 +1,8 @@
 extends RefCounted
 class_name Main2dRoomTimer
 
-const ROOM_TIMER_SECONDS: float = 120.0
-const WARNING_SECONDS: float = 60.0
+const ROOM_TIMER_SECONDS: float = 60.0
+const WARNING_SECONDS: float = 30.0
 const CRITICAL_SECONDS: float = 15.0
 
 var remaining: float = ROOM_TIMER_SECONDS
