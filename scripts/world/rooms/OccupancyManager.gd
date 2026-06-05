@@ -17,10 +17,14 @@ func register_actor(actor: Node, grid_pos: Vector2i, blocks: bool = true, allow_
 	if actor == null or not is_instance_valid(actor):
 		return
 
+	if not actor.tree_exiting.is_connected(_on_actor_tree_exiting.bind(actor)):
+		actor.tree_exiting.connect(_on_actor_tree_exiting.bind(actor))
+
 	_blocking_actors[actor] = blocks
-	# allow_multi explicit OR global default
-	var multi: bool = allow_multi or _default_multi_mode
-	_update_actor_cell(actor, grid_pos, multi)
+	_update_actor_cell(actor, grid_pos, allow_multi or _default_multi_mode)
+
+func _on_actor_tree_exiting(actor: Node) -> void:
+	unregister_actor(actor)
 
 func unregister_actor(actor: Node) -> void:
 	if actor == null or not is_instance_valid(actor):
@@ -91,18 +95,22 @@ func is_cell_blocked(grid_pos: Vector2i, requester: Node = null) -> bool:
 		for actor in entry:
 			if not is_instance_valid(actor):
 				continue
-			if requester != null and actor == requester:
+			if is_instance_valid(requester) and actor == requester:
 				continue
 			if _blocking_actors.get(actor, true):
 				return true
 		return false
 	else:
-		var actor: Node = entry
-		if not is_instance_valid(actor):
+		if not is_instance_valid(entry):
 			return false
+
+		var actor: Node = entry
+
 		if requester != null and actor == requester:
 			return false
+
 		return _blocking_actors.get(actor, true)
+
 
 func _update_actor_cell(actor: Node, grid_pos: Vector2i, allow_multi: bool = false) -> void:
 	if actor == null or not is_instance_valid(actor):

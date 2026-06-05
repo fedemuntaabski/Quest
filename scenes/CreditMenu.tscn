@@ -51,19 +51,21 @@ horizontal_alignment = 1
 [node name="Member1" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1113474171]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Federico"
+text = "
+Garrido Marcos Enrique
+"
 horizontal_alignment = 1
 
 [node name="Member2" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1891779486]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Integrante 2"
+text = "Alvarez Nahuel Lucas"
 horizontal_alignment = 1
 
 [node name="Member3" type="Label" parent="CenterContainer/CreditsVBox" unique_id=191809164]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Integrante 3"
+text = "Federico Muntaabski"
 horizontal_alignment = 1
 
 [node name="Spacer2" type="Control" parent="CenterContainer/CreditsVBox" unique_id=1440560820]
