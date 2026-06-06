@@ -6,6 +6,7 @@ const STANDARD_ENEMY_STRENGTH := 1
 const STANDARD_ENEMY_MAGIC := 0
 const STANDARD_ENEMY_DEX := 0
 const STANDARD_ENEMY_BASE_DAMAGE := 1
+@export_range(0.0, 1.0, 0.01) var forced_miss_chance: float = 0.0
 
 static func apply_standard_profile(stats: CharacterStats) -> void:
 	if stats == null:
@@ -28,12 +29,16 @@ static func apply_standard_combat_profile(combat_component: CombatComponent) -> 
 	combat_component.attack_range = 1
 	combat_component.attack_stat = "strength"
 
+
 static func apply_combat_from_data(combat_component: CombatComponent, data: EnemyData) -> void:
 	if combat_component == null or data == null:
 		return
 	combat_component.base_damage = data.base_damage
 	combat_component.attack_range = max(1, data.attack_range)
 	combat_component.attack_stat = data.attack_stat
+	combat_component.forced_miss_chance = clampf(data.forced_miss_chance, 0.0, 1.0)
+
+
 
 # 🌟 CORREGIDO: Ahora acepta AnimatedSprite2D como tercer argumento
 static func apply_enemy_data(
