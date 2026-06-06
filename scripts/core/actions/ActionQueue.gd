@@ -26,12 +26,9 @@ func queue_action(action: BaseAction) -> void:
 	if action == null:
 		return
 
-	print("[ActionQueue] queue_action: queuing action=%s _is_busy=%s queue_size_before=%d" % [_describe_action(action), _is_busy, _queue.size()])
 	_queue.append(action)
-	print("[ActionQueue] queue_action: queued action=%s queue_size_after=%d" % [_describe_action(action), _queue.size()])
 
 	if not _is_busy:
-		print("[ActionQueue] queue_action: queue not busy, calling process_next()")
 		process_next()
 	else:
 		print("[ActionQueue] queue_action: queue is busy, action will wait in queue")
@@ -47,11 +44,9 @@ func process_next() -> void:
 	# Pop and execute the next queued action; await its `completed` signal
 	# if it is asynchronous.
 	if action == null:
-		print("[ActionQueue] process_next: popped NULL action, recursing")
 		process_next()
 		return
 
-	print("[ActionQueue] process_next: executing action, type=%s" % _describe_action(action))
 	_is_busy = true
 	var start_token: Dictionary = action.get_execution_state_token() if action else {}
 
@@ -82,7 +77,6 @@ func process_next() -> void:
 		# if action didn't call finish, finish it now with default success
 		action.finish(res)
 
-	print("[ActionQueue] process_next: action finished, type=%s queue_size_remaining=%d" % [_describe_action(action), _queue.size()])
 	_is_busy = false
 	action_finished.emit(action, res)
 	process_next()

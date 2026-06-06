@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://fxvols31t8sp"]
 
-[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+[ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" uid="uid://di03ffuiig3v2" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
@@ -17,7 +17,6 @@ display_name = "Descarga Arcana"
 description = "Lanza un proyectil arcano fiable para dañar a un enemigo a distancia."
 category = "magic"
 card_type = "magic"
-target_type = "enemy"
 stat_key = "magic"
 base_damage = 1
 damage_scaling = 0.4
