@@ -56,16 +56,19 @@ Garrido Marcos Enrique
 "
 horizontal_alignment = 1
 
-[node name="Member2" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1891779486]
+[node name="Member2" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1156702169]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Alvarez Nahuel Lucas"
+text = "
+Alvarez Nahuel Lucas
+"
 horizontal_alignment = 1
 
-[node name="Member3" type="Label" parent="CenterContainer/CreditsVBox" unique_id=191809164]
+[node name="Member3" type="Label" parent="CenterContainer/CreditsVBox" unique_id=1575149571]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Federico Muntaabski"
+text = "
+Federico Muntaabski"
 horizontal_alignment = 1
 
 [node name="Spacer2" type="Control" parent="CenterContainer/CreditsVBox" unique_id=1440560820]
