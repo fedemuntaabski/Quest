@@ -40,8 +40,8 @@ mouse_filter = 2
 layout_mode = 0
 offset_left = 18.0
 offset_top = 82.0
-offset_right = 240.0
-offset_bottom = 285.0
+offset_right = 300.0
+offset_bottom = 320.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat_panel")
 
@@ -65,14 +65,14 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="IconHP" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowHP" unique_id=986120555]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_stat_icon")
 
 [node name="LabelHP" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowHP" unique_id=986120556]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 24
 text = "HP 20/20"
 
 [node name="StatRowStrength" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=986120557]
@@ -81,7 +81,7 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="IconStrength" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowStrength" unique_id=986120558]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_stat_icon")
@@ -89,7 +89,7 @@ icon_type = "strength"
 
 [node name="LabelStrength" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowStrength" unique_id=986120559]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 24
 text = "Fuerza 1"
 
 [node name="StatRowMagic" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=986120560]
@@ -98,7 +98,7 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="IconMagic" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowMagic" unique_id=986120561]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_stat_icon")
@@ -106,7 +106,7 @@ icon_type = "magic"
 
 [node name="LabelMagic" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowMagic" unique_id=986120562]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 24
 text = "Magia 1"
 
 [node name="StatRowDexterity" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=986120563]
@@ -115,7 +115,7 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="IconDexterity" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowDexterity" unique_id=986120564]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_stat_icon")
@@ -123,7 +123,7 @@ icon_type = "dexterity"
 
 [node name="LabelDexterity" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowDexterity" unique_id=986120565]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 24
 text = "Agilidad 1"
 
 [node name="StatRowPotion" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=69585374]
@@ -132,7 +132,7 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="IconPotion" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion" unique_id=1091175712]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_stat_icon")
@@ -140,7 +140,7 @@ icon_type = "potion"
 
 [node name="LabelPotion" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion" unique_id=1592559229]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 24
 text = "Pocion"
 
 [node name="PotionCount" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion" unique_id=226464989]
@@ -188,16 +188,16 @@ grow_horizontal = 2
 theme_override_constants/separation = 12
 
 [node name="HotbarSlot1" parent="Control/HotbarBar" unique_id=1241558303 instance=ExtResource("5_hotbar_slot")]
-custom_minimum_size = Vector2(110, 110)
+custom_minimum_size = Vector2(110, 100)
 layout_mode = 2
 
 [node name="HotbarSlot2" parent="Control/HotbarBar" unique_id=1476327411 instance=ExtResource("5_hotbar_slot")]
-custom_minimum_size = Vector2(110, 110)
+custom_minimum_size = Vector2(110, 100)
 layout_mode = 2
 slot_index = 1
 
 [node name="HotbarSlot3" parent="Control/HotbarBar" unique_id=175439902 instance=ExtResource("5_hotbar_slot")]
-custom_minimum_size = Vector2(110, 110)
+custom_minimum_size = Vector2(110, 100)
 layout_mode = 2
 slot_index = 2
 

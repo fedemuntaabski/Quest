@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dakale2rufyo0"]
+[gd_scene format=3 uid="uid://8wtfaaxkuur0"]
 
 [ext_resource type="PackedScene" uid="uid://b7yguhd58c6y1" path="res://scenes/Enemy.tscn" id="1_5sw1d"]
 [ext_resource type="Texture2D" uid="uid://l128binrf10b" path="res://Sprites/Boss/attack_1.png" id="2_lii3u"]
@@ -374,8 +374,7 @@ modulate = Color(1, 1, 1, 1)
 position = Vector2(0, 1)
 scale = Vector2(0.75, 0.75)
 sprite_frames = SubResource("SpriteFrames_1pdl0")
-animation = &"idle"
-frame_progress = 0.7043376
+animation = &"attack"
 
 [node name="HealthBar" parent="." index="3" unique_id=1776289430]
 visible = true
