@@ -9,6 +9,7 @@ var _working_floor_cells: Dictionary = {}
 var _working_corridor_cells: Dictionary = {}
 var _working_room_infos: Array[Dictionary] = []
 var _working_graph: DungeonGraph = null
+var _working_room_cells: Dictionary = {}
 
 
 func setup(p_dungeon: DungeonGenerator) -> void:
@@ -152,6 +153,7 @@ func _register_room(room_rect: Rect2i) -> void:
 			var cell := Vector2i(x, y)
 			_working_floor_cells[cell] = true
 			room_cells.append(cell)
+			_working_room_cells[cell] = true
 
 	var center_cell := Vector2i(
 		room_rect.position.x + int(room_rect.size.x * 0.5),
@@ -185,8 +187,8 @@ func _connect_rooms_with_corridors() -> void:
 
 		var from_room_id: int = current_room["id"]
 		var to_room_id: int = next_room["id"]
-		var from_cell: Vector2i = current_room["center_cell"]
-		var to_cell: Vector2i = next_room["center_cell"]
+		var from_cell := _get_connection_point(current_room, next_room["center_cell"])
+		var to_cell := _get_connection_point(next_room, current_room["center_cell"])
 
 		var corridor_cells := _carve_corridor(from_cell, to_cell)
 		_register_connection(from_room_id, to_room_id, corridor_cells)
@@ -203,8 +205,12 @@ func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 	var corridor_cells: Array[Vector2i] = []
 
 	var current := from_cell
+
+	# Evitar que el punto inicial sea considerado corredor
+	# si está dentro de la sala
+	_working_corridor_cells[current] = false
 	var corridor_length := 0
-	if _add_corridor_cell(current, true):
+	if _add_corridor_cell(current):
 		corridor_cells.append(current)
 
 	var horizontal_first := randf() < 0.5
@@ -212,31 +218,31 @@ func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 	if horizontal_first:
 		while current.x != to_cell.x:
 			current.x += signi(to_cell.x - current.x)
-			if _add_corridor_cell(current,true):
+			if _add_corridor_cell(current):
 				corridor_cells.append(current)
 			corridor_length += 1
 
-		_add_corridor_cell(current, true)
-		_add_corridor_cell(current, false)
+		_add_corridor_cell(current)
+		_add_corridor_cell(current)
 
 		while current.y != to_cell.y:
 			current.y += signi(to_cell.y - current.y)
-			if _add_corridor_cell(current,false):
+			if _add_corridor_cell(current):
 				corridor_cells.append(current)
 			corridor_length += 1
 	else:
 		while current.y != to_cell.y:
 			current.y += signi(to_cell.y - current.y)
-			if _add_corridor_cell(current,false):
+			if _add_corridor_cell(current):
 				corridor_cells.append(current)
 			corridor_length += 1
 
-		_add_corridor_cell(current, true)
-		_add_corridor_cell(current, false)
+		_add_corridor_cell(current)
+		_add_corridor_cell(current)
 
 		while current.x != to_cell.x:
 			current.x += signi(to_cell.x - current.x)
-			if _add_corridor_cell(current,true):
+			if _add_corridor_cell(current):
 				corridor_cells.append(current)
 			corridor_length += 1
 
@@ -246,26 +252,16 @@ func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 	return corridor_cells
 
 
-func _add_corridor_cell(cell: Vector2i, horizontal: bool) -> bool:
-
+func _add_corridor_cell(cell: Vector2i) -> bool:
 	if not dungeon.is_within_bounds(cell):
 		return false
 
-	var cells_to_add: Array[Vector2i] = [cell]
+	if _working_room_cells.has(cell):
+		# evita invadir salas
+		return false
 
-	if horizontal:
-		cells_to_add.append(cell + Vector2i(0, 1))
-	else:
-		cells_to_add.append(cell + Vector2i(1, 0))
-
-	for c in cells_to_add:
-
-		if not dungeon.is_within_bounds(c):
-			continue
-
-		_working_floor_cells[c] = true
-		_working_corridor_cells[c] = true
-
+	_working_floor_cells[cell] = true
+	_working_corridor_cells[cell] = true
 	return true
 
 
@@ -318,3 +314,22 @@ func _fill_corner(cell: Vector2i) -> void:
 
 		_working_floor_cells[c] = true
 		_working_corridor_cells[c] = true
+
+func _get_connection_point(room: Dictionary, target: Vector2i) -> Vector2i:
+	var rect: Rect2i = room["rect"]
+	var center: Vector2i = room["center_cell"]
+
+	var dx := target.x - center.x
+	var dy := target.y - center.y
+
+	# elegimos UN SOLO borde (no múltiples entradas/salidas)
+	if abs(dx) > abs(dy):
+		if dx > 0:
+			return Vector2i(rect.end.x - 1, center.y)
+		else:
+			return Vector2i(rect.position.x, center.y)
+	else:
+		if dy > 0:
+			return Vector2i(center.x, rect.end.y - 1)
+		else:
+			return Vector2i(center.x, rect.position.y)

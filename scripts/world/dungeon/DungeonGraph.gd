@@ -50,7 +50,12 @@ func add_edge(room_a: int, room_b: int, corridor_cells: Array = []) -> bool:
 		"room_a": room_a,
 		"room_b": room_b,
 		"corridor_cells": corridor_cells.duplicate(),
-		"template": TEMPLATE_CORRIDOR
+		"template": TEMPLATE_CORRIDOR,
+
+		# NUEVO: define unicidad espacial de conexión
+		"entry_a": null,
+		"entry_b": null,
+		"shape": "unknown" # L, straight, etc
 	}
 	_add_adjacency(room_a, room_b)
 	_add_adjacency(room_b, room_a)
