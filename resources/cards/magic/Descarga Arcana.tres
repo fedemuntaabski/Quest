@@ -5,9 +5,9 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-base_damage = 2
+base_damage = 1
 stat_key = "magic"
-damage_scaling = 0.8
+damage_scaling = 0.4
 description = "Proyectil arcano fiable que inflige daño a distancia."
 
 [resource]
@@ -22,7 +22,7 @@ stat_key = "magic"
 base_damage = 1
 damage_scaling = 0.4
 range = 2
-cooldown = 4
+cooldown = 5
 effects = Array[Resource]([SubResource("1")])
 tags = Array[String](["magic", "damage", "basic", "arcane_projectile"])
 keywords = Array[String](["proyectil arcano", "daño a distancia"])

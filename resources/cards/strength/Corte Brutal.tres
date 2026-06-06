@@ -6,8 +6,8 @@
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-base_damage = 3
-damage_scaling = 0.7
+base_damage = 1
+damage_scaling = 0.4
 description = "Daño directo que escala con tu Fuerza."
 
 [sub_resource type="Resource" id="2"]
