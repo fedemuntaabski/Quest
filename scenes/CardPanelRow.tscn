@@ -2,63 +2,70 @@
 
 [ext_resource type="Script" uid="uid://dw4h4in85e1sp" path="res://scripts/ui/hud/CardPanelRow.gd" id="1_card_panel_row_script"]
 
-[node name="CardPanelRow" type="HBoxContainer" unique_id=1395791252]
-theme_override_constants/separation = 12
+[node name="CardPanelRow" type="VBoxContainer" unique_id=2112211603]
+theme_override_constants/separation = 4
 script = ExtResource("1_card_panel_row_script")
 
-[node name="SlotLabel" type="Label" parent="." unique_id=183080202]
+[node name="Content" type="HBoxContainer" parent="." unique_id=1461684056]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LeftColumn" type="VBoxContainer" parent="Content" unique_id=573257192]
+layout_mode = 2
+
+[node name="SlotLabel" type="Label" parent="Content/LeftColumn" unique_id=382724117]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "[1]"
 
-[node name="IconRect" type="TextureRect" parent="." unique_id=1793565568]
+[node name="IconRect" type="TextureRect" parent="Content/LeftColumn" unique_id=794160700]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 expand_mode = 2
 stretch_mode = 5
 
-[node name="InfoVBox" type="VBoxContainer" parent="." unique_id=1890776148]
+[node name="InfoVBox" type="VBoxContainer" parent="Content" unique_id=324046267]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NameHBox" type="HBoxContainer" parent="InfoVBox" unique_id=28554288]
+[node name="NameHBox" type="HBoxContainer" parent="Content/InfoVBox" unique_id=2100748867]
 layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="InfoVBox/NameHBox" unique_id=997607443]
+[node name="NameLabel" type="Label" parent="Content/InfoVBox/NameHBox" unique_id=350407352]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "Card Name"
 
-[node name="CooldownLabel" type="Label" parent="InfoVBox/NameHBox" unique_id=698018705]
+[node name="CooldownLabel" type="Label" parent="Content/InfoVBox/NameHBox" unique_id=227205429]
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.3, 0.3, 1)
 text = "(CD: 0)"
 
-[node name="StateLabel" type="Label" parent="InfoVBox/NameHBox" unique_id=1106738647]
+[node name="StateLabel" type="Label" parent="Content/InfoVBox/NameHBox" unique_id=634914622]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 text = "[READY]"
 
-[node name="DescLabel" type="Label" parent="InfoVBox" unique_id=275791876]
+[node name="DescLabel" type="Label" parent="Content/InfoVBox" unique_id=1757543210]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
 text = "Description"
 autowrap_mode = 3
 
-[node name="StatsLabel" type="Label" parent="InfoVBox" unique_id=1699273599]
+[node name="StatsLabel" type="Label" parent="Content/InfoVBox" unique_id=1750517544]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.8, 0.95, 1)
 theme_override_font_sizes/font_size = 12
 text = "STR x1.00 | D:0 | R:0 | CD:0"
 
-[node name="SwapButton" type="Button" parent="InfoVBox" unique_id=802735475]
+[node name="SwapButton" type="Button" parent="Content/InfoVBox" unique_id=193353963]
 layout_mode = 2
 size_flags_horizontal = 2
 disabled = true
 text = "Swap (coming soon)"
 
-[node name="Separator" type="HSeparator" parent="." unique_id=390360373]
+[node name="Separator" type="HSeparator" parent="." unique_id=600755468]
 modulate = Color(1, 1, 1, 0.3)
 layout_mode = 2
