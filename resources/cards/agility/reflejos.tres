@@ -1,18 +1,16 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://vtlmn4ghjd8n"]
 
-[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/core/effects/StatusEffect.gd" id="2"]
+[ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" uid="uid://cnrvf2qrt0ie4" path="res://scripts/core/effects/StatusEffect.gd" id="2"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 status_id = "reflexes"
 duration_turns = 3
 stacks = 2
-magnitude = 0
-max_stacks = 2
-refresh_duration_on_reapply = true
-stack_behavior = "refresh"
 apply_to_source = true
+max_stacks = 2
+stack_behavior = "refresh"
 status_tags = Array[String](["defensive", "evasion"])
 
 [resource]
@@ -21,17 +19,15 @@ id = "reflejos"
 display_name = "Reflejos"
 description = "Ganas 2 cargas de esquive durante 3 turnos. Cada esquive consume 1 carga."
 category = "agility"
-rarity = "common"
 card_type = "buff"
 target_type = "self"
 stat_key = "dexterity"
-base_damage = 0
 damage_scaling = 0.0
 range = 0
 cooldown = 7
-resource_cost = 1
 effects = Array[Resource]([SubResource("1")])
 tags = Array[String](["agility", "defense", "evasion", "dodge"])
+resource_cost = 1
 keywords = Array[String](["esquiva", "evasión", "defensa"])
 archetype = "defense"
 combo_tags = Array[String](["defense", "tempo"])

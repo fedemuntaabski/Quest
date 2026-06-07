@@ -1,13 +1,11 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://bjvnqip5flyeh"]
 
-[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/core/effects/MovementEffect.gd" id="2"]
+[ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" uid="uid://yv2pdhq75jb1" path="res://scripts/core/effects/MovementEffect.gd" id="2"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 move_cells = 2
-movement_mode = "dash"
-apply_to_source = true
 
 [resource]
 script = ExtResource("1")
@@ -15,18 +13,16 @@ id = "paso_sombrio"
 display_name = "Paso Sombrío"
 description = "Desplázate hasta 2 casillas hacia una celda válida y reposiciónate al instante."
 category = "agility"
-rarity = "common"
 card_type = "buff"
 target_type = "self"
 targeting_profile = "dash"
 stat_key = "dexterity"
-base_damage = 0
 damage_scaling = 0.0
 range = 2
 cooldown = 5
-resource_cost = 1
 effects = Array[Resource]([SubResource("1")])
 tags = Array[String](["agility", "mobility", "dash", "movement"])
+resource_cost = 1
 keywords = Array[String](["dash", "movimiento", "posicionamiento"])
 archetype = "mobility"
 combo_tags = Array[String](["mobility", "setup"])

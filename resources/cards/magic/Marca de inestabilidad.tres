@@ -1,16 +1,13 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://c7ywefklyuymo"]
 
-[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/core/effects/StatusEffect.gd" id="2"]
+[ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" uid="uid://cnrvf2qrt0ie4" path="res://scripts/core/effects/StatusEffect.gd" id="2"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 status_id = "arcane_mark"
 duration_turns = 3
-stacks = 1
 magnitude = 1
-apply_to_source = false
-
 description = "Marca al objetivo. El siguiente proyectil arcano que lo golpee consume la marca y causa +2 daño."
 
 [resource]
@@ -20,9 +17,7 @@ display_name = "Marca de Inestabilidad"
 description = "Marca a un enemigo para preparar el siguiente impacto arcano."
 category = "magic"
 card_type = "magic"
-target_type = "enemy"
 stat_key = "magic"
-base_damage = 0
 damage_scaling = 0
 range = 2
 cooldown = 5
