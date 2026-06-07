@@ -250,7 +250,27 @@ func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 	if corridor_length < min_length or corridor_length > max_length:
 		push_warning("Corridor length %d outside bounds [%d, %d]. Consider adjusting room placement." % [corridor_length, min_length, max_length])
 
-	return corridor_cells
+	var final_cells: Array[Vector2i] = []
+
+	for c in corridor_cells:
+		_add_corridor_cell_double(c, final_cells)
+
+	return final_cells
+
+
+func _add_corridor_cell_double(cell: Vector2i, out: Array) -> void:
+	var offsets = [
+		Vector2i(0, 0),
+		Vector2i(1, 0)
+	]
+
+	for o in offsets:
+		var c = cell + o
+
+		if dungeon.is_within_bounds(c) and not _working_room_cells.has(c):
+			out.append(c)
+			_working_floor_cells[c] = true
+			_working_corridor_cells[c] = true
 
 
 func _add_corridor_cell(cell: Vector2i) -> bool:
