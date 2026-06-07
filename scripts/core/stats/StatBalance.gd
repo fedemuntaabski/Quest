@@ -11,11 +11,11 @@ const BASE_UPGRADE_COST: int = 50
 const UPGRADE_COST_STEP: int = 25
 
 const DEX_DODGE_MIN: float = 0.025
-const DEX_DODGE_MAX: float = 0.18
-const DEX_DODGE_CURVE: float = 8.0
+const DEX_DODGE_MAX: float = 0.2
+const DEX_DODGE_CURVE: float = 6.8
 
-const DEX_DAMAGE_LINEAR_PORTION: float = 0.6
-const DEX_DAMAGE_ROOT_PORTION: float = 0.4
+const DEX_DAMAGE_LINEAR_PORTION: float = 0.4
+const DEX_DAMAGE_ROOT_PORTION: float = 0.3
 
 static func clamp_player_hp(max_hp: int, current_hp: int) -> Dictionary:
 	var clamped_max := clampi(max_hp, PLAYER_BASE_HP, PLAYER_MAX_HP)

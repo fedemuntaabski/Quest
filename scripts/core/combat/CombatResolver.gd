@@ -25,10 +25,9 @@ static func resolve_attack(
 			"reason": "missing_stats"
 		}
 
-	var attack_stat := attacker.get_total_stat(stat_key)
-
+	var attack_stat := attacker.get_total_dexterity()
 	var attack_bonus := CombatFormula.get_attack_bonus(
-		stat_key,
+		"dexterity",
 		attack_stat,
 		damage_scaling
 	)

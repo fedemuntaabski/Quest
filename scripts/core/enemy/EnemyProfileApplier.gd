@@ -27,7 +27,7 @@ static func apply_standard_combat_profile(combat_component: CombatComponent) -> 
 		return
 	combat_component.base_damage = STANDARD_ENEMY_BASE_DAMAGE
 	combat_component.attack_range = 1
-	combat_component.attack_stat = "strength"
+	
 
 
 static func apply_combat_from_data(combat_component: CombatComponent, data: EnemyData) -> void:
@@ -35,7 +35,6 @@ static func apply_combat_from_data(combat_component: CombatComponent, data: Enem
 		return
 	combat_component.base_damage = data.base_damage
 	combat_component.attack_range = max(1, data.attack_range)
-	combat_component.attack_stat = data.attack_stat
 	combat_component.forced_miss_chance = clampf(data.forced_miss_chance, 0.0, 1.0)
 
 

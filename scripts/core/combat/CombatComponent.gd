@@ -12,7 +12,7 @@ const CombatResolverScript = preload("res://scripts/core/combat/CombatResolver.g
 # setup code and lives under the actor node.
 
 @export var attack_range: int = 1
-@export var attack_stat: String = "strength"
+const ATTACK_STAT := "dexterity"
 @export var base_damage: int = 0
 @export_range(0.0, 1.0, 0.01) var forced_miss_chance: float = 0.0
 
@@ -59,7 +59,7 @@ func attack(target: Node) -> Dictionary:
 			"damage": 0,
 			"reason": "no_target"
 		}
-		
+
 	if forced_miss_chance > 0.0 and randf() < forced_miss_chance:
 		var forced_miss_result := {
 			"hit": false,
@@ -77,7 +77,7 @@ func attack(target: Node) -> Dictionary:
 	var result := CombatResolverScript.resolve_attack(
 		stats,
 		target_component.stats,
-		attack_stat,
+		"dexterity",
 		base_damage,
 		1.0,
 		target_component.actor_owner
