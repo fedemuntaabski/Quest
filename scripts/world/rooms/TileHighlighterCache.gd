@@ -36,6 +36,15 @@ func update_range_cache(highlighter: TileHighlighter) -> void:
             highlighter._cached_range_cells.append(cell)
         highlighter.queue_redraw()
         return
+    
+    if card.target_type == "self":
+        highlighter._cached_range_cells.clear()
+        highlighter._cached_range_cells.append(
+            highlighter._player.grid_pos
+        )
+        highlighter.queue_redraw()
+        return
+
 
     if card.target_type != "enemy":
         highlighter.queue_redraw()
