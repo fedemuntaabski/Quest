@@ -17,6 +17,7 @@ var flow: MainMenuFlow
 
 
 func _ready() -> void:
+	$AnimationPlayer.play("menu_intro")
 	_setup_content_scaling()
 	_connect_signals()
 
