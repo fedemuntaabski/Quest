@@ -54,7 +54,7 @@ func show_reward(cards: Array, requires_replace: bool = false, equipped_slots: A
 		panel.scale = Vector2(0.98, 0.98)
 	visible = true
 	_is_active = true
-	title_label.text = "Choose a Card Reward" if not requires_replace else "Choose a Card (then replace a slot)"
+	title_label.text = "Elige tu carta" if not requires_replace else "Elige una carta (luego reemplaza una ranura)"
 	
 	_play_show_animation()
 

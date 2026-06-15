@@ -73,7 +73,7 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
 [sub_resource type="Animation" id="Animation_mipys"]
-length = 0.001
+length = 1.5333333
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true

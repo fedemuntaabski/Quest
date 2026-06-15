@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://mjkkhtrj2ch3"]
 
-[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
-[ext_resource type="Script" path="res://scripts/core/effects/StatusEffect.gd" id="3"]
+[ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" uid="uid://di03ffuiig3v2" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+[ext_resource type="Script" uid="uid://cnrvf2qrt0ie4" path="res://scripts/core/effects/StatusEffect.gd" id="3"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
@@ -13,11 +13,7 @@ damage_scaling = 0.6
 [sub_resource type="Resource" id="2"]
 script = ExtResource("3")
 status_id = "stun"
-duration_turns = 1
-stacks = 1
 magnitude = 1
-apply_to_source = false
-
 description = "Aplica Aturdimiento durante 1 turno. El enemigo no puede moverse ni atacar."
 
 [resource]
@@ -27,12 +23,11 @@ display_name = "Prisión de Hielo"
 description = "Inflige daño y congela al enemigo, dejándolo aturdido durante 1 turno."
 category = "magic"
 card_type = "magic"
-target_type = "enemy"
 stat_key = "magic"
 base_damage = 1
 damage_scaling = 0.2
 range = 2
-cooldown = 9
+cooldown = 8
 effects = Array[Resource]([SubResource("1"), SubResource("2")])
 tags = Array[String](["magic", "control", "stun", "freeze"])
 keywords = Array[String](["aturdir", "control", "congelar"])

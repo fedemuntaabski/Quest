@@ -1,16 +1,13 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://bcqfcl2dmmsmn"]
 
-[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/core/effects/BuffEffect.gd" id="2"]
+[ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" uid="uid://cpdt042bv7u3" path="res://scripts/core/effects/BuffEffect.gd" id="2"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-
-stat_key = "strength"
 value = 2
 duration_turns = 3
 apply_to_source = true
-
 description = "Aumenta tu Fuerza en +2 durante 3 turnos."
 
 [resource]
@@ -18,11 +15,8 @@ script = ExtResource("1")
 id = "rage"
 display_name = "Furia"
 description = "Aumenta tu Fuerza en +2 durante 3 turnos para potenciar tus cartas de Fuerza."
-category = "strength"
-rarity = "common"
 card_type = "buff"
 target_type = "self"
-stat_key = "strength"
 range = 0
 cooldown = 4
 effects = Array[Resource]([SubResource("1")])

@@ -1,16 +1,14 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://blt8tobp1v55l"]
 
-[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/core/effects/BuffEffect.gd" id="2"]
+[ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" uid="uid://cpdt042bv7u3" path="res://scripts/core/effects/BuffEffect.gd" id="2"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
-
 stat_key = "magic"
 value = 2
 duration_turns = 3
 apply_to_source = true
-
 description = "Aumenta tu Magia en +2 durante 3 turnos para potenciar tus cartas de Magia."
 
 [resource]

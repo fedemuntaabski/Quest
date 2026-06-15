@@ -1,13 +1,12 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://m8io3v0uvinq"]
 
-[ext_resource type="Script" path="res://scripts/core/cards/CardData.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
-[ext_resource type="Script" path="res://scripts/core/effects/StatusEffect.gd" id="3"]
+[ext_resource type="Script" uid="uid://cphq0h0u56tvl" path="res://scripts/core/cards/CardData.gd" id="1"]
+[ext_resource type="Script" uid="uid://di03ffuiig3v2" path="res://scripts/core/effects/DamageEffect.gd" id="2"]
+[ext_resource type="Script" uid="uid://cnrvf2qrt0ie4" path="res://scripts/core/effects/StatusEffect.gd" id="3"]
 
 [sub_resource type="Resource" id="1"]
 script = ExtResource("2")
 base_damage = 1
-stat_key = "strength"
 damage_scaling = 0.4
 description = "Un corte que prepara un sangrado constante."
 
@@ -15,11 +14,8 @@ description = "Un corte que prepara un sangrado constante."
 script = ExtResource("3")
 status_id = "bleed"
 duration_turns = 2
-stacks = 1
 magnitude = 1
 max_stacks = 10
-refresh_duration_on_reapply = true
-stack_behavior = "add"
 status_tags = Array[String](["physical", "bleed"])
 
 [resource]
@@ -27,18 +23,13 @@ script = ExtResource("1")
 id = "herida_profunda"
 display_name = "Herida Profunda"
 description = "Causa sangrado y hace 1 de daño por turno durante 2 turnos."
-category = "strength"
-rarity = "common"
 card_type = "debuff"
-target_type = "enemy"
-stat_key = "strength"
 base_damage = 1
 damage_scaling = 0.3
-range = 1
 cooldown = 6
-resource_cost = 1
 effects = Array[Resource]([SubResource("1"), SubResource("2")])
 tags = Array[String](["strength", "bleed", "damage"])
+resource_cost = 1
 keywords = Array[String](["bleed", "sangrado", "melee"])
 archetype = "pressure"
 combo_tags = Array[String](["bleed", "setup"])

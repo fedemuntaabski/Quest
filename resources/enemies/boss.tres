@@ -1,16 +1,16 @@
 [gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://dw1g5rbp50njp"]
 
 [ext_resource type="Script" uid="uid://bp0gdkxxuyr5v" path="res://scripts/core/enemy/EnemyData.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/BossEnemy.tscn" id="1_h3ops"]
+[ext_resource type="PackedScene" uid="uid://8wtfaaxkuur0" path="res://scenes/BossEnemy.tscn" id="1_h3ops"]
 
 [resource]
 script = ExtResource("1")
 enemy_id = "boss"
 enemy_name = "Boss_Purple"
-max_hp = 30
+max_hp = 25
 strength = 0
-dexterity = 4
-base_damage = 5
+dexterity = 3
+base_damage = 4
 reward_gold = 200
 enemy_scene = ExtResource("1_h3ops")
 target_tint = Color(1, 0.6, 1, 1)
