@@ -113,7 +113,7 @@ func on_start_button_pressed() -> void:
 		flow.start_pressed()
 
 func _on_credits_button_pressed() -> void:
-	print("CREDITS")
+	Logger.info(Logger.Category.UI, "Credits button pressed")
 
 	if flow:
 		flow.credits_pressed()

@@ -147,11 +147,11 @@ func _get_mouse_world_pos() -> Vector2:
 
 # ── Grid helpers ──────────────────────────────────────────────────────────────
 func world_to_grid(world: Vector2) -> Vector2i:
-	return core.world_to_grid(world) if core else (navigation_helper.world_to_grid_coords(world) if navigation_helper else Vector2i.ZERO)
+	return world_to_grid_coords(world)
 
 
 func grid_to_world(grid: Vector2i) -> Vector2:
-	return core.grid_to_world(grid) if core else (navigation_helper.grid_to_world_coords(grid) if navigation_helper else Vector2.ZERO)
+	return grid_to_world_coords(grid)
 
 
 func is_walkable_cell(grid_pos: Vector2i) -> bool:
@@ -173,7 +173,7 @@ func _setup_enemy_manager() -> void:
 
 
 func _on_room_cleared_from_enemies(room_id: int) -> void:
-	print("Room cleared by enemies:", room_id)
+	Logger.info(Logger.Category.MAP, "Room cleared of enemies: %d" % room_id)
 
 
 # ── Enemy tracking ────────────────────────────────────────────────────────────

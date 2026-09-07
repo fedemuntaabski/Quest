@@ -226,7 +226,7 @@ func process_turn_end() -> void:
 func _skip_turn(reason: String = "") -> void:
 	if turn_manager == null:
 		return
-	print("[Enemy] _skip_turn: enemy=%s reason=%s" % [name, reason])
+	Logger.debug(Logger.Category.ACTIONS, "_skip_turn: enemy=%s reason=%s" % [name, reason])
 	turn_manager.call_deferred("end_turn")
 
 func _start_move_to(next: Vector2i) -> void:

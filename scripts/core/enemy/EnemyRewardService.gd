@@ -14,7 +14,7 @@ static func process_enemy_defeat(manager: EnemyManager, enemy, room_id: int) -> 
 		reward_gold = int(enemy.get_reward_gold())
 
 	manager._run_accumulated_gold += max(0, reward_gold)
-	print("[EnemyManager] Enemy defeated: +%dg (accumulated total: %dg)" % [reward_gold, manager._run_accumulated_gold])
+	Logger.info(Logger.Category.COMBAT, "Enemy defeated: +%dg (accumulated total: %dg)" % [reward_gold, manager._run_accumulated_gold])
 
 	if is_boss:
 		manager.boss_defeated.emit(enemy)
@@ -59,6 +59,6 @@ static func grant_and_reset_accumulated_gold(manager: EnemyManager) -> int:
 
 	var amount := manager._run_accumulated_gold
 	currency.add_gold(amount, Vector2.ZERO)
-	print("[EnemyManager] Run ended: granted accumulated gold +%dg" % amount)
+	Logger.info(Logger.Category.SAVE, "Run ended: granted accumulated gold +%dg" % amount)
 	manager._run_accumulated_gold = 0
 	return amount

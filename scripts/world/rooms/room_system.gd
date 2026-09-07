@@ -56,12 +56,12 @@ func _set_active_room(room_id: int, enforce_connectivity: bool = true) -> void:
 
 	if enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0:
 		if not _is_valid_linear_transition(dungeon.active_room_id, room_id):
-			print("RoomSystem: rejected activation of room %d (not a linear neighbor of active room %d)" % [room_id, dungeon.active_room_id])
+			Logger.warn(Logger.Category.MAP, "RoomSystem: rejected activation of room %d (not a linear neighbor of active room %d)" % [room_id, dungeon.active_room_id])
 			return
 
 	if not enforce_connectivity and dungeon != null and dungeon.active_room_id >= 0:
 		if not _is_valid_linear_transition(dungeon.active_room_id, room_id):
-			print("RoomSystem: accepting non-adjacent room sync from player position room %d -> %d" % [dungeon.active_room_id, room_id])
+			Logger.info(Logger.Category.MAP, "RoomSystem: accepting non-adjacent room sync from player position room %d -> %d" % [dungeon.active_room_id, room_id])
 
 	active_room_id = room_id
 	if dungeon:

@@ -123,7 +123,7 @@ func receive_damage(amount: int, crit: bool = false) -> void:
 	if stats == null:
 		return
 
-	print("[Combat] Damage applied: ", amount, " Crit: ", crit)
+	Logger.debug(Logger.Category.COMBAT, "Damage applied: %d Crit: %s" % [amount, str(crit)])
 	stats.take_damage(amount)
 	if actor_owner and actor_owner.has_method("show_damage"):
 		actor_owner.show_damage(amount, crit)
