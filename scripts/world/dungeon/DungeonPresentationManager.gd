@@ -1,13 +1,13 @@
 extends Node
 class_name DungeonPresentationManager
 
-var map_renderer: DungeonMapRenderer
+var map_renderer: DungeonTileRenderer
 var fog_manager: FogOfWarManager
 var generator: DungeonGenerator
 
 func setup(parent: Node, dg: DungeonGenerator) -> void:
 	self.generator = dg
-	map_renderer = parent.get_node_or_null("TileRenderer") as DungeonMapRenderer
+	map_renderer = parent.get_node_or_null("TileRenderer") as DungeonTileRenderer
 	if map_renderer == null:
 		map_renderer = DungeonTileRenderer.new()
 		map_renderer.name = "TileRenderer"

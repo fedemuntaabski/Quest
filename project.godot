@@ -22,7 +22,6 @@ boot_splash/minimum_display_time=2000
 
 PlayerStats="*res://scripts/core/stats/PlayerStats.gd"
 SaveManager="*res://scripts/managers/SaveManager.gd"
-MapManag="uid://cwowlgio0q0w8"
 CurrencyManager="*res://scripts/managers/CurrencyManager.gd"
 ThemeManager="*res://scripts/core/theme/ThemeManager.gd"
 
