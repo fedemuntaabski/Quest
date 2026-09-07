@@ -24,6 +24,7 @@ PlayerStats="*res://scripts/core/stats/PlayerStats.gd"
 SaveManager="*res://scripts/managers/SaveManager.gd"
 CurrencyManager="*res://scripts/managers/CurrencyManager.gd"
 ThemeManager="*res://scripts/core/theme/ThemeManager.gd"
+SettingsManager="*res://scripts/managers/SettingsManager.gd"
 
 [display]
 

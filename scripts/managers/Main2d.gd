@@ -323,9 +323,8 @@ func _on_player_died() -> void:
 	if enemy_manager:
 		enemy_manager.grant_and_reset_accumulated_gold()
 	
-	var gsm := _get_game_state_manager()
-	if gsm:
-		gsm.request_death()
+	if game_state_manager:
+		game_state_manager.request_death()
 	else:
 		if map_manager and map_manager.turn_manager:
 			map_manager.turn_manager.stop()
@@ -350,9 +349,8 @@ func _on_boss_defeated(enemy) -> void:
 		death_overlay.visible = false
 	_hide_victory_overlay()
 
-	var gsm := _get_game_state_manager()
-	if gsm:
-		gsm.request_victory()
+	if game_state_manager:
+		game_state_manager.request_victory()
 	else:
 		_on_victory_entered()
 
@@ -457,14 +455,18 @@ func _on_retry_pressed() -> void:
 	_reload_current_scene()
 
 func _go_to_main_menu() -> void:
-	ManagerLocator.flush_saves()
-	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	_cleanup_and_change_scene("res://scenes/MainMenu.tscn")
 
 func _reload_current_scene() -> void:
+	_cleanup_and_change_scene("", true)
+
+func _cleanup_and_change_scene(target_scene: String, reload: bool = false) -> void:
 	ManagerLocator.flush_saves()
 	get_tree().paused = false
-	get_tree().reload_current_scene()
+	if reload:
+		get_tree().reload_current_scene()
+	elif not target_scene.is_empty():
+		get_tree().change_scene_to_file(target_scene)
 
 # ─────────────────────────────────────────────
 # TIMER
@@ -475,19 +477,17 @@ func _reset_room_timer() -> void:
 
 func _on_tutorial_started() -> void:
 	_room_timer_paused = true
-	var gsm := _get_game_state_manager()
-	if gsm:
-		gsm.request_pause()
+	if game_state_manager:
+		game_state_manager.request_pause()
 
 func _on_tutorial_finished() -> void:
 	var popup_shown := _load_post_victory_popup_if_needed()
 	_room_timer_paused = popup_shown
-	var gsm := _get_game_state_manager()
-	if gsm and not popup_shown:
-		gsm.request_resume()
+	if game_state_manager and not popup_shown:
+		game_state_manager.request_resume()
 
 func _get_game_state_manager() -> GameStateManager:
-	return get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	return game_state_manager
 
 func _on_reward_entered(cards: Array) -> void:
 	if hud:
@@ -555,9 +555,8 @@ func _load_post_victory_popup_if_needed() -> bool:
 	post_victory_popup.show_popup(save_mgr.get_run_cycle())
 
 	_room_timer_paused = true
-	var gsm := _get_game_state_manager()
-	if gsm:
-		gsm.request_pause()
+	if game_state_manager:
+		game_state_manager.request_pause()
 
 	return true
 
@@ -572,6 +571,5 @@ func _on_post_victory_popup_continue_pressed() -> void:
 	post_victory_popup = null
 
 	_room_timer_paused = false
-	var gsm := _get_game_state_manager()
-	if gsm:
-		gsm.request_resume()
+	if game_state_manager:
+		game_state_manager.request_resume()

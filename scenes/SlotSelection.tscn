@@ -1,62 +1,292 @@
 [gd_scene format=3 uid="uid://bhcojkrmd5j16"]
 
-[node name="SlotSelection" type="Control" unique_id=1388388551]
+[ext_resource type="Script" path="res://scripts/ui/menus/SaveSlotSelector.gd" id="1_slot_selector_script"]
+[ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
+[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 32.0
+content_margin_top = 32.0
+content_margin_right = 32.0
+content_margin_bottom = 32.0
+bg_color = Color(0.08, 0.06, 0.05, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.8, 0.63, 0.33, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.11, 0.09, 0.86)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.76, 0.56, 0.25, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_pressed"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.11, 0.08, 0.06, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.72, 0.51, 0.2, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.26, 0.17, 0.11, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.72, 0.35, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_focus"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.19, 0.13, 0.1, 0.88)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.82, 0.41, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_delete_normal"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.22, 0.08, 0.08, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.22, 0.22, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_delete_hover"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.35, 0.1, 0.1, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.35, 0.35, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_info_panel"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0.12, 0.09, 0.07, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.48, 0.25, 0.8)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="SlotSelection" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_slot_selector_script")
 
-[node name="CenterContainer" type="CenterContainer" parent="." unique_id=390690179]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer" unique_id=1396628277]
+[node name="SlotCard" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(980, 680)
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
-[node name="LeftPanel" type="VBoxContainer" parent="CenterContainer/HBoxContainer" unique_id=1240148231]
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/SlotCard"]
 layout_mode = 2
+theme_override_constants/separation = 40
+alignment = 1
 
-[node name="Title" type="Label" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=472353146]
+[node name="LeftPanel" type="VBoxContainer" parent="CenterContainer/SlotCard/HBoxContainer"]
+custom_minimum_size = Vector2(460, 0)
 layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=1266543588]
+[node name="Title" type="Label" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.03, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_title_font")
+theme_override_font_sizes/font_size = 38
+text = "SELECCIONAR RANURA"
+horizontal_alignment = 1
 
-[node name="SlotRow1" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer" unique_id=728737530]
+[node name="SlotContainer" type="VBoxContainer" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel"]
 layout_mode = 2
+theme_override_constants/separation = 16
 
-[node name="Delete1" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer" unique_id=1031867444]
+[node name="SlotRow1" type="HBoxContainer" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel/SlotContainer"]
 layout_mode = 2
+theme_override_constants/separation = 12
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=170579283]
+[node name="SlotBtn1" type="Button" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel/SlotContainer/SlotRow1"]
+custom_minimum_size = Vector2(360, 72)
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+text = "RANURA 1"
 
-[node name="SlotRow2" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer3" unique_id=420925868]
+[node name="Delete1" type="Button" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel/SlotContainer/SlotRow1"]
+custom_minimum_size = Vector2(64, 72)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.3, 0.3, 1)
+theme_override_colors/font_hover_color = Color(1, 0.5, 0.5, 1)
+theme_override_fonts/font = ExtResource("2_title_font")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_delete_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_delete_hover")
+text = "X"
 
-[node name="Delete2" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer3" unique_id=1660855987]
+[node name="SlotRow2" type="HBoxContainer" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel/SlotContainer"]
 layout_mode = 2
+theme_override_constants/separation = 12
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=2044991683]
+[node name="SlotBtn2" type="Button" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel/SlotContainer/SlotRow2"]
+custom_minimum_size = Vector2(360, 72)
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+text = "RANURA 2"
 
-[node name="SlotRow3" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer2" unique_id=909287382]
+[node name="Delete2" type="Button" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel/SlotContainer/SlotRow2"]
+custom_minimum_size = Vector2(64, 72)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.3, 0.3, 1)
+theme_override_colors/font_hover_color = Color(1, 0.5, 0.5, 1)
+theme_override_fonts/font = ExtResource("2_title_font")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_delete_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_delete_hover")
+text = "X"
 
-[node name="Delete3" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel/HBoxContainer2" unique_id=23063660]
+[node name="SlotRow3" type="HBoxContainer" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel/SlotContainer"]
 layout_mode = 2
+theme_override_constants/separation = 12
 
-[node name="BackButton" type="Button" parent="CenterContainer/HBoxContainer/LeftPanel" unique_id=1233481064]
+[node name="SlotBtn3" type="Button" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel/SlotContainer/SlotRow3"]
+custom_minimum_size = Vector2(360, 72)
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+text = "RANURA 3"
 
-[node name="RightPanel" type="PanelContainer" parent="CenterContainer/HBoxContainer" unique_id=792382588]
+[node name="Delete3" type="Button" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel/SlotContainer/SlotRow3"]
+custom_minimum_size = Vector2(64, 72)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.3, 0.3, 1)
+theme_override_colors/font_hover_color = Color(1, 0.5, 0.5, 1)
+theme_override_fonts/font = ExtResource("2_title_font")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_delete_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_delete_hover")
+text = "X"
 
-[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/HBoxContainer/RightPanel" unique_id=887676835]
+[node name="BackButton" type="Button" parent="CenterContainer/SlotCard/HBoxContainer/LeftPanel"]
+custom_minimum_size = Vector2(360, 68)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+text = "VOLVER"
 
-[node name="HoverLabel" type="Label" parent="CenterContainer/HBoxContainer/RightPanel" unique_id=241001439]
+[node name="RightPanel" type="PanelContainer" parent="CenterContainer/SlotCard/HBoxContainer"]
+custom_minimum_size = Vector2(400, 480)
 layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_info_panel")
+
+[node name="HoverLabel" type="Label" parent="CenterContainer/SlotCard/HBoxContainer/RightPanel"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.9, 0.85, 0.75, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "Selecciona una ranura para ver sus datos..."
+autowrap_mode = 3

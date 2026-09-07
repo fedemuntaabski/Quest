@@ -12,8 +12,8 @@ const UPGRADES = {
 	"dex": {"stat": "dexterity", "label": "Agilidad", "effect": "+1 Agilidad Maxima", "value": 1}
 }
 
-@export var save_mgr: SaveManager
-@export var player_stats: PlayerStats
+@export var save_mgr: Node
+@export var player_stats: Node
 @export var confirm_exit_on_run: bool = true
 
 @onready var pause_panel = $CenterContainer/PausePanel
@@ -63,9 +63,9 @@ func _ready() -> void:
 	hover_sfx.stream = load("res://assets/audio/hover.mp3")
 
 	if save_mgr == null:
-		save_mgr = ManagerLocator.get_save_manager() as SaveManager
+		save_mgr = ManagerLocator.get_save_manager()
 	if player_stats == null:
-		player_stats = ManagerLocator.get_player_stats() as PlayerStats
+		player_stats = ManagerLocator.get_player_stats()
 
 	_connect()
 	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
@@ -141,6 +141,9 @@ func _set_panel(i: int) -> void:
 	if options_menu:
 		options_menu.close()
 	panels[i].visible = true
+
+func _on_options_menu_closed() -> void:
+	_set_panel(0)
 
 # ---------------- CONNECT ----------------
 
