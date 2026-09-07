@@ -52,10 +52,10 @@ func execute() -> void:
 		real_target = target as Node
 
 	if card_system:
-		print("[CardAction] execute: awaiting card_system.execute_card_snapshot()")
+		Logger.debug(Logger.Category.ACTIONS, "execute: awaiting card_system.execute_card_snapshot()")
 		res = await card_system.execute_card_snapshot(card_data, target)
 	else:
-		print("[CardAction] execute: card_system is NULL")
+		Logger.error(Logger.Category.ACTIONS, "execute: card_system is NULL")
 	
 	finish(res if res else {"status":"unknown"})
 	

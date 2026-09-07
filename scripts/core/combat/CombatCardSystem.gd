@@ -70,7 +70,7 @@ func _compute_card_validation(card: CardData, target: Node) -> Dictionary:
 			result["reason"] = str(val.get("reason", "invalid"))
 			# Helpful debug for common validation failures
 			if result["reason"] == "not_in_same_room":
-				print("[CombatCardSystem] card validation rejected due to not_in_same_room; allowing for cards by default")
+				Logger.debug(Logger.Category.CARDS, "card validation rejected due to not_in_same_room; allowing for cards by default")
 			if val.has("distance"):
 				result["distance"] = val.get("distance")
 			if val.has("max_range"):
@@ -172,7 +172,7 @@ func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager, 
 
 	var distance := int(validation.get("distance", -1))
 	if card.target_type == "enemy":
-		print("[CombatCardSystem] Queue card '%s' at distance %d / range %d" % [card.display_name, distance, card.range])
+		Logger.info(Logger.Category.CARDS, "Queue card '%s' at distance %d / range %d" % [card.display_name, distance, card.range])
 
 	var occ_ver := -1
 	if map_manager and map_manager.occupancy_manager:
@@ -191,9 +191,12 @@ func queue_card_action(card: CardData, target: Node, turn_manager: TurnManager, 
 	turn_manager.action_queue.queue_action(action)
 	return true
 
+func execute_card(card: CardData, target: Node) -> Dictionary:
+	return await execute_card_snapshot(card, {"target": target})
+
 func execute_card_snapshot(card: CardData, snapshot: Dictionary) -> Dictionary:
 	# Snapshot-aware execution: validate occupancy version and avoid re-repairing
-	print("[CombatCardSystem] execute_card_snapshot: START card=", card.display_name if card else "NULL", " snapshot=", snapshot)
+	Logger.debug(Logger.Category.CARDS, "execute_card_snapshot: START card=%s snapshot=%s" % [card.display_name if card else "NULL", str(snapshot)])
 	if card == null:
 		card_failed.emit(card, "missing_card")
 		return {"hit": false, "damage": 0, "reason": "missing_card"}
@@ -246,9 +249,8 @@ func _finalize_card_execution(card: CardData, target: Node, target_component: Co
 				hud.show_combat_result(result)
 
 		var damage := int(result.get("damage", 0))
-		# Debug: log finalization info
 		if result.get("hit", false) and damage > 0:
-			print("[CombatCardSystem] _finalize_card_execution: applying damage=", damage)
+			Logger.debug(Logger.Category.COMBAT, "_finalize_card_execution: applying damage=%d" % damage)
 			target_component.receive_damage(damage, result.get("crit", false))
 		elif not result.get("hit", false) and target_component.actor_owner and target_component.actor_owner.has_method("show_miss"):
 			target_component.actor_owner.show_miss()
@@ -314,10 +316,10 @@ func _is_arcane_projectile_card(card: CardData) -> bool:
 func _resolve_card_result(card: CardData, source_stats: CharacterStats, target_stats: CharacterStats, target_actor: Node = null) -> Dictionary:
 	var results: Array = []
 	var has_damage := false
-	print("[CombatCardSystem] resolve_card: START card=%s effects=%d" % [card.display_name if card else "NULL", card.effects.size() if card else 0])
+	Logger.debug(Logger.Category.COMBAT, "resolve_card: START card=%s effects=%d" % [card.display_name if card else "NULL", card.effects.size() if card else 0])
 
 	if card == null or source_stats == null or target_stats == null:
-		print("[CombatCardSystem] resolve_card: reject reason=missing_inputs card=%s source_stats=%s target_stats=%s" % ["valid" if card else "NULL", "valid" if source_stats else "NULL", "valid" if target_stats else "NULL"])
+		Logger.warn(Logger.Category.COMBAT, "resolve_card: reject reason=missing_inputs")
 		return {"results": results, "hit": false, "damage": 0}
 
 	if card.effects.is_empty():
@@ -343,7 +345,7 @@ func _resolve_card_result(card: CardData, source_stats: CharacterStats, target_s
 	var summary := _summarize_card_results(results)
 	if not has_damage:
 		summary["hit"] = true
-	print("[CombatCardSystem] resolve_card: END card=%s hit=%s damage=%d result_count=%d movement=%d statuses=%d modifiers=%d" % [card.display_name, summary.get("hit", false), int(summary.get("damage", 0)), results.size(), summary.get("movement", []).size(), summary.get("statuses", []).size(), summary.get("modifiers", []).size()])
+	Logger.debug(Logger.Category.COMBAT, "resolve_card: END card=%s hit=%s damage=%d" % [card.display_name, summary.get("hit", false), int(summary.get("damage", 0))])
 
 	return summary
 

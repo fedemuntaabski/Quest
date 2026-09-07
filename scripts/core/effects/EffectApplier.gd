@@ -14,28 +14,25 @@ class_name EffectApplier
 
 func apply(result: Dictionary, target_component: CombatComponent, context: EffectContext) -> void:
 	# Entry point for applying an already-resolved `result` payload.
-	print("[EffectApplier] apply: START result=%s, target=%s" % [result, target_component.actor_owner.name if target_component and target_component.actor_owner else "NULL"])
+	Logger.debug(Logger.Category.COMBAT, "apply: START result=%s, target=%s" % [str(result), target_component.actor_owner.name if target_component and target_component.actor_owner else "NULL"])
 	if result == null:
-		print("[EffectApplier] apply: result is NULL")
+		Logger.warn(Logger.Category.COMBAT, "apply: result is NULL")
 		return
 	if target_component == null:
-		print("[EffectApplier] apply: target_component is NULL")
+		Logger.warn(Logger.Category.COMBAT, "apply: target_component is NULL")
 		return
 	if context == null:
-		push_warning("EffectApplier.apply called with null context")
-		print("[EffectApplier] apply: context is NULL")
+		Logger.warn(Logger.Category.COMBAT, "apply: context is NULL")
 		return
 
 	var map_manager := context.map_manager
 	var owner_actor := context.owner_actor
 
 	if map_manager == null:
-		push_warning("EffectApplier: missing map_manager in context")
-		print("[EffectApplier] apply: reject reason=missing_map_manager")
+		Logger.warn(Logger.Category.COMBAT, "apply: reject reason=missing_map_manager")
 		return
 	if target_component.actor_owner == null or not is_instance_valid(target_component.actor_owner):
-		push_warning("EffectApplier: target actor is invalid or freed")
-		print("[EffectApplier] apply: reject reason=invalid_target_actor")
+		Logger.warn(Logger.Category.COMBAT, "apply: reject reason=invalid_target_actor")
 		return
 
 	# Begin effect transaction
@@ -46,36 +43,36 @@ func apply(result: Dictionary, target_component: CombatComponent, context: Effec
 
 	# Movement
 	var movement_count: int = result.get("movement", []).size()
-	print("[EffectApplier] apply: processing %d movement effects" % movement_count)
+	Logger.debug(Logger.Category.COMBAT, "apply: processing %d movement effects" % movement_count)
 	for move_data in result.get("movement", []):
 		if not (move_data is Dictionary):
 			continue
 		var ok := await _apply_movement_effect(move_data, target_component, owner_actor, map_manager, context)
 		if not ok:
-			push_error("EffectApplier.apply: movement effect failed")
+			Logger.error(Logger.Category.COMBAT, "apply: movement effect failed")
 			success = false
 			break
 
 	# Statuses
 	if success:
 		var status_count: int = result.get("statuses", []).size()
-		print("[EffectApplier] apply: processing %d status effects" % status_count)
+		Logger.debug(Logger.Category.COMBAT, "apply: processing %d status effects" % status_count)
 		for status_data in result.get("statuses", []):
 			if not (status_data is Dictionary):
 				continue
 			var ok2 := _apply_status_effect(status_data, target_component, context)
 			if not ok2:
-				push_error("EffectApplier.apply: status effect failed")
+				Logger.error(Logger.Category.COMBAT, "apply: status effect failed")
 				success = false
 				break
 
-	print("[EffectApplier] apply: effects complete success=%s movement_count=%d status_count=%d" % [success, movement_count, result.get("statuses", []).size()])
+	Logger.debug(Logger.Category.COMBAT, "apply: effects complete success=%s movement_count=%d status_count=%d" % [success, movement_count, result.get("statuses", []).size()])
 	if context:
 		if success:
 			context.commit()
 		else:
 			context.rollback()
-	print("[EffectApplier] apply: COMPLETE")
+	Logger.debug(Logger.Category.COMBAT, "apply: COMPLETE")
 
 func _apply_movement_effect(move_data: Dictionary, target_component: CombatComponent, owner_actor: Node, map_manager: Node, context: EffectContext) -> bool:
 	# Movement effects share the same one-step actor contract as queued move actions.
