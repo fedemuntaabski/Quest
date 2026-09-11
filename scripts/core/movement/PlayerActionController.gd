@@ -22,7 +22,7 @@ func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 	player = p_player
 	map_manager = p_map_manager
 	_ensure_input_actions()
-	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	var game_state_manager := ManagerLocator.get_game_state_manager()
 	if game_state_manager and not game_state_manager.state_changed.is_connected(_on_game_state_changed):
 		game_state_manager.state_changed.connect(_on_game_state_changed)
 	# Ensure an InputHandler child exists to capture input events
@@ -278,7 +278,7 @@ func _handle_mouse_hover(_event: InputEvent = null) -> void:
 		hovered_enemy.set_targeted(true)
 
 func _can_process_input() -> bool:
-	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	var game_state_manager := ManagerLocator.get_game_state_manager()
 	if game_state_manager:
 		return game_state_manager.can_process_input()
 	return true

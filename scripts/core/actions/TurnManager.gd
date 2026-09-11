@@ -26,11 +26,7 @@ func _ready() -> void:
 	# turn processing honors global pause/death/reward states.
 
 func _bind_game_state() -> void:
-	var tree := get_tree()
-	if tree == null:
-		call_deferred("_bind_game_state")
-		return
-	var gsm := tree.get_first_node_in_group("game_state_manager") as GameStateManager
+	var gsm := ManagerLocator.get_game_state_manager()
 	if gsm == null:
 		call_deferred("_bind_game_state")
 		return
@@ -170,10 +166,7 @@ func _on_action_finished(action: BaseAction, result: Dictionary) -> void:
 		end_turn()
 
 func _can_process_turns() -> bool:
-	var tree := get_tree()
-	if tree == null:
-		return true
-	var game_state_manager := tree.get_first_node_in_group("game_state_manager") as GameStateManager
+	var game_state_manager := ManagerLocator.get_game_state_manager()
 	if game_state_manager:
 		return game_state_manager.can_process_turns()
 	return true

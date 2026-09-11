@@ -14,13 +14,14 @@ static func spawn_enemies(manager: EnemyManager, room_infos: Array, wall_cells: 
 	manager.boss_enemy = null
 
 	var map_manager := manager.get_parent() as MapManager
+	var occupancy_manager: OccupancyManager = map_manager.get_occupancy_manager() if map_manager else null
 	var occupied_spawn_cells: Dictionary = {}
 	var player_cell: Vector2i = Vector2i(-9999, -9999)
 	if map_manager and manager.player:
 		player_cell = map_manager.world_to_grid_coords(manager.player.global_position)
 
 	for room_info in room_infos:
-		_spawn_enemy_for_room(manager, room_info, wall_cells, map_manager, player_cell, occupied_spawn_cells)
+		_spawn_enemy_for_room(manager, room_info, wall_cells, map_manager, player_cell, occupied_spawn_cells, occupancy_manager)
 
 static func _spawn_enemy_for_room(
 	manager: EnemyManager,
@@ -28,7 +29,8 @@ static func _spawn_enemy_for_room(
 	wall_cells: Dictionary,
 	map_manager: MapManager,
 	player_cell: Vector2i,
-	occupied_spawn_cells: Dictionary
+	occupied_spawn_cells: Dictionary,
+	occupancy_manager: OccupancyManager = null
 ) -> void:
 	var room_id: int = room_info["id"]
 
@@ -37,10 +39,12 @@ static func _spawn_enemy_for_room(
 		wall_cells,
 		room_info.get("template", "") == "tutorial",
 		player_cell,
-		occupied_spawn_cells
+		occupied_spawn_cells,
+		occupancy_manager
 	)
 
 	if spawn_cell == Vector2i(-1, -1):
+		push_warning("EnemySpawnLifecycleService: room %d exhausted spawn candidates, no enemy spawned" % room_id)
 		return
 
 	# 🌟 MODIFICADO: Solicitamos de forma dinámica la escena específica (Boss, Skeleton, etc.) al manager

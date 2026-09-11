@@ -111,7 +111,8 @@ func _get_random_floor_cell_in_room(
 	wall_cells: Dictionary,
 	avoid_center: bool,
 	player_cell: Vector2i,
-	occupied_spawn_cells: Dictionary
+	occupied_spawn_cells: Dictionary,
+	occupancy_manager: OccupancyManager = null
 ) -> Vector2i:
 	return EnemySpawnPlanner.get_random_floor_cell_in_room(
 		room_info,
@@ -119,7 +120,8 @@ func _get_random_floor_cell_in_room(
 		avoid_center,
 		player_cell,
 		occupied_spawn_cells,
-		dungeon
+		dungeon,
+		occupancy_manager
 	)
 
 

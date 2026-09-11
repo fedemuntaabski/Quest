@@ -39,15 +39,19 @@ func _ready() -> void:
 	# 🔥 NUEVO
 	_setup_turn_manager()
 
+	dungeon_generator.map_generated.connect(_on_map_generated)
+
 	var player := get_node_or_null("Player") as CharacterBody2D
 	dungeon_generator.generate_dungeon(player)
 
+
+func _on_map_generated(_layout_data: DungeonLayoutData) -> void:
 	if dungeon_generator.floor_cells.is_empty():
 		push_warning("MapManager: Dungeon generation failed or empty.")
 		return
 
-	_setup_enemy_manager()
 	navigation_helper.bake_navigation_region()
+	_setup_enemy_manager()
 
 
 # 🔥 NUEVO

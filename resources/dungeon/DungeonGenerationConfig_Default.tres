@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="DungeonGenerationConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/dungeon/DungeonGenerationConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+grid_width = 90
+grid_height = 70
+tile_size = 16.0
+room_count = 8
+room_min_size = Vector2i(10, 8)
+room_max_size = Vector2i(20, 14)
+room_padding = 4
+room_light_energy = 0.0
+room_light_transition_seconds = 0.45
+corridor_min_length = 4
+corridor_max_length = 8
+map_seed = -1

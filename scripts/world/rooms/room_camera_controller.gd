@@ -1,19 +1,18 @@
 extends Node
 class_name RoomCameraController
 
-## Hybrid camera controller: switches between ROOM and CORRIDOR modes dynamically
-## ROOM mode: tight margins, room-centered framing
-## CORRIDOR mode: expanded bounds, active player follow
-
-# Preload camera mode classes for type resolution
-const CameraMode_Room = preload("res://scripts/world/camera/CameraMode_Room.gd")
-const CameraMode_Corridor = preload("res://scripts/world/camera/CameraMode_Corridor.gd")
+## Single source of truth for camera limits/zoom.
+## ROOM state: tight margins, dynamic viewport-fit zoom, room-centered framing (animated on room change).
+## CORRIDOR state: expanded bounds around the last active room, updated every frame while traversing.
 
 @export var move_duration: float = 0.35
 @export var initial_delay: float = 0.08
 @export var margin_factor: float = 0.5
 @export var min_zoom: float = 0.6
 @export var max_zoom: float = 2
+
+@export var corridor_base_margin_tiles: float = 10.0
+@export var corridor_margin_expansion_factor: float = 2.5
 
 var dungeon: DungeonGenerator = null
 var active_tween: Tween = null
@@ -22,10 +21,6 @@ var _has_initialized: bool = false
 var _shake_timer: float = 0.0
 var _shake_intensity: float = 0.0
 
-## Camera state modes
-var current_mode: CameraMode = null
-var room_mode: CameraMode_Room = null
-var corridor_mode: CameraMode_Corridor = null
 var _last_was_corridor: bool = false
 
 # ─────────────────────────────────────────────
@@ -33,11 +28,6 @@ var _last_was_corridor: bool = false
 # ─────────────────────────────────────────────
 func setup(dg: DungeonGenerator) -> void:
 	dungeon = dg
-	
-	# Initialize camera modes
-	room_mode = CameraMode_Room.new(dungeon)
-	corridor_mode = CameraMode_Corridor.new(dungeon)
-	current_mode = room_mode  # Start in room mode by default
 
 	if dungeon != null and not dungeon.room_changed.is_connected(Callable(self, "_on_room_changed")):
 		dungeon.room_changed.connect(Callable(self, "_on_room_changed"))
@@ -111,8 +101,6 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	if camera == null:
 		return
 
-	# Reset to room mode on room transition
-	_switch_camera_mode(false)
 	_last_was_corridor = false
 
 	var room_rect: Rect2i = room_info["rect"]
@@ -130,11 +118,11 @@ func _update_camera_for_room(room_id: int, animate: bool) -> void:
 	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
 
-	#var zoom_x: float = viewport_size.x / room_size_px.x
-	#var zoom_y: float = viewport_size.y / room_size_px.y
-	#var base_zoom: float = (zoom_x + zoom_y) * 0.5
-
-	var zoom_vec := Vector2(3.3, 3.3)
+	var zoom_x: float = viewport_size.x / room_size_px.x
+	var zoom_y: float = viewport_size.y / room_size_px.y
+	var base_zoom: float = (zoom_x + zoom_y) * 0.5
+	var target_zoom_value: float = clamp(base_zoom * margin_factor, min_zoom, max_zoom)
+	var zoom_vec := Vector2(target_zoom_value, target_zoom_value)
 
 	var base_margin: float = 3.0  # Room base margin
 	var margin_px: float = base_margin * dungeon.tile_size
@@ -192,17 +180,24 @@ func _is_player_in_corridor() -> bool:
 	# If not in any room, player is in a corridor
 	return true
 
-# ─────────────────────────────────────────────
-# MODE SWITCHING
-# ─────────────────────────────────────────────
-func _switch_camera_mode(to_corridor: bool) -> void:
-	if current_mode != null:
-		current_mode.exit()
-	
-	current_mode = corridor_mode as CameraMode if to_corridor else room_mode as CameraMode
-	
-	if current_mode != null:
-		current_mode.enter()
+func _apply_corridor_bounds(camera: Camera2D) -> void:
+	var room_id: int = dungeon.active_room_id
+	if room_id < 0:
+		return
+	var room_info: Dictionary = dungeon.get_room_info(room_id)
+	if room_info.is_empty():
+		return
+
+	var room_rect: Rect2i = room_info["rect"]
+	var expanded_margin_px: float = corridor_base_margin_tiles * corridor_margin_expansion_factor * dungeon.tile_size
+	var room_world_pos: Vector2 = dungeon.grid_to_world_coords(room_rect.position)
+	var room_world_end: Vector2 = dungeon.grid_to_world_coords(room_rect.end)
+
+	camera.limit_left = int(room_world_pos.x - expanded_margin_px)
+	camera.limit_top = int(room_world_pos.y - expanded_margin_px)
+	camera.limit_right = int(room_world_end.x + expanded_margin_px)
+	camera.limit_bottom = int(room_world_end.y + expanded_margin_px)
+	camera.limit_smoothed = true
 
 
 func _on_screen_shake(intensity: float, duration: float) -> void:
@@ -228,17 +223,12 @@ func _process(_delta: float) -> void:
 	if camera == null:
 		return
 
-	# Detect current location (room or corridor)
+	# Detect current location (room or corridor) and keep bounds in sync every frame
 	var in_corridor: bool = _is_player_in_corridor()
-	
-	# Switch modes if needed
-	if in_corridor != _last_was_corridor:
-		_switch_camera_mode(in_corridor)
-		_last_was_corridor = in_corridor
-	
-	# Update camera via current mode
-	if current_mode != null:
-		current_mode.update_camera(player, camera, dungeon, _delta)
+	_last_was_corridor = in_corridor
+
+	if in_corridor:
+		_apply_corridor_bounds(camera)
 
 	# Apply screen shake overlay (subtle)
 	if _shake_timer > 0.0:

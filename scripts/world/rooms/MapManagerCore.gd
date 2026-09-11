@@ -25,10 +25,7 @@ func _enemy_manager() -> EnemyManager:
 func _is_active_gameplay() -> bool:
 	if map_manager == null:
 		return false
-	var tree := map_manager.get_tree()
-	if tree == null:
-		return false
-	var gsm := tree.get_first_node_in_group("game_state_manager") as GameStateManager
+	var gsm := ManagerLocator.get_game_state_manager()
 	if gsm == null:
 		return true
 	return gsm.can_process_input()

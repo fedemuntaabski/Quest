@@ -18,8 +18,6 @@ class_name EnemyData
 @export var move_step_time: float = 0.12
 @export var reward_gold: int = 5
 
-@export var ai_type: String = "melee_chase"
-
 # 🌟 LA CLAVE: Cambiamos Texture2D por PackedScene para guiar el recurso a su escena heredada (.tscn)
 @export var enemy_scene: PackedScene
 

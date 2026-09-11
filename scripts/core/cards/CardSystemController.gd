@@ -93,7 +93,7 @@ func bind_hud_external(hud: HUDController) -> void:
 	if hud == null or card_manager == null:
 		return
 	_bound_hud = hud
-	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	var game_state_manager := ManagerLocator.get_game_state_manager()
 	if game_state_manager and not game_state_manager.state_changed.is_connected(Callable(self, "_on_game_state_changed")):
 		game_state_manager.state_changed.connect(Callable(self, "_on_game_state_changed"))
 	
@@ -207,7 +207,7 @@ func on_hotbar_slot_pressed(index: int) -> void:
 	# Toggle selection behavior
 	if card_manager == null:
 		return
-	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	var game_state_manager := ManagerLocator.get_game_state_manager()
 	if game_state_manager and not game_state_manager.can_process_input():
 		QuestLogger.debug(QuestLogger.Category.CARDS, "on_hotbar_slot_pressed: ignored, game state is %s" % GameStateManager.State.keys()[game_state_manager.get_state()])
 		return

@@ -45,7 +45,7 @@ func _on_potion_used(_heal_amount: int, _remaining: int) -> void:
 	refresh()
 
 func _bind_game_state() -> void:
-	_game_state_manager = get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	_game_state_manager = ManagerLocator.get_game_state_manager()
 	if _game_state_manager and not _game_state_manager.state_changed.is_connected(_on_game_state_changed):
 		_game_state_manager.state_changed.connect(_on_game_state_changed)
 

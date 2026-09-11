@@ -6,6 +6,7 @@ class_name DungeonGenerator
 @warning_ignore("unused_signal")
 signal room_changed(room_id: int)
 signal room_cleared(room_id: int)
+signal map_generated(layout_data: DungeonLayoutData)
 
 const WALL_TEXTURE_PATH := "res://assets/ui/white_2x2.svg"
 const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
@@ -24,7 +25,10 @@ const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
 @export var corridor_min_length: int = 4
 @export var corridor_max_length: int = 8
 
-@export var main_path_branching: bool = false
+@export var map_seed: int = -1
+@export var config: DungeonGenerationConfig = null
+
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 var wall_texture: Texture2D = preload(WALL_TEXTURE_PATH)
 var light_texture: Texture2D = preload(LIGHT_TEXTURE_PATH)
@@ -225,7 +229,27 @@ func _on_room_cleared(room_id: int) -> void:
 
 
 func generate_dungeon(player: CharacterBody2D = null) -> void:
-	randomize()
+	if config:
+		grid_width = config.grid_width
+		grid_height = config.grid_height
+		tile_size = config.tile_size
+		room_count = config.room_count
+		room_min_size = config.room_min_size
+		room_max_size = config.room_max_size
+		room_padding = config.room_padding
+		room_light_energy = config.room_light_energy
+		room_light_transition_seconds = config.room_light_transition_seconds
+		corridor_min_length = config.corridor_min_length
+		corridor_max_length = config.corridor_max_length
+		map_seed = config.map_seed
+
+	var seed_to_use: int = map_seed
+	if seed_to_use == -1:
+		rng.randomize()
+		seed_to_use = rng.get_seed()
+	rng.seed = seed_to_use
+	QuestLogger.info(QuestLogger.Category.MAP, "DungeonGenerator: using seed %d" % seed_to_use)
+
 	_clear_generated_content()
 
 	floor_cells.clear()
@@ -273,6 +297,8 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 
 	if not room_infos.is_empty():
 		_set_active_room(int(room_infos[0]["id"]), false)
+
+	map_generated.emit(layout_data)
 
 
 func _apply_layout_data(layout_data: DungeonLayoutData) -> void:

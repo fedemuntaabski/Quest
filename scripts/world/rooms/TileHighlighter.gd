@@ -92,7 +92,7 @@ func _connect_player_signals() -> void:
 		_player.movement_ended.connect(_on_player_movement_ended)
 	
 	# Connect to game state changes to clear overlays when state changes
-	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	var gsm := ManagerLocator.get_game_state_manager()
 	if gsm and not gsm.state_changed.is_connected(_on_game_state_changed):
 		gsm.state_changed.connect(_on_game_state_changed)
 

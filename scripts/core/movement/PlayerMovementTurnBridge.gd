@@ -24,7 +24,7 @@ func can_accept_input() -> bool:
 	if player == null:
 		return false
 
-	var gsm := player.get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	var gsm := ManagerLocator.get_game_state_manager()
 	if gsm and not gsm.is_active():
 		return false
 	if not player.is_turn_active():

@@ -31,7 +31,6 @@ func get_dungeon_graph() -> DungeonGraph:
 # DungeonGenerator is responsible for applying the returned data.
 func generate() -> DungeonLayoutData:
 	const LAYOUT_RETRIES := 32
-	dungeon.room_count = 8 # Force strict linear progression of exactly 8 rooms
 
 	for _retry in range(LAYOUT_RETRIES):
 		_begin_working_layout()
@@ -50,8 +49,8 @@ func generate() -> DungeonLayoutData:
 				continue
 
 			var room_pos := Vector2i(
-				randi_range(dungeon.room_padding, max_x),
-				randi_range(dungeon.room_padding, max_y)
+				dungeon.rng.randi_range(dungeon.room_padding, max_x),
+				dungeon.rng.randi_range(dungeon.room_padding, max_y)
 			)
 
 			var room_rect := Rect2i(room_pos, room_size)
@@ -112,35 +111,24 @@ func _build_layout_data() -> DungeonLayoutData:
 
 
 func _roll_room_size() -> Vector2i:
-	var width := randi_range(dungeon.room_min_size.x, dungeon.room_max_size.x)
-	var height := randi_range(dungeon.room_min_size.y, dungeon.room_max_size.y)
+	var width := dungeon.rng.randi_range(dungeon.room_min_size.x, dungeon.room_max_size.x)
+	var height := dungeon.rng.randi_range(dungeon.room_min_size.y, dungeon.room_max_size.y)
 
 	var short_width_max := mini(dungeon.room_max_size.x, dungeon.room_min_size.x + 2)
 	var short_height_max := mini(dungeon.room_max_size.y, dungeon.room_min_size.y + 2)
 	var long_width_min := maxi(dungeon.room_min_size.x, dungeon.room_max_size.x - 4)
 	var long_height_min := maxi(dungeon.room_min_size.y, dungeon.room_max_size.y - 4)
 
-	var shape_roll := randf()
+	var shape_roll := dungeon.rng.randf()
 
 	if shape_roll < 0.34:
-		width = randi_range(long_width_min, dungeon.room_max_size.x)
-		height = randi_range(dungeon.room_min_size.y, short_height_max)
+		width = dungeon.rng.randi_range(long_width_min, dungeon.room_max_size.x)
+		height = dungeon.rng.randi_range(dungeon.room_min_size.y, short_height_max)
 	elif shape_roll < 0.68:
-		width = randi_range(dungeon.room_min_size.x, short_width_max)
-		height = randi_range(long_height_min, dungeon.room_max_size.y)
+		width = dungeon.rng.randi_range(dungeon.room_min_size.x, short_width_max)
+		height = dungeon.rng.randi_range(long_height_min, dungeon.room_max_size.y)
 
 	return Vector2i(width, height)
-
-
-func _room_overlaps_existing(candidate: Rect2i) -> bool:
-	var expanded := candidate.grow(dungeon.room_padding)
-
-	for room_info in _working_room_infos:
-		var other: Rect2i = room_info["rect"]
-		if expanded.intersects(other):
-			return true
-
-	return false
 
 
 func _register_room(room_rect: Rect2i) -> void:
@@ -214,7 +202,7 @@ func _carve_corridor(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 	if _add_corridor_cell(current):
 		corridor_cells.append(current)
 
-	var horizontal_first := randf() < 0.5
+	var horizontal_first := dungeon.rng.randf() < 0.5
 
 	if horizontal_first:
 		while current.x != to_cell.x:
@@ -318,23 +306,6 @@ func _validate_graph() -> bool:
 		push_error("DungeonLayoutGenerator: %s" % str(error_text))
 
 	return false
-
-func _fill_corner(cell: Vector2i) -> void:
-
-	var corner_cells := [
-		cell,
-		cell + Vector2i.RIGHT,
-		cell + Vector2i.DOWN,
-		cell + Vector2i(1, 1)
-	]
-
-	for c in corner_cells:
-
-		if not dungeon.is_within_bounds(c):
-			continue
-
-		_working_floor_cells[c] = true
-		_working_corridor_cells[c] = true
 
 func _get_connection_point(room: Dictionary, target: Vector2i) -> Vector2i:
 	var rect: Rect2i = room["rect"]

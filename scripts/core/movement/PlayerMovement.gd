@@ -62,9 +62,14 @@ func _ready() -> void:
 		push_error("PlayerMovement: el padre no es MapManager")
 		return
 
-	sync_to_grid()
-	if map_manager:
-		map_manager.register_actor(self, grid_pos, true)
+	# NOTE: map_manager.dungeon_generator is an @onready var on MapManager, and
+	# PlayerMovement (a child of MapManager) has its _ready() called before
+	# MapManager's own onready vars are resolved — so it's still null here.
+	# Look up the sibling node directly instead, which already exists in the
+	# tree regardless of onready timing.
+	var dg := map_manager.get_node_or_null("DungeonGenerator") as DungeonGenerator
+	if dg:
+		dg.map_generated.connect(_on_map_generated)
 
 	_ensure_combat_component()
 	_ensure_turn_bridge()
@@ -94,13 +99,18 @@ func _ready() -> void:
 		status_component.statuses_changed.connect(_on_statuses_changed)
 		_on_statuses_changed(status_component.get_active_statuses())
 
+func _on_map_generated(_layout_data: DungeonLayoutData) -> void:
+	sync_to_grid()
+	if map_manager:
+		map_manager.register_actor(self, grid_pos, true)
+
 func _ensure_turn_bridge() -> void:
 	if turn_bridge == null:
 		turn_bridge = PlayerMovementTurnBridge.new()
 	turn_bridge.setup(self, map_manager)
 
 func _connect_game_state() -> void:
-	var gsm := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
+	var gsm := ManagerLocator.get_game_state_manager()
 	if gsm == null:
 		call_deferred("_connect_game_state")
 		return

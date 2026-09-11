@@ -7,7 +7,8 @@ static func get_random_floor_cell_in_room(
 	avoid_center: bool,
 	player_cell: Vector2i,
 	occupied_spawn_cells: Dictionary,
-	dungeon: DungeonGenerator
+	dungeon: DungeonGenerator,
+	occupancy_manager: OccupancyManager = null
 ) -> Vector2i:
 	var room_cells: Array = room_info["floor_cells"]
 	var center_cell: Vector2i = room_info["center_cell"]
@@ -28,6 +29,8 @@ static func get_random_floor_cell_in_room(
 		if cell == player_cell:
 			continue
 		if occupied_spawn_cells.has(cell):
+			continue
+		if occupancy_manager and occupancy_manager.is_cell_blocked(cell):
 			continue
 
 		if avoid_radius > 0:
