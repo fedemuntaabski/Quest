@@ -26,6 +26,7 @@ func _ready() -> void:
 
 	if steam_mgr:
 		steam_mgr.client_authenticated.connect(_on_roster_changed)
+		steam_mgr.avatar_loaded_ready.connect(_on_avatar_loaded)
 	multiplayer.peer_disconnected.connect(_on_roster_changed)
 	if multiplayer.multiplayer_peer != null:
 		multiplayer.server_disconnected.connect(_on_host_lost)
@@ -50,16 +51,46 @@ func _refresh(_arg = null) -> void:
 	for child: Node in players_list.get_children():
 		child.queue_free()
 
-	var local_label := Label.new()
-	local_label.text = "• %s (vos)" % Steam.getPersonaName()
-	players_list.add_child(local_label)
+	_make_player_row(Steam.getSteamID(), "%s (vos)" % Steam.getPersonaName(), steam_mgr)
 
 	if steam_mgr:
 		for peer_id: int in steam_mgr.connected_clients.keys():
 			var steam_id: int = steam_mgr.connected_clients[peer_id].get("steam_id", 0)
-			var entry_label := Label.new()
-			entry_label.text = "• %s" % Steam.getFriendPersonaName(steam_id)
-			players_list.add_child(entry_label)
+			_make_player_row(steam_id, Steam.getFriendPersonaName(steam_id), steam_mgr)
+
+
+func _make_player_row(steam_id: int, display_name: String, steam_mgr) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.set_meta("steam_id", steam_id)
+
+	var avatar := TextureRect.new()
+	avatar.name = "Avatar"
+	avatar.custom_minimum_size = Vector2(32, 32)
+	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	avatar.stretch_mode = TextureRect.STRETCH_SCALE
+	row.add_child(avatar)
+
+	var label := Label.new()
+	label.text = "• %s" % display_name
+	row.add_child(label)
+
+	players_list.add_child(row)
+
+	if steam_mgr:
+		if steam_mgr.avatar_cache.has(steam_id):
+			avatar.texture = steam_mgr.avatar_cache[steam_id]
+		else:
+			steam_mgr.get_user_avatar(steam_id)
+
+	return row
+
+
+func _on_avatar_loaded(steam_id: int, texture: ImageTexture) -> void:
+	for row: Node in players_list.get_children():
+		if row.get_meta("steam_id", 0) == steam_id:
+			var avatar := row.get_node_or_null("Avatar") as TextureRect
+			if avatar:
+				avatar.texture = texture
 
 
 func _on_roster_changed(_a = null, _b = null) -> void:

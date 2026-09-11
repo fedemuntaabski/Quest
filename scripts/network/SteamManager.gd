@@ -9,6 +9,10 @@ signal client_rejected(peer_id: int, steam_id: int, reason: String)
 var connected_clients: Dictionary[int, Dictionary] = {}
 var pending_clients: Dictionary[int, Dictionary] = {}
 
+signal avatar_loaded_ready(steam_id: int, texture: ImageTexture)
+
+var avatar_cache: Dictionary[int, ImageTexture] = {}
+
 var lobby_manager: SteamLobbyManager = null
 
 var _steam_initialized: bool = false
@@ -28,6 +32,7 @@ func _ready() -> void:
 
 	Steam.get_auth_session_ticket_response.connect(_on_get_auth_session_ticket_response)
 	Steam.validate_auth_ticket_response.connect(_on_validate_auth_ticket_response)
+	Steam.avatar_loaded.connect(_on_loaded_avatar)
 
 	lobby_manager = SteamLobbyManager.new()
 	lobby_manager.name = "SteamLobbyManager"
@@ -50,6 +55,14 @@ func get_steam_id_for_peer_id(peer_id: int) -> int:
 	if lobby_manager == null or lobby_manager.peer == null:
 		return 0
 	return lobby_manager.peer.get_steam_id_for_peer_id(peer_id)
+
+
+func get_user_avatar(steam_id: int = 0, size: int = Steam.AVATAR_MEDIUM) -> void:
+	var target_id: int = steam_id if steam_id != 0 else Steam.getSteamID()
+	if avatar_cache.has(target_id):
+		avatar_loaded_ready.emit(target_id, avatar_cache[target_id])
+		return
+	Steam.getPlayerAvatar(size, target_id)
 
 
 func get_auth_ticket_for_peer(peer_id: int) -> void:
@@ -120,6 +133,18 @@ func _reject_client(peer_id: int, steam_id: int, reason: String) -> void:
 	client_rejected.emit(peer_id, steam_id, reason)
 	if multiplayer.multiplayer_peer != null and peer_id in multiplayer.get_peers():
 		multiplayer.multiplayer_peer.disconnect_peer(peer_id, true)
+
+
+func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByteArray) -> void:
+	var img := Image.create_from_data(avatar_size, avatar_size, false, Image.FORMAT_RGBA8, avatar_buffer)
+	if img == null:
+		QuestLogger.warn(QuestLogger.Category.NETWORK, "Failed to build avatar image for steam_id=%d" % user_id)
+		return
+	if avatar_size > 128:
+		img.resize(128, 128, Image.INTERPOLATE_LANCZOS)
+	var tex := ImageTexture.create_from_image(img)
+	avatar_cache[user_id] = tex
+	avatar_loaded_ready.emit(user_id, tex)
 
 
 func _on_peer_connected(peer_id: int) -> void:

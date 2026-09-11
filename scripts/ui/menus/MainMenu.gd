@@ -10,6 +10,10 @@ extends Control
 
 @onready var options_menu: OptionsMenu = $OptionsMenu
 
+@onready var profile_container: HBoxContainer = $ProfileContainer
+@onready var profile_avatar: TextureRect = $ProfileContainer/Avatar
+@onready var profile_name_label: Label = $ProfileContainer/NameLabel
+
 @onready var click_sound: AudioStreamPlayer = $click
 @onready var hover_sound: AudioStreamPlayer = $hover
 
@@ -22,6 +26,7 @@ func _ready() -> void:
 	_setup_content_scaling()
 	_apply_audio_settings()
 	_connect_signals()
+	_setup_profile()
 
 	start_button.grab_focus()
 
@@ -74,6 +79,24 @@ func _on_volume_changed(type: String, _linear_val: float, db_val: float) -> void
 		"hover":
 			if hover_sound:
 				hover_sound.volume_db = db_val
+
+
+func _setup_profile() -> void:
+	var steam_mgr := ManagerLocator.get_steam_manager()
+	if steam_mgr == null or not steam_mgr.is_steam_available():
+		profile_container.visible = false
+		return
+	profile_name_label.text = Steam.getPersonaName()
+	steam_mgr.avatar_loaded_ready.connect(_on_avatar_loaded)
+	if steam_mgr.avatar_cache.has(Steam.getSteamID()):
+		profile_avatar.texture = steam_mgr.avatar_cache[Steam.getSteamID()]
+	else:
+		steam_mgr.get_user_avatar()
+
+
+func _on_avatar_loaded(steam_id: int, texture: ImageTexture) -> void:
+	if steam_id == Steam.getSteamID():
+		profile_avatar.texture = texture
 
 
 func _connect_signals() -> void:

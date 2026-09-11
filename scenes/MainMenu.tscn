@@ -232,6 +232,24 @@ texture = ExtResource("2_main_background")
 expand_mode = 1
 stretch_mode = 6
 
+[node name="ProfileContainer" type="HBoxContainer" parent="." unique_id=1745659787]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 224.0
+offset_bottom = 72.0
+theme_override_constants/separation = 12
+
+[node name="Avatar" type="TextureRect" parent="ProfileContainer" unique_id=1621214814]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="NameLabel" type="Label" parent="ProfileContainer" unique_id=1728681422]
+layout_mode = 2
+vertical_alignment = 1
+
 [node name="TitleCenterContainer" type="CenterContainer" parent="." unique_id=1234096387]
 layout_mode = 1
 anchors_preset = 5
