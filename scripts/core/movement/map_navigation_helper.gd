@@ -60,7 +60,7 @@ func bake_navigation_region() -> void:
 	nav_region.navigation_polygon = null
 	nav_region.navigation_polygon = nav_poly
 
-	Logger.info(Logger.Category.MAP, "NavigationRegion2D baked with %d floor cells." % floor_cells.size())
+	QuestLogger.info(QuestLogger.Category.MAP, "NavigationRegion2D baked with %d floor cells." % floor_cells.size())
 
 
 # ── Passability checks ────────────────────────────────────────────────────────

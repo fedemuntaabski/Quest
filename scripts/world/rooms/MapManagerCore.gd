@@ -239,7 +239,7 @@ func can_actors_engage(source: Node, target: Node) -> bool:
 	if dungeon == null:
 		return true
 	if source == null or target == null:
-		Logger.warn(Logger.Category.MAP, "can_actors_engage: source or target NULL")
+		QuestLogger.warn(QuestLogger.Category.MAP, "can_actors_engage: source or target NULL")
 		return false
 	var source_room := get_actor_room_id(source)
 	var target_room := get_actor_room_id(target)
@@ -248,7 +248,7 @@ func can_actors_engage(source: Node, target: Node) -> bool:
 		return true
 	var can_engage := source_room != -1 and source_room == target_room
 	if not can_engage:
-		Logger.debug(Logger.Category.MAP, "can_actors_engage: blocked source=%s room=%d target=%s room=%d active_room=%d source_cell=%s target_cell=%s" % [source.name if source else "NULL", source_room, target.name if target else "NULL", target_room, dungeon.active_room_id, str(_resolve_actor_cell(source)), str(_resolve_actor_cell(target))])
+		QuestLogger.debug(QuestLogger.Category.MAP, "can_actors_engage: blocked source=%s room=%d target=%s room=%d active_room=%d source_cell=%s target_cell=%s" % [source.name if source else "NULL", source_room, target.name if target else "NULL", target_room, dungeon.active_room_id, str(_resolve_actor_cell(source)), str(_resolve_actor_cell(target))])
 	return can_engage
 
 func _is_player_room_locked() -> bool:

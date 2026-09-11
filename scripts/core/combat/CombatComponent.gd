@@ -123,7 +123,7 @@ func receive_damage(amount: int, crit: bool = false) -> void:
 	if stats == null:
 		return
 
-	Logger.debug(Logger.Category.COMBAT, "Damage applied: %d Crit: %s" % [amount, str(crit)])
+	QuestLogger.debug(QuestLogger.Category.COMBAT, "Damage applied: %d Crit: %s" % [amount, str(crit)])
 	stats.take_damage(amount)
 	if actor_owner and actor_owner.has_method("show_damage"):
 		actor_owner.show_damage(amount, crit)

@@ -1,4 +1,4 @@
-class_name Logger
+class_name QuestLogger
 extends RefCounted
 
 ## Centralized logging utility for QUEST.

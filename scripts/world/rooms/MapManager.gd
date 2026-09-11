@@ -173,7 +173,7 @@ func _setup_enemy_manager() -> void:
 
 
 func _on_room_cleared_from_enemies(room_id: int) -> void:
-	Logger.info(Logger.Category.MAP, "Room cleared of enemies: %d" % room_id)
+	QuestLogger.info(QuestLogger.Category.MAP, "Room cleared of enemies: %d" % room_id)
 
 
 # ── Enemy tracking ────────────────────────────────────────────────────────────

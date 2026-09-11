@@ -31,7 +31,7 @@ func queue_action(action: BaseAction) -> void:
 	if not _is_busy:
 		process_next()
 	else:
-		Logger.debug(Logger.Category.ACTIONS, "queue_action: queue is busy, action will wait in queue")
+		QuestLogger.debug(QuestLogger.Category.ACTIONS, "queue_action: queue is busy, action will wait in queue")
 
 func process_next() -> void:
 	if _is_busy:
@@ -51,7 +51,7 @@ func process_next() -> void:
 	var start_token: Dictionary = action.get_execution_state_token() if action else {}
 
 	if not action.can_execute():
-		Logger.warn(Logger.Category.ACTIONS, "process_next: action cannot execute, finishing action=%s" % _describe_action(action))
+		QuestLogger.warn(QuestLogger.Category.ACTIONS, "process_next: action cannot execute, finishing action=%s" % _describe_action(action))
 		var failure_reason : Variant = action.get_failure_reason() if action and action.has_method("get_failure_reason") else ""
 		var res : Dictionary = {"status":"cannot_execute", "consumes_turn": false, "reason": failure_reason if failure_reason != "" else "can_execute_false"}
 		action.finish(res)

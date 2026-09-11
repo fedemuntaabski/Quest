@@ -14,25 +14,25 @@ class_name EffectApplier
 
 func apply(result: Dictionary, target_component: CombatComponent, context: EffectContext) -> void:
 	# Entry point for applying an already-resolved `result` payload.
-	Logger.debug(Logger.Category.COMBAT, "apply: START result=%s, target=%s" % [str(result), target_component.actor_owner.name if target_component and target_component.actor_owner else "NULL"])
+	QuestLogger.debug(QuestLogger.Category.COMBAT, "apply: START result=%s, target=%s" % [str(result), target_component.actor_owner.name if target_component and target_component.actor_owner else "NULL"])
 	if result == null:
-		Logger.warn(Logger.Category.COMBAT, "apply: result is NULL")
+		QuestLogger.warn(QuestLogger.Category.COMBAT, "apply: result is NULL")
 		return
 	if target_component == null:
-		Logger.warn(Logger.Category.COMBAT, "apply: target_component is NULL")
+		QuestLogger.warn(QuestLogger.Category.COMBAT, "apply: target_component is NULL")
 		return
 	if context == null:
-		Logger.warn(Logger.Category.COMBAT, "apply: context is NULL")
+		QuestLogger.warn(QuestLogger.Category.COMBAT, "apply: context is NULL")
 		return
 
 	var map_manager := context.map_manager
 	var owner_actor := context.owner_actor
 
 	if map_manager == null:
-		Logger.warn(Logger.Category.COMBAT, "apply: reject reason=missing_map_manager")
+		QuestLogger.warn(QuestLogger.Category.COMBAT, "apply: reject reason=missing_map_manager")
 		return
 	if target_component.actor_owner == null or not is_instance_valid(target_component.actor_owner):
-		Logger.warn(Logger.Category.COMBAT, "apply: reject reason=invalid_target_actor")
+		QuestLogger.warn(QuestLogger.Category.COMBAT, "apply: reject reason=invalid_target_actor")
 		return
 
 	# Begin effect transaction
@@ -43,36 +43,36 @@ func apply(result: Dictionary, target_component: CombatComponent, context: Effec
 
 	# Movement
 	var movement_count: int = result.get("movement", []).size()
-	Logger.debug(Logger.Category.COMBAT, "apply: processing %d movement effects" % movement_count)
+	QuestLogger.debug(QuestLogger.Category.COMBAT, "apply: processing %d movement effects" % movement_count)
 	for move_data in result.get("movement", []):
 		if not (move_data is Dictionary):
 			continue
 		var ok := await _apply_movement_effect(move_data, target_component, owner_actor, map_manager, context)
 		if not ok:
-			Logger.error(Logger.Category.COMBAT, "apply: movement effect failed")
+			QuestLogger.error(QuestLogger.Category.COMBAT, "apply: movement effect failed")
 			success = false
 			break
 
 	# Statuses
 	if success:
 		var status_count: int = result.get("statuses", []).size()
-		Logger.debug(Logger.Category.COMBAT, "apply: processing %d status effects" % status_count)
+		QuestLogger.debug(QuestLogger.Category.COMBAT, "apply: processing %d status effects" % status_count)
 		for status_data in result.get("statuses", []):
 			if not (status_data is Dictionary):
 				continue
 			var ok2 := _apply_status_effect(status_data, target_component, context)
 			if not ok2:
-				Logger.error(Logger.Category.COMBAT, "apply: status effect failed")
+				QuestLogger.error(QuestLogger.Category.COMBAT, "apply: status effect failed")
 				success = false
 				break
 
-	Logger.debug(Logger.Category.COMBAT, "apply: effects complete success=%s movement_count=%d status_count=%d" % [success, movement_count, result.get("statuses", []).size()])
+	QuestLogger.debug(QuestLogger.Category.COMBAT, "apply: effects complete success=%s movement_count=%d status_count=%d" % [success, movement_count, result.get("statuses", []).size()])
 	if context:
 		if success:
 			context.commit()
 		else:
 			context.rollback()
-	Logger.debug(Logger.Category.COMBAT, "apply: COMPLETE")
+	QuestLogger.debug(QuestLogger.Category.COMBAT, "apply: COMPLETE")
 
 func _apply_movement_effect(move_data: Dictionary, target_component: CombatComponent, owner_actor: Node, map_manager: Node, context: EffectContext) -> bool:
 	# Movement effects share the same one-step actor contract as queued move actions.

@@ -68,13 +68,13 @@ func _ensure_card_system() -> void:
 
 	combat_card_system = player.get_node_or_null("CombatCardSystem") as CombatCardSystem
 	if combat_card_system == null:
-		Logger.debug(Logger.Category.CARDS, "CombatCardSystem not found, creating new instance")
+		QuestLogger.debug(QuestLogger.Category.CARDS, "CombatCardSystem not found, creating new instance")
 		combat_card_system = CombatCardSystem.new()
 		combat_card_system.name = "CombatCardSystem"
 		player.add_child(combat_card_system)
-		Logger.debug(Logger.Category.CARDS, "CombatCardSystem created and added to player")
+		QuestLogger.debug(QuestLogger.Category.CARDS, "CombatCardSystem created and added to player")
 	else:
-		Logger.debug(Logger.Category.CARDS, "CombatCardSystem found existing instance")
+		QuestLogger.debug(QuestLogger.Category.CARDS, "CombatCardSystem found existing instance")
 
 	var starter_deck := _get_starter_deck()
 	if starter_deck == null or starter_deck.is_empty():
@@ -191,7 +191,7 @@ func update_hotbar_ui() -> void:
 			_bound_hud.update_hotbar(payload, card_manager.active_index)
 
 func clear_targeting_state() -> void:
-	Logger.debug(Logger.Category.CARDS, "clear_targeting_state()")
+	QuestLogger.debug(QuestLogger.Category.CARDS, "clear_targeting_state()")
 	if card_manager and card_manager.active_index != -1:
 		card_manager.set_active_index(-1)
 	var action_controller := get_parent() as PlayerActionController
@@ -199,7 +199,7 @@ func clear_targeting_state() -> void:
 		action_controller.clear_hover_targeting_state()
 
 func _on_game_state_changed(new_state: GameStateManager.State, _old_state: GameStateManager.State) -> void:
-	Logger.debug(Logger.Category.CARDS, "_on_game_state_changed: %s -> %s" % [GameStateManager.State.keys()[_old_state], GameStateManager.State.keys()[new_state]])
+	QuestLogger.debug(QuestLogger.Category.CARDS, "_on_game_state_changed: %s -> %s" % [GameStateManager.State.keys()[_old_state], GameStateManager.State.keys()[new_state]])
 	if new_state != GameStateManager.State.ACTIVE:
 		clear_targeting_state()
 
@@ -209,10 +209,10 @@ func on_hotbar_slot_pressed(index: int) -> void:
 		return
 	var game_state_manager := get_tree().get_first_node_in_group("game_state_manager") as GameStateManager
 	if game_state_manager and not game_state_manager.can_process_input():
-		Logger.debug(Logger.Category.CARDS, "on_hotbar_slot_pressed: ignored, game state is %s" % GameStateManager.State.keys()[game_state_manager.get_state()])
+		QuestLogger.debug(QuestLogger.Category.CARDS, "on_hotbar_slot_pressed: ignored, game state is %s" % GameStateManager.State.keys()[game_state_manager.get_state()])
 		return
 	if player and player.has_method("can_accept_input") and not player.can_accept_input():
-		Logger.debug(Logger.Category.CARDS, "on_hotbar_slot_pressed: ignored, player cannot accept input")
+		QuestLogger.debug(QuestLogger.Category.CARDS, "on_hotbar_slot_pressed: ignored, player cannot accept input")
 		return
 	if card_manager.active_index == index:
 		card_manager.set_active_index(-1)

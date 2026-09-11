@@ -150,7 +150,7 @@ func _on_options_button_pressed() -> void:
 
 func _on_credits_button_pressed() -> void:
 	_play_click()
-	Logger.info(Logger.Category.UI, "Credits button pressed")
+	QuestLogger.info(QuestLogger.Category.UI, "Credits button pressed")
 	if flow:
 		flow.credits_pressed()
 

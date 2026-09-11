@@ -20,7 +20,7 @@ var post_victory_popup_pending: bool = false
 
 
 func _ready() -> void:
-	Logger.info(Logger.Category.SAVE, "Initialized.")
+	QuestLogger.info(QuestLogger.Category.SAVE, "Initialized.")
 
 
 func get_save_path(slot: int = current_slot) -> String:
@@ -71,9 +71,9 @@ func save_game(slot: int = current_slot) -> void:
 
 	var err := cfg.save(get_save_path(slot))
 	if err == OK:
-		Logger.info(Logger.Category.SAVE, "Saved successfully to slot %d." % slot)
+		QuestLogger.info(QuestLogger.Category.SAVE, "Saved successfully to slot %d." % slot)
 	else:
-		Logger.error(Logger.Category.SAVE, "Failed to save to slot %d (Error code: %d)." % [slot, err])
+		QuestLogger.error(QuestLogger.Category.SAVE, "Failed to save to slot %d (Error code: %d)." % [slot, err])
 
 
 func load_game(slot: int = current_slot) -> void:
@@ -84,7 +84,7 @@ func load_game(slot: int = current_slot) -> void:
 	var player_stats_autoload = ManagerLocator.get_player_stats()
 
 	if err == OK:
-		Logger.info(Logger.Category.SAVE, "Loaded save from slot %d." % slot)
+		QuestLogger.info(QuestLogger.Category.SAVE, "Loaded save from slot %d." % slot)
 		first_time_player = bool(cfg.get_value(SAVE_SECTION, "first_time_player", false))
 		gold = int(cfg.get_value(SAVE_SECTION, "gold", 0))
 
@@ -107,7 +107,7 @@ func load_game(slot: int = current_slot) -> void:
 			player_stats_autoload.active_upgrades = cfg.get_value(SAVE_SECTION, "active_upgrades", [])
 			player_stats_autoload.refresh_stats()
 	else:
-		Logger.info(Logger.Category.SAVE, "No save file found for slot %d, starting fresh." % slot)
+		QuestLogger.info(QuestLogger.Category.SAVE, "No save file found for slot %d, starting fresh." % slot)
 		first_time_player = true
 		gold = 0
 		run_cycle = 0
@@ -135,8 +135,8 @@ func delete_save(slot: int) -> void:
 	if FileAccess.file_exists(path):
 		var err := DirAccess.remove_absolute(path)
 		if err == OK:
-			Logger.info(Logger.Category.SAVE, "Deleted save in slot %d." % slot)
+			QuestLogger.info(QuestLogger.Category.SAVE, "Deleted save in slot %d." % slot)
 		else:
-			Logger.error(Logger.Category.SAVE, "Failed to delete save in slot %d (Error code: %d)." % [slot, err])
+			QuestLogger.error(QuestLogger.Category.SAVE, "Failed to delete save in slot %d (Error code: %d)." % [slot, err])
 	else:
-		Logger.warn(Logger.Category.SAVE, "No save found to delete in slot %d." % slot)
+		QuestLogger.warn(QuestLogger.Category.SAVE, "No save found to delete in slot %d." % slot)
