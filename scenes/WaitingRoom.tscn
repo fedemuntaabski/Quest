@@ -1,0 +1,173 @@
+[gd_scene format=3 uid="uid://c7g2h4k8n1qxr"]
+
+[ext_resource type="Script" path="res://scripts/ui/menus/WaitingRoom.gd" id="1_waiting_room_script"]
+[ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
+[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 32.0
+content_margin_top = 32.0
+content_margin_right = 32.0
+content_margin_bottom = 32.0
+bg_color = Color(0.08, 0.06, 0.05, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.8, 0.63, 0.33, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_players_panel"]
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+bg_color = Color(0.12, 0.09, 0.07, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.48, 0.25, 0.8)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.11, 0.09, 0.86)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.76, 0.56, 0.25, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_pressed"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.11, 0.08, 0.06, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.72, 0.51, 0.2, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.26, 0.17, 0.11, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.72, 0.35, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="WaitingRoom" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_waiting_room_script")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RoomCard" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(520, 560)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/RoomCard"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Title" type="Label" parent="CenterContainer/RoomCard/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.03, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_title_font")
+theme_override_font_sizes/font_size = 34
+text = "SALA DE ESPERA"
+horizontal_alignment = 1
+
+[node name="LobbyIdLabel" type="Label" parent="CenterContainer/RoomCard/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.72, 0.6, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 18
+text = "Lobby: 0"
+horizontal_alignment = 1
+
+[node name="PlayersPanel" type="PanelContainer" parent="CenterContainer/RoomCard/VBoxContainer"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_players_panel")
+
+[node name="PlayersList" type="VBoxContainer" parent="CenterContainer/RoomCard/VBoxContainer/PlayersPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InviteButton" type="Button" parent="CenterContainer/RoomCard/VBoxContainer"]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_colors/font_disabled_color = Color(0.5, 0.44, 0.32, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "INVITAR AMIGOS"
+
+[node name="StartButton" type="Button" parent="CenterContainer/RoomCard/VBoxContainer"]
+custom_minimum_size = Vector2(400, 68)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "INICIAR"
+
+[node name="LeaveButton" type="Button" parent="CenterContainer/RoomCard/VBoxContainer"]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.72, 0.6, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "ABANDONAR"

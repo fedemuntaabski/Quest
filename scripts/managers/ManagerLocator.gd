@@ -35,6 +35,10 @@ static func get_settings_manager() -> Node:
 	return get_autoload("SettingsManager")
 
 
+static func get_steam_manager() -> Node:
+	return get_autoload("SteamManager")
+
+
 static func get_game_state_manager() -> GameStateManager:
 	var ml = Engine.get_main_loop()
 	if ml and ml is SceneTree:

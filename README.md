@@ -1,6 +1,6 @@
 # QUEST
 
-2D grid-based roguelike in Godot 4.6. Focus: tactical movement and melee combat.
+2D grid-based roguelike in Godot 4.6. Focus: tactical movement and melee combat, playable offline or in Steam co-op multiplayer.
 
 ## Current Status
 - Turn-based loop with action queue
@@ -9,6 +9,7 @@
 - Card-driven actions (strength/agility/magic decks) alongside melee combat with hit/dodge/crit and stat scaling
 - Dungeon generation + enemy spawning
 - Save slots, persistent upgrades, and a run-reward flow (card picks between runs)
+- Steam multiplayer: Host/Join/Offline from the main menu, Steam lobbies (GodotSteam), and mandatory auth-ticket validation for joining clients
 
 ## Controls
 - Move: WASD / Arrow keys
@@ -20,6 +21,7 @@
 - Combat: `scripts/core/combat/CombatResolver.gd`, `scripts/core/combat/CombatCardSystem.gd`, `scripts/core/cards/CardManager.gd`
 - Occupancy/map: `scripts/world/rooms/OccupancyManager.gd`, `scripts/world/rooms/MapManager.gd`
 - Managers (autoload + locator): `scripts/managers/ManagerLocator.gd`, `scripts/managers/SaveManager.gd`, `scripts/managers/CurrencyManager.gd`, `scripts/managers/SettingsManager.gd`, `scripts/managers/GameStateManager.gd`
+- Networking (Steam): `scripts/network/SteamManager.gd`, `scripts/network/SteamLobbyManager.gd`
 
 See `CLAUDE.md` for full architecture notes.
 

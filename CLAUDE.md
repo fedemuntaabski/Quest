@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-QUEST: 2D grid-based tactical roguelike built in Godot 4.6, GDScript only (no C#/.NET), GL Compatibility renderer. Turn-based movement + melee combat with card-driven actions and procedural dungeon generation.
+QUEST: 2D grid-based tactical roguelike built in Godot 4.6, GDScript only (no C#/.NET), GL Compatibility renderer. Turn-based movement + melee combat with card-driven actions and procedural dungeon generation. Supports Steam multiplayer (Host/Join via GodotSteam lobbies with auth-ticket validation) alongside the original offline single-player flow.
 
 ## Commands
 
@@ -25,8 +25,9 @@ If asked to add tests/lint/CI, there is nothing existing to hook into — treat 
 - `CurrencyManager` (scripts/managers/CurrencyManager.gd) — facade over `SaveManager.gold`, debounced persistence, emits `gold_changed`.
 - `ThemeManager` (scripts/core/theme/ThemeManager.gd) — builds reusable `StyleBoxFlat`s for card UI/menus.
 - `SettingsManager` (scripts/managers/SettingsManager.gd) — persists audio/display settings to `user://settings.cfg`, emits `settings_changed`/`volume_changed`.
+- `SteamManager` (scripts/network/SteamManager.gd) — Steam API init (AppID 480), Steam auth-ticket issuance/validation, `connected_clients`/`pending_clients` peer↔steam_id bookkeeping; owns a child `SteamLobbyManager` (scripts/network/SteamLobbyManager.gd, not an autoload) that handles lobby create/join/leave and `SteamMultiplayerPeer` wiring.
 
-**`ManagerLocator`** (scripts/managers/ManagerLocator.gd) is the central indirection point: wraps autoload access (`get_save_manager`, `get_currency_manager`, `get_player_stats`, `get_settings_manager`) and group-based lookup for singletons that are *not* autoloads (`get_game_state_manager()` via `game_state_manager` group, `get_floating_text_manager()` via group, lazily instantiating if absent). Fetch managers through this rather than raw autoload names or ad-hoc `get_tree().get_first_node_in_group()` calls.
+**`ManagerLocator`** (scripts/managers/ManagerLocator.gd) is the central indirection point: wraps autoload access (`get_save_manager`, `get_currency_manager`, `get_player_stats`, `get_settings_manager`, `get_steam_manager`) and group-based lookup for singletons that are *not* autoloads (`get_game_state_manager()` via `game_state_manager` group, `get_floating_text_manager()` via group, lazily instantiating if absent). Fetch managers through this rather than raw autoload names or ad-hoc `get_tree().get_first_node_in_group()` calls.
 
 **`GameStateManager`** (scripts/managers/GameStateManager.gd) — scene-instantiated (not an autoload) gameplay state machine: `State` enum ACTIVE/PAUSED/DEAD/VICTORY/REWARD. Other systems call its `can_process_*` helpers to gate logic, and it emits `state_changed`/`pause_requested`/`death_entered`/`victory_entered`/`reward_entered`.
 
@@ -38,14 +39,17 @@ If asked to add tests/lint/CI, there is nothing existing to hook into — treat 
 
 **`CombatResolver`** (scripts/core/combat/CombatResolver.gd) — stateless static `resolve_attack(...)` wrapping `CombatFormula`, producing a result dict consumed by `CombatComponent` and HUD presentation.
 
-**`Logger`** (scripts/core/utils/Logger.gd) — categorized/leveled logging (`Category`: GENERAL/COMBAT/CARDS/MAP/STATE/ACTIONS/SAVE; `Level`: DEBUG/INFO/WARN/ERROR), replacing raw `print()` calls project-wide. Use it for new diagnostics instead of `print()`.
+**`Logger`** (scripts/core/utils/Logger.gd) — categorized/leveled logging (`Category`: GENERAL/COMBAT/CARDS/MAP/STATE/ACTIONS/SAVE/UI/CAMERA/NETWORK; `Level`: DEBUG/INFO/WARN/ERROR), replacing raw `print()` calls project-wide. Use it for new diagnostics instead of `print()`.
 
 **Data flow**: `MapManager` wires a per-scene `TurnManager`, which drives actor turns and pushes `BaseAction`s (Move/Wait/Attack/Card) through `ActionQueue` for serial execution. Combat/card actions route through `CombatCardSystem` → `EffectApplier`/`EffectContext` → `CombatResolver`/`CombatFormula` for resolution — all gated by `GameStateManager.can_process_*`.
+
+**Multiplayer flow**: Main menu "Iniciar Partida" opens `NetworkModeSelect` (scenes/NetworkModeSelect.tscn) with Host/Join/Offline. Host creates a Steam lobby (`SteamLobbyManager.create_lobby`, Friends Only) then picks a save slot via the existing `SaveSlotSelector`; Join opens the Steam friends overlay and joins via `join_requested`/`lobby_joined`. Joining clients must pass Steam auth-ticket validation (mandatory-blocking, 15s timeout) before `SteamManager.connected_clients` counts them as real players. Both paths land in `scenes/WaitingRoom.tscn` before the host starts `Main2d.tscn`; Offline is unchanged from the original single-player flow (`SlotSelection.tscn` → `Main2d.tscn` directly, no networking).
 
 ## Directory layout
 
 - `scripts/core/` — actions, cards, combat, effects, enemy, movement, stats, theme, utils
 - `scripts/managers/` — SaveManager, CurrencyManager, SettingsManager, GameStateManager, ManagerLocator
+- `scripts/network/` — SteamManager (autoload), SteamLobbyManager (Steam lobby/matchmaking)
 - `scripts/ui/` — card_reward, hud, menus, overlays, visual
 - `scripts/world/` — camera, dungeon, rooms
 - `resources/` — `.tres` data: `cards/{agility,magic,strength}/*.tres`, `card_library.tres`, `enemies/*.tres`

@@ -6,10 +6,13 @@ class_name MainMenuFlow
 
 const GAME_SCENE := "res://scenes/Main2d.tscn"
 const CREDITS_SCENE := "res://scenes/CreditMenu.tscn"
+const WAITING_ROOM_SCENE := "res://scenes/WaitingRoom.tscn"
 const SLOT_SELECTION_SCENE := preload("res://scenes/SlotSelection.tscn")
+const NETWORK_MODE_SELECT_SCENE := preload("res://scenes/NetworkModeSelect.tscn")
 
 enum MenuState {
 	MAIN,
+	NETWORK_MODE_SELECT,
 	SLOT_SELECT,
 	OPTIONS
 }
@@ -23,6 +26,9 @@ var click_sound: AudioStreamPlayer = null
 var hover_sound: AudioStreamPlayer = null
 
 var slot_selector: SaveSlotSelector = null
+var network_mode_select: NetworkModeSelect = null
+
+var _is_hosting: bool = false
 
 var current_state: MenuState = MenuState.MAIN
 var is_transitioning: bool = false
@@ -62,15 +68,53 @@ func build_slot_selector(_start_button: Button = null) -> void:
 		slot_selector.back_pressed.connect(_on_slot_back_pressed)
 
 
+func build_network_mode_select() -> void:
+	if owner == null:
+		return
+
+	network_mode_select = NETWORK_MODE_SELECT_SCENE.instantiate() as NetworkModeSelect
+	network_mode_select.setup(click_sound, hover_sound)
+	network_mode_select.visible = false
+
+	owner.add_child(network_mode_select)
+
+	if not network_mode_select.host_selected.is_connected(_on_host_selected):
+		network_mode_select.host_selected.connect(_on_host_selected)
+	if not network_mode_select.join_selected.is_connected(_on_join_selected):
+		network_mode_select.join_selected.connect(_on_join_selected)
+	if not network_mode_select.offline_selected.is_connected(_on_offline_selected):
+		network_mode_select.offline_selected.connect(_on_offline_selected)
+	if not network_mode_select.back_pressed.is_connected(_on_network_mode_back_pressed):
+		network_mode_select.back_pressed.connect(_on_network_mode_back_pressed)
+
+	var steam_mgr := ManagerLocator.get_steam_manager()
+	if steam_mgr and steam_mgr.lobby_manager:
+		if not steam_mgr.lobby_manager.lobby_ready.is_connected(_on_lobby_ready):
+			steam_mgr.lobby_manager.lobby_ready.connect(_on_lobby_ready)
+		if not steam_mgr.lobby_manager.lobby_failed.is_connected(_on_lobby_failed):
+			steam_mgr.lobby_manager.lobby_failed.connect(_on_lobby_failed)
+
+
 func show_main_menu() -> void:
 	current_state = MenuState.MAIN
+	_leave_network_session()
 
 	if slot_selector:
 		slot_selector.close(true)
+	if network_mode_select:
+		network_mode_select.close(false)
 	if options_menu:
 		options_menu.close(false)
 
 	_animate_main_menu(true)
+
+
+func _leave_network_session() -> void:
+	if _is_hosting:
+		var steam_mgr := ManagerLocator.get_steam_manager()
+		if steam_mgr and steam_mgr.lobby_manager:
+			steam_mgr.lobby_manager.leave_lobby()
+	_is_hosting = false
 
 
 func show_options_menu() -> void:
@@ -91,15 +135,15 @@ func start_pressed() -> void:
 	if is_transitioning:
 		return
 
-	current_state = MenuState.SLOT_SELECT
+	current_state = MenuState.NETWORK_MODE_SELECT
 	_play_click()
 
 	if options_menu:
 		options_menu.close(false)
 
 	_animate_main_menu(false, func():
-		if slot_selector:
-			slot_selector.open()
+		if network_mode_select:
+			network_mode_select.open()
 	)
 
 
@@ -141,6 +185,15 @@ func credits_pressed() -> void:
 
 
 func _on_slot_back_pressed() -> void:
+	if _is_hosting:
+		_leave_network_session()
+		if slot_selector:
+			slot_selector.close(true)
+		current_state = MenuState.NETWORK_MODE_SELECT
+		if network_mode_select:
+			network_mode_select.open()
+		return
+
 	show_main_menu()
 
 
@@ -157,7 +210,69 @@ func _on_slot_selected(slot_id: int) -> void:
 		return
 
 	save_mgr.load_game(slot_id)
-	await _change_to_game_scene()
+
+	if _is_hosting:
+		await _change_to_waiting_room()
+	else:
+		await _change_to_game_scene()
+
+
+func _on_host_selected() -> void:
+	if network_mode_select:
+		network_mode_select.close(false)
+
+	_is_hosting = true
+
+	var steam_mgr := ManagerLocator.get_steam_manager()
+	if steam_mgr == null or steam_mgr.lobby_manager == null:
+		QuestLogger.error(QuestLogger.Category.NETWORK, "SteamManager/lobby_manager not available for host flow.")
+		_is_hosting = false
+		if network_mode_select:
+			network_mode_select.open()
+		return
+
+	steam_mgr.lobby_manager.create_lobby(Steam.LOBBY_TYPE_FRIENDS_ONLY)
+
+
+func _on_join_selected() -> void:
+	if network_mode_select:
+		network_mode_select.close(false)
+
+	_is_hosting = false
+	Steam.activateGameOverlay("Friends")
+
+
+func _on_offline_selected() -> void:
+	current_state = MenuState.SLOT_SELECT
+	_is_hosting = false
+
+	if network_mode_select:
+		network_mode_select.close(false)
+	if slot_selector:
+		slot_selector.open()
+
+
+func _on_network_mode_back_pressed() -> void:
+	if network_mode_select:
+		network_mode_select.close(true)
+	show_main_menu()
+
+
+func _on_lobby_ready(_lobby_id: int, is_host: bool) -> void:
+	if is_host:
+		current_state = MenuState.SLOT_SELECT
+		if slot_selector:
+			slot_selector.open()
+	else:
+		await _change_to_waiting_room()
+
+
+func _on_lobby_failed(reason: String) -> void:
+	QuestLogger.error(QuestLogger.Category.NETWORK, "Lobby flow failed: %s" % reason)
+	_is_hosting = false
+	current_state = MenuState.NETWORK_MODE_SELECT
+	if network_mode_select:
+		network_mode_select.open()
 
 
 func _change_to_game_scene() -> void:
@@ -170,6 +285,18 @@ func _change_to_game_scene() -> void:
 	await owner.get_tree().create_timer(0.2).timeout
 	ManagerLocator.flush_saves()
 	owner.get_tree().change_scene_to_file(GAME_SCENE)
+
+
+func _change_to_waiting_room() -> void:
+	if owner == null:
+		return
+
+	if slot_selector:
+		slot_selector.close(true)
+
+	await owner.get_tree().create_timer(0.2).timeout
+	ManagerLocator.flush_saves()
+	owner.get_tree().change_scene_to_file(WAITING_ROOM_SCENE)
 
 
 func _animate_main_menu(show: bool, on_finish: Callable = Callable()) -> void:

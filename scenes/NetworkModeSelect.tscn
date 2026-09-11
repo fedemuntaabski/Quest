@@ -1,0 +1,201 @@
+[gd_scene format=3 uid="uid://dqxk2m8h1lp0j"]
+
+[ext_resource type="Script" path="res://scripts/ui/menus/NetworkModeSelect.gd" id="1_mode_select_script"]
+[ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
+[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+content_margin_left = 32.0
+content_margin_top = 32.0
+content_margin_right = 32.0
+content_margin_bottom = 32.0
+bg_color = Color(0.08, 0.06, 0.05, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.8, 0.63, 0.33, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.11, 0.09, 0.86)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.76, 0.56, 0.25, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_pressed"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.11, 0.08, 0.06, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.72, 0.51, 0.2, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.26, 0.17, 0.11, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.72, 0.35, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_focus"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.19, 0.13, 0.1, 0.88)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 0.82, 0.41, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_disabled"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.08, 0.07, 0.6)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.4, 0.32, 0.2, 0.6)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="NetworkModeSelect" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mode_select_script")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ModeCard" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(480, 460)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/ModeCard"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Title" type="Label" parent="CenterContainer/ModeCard/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.03, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_title_font")
+theme_override_font_sizes/font_size = 34
+text = "MODO DE JUEGO"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="CenterContainer/ModeCard/VBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.4, 0.35, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 18
+text = "Steam no está disponible. Solo modo sin conexión."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="HostButton" type="Button" parent="CenterContainer/ModeCard/VBoxContainer"]
+custom_minimum_size = Vector2(400, 68)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_colors/font_disabled_color = Color(0.5, 0.44, 0.32, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_button_disabled")
+text = "HOST (STEAM)"
+
+[node name="JoinButton" type="Button" parent="CenterContainer/ModeCard/VBoxContainer"]
+custom_minimum_size = Vector2(400, 68)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_colors/font_disabled_color = Color(0.5, 0.44, 0.32, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_button_disabled")
+text = "UNIRSE (STEAM)"
+
+[node name="OfflineButton" type="Button" parent="CenterContainer/ModeCard/VBoxContainer"]
+custom_minimum_size = Vector2(400, 68)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+text = "JUGAR SIN CONEXIÓN"
+
+[node name="BackButton" type="Button" parent="CenterContainer/ModeCard/VBoxContainer"]
+custom_minimum_size = Vector2(400, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.72, 0.6, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+text = "VOLVER"

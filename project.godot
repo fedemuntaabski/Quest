@@ -25,6 +25,11 @@ SaveManager="*res://scripts/managers/SaveManager.gd"
 CurrencyManager="*res://scripts/managers/CurrencyManager.gd"
 ThemeManager="*res://scripts/core/theme/ThemeManager.gd"
 SettingsManager="*res://scripts/managers/SettingsManager.gd"
+SteamManager="*res://scripts/network/SteamManager.gd"
+
+[debug]
+
+file_logging/enable_file_logging=true
 
 [display]
 
@@ -74,3 +79,7 @@ textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+
+[steam]
+
+initialization/processes/initialize_on_startup=true

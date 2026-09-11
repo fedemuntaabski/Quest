@@ -36,6 +36,7 @@ func _ready() -> void:
 	)
 
 	flow.build_slot_selector(start_button)
+	flow.build_network_mode_select()
 
 	if options_menu:
 		options_menu.close(false)
