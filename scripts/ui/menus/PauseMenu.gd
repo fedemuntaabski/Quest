@@ -8,9 +8,11 @@ signal exit_requested
 @export var confirm_exit_on_run: bool = true
 
 @onready var pause_panel: Panel = %PausePanel
+@onready var blur_rect: ColorRect = %BlurRect
+@onready var dim_rect: ColorRect = %DimRect
 @onready var options_menu: OptionsMenu = %OptionsMenu
 @onready var store_panel: StorePanel = %StorePanel
-@onready var exit_confirm_dialog: ConfirmationDialog = %ExitConfirmDialog
+@onready var exit_confirm_dialog: ExitConfirmDialog = %ExitConfirmDialog
 
 @onready var options_button: Button = %OptionsButton
 @onready var store_button: Button = %StoreButton
@@ -44,11 +46,16 @@ func _on_base_ready() -> void:
 		exit_confirm_dialog.confirmed.connect(_on_exit_confirmed)
 	if exit_confirm_dialog and not exit_confirm_dialog.canceled.is_connected(_on_exit_canceled):
 		exit_confirm_dialog.canceled.connect(_on_exit_canceled)
-	if exit_confirm_dialog:
-		exit_confirm_dialog.ok_button_text = "OK"
-		exit_confirm_dialog.cancel_button_text = "Cancelar"
 
 	_apply_theme()
+
+	animate_transitions = true
+	fade_duration_in = 0.22
+	fade_duration_out = 0.16
+	add_fade_target(dim_rect, 1.0)
+	add_fade_target(blur_rect, 1.0)
+	add_fade_target(pause_panel, 1.0)
+	add_scale_target(pause_panel)
 
 	_set_panel(0)
 	_update_gold_label()
@@ -69,6 +76,8 @@ func _on_before_close() -> void:
 		options_menu.close()
 	if store_panel and store_panel.is_open:
 		store_panel.close()
+	if exit_confirm_dialog and exit_confirm_dialog.is_open:
+		exit_confirm_dialog.close()
 
 # ---------------- UI ----------------
 
@@ -129,8 +138,7 @@ func _on_exit_canceled() -> void:
 
 
 func _show_exit_confirm_dialog() -> void:
-	exit_confirm_dialog.popup_centered()
-	exit_confirm_dialog.position += Vector2i(0, 80)
+	exit_confirm_dialog.open()
 
 
 func _emit_exit_requested() -> void:

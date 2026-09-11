@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/menus/StorePanel.gd" id="1_store_script"]
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+[ext_resource type="PackedScene" path="res://scenes/StoreUpgradeCard.tscn" id="4_upgrade_card"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_store_panel"]
 bg_color = Color(0.08, 0.06, 0.05, 0.92)
@@ -125,53 +126,21 @@ theme_override_font_sizes/font_size = 26
 text = "Oro: 0"
 horizontal_alignment = 1
 
-[node name="UpgradeHPButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000007]
+[node name="UpgradeHPCard" parent="StoreCenterContainer/StoreCard/StoreVBox" instance=ExtResource("4_upgrade_card")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_store_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_store_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_store_button_hover")
-text = "Mejorar Vida (+2)"
 
-[node name="UpgradeSTRButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000008]
+[node name="UpgradeSTRCard" parent="StoreCenterContainer/StoreCard/StoreVBox" instance=ExtResource("4_upgrade_card")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_store_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_store_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_store_button_hover")
-text = "Mejorar Fuerza (+1)"
 
-[node name="UpgradeMAGButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000009]
+[node name="UpgradeMAGCard" parent="StoreCenterContainer/StoreCard/StoreVBox" instance=ExtResource("4_upgrade_card")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_store_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_store_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_store_button_hover")
-text = "Mejorar Magia (+1)"
 
-[node name="UpgradeDEXButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000010]
+[node name="UpgradeDEXCard" parent="StoreCenterContainer/StoreCard/StoreVBox" instance=ExtResource("4_upgrade_card")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_store_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_store_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_store_button_hover")
-text = "Mejorar Destreza (+1)"
 
 [node name="StoreBackButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000011]
 unique_name_in_owner = true

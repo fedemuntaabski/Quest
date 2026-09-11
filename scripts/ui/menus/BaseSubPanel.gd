@@ -9,12 +9,18 @@ signal menu_closed
 @export var fade_duration_in: float = 0.25
 @export var fade_duration_out: float = 0.20
 
+@export var entrance_scale_from: Vector2 = Vector2(0.92, 0.92)
+@export var exit_scale_to: Vector2 = Vector2(0.94, 0.94)
+@export var entrance_trans: Tween.TransitionType = Tween.TRANS_BACK
+@export var entrance_ease: Tween.EaseType = Tween.EASE_OUT
+
 var is_open: bool = false
 
 var _click_sfx: AudioStreamPlayer
 var _hover_sfx: AudioStreamPlayer
 var _tween: Tween
 var _fade_targets: Array[Dictionary] = []
+var _scale_targets: Array[CanvasItem] = []
 
 
 func _ready() -> void:
@@ -62,6 +68,10 @@ func add_fade_target(node: CanvasItem, max_alpha: float = 1.0) -> void:
 	_fade_targets.append({"node": node, "max_alpha": max_alpha})
 
 
+func add_scale_target(node: CanvasItem) -> void:
+	_scale_targets.append(node)
+
+
 func open() -> void:
 	if is_open:
 		return
@@ -100,25 +110,14 @@ func toggle() -> void:
 
 
 func _play_fade_in() -> void:
-	if _fade_targets.is_empty():
-		return
 	if _tween and _tween.is_valid():
 		_tween.kill()
-	_tween = create_tween().set_parallel(true)
-	_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	for entry in _fade_targets:
-		var node: CanvasItem = entry["node"]
-		node.modulate.a = 0.0
-		_tween.tween_property(node, "modulate:a", entry["max_alpha"], fade_duration_in)
+	_tween = MenuTransitionFX.play_entrance(self, _fade_targets, _scale_targets, fade_duration_in, entrance_trans, entrance_ease, entrance_scale_from)
 
 
 func _play_fade_out() -> void:
-	if _fade_targets.is_empty():
-		return
 	if _tween and _tween.is_valid():
 		_tween.kill()
-	_tween = create_tween().set_parallel(true)
-	_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	for entry in _fade_targets:
-		_tween.tween_property(entry["node"], "modulate:a", 0.0, fade_duration_out)
-	await _tween.finished
+	_tween = MenuTransitionFX.play_exit(self, _fade_targets, _scale_targets, fade_duration_out, exit_scale_to)
+	if _tween != null:
+		await _tween.finished

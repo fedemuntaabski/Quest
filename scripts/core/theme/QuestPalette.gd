@@ -59,6 +59,7 @@ const CURRENCY_GOLD_POPUP: Color = Color(1.00, 0.84, 0.10, 1.0)
 const CARD_STRENGTH: Color = BLOOD_LIGHT
 const CARD_AGILITY: Color = STEEL
 const CARD_MAGIC: Color = VIOLET
+const CARD_VITALITY: Color = MOSS
 const CARD_NEUTRAL: Color = PARCHMENT_FADED
 
 static func with_alpha(color: Color, alpha: float) -> Color:

@@ -1,0 +1,96 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/menus/ExitConfirmDialog.gd" id="1_exit_script"]
+[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="2_ui_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog_panel"]
+bg_color = Color(0.08, 0.06, 0.05, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.86, 0.67, 0.33, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[node name="ExitConfirmDialog" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_exit_script")
+
+[node name="DimRect" type="ColorRect" parent="."]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DialogPanel" type="Panel" parent="CenterContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(520, 260)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog_panel")
+
+[node name="DialogVBox" type="VBoxContainer" parent="CenterContainer/DialogPanel"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -100.0
+offset_right = 230.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 24
+
+[node name="DialogMessage" type="Label" parent="CenterContainer/DialogPanel/DialogVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
+theme_override_fonts/font = ExtResource("2_ui_font")
+theme_override_font_sizes/font_size = 24
+text = "¿Estás seguro de salir? Se perderán los datos de esta run actual."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="CenterContainer/DialogPanel/DialogVBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="CenterContainer/DialogPanel/DialogVBox/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 64)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_ui_font")
+theme_override_font_sizes/font_size = 28
+theme_override_constants/outline_size = 3
+text = "Cancelar"
+
+[node name="ConfirmButton" type="Button" parent="CenterContainer/DialogPanel/DialogVBox/ButtonRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 64)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_ui_font")
+theme_override_font_sizes/font_size = 28
+theme_override_constants/outline_size = 3
+text = "OK"

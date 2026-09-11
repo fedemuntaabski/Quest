@@ -19,13 +19,21 @@ const UPGRADES = {
 
 @onready var gold_label: Label = %GoldLabel
 @onready var store_back_button: Button = %StoreBackButton
+@onready var store_card: Panel = %StoreCard
 
-@onready var upgrade_buttons: Array[Button] = [
-	%UpgradeHPButton,
-	%UpgradeSTRButton,
-	%UpgradeMAGButton,
-	%UpgradeDEXButton
+@onready var upgrade_cards: Array[StoreUpgradeCard] = [
+	%UpgradeHPCard,
+	%UpgradeSTRCard,
+	%UpgradeMAGCard,
+	%UpgradeDEXCard
 ]
+
+const STAT_COLORS: Dictionary = {
+	"hp": QuestPalette.CARD_VITALITY,
+	"str": QuestPalette.CARD_STRENGTH,
+	"mag": QuestPalette.CARD_MAGIC,
+	"dex": QuestPalette.CARD_AGILITY,
+}
 
 var _error_message_timer: float = 0.0
 var _error_message: String = ""
@@ -42,14 +50,22 @@ func _on_base_ready() -> void:
 	connect_button(store_back_button, _on_back_pressed)
 
 	var stats: Array[String] = ["hp", "str", "mag", "dex"]
-	for i in upgrade_buttons.size():
+	for i in upgrade_cards.size():
 		var stat: String = stats[i]
-		connect_button(upgrade_buttons[i], _on_upgrade_pressed.bind(stat))
-		upgrade_buttons[i].mouse_entered.connect(_on_upgrade_button_entered.bind(upgrade_buttons[i]))
-		upgrade_buttons[i].mouse_exited.connect(_on_upgrade_button_exited)
+		var card: StoreUpgradeCard = upgrade_cards[i]
+		card.configure(stat, STAT_COLORS.get(stat, QuestPalette.GOLD))
+		card.upgrade_pressed.connect(_on_upgrade_pressed)
+		card.hovered.connect(_on_upgrade_card_hovered.bind(card))
+		card.unhovered.connect(_on_upgrade_card_unhovered)
 
 	_apply_theme()
 	_update_gold_label()
+
+	animate_transitions = true
+	fade_duration_in = 0.22
+	fade_duration_out = 0.16
+	add_fade_target(store_card, 1.0)
+	add_scale_target(store_card)
 
 	var currency := ManagerLocator.get_currency_manager()
 	if currency and not currency.gold_changed.is_connected(_on_gold_changed):
@@ -98,7 +114,7 @@ func _update_store() -> void:
 		gold_label.text = "%s - %s" % [gold_label.text, _error_message]
 
 	var stats: Array[String] = ["hp", "str", "mag", "dex"]
-	for i in upgrade_buttons.size():
+	for i in upgrade_cards.size():
 		var key: String = stats[i]
 		var config: Dictionary = UPGRADES.get(key, {})
 		var stat_name: String = str(config.get("stat", ""))
@@ -110,25 +126,15 @@ func _update_store() -> void:
 		var cost := StatBalanceScript.get_upgrade_cost(level)
 		var can_upgrade: bool = player_stats != null and player_stats.can_upgrade_stat(stat_name)
 		var affordable: bool = current_gold >= cost
-		var button: Button = upgrade_buttons[i]
-		button.disabled = not (can_upgrade and affordable)
-		if can_upgrade:
-			button.text = "%s\n%s | %dg" % [
-				str(config.get("label", key.to_upper())),
-				str(config.get("effect", "")),
-				cost
-			]
-			button.set_meta("upgrade_hint", "%s\nNivel %d/%d\nCosto: %dg\n%s" % [
-				str(config.get("label", key.to_upper())),
-				level,
-				max_level,
-				cost,
-				str(config.get("effect", ""))
-			])
-		else:
-			button.text = "%s\nMAX NIVEL" % [
-				str(config.get("label", key.to_upper()))
-			]
+		upgrade_cards[i].set_data(
+			str(config.get("label", key.to_upper())),
+			str(config.get("effect", "")),
+			level,
+			max_level,
+			cost,
+			can_upgrade,
+			affordable
+		)
 
 
 func _on_upgrade_pressed(stat: String) -> void:
@@ -173,22 +179,19 @@ func _show_error_message(message: String) -> void:
 	_error_message_timer = 3.0
 
 
-func _on_upgrade_button_entered(btn: Button) -> void:
+func _on_upgrade_card_hovered(hint: String, card: StoreUpgradeCard) -> void:
+	if hint == "":
+		return
 	var hud_nodes := get_tree().get_nodes_in_group("hud")
 	if hud_nodes.size() == 0:
 		return
 	var hud := hud_nodes[0]
-	var hint := ""
-	if btn.has_meta("upgrade_hint"):
-		hint = str(btn.get_meta("upgrade_hint"))
-	if hint == "":
-		return
-	var rect := btn.get_global_rect()
+	var rect := card.get_global_rect()
 	var pos := rect.position + Vector2(rect.size.x + 12.0, 0.0)
 	hud.show_simple_tooltip(hint, pos)
 
 
-func _on_upgrade_button_exited() -> void:
+func _on_upgrade_card_unhovered() -> void:
 	var hud_nodes := get_tree().get_nodes_in_group("hud")
 	if hud_nodes.size() == 0:
 		return
@@ -199,8 +202,6 @@ func _on_upgrade_button_exited() -> void:
 func _apply_theme() -> void:
 	if gold_label:
 		gold_label.add_theme_color_override("font_color", QuestPalette.GOLD)
-	for b in upgrade_buttons:
-		_style_button(b)
 	if store_back_button:
 		_style_button(store_back_button)
 

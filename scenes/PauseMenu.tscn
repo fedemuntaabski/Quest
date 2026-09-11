@@ -5,6 +5,7 @@
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
 [ext_resource type="PackedScene" uid="uid://baeb8xmga0bum" path="res://scenes/OptionsMenu.tscn" id="4_options_menu"]
 [ext_resource type="PackedScene" path="res://scenes/StorePanel.tscn" id="5_store_panel"]
+[ext_resource type="PackedScene" path="res://scenes/ExitConfirmDialog.tscn" id="6_exit_confirm_dialog"]
 
 [sub_resource type="Shader" id="Shader_pause_blur"]
 code = "shader_type canvas_item;
@@ -117,6 +118,7 @@ visible = false
 script = ExtResource("1_pause_script")
 
 [node name="BlurRect" type="ColorRect" parent="." unique_id=94673652]
+unique_name_in_owner = true
 material = SubResource("ShaderMaterial_pause_blur")
 anchors_preset = 15
 anchor_right = 1.0
@@ -127,6 +129,7 @@ mouse_filter = 2
 color = Color(1, 1, 1, 0.8)
 
 [node name="DimRect" type="ColorRect" parent="." unique_id=460011677]
+unique_name_in_owner = true
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -236,13 +239,6 @@ unique_name_in_owner = true
 click_player_path = NodePath("../UIAudio/ClickSound")
 hover_player_path = NodePath("../UIAudio/HoverSound")
 
-[node name="ExitConfirmDialog" type="ConfirmationDialog" parent="." unique_id=1140944121]
-unique_name_in_owner = true
-oversampling_override = 1.0
-title = "Confirmar salida"
-size = Vector2i(508, 100)
-dialog_text = "¿Estás seguro de salir? Se perderán los datos de esta run actual."
-
 [node name="StorePanel" parent="." unique_id=1280633485 instance=ExtResource("5_store_panel")]
 unique_name_in_owner = true
 click_player_path = NodePath("../UIAudio/ClickSound")
@@ -254,4 +250,7 @@ hover_player_path = NodePath("../UIAudio/HoverSound")
 unique_name_in_owner = true
 
 [node name="HoverSound" type="AudioStreamPlayer" parent="UIAudio" unique_id=1216079041]
+unique_name_in_owner = true
+
+[node name="ExitConfirmDialog" parent="." instance=ExtResource("6_exit_confirm_dialog")]
 unique_name_in_owner = true

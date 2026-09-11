@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/menus/StoreUpgradeCard.gd" id="1_card_script"]
+[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="2_ui_font"]
+
+[node name="StoreUpgradeCard" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+mouse_filter = 1
+script = ExtResource("1_card_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="HBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="TextColumn" type="VBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="StatLabel" type="Label" parent="Margin/Content/TextColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_ui_font")
+theme_override_font_sizes/font_size = 26
+text = "Vitalidad"
+
+[node name="EffectLabel" type="Label" parent="Margin/Content/TextColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.78, 0.72, 1)
+theme_override_fonts/font = ExtResource("2_ui_font")
+theme_override_font_sizes/font_size = 18
+text = "+2 Vida maxima"
+
+[node name="LevelLabel" type="Label" parent="Margin/Content/TextColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_fonts/font = ExtResource("2_ui_font")
+theme_override_font_sizes/font_size = 16
+text = "Nivel 0/5"
+
+[node name="ActionColumn" type="VBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="CostLabel" type="Label" parent="Margin/Content/ActionColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+theme_override_fonts/font = ExtResource("2_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "10g"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="UpgradeButton" type="Button" parent="Margin/Content/ActionColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 44)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_ui_font")
+theme_override_font_sizes/font_size = 18
+text = "MEJORAR"
