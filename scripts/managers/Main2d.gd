@@ -37,7 +37,7 @@ var _is_dead: bool = false
 var _room_timer_paused: bool = false
 var _victory_triggered: bool = false
 
-var tutorial_layer: Node = null
+var tutorial_layer: TutorialLayer = null
 var _run_gold_start: int = 0
 var _reward_pending: bool = false
 var post_victory_popup: PostVictoryPopup = null
@@ -143,8 +143,8 @@ func _connect_menu_ui() -> void:
 	if exit_button and not exit_button.pressed.is_connected(Callable(self, "_on_return_pressed")):
 		exit_button.pressed.connect(Callable(self, "_on_return_pressed"))
 
-	if pause_menu and pause_menu.has_method("close_menu"):
-		pause_menu.close_menu()
+	if pause_menu:
+		pause_menu.close()
 
 	if pause_menu and not pause_menu.exit_requested.is_connected(Callable(self, "_on_pause_exit_requested")):
 		pause_menu.exit_requested.connect(Callable(self, "_on_pause_exit_requested"))
@@ -204,25 +204,20 @@ func _load_tutorial_if_needed() -> void:
 	if not scene:
 		return
 
-	tutorial_layer = scene.instantiate()
-	if tutorial_layer is Node:
-		tutorial_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	tutorial_layer = scene.instantiate() as TutorialLayer
 	add_child(tutorial_layer)
 	_room_timer_paused = true
 
-	if tutorial_layer.has_signal("tutorial_started"):
-		tutorial_layer.connect("tutorial_started", _on_tutorial_started)
-	if tutorial_layer.has_signal("tutorial_finished"):
-		tutorial_layer.connect("tutorial_finished", _on_tutorial_finished)
-
-	if tutorial_layer.has_method("setup"):
-		tutorial_layer.setup(_dg())
+	if not tutorial_layer.tutorial_started.is_connected(_on_tutorial_started):
+		tutorial_layer.tutorial_started.connect(_on_tutorial_started)
+	if not tutorial_layer.tutorial_finished.is_connected(_on_tutorial_finished):
+		tutorial_layer.tutorial_finished.connect(_on_tutorial_finished)
 
 # ─────────────────────────────────────────────
 # LOOP
 # ─────────────────────────────────────────────
 func _process(delta: float) -> void:
-	if get_tree().paused:
+	if not game_state_manager or not game_state_manager.is_active():
 		return
 	if _room_timer_paused:
 		if tutorial_layer == null or not is_instance_valid(tutorial_layer):
@@ -251,7 +246,10 @@ func _input(event: InputEvent) -> void:
 	if tutorial_layer and is_instance_valid(tutorial_layer) and tutorial_layer.visible:
 		return
 	if event.is_action_pressed("ui_cancel") and not _is_dead:
-		_set_paused_state(not get_tree().paused)
+		var can_toggle_pause := pause_menu != null \
+			and (pause_menu.is_open or (game_state_manager and game_state_manager.is_active()))
+		if can_toggle_pause:
+			pause_menu.toggle()
 		get_viewport().set_input_as_handled()
 
 # ─────────────────────────────────────────────
@@ -328,8 +326,8 @@ func _on_player_died() -> void:
 	else:
 		if map_manager and map_manager.turn_manager:
 			map_manager.turn_manager.stop()
-		if pause_menu and pause_menu.has_method("close_menu"):
-			pause_menu.close_menu()
+		if pause_menu:
+			pause_menu.close()
 		get_tree().paused = true
 	
 	var run_gold := _get_run_gold_earned()
@@ -436,15 +434,6 @@ func _hide_victory_overlay() -> void:
 # ─────────────────────────────────────────────
 # PAUSE
 # ─────────────────────────────────────────────
-func _set_paused_state(paused: bool) -> void:
-	if pause_menu == null:
-		return
-
-	if paused and pause_menu.has_method("open_menu"):
-		pause_menu.open_menu()
-	elif not paused and pause_menu.has_method("close_menu"):
-		pause_menu.close_menu()
-
 func _on_return_pressed() -> void:
 	_go_to_main_menu()
 

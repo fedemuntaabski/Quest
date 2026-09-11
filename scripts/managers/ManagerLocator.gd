@@ -19,16 +19,16 @@ static func get_autoload(name: String) -> Node:
 	return null
 
 
-static func get_save_manager() -> Node:
-	return get_autoload("SaveManager")
+static func get_save_manager() -> SaveManager:
+	return get_autoload("SaveManager") as SaveManager
 
 
-static func get_currency_manager() -> Node:
-	return get_autoload("CurrencyManager")
+static func get_currency_manager() -> CurrencyManager:
+	return get_autoload("CurrencyManager") as CurrencyManager
 
 
-static func get_player_stats() -> Node:
-	return get_autoload("PlayerStats")
+static func get_player_stats() -> PlayerStats:
+	return get_autoload("PlayerStats") as PlayerStats
 
 
 static func get_settings_manager() -> Node:

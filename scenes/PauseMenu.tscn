@@ -4,6 +4,7 @@
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
 [ext_resource type="PackedScene" uid="uid://baeb8xmga0bum" path="res://scenes/OptionsMenu.tscn" id="4_options_menu"]
+[ext_resource type="PackedScene" path="res://scenes/StorePanel.tscn" id="5_store_panel"]
 
 [sub_resource type="Shader" id="Shader_pause_blur"]
 code = "shader_type canvas_item;
@@ -110,7 +111,7 @@ corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
 [node name="PauseMenu" type="CanvasLayer" unique_id=1562215036]
-process_mode = 2
+process_mode = 3
 layer = 20
 visible = false
 script = ExtResource("1_pause_script")
@@ -142,6 +143,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PausePanel" type="Panel" parent="CenterContainer" unique_id=1211186564]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(560, 460)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
@@ -172,6 +174,7 @@ text = "PAUSA"
 horizontal_alignment = 1
 
 [node name="PauseGoldLabel" type="Label" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1182267748]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
@@ -181,6 +184,7 @@ text = "Oro: 0"
 horizontal_alignment = 1
 
 [node name="OptionsButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1136326752]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -196,6 +200,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "OPCIONES"
 
 [node name="StoreButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1906562401]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -211,6 +216,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "TIENDA"
 
 [node name="ExitButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=462390056]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 70)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.85, 1)
@@ -226,129 +232,26 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "SALIR"
 
 [node name="OptionsMenu" parent="." unique_id=703756764 instance=ExtResource("4_options_menu")]
+unique_name_in_owner = true
 click_player_path = NodePath("../UIAudio/ClickSound")
 hover_player_path = NodePath("../UIAudio/HoverSound")
 
 [node name="ExitConfirmDialog" type="ConfirmationDialog" parent="." unique_id=1140944121]
+unique_name_in_owner = true
 oversampling_override = 1.0
 title = "Confirmar salida"
 size = Vector2i(508, 100)
 dialog_text = "¿Estás seguro de salir? Se perderán los datos de esta run actual."
 
-[node name="StorePanel" type="Panel" parent="." unique_id=1280633485]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="StoreCenterContainer" type="CenterContainer" parent="StorePanel" unique_id=812721120]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="StoreCard" type="Panel" parent="StorePanel/StoreCenterContainer" unique_id=2078292481]
-custom_minimum_size = Vector2(912, 672)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
-
-[node name="StoreVBox" type="VBoxContainer" parent="StorePanel/StoreCenterContainer/StoreCard" unique_id=747076580]
-custom_minimum_size = Vector2(768, 552)
-layout_mode = 0
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -384.0
-offset_top = -300.0
-offset_right = 384.0
-offset_bottom = 252.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 18
-alignment = 1
-
-[node name="StoreTitle" type="Label" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=483408238]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
-theme_override_colors/font_outline_color = Color(0.05, 0.03, 0.02, 1)
-theme_override_constants/outline_size = 4
-theme_override_fonts/font = ExtResource("2_title_font")
-theme_override_font_sizes/font_size = 52
-text = "TIENDA"
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="GoldLabel" type="Label" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1271912898]
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 26
-text = "Oro: 0"
-horizontal_alignment = 1
-
-[node name="UpgradeHPButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1556794747]
-custom_minimum_size = Vector2(0, 96)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "Mejorar Vida (+2)"
-
-[node name="UpgradeSTRButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1371072363]
-custom_minimum_size = Vector2(0, 96)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "Mejorar Fuerza (+1)"
-
-[node name="UpgradeMAGButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=1361103944]
-custom_minimum_size = Vector2(0, 96)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "Mejorar Magia (+1)"
-
-[node name="UpgradeDEXButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=663664604]
-custom_minimum_size = Vector2(0, 96)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "Mejorar Destreza (+1)"
-
-[node name="StoreBackButton" type="Button" parent="StorePanel/StoreCenterContainer/StoreCard/StoreVBox" unique_id=351117902]
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 34
-theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "VOLVER"
+[node name="StorePanel" parent="." unique_id=1280633485 instance=ExtResource("5_store_panel")]
+unique_name_in_owner = true
+click_player_path = NodePath("../UIAudio/ClickSound")
+hover_player_path = NodePath("../UIAudio/HoverSound")
 
 [node name="UIAudio" type="Node" parent="." unique_id=20375023]
 
 [node name="ClickSound" type="AudioStreamPlayer" parent="UIAudio" unique_id=879104593]
+unique_name_in_owner = true
 
 [node name="HoverSound" type="AudioStreamPlayer" parent="UIAudio" unique_id=1216079041]
+unique_name_in_owner = true

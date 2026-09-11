@@ -1,0 +1,186 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/menus/StorePanel.gd" id="1_store_script"]
+[ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
+[ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_store_panel"]
+bg_color = Color(0.08, 0.06, 0.05, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.8, 0.63, 0.33, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_store_button_normal"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.11, 0.09, 0.86)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.76, 0.56, 0.25, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_store_button_pressed"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.11, 0.08, 0.06, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.72, 0.51, 0.2, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_store_button_hover"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.26, 0.17, 0.11, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.72, 0.35, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="StorePanel" type="Control" unique_id=3100000001]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_store_script")
+
+[node name="StoreCenterContainer" type="CenterContainer" parent="." unique_id=3100000002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StoreCard" type="Panel" parent="StoreCenterContainer" unique_id=3100000003]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(912, 672)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_store_panel")
+
+[node name="StoreVBox" type="VBoxContainer" parent="StoreCenterContainer/StoreCard" unique_id=3100000004]
+custom_minimum_size = Vector2(768, 552)
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -384.0
+offset_top = -300.0
+offset_right = 384.0
+offset_bottom = 252.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="StoreTitle" type="Label" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000005]
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.85, 0.62, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.03, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_title_font")
+theme_override_font_sizes/font_size = 52
+text = "TIENDA"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="GoldLabel" type="Label" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000006]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 26
+text = "Oro: 0"
+horizontal_alignment = 1
+
+[node name="UpgradeHPButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000007]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_store_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_store_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_store_button_hover")
+text = "Mejorar Vida (+2)"
+
+[node name="UpgradeSTRButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000008]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_store_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_store_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_store_button_hover")
+text = "Mejorar Fuerza (+1)"
+
+[node name="UpgradeMAGButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000009]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_store_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_store_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_store_button_hover")
+text = "Mejorar Magia (+1)"
+
+[node name="UpgradeDEXButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000010]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_store_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_store_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_store_button_hover")
+text = "Mejorar Destreza (+1)"
+
+[node name="StoreBackButton" type="Button" parent="StoreCenterContainer/StoreCard/StoreVBox" unique_id=3100000011]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 34
+theme_override_styles/normal = SubResource("StyleBoxFlat_store_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_store_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_store_button_hover")
+text = "VOLVER"

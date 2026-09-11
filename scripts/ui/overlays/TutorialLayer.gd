@@ -1,4 +1,4 @@
-extends CanvasLayer
+extends BaseMenu
 class_name TutorialLayer
 
 # =====================================================
@@ -14,13 +14,9 @@ signal tutorial_finished
 
 class TutorialStep:
 	var text: String
-	var wait_for_action: bool = false
-	var auto_advance: bool = false
 
-	func _init(_text: String, _wait_for_action := false, _auto := false):
+	func _init(_text: String):
 		text = _text
-		wait_for_action = _wait_for_action
-		auto_advance = _auto
 
 
 # =====================================================
@@ -29,16 +25,13 @@ class TutorialStep:
 
 var steps: Array[TutorialStep] = [
 	TutorialStep.new(
-		"Bienvenido a la mazmorra, cazarecompensas. Para sobrevivir a este contrato y reclamar tu oro. Recuerda: en QUEST, cada movimiento es una decisión de vida o muerte.",
-		true
+		"Bienvenido a la mazmorra, cazarecompensas. Para sobrevivir a este contrato y reclamar tu oro. Recuerda: en QUEST, cada movimiento es una decisión de vida o muerte."
 	),
 	TutorialStep.new(
-		"La mazmorra se rige por turnos. Verás un resaltador de casillas en el suelo: las casillas válidas para moverte se iluminarán al pasar el mouse. Haz clic izquierdo en una de ellas para desplazarte. Ten cuidado: cada paso consume un turno, lo que permite que los enemigos también actúen",
-		true
+		"La mazmorra se rige por turnos. Verás un resaltador de casillas en el suelo: las casillas válidas para moverte se iluminarán al pasar el mouse. Haz clic izquierdo en una de ellas para desplazarte. Ten cuidado: cada paso consume un turno, lo que permite que los enemigos también actúen"
 	),
 	TutorialStep.new(
-		"No temas a la oscuridad. A medida que avanzas por las habitaciones modulares, la cámara se ajustará automáticamente para seguir tu posición, manteniéndote siempre en el centro de la acción dentro de la sala actual.",
-		true
+		"No temas a la oscuridad. A medida que avanzas por las habitaciones modulares, la cámara se ajustará automáticamente para seguir tu posición, manteniéndote siempre en el centro de la acción dentro de la sala actual."
 	),
 	TutorialStep.new(
 		"Cuando veas una criatura, no te lances a ciegas. Acércate lo suficiente y, cuando el enemigo esté dentro del rango de tu arma o habilidad, haz clic sobre él para iniciar el ataque. El éxito dependerá de tus estadísticas y de la suerte del dado 1d6."
@@ -74,53 +67,33 @@ enum State {
 var state: State = State.IDLE
 var step_index: int = 0
 
-var dungeon_generator: DungeonGenerator = null
-var tween: Tween
-
 # =====================================================
 # UI REFS
 # =====================================================
 
-@onready var dimmer: ColorRect = $Dimer
-
-@onready var tutorial_panel: PanelContainer = \
-	$RootControl/MarginContainer/TutorialPanel
-
-@onready var title_label: Label = \
-	$RootControl/MarginContainer/TutorialPanel/Content/TitleLabel
-
-@onready var body_label: Label = \
-	$RootControl/MarginContainer/TutorialPanel/Content/BodyLabel
-
-@onready var hint_label: Label = \
-	$RootControl/MarginContainer/TutorialPanel/Content/HintLabel
-
-
-# =====================================================
-# SETUP
-# =====================================================
-
-func setup(dg: DungeonGenerator) -> void:
-	dungeon_generator = dg
-
-	if dungeon_generator \
-	and not dungeon_generator.room_cleared.is_connected(_on_room_cleared):
-
-		dungeon_generator.room_cleared.connect(
-			_on_room_cleared
-		)
+@onready var dimmer: ColorRect = %Dimmer
+@onready var tutorial_panel: PanelContainer = %TutorialPanel
+@onready var title_label: Label = %TitleLabel
+@onready var body_label: Label = %BodyLabel
+@onready var hint_label: Label = %HintLabel
+@onready var continue_button: Button = %ContinueButton
 
 
 # =====================================================
 # READY
 # =====================================================
 
-func _ready() -> void:
-	layer = 15
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	visible = false
+func _on_base_ready() -> void:
+	animate_transitions = true
+	fade_duration_in = 0.25
+	fade_duration_out = 0.20
+	add_fade_target(tutorial_panel, 1.0)
+	add_fade_target(dimmer, 0.35)
 
-	var save_mgr = ManagerLocator.get_save_manager()
+	visible = false
+	continue_button.pressed.connect(advance_step)
+
+	var save_mgr := ManagerLocator.get_save_manager()
 
 	if save_mgr and save_mgr.first_time_player:
 		call_deferred("_start_tutorial")
@@ -133,18 +106,12 @@ func _ready() -> void:
 # =====================================================
 
 func _input(event: InputEvent) -> void:
-
 	if state != State.SHOWING:
 		return
 
 	if event.is_action_pressed("ui_accept"):
 		advance_step()
-		return
-
-	if event is InputEventMouseButton \
-	and event.pressed:
-
-		advance_step()
+		get_viewport().set_input_as_handled()
 
 
 # =====================================================
@@ -161,7 +128,6 @@ func _start_tutorial() -> void:
 
 
 func show_step() -> void:
-
 	if step_index >= steps.size():
 		finish_tutorial()
 		return
@@ -170,9 +136,10 @@ func show_step() -> void:
 
 	title_label.text = "Tutorial"
 	body_label.text = step.text
-	hint_label.text = "[Click o Enter para continuar]"
+	hint_label.text = "[Click, Enter o Continuar]"
 
-	play_fade_in()
+	_play_fade_in()
+	continue_button.grab_focus()
 
 
 # =====================================================
@@ -180,15 +147,12 @@ func show_step() -> void:
 # =====================================================
 
 func advance_step() -> void:
-
 	if state != State.SHOWING:
 		return
 
 	state = State.TRANSITIONING
 
-	play_fade_out()
-
-	await tween.finished
+	await _play_fade_out()
 
 	step_index += 1
 
@@ -198,72 +162,10 @@ func advance_step() -> void:
 
 
 # =====================================================
-# ANIMATION
-# =====================================================
-
-func play_fade_in() -> void:
-
-	if tween:
-		tween.kill()
-
-	tween = create_tween().set_parallel(true)
-	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-
-	tutorial_panel.modulate.a = 0.0
-	dimmer.modulate.a = 0.0
-
-	tween.tween_property(
-		tutorial_panel,
-		"modulate:a",
-		1.0,
-		0.25
-	)
-
-	tween.tween_property(
-		dimmer,
-		"modulate:a",
-		0.35,
-		0.25
-	)
-
-
-func play_fade_out() -> void:
-
-	if tween:
-		tween.kill()
-
-	tween = create_tween().set_parallel(true)
-	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-
-	tween.tween_property(
-		tutorial_panel,
-		"modulate:a",
-		0.0,
-		0.20
-	)
-
-	tween.tween_property(
-		dimmer,
-		"modulate:a",
-		0.0,
-		0.20
-	)
-
-
-# =====================================================
-# GAME EVENTS
-# =====================================================
-
-func _on_room_cleared(_room_id: int) -> void:
-	finish_tutorial()
-
-
-# =====================================================
 # FINISH
 # =====================================================
 
 func finish_tutorial() -> void:
-
 	if state == State.FINISHED:
 		return
 
@@ -273,7 +175,7 @@ func finish_tutorial() -> void:
 
 	tutorial_finished.emit()
 
-	var save_mgr = ManagerLocator.get_save_manager()
+	var save_mgr := ManagerLocator.get_save_manager()
 
 	if save_mgr:
 		save_mgr.first_time_player = false
