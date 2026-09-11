@@ -16,6 +16,7 @@ signal back_pressed
 var _click_sound: AudioStreamPlayer
 var _hover_sound: AudioStreamPlayer
 var _active_tween: Tween = null
+var _is_animating_open: bool = false
 
 
 func setup(click_sound: AudioStreamPlayer = null, hover_sound: AudioStreamPlayer = null) -> void:
@@ -55,11 +56,15 @@ func _refresh_steam_availability() -> void:
 
 
 func open() -> void:
+	if visible and _is_animating_open:
+		return
+
 	if _active_tween and _active_tween.is_valid():
 		_active_tween.kill()
 
 	_refresh_steam_availability()
 	visible = true
+	_is_animating_open = true
 
 	if mode_card:
 		mode_card.pivot_offset = mode_card.size / 2.0
@@ -75,7 +80,11 @@ func close(animate: bool = true) -> void:
 	if not visible:
 		return
 
+	_is_animating_open = false
+
 	if not animate:
+		if _active_tween and _active_tween.is_valid():
+			_active_tween.kill()
 		visible = false
 		return
 

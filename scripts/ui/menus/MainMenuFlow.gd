@@ -110,10 +110,10 @@ func show_main_menu() -> void:
 
 
 func _leave_network_session() -> void:
-	if _is_hosting:
-		var steam_mgr := ManagerLocator.get_steam_manager()
-		if steam_mgr and steam_mgr.lobby_manager:
-			steam_mgr.lobby_manager.leave_lobby()
+	var steam_mgr := ManagerLocator.get_steam_manager()
+	if is_instance_valid(steam_mgr) and is_instance_valid(steam_mgr.lobby_manager) \
+			and steam_mgr.lobby_manager.current_lobby_id != 0:
+		steam_mgr.lobby_manager.leave_lobby()
 	_is_hosting = false
 
 
@@ -218,8 +218,11 @@ func _on_slot_selected(slot_id: int) -> void:
 
 
 func _on_host_selected() -> void:
+	QuestLogger.info(QuestLogger.Category.NETWORK, "_on_host_selected: entered")
+
 	if network_mode_select:
 		network_mode_select.close(false)
+		QuestLogger.info(QuestLogger.Category.NETWORK, "_on_host_selected: network_mode_select.close(false) called, visible=%s" % network_mode_select.visible)
 
 	_is_hosting = true
 
@@ -231,6 +234,7 @@ func _on_host_selected() -> void:
 			network_mode_select.open()
 		return
 
+	QuestLogger.info(QuestLogger.Category.NETWORK, "_on_host_selected: is_steam_available=%s, calling create_lobby" % steam_mgr.is_steam_available())
 	steam_mgr.lobby_manager.create_lobby(Steam.LOBBY_TYPE_FRIENDS_ONLY)
 
 
@@ -259,6 +263,7 @@ func _on_network_mode_back_pressed() -> void:
 
 
 func _on_lobby_ready(_lobby_id: int, is_host: bool) -> void:
+	QuestLogger.info(QuestLogger.Category.NETWORK, "_on_lobby_ready: lobby_id=%d is_host=%s" % [_lobby_id, is_host])
 	if is_host:
 		current_state = MenuState.SLOT_SELECT
 		if slot_selector:
@@ -272,7 +277,7 @@ func _on_lobby_failed(reason: String) -> void:
 	_is_hosting = false
 	current_state = MenuState.NETWORK_MODE_SELECT
 	if network_mode_select:
-		network_mode_select.open()
+		network_mode_select.call_deferred("open")
 
 
 func _change_to_game_scene() -> void:

@@ -5,7 +5,7 @@ const MAIN_MENU_SCENE := "res://scenes/MainMenu.tscn"
 const GAME_SCENE := "res://scenes/Main2d.tscn"
 
 @onready var lobby_id_label: Label = $CenterContainer/RoomCard/VBoxContainer/LobbyIdLabel
-@onready var players_list: VBoxContainer = $CenterContainer/RoomCard/VBoxContainer/PlayersList
+@onready var players_list: VBoxContainer = $CenterContainer/RoomCard/VBoxContainer/PlayersPanel/PlayersList
 @onready var invite_button: Button = $CenterContainer/RoomCard/VBoxContainer/InviteButton
 @onready var start_button: Button = $CenterContainer/RoomCard/VBoxContainer/StartButton
 @onready var leave_button: Button = $CenterContainer/RoomCard/VBoxContainer/LeaveButton

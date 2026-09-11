@@ -16,10 +16,12 @@ func _ready() -> void:
 
 func create_lobby(lobby_type: int = Steam.LOBBY_TYPE_FRIENDS_ONLY, max_members: int = 4) -> void:
 	var steam_mgr := ManagerLocator.get_steam_manager()
+	QuestLogger.info(QuestLogger.Category.NETWORK, "create_lobby: steam_mgr=%s is_steam_available=%s" % [steam_mgr, (steam_mgr.is_steam_available() if steam_mgr else "n/a")])
 	if steam_mgr == null or not steam_mgr.is_steam_available():
 		QuestLogger.error(QuestLogger.Category.NETWORK, "create_lobby called but Steam is not available.")
 		lobby_failed.emit("steam_unavailable")
 		return
+	QuestLogger.info(QuestLogger.Category.NETWORK, "create_lobby: calling Steam.createLobby(type=%d, max=%d)" % [lobby_type, max_members])
 	Steam.createLobby(lobby_type, max_members)
 
 
@@ -68,6 +70,11 @@ func _on_lobby_joined(lobby_id: int, _permissions: int, _locked: bool, response:
 
 	current_lobby_id = lobby_id
 	var host_steam_id: int = Steam.getLobbyOwner(lobby_id)
+
+	if host_steam_id == Steam.getSteamID():
+		# El host también recibe su propio lobby_joined (Steam lo trata como
+		# miembro de su propio lobby). El peer ya quedó armado en _on_lobby_created.
+		return
 
 	peer = SteamMultiplayerPeer.new()
 	var error: int = peer.create_client(host_steam_id, 0)
