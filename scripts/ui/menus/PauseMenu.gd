@@ -201,9 +201,6 @@ func _on_upgrade_button_exited() -> void:
 	var hud := hud_nodes[0]
 	hud.hide_simple_tooltip()
 
-func _on_options_menu_closed() -> void:
-	_set_panel(0)
-
 func _request_exit() -> void:
 	if confirm_exit_on_run and exit_confirm_dialog:
 		_show_exit_confirm_dialog()
@@ -241,7 +238,7 @@ func _update_store():
 		return
 
 	var currency := _get_currency_manager()
-	var current_gold := currency.get_gold() if currency else save_mgr.gold
+	var current_gold: int = currency.get_gold() if currency else save_mgr.gold
 	gold_label.text = "Oro: %d" % current_gold
 	
 	# PHASE 2: Display transaction error if present
@@ -259,8 +256,8 @@ func _update_store():
 			level = player_stats.get_upgrade_level(stat_name)
 			max_level = player_stats.get_max_upgrade_level()
 		var cost := StatBalanceScript.get_upgrade_cost(level)
-		var can_upgrade := player_stats != null and player_stats.can_upgrade_stat(stat_name)
-		var affordable := save_mgr.gold >= cost
+		var can_upgrade: bool = player_stats != null and player_stats.can_upgrade_stat(stat_name)
+		var affordable: bool = save_mgr.gold >= cost
 		var button: Button = upgrade_buttons[i]
 		button.disabled = not (can_upgrade and affordable)
 		if can_upgrade:
@@ -284,7 +281,7 @@ func _update_store():
 
 func _update_gold_labels() -> void:
 	var currency := _get_currency_manager()
-	var current_gold := currency.get_gold() if currency else (save_mgr.gold if save_mgr else 0)
+	var current_gold: int = currency.get_gold() if currency else (save_mgr.gold if save_mgr else 0)
 	if pause_gold_label:
 		pause_gold_label.text = "Oro: %d" % current_gold
 	if gold_label:
@@ -307,7 +304,7 @@ func _on_upgrade_pressed(stat: String):
 	if stat_name == "" or not player_stats.can_upgrade_stat(stat_name):
 		return
 
-	var level := player_stats.get_upgrade_level(stat_name)
+	var level: int = player_stats.get_upgrade_level(stat_name)
 	var cost := StatBalanceScript.get_upgrade_cost(level)
 	
 	var currency := _get_currency_manager()
