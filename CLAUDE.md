@@ -34,7 +34,7 @@ If asked to add tests/lint/CI, there is nothing existing to hook into — treat 
 
 **`TurnManager`** (scripts/core/actions/TurnManager.gd) + **`ActionQueue`** (scripts/core/actions/ActionQueue.gd) — TurnManager registers/unregisters actors and drives turn sequencing; ActionQueue serially executes queued `BaseAction` instances (`MoveAction`, `WaitAction` in core/actions; `AttackAction`, `CardAction` in core/combat), emitting `action_finished(action, result)`.
 
-**`CombatCardSystem`** (scripts/core/combat/CombatCardSystem.gd) — per-actor card validate/queue/execute/finalize (`get_card_validation`, `can_play`, `queue_card_action`). Executes via a snapshot (`execute_card_snapshot`) that checks `occ_version` to avoid stale-occupancy races, then resolves through `EffectApplier`/`EffectContext`. Emits `card_played`/`card_failed`.
+**`CombatCardSystem`** (scripts/core/combat/CombatCardSystem.gd) — per-actor card validate/queue/execute/finalize (`get_card_validation`, `queue_card_action`; playability itself is `CardManager.can_play_card` in scripts/core/cards/CardManager.gd). Executes via a snapshot (`execute_card_snapshot`) that checks `occ_version` to avoid stale-occupancy races, then resolves through `EffectApplier`/`EffectContext`. Emits `card_played`/`card_failed`.
 
 **`CombatResolver`** (scripts/core/combat/CombatResolver.gd) — stateless static `resolve_attack(...)` wrapping `CombatFormula`, producing a result dict consumed by `CombatComponent` and HUD presentation.
 
@@ -49,8 +49,5 @@ If asked to add tests/lint/CI, there is nothing existing to hook into — treat 
 - `scripts/ui/` — card_reward, hud, menus, overlays, visual
 - `scripts/world/` — camera, dungeon, rooms
 - `resources/` — `.tres` data: `cards/{agility,magic,strength}/*.tres`, `card_library.tres`, `enemies/*.tres`
-- `docs/architecture/` and `analysis/` — internal design/refactor notes worth checking for context on in-progress cleanup (`CODE_CLEANUP_REPORT.md`, `MIGRATION_PLAN.md`, `ROOM_SYSTEM_ANALYSIS.md`, `WORLD_GENERATION_AUDIT.md`, `combat_determinism_report.md`, `state_ownership_matrix.md`)
+- `docs/architecture/` and `analysis/` — internal design/refactor notes worth checking for context on in-progress cleanup (`docs/architecture/CAMERA_AND_UI_OVERHAUL.md`; `analysis/Dungeon-Architecture-Overview.md`, `Grid-and-Occupancy-Ownership.md`, `MAP_GENERATION_AUDIT.md`, `MAP_GENERATION_REFACTOR.md`, `Spawning-and-Pacing.md`)
 
-## README.md is stale
-
-README.md's "Core Systems" section lists pre-refactor paths (`scripts/TurnManager.gd`, `scripts/BaseAction.gd`, `scripts/MoveAction.gd`, `scripts/AttackAction.gd`, `scripts/CombatResolver.gd`, `scripts/CombatComponent.gd`, `scripts/OccupancyManager.gd`, `scripts/MapManager.gd`, `scripts/map_navigation_helper.gd`) that no longer exist at those locations. The actual current paths are under `scripts/core/actions/`, `scripts/core/combat/`, `scripts/world/rooms/`, `scripts/core/movement/` as listed above — trust this file over README's script list.
