@@ -12,6 +12,7 @@ var pending_clients: Dictionary[int, Dictionary] = {}
 signal avatar_loaded_ready(steam_id: int, texture: ImageTexture)
 
 var avatar_cache: Dictionary[int, ImageTexture] = {}
+var _pending_avatar_requests: Dictionary[int, bool] = {}
 
 var lobby_manager: SteamLobbyManager = null
 
@@ -33,6 +34,7 @@ func _ready() -> void:
 	Steam.get_auth_session_ticket_response.connect(_on_get_auth_session_ticket_response)
 	Steam.validate_auth_ticket_response.connect(_on_validate_auth_ticket_response)
 	Steam.avatar_loaded.connect(_on_loaded_avatar)
+	Steam.persona_state_change.connect(_on_persona_state_change)
 
 	lobby_manager = SteamLobbyManager.new()
 	lobby_manager.name = "SteamLobbyManager"
@@ -62,7 +64,19 @@ func get_user_avatar(steam_id: int = 0, size: int = Steam.AVATAR_MEDIUM) -> void
 	if avatar_cache.has(target_id):
 		avatar_loaded_ready.emit(target_id, avatar_cache[target_id])
 		return
+	if _pending_avatar_requests.has(target_id):
+		return
+	_pending_avatar_requests[target_id] = true
+	if target_id != Steam.getSteamID():
+		Steam.requestUserInformation(target_id, false)
 	Steam.getPlayerAvatar(size, target_id)
+
+
+func _on_persona_state_change(steam_id: int, flags: int) -> void:
+	if not _pending_avatar_requests.has(steam_id):
+		return
+	if flags & Steam.PERSONA_CHANGE_AVATAR:
+		Steam.getPlayerAvatar(Steam.AVATAR_MEDIUM, steam_id)
 
 
 func get_auth_ticket_for_peer(peer_id: int) -> void:
@@ -136,6 +150,7 @@ func _reject_client(peer_id: int, steam_id: int, reason: String) -> void:
 
 
 func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByteArray) -> void:
+	_pending_avatar_requests.erase(user_id)
 	var img := Image.create_from_data(avatar_size, avatar_size, false, Image.FORMAT_RGBA8, avatar_buffer)
 	if img == null:
 		QuestLogger.warn(QuestLogger.Category.NETWORK, "Failed to build avatar image for steam_id=%d" % user_id)
