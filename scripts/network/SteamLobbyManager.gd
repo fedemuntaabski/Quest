@@ -34,6 +34,9 @@ func join_lobby(lobby_id: int) -> void:
 func leave_lobby() -> void:
 	if current_lobby_id == 0:
 		return
+	var steam_mgr := ManagerLocator.get_steam_manager()
+	if steam_mgr != null:
+		steam_mgr.clear_all_sessions()
 	Steam.leaveLobby(current_lobby_id)
 	current_lobby_id = 0
 	multiplayer.multiplayer_peer = null

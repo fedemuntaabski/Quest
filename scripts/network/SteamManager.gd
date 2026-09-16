@@ -80,6 +80,8 @@ func _on_persona_state_change(steam_id: int, flags: int) -> void:
 
 
 func get_auth_ticket_for_peer(peer_id: int) -> void:
+	if _local_auth_ticket != -1:
+		Steam.cancelAuthTicket(_local_auth_ticket)
 	var ticket_info: Dictionary = Steam.getAuthSessionTicket()
 	_local_auth_ticket = ticket_info.get("id", -1)
 	_local_auth_ticket_peer = peer_id
@@ -98,6 +100,8 @@ func submit_auth_ticket(ticket_bytes: PackedByteArray) -> void:
 	var steam_id: int = get_steam_id_for_peer_id(peer_id)
 	if steam_id == 0:
 		QuestLogger.warn(QuestLogger.Category.NETWORK, "submit_auth_ticket: could not resolve steam_id for peer_id=%d" % peer_id)
+		if multiplayer.multiplayer_peer != null and peer_id in multiplayer.get_peers():
+			multiplayer.multiplayer_peer.disconnect_peer(peer_id, true)
 		return
 	pending_clients[peer_id] = {"steam_id": steam_id, "ticket": ticket_bytes, "requested_at": Time.get_ticks_msec()}
 	validate_auth_session(ticket_bytes, steam_id)
@@ -151,10 +155,10 @@ func _reject_client(peer_id: int, steam_id: int, reason: String) -> void:
 
 func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByteArray) -> void:
 	_pending_avatar_requests.erase(user_id)
-	var img := Image.create_from_data(avatar_size, avatar_size, false, Image.FORMAT_RGBA8, avatar_buffer)
-	if img == null:
+	if avatar_buffer.size() != avatar_size * avatar_size * 4:
 		QuestLogger.warn(QuestLogger.Category.NETWORK, "Failed to build avatar image for steam_id=%d" % user_id)
 		return
+	var img := Image.create_from_data(avatar_size, avatar_size, false, Image.FORMAT_RGBA8, avatar_buffer)
 	if avatar_size > 128:
 		img.resize(128, 128, Image.INTERPOLATE_LANCZOS)
 	var tex := ImageTexture.create_from_image(img)
@@ -175,4 +179,25 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	if connected_clients.has(peer_id):
 		Steam.endAuthSession(connected_clients[peer_id].get("steam_id", 0))
 		connected_clients.erase(peer_id)
-	pending_clients.erase(peer_id)
+	if pending_clients.has(peer_id):
+		var pending_steam_id: int = pending_clients[peer_id].get("steam_id", 0)
+		if pending_steam_id != 0:
+			Steam.endAuthSession(pending_steam_id)
+		pending_clients.erase(peer_id)
+
+
+func clear_all_sessions() -> void:
+	for peer_id: int in connected_clients.keys():
+		Steam.endAuthSession(connected_clients[peer_id].get("steam_id", 0))
+	connected_clients.clear()
+
+	for peer_id: int in pending_clients.keys():
+		var pending_steam_id: int = pending_clients[peer_id].get("steam_id", 0)
+		if pending_steam_id != 0:
+			Steam.endAuthSession(pending_steam_id)
+	pending_clients.clear()
+
+	if _local_auth_ticket != -1:
+		Steam.cancelAuthTicket(_local_auth_ticket)
+		_local_auth_ticket = -1
+		_local_auth_ticket_peer = -1
