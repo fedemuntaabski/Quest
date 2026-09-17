@@ -1,6 +1,7 @@
 extends Node
 
 const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
+const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd")
 
 signal stats_changed(stats: CharacterStats)
 signal upgrades_changed(upgrades: Array)
@@ -10,10 +11,10 @@ signal player_died
 var stats: CharacterStats = null
 
 # BASE STATS (PERSISTENCIA)
-var base_hp: int = StatBalance.PLAYER_BASE_HP
-var base_str: int = 1
-var base_mag: int = 1
-var base_dex: int = 1
+var base_hp: int = CharacterDatabase.get_default().base_hp
+var base_str: int = CharacterDatabase.get_default().base_str
+var base_mag: int = CharacterDatabase.get_default().base_mag
+var base_dex: int = CharacterDatabase.get_default().base_dex
 
 var active_upgrades: Array = []
 var upgrade_levels := {

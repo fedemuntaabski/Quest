@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
+
+[resource]
+script = ExtResource("1_character_data")
+character_id = "tank"
+display_name = "Tanque"
+description = "Resistencia por encima de todo. Vida elevada para aguantar cualquier golpe."
+base_hp = 32
+base_str = 1
+base_mag = 1
+base_dex = 1

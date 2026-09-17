@@ -1,6 +1,7 @@
 extends Node
 
 const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
+const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd")
 
 ## SaveManager — Autoload singleton
 ## Responsibilities:
@@ -16,6 +17,7 @@ var first_time_player: bool = true
 
 var gold: int = 0
 var run_cycle: int = 0
+var selected_character_id: String = ""
 var post_victory_popup_pending: bool = false
 var playtime_seconds: float = 0.0
 var _session_start_msec: int = 0
@@ -43,6 +45,29 @@ func increment_run_cycle() -> int:
 	return run_cycle
 
 
+func get_selected_character_id() -> String:
+	return selected_character_id if selected_character_id != "" else CharacterDatabase.get_default_id()
+
+
+func set_selected_character_id(character_id: String) -> void:
+	selected_character_id = character_id
+
+
+func apply_character_selection(character_id: String) -> void:
+	var data := CharacterDatabase.get_by_id(character_id)
+	selected_character_id = data.character_id
+
+	var player_stats_autoload = ManagerLocator.get_player_stats()
+	if player_stats_autoload:
+		player_stats_autoload.base_hp = data.base_hp
+		player_stats_autoload.base_str = data.base_str
+		player_stats_autoload.base_mag = data.base_mag
+		player_stats_autoload.base_dex = data.base_dex
+		player_stats_autoload.refresh_stats()
+
+	save_game(current_slot)
+
+
 func save_game(slot: int = current_slot) -> void:
 	var cfg := ConfigFile.new()
 
@@ -63,12 +88,14 @@ func save_game(slot: int = current_slot) -> void:
 		cfg.set_value(SAVE_SECTION, "base_dex", player_stats_autoload.base_dex)
 		cfg.set_value(SAVE_SECTION, "active_upgrades", player_stats_autoload.active_upgrades)
 	else:
-		cfg.set_value(SAVE_SECTION, "base_hp", StatBalance.PLAYER_BASE_HP)
-		cfg.set_value(SAVE_SECTION, "base_str", 1)
-		cfg.set_value(SAVE_SECTION, "base_mag", 1)
-		cfg.set_value(SAVE_SECTION, "base_dex", 1)
+		var fallback_data := CharacterDatabase.get_by_id(get_selected_character_id())
+		cfg.set_value(SAVE_SECTION, "base_hp", fallback_data.base_hp)
+		cfg.set_value(SAVE_SECTION, "base_str", fallback_data.base_str)
+		cfg.set_value(SAVE_SECTION, "base_mag", fallback_data.base_mag)
+		cfg.set_value(SAVE_SECTION, "base_dex", fallback_data.base_dex)
 		cfg.set_value(SAVE_SECTION, "active_upgrades", [])
 
+	cfg.set_value(SAVE_SECTION, "selected_character_id", selected_character_id)
 	cfg.set_value(SAVE_SECTION, "first_time_player", first_time_player)
 	cfg.set_value(SAVE_SECTION, "gold", gold)
 	cfg.set_value(SAVE_SECTION, "run_cycle", run_cycle)
@@ -96,6 +123,7 @@ func load_game(slot: int = current_slot) -> void:
 		QuestLogger.info(QuestLogger.Category.SAVE, "Loaded save from slot %d." % slot)
 		first_time_player = bool(cfg.get_value(SAVE_SECTION, "first_time_player", false))
 		gold = int(cfg.get_value(SAVE_SECTION, "gold", 0))
+		selected_character_id = str(cfg.get_value(SAVE_SECTION, "selected_character_id", CharacterDatabase.get_default_id()))
 
 		# Sync gold with CurrencyManager immediately
 		var currency = ManagerLocator.get_currency_manager()
@@ -122,6 +150,7 @@ func load_game(slot: int = current_slot) -> void:
 		first_time_player = true
 		gold = 0
 		run_cycle = 0
+		selected_character_id = CharacterDatabase.get_default_id()
 		post_victory_popup_pending = false
 		playtime_seconds = 0.0
 		_session_start_msec = Time.get_ticks_msec()
@@ -131,10 +160,11 @@ func load_game(slot: int = current_slot) -> void:
 			currency.set_gold(0)
 
 		if player_stats_autoload:
-			player_stats_autoload.base_hp = StatBalance.PLAYER_BASE_HP
-			player_stats_autoload.base_str = 1
-			player_stats_autoload.base_mag = 1
-			player_stats_autoload.base_dex = 1
+			var default_data := CharacterDatabase.get_default()
+			player_stats_autoload.base_hp = default_data.base_hp
+			player_stats_autoload.base_str = default_data.base_str
+			player_stats_autoload.base_mag = default_data.base_mag
+			player_stats_autoload.base_dex = default_data.base_dex
 			player_stats_autoload.active_upgrades = []
 			player_stats_autoload.refresh_stats()
 

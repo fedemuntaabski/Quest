@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
+
+[resource]
+script = ExtResource("1_character_data")
+character_id = "mage"
+display_name = "Mago"
+description = "Domina las artes arcanas. Daño mágico elevado a cambio de fragilidad física."
+base_hp = 20
+base_str = 1
+base_mag = 3
+base_dex = 1
