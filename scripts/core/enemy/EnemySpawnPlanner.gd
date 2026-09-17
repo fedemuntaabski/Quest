@@ -53,4 +53,6 @@ static func get_random_floor_cell_in_room(
 	if candidates.is_empty():
 		return Vector2i(-1, -1)
 
+	if dungeon:
+		return candidates[dungeon.rng.randi_range(0, candidates.size() - 1)]
 	return candidates[randi() % candidates.size()]

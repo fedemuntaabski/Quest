@@ -91,7 +91,7 @@ func _select_enemy_data(room_id: int) -> EnemyData:
 		else:
 			room_template = "normal"
 
-	return EnemyDataSelector.select_enemy_data(room_template, enemy_data_pool, default_enemy_data)
+	return EnemyDataSelector.select_enemy_data(room_template, enemy_data_pool, default_enemy_data, dungeon.rng if dungeon else null)
 
 
 func _find_enemy_data_by_id(enemy_id: String) -> EnemyData:

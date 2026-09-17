@@ -23,6 +23,12 @@ static func spawn_enemies(manager: EnemyManager, room_infos: Array, wall_cells: 
 	for room_info in room_infos:
 		_spawn_enemy_for_room(manager, room_info, wall_cells, map_manager, player_cell, occupied_spawn_cells, occupancy_manager)
 
+	var parts: PackedStringArray = []
+	for e in manager.enemies:
+		if is_instance_valid(e):
+			parts.append("%s@%s" % [e.name, str(e.global_position)])
+	QuestLogger.debug(QuestLogger.Category.MAP, "EnemySpawnLifecycleService: spawned %d enemies fingerprint=%s" % [manager.enemies.size(), String(",".join(parts)).sha256_text()])
+
 static func _spawn_enemy_for_room(
 	manager: EnemyManager,
 	room_info: Dictionary,
@@ -33,6 +39,10 @@ static func _spawn_enemy_for_room(
 	occupancy_manager: OccupancyManager = null
 ) -> void:
 	var room_id: int = room_info["id"]
+	var room_template: String = room_info.get("template", "").to_lower()
+	if room_template == DungeonGraph.TEMPLATE_TREASURE or room_template == DungeonGraph.TEMPLATE_SHOP:
+		QuestLogger.info(QuestLogger.Category.MAP, "Saltando spawn de enemigos en sala especial (id: %d, tipo: %s)" % [room_id, room_template])
+		return
 
 	var spawn_cell := manager._get_random_floor_cell_in_room(
 		room_info,
@@ -58,17 +68,19 @@ static func _spawn_enemy_for_room(
 		return
 
 	enemy.name = "Enemy_%d" % room_id
-	enemy.global_position = manager.dungeon.grid_to_world_coords(spawn_cell)
 	enemy.my_room_id = room_id
 	enemy.dungeon_generator = manager.dungeon
-	
+
 	var selected_data := manager._select_enemy_data(room_id)
 	if selected_data and enemy.has_method("apply_enemy_data"):
 		enemy.apply_enemy_data(selected_data)
 		if selected_data.enemy_name != "":
 			enemy.name = "%s_%d" % [selected_data.enemy_name, room_id]
-			
-	manager.add_child(enemy)
+
+	var enemies_root: Node2D = manager.dungeon.enemies_root if manager.dungeon else null
+	var parent_node: Node = enemies_root if enemies_root else manager
+	parent_node.add_child(enemy)
+	enemy.global_position = manager.dungeon.grid_to_world_coords(spawn_cell)
 	_apply_cycle_hp_scaling_if_needed(enemy, selected_data)
 	occupied_spawn_cells[spawn_cell] = true
 

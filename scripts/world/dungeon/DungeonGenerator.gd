@@ -26,6 +26,8 @@ const LIGHT_TEXTURE_PATH := "res://assets/ui/vision_scope.svg"
 @export var corridor_max_length: int = 8
 
 @export var map_seed: int = -1
+# When assigned (see scenes/MapManager.tscn), this .tres is the single source of truth —
+# editing the @export fields above directly on this node has no effect at runtime.
 @export var config: DungeonGenerationConfig = null
 
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -271,12 +273,27 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	is_ready = true
 	_ensure_runtime_nodes()
 
-	var layout_data := layout_generator.generate()
-	if layout_data == null or not layout_data.is_valid(room_count):
+	const MAX_GENERATION_ATTEMPTS := 4  # 1 inicial + 3 extra con reseed
+
+	var attempt_seed := seed_to_use
+	var layout_data: DungeonLayoutData = null
+	for attempt in range(MAX_GENERATION_ATTEMPTS):
+		rng.seed = attempt_seed
+		layout_data = layout_generator.generate()
+		if layout_data != null and layout_data.is_valid(room_count):
+			break
+		QuestLogger.warn(QuestLogger.Category.MAP, "DungeonGenerator: layout attempt %d/%d failed (seed %d), retrying with seed %d" % [attempt + 1, MAX_GENERATION_ATTEMPTS, attempt_seed, attempt_seed + 1])
+		layout_data = null
+		attempt_seed += 1
+
+	if layout_data == null:
+		QuestLogger.error(QuestLogger.Category.MAP, "DungeonGenerator: failed to generate a valid layout after %d attempts (base seed %d)." % [MAX_GENERATION_ATTEMPTS, seed_to_use])
 		push_error("DungeonGenerator: Failed to generate exactly %d rooms." % room_count)
 		return
 
 	_apply_layout_data(layout_data)
+
+	DungeonRoomObstaclePlacer.place_obstacles(self)
 
 	wall_manager.generate_walls_from_floor()
 
@@ -298,7 +315,23 @@ func generate_dungeon(player: CharacterBody2D = null) -> void:
 	if not room_infos.is_empty():
 		_set_active_room(int(room_infos[0]["id"]), false)
 
+	QuestLogger.debug(QuestLogger.Category.MAP, "DungeonGenerator: fingerprint seed=%d rooms=%d floor_cells=%d hash=%s" % [attempt_seed, room_infos.size(), floor_cells.size(), _compute_layout_hash()])
+
 	map_generated.emit(layout_data)
+
+
+func _compute_layout_hash() -> String:
+	var keys: Array = floor_cells.keys()
+	keys.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		if a.x != b.x:
+			return a.x < b.x
+		return a.y < b.y
+	)
+	var parts: PackedStringArray = []
+	for k in keys:
+		var cell: Vector2i = k
+		parts.append("%d,%d" % [cell.x, cell.y])
+	return String(",".join(parts)).sha256_text()
 
 
 func _apply_layout_data(layout_data: DungeonLayoutData) -> void:

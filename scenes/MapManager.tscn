@@ -2,11 +2,13 @@
 
 [ext_resource type="Script" uid="uid://cwowlgio0q0w8" path="res://scripts/world/rooms/MapManager.gd" id="1_map_script"]
 [ext_resource type="Script" uid="uid://densb3ynbqngm" path="res://scripts/world/dungeon/DungeonGenerator.gd" id="2_dungeon_script"]
+[ext_resource type="Resource" path="res://resources/dungeon/DungeonGenerationConfig_Default.tres" id="3_dungeon_config"]
 
 [node name="MapManager" type="Node2D" unique_id=145395336]
 script = ExtResource("1_map_script")
 
 [node name="DungeonGenerator" type="Node2D" parent="." unique_id=125467023]
 script = ExtResource("2_dungeon_script")
+config = ExtResource("3_dungeon_config")
 
 [node name="NavigationRegion2D" type="NavigationRegion2D" parent="." unique_id=1846088130]

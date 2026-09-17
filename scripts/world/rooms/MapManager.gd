@@ -50,7 +50,6 @@ func _on_map_generated(_layout_data: DungeonLayoutData) -> void:
 		push_warning("MapManager: Dungeon generation failed or empty.")
 		return
 
-	navigation_helper.bake_navigation_region()
 	_setup_enemy_manager()
 
 

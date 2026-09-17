@@ -1,7 +1,10 @@
 extends RefCounted
 class_name EnemyDataSelector
 
-static func select_enemy_data(room_template: String, enemy_data_pool: Array[EnemyData], default_enemy_data: EnemyData) -> EnemyData:
+static func select_enemy_data(room_template: String, enemy_data_pool: Array[EnemyData], default_enemy_data: EnemyData, rng: RandomNumberGenerator = null) -> EnemyData:
+	if room_template == DungeonGraph.TEMPLATE_TREASURE or room_template == DungeonGraph.TEMPLATE_SHOP:
+		return null
+
 	if room_template == "tutorial":
 		var tutorial := find_enemy_data_by_id(enemy_data_pool, "tutorial")
 		if tutorial:
@@ -13,7 +16,7 @@ static func select_enemy_data(room_template: String, enemy_data_pool: Array[Enem
 			if data and data.is_boss:
 				boss_candidates.append(data)
 		if not boss_candidates.is_empty():
-			return boss_candidates[randi() % boss_candidates.size()]
+			return boss_candidates[rng.randi_range(0, boss_candidates.size() - 1) if rng else randi() % boss_candidates.size()]
 
 	var candidates: Array[EnemyData] = []
 	for data in enemy_data_pool:
@@ -26,7 +29,7 @@ static func select_enemy_data(room_template: String, enemy_data_pool: Array[Enem
 		candidates.append(data)
 
 	if not candidates.is_empty():
-		return candidates[randi() % candidates.size()]
+		return candidates[rng.randi_range(0, candidates.size() - 1) if rng else randi() % candidates.size()]
 
 	if default_enemy_data:
 		return default_enemy_data

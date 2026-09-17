@@ -72,8 +72,6 @@ func _set_active_room(room_id: int, enforce_connectivity: bool = true) -> void:
 func _is_valid_linear_transition(from_id: int, to_id: int) -> bool:
 	if from_id < 0 or to_id < 0:
 		return false
-	if absi(to_id - from_id) != 1:
-		return false
 	if dungeon == null:
 		return true
 	return dungeon.are_rooms_connected(from_id, to_id)

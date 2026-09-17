@@ -14,54 +14,6 @@ func set_occupancy_manager(manager: OccupancyManager) -> void:
 	occupancy_manager = manager
 
 
-# ── Navigation baking ─────────────────────────────────────────────────────────
-func bake_navigation_region() -> void:
-	if dungeon_generator == null:
-		return
-
-	if nav_region == null:
-		push_warning("MapNavigationHelper: NavigationRegion2D missing — enemies won't pathfind.")
-		return
-
-	var tile_size: float = dungeon_generator.tile_size
-	var floor_cells: Dictionary = dungeon_generator.floor_cells
-	var wall_cells: Dictionary = dungeon_generator.wall_cells
-
-	if floor_cells.is_empty():
-		return
-
-	var nav_poly := NavigationPolygon.new()
-
-	# Ajuste fino para evitar problemas de bordes
-	var inset: float = 2.0
-	var half: float = tile_size * 0.5
-
-	for raw_cell in floor_cells.keys():
-		var cell: Vector2i = raw_cell
-
-		# Seguridad extra (aunque no debería pasar)
-		if wall_cells.has(cell):
-			continue
-
-		var world_pos: Vector2 = dungeon_generator.grid_to_world_coords(cell)
-
-		var verts := PackedVector2Array([
-			world_pos + Vector2(-half + inset, -half + inset),
-			world_pos + Vector2(half - inset, -half + inset),
-			world_pos + Vector2(half - inset, half - inset),
-			world_pos + Vector2(-half + inset, half - inset),
-		])
-
-		nav_poly.add_outline(verts)
-
-	nav_poly.make_polygons_from_outlines()
-
-	# Limpiar y asignar
-	nav_region.navigation_polygon = null
-	nav_region.navigation_polygon = nav_poly
-
-	QuestLogger.info(QuestLogger.Category.MAP, "NavigationRegion2D baked with %d floor cells." % floor_cells.size())
-
 
 # ── Passability checks ────────────────────────────────────────────────────────
 func is_cell_walkable(world_position: Vector2) -> bool:

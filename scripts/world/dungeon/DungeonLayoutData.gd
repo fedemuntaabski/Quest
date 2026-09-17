@@ -13,7 +13,7 @@ var metadata: Dictionary = {}
 func is_valid(expected_room_count: int) -> bool:
 	if graph == null:
 		return false
-	if room_infos.size() != expected_room_count:
+	if room_infos.size() < expected_room_count:
 		return false
 	if floor_cells.is_empty():
 		return false

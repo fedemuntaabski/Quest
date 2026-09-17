@@ -7,6 +7,7 @@ var tile_set: TileSet
 var floor_cells: Dictionary
 var wall_cells: Dictionary
 var grid_origin: Vector2
+var rng: RandomNumberGenerator
 
 # --- TILE CONFIG (movido desde DungeonGenerator) ---
 const TILE_MAIN_FLOOR := Vector2i(5, 10)
@@ -23,9 +24,10 @@ const TILE_EDGE_RIGHT := Vector2i(6, 10)
 
 # ----------------------------
 
-func setup(parent: Node, _tile_set: TileSet, _grid_origin: Vector2) -> void:
+func setup(parent: Node, _tile_set: TileSet, _grid_origin: Vector2, _rng: RandomNumberGenerator) -> void:
 	tile_set = _tile_set
 	grid_origin = _grid_origin
+	rng = _rng
 
 	floor_layer = TileMapLayer.new()
 	floor_layer.name = "FloorLayer"
@@ -75,8 +77,8 @@ func _paint_cell(cell: Vector2i) -> void:
 
 	# random floor variation
 	else:
-		if randf() < 0.3:
-			atlas_coords = TILE_VARIATIONS.pick_random()
+		if rng.randf() < 0.3:
+			atlas_coords = TILE_VARIATIONS[rng.randi_range(0, TILE_VARIATIONS.size() - 1)]
 
 	# draw
 	floor_layer.set_cell(cell, 0, atlas_coords)
