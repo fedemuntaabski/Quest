@@ -26,6 +26,9 @@ const BLOOD_LIGHT: Color = Color(0.95, 0.35, 0.32, 1.0)
 const MOSS: Color = Color(0.62, 0.80, 0.62, 1.0)
 const VIOLET: Color = Color(0.61, 0.46, 0.74, 1.0)
 
+const TACTICAL_MOVE_NEAR: Color = Color(0.40, 0.62, 0.95, 1.0)  # azul: alcanzable con 1 AP
+const TACTICAL_MOVE_DASH: Color = Color(0.95, 0.80, 0.30, 1.0)  # amarillo: requiere dash (2 AP)
+
 const UI_PANEL_BG: Color = Color(0.08, 0.08, 0.10, 0.98)
 const UI_PANEL_BG_SOFT: Color = Color(0.15, 0.15, 0.18, 0.80)
 const UI_PANEL_BORDER: Color = Color(0.30, 0.32, 0.38, 1.0)

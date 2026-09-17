@@ -27,12 +27,10 @@ func _init(
 
 func _compute_ap_cost() -> int:
 	var steps: int = maxi(path.size() - 1, 0)
-	if steps <= 0:
-		return 0
 	var range_per_ap: int = 3
 	if owner and "stats" in owner and owner.stats:
 		range_per_ap = maxi(owner.stats.move_range_per_ap, 1)
-	return int(ceil(float(steps) / float(range_per_ap)))
+	return MovementCostUtil.steps_to_ap(steps, range_per_ap)
 
 func can_execute() -> bool:
 	if owner == null or map_manager == null:

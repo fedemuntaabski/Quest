@@ -25,6 +25,13 @@ func _unhandled_input(event: InputEvent) -> void:
 					get_viewport().set_input_as_handled()
 			return
 
+		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+			if parent_ctrl and parent_ctrl.has_method("_handle_mouse_right_click"):
+				var consumed_right : Variant = parent_ctrl._handle_mouse_right_click(event)
+				if consumed_right:
+					get_viewport().set_input_as_handled()
+			return
+
 	# Mouse hover
 	if event is InputEventMouseMotion:
 		if parent_ctrl and parent_ctrl.has_method("_handle_mouse_hover"):

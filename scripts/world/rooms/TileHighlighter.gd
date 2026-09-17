@@ -49,6 +49,17 @@ var _last_player_grid_pos: Vector2i = INVALID_CELL
 var _renderer: TileHighlighterRenderer = null
 var _cache: TileHighlighterCache = null
 
+# ── AP movement range (blue/yellow) ─────────────────────────────────────────
+var _cached_move_blue_cells: Array[Vector2i] = []
+var _cached_move_yellow_cells: Array[Vector2i] = []
+var _last_move_ap: int = -1
+var _last_move_occ_version: int = -1
+var _last_move_grid_pos: Vector2i = INVALID_CELL
+
+# ── Staged destination (XCOM-style confirm flow) ────────────────────────────
+var _staged_cell: Vector2i = INVALID_CELL
+var _staged_path: Array[Vector2i] = []
+
 # =====================================================
 # READY
 # =====================================================
@@ -108,7 +119,10 @@ func _on_game_state_changed(new_state: int, _old_state: int) -> void:
 	# Clear overlay when game state changes (e.g., pause, reward, dead)
 	if new_state != GameStateManager.State.ACTIVE:
 		clear_path_preview()
+		clear_staged_destination()
 		_cached_range_cells.clear()
+		_cached_move_blue_cells.clear()
+		_cached_move_yellow_cells.clear()
 		queue_redraw()
 
 func _on_active_index_changed(_index: int) -> void:
@@ -151,6 +165,7 @@ func _process(_delta: float) -> void:
 			queue_redraw()
 
 	_update_range_cache_if_needed()
+	_update_move_range_cache_if_needed()
 
 	if hovered_cell != INVALID_CELL:
 		queue_redraw()
@@ -163,13 +178,30 @@ func _draw() -> void:
 	if not _can_update():
 		return
 
-	if hovered_cell == INVALID_CELL:
-		return
-
 	var tile_size := _get_tile_size()
+	var active_path := _active_preview_path()
+	var ap_cost := 0
+	var ap_affordable := true
+
+	if _player and _player.stats and active_path.size() >= 2:
+		ap_cost = MovementCostUtil.steps_to_ap(active_path.size() - 1, _player.stats.move_range_per_ap)
+		ap_affordable = _player.stats.has_ap(ap_cost)
 
 	if _renderer:
-		_renderer.draw(self, tile_size, _path_preview, _cached_range_cells, hovered_cell, _player, map_manager)
+		_renderer.draw(
+			self,
+			tile_size,
+			active_path,
+			_cached_range_cells,
+			_cached_move_blue_cells,
+			_cached_move_yellow_cells,
+			hovered_cell,
+			_player,
+			map_manager,
+			_staged_cell,
+			ap_cost,
+			ap_affordable
+		)
 
 # Drawing moved to TileHighlighterRenderer
 
@@ -191,6 +223,11 @@ func _on_hover_changed(cell: Vector2i) -> void:
 	queue_redraw()
 
 func _update_path_preview() -> void:
+	if _staged_cell != INVALID_CELL:
+		# A destination is staged and awaiting confirmation — freeze the
+		# hover-driven preview so it doesn't fight the staged path visually.
+		return
+
 	if map_manager == null or _player == null:
 		_path_preview.clear()
 		return
@@ -235,6 +272,67 @@ func clear_path_preview() -> void:
 func _update_range_cache_if_needed() -> void:
 	if _cache:
 		_cache.update_range_cache(self)
+
+# ─────────────────────────────────────────────
+# AP MOVEMENT RANGE (blue/yellow BFS overlay)
+# ─────────────────────────────────────────────
+func _update_move_range_cache_if_needed() -> void:
+	if _player == null or _card_manager == null or map_manager == null:
+		return
+
+	var active := _player.is_turn_active() and _card_manager.get_active_card() == null
+	if not active:
+		if not _cached_move_blue_cells.is_empty() or not _cached_move_yellow_cells.is_empty():
+			_cached_move_blue_cells.clear()
+			_cached_move_yellow_cells.clear()
+			queue_redraw()
+		return
+
+	var stats := _player.stats
+	var current_ap := stats.current_ap if stats else -1
+	var occ_version := map_manager.get_occupancy_version()
+
+	if _staged_cell != INVALID_CELL and occ_version != _last_move_occ_version:
+		if not map_manager.is_walkable_cell_for_actor(_staged_cell, _player):
+			# Route through the controller so its canonical staged state
+			# (which drives click confirm/re-stage) never disagrees with
+			# what this overlay is showing.
+			var controller := get_tree().get_first_node_in_group("player_action_controller")
+			if controller and controller.has_method("cancel_staged_move"):
+				controller.cancel_staged_move()
+			else:
+				clear_staged_destination()
+
+	if current_ap == _last_move_ap and occ_version == _last_move_occ_version and _player.grid_pos == _last_move_grid_pos:
+		return
+
+	_last_move_ap = current_ap
+	_last_move_occ_version = occ_version
+	_last_move_grid_pos = _player.grid_pos
+
+	var buckets := MovementRangeCalculator.compute_move_buckets(map_manager, _player)
+	_cached_move_blue_cells = buckets["blue"]
+	_cached_move_yellow_cells = buckets["yellow"]
+	queue_redraw()
+
+# ─────────────────────────────────────────────
+# STAGED DESTINATION (XCOM-style confirm flow)
+# ─────────────────────────────────────────────
+func set_staged_destination(cell: Vector2i, path: Array[Vector2i]) -> void:
+	_staged_cell = cell
+	_staged_path = path
+	queue_redraw()
+
+func clear_staged_destination() -> void:
+	if _staged_cell == INVALID_CELL:
+		return
+	_staged_cell = INVALID_CELL
+	_staged_path.clear()
+	_last_hover_cell = INVALID_CELL  # force _update_path_preview to recompute on next hover
+	queue_redraw()
+
+func _active_preview_path() -> Array[Vector2i]:
+	return _staged_path if _staged_cell != INVALID_CELL else _path_preview
 
 # =====================================================
 # HELPERS

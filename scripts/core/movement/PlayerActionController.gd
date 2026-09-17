@@ -6,6 +6,8 @@ class_name PlayerActionController
 
 const PRELOAD_ATTACK_ACTION = preload("res://scripts/core/combat/AttackAction.gd")
 
+const NO_STAGED_CELL := Vector2i(-999, -999)
+
 @export var card_library: CardLibrary
 
 var player: PlayerMovement
@@ -14,6 +16,9 @@ var map_manager: MapManager
 var hud: HUDController = null
 var hovered_enemy: Node = null
 
+var _staged_destination_cell: Vector2i = NO_STAGED_CELL
+var _staged_path: Array[Vector2i] = []
+
 var card_manager: CardManager = null
 var combat_card_system: CombatCardSystem = null
 @onready var card_system_controller: CardSystemController = $CardSystemController
@@ -21,6 +26,7 @@ var combat_card_system: CombatCardSystem = null
 func setup(p_player: PlayerMovement, p_map_manager: MapManager):
 	player = p_player
 	map_manager = p_map_manager
+	add_to_group("player_action_controller")
 	_ensure_input_actions()
 	var game_state_manager := ManagerLocator.get_game_state_manager()
 	if game_state_manager and not game_state_manager.state_changed.is_connected(_on_game_state_changed):
@@ -108,6 +114,7 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 
 	var active_card := card_manager.get_active_card() if card_manager else null
 	if active_card:
+		_clear_staged_move()
 		if active_card.target_type == "self":
 			if active_card.targeting_profile == "dash":
 				if target_cell == player.grid_pos:
@@ -155,10 +162,12 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 					if queued and card_system_controller:
 						_clear_card_targeting_state()
 					return true
+		_clear_staged_move()
 		player.cancel_movement()
 		return true
 	var enemy := map_manager.get_actor_at_cell(target_cell)
 	if _is_enemy_combat_target(enemy):
+		_clear_staged_move()
 		var ccs := _get_combat_card_system()
 		if ccs and card_manager:
 			var card := card_manager.get_active_card()
@@ -174,16 +183,35 @@ func _handle_mouse_click(_event: InputEventMouseButton = null) -> bool:
 		return true
 
 
-	if not player.request_path_to_cell(target_cell):
+	if target_cell == _staged_destination_cell:
+		# Second click on the already-staged cell = confirm the move.
+		var confirmed := player.request_path_to_cell(target_cell)
+		_clear_staged_move()
+		if confirmed:
+			var highlighter := get_tree().get_first_node_in_group("tile_highlighter") as TileHighlighter
+			if highlighter:
+				highlighter.clear_path_preview()
 		return true
-	
-	# Clear path preview overlay once movement is confirmed/queued
-	var highlighter := get_tree().get_first_node_in_group("tile_highlighter") as TileHighlighter
-	if highlighter:
-		highlighter.clear_path_preview()
+
+	# First click (or a click on a different cell) = (re)stage a destination.
+	if not map_manager.is_walkable_cell_for_actor(target_cell, player):
+		_clear_staged_move()
+		return true
+
+	var path: Array[Vector2i] = map_manager.find_path(player.grid_pos, target_cell, player)
+	if path.size() < 2:
+		_clear_staged_move()
+		return true
+
+	_staged_destination_cell = target_cell
+	_staged_path = path
+	var stage_highlighter := get_tree().get_first_node_in_group("tile_highlighter") as TileHighlighter
+	if stage_highlighter:
+		stage_highlighter.set_staged_destination(target_cell, path)
 	return true
 
 func on_player_turn_started() -> void:
+	_clear_staged_move()
 	if card_system_controller:
 		card_system_controller.tick_cooldowns()
 
@@ -196,7 +224,31 @@ func _clear_card_targeting_state() -> void:
 	else:
 		if card_manager:
 			card_manager.set_active_index(-1)
+	_clear_staged_move()
 	_clear_hover_targeting_state()
+
+func _clear_staged_move() -> void:
+	if _staged_destination_cell == NO_STAGED_CELL:
+		return
+	_staged_destination_cell = NO_STAGED_CELL
+	_staged_path.clear()
+	var highlighter := get_tree().get_first_node_in_group("tile_highlighter") as TileHighlighter
+	if highlighter:
+		highlighter.clear_staged_destination()
+
+# Public so TileHighlighter can cancel the canonical staged state when it
+# detects the staged cell went stale (e.g. an enemy stepped into it) — the
+# highlighter's own cache must never disagree with this controller's state.
+func cancel_staged_move() -> void:
+	_clear_staged_move()
+
+func _handle_mouse_right_click(_event: InputEventMouseButton = null) -> bool:
+	if player == null or not player.can_accept_input():
+		return false
+	if _staged_destination_cell == NO_STAGED_CELL:
+		return false
+	_clear_staged_move()
+	return true
 
 func _clear_hover_targeting_state() -> void:
 	if hovered_enemy and hovered_enemy.has_method("set_targeted"):
@@ -233,7 +285,9 @@ func _select_card(index: int) -> void:
 		return
 	if not _can_process_input():
 		return
-	
+
+	_clear_staged_move()
+
 	# Toggle behavior: if already selected, deselect to neutral state
 	if card_manager.active_index == index:
 		if card_system_controller:

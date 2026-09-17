@@ -132,6 +132,16 @@ func find_path(start: Vector2i, goal: Vector2i, actor: Node = null) -> Array[Vec
 
 	return nav.find_path_preferred(start, goal, false, room_rect, use_room)
 
+func get_reachable_cells_for_actor(actor: Node, max_steps: int) -> Dictionary:
+	var nav: MapNavigationHelper = _nav()
+	if nav == null or actor == null or not ("grid_pos" in actor):
+		return {}
+
+	var start: Vector2i = actor.grid_pos
+	var room_rect := _get_actor_room_rect(actor)
+	var use_room := room_rect.size != Vector2i.ZERO
+	return nav.get_reachable_cells(start, max_steps, room_rect, use_room)
+
 func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null) -> Array[Vector2i]:
 	var nav: MapNavigationHelper = _nav()
 	if nav == null:

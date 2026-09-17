@@ -9,12 +9,28 @@ func draw(
 	tile_size: float,
 	path_preview: Array[Vector2i],
 	cached_range: Array[Vector2i],
+	move_blue: Array[Vector2i],
+	move_yellow: Array[Vector2i],
 	hovered_cell: Vector2i,
 	player: Node,
-	map_manager: MapManager
+	map_manager: MapManager,
+	staged_cell: Vector2i = INVALID_CELL,
+	ap_cost: int = 0,
+	ap_affordable: bool = true
 ) -> void:
 
-	if hovered_cell == INVALID_CELL:
+	_draw_move_range_preview(
+		canvas,
+		tile_size,
+		move_blue,
+		move_yellow,
+		map_manager
+	)
+
+	if staged_cell != INVALID_CELL:
+		_draw_staged_destination(canvas, tile_size, staged_cell, map_manager)
+
+	if hovered_cell == INVALID_CELL and staged_cell == INVALID_CELL:
 		return
 
 	_draw_range_preview(
@@ -33,12 +49,92 @@ func draw(
 		map_manager
 	)
 
-	_draw_hover(
+	if hovered_cell != INVALID_CELL:
+		_draw_hover(
+			canvas,
+			tile_size,
+			hovered_cell,
+			player,
+			map_manager
+		)
+
+	_draw_ap_cost_label(
 		canvas,
 		tile_size,
+		staged_cell,
 		hovered_cell,
-		player,
+		ap_cost,
+		ap_affordable,
 		map_manager
+	)
+
+
+func _draw_move_range_preview(
+	canvas: Node2D,
+	tile_size: float,
+	move_blue: Array[Vector2i],
+	move_yellow: Array[Vector2i],
+	map_manager: MapManager
+) -> void:
+
+	for cell in move_blue:
+		var pos: Vector2 = map_manager.grid_to_world_coords(cell)
+		var rect := Rect2(pos - Vector2.ONE * tile_size * 0.5, Vector2.ONE * tile_size)
+		canvas.draw_rect(rect, ThemeManager.tactical_move_near_fill_color(), true)
+		canvas.draw_rect(rect, ThemeManager.tactical_move_near_border_color(), false, 1.0)
+
+	for cell in move_yellow:
+		var pos: Vector2 = map_manager.grid_to_world_coords(cell)
+		var rect := Rect2(pos - Vector2.ONE * tile_size * 0.5, Vector2.ONE * tile_size)
+		canvas.draw_rect(rect, ThemeManager.tactical_move_dash_fill_color(), true)
+		canvas.draw_rect(rect, ThemeManager.tactical_move_dash_border_color(), false, 1.0)
+
+
+func _draw_staged_destination(
+	canvas: Node2D,
+	tile_size: float,
+	staged_cell: Vector2i,
+	map_manager: MapManager
+) -> void:
+
+	var pos: Vector2 = map_manager.grid_to_world_coords(staged_cell)
+	var rect := Rect2(pos - Vector2.ONE * tile_size * 0.5, Vector2.ONE * tile_size)
+	var color: Color = ThemeManager.tactical_destination_color()
+
+	canvas.draw_rect(rect, color, false, 3.0)
+	canvas.draw_rect(rect.grow(-3.0), color, false, 1.0)
+
+
+func _draw_ap_cost_label(
+	canvas: Node2D,
+	tile_size: float,
+	staged_cell: Vector2i,
+	hovered_cell: Vector2i,
+	ap_cost: int,
+	ap_affordable: bool,
+	map_manager: MapManager
+) -> void:
+
+	if ap_cost <= 0:
+		return
+
+	var anchor_cell: Vector2i = staged_cell if staged_cell != INVALID_CELL else hovered_cell
+	if anchor_cell == INVALID_CELL:
+		return
+
+	var pos: Vector2 = map_manager.grid_to_world_coords(anchor_cell) + Vector2(0, -tile_size * 0.9)
+	var text := "-%d AP" % ap_cost
+	var color: Color = QuestPalette.UI_TEXT_PRIMARY if ap_affordable else QuestPalette.UI_TEXT_BLOCKED
+	var font: Font = ThemeDB.fallback_font
+
+	canvas.draw_string(
+		font,
+		pos,
+		text,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		-1,
+		12,
+		color
 	)
 
 

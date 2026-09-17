@@ -246,6 +246,9 @@ func find_path(start: Vector2i, goal: Vector2i, actor: Node = null) -> Array[Vec
 func find_path_to_adjacent(start: Vector2i, target: Vector2i, actor: Node = null) -> Array[Vector2i]:
 	return core.find_path_to_adjacent(start, target, actor) if core else []
 
+func get_reachable_cells_for_actor(actor: Node, max_steps: int) -> Dictionary:
+	return core.get_reachable_cells_for_actor(actor, max_steps) if core else {}
+
 func _get_room_rect(room_id: int) -> Rect2i:
 	return core._get_room_rect(room_id) if core else Rect2i()
 

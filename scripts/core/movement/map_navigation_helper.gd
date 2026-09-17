@@ -150,6 +150,36 @@ func _reconstruct_path(came_from: Dictionary, current: Vector2i) -> Array[Vector
 	return path
 
 
+# ── Reachability (BFS flood-fill) ──────────────────────────────────────────────
+func get_reachable_cells(
+	start: Vector2i,
+	max_steps: int,
+	allowed_rect: Rect2i = Rect2i(),
+	use_allowed_rect: bool = false
+) -> Dictionary:
+	var result: Dictionary = {start: 0}
+	if max_steps <= 0:
+		return result
+
+	var frontier: Array[Vector2i] = [start]
+	var steps := 0
+
+	while frontier.size() > 0 and steps < max_steps:
+		steps += 1
+		var next_frontier: Array[Vector2i] = []
+
+		for cell in frontier:
+			for neighbor in _get_neighbors(cell, cell, false, allowed_rect, use_allowed_rect):
+				if result.has(neighbor):
+					continue
+				result[neighbor] = steps
+				next_frontier.append(neighbor)
+
+		frontier = next_frontier
+
+	return result
+
+
 # Centralized pathfinding API
 func find_path_preferred(
     start: Vector2i,

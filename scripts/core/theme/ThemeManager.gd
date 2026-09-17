@@ -108,3 +108,15 @@ static func tactical_destination_color() -> Color:
 		QuestPalette.GOLD_LIGHT,
 		1.0
 	)
+
+static func tactical_move_near_fill_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.TACTICAL_MOVE_NEAR, 0.16)
+
+static func tactical_move_near_border_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.TACTICAL_MOVE_NEAR, 0.85)
+
+static func tactical_move_dash_fill_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.TACTICAL_MOVE_DASH, 0.16)
+
+static func tactical_move_dash_border_color() -> Color:
+	return QuestPalette.with_alpha(QuestPalette.TACTICAL_MOVE_DASH, 0.85)
