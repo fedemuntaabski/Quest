@@ -11,7 +11,8 @@ const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd
 const CardOptionScene := preload("res://scenes/CharacterCardOption.tscn")
 
 @onready var selection_card: PanelContainer = $CenterContainer/SelectionCard
-@onready var cards_container: HBoxContainer = $CenterContainer/SelectionCard/VBoxContainer/CardsContainer
+@onready var cards_container: GridContainer = $CenterContainer/SelectionCard/VBoxContainer/ContentRow/CardsContainer
+@onready var preview_placeholder: PanelContainer = $CenterContainer/SelectionCard/VBoxContainer/ContentRow/CharacterPreviewPlaceholder
 @onready var confirm_button: Button = $CenterContainer/SelectionCard/VBoxContainer/ConfirmButton
 @onready var back_button: Button = $CenterContainer/SelectionCard/VBoxContainer/BackButton
 
@@ -31,6 +32,8 @@ func setup(click_sound: AudioStreamPlayer = null, hover_sound: AudioStreamPlayer
 func _ready() -> void:
 	_build_cards()
 	_connect_events()
+	if preview_placeholder:
+		preview_placeholder.add_theme_stylebox_override("panel", ThemeManager.build_slot_icon_style())
 
 
 func _build_cards() -> void:
@@ -83,15 +86,22 @@ func open() -> void:
 
 	visible = true
 	_is_animating_open = true
+	_set_transition_buttons_disabled(true)
 
+	var scale_targets: Array[CanvasItem] = []
 	if selection_card:
-		selection_card.pivot_offset = selection_card.size / 2.0
-		selection_card.scale = Vector2(0.93, 0.93)
-		selection_card.modulate.a = 0.0
+		scale_targets.append(selection_card)
 
-		_active_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		_active_tween.tween_property(selection_card, "scale", Vector2.ONE, 0.25)
-		_active_tween.tween_property(selection_card, "modulate:a", 1.0, 0.22)
+	_active_tween = MenuTransitionFX.play_entrance(
+		self,
+		[{"node": self, "max_alpha": 1.0}],
+		scale_targets,
+		0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2(0.93, 0.93)
+	)
+	if _active_tween != null:
+		await _active_tween.finished
+
+	_set_transition_buttons_disabled(false)
 
 
 func close(animate: bool = true) -> void:
@@ -109,16 +119,30 @@ func close(animate: bool = true) -> void:
 	if _active_tween and _active_tween.is_valid():
 		_active_tween.kill()
 
+	_set_transition_buttons_disabled(true)
+
+	var scale_targets: Array[CanvasItem] = []
 	if selection_card:
-		selection_card.pivot_offset = selection_card.size / 2.0
-		_active_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-		_active_tween.tween_property(selection_card, "scale", Vector2(0.93, 0.93), 0.18)
-		_active_tween.tween_property(selection_card, "modulate:a", 0.0, 0.18)
-		_active_tween.chain().tween_callback(func():
-			visible = false
-		)
-	else:
-		visible = false
+		scale_targets.append(selection_card)
+
+	_active_tween = MenuTransitionFX.play_exit(
+		self,
+		[{"node": self, "max_alpha": 1.0}],
+		scale_targets,
+		0.28, Vector2(0.93, 0.93),
+		Tween.TRANS_CUBIC, Tween.EASE_IN_OUT
+	)
+	if _active_tween != null:
+		await _active_tween.finished
+
+	visible = false
+
+
+func _set_transition_buttons_disabled(is_disabled: bool) -> void:
+	if back_button:
+		back_button.disabled = is_disabled
+	if confirm_button:
+		confirm_button.disabled = is_disabled if is_disabled else (_selected_id == "")
 
 
 func _play_click() -> void:

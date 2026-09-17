@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/menus/CharacterSelection.gd" id="1_character_selection_script"]
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+[ext_resource type="Texture2D" path="res://assets/ui/Selección de Héroes.png" id="4_character_select_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 content_margin_left = 32.0
@@ -94,6 +95,18 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_character_selection_script")
 
+[node name="BackgroundTexture" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_character_select_bg")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -103,7 +116,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="SelectionCard" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(1000, 480)
+custom_minimum_size = Vector2(1040, 960)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 
@@ -122,10 +135,33 @@ theme_override_font_sizes/font_size = 34
 text = "ELEGÍ TU HÉROE"
 horizontal_alignment = 1
 
-[node name="CardsContainer" type="HBoxContainer" parent="CenterContainer/SelectionCard/VBoxContainer"]
+[node name="ContentRow" type="HBoxContainer" parent="CenterContainer/SelectionCard/VBoxContainer"]
 layout_mode = 2
+theme_override_constants/separation = 28
 alignment = 1
-theme_override_constants/separation = 16
+
+[node name="CardsContainer" type="GridContainer" parent="CenterContainer/SelectionCard/VBoxContainer/ContentRow"]
+layout_mode = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 20
+columns = 2
+
+[node name="CharacterPreviewPlaceholder" type="PanelContainer" parent="CenterContainer/SelectionCard/VBoxContainer/ContentRow"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PreviewCenter" type="CenterContainer" parent="CenterContainer/SelectionCard/VBoxContainer/ContentRow/CharacterPreviewPlaceholder"]
+layout_mode = 2
+
+[node name="PreviewLabel" type="Label" parent="CenterContainer/SelectionCard/VBoxContainer/ContentRow/CharacterPreviewPlaceholder/PreviewCenter"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 0.7)
+theme_override_font_sizes/font_size = 16
+text = "Vista previa
+(próximamente)"
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="ConfirmButton" type="Button" parent="CenterContainer/SelectionCard/VBoxContainer"]
 custom_minimum_size = Vector2(400, 68)

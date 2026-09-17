@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/menus/WaitingRoom.gd" id="1_waiting_room_script"]
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
+[ext_resource type="Texture2D" path="res://assets/ui/Lobby Multijugador.png" id="4_waiting_room_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 content_margin_left = 32.0
@@ -92,6 +93,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_waiting_room_script")
+
+[node name="BackgroundTexture" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_waiting_room_bg")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1

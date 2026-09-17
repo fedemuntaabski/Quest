@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cxwymeacpk8vx" path="res://scripts/ui/menus/OptionsMenu.gd" id="1_options_menu_script"]
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
-[ext_resource type="Texture2D" uid="uid://0nc7hiqggiu8" path="res://assets/ui/menuoption.png" id="4_options_bg"]
+[ext_resource type="Texture2D" path="res://assets/ui/Opciones.png" id="4_options_bg"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_options_panel"]
 bg_color = Color(0.08, 0.06, 0.05, 0.9)
@@ -122,6 +122,17 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_options_menu_script")
 
+[node name="OptionsBackground" type="TextureRect" parent="." unique_id=2136440443]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_options_bg")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="OptionsCenterContainer" type="CenterContainer" parent="." unique_id=1716813519]
 layout_mode = 0
 anchor_right = 1.0
@@ -133,16 +144,6 @@ grow_vertical = 2
 custom_minimum_size = Vector2(960, 760)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_options_panel")
-
-[node name="OptionsBackground" type="TextureRect" parent="OptionsCenterContainer/OptionsCard" unique_id=2136440443]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("4_options_bg")
-expand_mode = 1
-stretch_mode = 6
 
 [node name="OptionsVBox" type="VBoxContainer" parent="OptionsCenterContainer/OptionsCard" unique_id=1630670219]
 custom_minimum_size = Vector2(816, 640)

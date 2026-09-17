@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CharacterData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
+[ext_resource type="Texture2D" uid="uid://dtm5sxr07k2ao" path="res://assets/portraits/picaro.png" id="2_portrait"]
 
 [resource]
 script = ExtResource("1_character_data")
+portrait = ExtResource("2_portrait")
 character_id = "rogue"
 display_name = "Pícaro"
 description = "Veloz y preciso. Alta destreza para esquivar y golpear con agilidad."
@@ -11,3 +13,5 @@ base_hp = 20
 base_str = 1
 base_mag = 1
 base_dex = 3
+base_ap = 3
+move_range_per_ap = 4

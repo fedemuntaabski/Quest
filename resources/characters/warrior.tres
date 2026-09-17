@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CharacterData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
+[ext_resource type="Texture2D" uid="uid://cdg3u5qy4xj68" path="res://assets/portraits/guerrero.png" id="2_portrait"]
 
 [resource]
 script = ExtResource("1_character_data")
+portrait = ExtResource("2_portrait")
 character_id = "warrior"
 display_name = "Guerrero"
 description = "Fuerza bruta y golpes contundentes. Ideal para el combate cuerpo a cuerpo directo."
@@ -11,3 +13,5 @@ base_hp = 22
 base_str = 3
 base_mag = 1
 base_dex = 1
+base_ap = 2
+move_range_per_ap = 3

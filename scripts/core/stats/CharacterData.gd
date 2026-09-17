@@ -7,9 +7,12 @@ class_name CharacterData
 @export var character_id: String = ""
 @export var display_name: String = "Hero"
 @export var description: String = ""
-@export var icon: Texture2D = null
+@export var portrait: Texture2D = null
 
 @export var base_hp: int = 20
 @export var base_str: int = 1
 @export var base_mag: int = 1
 @export var base_dex: int = 1
+
+@export var base_ap: int = 2
+@export var move_range_per_ap: int = 3

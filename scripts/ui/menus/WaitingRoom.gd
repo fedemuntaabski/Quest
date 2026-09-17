@@ -48,6 +48,17 @@ func _ready() -> void:
 
 	_refresh()
 
+	_set_transition_buttons_disabled(true)
+	var tween := MenuTransitionFX.play_entrance(
+		self,
+		[{"node": self, "max_alpha": 1.0}],
+		[],
+		0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2.ONE
+	)
+	if tween != null:
+		await tween.finished
+	_set_transition_buttons_disabled(false)
+
 
 func _refresh(_arg = null) -> void:
 	var lobby_mgr: SteamLobbyManager = null
@@ -168,11 +179,15 @@ func _on_invite_pressed() -> void:
 func _on_start_pressed() -> void:
 	if not multiplayer.is_server():
 		return
+	_set_transition_buttons_disabled(true)
+	await _fade_out()
 	ManagerLocator.flush_saves()
 	get_tree().change_scene_to_file(GAME_SCENE)
 
 
 func _on_leave_pressed() -> void:
+	_set_transition_buttons_disabled(true)
+	await _fade_out()
 	var steam_mgr := ManagerLocator.get_steam_manager()
 	if steam_mgr and steam_mgr.lobby_manager:
 		steam_mgr.lobby_manager.leave_lobby()
@@ -181,7 +196,30 @@ func _on_leave_pressed() -> void:
 
 func _on_host_lost() -> void:
 	QuestLogger.warn(QuestLogger.Category.NETWORK, "Host disconnected, returning to main menu")
+	_set_transition_buttons_disabled(true)
+	await _fade_out()
 	var steam_mgr := ManagerLocator.get_steam_manager()
 	if steam_mgr and steam_mgr.lobby_manager:
 		steam_mgr.lobby_manager.leave_lobby()
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+
+
+func _fade_out() -> void:
+	var tween := MenuTransitionFX.play_exit(
+		self,
+		[{"node": self, "max_alpha": 1.0}],
+		[],
+		0.28, Vector2.ONE,
+		Tween.TRANS_CUBIC, Tween.EASE_IN_OUT
+	)
+	if tween != null:
+		await tween.finished
+
+
+func _set_transition_buttons_disabled(is_disabled: bool) -> void:
+	var steam_mgr := ManagerLocator.get_steam_manager()
+	var is_host: bool = multiplayer.multiplayer_peer != null and multiplayer.is_server()
+	start_button.disabled = is_disabled
+	start_button.visible = is_host
+	invite_button.disabled = is_disabled if is_disabled else (steam_mgr == null or not steam_mgr.is_steam_available())
+	leave_button.disabled = is_disabled

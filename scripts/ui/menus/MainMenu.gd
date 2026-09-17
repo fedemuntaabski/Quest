@@ -36,7 +36,8 @@ func _ready() -> void:
 		main_vbox,
 		options_menu,
 		click_sound,
-		hover_sound
+		hover_sound,
+		start_button
 	)
 
 	flow.build_slot_selector(start_button)
@@ -118,9 +119,6 @@ func _connect_signals() -> void:
 			if not btn.focus_exited.is_connected(_on_button_hover_exited.bind(btn)):
 				btn.focus_exited.connect(_on_button_hover_exited.bind(btn))
 
-	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
-		options_menu.closed.connect(_on_options_menu_closed)
-
 
 func _on_button_hover_entered(btn: Button) -> void:
 	_play_hover()
@@ -152,12 +150,6 @@ func _play_hover() -> void:
 func _play_click() -> void:
 	if click_sound and click_sound.stream:
 		click_sound.play()
-
-
-func _on_options_menu_closed() -> void:
-	if flow:
-		flow.show_main_menu()
-	start_button.grab_focus()
 
 
 func on_start_button_pressed() -> void:

@@ -7,9 +7,10 @@ class_name CharacterCardOption
 signal selected(character_id: String)
 
 @onready var name_label: Label = $MarginContainer/VBoxContainer/NameLabel
-@onready var icon_rect: TextureRect = $MarginContainer/VBoxContainer/Icon
+@onready var portrait_rect: TextureRect = $MarginContainer/VBoxContainer/PortraitRect
+@onready var role_label: Label = $MarginContainer/VBoxContainer/RoleLabel
+@onready var ap_label: Label = $MarginContainer/VBoxContainer/APBadgeCenter/APBadge/APLabel
 @onready var stats_label: Label = $MarginContainer/VBoxContainer/StatsLabel
-@onready var description_label: Label = $MarginContainer/VBoxContainer/DescriptionLabel
 @onready var select_button: Button = $MarginContainer/VBoxContainer/SelectButton
 
 var _data: CharacterData = null
@@ -32,6 +33,8 @@ func _ready() -> void:
 		mouse_entered.connect(_on_mouse_entered)
 	if not mouse_exited.is_connected(_on_mouse_exited):
 		mouse_exited.connect(_on_mouse_exited)
+	if ap_label and ap_label.get_parent():
+		ap_label.get_parent().add_theme_stylebox_override("panel", ThemeManager.build_ap_badge_style())
 	_apply_visual_state()
 
 
@@ -43,13 +46,17 @@ func setup(data: CharacterData) -> void:
 
 	if name_label:
 		name_label.text = data.display_name
-	if icon_rect:
-		icon_rect.visible = data.icon != null
-		icon_rect.texture = data.icon
+	if portrait_rect:
+		portrait_rect.visible = data.portrait != null
+		portrait_rect.texture = data.portrait
+	if role_label:
+		role_label.text = data.description
+	if ap_label:
+		ap_label.text = "AP %d" % data.base_ap
 	if stats_label:
-		stats_label.text = "HP %d · STR %d · MAG %d · DEX %d" % [data.base_hp, data.base_str, data.base_mag, data.base_dex]
-	if description_label:
-		description_label.text = data.description
+		stats_label.text = "HP %d · STR %d · MAG %d · DEX %d\nMovimiento %d/AP" % [
+			data.base_hp, data.base_str, data.base_mag, data.base_dex, data.move_range_per_ap
+		]
 
 
 func get_character_id() -> String:
@@ -70,12 +77,12 @@ func set_taken(is_taken: bool, by_name: String = "") -> void:
 	if is_taken:
 		_is_selected = false
 		modulate.a = 0.5
-		if description_label:
-			description_label.text = "Elegido por %s" % by_name
+		if role_label:
+			role_label.text = "Elegido por %s" % by_name
 	else:
 		modulate.a = 1.0
-		if description_label and _data:
-			description_label.text = _data.description
+		if role_label and _data:
+			role_label.text = _data.description
 	_apply_visual_state()
 
 

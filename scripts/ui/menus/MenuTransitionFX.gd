@@ -27,7 +27,8 @@ static func play_entrance(owner: Node, fade_targets: Array[Dictionary], scale_ta
 
 
 static func play_exit(owner: Node, fade_targets: Array[Dictionary], scale_targets: Array[CanvasItem],
-		duration: float, to_scale: Vector2) -> Tween:
+		duration: float, to_scale: Vector2,
+		trans: Tween.TransitionType = Tween.TRANS_LINEAR, ease: Tween.EaseType = Tween.EASE_IN_OUT) -> Tween:
 	if fade_targets.is_empty() and scale_targets.is_empty():
 		return null
 
@@ -35,10 +36,10 @@ static func play_exit(owner: Node, fade_targets: Array[Dictionary], scale_target
 	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 
 	for entry in fade_targets:
-		tw.tween_property(entry["node"], "modulate:a", 0.0, duration)
+		tw.tween_property(entry["node"], "modulate:a", 0.0, duration).set_trans(trans).set_ease(ease)
 
 	for node in scale_targets:
-		tw.tween_property(node, "scale", to_scale, duration)
+		tw.tween_property(node, "scale", to_scale, duration).set_trans(trans).set_ease(ease)
 
 	return tw
 

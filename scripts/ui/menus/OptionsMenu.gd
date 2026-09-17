@@ -275,14 +275,22 @@ func open() -> void:
 
 	_sync_from_settings_manager()
 	visible = true
+	_set_transition_buttons_disabled(true)
 
+	var scale_targets: Array[CanvasItem] = []
 	if options_card:
-		_active_tween = MenuTransitionFX.play_entrance(
-			self,
-			[{"node": options_card, "max_alpha": 1.0}],
-			[options_card],
-			0.24, Tween.TRANS_CUBIC, Tween.EASE_OUT, Vector2(0.92, 0.92)
-		)
+		scale_targets.append(options_card)
+
+	_active_tween = MenuTransitionFX.play_entrance(
+		self,
+		[{"node": self, "max_alpha": 1.0}],
+		scale_targets,
+		0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2(0.92, 0.92)
+	)
+	if _active_tween != null:
+		await _active_tween.finished
+
+	_set_transition_buttons_disabled(false)
 
 
 func close(animate: bool = true) -> void:
@@ -296,18 +304,31 @@ func close(animate: bool = true) -> void:
 	if _active_tween and _active_tween.is_valid():
 		_active_tween.kill()
 
+	_set_transition_buttons_disabled(true)
+
+	var scale_targets: Array[CanvasItem] = []
 	if options_card:
-		_active_tween = MenuTransitionFX.play_exit(
-			self,
-			[{"node": options_card, "max_alpha": 1.0}],
-			[options_card],
-			0.18, Vector2(0.92, 0.92)
-		)
-		if _active_tween != null:
-			await _active_tween.finished
+		scale_targets.append(options_card)
+
+	_active_tween = MenuTransitionFX.play_exit(
+		self,
+		[{"node": self, "max_alpha": 1.0}],
+		scale_targets,
+		0.28, Vector2(0.92, 0.92),
+		Tween.TRANS_CUBIC, Tween.EASE_IN_OUT
+	)
+	if _active_tween != null:
+		await _active_tween.finished
 
 	visible = false
 	closed.emit()
+
+
+func _set_transition_buttons_disabled(is_disabled: bool) -> void:
+	if save_button:
+		save_button.disabled = is_disabled
+	if back_button:
+		back_button.disabled = is_disabled
 
 
 # ---------------- CONNECT ----------------

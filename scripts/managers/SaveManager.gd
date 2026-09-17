@@ -63,6 +63,8 @@ func apply_character_selection(character_id: String) -> void:
 		player_stats_autoload.base_str = data.base_str
 		player_stats_autoload.base_mag = data.base_mag
 		player_stats_autoload.base_dex = data.base_dex
+		player_stats_autoload.base_ap = data.base_ap
+		player_stats_autoload.base_move_range_per_ap = data.move_range_per_ap
 		player_stats_autoload.refresh_stats()
 
 	save_game(current_slot)
@@ -86,6 +88,8 @@ func save_game(slot: int = current_slot) -> void:
 		cfg.set_value(SAVE_SECTION, "base_str", player_stats_autoload.base_str)
 		cfg.set_value(SAVE_SECTION, "base_mag", player_stats_autoload.base_mag)
 		cfg.set_value(SAVE_SECTION, "base_dex", player_stats_autoload.base_dex)
+		cfg.set_value(SAVE_SECTION, "base_ap", player_stats_autoload.base_ap)
+		cfg.set_value(SAVE_SECTION, "base_move_range_per_ap", player_stats_autoload.base_move_range_per_ap)
 		cfg.set_value(SAVE_SECTION, "active_upgrades", player_stats_autoload.active_upgrades)
 	else:
 		var fallback_data := CharacterDatabase.get_by_id(get_selected_character_id())
@@ -93,6 +97,8 @@ func save_game(slot: int = current_slot) -> void:
 		cfg.set_value(SAVE_SECTION, "base_str", fallback_data.base_str)
 		cfg.set_value(SAVE_SECTION, "base_mag", fallback_data.base_mag)
 		cfg.set_value(SAVE_SECTION, "base_dex", fallback_data.base_dex)
+		cfg.set_value(SAVE_SECTION, "base_ap", fallback_data.base_ap)
+		cfg.set_value(SAVE_SECTION, "base_move_range_per_ap", fallback_data.move_range_per_ap)
 		cfg.set_value(SAVE_SECTION, "active_upgrades", [])
 
 	cfg.set_value(SAVE_SECTION, "selected_character_id", selected_character_id)
@@ -143,6 +149,8 @@ func load_game(slot: int = current_slot) -> void:
 			player_stats_autoload.base_str = int(cfg.get_value(SAVE_SECTION, "base_str", 1))
 			player_stats_autoload.base_mag = int(cfg.get_value(SAVE_SECTION, "base_mag", 1))
 			player_stats_autoload.base_dex = int(cfg.get_value(SAVE_SECTION, "base_dex", 1))
+			player_stats_autoload.base_ap = int(cfg.get_value(SAVE_SECTION, "base_ap", 2))
+			player_stats_autoload.base_move_range_per_ap = int(cfg.get_value(SAVE_SECTION, "base_move_range_per_ap", 3))
 			player_stats_autoload.active_upgrades = cfg.get_value(SAVE_SECTION, "active_upgrades", [])
 			player_stats_autoload.refresh_stats()
 	else:
@@ -165,6 +173,8 @@ func load_game(slot: int = current_slot) -> void:
 			player_stats_autoload.base_str = default_data.base_str
 			player_stats_autoload.base_mag = default_data.base_mag
 			player_stats_autoload.base_dex = default_data.base_dex
+			player_stats_autoload.base_ap = default_data.base_ap
+			player_stats_autoload.base_move_range_per_ap = default_data.move_range_per_ap
 			player_stats_autoload.active_upgrades = []
 			player_stats_autoload.refresh_stats()
 

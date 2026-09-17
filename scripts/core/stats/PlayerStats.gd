@@ -15,6 +15,8 @@ var base_hp: int = CharacterDatabase.get_default().base_hp
 var base_str: int = CharacterDatabase.get_default().base_str
 var base_mag: int = CharacterDatabase.get_default().base_mag
 var base_dex: int = CharacterDatabase.get_default().base_dex
+var base_ap: int = CharacterDatabase.get_default().base_ap
+var base_move_range_per_ap: int = CharacterDatabase.get_default().move_range_per_ap
 
 var active_upgrades: Array = []
 var upgrade_levels := {
@@ -63,6 +65,10 @@ func _apply_base_stats() -> void:
 	stats.strength = base_str
 	stats.magic = base_mag
 	stats.dexterity = base_dex
+
+	stats.max_ap = base_ap
+	stats.current_ap = base_ap
+	stats.move_range_per_ap = base_move_range_per_ap
 
 func _reapply_upgrades() -> void:
 	for upg in active_upgrades:

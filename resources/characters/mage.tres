@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CharacterData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
+[ext_resource type="Texture2D" uid="uid://cs8h2ibaxwnty" path="res://assets/portraits/mago.png" id="2_portrait"]
 
 [resource]
 script = ExtResource("1_character_data")
+portrait = ExtResource("2_portrait")
 character_id = "mage"
 display_name = "Mago"
 description = "Domina las artes arcanas. Daño mágico elevado a cambio de fragilidad física."
@@ -11,3 +13,5 @@ base_hp = 20
 base_str = 1
 base_mag = 3
 base_dex = 1
+base_ap = 2
+move_range_per_ap = 3

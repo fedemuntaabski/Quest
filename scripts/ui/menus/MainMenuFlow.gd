@@ -22,6 +22,7 @@ var owner: Node = null
 var center_container: CenterContainer = null
 var main_vbox: VBoxContainer = null
 var options_menu: OptionsMenu = null
+var start_button: Button = null
 
 var click_sound: AudioStreamPlayer = null
 var hover_sound: AudioStreamPlayer = null
@@ -43,7 +44,8 @@ func setup(
 	p_main_vbox: VBoxContainer,
 	p_options_menu: OptionsMenu,
 	p_click_sound: AudioStreamPlayer,
-	p_hover_sound: AudioStreamPlayer
+	p_hover_sound: AudioStreamPlayer,
+	p_start_button: Button = null
 ) -> void:
 	owner = p_owner
 	center_container = p_center_container
@@ -51,6 +53,10 @@ func setup(
 	options_menu = p_options_menu
 	click_sound = p_click_sound
 	hover_sound = p_hover_sound
+	start_button = p_start_button
+
+	if options_menu and not options_menu.closed.is_connected(_on_options_back_pressed):
+		options_menu.closed.connect(_on_options_back_pressed)
 
 
 func build_slot_selector(_start_button: Button = null) -> void:
@@ -150,6 +156,12 @@ func show_options_menu() -> void:
 		if options_menu:
 			options_menu.open()
 	)
+
+
+func _on_options_back_pressed() -> void:
+	show_main_menu()
+	if start_button:
+		start_button.grab_focus()
 
 
 func start_pressed() -> void:
@@ -352,24 +364,28 @@ func _animate_main_menu(show: bool, on_finish: Callable = Callable()) -> void:
 		center_container.visible = true
 		if main_vbox:
 			main_vbox.visible = true
+		_set_main_buttons_disabled(true)
 		_menu_tween = MenuTransitionFX.play_entrance(
 			center_container,
 			[{"node": center_container, "max_alpha": 1.0}],
 			[center_container],
-			0.22, Tween.TRANS_CUBIC, Tween.EASE_OUT, Vector2(0.95, 0.95)
+			0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2(0.95, 0.95)
 		)
 		if _menu_tween != null:
 			await _menu_tween.finished
+		_set_main_buttons_disabled(false)
 		is_transitioning = false
 		if on_finish.is_valid():
 			on_finish.call()
 	else:
 		is_transitioning = true
+		_set_main_buttons_disabled(true)
 		_menu_tween = MenuTransitionFX.play_exit(
 			center_container,
 			[{"node": center_container, "max_alpha": 1.0}],
 			[center_container],
-			0.18, Vector2(0.95, 0.95)
+			0.28, Vector2(0.95, 0.95),
+			Tween.TRANS_CUBIC, Tween.EASE_IN_OUT
 		)
 		if _menu_tween != null:
 			await _menu_tween.finished
@@ -379,6 +395,14 @@ func _animate_main_menu(show: bool, on_finish: Callable = Callable()) -> void:
 		is_transitioning = false
 		if on_finish.is_valid():
 			on_finish.call()
+
+
+func _set_main_buttons_disabled(is_disabled: bool) -> void:
+	if main_vbox == null:
+		return
+	for child in main_vbox.get_children():
+		if child is Button:
+			(child as Button).disabled = is_disabled
 
 
 func _play_click() -> void:

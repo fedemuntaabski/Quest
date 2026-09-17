@@ -28,6 +28,10 @@ static func build_reward_card_style(border_color: Color) -> StyleBoxFlat:
 static func build_slot_icon_style() -> StyleBoxFlat:
 	return build_panel_style(QuestPalette.UI_PANEL_BG_SOFT, QuestPalette.UI_PANEL_BORDER, 1, 6)
 
+## Small gold-accented badge style for prominent numeric callouts (e.g. AP cost on character cards).
+static func build_ap_badge_style() -> StyleBoxFlat:
+	return build_panel_style(QuestPalette.UI_PANEL_BG_SOFT, QuestPalette.GOLD_DARK, 2, 8)
+
 static func get_combat_feedback_palette() -> Dictionary:
 	return {
 		"damage_text": QuestPalette.COMBAT_TEXT_DAMAGE,
