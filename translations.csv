@@ -21,3 +21,5 @@ KEY_SAVE,Guardar,Save
 KEY_BACK,Volver,Back
 KEY_UNSAVED_TITLE,Cambios sin guardar,Unsaved Changes
 KEY_UNSAVED_MSG,¿Deseas descartar los cambios?,Do you want to discard changes?
+KEY_CLICK_VOL,Volumen Clic UI,UI Click Volume
+KEY_HOVER_VOL,Volumen Pasado UI,UI Hover Volume

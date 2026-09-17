@@ -5,7 +5,6 @@ class_name MainMenuFlow
 ## Coordinates transitions between Main buttons, OptionsMenu and SlotSelection.
 
 const GAME_SCENE := "res://scenes/Main2d.tscn"
-const CREDITS_SCENE := "res://scenes/CreditMenu.tscn"
 const WAITING_ROOM_SCENE := "res://scenes/WaitingRoom.tscn"
 const SLOT_SELECTION_SCENE := preload("res://scenes/SlotSelection.tscn")
 const NETWORK_MODE_SELECT_SCENE := preload("res://scenes/NetworkModeSelect.tscn")
@@ -164,26 +163,6 @@ func exit_pressed() -> void:
 	owner.get_tree().quit()
 
 
-func credits_pressed() -> void:
-	if is_transitioning:
-		return
-
-	is_transitioning = true
-	_play_click()
-
-	if owner == null:
-		return
-
-	_animate_main_menu(false)
-
-	await owner.get_tree().create_timer(0.2).timeout
-	var err := owner.get_tree().change_scene_to_file(CREDITS_SCENE)
-	if err != OK:
-		push_error("MainMenuFlow: Failed to load CreditsScene: %d" % err)
-		is_transitioning = false
-		_animate_main_menu(true)
-
-
 func _on_slot_back_pressed() -> void:
 	if _is_hosting:
 		_leave_network_session()
@@ -313,33 +292,37 @@ func _animate_main_menu(show: bool, on_finish: Callable = Callable()) -> void:
 
 	center_container.pivot_offset = center_container.size / 2.0
 
-	_menu_tween = center_container.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC)
-
 	if show:
 		center_container.visible = true
 		if main_vbox:
 			main_vbox.visible = true
-		_menu_tween.set_ease(Tween.EASE_OUT)
-		_menu_tween.tween_property(center_container, "modulate:a", 1.0, 0.22)
-		_menu_tween.tween_property(center_container, "scale", Vector2.ONE, 0.22)
-		_menu_tween.chain().tween_callback(func():
-			is_transitioning = false
-			if on_finish.is_valid():
-				on_finish.call()
+		_menu_tween = MenuTransitionFX.play_entrance(
+			center_container,
+			[{"node": center_container, "max_alpha": 1.0}],
+			[center_container],
+			0.22, Tween.TRANS_CUBIC, Tween.EASE_OUT, Vector2(0.95, 0.95)
 		)
+		if _menu_tween != null:
+			await _menu_tween.finished
+		is_transitioning = false
+		if on_finish.is_valid():
+			on_finish.call()
 	else:
 		is_transitioning = true
-		_menu_tween.set_ease(Tween.EASE_IN)
-		_menu_tween.tween_property(center_container, "modulate:a", 0.0, 0.18)
-		_menu_tween.tween_property(center_container, "scale", Vector2(0.95, 0.95), 0.18)
-		_menu_tween.chain().tween_callback(func():
-			center_container.visible = false
-			if main_vbox:
-				main_vbox.visible = false
-			is_transitioning = false
-			if on_finish.is_valid():
-				on_finish.call()
+		_menu_tween = MenuTransitionFX.play_exit(
+			center_container,
+			[{"node": center_container, "max_alpha": 1.0}],
+			[center_container],
+			0.18, Vector2(0.95, 0.95)
 		)
+		if _menu_tween != null:
+			await _menu_tween.finished
+		center_container.visible = false
+		if main_vbox:
+			main_vbox.visible = false
+		is_transitioning = false
+		if on_finish.is_valid():
+			on_finish.call()
 
 
 func _play_click() -> void:

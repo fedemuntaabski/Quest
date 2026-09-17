@@ -41,8 +41,10 @@ signal closed
 @onready var ui_volume_label: Label = $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/UiVolumeLabel
 @onready var ui_volume_slider: HSlider = $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/UiVolumeRow/UiVolumeSlider
 @onready var ui_volume_value_label: Label = $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/UiVolumeRow/UiVolumeValueLabel
+@onready var click_volume_label: Label = $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/ClickVolumeLabel
 @onready var click_volume_slider: HSlider = $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/ClickVolumeRow/ClickVolumeSlider
 @onready var click_volume_value_label: Label = $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/ClickVolumeRow/ClickVolumeValueLabel
+@onready var hover_volume_label: Label = $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/HoverVolumeLabel
 @onready var hover_volume_slider: HSlider = $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/HoverVolumeRow/HoverVolumeSlider
 @onready var hover_volume_value_label: Label = $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/HoverVolumeRow/HoverVolumeValueLabel
 
@@ -72,6 +74,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 
+	_apply_theme()
 	_populate_option_buttons()
 	_connect_menu_signals()
 	_update_ui_text_translations()
@@ -79,11 +82,51 @@ func _ready() -> void:
 	if not unsaved_changes_dialog.confirmed.is_connected(_on_unsaved_discard_confirmed):
 		unsaved_changes_dialog.confirmed.connect(_on_unsaved_discard_confirmed)
 
+	if not options_tabs.tab_changed.is_connected(_on_tab_changed):
+		options_tabs.tab_changed.connect(_on_tab_changed)
+
 	_sync_from_settings_manager()
 
 	var settings_mgr := _get_settings_manager()
 	if settings_mgr and not settings_mgr.volume_changed.is_connected(_on_settings_volume_changed):
 		settings_mgr.volume_changed.connect(_on_settings_volume_changed)
+
+
+func _apply_theme() -> void:
+	if options_card:
+		options_card.add_theme_stylebox_override("panel", ThemeManager.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 20))
+	_style_button(save_button)
+	_style_button(back_button)
+
+
+func _style_button(button: Button, danger: bool = false) -> void:
+	if button == null:
+		return
+
+	var border_base: Color = QuestPalette.BLOOD if danger else QuestPalette.GOLD_DARK
+	var border_hover: Color = QuestPalette.BLOOD_LIGHT if danger else QuestPalette.GOLD_LIGHT
+	var text_base: Color = QuestPalette.PARCHMENT
+	var text_hover: Color = QuestPalette.PARCHMENT_LIGHT
+	var text_pressed: Color = QuestPalette.BLOOD_LIGHT if danger else QuestPalette.GOLD
+
+	button.add_theme_color_override("font_color", text_base)
+	button.add_theme_color_override("font_focus_color", text_hover)
+	button.add_theme_color_override("font_hover_color", text_hover)
+	button.add_theme_color_override("font_pressed_color", text_pressed)
+	button.add_theme_color_override("font_outline_color", QuestPalette.INK)
+	button.add_theme_constant_override("outline_size", 3)
+
+	button.add_theme_stylebox_override("normal", ThemeManager.build_panel_style(QuestPalette.DUNGEON_MUD, border_base, 3, 16, 16))
+	button.add_theme_stylebox_override("pressed", ThemeManager.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, border_base, 3, 16, 16))
+	button.add_theme_stylebox_override("hover", ThemeManager.build_panel_style(QuestPalette.DUNGEON_MUD, border_hover, 3, 16, 16))
+	button.add_theme_stylebox_override("focus", ThemeManager.build_panel_style(QuestPalette.DUNGEON_MUD, QuestPalette.PARCHMENT_LIGHT, 4, 16, 16))
+
+
+func _on_tab_changed(tab_idx: int) -> void:
+	match tab_idx:
+		0: window_mode_option.grab_focus()
+		1: master_volume_slider.grab_focus()
+		2: screen_shake_slider.grab_focus()
 
 
 func _get_settings_manager() -> Node:
@@ -234,13 +277,12 @@ func open() -> void:
 	visible = true
 
 	if options_card:
-		options_card.pivot_offset = options_card.size / 2.0
-		options_card.scale = Vector2(0.92, 0.92)
-		options_card.modulate.a = 0.0
-
-		_active_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		_active_tween.tween_property(options_card, "scale", Vector2.ONE, 0.25)
-		_active_tween.tween_property(options_card, "modulate:a", 1.0, 0.22)
+		_active_tween = MenuTransitionFX.play_entrance(
+			self,
+			[{"node": options_card, "max_alpha": 1.0}],
+			[options_card],
+			0.24, Tween.TRANS_CUBIC, Tween.EASE_OUT, Vector2(0.92, 0.92)
+		)
 
 
 func close(animate: bool = true) -> void:
@@ -255,17 +297,17 @@ func close(animate: bool = true) -> void:
 		_active_tween.kill()
 
 	if options_card:
-		options_card.pivot_offset = options_card.size / 2.0
-		_active_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-		_active_tween.tween_property(options_card, "scale", Vector2(0.92, 0.92), 0.18)
-		_active_tween.tween_property(options_card, "modulate:a", 0.0, 0.18)
-		_active_tween.chain().tween_callback(func():
-			visible = false
-			closed.emit()
+		_active_tween = MenuTransitionFX.play_exit(
+			self,
+			[{"node": options_card, "max_alpha": 1.0}],
+			[options_card],
+			0.18, Vector2(0.92, 0.92)
 		)
-	else:
-		visible = false
-		closed.emit()
+		if _active_tween != null:
+			await _active_tween.finished
+
+	visible = false
+	closed.emit()
 
 
 # ---------------- CONNECT ----------------
@@ -566,6 +608,8 @@ func _update_ui_text_translations() -> void:
 	music_volume_label.text = tr("KEY_MUSIC_VOL")
 	sfx_volume_label.text = tr("KEY_SFX_VOL")
 	ui_volume_label.text = tr("KEY_UI_VOL")
+	click_volume_label.text = tr("KEY_CLICK_VOL")
+	hover_volume_label.text = tr("KEY_HOVER_VOL")
 
 	screen_shake_label.text = tr("KEY_SCREEN_SHAKE")
 

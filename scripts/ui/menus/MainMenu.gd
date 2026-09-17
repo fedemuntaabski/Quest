@@ -5,7 +5,6 @@ extends Control
 
 @onready var start_button: Button = $CenterContainer/VBoxContainer/StartButton
 @onready var options_button: Button = $CenterContainer/VBoxContainer/OptionsButton
-@onready var credit_button: Button = $CenterContainer/VBoxContainer/CreditsButton
 @onready var exit_button: Button = $CenterContainer/VBoxContainer/ExitMargin/ExitButton
 
 @onready var options_menu: OptionsMenu = $OptionsMenu
@@ -103,7 +102,6 @@ func _connect_signals() -> void:
 	var buttons: Array[Button] = [
 		start_button,
 		options_button,
-		credit_button,
 		exit_button
 	]
 
@@ -140,9 +138,9 @@ func _animate_button_scale(btn: Button, target_scale: float) -> void:
 	if cur_tween and cur_tween.is_valid():
 		cur_tween.kill()
 
-	var t := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_button_tweens[btn] = t
-	t.tween_property(btn, "scale", Vector2(target_scale, target_scale), 0.16)
+	_button_tweens[btn] = MenuTransitionFX.play_scale_bounce(
+		self, btn, Vector2(target_scale, target_scale), 0.16, Tween.TRANS_BACK, Tween.EASE_OUT
+	)
 
 
 func _play_hover() -> void:
@@ -158,6 +156,7 @@ func _play_click() -> void:
 func _on_options_menu_closed() -> void:
 	if flow:
 		flow.show_main_menu()
+	start_button.grab_focus()
 
 
 func on_start_button_pressed() -> void:
@@ -170,13 +169,6 @@ func _on_options_button_pressed() -> void:
 	_play_click()
 	if flow:
 		flow.show_options_menu()
-
-
-func _on_credits_button_pressed() -> void:
-	_play_click()
-	QuestLogger.info(QuestLogger.Category.UI, "Credits button pressed")
-	if flow:
-		flow.credits_pressed()
 
 
 func on_exit_button_pressed() -> void:
