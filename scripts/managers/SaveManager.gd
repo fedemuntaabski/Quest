@@ -17,9 +17,12 @@ var first_time_player: bool = true
 var gold: int = 0
 var run_cycle: int = 0
 var post_victory_popup_pending: bool = false
+var playtime_seconds: float = 0.0
+var _session_start_msec: int = 0
 
 
 func _ready() -> void:
+	_session_start_msec = Time.get_ticks_msec()
 	QuestLogger.info(QuestLogger.Category.SAVE, "Initialized.")
 
 
@@ -42,6 +45,10 @@ func increment_run_cycle() -> int:
 
 func save_game(slot: int = current_slot) -> void:
 	var cfg := ConfigFile.new()
+
+	var now_msec := Time.get_ticks_msec()
+	playtime_seconds += (now_msec - _session_start_msec) / 1000.0
+	_session_start_msec = now_msec
 
 	var currency = ManagerLocator.get_currency_manager()
 	if currency and currency.has_method("get_gold"):
@@ -68,6 +75,8 @@ func save_game(slot: int = current_slot) -> void:
 	# Backward compatibility for older save formats:
 	cfg.set_value(SAVE_SECTION, "contracts_completed", run_cycle)
 	cfg.set_value(SAVE_SECTION, "post_victory_popup_pending", post_victory_popup_pending)
+	cfg.set_value(SAVE_SECTION, "saved_at_unix", Time.get_unix_time_from_system())
+	cfg.set_value(SAVE_SECTION, "playtime_seconds", playtime_seconds)
 
 	var err := cfg.save(get_save_path(slot))
 	if err == OK:
@@ -96,6 +105,8 @@ func load_game(slot: int = current_slot) -> void:
 		var loaded_cycle := int(cfg.get_value(SAVE_SECTION, "run_cycle", cfg.get_value(SAVE_SECTION, "contracts_completed", 0)))
 		run_cycle = max(0, loaded_cycle)
 		post_victory_popup_pending = bool(cfg.get_value(SAVE_SECTION, "post_victory_popup_pending", false))
+		playtime_seconds = float(cfg.get_value(SAVE_SECTION, "playtime_seconds", 0.0))
+		_session_start_msec = Time.get_ticks_msec()
 
 		if player_stats_autoload:
 			var loaded_base_hp := int(cfg.get_value(SAVE_SECTION, "base_hp", StatBalance.PLAYER_BASE_HP))
@@ -112,6 +123,8 @@ func load_game(slot: int = current_slot) -> void:
 		gold = 0
 		run_cycle = 0
 		post_victory_popup_pending = false
+		playtime_seconds = 0.0
+		_session_start_msec = Time.get_ticks_msec()
 
 		var currency = ManagerLocator.get_currency_manager()
 		if currency and currency.has_method("set_gold"):

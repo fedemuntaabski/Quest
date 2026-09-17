@@ -214,7 +214,8 @@ func _get_slot_summary(slot_id: int) -> String:
 	var cfg := ConfigFile.new()
 	var err := cfg.load(save_mgr.get_save_path(slot_id))
 	if err != OK:
-		return "No se pudieron leer los datos de guardado."
+		QuestLogger.error(QuestLogger.Category.SAVE, "Failed to read slot %d summary (Error code: %d)." % [slot_id, err])
+		return "No se pudo leer la ranura %d. El archivo de guardado podria estar danado." % slot_id
 
 	var gold = cfg.get_value("save_data", "gold", 0)
 	var contracts = cfg.get_value("save_data", "run_cycle", cfg.get_value("save_data", "contracts_completed", 0))
@@ -222,6 +223,8 @@ func _get_slot_summary(slot_id: int) -> String:
 	var s_str = cfg.get_value("save_data", "base_str", 0)
 	var s_mag = cfg.get_value("save_data", "base_mag", 0)
 	var s_dex = cfg.get_value("save_data", "base_dex", 0)
+	var saved_at_unix = cfg.get_value("save_data", "saved_at_unix", 0)
+	var playtime_seconds = cfg.get_value("save_data", "playtime_seconds", 0.0)
 
 	var max_stat_name := "Fuerza"
 	var max_stat_val = s_str
@@ -234,19 +237,45 @@ func _get_slot_summary(slot_id: int) -> String:
 		max_stat_name = "Destreza"
 		max_stat_val = s_dex
 
+	var date_str := "Desconocida"
+	if saved_at_unix > 0:
+		var dt := Time.get_datetime_dict_from_unix_time(int(saved_at_unix))
+		date_str = "%02d/%02d/%04d %02d:%02d" % [dt.day, dt.month, dt.year, dt.hour, dt.minute]
+
+	var playtime_str := "Desconocido"
+	if playtime_seconds > 0:
+		var total_min := int(playtime_seconds / 60.0)
+		playtime_str = "%dh %02dm" % [total_min / 60, total_min % 60]
+
 	return (
 		"DATOS DE LA RANURA %d:\n\n" +
-		"• Oro acumulado: %d\n" +
+		"• Guardado: %s\n" +
+		"• Tiempo jugado: %s\n" +
+		"• Oro acumulado: %s\n" +
 		"• Ciclo de contratos: %d\n" +
 		"• Vida base: %d/%d\n" +
 		"• Atributo principal: %s (+%d)\n\n" +
 		"Haz clic para continuar la aventura."
 	) % [
 		slot_id,
-		gold,
+		date_str,
+		playtime_str,
+		_format_thousands(int(gold)),
 		contracts,
 		s_hp,
 		StatBalance.PLAYER_MAX_HP,
 		max_stat_name,
 		max_stat_val
 	]
+
+
+static func _format_thousands(n: int) -> String:
+	var s := str(n)
+	var out := ""
+	var count := 0
+	for i in range(s.length() - 1, -1, -1):
+		out = s[i] + out
+		count += 1
+		if count % 3 == 0 and i != 0:
+			out = "." + out
+	return out
