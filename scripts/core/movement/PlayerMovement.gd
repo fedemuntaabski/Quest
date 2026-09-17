@@ -27,7 +27,6 @@ var step_timer: float = 0.0
 var _idle_delay_timer: float = 0.0 
 
 var map_manager: MapManager
-var current_path: Array[Vector2i] = []
 
 var turn_manager: TurnManager
 var combat_component: CombatComponent
@@ -153,7 +152,7 @@ func request_move(dir: Vector2i) -> bool:
 			sprite.scale.x = abs(sprite.scale.x)  # Mira a la derecha
 			sprite.offset.x = 0                     # Posición original
 		
-	return turn_bridge.request_move(dir) if turn_bridge else false
+	return turn_bridge.request_move_path([grid_pos, grid_pos + dir]) if turn_bridge else false
 
 # Path planning
 func request_path_to_cell(target_cell: Vector2i) -> bool:
@@ -161,22 +160,20 @@ func request_path_to_cell(target_cell: Vector2i) -> bool:
 		return false
 
 	var path: Array[Vector2i] = map_manager.find_path(grid_pos, target_cell, self)
-	if path.is_empty():
+	if path.size() < 2:
 		return false
 
-	set_path(path)
-	return true
+	return turn_bridge.request_move_path(path) if turn_bridge else false
 
 func request_path_to_adjacent(target_cell: Vector2i) -> bool:
 	if _is_dead or map_manager == null:
 		return false
 
 	var path: Array[Vector2i] = map_manager.find_path_to_adjacent(grid_pos, target_cell, self)
-	if path.is_empty():
+	if path.size() < 2:
 		return false
 
-	set_path(path)
-	return true
+	return turn_bridge.request_move_path(path) if turn_bridge else false
 
 # ─────────────────────────────────────────────
 func _start_move_to(next: Vector2i) -> void:
@@ -207,12 +204,6 @@ func _physics_process(delta: float) -> void:
 		
 	_process_step_move(delta)
 
-	# 🔥 SOLO si es tu turno
-	if can_accept_input() and not is_moving_step and current_path.size() > 0:
-		var next_cell: Vector2i = current_path.pop_front()
-		var dir := next_cell - grid_pos
-		request_move(dir)
-
 	# Control de animaciones con delta
 	_update_animations(delta)
 
@@ -235,10 +226,8 @@ func _force_step_complete() -> void:
 		return
 	global_position = target_world_pos
 	is_moving_step = false
-	if map_manager:
-		map_manager.update_actor_cell(self, grid_pos)
 	update_room_state_from_grid()
-	
+
 	# Emit signal: movement animation completed
 	movement_ended.emit()
 
@@ -263,16 +252,10 @@ func update_room_state_from_grid() -> void:
 	if dungeon and dungeon.room_system:
 		dungeon.room_system.update_player_cell(grid_pos)
 
-func set_path(path: Array[Vector2i]) -> void:
-	if _is_dead: return
-	current_path = path.duplicate()
-
-	# remover el primer nodo si es la celda actual
-	if current_path.size() > 0 and current_path[0] == grid_pos:
-		current_path.pop_front()
-
 func cancel_movement() -> void:
-	current_path.clear()
+	# Multi-cell moves are atomic once queued (single MoveAction spanning the
+	# whole path) — there is no longer a drained per-cell path to cancel.
+	pass
 
 func begin_turn(tm: TurnManager) -> void:
 	if _is_dead: return

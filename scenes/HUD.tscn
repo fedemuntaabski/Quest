@@ -153,6 +153,21 @@ custom_minimum_size = Vector2(64, 26)
 layout_mode = 2
 text = "Usar"
 
+[node name="StatRowAP" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI" unique_id=69585375]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="LabelAP" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowAP" unique_id=1592559230]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "AP 2/2"
+
+[node name="EndTurnButton" type="Button" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowAP" unique_id=1579607392]
+custom_minimum_size = Vector2(96, 26)
+layout_mode = 2
+text = "Pasar Turno"
+
 [node name="TimerUI" type="Control" parent="Control" unique_id=134582833]
 anchors_preset = 0
 offset_right = 40.0

@@ -15,7 +15,7 @@ func _init(p_system: CombatCardSystem, p_card: CardData, p_target: Variant) -> v
 	card_data = p_card
 	var actor_owner_local := card_system.owner_actor if card_system else null
 	super._init(actor_owner_local, p_target)
-	consume_turn = true
+	consume_turn = false
 
 func can_execute() -> bool:
 	var real_target: Node = null

@@ -6,7 +6,12 @@ signal completed(action: BaseAction, result: Dictionary)
 var owner: Node = null
 var target: Variant = null
 var is_complete: bool = false
+# consume_turn: forces the turn to end unconditionally, regardless of
+# remaining AP. Only for skip/incapacitation/explicit end-turn actions
+# (e.g. WaitAction). AP-costing actions (Move/Attack/Card) leave this
+# false — TurnManager ends the turn once current_ap reaches 0 instead.
 var consume_turn: bool = true
+var ap_cost: int = 1
 var duration: float = 0.0
 var result: Dictionary = {}
 

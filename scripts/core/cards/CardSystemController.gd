@@ -226,6 +226,8 @@ func _human_readable_playability_reason(reason: String) -> String:
 	match reason:
 		"card_on_cooldown":
 			return "En enfriamiento"
+		"insufficient_ap":
+			return "Sin puntos de acción"
 		"out_of_range":
 			return "Fuera de rango"
 		"no_target":

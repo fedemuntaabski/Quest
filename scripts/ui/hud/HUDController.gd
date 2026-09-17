@@ -18,6 +18,8 @@ signal hud_ready
 @onready var potion_count_label: Label = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion/PotionCount")
 @onready var potion_icon: Control = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowPotion/IconPotion")
 
+@onready var turn_button: Button = get_node_or_null("Control/StatsHUD/MarginContainer/StatPanelUI/StatRowAP/EndTurnButton")
+
 @onready var stat_tooltip: PanelContainer = get_node_or_null("Control/StatTooltip")
 @onready var stat_tooltip_label: Label = get_node_or_null("Control/StatTooltip/Label")
 
@@ -33,6 +35,7 @@ var hotbar_slots: Array = []
 
 var _roll_label_tween: Tween
 var _potion_controller: PotionController
+var _turn_button_controller: TurnButtonController
 
 var _bound_stats: CharacterStats
 var _bound_player_stats: PlayerStats
@@ -43,6 +46,7 @@ func _ready() -> void:
 
 	_setup_hotbar()
 	_init_potion_controller()
+	_init_turn_button_controller()
 
 	var ps := ManagerLocator.get_player_stats()
 	if ps:
@@ -88,6 +92,17 @@ func _init_potion_controller() -> void:
 	_potion_controller.setup(potion_button, potion_count_label, potion_icon)
 
 
+# ---------------- TURN BUTTON ----------------
+
+func _init_turn_button_controller() -> void:
+	if _turn_button_controller != null:
+		return
+
+	_turn_button_controller = TurnButtonController.new()
+	add_child(_turn_button_controller)
+	_turn_button_controller.setup(turn_button)
+
+
 # ---------------- PLAYER STATS BINDING ----------------
 
 func _bind_player_stats(ps: PlayerStats) -> void:
@@ -117,6 +132,8 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 				_bound_stats.hp_changed.disconnect(_on_hp_changed)
 			if _bound_stats.potion_used.is_connected(_on_potion_used):
 				_bound_stats.potion_used.disconnect(_on_potion_used)
+			if _bound_stats.ap_changed.is_connected(_on_ap_changed):
+				_bound_stats.ap_changed.disconnect(_on_ap_changed)
 
 		_bound_stats = stats
 
@@ -124,6 +141,8 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 			stats.hp_changed.connect(_on_hp_changed)
 		if not stats.potion_used.is_connected(_on_potion_used):
 			stats.potion_used.connect(_on_potion_used)
+		if not stats.ap_changed.is_connected(_on_ap_changed):
+			stats.ap_changed.connect(_on_ap_changed)
 
 		if _potion_controller:
 			_potion_controller.bind_stats(stats)
@@ -137,6 +156,14 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 
 	if _potion_controller:
 		_potion_controller.refresh()
+
+
+func _on_ap_changed(current_ap: int, max_ap: int) -> void:
+	if stat_panel:
+		stat_panel.update_ap(current_ap, max_ap)
+
+	if _turn_button_controller:
+		_turn_button_controller.refresh()
 
 
 func _on_potion_used(_heal_amount: int, _remaining: int) -> void:

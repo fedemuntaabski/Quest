@@ -33,16 +33,16 @@ func can_accept_input() -> bool:
 		return false
 	return true
 
-func request_move(dir: Vector2i) -> bool:
+func request_move_path(path: Array[Vector2i]) -> bool:
 	if not can_accept_input():
 		return false
 	if player.is_moving_step:
 		return false
-	if map_manager == null:
+	if map_manager == null or path.size() < 2:
 		return false
 
-	var next := player.grid_pos + dir
-	if not map_manager.is_walkable_cell_for_actor(next, player):
+	var final_cell: Vector2i = path.back()
+	if not map_manager.is_walkable_cell_for_actor(final_cell, player):
 		return false
 	if player.turn_manager == null or player.turn_manager.action_queue == null:
 		return false
@@ -51,8 +51,8 @@ func request_move(dir: Vector2i) -> bool:
 	if map_manager.occupancy_manager:
 		snapshot["occ_version"] = map_manager.occupancy_manager.get_version()
 	snapshot["owner_cell"] = player.grid_pos
-	snapshot["target_cell"] = next
-	var action: BaseAction = PRELOAD_MOVE_ACTION.new(player, map_manager, next, false, snapshot)
+	snapshot["target_cell"] = final_cell
+	var action: BaseAction = PRELOAD_MOVE_ACTION.new(player, map_manager, path, snapshot)
 	player.turn_manager.action_queue.queue_action(action)
 	return true
 

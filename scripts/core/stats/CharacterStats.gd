@@ -13,12 +13,20 @@ signal hp_changed(current, max)
 signal died
 signal stats_changed
 signal potion_used(heal_amount: int, remaining: int)
+signal ap_changed(current, max)
 
 # -------------------------
 # HEALTH
 # -------------------------
 var max_hp: int = StatBalance.PLAYER_BASE_HP
 var current_hp: int = StatBalance.PLAYER_BASE_HP
+
+# -------------------------
+# ACTION POINTS (AP)
+# -------------------------
+var max_ap: int = 2
+var current_ap: int = 2
+var move_range_per_ap: int = 3
 
 # -------------------------
 # CORE STATS (BASE)
@@ -150,6 +158,25 @@ func use_potion() -> bool:
 
 func is_alive() -> bool:
 	return current_hp > 0
+
+# -------------------------
+# ACTION POINTS (AP)
+# -------------------------
+func refill_ap() -> void:
+	current_ap = max_ap
+	ap_changed.emit(current_ap, max_ap)
+
+func spend_ap(amount: int = 1) -> bool:
+	if amount <= 0:
+		return true
+	if current_ap < amount:
+		return false
+	current_ap -= amount
+	ap_changed.emit(current_ap, max_ap)
+	return true
+
+func has_ap(amount: int = 1) -> bool:
+	return current_ap >= amount
 
 # -------------------------
 # PERMANENT MODIFIERS

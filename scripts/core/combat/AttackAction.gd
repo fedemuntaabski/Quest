@@ -10,11 +10,14 @@ func _init(p_combat_component: CombatComponent, p_target: Node, p_snapshot: Dict
 	var actor_owner_local := combat_component.actor_owner if combat_component else null
 	super._init(actor_owner_local, p_target)
 	validation_snapshot = p_snapshot.duplicate(true) if p_snapshot else {}
-	consume_turn = true
+	consume_turn = false
 
 func can_execute() -> bool:
 	if combat_component == null:
 		validation_reason = "no_combat_component"
+		return false
+	if combat_component.stats and not combat_component.stats.has_ap(ap_cost):
+		validation_reason = "insufficient_ap"
 		return false
 	if validation_snapshot.size() > 0 and combat_component.map_manager and combat_component.map_manager.occupancy_manager:
 		var current_ver := combat_component.map_manager.occupancy_manager.get_version()
@@ -66,7 +69,10 @@ func execute() -> void:
 
 		# Ejecución nativa del ataque y daño
 		var result = combat_component.attack(target)
-		
+
+		if combat_component.stats:
+			combat_component.stats.spend_ap(ap_cost)
+
 		# 3. 🛡️ PROTECCIÓN DE RENDER: Evita que el cambio de turno pise la animación instantáneamente
 		if owner_actor and owner_actor.is_inside_tree():
 			await owner_actor.get_tree().create_timer(0.15).timeout

@@ -200,10 +200,27 @@ func sync_to_grid():
 		map_manager.update_actor_cell(self, grid_pos)
 
 func begin_turn(tm: TurnManager) -> void:
-	if _is_dead: return 
-	
+	if _is_dead: return
+
 	turn_manager = tm
-	var decision := EnemyTurnPolicy.decide(self)
+	var turn_setup := EnemyTurnPolicy.begin_turn_setup(self)
+	if int(turn_setup.get("decision", -1)) == EnemyTurnPolicy.Decision.SKIP:
+		_skip_turn(str(turn_setup.get("reason", "")))
+		return
+	_take_next_action()
+
+# Called by TurnManager after an action resolves while this enemy still has
+# AP remaining, so it can act again this turn (e.g. move then attack)
+# without re-running begin_turn's once-per-turn setup.
+func request_next_action(tm: TurnManager) -> void:
+	if _is_dead: return
+	turn_manager = tm
+	_take_next_action()
+
+func _take_next_action() -> void:
+	if _is_dead or turn_manager == null: return
+
+	var decision := EnemyTurnPolicy.decide_action(self)
 	match int(decision.get("decision", EnemyTurnPolicy.Decision.WAIT)):
 		EnemyTurnPolicy.Decision.SKIP:
 			_skip_turn(str(decision.get("reason", "")))
@@ -279,7 +296,7 @@ func _queue_move_action(next_cell: Vector2i) -> void:
 		snapshot["occ_version"] = map_manager.occupancy_manager.get_version()
 	snapshot["owner_cell"] = grid_pos
 	snapshot["target_cell"] = next_cell
-	var action: BaseAction = MoveAction.new(self, map_manager, next_cell, false, snapshot)
+	var action: BaseAction = MoveAction.new(self, map_manager, [grid_pos, next_cell], snapshot)
 	turn_manager.action_queue.queue_action(action)
 
 func _queue_wait_action() -> void:

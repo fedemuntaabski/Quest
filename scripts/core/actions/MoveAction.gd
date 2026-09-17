@@ -1,12 +1,11 @@
 extends BaseAction
 class_name MoveAction
 
-# Queued move action that validates a target cell and executes the shared step contract.
+# Queued move action that validates a full path and executes it atomically:
+# the whole path is walked in one turn action, AP cost scaled by distance.
 
 var map_manager: MapManager = null
-var target_cell: Vector2i = Vector2i.ZERO
-var use_pathfinding: bool = true
-var tween_pause_mode: bool = true
+var path: Array[Vector2i] = []
 var validation_reason: String = ""
 var validation_snapshot: Dictionary = {}
 
@@ -14,21 +13,36 @@ var validation_snapshot: Dictionary = {}
 func _init(
 	p_owner: Node = null,
 	p_map_manager: MapManager = null,
-	p_target_cell: Vector2i = Vector2i.ZERO,
-	p_use_pathfinding: bool = true,
+	p_path: Array[Vector2i] = [],
 	p_snapshot: Dictionary = {}
 ) -> void:
-	super._init(p_owner, p_target_cell)
-	consume_turn = true
+	var final_cell: Vector2i = p_path.back() if p_path.size() > 0 else Vector2i.ZERO
+	super._init(p_owner, final_cell)
+	consume_turn = false
 
 	map_manager = p_map_manager
-	target_cell = p_target_cell
-	use_pathfinding = p_use_pathfinding
+	path = p_path.duplicate()
 	validation_snapshot = p_snapshot.duplicate(true) if p_snapshot else {}
+	ap_cost = _compute_ap_cost()
+
+func _compute_ap_cost() -> int:
+	var steps: int = maxi(path.size() - 1, 0)
+	if steps <= 0:
+		return 0
+	var range_per_ap: int = 3
+	if owner and "stats" in owner and owner.stats:
+		range_per_ap = maxi(owner.stats.move_range_per_ap, 1)
+	return int(ceil(float(steps) / float(range_per_ap)))
 
 func can_execute() -> bool:
 	if owner == null or map_manager == null:
 		validation_reason = "missing_owner_or_map"
+		return false
+	if path.size() < 2:
+		validation_reason = "empty_path"
+		return false
+	if "grid_pos" in owner and path[0] != owner.grid_pos:
+		validation_reason = "stale_path"
 		return false
 	if validation_snapshot.size() > 0 and map_manager.occupancy_manager:
 		var current_ver := map_manager.occupancy_manager.get_version()
@@ -36,28 +50,33 @@ func can_execute() -> bool:
 		if snap_ver != -1 and snap_ver != current_ver:
 			validation_reason = "stale_snapshot"
 			return false
+	if "stats" in owner and owner.stats and not owner.stats.has_ap(ap_cost):
+		validation_reason = "insufficient_ap"
+		return false
+	for i in range(1, path.size()):
+		if not map_manager.is_walkable_cell_for_actor(path[i], owner):
+			validation_reason = "path_blocked"
+			return false
 	validation_reason = ""
 	return true
 
 func execute() -> void:
-	# Preserve the current move semantics: validate the path, then execute one step.
 	if not can_execute():
 		finish()
 		return
 
-	var next_cell := target_cell
-	if use_pathfinding:
-		var path: Array[Vector2i] = map_manager.find_path(owner.grid_pos, target_cell, owner)
-		if path.is_empty():
-			finish()
-			return
-		next_cell = path[1] if path.size() > 1 else path[0]
+	var final_cell: Vector2i = path.back()
 
-	if not map_manager.is_walkable_cell_for_actor(next_cell, owner):
-		finish()
-		return
+	# Atomic reservation: release the origin cell and reserve the final
+	# destination cell in one OccupancyManager call (one version bump),
+	# before the visual animation begins.
+	if map_manager.occupancy_manager:
+		map_manager.occupancy_manager.update_actor_cell(owner, final_cell)
 
-	if not await MovementStepService.move_actor_one_step(owner, next_cell, map_manager):
+	if "stats" in owner and owner.stats:
+		owner.stats.spend_ap(ap_cost)
+
+	if not await MovementStepService.animate_actor_through_path(owner, path, map_manager):
 		finish()
 		return
 	finish()
@@ -66,7 +85,8 @@ func get_execution_state_token() -> Dictionary:
 	var token: Dictionary = {}
 	if owner and "grid_pos" in owner:
 		token["owner_cell"] = owner.grid_pos
-	token["target_cell"] = target_cell
+	if path.size() > 0:
+		token["target_cell"] = path.back()
 	if map_manager and map_manager.occupancy_manager:
 		token["occ_version"] = map_manager.occupancy_manager.get_version()
 	if validation_snapshot.size() > 0:

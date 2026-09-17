@@ -112,6 +112,10 @@ func _begin_actor_turn() -> void:
 		_actor_finished()
 		return
 
+	var stats := _get_actor_stats(current_actor)
+	if stats:
+		stats.refill_ap()
+
 	if current_actor.has_method("begin_turn"):
 		current_actor.begin_turn(self)
 	else:
@@ -127,6 +131,19 @@ func end_turn() -> void:
 	if current_actor != null and current_actor.has_method("process_turn_end"):
 		current_actor.process_turn_end()
 	_actor_finished()
+
+# Explicit "Pasar Turno" entry point for the End Turn UI control. Only the
+# actor whose turn is currently active may pass, and only while the queue
+# is idle (no action mid-flight).
+func request_pass_turn(requesting_actor: Node) -> bool:
+	if not _active or current_actor == null:
+		return false
+	if requesting_actor != current_actor:
+		return false
+	if action_queue and action_queue.is_busy():
+		return false
+	end_turn()
+	return true
 
 func stop() -> void:
 	_active = false
@@ -158,12 +175,35 @@ func _on_action_finished(action: BaseAction, result: Dictionary) -> void:
 	if not _active:
 		return
 
-	var consumes := action.consume_turn
+	var force_end := action.consume_turn
 	if result and result.has("consumes_turn"):
-		consumes = bool(result["consumes_turn"])
+		force_end = bool(result["consumes_turn"])
 
-	if consumes:
+	if force_end:
 		end_turn()
+		return
+
+	var stats := _get_actor_stats(current_actor)
+	if stats == null or stats.current_ap <= 0:
+		end_turn()
+		return
+
+	if current_actor and current_actor.has_method("request_next_action"):
+		current_actor.request_next_action(self)
+	# else: player-like actor — the existing input-driven pipeline
+	# (can_accept_input) already permits the next click/attack/card
+	# immediately, no explicit resume needed.
+
+func _get_actor_stats(actor: Node) -> CharacterStats:
+	if actor == null:
+		return null
+	if "stats" in actor and actor.stats:
+		return actor.stats
+	if actor.has_method("get_combat_component"):
+		var cc = actor.get_combat_component()
+		if cc and cc.stats:
+			return cc.stats
+	return null
 
 func _can_process_turns() -> bool:
 	var game_state_manager := ManagerLocator.get_game_state_manager()

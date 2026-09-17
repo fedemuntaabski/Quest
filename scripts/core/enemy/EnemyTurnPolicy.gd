@@ -8,9 +8,12 @@ enum Decision {
 	SKIP,
 }
 
-static func decide(enemy: Enemy) -> Dictionary:
+# Once-per-turn setup: room repair + turn-start status tick. Must run exactly
+# once per turn (status ticks would double-fire otherwise) — call this from
+# Enemy.begin_turn(), never from the repeatable decision step.
+static func begin_turn_setup(enemy: Enemy) -> Dictionary:
 	if enemy == null:
-		return {"decision": Decision.WAIT}
+		return {"decision": Decision.SKIP, "reason": "null_enemy"}
 
 	if enemy.map_manager and enemy.map_manager.core:
 		enemy.map_manager.core.repair_actor_room(enemy)
@@ -24,6 +27,14 @@ static func decide(enemy: Enemy) -> Dictionary:
 					"decision": Decision.SKIP,
 					"reason": str(status_result.get("events", []).front().get("status_id", "status_control")) if status_result.get("events", []).size() > 0 else "status_control"
 				}
+
+	return {"decision": Decision.WAIT}
+
+# Repeatable move/attack decision — safe to call multiple times in the same
+# turn while the enemy still has AP remaining.
+static func decide_action(enemy: Enemy) -> Dictionary:
+	if enemy == null:
+		return {"decision": Decision.WAIT}
 
 	if enemy.map_manager == null or enemy.player == null:
 		return {"decision": Decision.WAIT}

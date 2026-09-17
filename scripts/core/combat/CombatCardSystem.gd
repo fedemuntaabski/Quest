@@ -59,6 +59,9 @@ func _compute_card_validation(card: CardData, target: Node) -> Dictionary:
 	if not card_manager.can_play_card(card):
 		result["reason"] = "card_on_cooldown"
 		return result
+	if not combat_component.stats.has_ap(1):
+		result["reason"] = "insufficient_ap"
+		return result
 
 	if card.target_type == "enemy":
 		# Delegate target validation but do NOT enforce room engagement here
@@ -268,6 +271,8 @@ func _finalize_card_execution(card: CardData, target: Node, target_component: Co
 				await applier.apply(result, target_component, ctx)
 
 		card_manager.start_cooldown(card)
+		if combat_component.stats:
+			combat_component.stats.spend_ap(1)
 		card_played.emit(card, target, result)
 		if owner_actor and owner_actor.is_in_group("player") and card_manager:
 			# Prefer CardSystemController as the canonical external writer for selection
