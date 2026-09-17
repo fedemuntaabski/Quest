@@ -1,0 +1,23 @@
+keys,es,en
+KEY_TAB_VIDEO,Video,Video
+KEY_TAB_AUDIO,Audio,Audio
+KEY_TAB_GAMEPLAY,Jugabilidad,Gameplay
+KEY_WINDOW_MODE,Modo de Ventana,Window Mode
+KEY_WINDOW_FULLSCREEN,Pantalla Completa,Fullscreen
+KEY_WINDOW_WINDOWED,Ventana,Windowed
+KEY_WINDOW_BORDERLESS,Sin Bordes,Borderless
+KEY_RESOLUTION,Resolución,Resolution
+KEY_RESOLUTION_NATIVE,Nativa,Native
+KEY_VSYNC,Sincronización Vertical,V-Sync
+KEY_FPS_LIMIT,Límite de FPS,FPS Limit
+KEY_SHOW_FPS,Mostrar Contador de FPS,Show FPS Counter
+KEY_LANGUAGE,Idioma,Language
+KEY_MASTER_VOL,Volumen General,Master Volume
+KEY_MUSIC_VOL,Volumen Música,Music Volume
+KEY_SFX_VOL,Volumen Efectos (SFX),SFX Volume
+KEY_UI_VOL,Volumen Interfaz (UI),UI Volume
+KEY_SCREEN_SHAKE,Intensidad de Temblor,Screen Shake Intensity
+KEY_SAVE,Guardar,Save
+KEY_BACK,Volver,Back
+KEY_UNSAVED_TITLE,Cambios sin guardar,Unsaved Changes
+KEY_UNSAVED_MSG,¿Deseas descartar los cambios?,Do you want to discard changes?

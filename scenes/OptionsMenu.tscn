@@ -130,7 +130,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="OptionsCard" type="Panel" parent="OptionsCenterContainer" unique_id=1979119676]
-custom_minimum_size = Vector2(912, 672)
+custom_minimum_size = Vector2(960, 760)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_options_panel")
 
@@ -145,16 +145,16 @@ expand_mode = 1
 stretch_mode = 6
 
 [node name="OptionsVBox" type="VBoxContainer" parent="OptionsCenterContainer/OptionsCard" unique_id=1630670219]
-custom_minimum_size = Vector2(768, 552)
+custom_minimum_size = Vector2(816, 640)
 layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -384.0
-offset_top = -300.0
-offset_right = 384.0
-offset_bottom = 252.0
+offset_left = -408.0
+offset_top = -340.0
+offset_right = 408.0
+offset_bottom = 340.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 18
@@ -172,62 +172,301 @@ text = "OPCIONES"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="ClickVolumeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=1598419100]
-custom_minimum_size = Vector2(0, 38)
+[node name="OptionsTabs" type="TabContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=500000001]
+custom_minimum_size = Vector2(0, 360)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 26
-text = "Volumen clic"
-horizontal_alignment = 1
-autowrap_mode = 3
+size_flags_vertical = 3
 
-[node name="ClickVolumeRow" type="HBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=959712724]
+[node name="Video" type="VBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs" unique_id=500000002]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="ClickVolumeSlider" type="HSlider" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow" unique_id=1898913119]
+[node name="WindowModeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000003]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+text = "KEY_WINDOW_MODE"
+autowrap_mode = 3
+
+[node name="WindowModeOption" type="OptionButton" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000004]
 custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+
+[node name="ResolutionLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000005]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+text = "KEY_RESOLUTION"
+autowrap_mode = 3
+
+[node name="ResolutionOption" type="OptionButton" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000006]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+
+[node name="VSyncCheck" type="CheckButton" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000007]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "KEY_VSYNC"
+
+[node name="FpsLimitLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000008]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+text = "KEY_FPS_LIMIT"
+autowrap_mode = 3
+
+[node name="FpsLimitOption" type="OptionButton" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000009]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+
+[node name="ShowFpsCheck" type="CheckButton" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000032]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "KEY_SHOW_FPS"
+
+[node name="LanguageLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000033]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+text = "KEY_LANGUAGE"
+autowrap_mode = 3
+
+[node name="LanguageOption" type="OptionButton" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Video" unique_id=500000034]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+
+[node name="Audio" type="VBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs" unique_id=500000010]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MasterVolumeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=500000011]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "KEY_MASTER_VOL"
+autowrap_mode = 3
+
+[node name="MasterVolumeRow" type="HBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=500000012]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="MasterVolumeSlider" type="HSlider" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/MasterVolumeRow" unique_id=500000013]
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="ClickVolumeValueLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/ClickVolumeRow" unique_id=1879588342]
-custom_minimum_size = Vector2(92, 44)
+[node name="MasterVolumeValueLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/MasterVolumeRow" unique_id=500000014]
+custom_minimum_size = Vector2(80, 40)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 22
 text = "100%"
 horizontal_alignment = 2
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="HoverVolumeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=848805191]
-custom_minimum_size = Vector2(0, 38)
+[node name="MusicVolumeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=500000015]
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 26
-text = "Volumen al pasar"
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 22
+text = "KEY_MUSIC_VOL"
 autowrap_mode = 3
 
-[node name="HoverVolumeRow" type="HBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=1490317664]
+[node name="MusicVolumeRow" type="HBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=500000016]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="HoverVolumeSlider" type="HSlider" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow" unique_id=1872114929]
-custom_minimum_size = Vector2(0, 44)
+[node name="MusicVolumeSlider" type="HSlider" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/MusicVolumeRow" unique_id=500000017]
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="HoverVolumeValueLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/HoverVolumeRow" unique_id=403414315]
+[node name="MusicVolumeValueLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/MusicVolumeRow" unique_id=500000018]
+custom_minimum_size = Vector2(80, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="SfxVolumeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=500000019]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "KEY_SFX_VOL"
+autowrap_mode = 3
+
+[node name="SfxVolumeRow" type="HBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=500000020]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="SfxVolumeSlider" type="HSlider" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/SfxVolumeRow" unique_id=500000021]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 2.0
+step = 0.01
+value = 1.0
+
+[node name="SfxVolumeValueLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/SfxVolumeRow" unique_id=500000022]
+custom_minimum_size = Vector2(80, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="UiVolumeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=500000023]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "KEY_UI_VOL"
+autowrap_mode = 3
+
+[node name="UiVolumeRow" type="HBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=500000024]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="UiVolumeSlider" type="HSlider" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/UiVolumeRow" unique_id=500000025]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 2.0
+step = 0.01
+value = 1.0
+
+[node name="UiVolumeValueLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/UiVolumeRow" unique_id=500000026]
+custom_minimum_size = Vector2(80, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="ClickVolumeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=1598419100]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "Volumen clic"
+autowrap_mode = 3
+
+[node name="ClickVolumeRow" type="HBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=959712724]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ClickVolumeSlider" type="HSlider" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/ClickVolumeRow" unique_id=1898913119]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 2.0
+step = 0.01
+value = 1.0
+
+[node name="ClickVolumeValueLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/ClickVolumeRow" unique_id=1879588342]
+custom_minimum_size = Vector2(80, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="HoverVolumeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=848805191]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "Volumen al pasar"
+autowrap_mode = 3
+
+[node name="HoverVolumeRow" type="HBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio" unique_id=1490317664]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="HoverVolumeSlider" type="HSlider" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/HoverVolumeRow" unique_id=1872114929]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 2.0
+step = 0.01
+value = 1.0
+
+[node name="HoverVolumeValueLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Audio/HoverVolumeRow" unique_id=403414315]
+custom_minimum_size = Vector2(80, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 22
+text = "100%"
+horizontal_alignment = 2
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Gameplay" type="VBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs" unique_id=500000027]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ScreenShakeLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Gameplay" unique_id=500000028]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 24
+text = "KEY_SCREEN_SHAKE"
+autowrap_mode = 3
+
+[node name="ScreenShakeRow" type="HBoxContainer" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Gameplay" unique_id=500000029]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ScreenShakeSlider" type="HSlider" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Gameplay/ScreenShakeRow" unique_id=500000030]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="ScreenShakeValueLabel" type="Label" parent="OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTabs/Gameplay/ScreenShakeRow" unique_id=500000031]
 custom_minimum_size = Vector2(92, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
@@ -252,7 +491,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_button_save")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_save_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
-text = "GUARDAR"
+text = "KEY_SAVE"
 
 [node name="BackButton" type="Button" parent="OptionsCenterContainer/OptionsCard/OptionsVBox" unique_id=165006380]
 custom_minimum_size = Vector2(0, 72)
@@ -269,10 +508,10 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
-text = "VOLVER"
+text = "KEY_BACK"
 
 [node name="UnsavedChangesDialog" type="ConfirmationDialog" parent="." unique_id=432187618]
 oversampling_override = 1.0
-title = "Cambios sin guardar"
+title = "KEY_UNSAVED_TITLE"
 size = Vector2i(259, 100)
-dialog_text = "¿Deseas descartar los cambios?"
+dialog_text = "KEY_UNSAVED_MSG"

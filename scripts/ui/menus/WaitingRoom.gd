@@ -47,7 +47,7 @@ func _refresh(_arg = null) -> void:
 		lobby_mgr = steam_mgr.lobby_manager
 
 	lobby_id_label.text = "Lobby: %d" % (lobby_mgr.current_lobby_id if lobby_mgr else 0)
-
+	
 	for child: Node in players_list.get_children():
 		child.queue_free()
 

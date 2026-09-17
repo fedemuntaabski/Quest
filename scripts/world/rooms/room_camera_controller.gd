@@ -231,7 +231,9 @@ func _apply_corridor_bounds(camera: Camera2D) -> void:
 
 
 func _on_screen_shake(intensity: float, duration: float) -> void:
-	_shake_intensity = intensity
+	var settings_mgr := ManagerLocator.get_settings_manager()
+	var scale: float = settings_mgr.screen_shake_intensity if settings_mgr else 1.0
+	_shake_intensity = intensity * scale
 	_shake_timer = max(_shake_timer, duration)
 
 func _process(_delta: float) -> void:

@@ -18,6 +18,10 @@ boot_splash/image="uid://cdg3ntj0dgxe5"
 config/icon="uid://csy67bd45j2vb"
 boot_splash/minimum_display_time=2000
 
+[audio]
+
+buses/default_bus_layout="res://default_bus_layout.tres"
+
 [autoload]
 
 PlayerStats="*res://scripts/core/stats/PlayerStats.gd"
@@ -25,6 +29,7 @@ SaveManager="*res://scripts/managers/SaveManager.gd"
 CurrencyManager="*res://scripts/managers/CurrencyManager.gd"
 ThemeManager="*res://scripts/core/theme/ThemeManager.gd"
 SettingsManager="*res://scripts/managers/SettingsManager.gd"
+FPSOverlay="*res://scripts/ui/overlays/FPSOverlay.gd"
 SteamManager="*res://scripts/network/SteamManager.gd"
 
 [debug]
@@ -37,6 +42,7 @@ window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/size/mode=3
 window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
 mouse_cursor/custom_image="uid://cbtsbpk8s6y35"
 mouse_cursor/tooltip_position_offset=Vector2(0, 0)
 
@@ -67,6 +73,10 @@ mouse_left={
 "events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":0,"position":Vector2(0, 0),"global_position":Vector2(0, 0),"factor":1.0,"button_index":1,"canceled":false,"pressed":false,"double_click":false,"script":null)
 ]
 }
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://translations.es.translation", "res://translations.en.translation")
 
 [physics]
 

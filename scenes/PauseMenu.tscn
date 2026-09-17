@@ -248,9 +248,11 @@ hover_player_path = NodePath("../UIAudio/HoverSound")
 
 [node name="ClickSound" type="AudioStreamPlayer" parent="UIAudio" unique_id=879104593]
 unique_name_in_owner = true
+bus = &"UI"
 
 [node name="HoverSound" type="AudioStreamPlayer" parent="UIAudio" unique_id=1216079041]
 unique_name_in_owner = true
+bus = &"UI"
 
 [node name="ExitConfirmDialog" parent="." instance=ExtResource("6_exit_confirm_dialog")]
 unique_name_in_owner = true
