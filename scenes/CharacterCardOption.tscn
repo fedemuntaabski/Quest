@@ -4,10 +4,13 @@
 
 [node name="CharacterCardOption" type="PanelContainer"]
 custom_minimum_size = Vector2(300, 330)
+size_flags_horizontal = 3
+size_flags_vertical = 3
 script = ExtResource("1_character_card_option_script")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
@@ -19,7 +22,7 @@ theme_override_constants/separation = 8
 
 [node name="NameLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 26
 text = "Hero"
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -29,15 +32,16 @@ max_lines_visible = 2
 custom_minimum_size = Vector2(268, 96)
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 expand_mode = 1
-stretch_mode = 6
+stretch_mode = 5
 visible = false
 
 [node name="RoleLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(268, 34)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.72, 0.45, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 autowrap_mode = 3
 max_lines_visible = 2
@@ -53,7 +57,7 @@ layout_mode = 2
 [node name="APLabel" type="Label" parent="MarginContainer/VBoxContainer/APBadgeCenter/APBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.72, 0.45, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "AP 2"
@@ -62,7 +66,7 @@ text = "AP 2"
 custom_minimum_size = Vector2(268, 54)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 14
 autowrap_mode = 3
 
 [node name="SelectButton" type="Button" parent="MarginContainer/VBoxContainer"]

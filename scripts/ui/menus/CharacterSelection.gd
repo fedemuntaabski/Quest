@@ -10,11 +10,10 @@ signal back_pressed
 const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd")
 const CardOptionScene := preload("res://scenes/CharacterCardOption.tscn")
 
-@onready var selection_card: PanelContainer = $CenterContainer/SelectionCard
-@onready var cards_container: GridContainer = $CenterContainer/SelectionCard/VBoxContainer/ContentRow/CardsContainer
-@onready var preview_placeholder: PanelContainer = $CenterContainer/SelectionCard/VBoxContainer/ContentRow/CharacterPreviewPlaceholder
-@onready var confirm_button: Button = $CenterContainer/SelectionCard/VBoxContainer/ConfirmButton
-@onready var back_button: Button = $CenterContainer/SelectionCard/VBoxContainer/BackButton
+@onready var cards_container: GridContainer = $MainLayout/ContentRow/LeftSector/ScrollContainer/CardsContainer
+@onready var preview_panel: PanelContainer = $MainLayout/ContentRow/RightSector/PreviewPanel
+@onready var confirm_button: Button = $MainLayout/ContentRow/RightSector/ConfirmButton
+@onready var back_button: Button = $MainLayout/ContentRow/RightSector/BackButton
 
 var _click_sound: AudioStreamPlayer
 var _hover_sound: AudioStreamPlayer
@@ -32,8 +31,8 @@ func setup(click_sound: AudioStreamPlayer = null, hover_sound: AudioStreamPlayer
 func _ready() -> void:
 	_build_cards()
 	_connect_events()
-	if preview_placeholder:
-		preview_placeholder.add_theme_stylebox_override("panel", ThemeManager.build_slot_icon_style())
+	if preview_panel:
+		preview_panel.add_theme_stylebox_override("panel", ThemeManager.build_slot_icon_style())
 
 
 func _build_cards() -> void:
@@ -88,14 +87,10 @@ func open() -> void:
 	_is_animating_open = true
 	_set_transition_buttons_disabled(true)
 
-	var scale_targets: Array[CanvasItem] = []
-	if selection_card:
-		scale_targets.append(selection_card)
-
 	_active_tween = MenuTransitionFX.play_entrance(
 		self,
 		[{"node": self, "max_alpha": 1.0}],
-		scale_targets,
+		[],
 		0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2(0.93, 0.93)
 	)
 	if _active_tween != null:
@@ -121,14 +116,10 @@ func close(animate: bool = true) -> void:
 
 	_set_transition_buttons_disabled(true)
 
-	var scale_targets: Array[CanvasItem] = []
-	if selection_card:
-		scale_targets.append(selection_card)
-
 	_active_tween = MenuTransitionFX.play_exit(
 		self,
 		[{"node": self, "max_alpha": 1.0}],
-		scale_targets,
+		[],
 		0.28, Vector2(0.93, 0.93),
 		Tween.TRANS_CUBIC, Tween.EASE_IN_OUT
 	)
