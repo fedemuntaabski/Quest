@@ -3,7 +3,7 @@ class_name GameStateManager
 
 ## GameStateManager: global gameplay state machine and gate keeper.
 ## Responsibilities:
-## - Represent high-level modes (ACTIVE, PAUSED, DEAD, VICTORY, REWARD).
+## - Represent high-level modes (ACTIVE, PAUSED, DEAD).
 ## - Provide `can_process_*` helpers used throughout to pause game logic.
 ## - Emit state transition signals so UI and orchestration (Main2d, TurnManager)
 ##   can react without tight coupling.
@@ -11,18 +11,13 @@ class_name GameStateManager
 enum State {
 	ACTIVE,
 	PAUSED,
-	DEAD,
-	VICTORY,
-	REWARD
+	DEAD
 }
 
 signal state_changed(new_state: State, old_state: State)
 signal pause_requested
 signal resume_requested
 signal death_entered
-signal victory_entered
-signal reward_entered(cards: Array)
-signal reward_exited(card_selected: CardData)
 
 var current_state: State = State.ACTIVE
 var _previous_state: State = State.ACTIVE
@@ -45,13 +40,7 @@ func is_paused() -> bool:
 func is_dead() -> bool:
 	return current_state == State.DEAD
 
-func is_reward() -> bool:
-	return current_state == State.REWARD
-
 func can_process_input() -> bool:
-	return current_state == State.ACTIVE
-
-func can_update_overlays() -> bool:
 	return current_state == State.ACTIVE
 
 func can_process_turns() -> bool:
@@ -98,27 +87,6 @@ func request_death() -> void:
 		_apply_state_change(State.DEAD, current_state)
 		death_entered.emit()
 
-func request_victory() -> void:
-	# Push a victory state if currently active
-	if current_state == State.ACTIVE:
-		push_state(State.VICTORY)
-		victory_entered.emit()
-
-func request_reward(card_options: Array) -> void:
-	if current_state == State.ACTIVE:
-		push_state(State.REWARD)
-		reward_entered.emit(card_options)
-
-func close_reward(selected_card: CardData) -> void:
-	QuestLogger.debug(QuestLogger.Category.STATE, "close_reward() called, current_state=%s" % State.keys()[current_state])
-	if current_state == State.REWARD:
-		QuestLogger.debug(QuestLogger.Category.STATE, "Popping REWARD state...")
-		pop_state(State.REWARD)
-		QuestLogger.info(QuestLogger.Category.STATE, "New state after pop: %s" % State.keys()[current_state])
-		reward_exited.emit(selected_card)
-	else:
-		QuestLogger.warn(QuestLogger.Category.STATE, "close_reward() called but current_state is %s, not REWARD!" % State.keys()[current_state])
-
 func toggle_pause() -> void:
 	if current_state == State.ACTIVE:
 		request_pause()
@@ -139,5 +107,5 @@ func _handle_state_change(new_state: State, _old_state: State) -> void:
 	match new_state:
 		State.ACTIVE:
 			get_tree().paused = false
-		State.PAUSED, State.DEAD, State.VICTORY, State.REWARD:
+		State.PAUSED, State.DEAD:
 			get_tree().paused = true

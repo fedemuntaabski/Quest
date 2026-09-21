@@ -3,15 +3,10 @@ class_name StatPanelUI
 
 const HP_FORMAT := "HP %d/%d"
 const AP_FORMAT := "AP %d/%d"
-const STRENGTH_FORMAT := "Fuerza %d"
-const MAGIC_FORMAT := "Magia %d"
-const DEXTERITY_FORMAT := "Agilidad %d"
 
 @onready var label_hp: Label = $StatRowHP/LabelHP
+@onready var hp_bar: ProgressBar = $StatRowHP/HPBar
 @onready var label_ap: Label = $StatRowAP/LabelAP
-@onready var label_strength: Label = $StatRowStrength/LabelStrength
-@onready var label_magic: Label = $StatRowMagic/LabelMagic
-@onready var label_dexterity: Label = $StatRowDexterity/LabelDexterity
 
 
 func update_stats(stats: CharacterStats) -> void:
@@ -28,21 +23,6 @@ func update_stats(stats: CharacterStats) -> void:
 		stats.max_ap
 	)
 
-	_set_label_text(
-		label_strength,
-		STRENGTH_FORMAT % stats.get_total_strength()
-	)
-
-	_set_label_text(
-		label_magic,
-		MAGIC_FORMAT % stats.get_total_magic()
-	)
-
-	_set_label_text(
-		label_dexterity,
-		DEXTERITY_FORMAT % stats.get_total_dexterity()
-	)
-
 
 func update_hp(
 	current_hp: int,
@@ -53,6 +33,10 @@ func update_hp(
 		label_hp,
 		HP_FORMAT % [current_hp, max_hp]
 	)
+
+	if hp_bar:
+		hp_bar.max_value = max_hp
+		hp_bar.value = current_hp
 
 
 func update_ap(

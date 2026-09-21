@@ -1,32 +1,26 @@
 [gd_scene format=3 uid="uid://u03qppfja2kb"]
 
-[ext_resource type="PackedScene" uid="uid://b1q61p4edk0o2" path="res://scenes/Player.tscn" id="1_qunv1"]
-[ext_resource type="PackedScene" uid="uid://dgcx23erhb3v1" path="res://scenes/MapManager.tscn" id="2_srb6u"]
+[ext_resource type="Script" path="res://scripts/world/TestGrid.gd" id="1_test_grid"]
 [ext_resource type="PackedScene" uid="uid://b5v43ol8idshh" path="res://scenes/HUD.tscn" id="3_hud"]
 [ext_resource type="Script" uid="uid://di5s00uwo18xr" path="res://scripts/managers/Main2d.gd" id="4_main2d_script"]
 [ext_resource type="PackedScene" uid="uid://h3720oxsybma" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
-[ext_resource type="PackedScene" uid="uid://dvfida6qamh5y" path="res://scenes/TileOverlay.tscn" id="8_dcq30"]
-[ext_resource type="PackedScene" uid="uid://uipe5cbrkn5j" path="res://scenes/VictoryOverlay.tscn" id="9_victory_overlay"]
 
-[node name="Main2d" type="Node2D" unique_id=719008083]
+[node name="Main2d" type="Node2D"]
 script = ExtResource("4_main2d_script")
 
-[node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=1224423481]
-color = Color(0.05, 0.05, 0.05, 1)
+[node name="TestGrid" type="Node2D" parent="."]
+z_index = -10
+script = ExtResource("1_test_grid")
 
-[node name="MapManager" parent="." unique_id=145395336 instance=ExtResource("2_srb6u")]
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
 
-[node name="Player" parent="MapManager" unique_id=1924339904 instance=ExtResource("1_qunv1")]
+[node name="PauseMenu" parent="." instance=ExtResource("5_pause_menu")]
 
-[node name="HUD" parent="." unique_id=712781322 instance=ExtResource("3_hud")]
-
-[node name="PauseMenu" parent="." unique_id=315828192 instance=ExtResource("5_pause_menu")]
-
-[node name="DeathOverlay" type="CanvasLayer" parent="." unique_id=154972817]
+[node name="DeathOverlay" type="CanvasLayer" parent="."]
 layer = 100
 visible = false
 
-[node name="ColorRect" type="ColorRect" parent="DeathOverlay" unique_id=426427661]
+[node name="ColorRect" type="ColorRect" parent="DeathOverlay"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -34,52 +28,44 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.8)
 
-[node name="CenterContainer" type="CenterContainer" parent="DeathOverlay" unique_id=1273579154]
+[node name="CenterContainer" type="CenterContainer" parent="DeathOverlay"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="DeathOverlay/CenterContainer" unique_id=457308186]
+[node name="VBoxContainer" type="VBoxContainer" parent="DeathOverlay/CenterContainer"]
 layout_mode = 2
 theme_override_constants/separation = 30
 
-[node name="DeathLabel" type="Label" parent="DeathOverlay/CenterContainer/VBoxContainer" unique_id=108326312]
+[node name="DeathLabel" type="Label" parent="DeathOverlay/CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.2, 0.2, 1)
 theme_override_font_sizes/font_size = 48
 text = "La mazmorra reclama su tributo..."
 horizontal_alignment = 1
 
-[node name="GoldLabel" type="Label" parent="DeathOverlay/CenterContainer/VBoxContainer" unique_id=530564371]
+[node name="GoldLabel" type="Label" parent="DeathOverlay/CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.84, 0, 1)
 theme_override_font_sizes/font_size = 32
 text = "Oro ganado: 0"
 horizontal_alignment = 1
 
-[node name="ButtonsHBox" type="HBoxContainer" parent="DeathOverlay/CenterContainer/VBoxContainer" unique_id=740568678]
+[node name="ButtonsHBox" type="HBoxContainer" parent="DeathOverlay/CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 40
 alignment = 1
 
-[node name="RetryButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox" unique_id=477708406]
+[node name="RetryButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox"]
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Reintentar"
 
-[node name="ExitButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox" unique_id=1072872623]
+[node name="ExitButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox"]
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Salir"
-
-[node name="TileOverlay" parent="." unique_id=1858402419 instance=ExtResource("8_dcq30")]
-process_mode = 3
-z_index = 4096
-map_manager_path = NodePath("../MapManager")
-
-[node name="VictoryOverlay" parent="." unique_id=107348359 instance=ExtResource("9_victory_overlay")]
-visible = false
