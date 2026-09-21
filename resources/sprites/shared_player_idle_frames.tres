@@ -1,0 +1,81 @@
+[gd_resource type="SpriteFrames" load_steps=12 format=3]
+
+[ext_resource type="Texture2D" uid="uid://dy40revhclxqf" path="res://Sprites/Player/_Idle.png" id="1_idle_tex"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_0"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(0, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_1"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(120, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_2"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(240, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_3"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(360, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_4"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(480, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_5"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(600, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_6"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(720, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_7"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(840, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_8"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(960, 0, 120, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shared_9"]
+atlas = ExtResource("1_idle_tex")
+region = Rect2(1080, 0, 120, 80)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_shared_9")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 10.0
+}]

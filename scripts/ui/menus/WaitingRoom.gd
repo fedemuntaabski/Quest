@@ -1,8 +1,6 @@
 extends Control
 class_name WaitingRoom
 
-const MAIN_MENU_SCENE := "res://scenes/MainMenu.tscn"
-const GAME_SCENE := "res://scenes/Main2d.tscn"
 const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd")
 const CharacterCardOptionScene := preload("res://scenes/CharacterCardOption.tscn")
 
@@ -180,40 +178,38 @@ func _on_start_pressed() -> void:
 	if not multiplayer.is_server():
 		return
 	_set_transition_buttons_disabled(true)
-	await _fade_out()
 	ManagerLocator.flush_saves()
-	get_tree().change_scene_to_file(GAME_SCENE)
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		await orchestrator.start_gameplay()
 
 
 func _on_leave_pressed() -> void:
 	_set_transition_buttons_disabled(true)
-	await _fade_out()
 	var steam_mgr := ManagerLocator.get_steam_manager()
 	if steam_mgr and steam_mgr.lobby_manager:
 		steam_mgr.lobby_manager.leave_lobby()
-	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		await orchestrator.return_to_main_menu()
 
 
 func _on_host_lost() -> void:
 	QuestLogger.warn(QuestLogger.Category.NETWORK, "Host disconnected, returning to main menu")
 	_set_transition_buttons_disabled(true)
-	await _fade_out()
 	var steam_mgr := ManagerLocator.get_steam_manager()
 	if steam_mgr and steam_mgr.lobby_manager:
 		steam_mgr.lobby_manager.leave_lobby()
-	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		await orchestrator.return_to_main_menu()
 
 
-func _fade_out() -> void:
-	var tween := MenuTransitionFX.play_exit(
-		self,
-		[{"node": self, "max_alpha": 1.0}],
-		[],
-		0.28, Vector2.ONE,
-		Tween.TRANS_CUBIC, Tween.EASE_IN_OUT
-	)
-	if tween != null:
-		await tween.finished
+func _get_orchestrator() -> Main:
+	var orchestrator := ManagerLocator.get_main_orchestrator()
+	if orchestrator == null:
+		QuestLogger.error(QuestLogger.Category.UI, "WaitingRoom: no Main orchestrator in group 'main_orchestrator' — run the project via scenes/Main.tscn (F5), not this scene standalone (F6).")
+	return orchestrator
 
 
 func _set_transition_buttons_disabled(is_disabled: bool) -> void:

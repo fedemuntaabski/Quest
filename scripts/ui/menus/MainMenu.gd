@@ -22,7 +22,6 @@ var _button_tweens: Dictionary = {}
 
 func _ready() -> void:
 	$AnimationPlayer.play("menu_intro")
-	_setup_content_scaling()
 	_apply_audio_settings()
 	_connect_signals()
 	_setup_profile()
@@ -46,12 +45,6 @@ func _ready() -> void:
 
 	if options_menu:
 		options_menu.close(false)
-
-
-func _setup_content_scaling() -> void:
-	var root_window: Window = get_tree().root
-	root_window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-	root_window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 
 
 func _apply_audio_settings() -> void:

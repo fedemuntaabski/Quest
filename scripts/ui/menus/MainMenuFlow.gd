@@ -4,8 +4,6 @@ class_name MainMenuFlow
 ## MainMenuFlow — Navigation coordinator for MainMenu.
 ## Coordinates transitions between Main buttons, OptionsMenu and SlotSelection.
 
-const GAME_SCENE := "res://scenes/Main2d.tscn"
-const WAITING_ROOM_SCENE := "res://scenes/WaitingRoom.tscn"
 const SLOT_SELECTION_SCENE := preload("res://scenes/SlotSelection.tscn")
 const NETWORK_MODE_SELECT_SCENE := preload("res://scenes/NetworkModeSelect.tscn")
 const CHARACTER_SELECTION_SCENE := preload("res://scenes/CharacterSelection.tscn")
@@ -336,7 +334,9 @@ func _change_to_game_scene() -> void:
 
 	await owner.get_tree().create_timer(0.2).timeout
 	ManagerLocator.flush_saves()
-	owner.get_tree().change_scene_to_file(GAME_SCENE)
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		await orchestrator.start_gameplay()
 
 
 func _change_to_waiting_room() -> void:
@@ -348,7 +348,16 @@ func _change_to_waiting_room() -> void:
 
 	await owner.get_tree().create_timer(0.2).timeout
 	ManagerLocator.flush_saves()
-	owner.get_tree().change_scene_to_file(WAITING_ROOM_SCENE)
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		await orchestrator.go_to_waiting_room()
+
+
+func _get_orchestrator() -> Main:
+	var orchestrator := ManagerLocator.get_main_orchestrator()
+	if orchestrator == null:
+		QuestLogger.error(QuestLogger.Category.UI, "MainMenuFlow: no Main orchestrator in group 'main_orchestrator' — run the project via scenes/Main.tscn (F5), not this scene standalone (F6).")
+	return orchestrator
 
 
 func _animate_main_menu(show: bool, on_finish: Callable = Callable()) -> void:

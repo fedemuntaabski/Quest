@@ -6,12 +6,15 @@ extends Node2D
 # pause/death overlays. No dungeon, combat or card systems.
 
 const PLAYER_SCENE := preload("res://scenes/Player.tscn")
-const SPAWN_POSITION := Vector2.ZERO
+const SPAWN_CELL := Vector2i(1, 1)
 
 # ─────────────────────────────────────────────
 # NODES
 # ─────────────────────────────────────────────
-@onready var hud: HUDController = $HUD
+@onready var floor_layer: TileMapLayer = $Floor
+@onready var highlight_layer: TileMapLayer = $Highlight
+@onready var player_action_controller: PlayerActionController = $PlayerActionController
+@onready var ap_label: Label = $PlayerActionController/ApLabel
 @onready var pause_menu: PauseMenu = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
 
@@ -36,7 +39,6 @@ var _run_gold_start: int = 0
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_setup_content_scaling()
 
 	death_handler = Main2dDeathHandler.new()
 	death_handler.setup(self, death_overlay, death_gold_label)
@@ -47,16 +49,12 @@ func _ready() -> void:
 	_ensure_game_state_manager()
 	_spawn_player()
 	_setup_turn_manager()
+	_setup_player_action_controller()
 	_connect_signals()
 
 	var currency := ManagerLocator.get_currency_manager() as CurrencyManager
 	if currency:
 		_run_gold_start = int(currency.get_gold())
-
-func _setup_content_scaling() -> void:
-	var root_window: Window = get_tree().root
-	root_window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-	root_window.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 
 func _ensure_game_state_manager() -> void:
 	game_state_manager = get_node_or_null("GameStateManager") as GameStateManager
@@ -66,11 +64,13 @@ func _ensure_game_state_manager() -> void:
 		add_child(game_state_manager)
 
 func _spawn_player() -> void:
+	var character_data := CharacterDatabase.get_by_id(active_character_id)
 	player = PLAYER_SCENE.instantiate() as Player
 	player.name = "Player"
-	player.position = SPAWN_POSITION
+	player.configure(character_data)
 	add_child(player)
-	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned character '%s'" % active_character_id)
+	player.set_grid_position(SPAWN_CELL, floor_layer)
+	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned character '%s' at %s" % [active_character_id, SPAWN_CELL])
 
 func _setup_turn_manager() -> void:
 	turn_manager = TurnManager.new()
@@ -78,6 +78,10 @@ func _setup_turn_manager() -> void:
 	add_child(turn_manager)
 	turn_manager.register_actor(player)
 	turn_manager.start()
+
+func _setup_player_action_controller() -> void:
+	if player_action_controller:
+		player_action_controller.setup(player, floor_layer, highlight_layer, ap_label, turn_manager)
 
 # ─────────────────────────────────────────────
 # SIGNALS
@@ -137,15 +141,17 @@ func _get_run_gold_earned() -> int:
 # PAUSE / SCENE FLOW
 # ─────────────────────────────────────────────
 func _go_to_main_menu() -> void:
-	_cleanup_and_change_scene("res://scenes/MainMenu.tscn")
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		orchestrator.return_to_main_menu()
 
 func _reload_current_scene() -> void:
-	_cleanup_and_change_scene("", true)
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		orchestrator.reload_gameplay()
 
-func _cleanup_and_change_scene(target_scene: String, reload: bool = false) -> void:
-	ManagerLocator.flush_saves()
-	get_tree().paused = false
-	if reload:
-		get_tree().reload_current_scene()
-	elif not target_scene.is_empty():
-		get_tree().change_scene_to_file(target_scene)
+func _get_orchestrator() -> Main:
+	var orchestrator := ManagerLocator.get_main_orchestrator()
+	if orchestrator == null:
+		QuestLogger.error(QuestLogger.Category.UI, "Main2d: no Main orchestrator in group 'main_orchestrator' — run the project via scenes/Main.tscn (F5), not this scene standalone (F6).")
+	return orchestrator

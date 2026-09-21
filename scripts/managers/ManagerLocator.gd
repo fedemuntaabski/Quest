@@ -46,6 +46,13 @@ static func get_game_state_manager() -> GameStateManager:
 	return null
 
 
+static func get_main_orchestrator() -> Main:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("main_orchestrator") as Main
+	return null
+
+
 static func get_floating_text_manager() -> Node:
 	var ml = Engine.get_main_loop()
 	if not (ml and ml is SceneTree):

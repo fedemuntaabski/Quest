@@ -16,3 +16,5 @@ class_name CharacterData
 
 @export var base_ap: int = 2
 @export var move_range_per_ap: int = 3
+
+@export var sprite_frames: SpriteFrames = null
