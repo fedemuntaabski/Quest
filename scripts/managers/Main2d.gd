@@ -4,7 +4,7 @@ extends Node2D
 # Responsibilities:
 # - Instantiate and wire managers (GameStateManager, CardRewardManager, etc.)
 # - Connect UI (HUD / overlays) to gameplay signals and mediate reward/death flows.
-# - Act as the canonical owner for room/timer, enemy manager and top-level
+# - Act as the canonical owner for match state, enemy manager and top-level
 #   presentation concerns. Avoid adding gameplay logic here; prefer managers.
 
 # ─────────────────────────────────────────────
@@ -27,15 +27,21 @@ var card_reward_manager: CardRewardManager
 # ─────────────────────────────────────────────
 # STATE
 # ─────────────────────────────────────────────
-var room_timer: Main2dRoomTimer
 var death_handler: Main2dDeathHandler
 
 var visited_rooms: Array[int] = []
 var enemies_killed: int = 0
 var rooms_cleared: int = 0
 var _is_dead: bool = false
-var _room_timer_paused: bool = false
 var _victory_triggered: bool = false
+
+# ─────────────────────────────────────────────
+# MATCH STATE
+# ─────────────────────────────────────────────
+enum MatchState { INIT_MATCH, PLAYER_TURN, ENEMY_TURN, ROOM_CLEARED, VICTORY, DEFEAT }
+signal match_state_changed(new_state: MatchState, old_state: MatchState)
+var match_state: MatchState = MatchState.INIT_MATCH
+var active_character_id: String = ""
 
 var tutorial_layer: TutorialLayer = null
 var _run_gold_start: int = 0
@@ -49,16 +55,16 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_content_scaling()
 
-	room_timer = Main2dRoomTimer.new()
 	death_handler = Main2dDeathHandler.new()
 	death_handler.setup(self, death_overlay, death_gold_label)
+
+	var save_mgr := ManagerLocator.get_save_manager()
+	active_character_id = save_mgr.get_selected_character_id() if save_mgr else CharacterDatabase.get_default_id()
 
 	_setup_managers()
 	_connect_signals()
 	_load_tutorial_if_needed()
 	_load_post_victory_popup_if_needed()
-
-	_reset_room_timer()
 
 	# Capture starting gold for this run to compute run-earned gold later
 	var currency := ManagerLocator.get_currency_manager() as CurrencyManager
@@ -104,6 +110,7 @@ func _connect_signals() -> void:
 	_connect_dungeon()
 	_connect_player()
 	_connect_ui()
+	_connect_turn_manager()
 
 func _connect_dungeon() -> void:
 	var dg = _dg()
@@ -127,6 +134,18 @@ func _connect_player() -> void:
 
 	if player_stats and not player_stats.player_died.is_connected(Callable(self, "_on_player_died")):
 		player_stats.player_died.connect(Callable(self, "_on_player_died"))
+
+## Connects the AP-engine's per-actor turn signal to drive PLAYER_TURN/ENEMY_TURN.
+func _connect_turn_manager() -> void:
+	if map_manager == null or map_manager.turn_manager == null:
+		return
+	if not map_manager.turn_manager.actor_turn_changed.is_connected(Callable(self, "_on_actor_turn_changed")):
+		map_manager.turn_manager.actor_turn_changed.connect(Callable(self, "_on_actor_turn_changed"))
+
+func _on_actor_turn_changed(actor: Node) -> void:
+	if actor == null:
+		return
+	_set_match_state(MatchState.PLAYER_TURN if actor.is_in_group("player") else MatchState.ENEMY_TURN)
 
 func _connect_ui() -> void:
 	_connect_menu_ui()
@@ -206,41 +225,11 @@ func _load_tutorial_if_needed() -> void:
 
 	tutorial_layer = scene.instantiate() as TutorialLayer
 	add_child(tutorial_layer)
-	_room_timer_paused = true
 
 	if not tutorial_layer.tutorial_started.is_connected(_on_tutorial_started):
 		tutorial_layer.tutorial_started.connect(_on_tutorial_started)
 	if not tutorial_layer.tutorial_finished.is_connected(_on_tutorial_finished):
 		tutorial_layer.tutorial_finished.connect(_on_tutorial_finished)
-
-# ─────────────────────────────────────────────
-# LOOP
-# ─────────────────────────────────────────────
-func _process(delta: float) -> void:
-	if not game_state_manager or not game_state_manager.is_active():
-		return
-	if _room_timer_paused:
-		if tutorial_layer == null or not is_instance_valid(tutorial_layer):
-			_room_timer_paused = false
-		else:
-			_update_room_timer_ui(room_timer.get_status())
-			return
-
-	var tick_data := room_timer.tick(delta)
-	_update_room_timer_ui(tick_data)
-
-	if tick_data["expired"]:
-		push_warning("Room timer reached zero - triggering death state")
-		_room_timer_paused = true
-		_trigger_timeout_death_flow()
-
-func _trigger_timeout_death_flow() -> void:
-	var player_node := get_tree().get_first_node_in_group("player") as PlayerMovement
-	if player_node and player_node.has_method("trigger_time_out_death"):
-		player_node.trigger_time_out_death()
-	
-	await get_tree().create_timer(1.2).timeout
-	_on_player_died()
 
 func _input(event: InputEvent) -> void:
 	if tutorial_layer and is_instance_valid(tutorial_layer) and tutorial_layer.visible:
@@ -256,9 +245,6 @@ func _input(event: InputEvent) -> void:
 # GAME EVENTS
 # ─────────────────────────────────────────────
 func _on_room_changed(room_id: int) -> void:
-	if _should_reset_room_timer(room_id):
-		_reset_room_timer()
-
 	if room_id not in visited_rooms:
 		visited_rooms.append(room_id)
 
@@ -268,16 +254,8 @@ func _on_room_changed(room_id: int) -> void:
 	if hud and enemy_manager:
 		hud.update_enemies_remaining(enemy_manager.get_enemies_in_room(room_id))
 
-func _should_reset_room_timer(room_id: int) -> bool:
-	if room_id < 0:
-		return false
-	if room_id in visited_rooms:
-		return false
-	if enemy_manager == null:
-		return false
-	return enemy_manager.get_enemies_in_room(room_id) > 0
-
 func _on_room_cleared(_room_id: int) -> void:
+	_set_match_state(MatchState.ROOM_CLEARED)
 	rooms_cleared += 1
 
 	if _victory_triggered:
@@ -316,11 +294,12 @@ func _on_player_died() -> void:
 		return
 	
 	_is_dead = true
+	_set_match_state(MatchState.DEFEAT)
 	_hide_victory_overlay()
-	
+
 	if enemy_manager:
 		enemy_manager.grant_and_reset_accumulated_gold()
-	
+
 	if game_state_manager:
 		game_state_manager.request_death()
 	else:
@@ -360,6 +339,8 @@ func _on_victory_entered() -> void:
 	if tree == null:
 		return
 
+	_set_match_state(MatchState.VICTORY)
+
 	var save_mgr := ManagerLocator.get_save_manager()
 	if save_mgr:
 		save_mgr.increment_run_cycle()
@@ -369,15 +350,6 @@ func _on_victory_entered() -> void:
 		enemy_manager.grant_and_reset_accumulated_gold()
 	
 	_show_victory_overlay(_get_run_gold_earned())
-
-func _update_room_timer_ui(status: Dictionary) -> void:
-	if hud == null or room_timer == null or status == null:
-		return
-	hud.update_room_timer(
-		status.get("remaining", 0.0),
-		Main2dRoomTimer.ROOM_TIMER_SECONDS,
-		status.get("color", Color.WHITE)
-	)
 
 func _request_room_reward(room_id: int, reward_cards: Array[CardData]) -> void:
 	if _reward_pending:
@@ -457,26 +429,27 @@ func _cleanup_and_change_scene(target_scene: String, reload: bool = false) -> vo
 	elif not target_scene.is_empty():
 		get_tree().change_scene_to_file(target_scene)
 
-# ─────────────────────────────────────────────
-# TIMER
-# ─────────────────────────────────────────────
-func _reset_room_timer() -> void:
-	if room_timer:
-		room_timer.reset()
-
 func _on_tutorial_started() -> void:
-	_room_timer_paused = true
 	if game_state_manager:
 		game_state_manager.request_pause()
 
 func _on_tutorial_finished() -> void:
 	var popup_shown := _load_post_victory_popup_if_needed()
-	_room_timer_paused = popup_shown
 	if game_state_manager and not popup_shown:
 		game_state_manager.request_resume()
 
 func _get_game_state_manager() -> GameStateManager:
 	return game_state_manager
+
+func get_match_state() -> MatchState:
+	return match_state
+
+func _set_match_state(new_state: MatchState) -> void:
+	if new_state == match_state:
+		return
+	var old_state := match_state
+	match_state = new_state
+	match_state_changed.emit(new_state, old_state)
 
 func _on_reward_entered(cards: Array) -> void:
 	if hud:
@@ -543,7 +516,6 @@ func _load_post_victory_popup_if_needed() -> bool:
 	add_child(post_victory_popup)
 	post_victory_popup.show_popup(save_mgr.get_run_cycle())
 
-	_room_timer_paused = true
 	if game_state_manager:
 		game_state_manager.request_pause()
 
@@ -559,6 +531,5 @@ func _on_post_victory_popup_continue_pressed() -> void:
 		post_victory_popup.queue_free()
 	post_victory_popup = null
 
-	_room_timer_paused = false
 	if game_state_manager:
 		game_state_manager.request_resume()

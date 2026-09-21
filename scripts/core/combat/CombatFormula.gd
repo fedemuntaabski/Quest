@@ -1,7 +1,6 @@
 extends RefCounted
 class_name CombatFormula
 
-const DiceSystem = preload("res://scripts/managers/DiceSystem.gd")
 const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
 
 static func get_attack_bonus(
@@ -21,13 +20,14 @@ static func get_dodge_chance(target_dexterity: int) -> float:
 		target_dexterity
 	)
 
-static func roll_damage_multiplier() -> Dictionary:
-	var dice_roll := DiceSystem.roll_d6()
+## Deterministic replacement for the old d6 roll: spending your last AP on an
+## attack (going all-in) lands a guaranteed critical hit.
+static func resolve_damage_multiplier(attacker_current_ap: int) -> Dictionary:
+	var is_finisher := attacker_current_ap <= 1
 
 	return {
-		"dice_roll": dice_roll,
-		"multiplier": DiceSystem.get_damage_multiplier(dice_roll),
-		"crit": dice_roll == 6
+		"multiplier": 1.5 if is_finisher else 1.0,
+		"crit": is_finisher
 	}
 
 static func calculate_final_damage(

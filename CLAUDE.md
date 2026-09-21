@@ -50,12 +50,12 @@ If asked to add tests/lint/CI, there is nothing existing to hook into — treat 
 
 **Multiplayer flow**: Main menu "Iniciar Partida" opens `NetworkModeSelect` (scenes/NetworkModeSelect.tscn) with Host/Join/Offline. Host creates a Steam lobby (`SteamLobbyManager.create_lobby`, Friends Only) then picks a save slot via `SaveSlotSelector` (script on `scenes/SlotSelection.tscn`, not its own scene); Join opens the Steam friends overlay and joins via `join_requested`/`lobby_joined`. Joining clients must pass Steam auth-ticket validation (mandatory-blocking, 15s timeout) before `SteamManager.connected_clients` counts them as real players. Both paths land in `scenes/WaitingRoom.tscn` before the host starts `Main2d.tscn`; Offline is unchanged from the original single-player flow (`SlotSelection.tscn` → `Main2d.tscn` directly, no networking).
 
-**`Main2d.tscn` gameplay scene** (scripts/managers/): `Main2d.gd` instantiates/wires `GameStateManager`, `CardRewardManager`, HUD/overlay connections. `Main2dRoomTimer.gd` runs a 60s per-room countdown (30s/15s warning/critical thresholds) — a pacing mechanic, not just presentation. `Main2dDeathHandler.gd` presents the death overlay/run summary. `DiceSystem.gd` (scripts/managers/) is a static dice-roll helper (`roll_d6()` etc.) used elsewhere in resolution.
+**`Main2d.tscn` gameplay scene** (scripts/managers/): `Main2d.gd` instantiates/wires `GameStateManager`, `CardRewardManager`, HUD/overlay connections, and exposes its own `MatchState` enum (INIT_MATCH/PLAYER_TURN/ENEMY_TURN/ROOM_CLEARED/VICTORY/DEFEAT) as a turn-aware observer layer over `GameStateManager`/`TurnManager` signals — not a replacement of either. `Main2dDeathHandler.gd` presents the death overlay/run summary. Combat crit is deterministic: `CombatFormula.resolve_damage_multiplier()` grants a guaranteed critical hit when the attacker spends their last AP on the attack (no dice roll).
 
 ## Directory layout
 
 - `scripts/core/` — actions, cards, combat, effects, enemy, movement, stats, theme, utils
-- `scripts/managers/` — SaveManager, CurrencyManager, SettingsManager, GameStateManager, ManagerLocator, DiceSystem, Main2d/Main2dRoomTimer/Main2dDeathHandler
+- `scripts/managers/` — SaveManager, CurrencyManager, SettingsManager, GameStateManager, ManagerLocator, Main2d/Main2dDeathHandler
 - `scripts/network/` — SteamManager (autoload), SteamLobbyManager (Steam lobby/matchmaking)
 - `scripts/ui/` — card_reward, hud, menus (incl. `MenuTransitionFX.gd` shared fade/scale tween helper used by `BaseMenu`/`BaseSubPanel`), overlays (incl. `FPSOverlay.gd`), visual
 - `scripts/world/` — dungeon, rooms (camera logic lives in `rooms/room_camera_controller.gd`; `world/camera/` dir exists but is empty)

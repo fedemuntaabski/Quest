@@ -63,7 +63,7 @@ static func resolve_attack(
 			"target_dex": target_dex
 		}
 
-	var roll_data := CombatFormula.roll_damage_multiplier()
+	var roll_data := CombatFormula.resolve_damage_multiplier(attacker.current_ap)
 
 	var damage := CombatFormula.calculate_final_damage(
 		base_damage,
@@ -79,7 +79,6 @@ static func resolve_attack(
 		"hit": true,
 		"crit": roll_data["crit"],
 		"damage": damage,
-		"dice_roll": roll_data["dice_roll"],
 		"damage_multiplier": roll_data["multiplier"],
 		"base_total": base_damage + attack_bonus,
 		"stat_key": stat_key,

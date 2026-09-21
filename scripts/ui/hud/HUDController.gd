@@ -8,7 +8,6 @@ signal hud_ready
 @onready var stats_hud_panel: PanelContainer = $Control/StatsHUD
 
 @onready var card_panel: CardPanelUI = get_node_or_null("Control/CardPanelUI") as CardPanelUI
-@onready var timer_ui: TimerUI = $Control/TimerUI
 @onready var hotbar_bar: HBoxContainer = $Control/HotbarBar
 @onready var card_tooltip: CardTooltip = $CardTooltip
 @onready var card_reward_ui: CardRewardUI = $CardRewardUI if has_node("CardRewardUI") else null
@@ -176,11 +175,6 @@ func _on_potion_used(_heal_amount: int, _remaining: int) -> void:
 
 # ---------------- ROOM / UI UPDATES ----------------
 
-func update_room_timer(time_left: float, _total: float, color: Color) -> void:
-	if timer_ui:
-		timer_ui.set_time(time_left, color)
-
-
 func update_current_room(id: int) -> void:
 	if current_room_label:
 		current_room_label.text = "Room: %d" % id
@@ -278,7 +272,6 @@ func show_combat_result(result: Dictionary) -> void:
 	var crit: bool = bool(result.get("crit", false))
 	var damage: int = int(result.get("damage", 0))
 	var reason: String = str(result.get("reason", ""))
-	var dice_roll: int = int(result.get("dice_roll", 0))
 
 	var text := ""
 	var color := QuestPalette.UI_TEXT_PRIMARY
@@ -289,8 +282,6 @@ func show_combat_result(result: Dictionary) -> void:
 
 		if damage > 0:
 			text += " · %d DAÑO" % damage
-		if dice_roll > 0:
-			text += "\n🎲 Tirada: %d" % dice_roll
 	else:
 		text = "FALLO"
 		color = QuestPalette.COMBAT_ROLL_FAIL

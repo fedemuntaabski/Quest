@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://dwj0wcnf1blct" path="res://scripts/ui/hud/HUDController.gd" id="1_hud_script"]
 [ext_resource type="Script" uid="uid://dltjy630888ox" path="res://scripts/ui/hud/StatIcon.gd" id="2_stat_icon"]
 [ext_resource type="Script" uid="uid://dwdiup326a0h8" path="res://scripts/ui/hud/StatPanelUI.gd" id="3_nysna"]
-[ext_resource type="Script" uid="uid://dct0sw5vdoaow" path="res://scripts/ui/hud/TimerUI.gd" id="4_7hsmw"]
 [ext_resource type="PackedScene" uid="uid://cbfp62ksudyq3" path="res://scenes/HotbarSlot.tscn" id="5_hotbar_slot"]
 [ext_resource type="Script" uid="uid://dne3u1o274ndl" path="res://scripts/ui/hud/PotionController.gd" id="5_potion_controller"]
 [ext_resource type="PackedScene" uid="uid://c6k0u8o5kwv8e" path="res://scenes/CardTooltip.tscn" id="6_card_tooltip"]
@@ -167,27 +166,6 @@ text = "AP 2/2"
 custom_minimum_size = Vector2(96, 26)
 layout_mode = 2
 text = "Pasar Turno"
-
-[node name="TimerUI" type="Control" parent="Control" unique_id=134582833]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-script = ExtResource("4_7hsmw")
-
-[node name="TimerLabel" type="Label" parent="Control/TimerUI" unique_id=405452174]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -33.0
-offset_top = 33.0
-offset_right = 237.0
-offset_bottom = 82.0
-grow_horizontal = 2
-theme_override_font_sizes/font_size = 30
-text = "Tiempo: 1:00"
-horizontal_alignment = 1
 
 [node name="HotbarBar" type="HBoxContainer" parent="Control" unique_id=2138843921]
 layout_mode = 0

@@ -3,6 +3,8 @@ class_name TurnManager
 
 const PRELOAD_ACTION_QUEUE = preload("res://scripts/core/actions/ActionQueue.gd")
 
+signal actor_turn_changed(actor: Node)
+
 var actors: Array = []
 var pending_actors: int = 0
 var current_actor_index: int = 0
@@ -111,6 +113,8 @@ func _begin_actor_turn() -> void:
 	if current_actor == null:
 		_actor_finished()
 		return
+
+	actor_turn_changed.emit(current_actor)
 
 	var stats := _get_actor_stats(current_actor)
 	if stats:
