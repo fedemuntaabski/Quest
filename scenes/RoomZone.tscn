@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/RoomZone.gd" id="1_room_zone_script"]
+
+[node name="RoomZone" type="Area2D"]
+z_index = -5
+input_pickable = true
+script = ExtResource("1_room_zone_script")
+
+[node name="Fill" type="Polygon2D" parent="."]
+
+[node name="Outline" type="Line2D" parent="."]
+width = 3.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]

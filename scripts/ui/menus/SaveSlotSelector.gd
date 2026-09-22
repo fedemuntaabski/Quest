@@ -220,22 +220,8 @@ func _get_slot_summary(slot_id: int) -> String:
 	var gold = cfg.get_value("save_data", "gold", 0)
 	var contracts = cfg.get_value("save_data", "run_cycle", cfg.get_value("save_data", "contracts_completed", 0))
 	var s_hp = cfg.get_value("save_data", "base_hp", StatBalance.PLAYER_BASE_HP)
-	var s_str = cfg.get_value("save_data", "base_str", 0)
-	var s_mag = cfg.get_value("save_data", "base_mag", 0)
-	var s_dex = cfg.get_value("save_data", "base_dex", 0)
 	var saved_at_unix = cfg.get_value("save_data", "saved_at_unix", 0)
 	var playtime_seconds = cfg.get_value("save_data", "playtime_seconds", 0.0)
-
-	var max_stat_name := "Fuerza"
-	var max_stat_val = s_str
-
-	if s_mag > max_stat_val:
-		max_stat_name = "Magia"
-		max_stat_val = s_mag
-
-	if s_dex > max_stat_val:
-		max_stat_name = "Destreza"
-		max_stat_val = s_dex
 
 	var date_str := "Desconocida"
 	if saved_at_unix > 0:
@@ -253,8 +239,7 @@ func _get_slot_summary(slot_id: int) -> String:
 		"• Tiempo jugado: %s\n" +
 		"• Oro acumulado: %s\n" +
 		"• Ciclo de contratos: %d\n" +
-		"• Vida base: %d/%d\n" +
-		"• Atributo principal: %s (+%d)\n\n" +
+		"• Vida base: %d/%d\n\n" +
 		"Haz clic para continuar la aventura."
 	) % [
 		slot_id,
@@ -263,9 +248,7 @@ func _get_slot_summary(slot_id: int) -> String:
 		_format_thousands(int(gold)),
 		contracts,
 		s_hp,
-		StatBalance.PLAYER_MAX_HP,
-		max_stat_name,
-		max_stat_val
+		StatBalance.PLAYER_MAX_HP
 	]
 
 

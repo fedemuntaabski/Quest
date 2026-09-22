@@ -31,69 +31,135 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="StatsHUD" type="PanelContainer" parent="Control"]
-layout_mode = 0
-offset_left = 18.0
-offset_top = 82.0
-offset_right = 300.0
-offset_bottom = 200.0
+[node name="StatBarAnchor" type="Control" parent="Control"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -84.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="StatBarCenter" type="CenterContainer" parent="Control/StatBarAnchor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StatBarPanel" type="PanelContainer" parent="Control/StatBarAnchor/StatBarCenter"]
+layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat_panel")
 
-[node name="MarginContainer" type="MarginContainer" parent="Control/StatsHUD"]
+[node name="MarginContainer" type="MarginContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
 
-[node name="StatPanelUI" type="VBoxContainer" parent="Control/StatsHUD/MarginContainer"]
+[node name="StatPanelUI" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 24
 script = ExtResource("3_nysna")
 
-[node name="StatRowHP" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI"]
+[node name="ChipHP" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
 layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 8
+mouse_filter = 0
+theme_override_constants/separation = 6
 
-[node name="IconHP" type="Control" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowHP"]
-custom_minimum_size = Vector2(30, 30)
+[node name="IconHP" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipHP"]
+custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_stat_icon")
 
-[node name="HPBar" type="ProgressBar" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowHP"]
-custom_minimum_size = Vector2(140, 18)
+[node name="LabelHP" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipHP"]
 layout_mode = 2
-show_percentage = false
+theme_override_font_sizes/font_size = 22
+text = "20/20"
 
-[node name="LabelHP" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowHP"]
+[node name="ChipIndustry" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "HP 20/20"
+mouse_filter = 0
+theme_override_constants/separation = 6
 
-[node name="StatRowAP" type="HBoxContainer" parent="Control/StatsHUD/MarginContainer/StatPanelUI"]
+[node name="IconIndustry" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipIndustry"]
+custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
+script = ExtResource("2_stat_icon")
+icon_type = "industry"
 
-[node name="LabelAP" type="Label" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowAP"]
+[node name="LabelIndustry" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipIndustry"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "AP 2/2"
+theme_override_font_sizes/font_size = 22
+text = "0"
 
-[node name="EndTurnButton" type="Button" parent="Control/StatsHUD/MarginContainer/StatPanelUI/StatRowAP"]
-custom_minimum_size = Vector2(96, 26)
+[node name="ChipFood" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
 layout_mode = 2
-text = "Pasar Turno"
+mouse_filter = 0
+theme_override_constants/separation = 6
+
+[node name="IconFood" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipFood"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "food"
+
+[node name="LabelFood" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipFood"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "0"
+
+[node name="ChipScience" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
+layout_mode = 2
+mouse_filter = 0
+theme_override_constants/separation = 6
+
+[node name="IconScience" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipScience"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "science"
+
+[node name="LabelScience" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipScience"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "0"
+
+[node name="ChipDust" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
+layout_mode = 2
+mouse_filter = 0
+theme_override_constants/separation = 6
+
+[node name="IconDust" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipDust"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "dust"
+
+[node name="LabelDust" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipDust"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "0"
 
 [node name="StatTooltip" type="PanelContainer" parent="Control"]
 z_index = 300
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 0
+grow_vertical = 0
 mouse_filter = 2
 visible = false
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tooltip")

@@ -13,7 +13,6 @@ signal hp_changed(current, max)
 signal died
 signal stats_changed
 signal potion_used(heal_amount: int, remaining: int)
-signal ap_changed(current, max)
 
 # -------------------------
 # HEALTH
@@ -22,107 +21,14 @@ var max_hp: int = StatBalance.PLAYER_BASE_HP
 var current_hp: int = StatBalance.PLAYER_BASE_HP
 
 # -------------------------
-# ACTION POINTS (AP)
-# -------------------------
-var max_ap: int = 2
-var current_ap: int = 2
-var move_range_per_ap: int = 3
-
-# -------------------------
-# CORE STATS (BASE)
-# -------------------------
-var strength: int = 1
-var magic: int = 1
-var dexterity: int = 1
-
-# -------------------------
-# PERMANENT MODIFIERS
-# -------------------------
-var strength_mod: int = 0
-var magic_mod: int = 0
-var dexterity_mod: int = 0
-
-# -------------------------
-# RUNTIME MODIFIER TRACKING
-# -------------------------
-# -------------------------
-# MODIFIER STACKS
-# -------------------------
-var strength_stack: ModifierStack = null
-var magic_stack: ModifierStack = null
-var dexterity_stack: ModifierStack = null
-
-# -------------------------
 # RESET
 # -------------------------
 func reset_modifiers() -> void:
-	strength_mod = 0
-	magic_mod = 0
-	dexterity_mod = 0
-
 	max_hp = StatBalance.PLAYER_BASE_HP
 	current_hp = min(current_hp, max_hp)
 
-	if strength_stack != null:
-		strength_stack.permanent_mod = 0
-
-	if magic_stack != null:
-		magic_stack.permanent_mod = 0
-
-	if dexterity_stack != null:
-		dexterity_stack.permanent_mod = 0
-
 	hp_changed.emit(current_hp, max_hp)
 	stats_changed.emit()
-
-func reset_runtime_modifiers() -> void:
-	if strength_stack != null:
-		strength_stack.clear_runtime_modifiers()
-
-	if magic_stack != null:
-		magic_stack.clear_runtime_modifiers()
-
-	if dexterity_stack != null:
-		dexterity_stack.clear_runtime_modifiers()
-
-	stats_changed.emit()
-
-# -------------------------
-# TOTAL STATS
-# -------------------------
-func get_total_stat(stat_key: String, fallback_key: String = "strength") -> int:
-	match stat_key.to_lower():
-		"strength":
-			return get_total_strength()
-
-		"magic":
-			return get_total_magic()
-
-		"dexterity":
-			return get_total_dexterity()
-
-		_:
-			match fallback_key.to_lower():
-				"magic":
-					return get_total_magic()
-
-				"dexterity":
-					return get_total_dexterity()
-
-				_:
-					return get_total_strength()
-
-func get_total_strength() -> int:
-	_ensure_stacks()
-	return strength_stack.get_total()
-
-func get_total_magic() -> int:
-	_ensure_stacks()
-	return magic_stack.get_total()
-
-func get_total_dexterity() -> int:
-	_ensure_stacks()
-	return dexterity_stack.get_total()
 
 # -------------------------
 # HEALTH SYSTEM
@@ -160,49 +66,12 @@ func is_alive() -> bool:
 	return current_hp > 0
 
 # -------------------------
-# ACTION POINTS (AP)
-# -------------------------
-func refill_ap() -> void:
-	current_ap = max_ap
-	ap_changed.emit(current_ap, max_ap)
-
-func spend_ap(amount: int = 1) -> bool:
-	if amount <= 0:
-		return true
-	if current_ap < amount:
-		return false
-	current_ap -= amount
-	ap_changed.emit(current_ap, max_ap)
-	return true
-
-func has_ap(amount: int = 1) -> bool:
-	return current_ap >= amount
-
-# -------------------------
 # PERMANENT MODIFIERS
 # -------------------------
 func apply_modifier(stat: String, value: int) -> void:
 	var stat_key := stat.to_lower()
 
 	match stat_key:
-		"strength":
-			strength_mod += value
-
-			if strength_stack != null:
-				strength_stack.permanent_mod = strength_mod
-
-		"magic":
-			magic_mod += value
-
-			if magic_stack != null:
-				magic_stack.permanent_mod = magic_mod
-
-		"dexterity":
-			dexterity_mod += value
-
-			if dexterity_stack != null:
-				dexterity_stack.permanent_mod = dexterity_mod
-
 		"hp":
 			var hp_state := StatBalance.apply_hp_delta(max_hp, current_hp, value)
 
@@ -216,107 +85,3 @@ func apply_modifier(stat: String, value: int) -> void:
 			return
 
 	stats_changed.emit()
-
-# -------------------------
-# RUNTIME MODIFIERS
-# -------------------------
-func apply_runtime_modifier(
-	stat: String,
-	value: int,
-	duration_turns: int = 1,
-	source: String = ""
-) -> String:
-
-	var stat_key := stat.to_lower()
-
-	_ensure_stacks()
-
-	var stack: ModifierStack = null
-
-	match stat_key:
-		"strength":
-			stack = strength_stack
-
-		"magic":
-			stack = magic_stack
-
-		"dexterity":
-			stack = dexterity_stack
-
-		_:
-			push_warning("Unknown runtime stat: %s" % stat_key)
-			return ""
-
-	var modifier_id := stack.add_runtime_modifier(
-		value,
-		duration_turns,
-		source
-	)
-
-	stats_changed.emit()
-
-	return modifier_id
-
-func process_runtime_modifiers_turn_start() -> Dictionary:
-	return process_runtime_modifiers_turn_end()
-
-func process_runtime_modifiers_turn_end() -> Dictionary:
-	var result := {
-		"changed": false,
-		"expired": []
-	}
-
-	_ensure_stacks()
-
-	var changed := false
-
-	var stacks := {
-		"strength": strength_stack,
-		"magic": magic_stack,
-		"dexterity": dexterity_stack
-	}
-
-	for stat_key in stacks.keys():
-		var stack: ModifierStack = stacks[stat_key]
-
-		if stack == null:
-			continue
-
-		var expired = stack.tick_turn_end()
-
-		if expired.is_empty():
-			continue
-
-		changed = true
-
-		for entry in expired:
-			var payload = entry.duplicate(true)
-			payload["stat"] = stat_key
-			result["expired"].append(payload)
-
-	if changed:
-		result["changed"] = true
-		stats_changed.emit()
-
-	return result
-
-# -------------------------
-# STACK INITIALIZATION
-# -------------------------
-func _ensure_stacks() -> void:
-	if strength_stack == null:
-		strength_stack = ModifierStack.new(strength)
-
-	if magic_stack == null:
-		magic_stack = ModifierStack.new(magic)
-
-	if dexterity_stack == null:
-		dexterity_stack = ModifierStack.new(dexterity)
-
-	strength_stack.base_value = strength
-	magic_stack.base_value = magic
-	dexterity_stack.base_value = dexterity
-
-	strength_stack.permanent_mod = strength_mod
-	magic_stack.permanent_mod = magic_mod
-	dexterity_stack.permanent_mod = dexterity_mod

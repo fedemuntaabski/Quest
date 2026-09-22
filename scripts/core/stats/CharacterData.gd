@@ -8,13 +8,12 @@ class_name CharacterData
 @export var display_name: String = "Hero"
 @export var description: String = ""
 @export var portrait: Texture2D = null
+@export var profile_bg: Texture2D = null
 
 @export var base_hp: int = 20
-@export var base_str: int = 1
-@export var base_mag: int = 1
-@export var base_dex: int = 1
 
-@export var base_ap: int = 2
-@export var move_range_per_ap: int = 3
+@export var passive_ability_name: String = ""
+@export var passive_ability_desc: String = ""
+@export var active_ability_name: String = ""
 
 @export var sprite_frames: SpriteFrames = null

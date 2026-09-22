@@ -4,8 +4,9 @@
 [ext_resource type="PackedScene" uid="uid://h3720oxsybma" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
 [ext_resource type="Script" path="res://scripts/world/FloorGenerator.gd" id="6_floor_generator"]
 [ext_resource type="TileSet" path="res://resources/tileset/placeholder_tileset.tres" id="7_floor_tileset"]
-[ext_resource type="TileSet" path="res://resources/tileset/highlight_tileset.tres" id="8_highlight_tileset"]
 [ext_resource type="Script" path="res://scripts/core/movement/PlayerActionController.gd" id="9_player_action_controller"]
+[ext_resource type="PackedScene" path="res://scenes/Door.tscn" id="10_door"]
+[ext_resource type="Script" path="res://scripts/world/RoomManager.gd" id="11_room_manager"]
 
 [node name="Main2d" type="Node2D"]
 script = ExtResource("4_main2d_script")
@@ -15,21 +16,37 @@ z_index = -10
 tile_set = ExtResource("7_floor_tileset")
 script = ExtResource("6_floor_generator")
 
-[node name="Highlight" type="TileMapLayer" parent="."]
-z_index = -5
-tile_set = ExtResource("8_highlight_tileset")
+[node name="RoomManager" type="Node2D" parent="."]
+script = ExtResource("11_room_manager")
 
 [node name="PlayerActionController" type="Node2D" parent="."]
 script = ExtResource("9_player_action_controller")
 
-[node name="ApLabel" type="Label" parent="PlayerActionController"]
-visible = false
-z_index = 50
-theme_override_font_sizes/font_size = 18
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
-text = "-1 AP"
+[node name="Doors" type="Node2D" parent="."]
+
+[node name="DoorHub" parent="Doors" instance=ExtResource("10_door")]
+door_id = "door_hub"
+target_room_id = "hub"
+from_zone_id = "start_room"
+cell = Vector2i(6, 9)
+
+[node name="DoorNorth" parent="Doors" instance=ExtResource("10_door")]
+door_id = "door_north"
+target_room_id = "north"
+from_zone_id = "hub_room"
+cell = Vector2i(12, 6)
+
+[node name="DoorEast" parent="Doors" instance=ExtResource("10_door")]
+door_id = "door_east"
+target_room_id = "east"
+from_zone_id = "hub_room"
+cell = Vector2i(15, 9)
+
+[node name="DoorVault" parent="Doors" instance=ExtResource("10_door")]
+door_id = "door_vault"
+target_room_id = "vault"
+from_zone_id = "east_room"
+cell = Vector2i(21, 6)
 
 [node name="PauseMenu" parent="." instance=ExtResource("5_pause_menu")]
 

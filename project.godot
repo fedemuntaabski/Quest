@@ -27,6 +27,7 @@ ThemeManager="*res://scripts/core/theme/ThemeManager.gd"
 SettingsManager="*res://scripts/managers/SettingsManager.gd"
 FPSOverlay="*res://scripts/ui/overlays/FPSOverlay.gd"
 SteamManager="*res://scripts/network/SteamManager.gd"
+ResourceManager="*res://scripts/managers/ResourceManager.gd"
 
 [debug]
 

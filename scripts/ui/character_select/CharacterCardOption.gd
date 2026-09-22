@@ -9,8 +9,8 @@ signal selected(character_id: String)
 @onready var name_label: Label = $MarginContainer/VBoxContainer/NameLabel
 @onready var portrait_rect: TextureRect = $MarginContainer/VBoxContainer/PortraitRect
 @onready var role_label: Label = $MarginContainer/VBoxContainer/RoleLabel
-@onready var ap_label: Label = $MarginContainer/VBoxContainer/APBadgeCenter/APBadge/APLabel
 @onready var stats_label: Label = $MarginContainer/VBoxContainer/StatsLabel
+@onready var ability_label: Label = $MarginContainer/VBoxContainer/AbilityLabel
 @onready var select_button: Button = $MarginContainer/VBoxContainer/SelectButton
 
 var _data: CharacterData = null
@@ -33,8 +33,6 @@ func _ready() -> void:
 		mouse_entered.connect(_on_mouse_entered)
 	if not mouse_exited.is_connected(_on_mouse_exited):
 		mouse_exited.connect(_on_mouse_exited)
-	if ap_label and ap_label.get_parent():
-		ap_label.get_parent().add_theme_stylebox_override("panel", ThemeManager.build_ap_badge_style())
 	_apply_visual_state()
 
 
@@ -51,12 +49,10 @@ func setup(data: CharacterData) -> void:
 		portrait_rect.texture = data.portrait
 	if role_label:
 		role_label.text = data.description
-	if ap_label:
-		ap_label.text = "AP %d" % data.base_ap
 	if stats_label:
-		stats_label.text = "HP %d · STR %d · MAG %d · DEX %d\nMovimiento %d/AP" % [
-			data.base_hp, data.base_str, data.base_mag, data.base_dex, data.move_range_per_ap
-		]
+		stats_label.text = "HP %d" % data.base_hp
+	if ability_label:
+		ability_label.text = "%s\n%s" % [data.passive_ability_name, data.passive_ability_desc]
 
 
 func get_character_id() -> String:

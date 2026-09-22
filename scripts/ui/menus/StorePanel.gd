@@ -4,10 +4,7 @@ class_name StorePanel
 const StatBalanceScript = preload("res://scripts/core/stats/StatBalance.gd")
 
 const UPGRADES = {
-	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+2 Vida maxima ", "value": 2},
-	"str": {"stat": "strength", "label": "Fuerza", "effect": "+1 Fuerza maxima", "value": 1},
-	"mag": {"stat": "magic", "label": "Magia", "effect": "+1 Magia Maxima", "value": 1},
-	"dex": {"stat": "dexterity", "label": "Agilidad", "effect": "+1 Agilidad Maxima", "value": 1}
+	"hp": {"stat": "hp", "label": "Vitalidad", "effect": "+2 Vida maxima ", "value": 2}
 }
 
 @export var player_stats: PlayerStats
@@ -22,17 +19,11 @@ const UPGRADES = {
 @onready var store_card: Panel = %StoreCard
 
 @onready var upgrade_cards: Array[StoreUpgradeCard] = [
-	%UpgradeHPCard,
-	%UpgradeSTRCard,
-	%UpgradeMAGCard,
-	%UpgradeDEXCard
+	%UpgradeHPCard
 ]
 
 const STAT_COLORS: Dictionary = {
 	"hp": QuestPalette.CARD_VITALITY,
-	"str": QuestPalette.CARD_STRENGTH,
-	"mag": QuestPalette.CARD_MAGIC,
-	"dex": QuestPalette.CARD_AGILITY,
 }
 
 var _error_message_timer: float = 0.0
@@ -49,7 +40,7 @@ func _on_base_ready() -> void:
 
 	connect_button(store_back_button, _on_back_pressed)
 
-	var stats: Array[String] = ["hp", "str", "mag", "dex"]
+	var stats: Array[String] = ["hp"]
 	for i in upgrade_cards.size():
 		var stat: String = stats[i]
 		var card: StoreUpgradeCard = upgrade_cards[i]
@@ -113,7 +104,7 @@ func _update_store() -> void:
 	if _error_message_timer > 0 and _error_message != "":
 		gold_label.text = "%s - %s" % [gold_label.text, _error_message]
 
-	var stats: Array[String] = ["hp", "str", "mag", "dex"]
+	var stats: Array[String] = ["hp"]
 	for i in upgrade_cards.size():
 		var key: String = stats[i]
 		var config: Dictionary = UPGRADES.get(key, {})

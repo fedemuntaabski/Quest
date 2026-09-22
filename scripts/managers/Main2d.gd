@@ -1,20 +1,52 @@
 extends Node2D
 
 # Main2d: minimal gameplay scaffold.
-# Spawns the selected hero (real stats/AP from SaveManager/PlayerStats) into
-# an empty test grid, drives a single-actor TurnManager loop, and wires the
-# pause/death overlays. No dungeon, combat or card systems.
+# Spawns the selected hero (HP-only stats from SaveManager/PlayerStats) into
+# a static room-graph test map (RoomManager), drives the DoorTurnSystem stub
+# (global turn advances on door-open, ticks ResourceManager, reveals rooms),
+# and wires the pause/death overlays. No combat, cards, or real enemy/dungeon-
+# generation systems.
 
 const PLAYER_SCENE := preload("res://scenes/Player.tscn")
-const SPAWN_CELL := Vector2i(1, 1)
+const SPAWN_ZONE_ID := "start_room"
+
+## Static test layout: 5 rooms + 4 corridors, grouped into 5 reveal groups.
+## Rects are in cell space (tile = 64px, read from the Floor tileset at
+## runtime); "group" is the DoorTurnSystem room_id that reveals this zone.
+const LAYOUT := {
+	"zones": {
+		"start_room":  {"kind": "room",     "pos": Vector2i(1, 7),  "size": Vector2i(5, 5), "group": "start"},
+		"corr_hub":    {"kind": "corridor", "pos": Vector2i(7, 9),  "size": Vector2i(3, 1), "group": "hub"},
+		"hub_room":    {"kind": "room",     "pos": Vector2i(10, 7), "size": Vector2i(5, 5), "group": "hub"},
+		"corr_north":  {"kind": "corridor", "pos": Vector2i(12, 3), "size": Vector2i(1, 3), "group": "north"},
+		"north_room":  {"kind": "room",     "pos": Vector2i(10, 0), "size": Vector2i(5, 3), "group": "north"},
+		"corr_east":   {"kind": "corridor", "pos": Vector2i(16, 9), "size": Vector2i(3, 1), "group": "east"},
+		"east_room":   {"kind": "room",     "pos": Vector2i(19, 7), "size": Vector2i(5, 5), "group": "east"},
+		"corr_vault":  {"kind": "corridor", "pos": Vector2i(21, 3), "size": Vector2i(1, 3), "group": "vault"},
+		"vault_room":  {"kind": "room",     "pos": Vector2i(19, 0), "size": Vector2i(5, 3), "group": "vault"},
+	},
+	"connections": [
+		["start_room", "corr_hub"], ["corr_hub", "hub_room"],
+		["hub_room", "corr_north"], ["corr_north", "north_room"],
+		["hub_room", "corr_east"], ["corr_east", "east_room"],
+		["east_room", "corr_vault"], ["corr_vault", "vault_room"],
+	],
+	"groups": {
+		"start": {"zones": ["start_room"], "visited": true},
+		"hub":   {"zones": ["corr_hub", "hub_room"], "visited": false},
+		"north": {"zones": ["corr_north", "north_room"], "visited": false},
+		"east":  {"zones": ["corr_east", "east_room"], "visited": false},
+		"vault": {"zones": ["corr_vault", "vault_room"], "visited": false},
+	},
+}
 
 # ─────────────────────────────────────────────
 # NODES
 # ─────────────────────────────────────────────
 @onready var floor_layer: TileMapLayer = $Floor
-@onready var highlight_layer: TileMapLayer = $Highlight
+@onready var room_manager: RoomManager = $RoomManager
 @onready var player_action_controller: PlayerActionController = $PlayerActionController
-@onready var ap_label: Label = $PlayerActionController/ApLabel
+@onready var doors_root: Node2D = $Doors
 @onready var pause_menu: PauseMenu = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
 
@@ -24,7 +56,7 @@ const SPAWN_CELL := Vector2i(1, 1)
 
 var game_state_manager: GameStateManager
 var player: Player
-var turn_manager: TurnManager
+var door_turn_system: DoorTurnSystem
 
 # ─────────────────────────────────────────────
 # STATE
@@ -47,8 +79,10 @@ func _ready() -> void:
 	active_character_id = save_mgr.get_selected_character_id() if save_mgr else CharacterDatabase.get_default_id()
 
 	_ensure_game_state_manager()
+	_setup_door_turn_system()
+	_setup_room_manager()
+	_register_groups_and_doors()
 	_spawn_player()
-	_setup_turn_manager()
 	_setup_player_action_controller()
 	_connect_signals()
 
@@ -69,19 +103,47 @@ func _spawn_player() -> void:
 	player.name = "Player"
 	player.configure(character_data)
 	add_child(player)
-	player.set_grid_position(SPAWN_CELL, floor_layer)
-	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned character '%s' at %s" % [active_character_id, SPAWN_CELL])
+	player.set_zone(SPAWN_ZONE_ID, room_manager.get_center(SPAWN_ZONE_ID), floor_layer)
+	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned character '%s' at zone '%s'" % [active_character_id, SPAWN_ZONE_ID])
 
-func _setup_turn_manager() -> void:
-	turn_manager = TurnManager.new()
-	turn_manager.name = "TurnManager"
-	add_child(turn_manager)
-	turn_manager.register_actor(player)
-	turn_manager.start()
+func _setup_door_turn_system() -> void:
+	door_turn_system = DoorTurnSystem.new()
+	door_turn_system.name = "DoorTurnSystem"
+	add_child(door_turn_system)
+	door_turn_system.room_revealed.connect(_on_room_revealed)
+
+func _setup_room_manager() -> void:
+	room_manager.setup(floor_layer, door_turn_system)
+	room_manager.build_from_layout(LAYOUT)
+
+func _register_groups_and_doors() -> void:
+	var groups_def: Dictionary = LAYOUT["groups"]
+	for group_id in groups_def.keys():
+		var group_def: Dictionary = groups_def[group_id]
+		door_turn_system.register_room(group_id, room_manager.get_group_cells(group_id), group_def.get("visited", false))
+
+	for child in doors_root.get_children():
+		room_manager.register_door(child as Door)
+
+	floor_layer.fill_cells(room_manager.get_group_cells("start"))
+	room_manager.on_group_revealed("start")
+
+func _on_room_revealed(group_id: String, cells: Array[Vector2i]) -> void:
+	floor_layer.fill_cells(cells)
+
+	var door := room_manager.get_door_for_group(group_id)
+	if door:
+		var door_cell: Array[Vector2i] = [door.cell]
+		floor_layer.fill_cells(door_cell)
+
+	room_manager.on_group_revealed(group_id)
+
+	if player_action_controller:
+		player_action_controller.refresh_zones()
 
 func _setup_player_action_controller() -> void:
 	if player_action_controller:
-		player_action_controller.setup(player, floor_layer, highlight_layer, ap_label, turn_manager)
+		player_action_controller.setup(player, floor_layer, room_manager, door_turn_system)
 
 # ─────────────────────────────────────────────
 # SIGNALS
@@ -122,8 +184,6 @@ func _on_player_died() -> void:
 	if game_state_manager:
 		game_state_manager.request_death()
 	else:
-		if turn_manager:
-			turn_manager.stop()
 		if pause_menu:
 			pause_menu.close()
 		get_tree().paused = true

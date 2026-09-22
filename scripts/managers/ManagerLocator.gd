@@ -39,6 +39,10 @@ static func get_steam_manager() -> Node:
 	return get_autoload("SteamManager")
 
 
+static func get_resource_manager() -> ResourceManager:
+	return get_autoload("ResourceManager") as ResourceManager
+
+
 static func get_game_state_manager() -> GameStateManager:
 	var ml = Engine.get_main_loop()
 	if ml and ml is SceneTree:
@@ -50,6 +54,13 @@ static func get_main_orchestrator() -> Main:
 	var ml = Engine.get_main_loop()
 	if ml and ml is SceneTree:
 		return ml.get_first_node_in_group("main_orchestrator") as Main
+	return null
+
+
+static func get_room_manager() -> RoomManager:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("room_manager") as RoomManager
 	return null
 
 

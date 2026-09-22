@@ -5,7 +5,7 @@ class_name GameStateManager
 ## Responsibilities:
 ## - Represent high-level modes (ACTIVE, PAUSED, DEAD).
 ## - Provide `can_process_*` helpers used throughout to pause game logic.
-## - Emit state transition signals so UI and orchestration (Main2d, TurnManager)
+## - Emit state transition signals so UI and orchestration (Main2d, DoorTurnSystem)
 ##   can react without tight coupling.
 
 enum State {

@@ -1,12 +1,15 @@
-extends Control
+extends HBoxContainer
 class_name StatPanelUI
 
-const HP_FORMAT := "HP %d/%d"
-const AP_FORMAT := "AP %d/%d"
+const HP_FORMAT := "%d/%d"
+const RESOURCE_FORMAT := "%d"
 
-@onready var label_hp: Label = $StatRowHP/LabelHP
-@onready var hp_bar: ProgressBar = $StatRowHP/HPBar
-@onready var label_ap: Label = $StatRowAP/LabelAP
+@onready var label_hp: Label = $ChipHP/LabelHP
+
+@onready var label_industry: Label = $ChipIndustry/LabelIndustry
+@onready var label_food: Label = $ChipFood/LabelFood
+@onready var label_science: Label = $ChipScience/LabelScience
+@onready var label_dust: Label = $ChipDust/LabelDust
 
 
 func update_stats(stats: CharacterStats) -> void:
@@ -16,11 +19,6 @@ func update_stats(stats: CharacterStats) -> void:
 	update_hp(
 		stats.current_hp,
 		stats.max_hp
-	)
-
-	update_ap(
-		stats.current_ap,
-		stats.max_ap
 	)
 
 
@@ -34,20 +32,19 @@ func update_hp(
 		HP_FORMAT % [current_hp, max_hp]
 	)
 
-	if hp_bar:
-		hp_bar.max_value = max_hp
-		hp_bar.value = current_hp
 
+func update_resource(key: String, amount: int) -> void:
+	var text := RESOURCE_FORMAT % amount
 
-func update_ap(
-	current_ap: int,
-	max_ap: int
-) -> void:
-
-	_set_label_text(
-		label_ap,
-		AP_FORMAT % [current_ap, max_ap]
-	)
+	match key:
+		"industry":
+			_set_label_text(label_industry, text)
+		"food":
+			_set_label_text(label_food, text)
+		"science":
+			_set_label_text(label_science, text)
+		"dust":
+			_set_label_text(label_dust, text)
 
 
 func _set_label_text(

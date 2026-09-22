@@ -1,14 +1,17 @@
 extends Node2D
 class_name Player
 
-## Player: test-scene actor. Owns a CharacterStats component, a grid cell
-## position, and participates in TurnManager's turn loop.
+## Player: test-scene actor. Owns a CharacterStats component and a grid cell
+## position. Moves freely — no turn/AP gating.
 
 @onready var stats: CharacterStats = $Stats
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 
-var turn_manager: TurnManager
 var character_data: CharacterData = null
+var current_zone_id: String = ""
+
+## grid_pos is the cell under the hero's world position — debug/logging only.
+## Movement, door access and reachability all key off current_zone_id.
 var grid_pos: Vector2i = Vector2i.ZERO
 
 
@@ -39,12 +42,11 @@ func set_grid_position(cell: Vector2i, tilemap: TileMapLayer) -> void:
 	global_position = GridUtils.cell_to_world(tilemap, cell)
 
 
-func begin_turn(tm: TurnManager) -> void:
-	turn_manager = tm
+func set_zone(zone_id: String, center: Vector2, tilemap: TileMapLayer) -> void:
+	current_zone_id = zone_id
+	global_position = center
+	grid_pos = GridUtils.world_to_cell(tilemap, center)
 
-func process_turn_end() -> void:
-	if stats:
-		stats.reset_runtime_modifiers()
 
 func can_accept_input() -> bool:
-	return stats != null and stats.has_ap()
+	return stats != null and stats.is_alive()
