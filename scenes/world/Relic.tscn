@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/Relic.gd" id="1_relic_script"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_relic"]
+radius = 18.0
+
+[node name="Relic" type="Area2D"]
+script = ExtResource("1_relic_script")
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+color = Color(0.61, 0.46, 0.74, 1)
+polygon = PackedVector2Array(0, -18, 15, 0, 0, 18, -15, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_relic")

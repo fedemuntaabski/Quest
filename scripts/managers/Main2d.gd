@@ -8,6 +8,7 @@ extends Node2D
 # generation systems.
 
 const PLAYER_SCENE := preload("res://scenes/Player.tscn")
+const RELIC_SCENE := preload("res://scenes/world/Relic.tscn")
 const SPAWN_ZONE_ID := "start_room"
 
 ## Static test layout: 5 rooms + 4 corridors, grouped into 5 reveal groups.
@@ -23,7 +24,7 @@ const LAYOUT := {
 		"corr_east":   {"kind": "corridor", "pos": Vector2i(16, 9), "size": Vector2i(3, 1), "group": "east"},
 		"east_room":   {"kind": "room",     "pos": Vector2i(19, 7), "size": Vector2i(5, 5), "group": "east"},
 		"corr_vault":  {"kind": "corridor", "pos": Vector2i(21, 3), "size": Vector2i(1, 3), "group": "vault"},
-		"vault_room":  {"kind": "room",     "pos": Vector2i(19, 0), "size": Vector2i(5, 3), "group": "vault"},
+		"vault_room":  {"kind": "room",     "pos": Vector2i(19, 0), "size": Vector2i(5, 3), "group": "vault", "is_exit_room": true},
 	},
 	"connections": [
 		["start_room", "corr_hub"], ["corr_hub", "hub_room"],
@@ -49,19 +50,30 @@ const LAYOUT := {
 @onready var doors_root: Node2D = $Doors
 @onready var pause_menu: PauseMenu = $PauseMenu
 @onready var death_overlay: CanvasLayer = $DeathOverlay
+@onready var victory_overlay: CanvasLayer = $VictoryOverlay
 
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
 @onready var death_gold_label: Label = $DeathOverlay/CenterContainer/VBoxContainer/GoldLabel
 
+@onready var return_button: Button = $VictoryOverlay/CenterContainer/VBoxContainer/ReturnButton
+@onready var victory_gold_label: Label = $VictoryOverlay/CenterContainer/VBoxContainer/GoldLabel
+
 var game_state_manager: GameStateManager
 var player: Player
 var door_turn_system: DoorTurnSystem
+var room_power_system: RoomPowerSystem
+var module_build_system: ModuleBuildSystem
+var enemy_manager: EnemyManager
+var extraction_manager: ExtractionManager
+var relic: Relic
+var relic_controller: RelicController
 
 # ─────────────────────────────────────────────
 # STATE
 # ─────────────────────────────────────────────
 var death_handler: Main2dDeathHandler
+var victory_handler: Main2dVictoryHandler
 var active_character_id: String = ""
 var _is_dead: bool = false
 var _run_gold_start: int = 0
@@ -75,14 +87,22 @@ func _ready() -> void:
 	death_handler = Main2dDeathHandler.new()
 	death_handler.setup(self, death_overlay, death_gold_label)
 
+	victory_handler = Main2dVictoryHandler.new()
+	victory_handler.setup(self, victory_overlay, victory_gold_label)
+
 	var save_mgr := ManagerLocator.get_save_manager()
 	active_character_id = save_mgr.get_selected_character_id() if save_mgr else CharacterDatabase.get_default_id()
 
 	_ensure_game_state_manager()
 	_setup_door_turn_system()
 	_setup_room_manager()
+	_setup_room_power_system()
+	_setup_module_build_system()
+	_setup_enemy_manager()
+	_setup_extraction_manager()
 	_register_groups_and_doors()
 	_spawn_player()
+	_spawn_relic()
 	_setup_player_action_controller()
 	_connect_signals()
 
@@ -115,6 +135,41 @@ func _setup_door_turn_system() -> void:
 func _setup_room_manager() -> void:
 	room_manager.setup(floor_layer, door_turn_system)
 	room_manager.build_from_layout(LAYOUT)
+
+func _setup_room_power_system() -> void:
+	room_power_system = RoomPowerSystem.new()
+	room_power_system.name = "RoomPowerSystem"
+	add_child(room_power_system)
+	room_power_system.setup(room_manager)
+
+func _setup_module_build_system() -> void:
+	module_build_system = ModuleBuildSystem.new()
+	module_build_system.name = "ModuleBuildSystem"
+	add_child(module_build_system)
+	module_build_system.setup(room_manager)
+
+func _setup_enemy_manager() -> void:
+	enemy_manager = EnemyManager.new()
+	enemy_manager.name = "EnemyManager"
+	add_child(enemy_manager)
+	enemy_manager.setup(room_manager)
+
+func _setup_extraction_manager() -> void:
+	extraction_manager = ExtractionManager.new()
+	extraction_manager.name = "ExtractionManager"
+	add_child(extraction_manager)
+	extraction_manager.setup(room_manager, enemy_manager)
+
+func _spawn_relic() -> void:
+	relic = RELIC_SCENE.instantiate() as Relic
+	relic.name = "Relic"
+	relic.global_position = room_manager.get_center("start_room")
+	add_child(relic)
+
+	relic_controller = RelicController.new()
+	relic_controller.name = "RelicController"
+	add_child(relic_controller)
+	relic_controller.setup(relic, room_manager)
 
 func _register_groups_and_doors() -> void:
 	var groups_def: Dictionary = LAYOUT["groups"]
@@ -164,6 +219,12 @@ func _connect_signals() -> void:
 		if not pause_menu.exit_requested.is_connected(_go_to_main_menu):
 			pause_menu.exit_requested.connect(_go_to_main_menu)
 
+	if return_button and not return_button.pressed.is_connected(_go_to_main_menu):
+		return_button.pressed.connect(_go_to_main_menu)
+
+	if game_state_manager and not game_state_manager.victory_entered.is_connected(_on_victory):
+		game_state_manager.victory_entered.connect(_on_victory)
+
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and not _is_dead:
 		var can_toggle_pause := pause_menu != null \
@@ -190,6 +251,13 @@ func _on_player_died() -> void:
 
 	if death_handler:
 		death_handler.show_death_screen(0, 0, _get_run_gold_earned())
+
+func _on_victory() -> void:
+	if pause_menu:
+		pause_menu.close()
+
+	if victory_handler:
+		victory_handler.show_victory_screen(_get_run_gold_earned())
 
 func _get_run_gold_earned() -> int:
 	var currency := ManagerLocator.get_currency_manager() as CurrencyManager

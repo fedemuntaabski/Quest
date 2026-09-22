@@ -41,6 +41,15 @@ func add_resource(key: String, delta: int) -> void:
 	resource_changed.emit(key, next, delta)
 
 
+func spend_resource(key: String, amount: int) -> bool:
+	if amount <= 0:
+		return true
+	if get_resource(key) < amount:
+		return false
+	add_resource(key, -amount)
+	return true
+
+
 func add_all(industry_delta: int, food_delta: int, science_delta: int, dust_delta: int) -> void:
 	add_resource("industry", industry_delta)
 	add_resource("food", food_delta)

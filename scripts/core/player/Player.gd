@@ -9,6 +9,7 @@ class_name Player
 
 var character_data: CharacterData = null
 var current_zone_id: String = ""
+var is_carrying_relic: bool = false
 
 ## grid_pos is the cell under the hero's world position — debug/logging only.
 ## Movement, door access and reachability all key off current_zone_id.
@@ -50,3 +51,7 @@ func set_zone(zone_id: String, center: Vector2, tilemap: TileMapLayer) -> void:
 
 func can_accept_input() -> bool:
 	return stats != null and stats.is_alive()
+
+
+func pick_up_relic() -> void:
+	is_carrying_relic = true

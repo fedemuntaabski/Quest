@@ -124,6 +124,10 @@ func _move_to_zone(zone_id: String) -> void:
 func _open_group(door: Door) -> void:
 	if door.is_opened():
 		return
+	var extraction := ManagerLocator.get_extraction_manager()
+	if extraction and not extraction.can_open_doors():
+		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: extraction phase active." % door.door_id)
+		return
 	if door.from_zone_id != "" and door.from_zone_id != player.current_zone_id:
 		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: hero is not in '%s'." % [door.door_id, door.from_zone_id])
 		return
@@ -147,7 +151,8 @@ func _run_move(waypoints: Array[Vector2], final_zone_id: String) -> void:
 	if waypoints.is_empty():
 		return
 
-	var action := MoveAction.new(player, waypoints)
+	var speed := MoveAction.DEFAULT_SPEED_PX * (0.75 if player.is_carrying_relic else 1.0)
+	var action := MoveAction.new(player, waypoints, speed)
 	if not action.can_execute():
 		return
 
@@ -160,3 +165,8 @@ func _run_move(waypoints: Array[Vector2], final_zone_id: String) -> void:
 	room_manager.set_current_zone(final_zone_id)
 	_action_in_flight = false
 	refresh_zones()
+
+	if player.is_carrying_relic and room_manager.is_exit_room(final_zone_id):
+		var extraction := ManagerLocator.get_extraction_manager()
+		if extraction:
+			extraction.declare_victory()

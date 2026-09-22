@@ -9,6 +9,8 @@ class_name RoomManager
 signal zone_clicked(zone_id: String)
 signal zone_hovered(zone_id: String)
 signal zone_unhovered(zone_id: String)
+signal energize_requested(zone_id: String)
+signal slot_clicked(zone_id: String, slot: ModuleSlot)
 
 const ZONE_SCENE := preload("res://scenes/RoomZone.tscn")
 const DEFAULT_TILE_SIZE := Vector2(64, 64)
@@ -56,6 +58,7 @@ func build_from_layout(layout: Dictionary) -> void:
 			"center_position": center,
 			"neighbors": [],
 			"group_id": def.get("group", zone_id),
+			"is_exit_room": def.get("is_exit_room", false),
 			"node": null,
 		}
 
@@ -90,6 +93,8 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.clicked.connect(func(z: RoomZone): zone_clicked.emit(z.zone_id))
 	zone.hovered.connect(func(z: RoomZone): zone_hovered.emit(z.zone_id))
 	zone.unhovered.connect(func(z: RoomZone): zone_unhovered.emit(z.zone_id))
+	zone.energize_requested.connect(func(zid: String): energize_requested.emit(zid))
+	zone.slot_clicked.connect(func(zid: String, slot: ModuleSlot): slot_clicked.emit(zid, slot))
 
 	record["node"] = zone
 
@@ -168,6 +173,53 @@ func is_zone_revealed(zone_id: String) -> bool:
 	if door_turn_system == null:
 		return false
 	return door_turn_system.is_room_visited(get_group_id(zone_id))
+
+
+func is_zone_powered(zone_id: String) -> bool:
+	var node: RoomZone = zones.get(zone_id, {}).get("node")
+	return node.is_powered if node else false
+
+
+func set_zone_powered(zone_id: String, v: bool) -> void:
+	var node: RoomZone = zones.get(zone_id, {}).get("node")
+	if node:
+		node.set_powered(v)
+
+
+func is_exit_room(zone_id: String) -> bool:
+	return zones.get(zone_id, {}).get("is_exit_room", false)
+
+
+func get_modules_in_group(group_id: String) -> Array[Module]:
+	var modules: Array[Module] = []
+	for zone_id in (groups.get(group_id, []) as Array):
+		var node: RoomZone = zones.get(zone_id, {}).get("node")
+		if node:
+			modules.append_array(node.get_modules())
+	return modules
+
+
+func get_all_modules() -> Array[Module]:
+	var modules: Array[Module] = []
+	for zone_id in zones.keys():
+		var node: RoomZone = zones[zone_id]["node"]
+		if node:
+			modules.append_array(node.get_modules())
+	return modules
+
+
+## Group ids whose room-kind zone is revealed but not yet powered — the
+## dark-room pool for enemy spawns (extraction ticks and door-open waves).
+func get_unpowered_revealed_room_group_ids() -> Array[String]:
+	var result: Array[String] = []
+	for group_id in groups.keys():
+		for zone_id in (groups[group_id] as Array):
+			if zones.get(zone_id, {}).get("kind", "") != "room":
+				continue
+			if is_zone_revealed(zone_id) and not is_zone_powered(zone_id):
+				result.append(group_id)
+			break
+	return result
 
 
 func are_connected(a_id: String, b_id: String) -> bool:

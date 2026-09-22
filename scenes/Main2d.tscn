@@ -103,3 +103,46 @@ custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Salir"
+
+[node name="VictoryOverlay" type="CanvasLayer" parent="."]
+layer = 100
+visible = false
+
+[node name="ColorRect" type="ColorRect" parent="VictoryOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="CenterContainer" type="CenterContainer" parent="VictoryOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VictoryOverlay/CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="VictoryLabel" type="Label" parent="VictoryOverlay/CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_font_sizes/font_size = 48
+text = "¡Reliquia extraída con éxito!"
+horizontal_alignment = 1
+
+[node name="GoldLabel" type="Label" parent="VictoryOverlay/CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 32
+text = "Oro ganado: 0"
+horizontal_alignment = 1
+
+[node name="ReturnButton" type="Button" parent="VictoryOverlay/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Volver al menú"

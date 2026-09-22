@@ -14,6 +14,8 @@ enum Highlight { NONE, CURRENT, REACHABLE, OPENABLE, BLOCKED }
 const SHAPE_INSET := 6.0
 const OUTLINE_WIDTH := 3.0
 const REVEALED_IDLE_OUTLINE := Color(1, 1, 1, 0.25)
+const POWERED_FILL_COLOR := Color(0.95, 0.78, 0.42, 0.28)
+const POWERED_OUTLINE_COLOR := Color(1.00, 0.88, 0.53, 0.9)
 
 const FILL_COLORS := {
 	Highlight.NONE: Color(1, 1, 1, 0.0),
@@ -30,15 +32,25 @@ const OUTLINE_COLORS := {
 	Highlight.BLOCKED: Color(0.9, 0.25, 0.25, 0.85),
 }
 
+const ENERGY_BUTTON_SCENE := preload("res://scenes/world/EnergyButton.tscn")
+const MODULE_SLOT_SCENE := preload("res://scenes/world/ModuleSlot.tscn")
+const MODULE_SLOT_OFFSETS := [Vector2(0, -24), Vector2(-24, 20), Vector2(24, 20)]
+
+signal energize_requested(zone_id: String)
+signal slot_clicked(zone_id: String, slot: ModuleSlot)
+
 @onready var fill: Polygon2D = $Fill
 @onready var outline: Line2D = $Outline
 @onready var collision: CollisionShape2D = $CollisionShape2D
 
 var zone_id: String = ""
 var kind: String = ""
+var is_powered: bool = false
 
 var _state: int = Highlight.NONE
 var _revealed: bool = false
+var _energy_button: EnergyButton = null
+var _module_slots: Array[ModuleSlot] = []
 
 
 func _ready() -> void:
@@ -68,10 +80,17 @@ func configure(p_zone_id: String, size_px: Vector2, p_kind: String) -> void:
 
 	set_highlight(Highlight.NONE)
 
+	if kind == "room":
+		_energy_button = ENERGY_BUTTON_SCENE.instantiate() as EnergyButton
+		add_child(_energy_button)
+		_energy_button.energy_button_clicked.connect(func(_zid: String): energize_requested.emit(zone_id))
+		_update_energy_button_visibility()
+
 
 func set_revealed(v: bool) -> void:
 	_revealed = v
 	_apply_visual()
+	_update_energy_button_visibility()
 
 
 func is_revealed() -> bool:
@@ -83,7 +102,48 @@ func set_highlight(state: int) -> void:
 	_apply_visual()
 
 
+func set_powered(v: bool) -> void:
+	if is_powered == v:
+		return
+	is_powered = v
+	_apply_visual()
+	_update_energy_button_visibility()
+	if is_powered and _module_slots.is_empty() and kind == "room":
+		_spawn_module_slots()
+
+
+func get_modules() -> Array[Module]:
+	var modules: Array[Module] = []
+	for slot in _module_slots:
+		if not slot.is_empty():
+			modules.append(slot.built_module)
+	return modules
+
+
+func _spawn_module_slots() -> void:
+	var slot_types := [Module.SlotType.MAJOR, Module.SlotType.MINOR, Module.SlotType.MINOR]
+	for i in range(slot_types.size()):
+		var slot := MODULE_SLOT_SCENE.instantiate() as ModuleSlot
+		add_child(slot)
+		slot.position = MODULE_SLOT_OFFSETS[i]
+		slot.configure(zone_id, slot_types[i])
+		slot.slot_clicked.connect(func(s: ModuleSlot): slot_clicked.emit(zone_id, s))
+		_module_slots.append(slot)
+
+
+func _update_energy_button_visibility() -> void:
+	if _energy_button == null:
+		return
+	var should_show := _revealed and not is_powered
+	_energy_button.visible = should_show
+	_energy_button.input_pickable = should_show
+
+
 func _apply_visual() -> void:
+	if _state == Highlight.NONE and is_powered:
+		fill.color = POWERED_FILL_COLOR
+		outline.default_color = POWERED_OUTLINE_COLOR
+		return
 	fill.color = FILL_COLORS.get(_state, FILL_COLORS[Highlight.NONE])
 	outline.default_color = REVEALED_IDLE_OUTLINE if (_state == Highlight.NONE and _revealed) \
 		else OUTLINE_COLORS.get(_state, OUTLINE_COLORS[Highlight.NONE])

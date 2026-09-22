@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/entities/Enemy.gd" id="1_enemy_script"]
+
+[node name="Enemy" type="Node2D"]
+script = ExtResource("1_enemy_script")
+
+[node name="Icon" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -16, 14, 12, -14, 12)
+
+[node name="AiTimer" type="Timer" parent="."]

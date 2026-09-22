@@ -64,6 +64,41 @@ static func get_room_manager() -> RoomManager:
 	return null
 
 
+static func get_player() -> Player:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("player") as Player
+	return null
+
+
+static func get_room_power_system() -> RoomPowerSystem:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("room_power_system") as RoomPowerSystem
+	return null
+
+
+static func get_module_build_system() -> ModuleBuildSystem:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("module_build_system") as ModuleBuildSystem
+	return null
+
+
+static func get_extraction_manager() -> ExtractionManager:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("extraction_manager") as ExtractionManager
+	return null
+
+
+static func get_enemy_manager() -> EnemyManager:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("enemy_manager") as EnemyManager
+	return null
+
+
 static func get_floating_text_manager() -> Node:
 	var ml = Engine.get_main_loop()
 	if not (ml and ml is SceneTree):

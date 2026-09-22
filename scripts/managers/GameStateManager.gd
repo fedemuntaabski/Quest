@@ -11,13 +11,15 @@ class_name GameStateManager
 enum State {
 	ACTIVE,
 	PAUSED,
-	DEAD
+	DEAD,
+	VICTORY
 }
 
 signal state_changed(new_state: State, old_state: State)
 signal pause_requested
 signal resume_requested
 signal death_entered
+signal victory_entered
 
 var current_state: State = State.ACTIVE
 var _previous_state: State = State.ACTIVE
@@ -39,6 +41,9 @@ func is_paused() -> bool:
 
 func is_dead() -> bool:
 	return current_state == State.DEAD
+
+func is_victory() -> bool:
+	return current_state == State.VICTORY
 
 func can_process_input() -> bool:
 	return current_state == State.ACTIVE
@@ -87,6 +92,13 @@ func request_death() -> void:
 		_apply_state_change(State.DEAD, current_state)
 		death_entered.emit()
 
+func request_victory() -> void:
+	if current_state != State.VICTORY:
+		_state_stack.clear()
+		_state_stack.append(State.VICTORY)
+		_apply_state_change(State.VICTORY, current_state)
+		victory_entered.emit()
+
 func toggle_pause() -> void:
 	if current_state == State.ACTIVE:
 		request_pause()
@@ -107,5 +119,5 @@ func _handle_state_change(new_state: State, _old_state: State) -> void:
 	match new_state:
 		State.ACTIVE:
 			get_tree().paused = false
-		State.PAUSED, State.DEAD:
+		State.PAUSED, State.DEAD, State.VICTORY:
 			get_tree().paused = true

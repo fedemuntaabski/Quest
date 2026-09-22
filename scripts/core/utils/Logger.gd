@@ -15,7 +15,11 @@ enum Category {
 	UI,
 	CAMERA,
 	NETWORK,
-	DOOR
+	DOOR,
+	ROOM,
+	MODULE,
+	RELIC,
+	ENEMY
 }
 
 enum Level {
@@ -37,6 +41,10 @@ static var enabled_categories: Dictionary = {
 	Category.CAMERA: true,
 	Category.NETWORK: true,
 	Category.DOOR: true,
+	Category.ROOM: true,
+	Category.MODULE: true,
+	Category.RELIC: true,
+	Category.ENEMY: true,
 }
 
 static var min_level: int = Level.INFO
@@ -65,6 +73,10 @@ static func _category_name(cat: Category) -> String:
 		Category.CAMERA: return "CAMERA"
 		Category.NETWORK: return "NETWORK"
 		Category.DOOR: return "DOOR"
+		Category.ROOM: return "ROOM"
+		Category.MODULE: return "MODULE"
+		Category.RELIC: return "RELIC"
+		Category.ENEMY: return "ENEMY"
 		_: return "UNKNOWN"
 
 static func _level_name(level: int) -> String:
