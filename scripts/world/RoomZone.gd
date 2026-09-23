@@ -181,6 +181,8 @@ func _apply_visual() -> void:
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
+	if not is_visited:
+		return
 	if get_viewport().is_input_handled():
 		return
 	clicked.emit(self)
