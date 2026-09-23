@@ -9,7 +9,7 @@ class_name RoomManager
 signal zone_clicked(zone_id: String)
 signal zone_hovered(zone_id: String)
 signal zone_unhovered(zone_id: String)
-signal energize_requested(zone_id: String)
+signal room_powered(zone_id: String)
 signal slot_clicked(zone_id: String, slot: ModuleSlot)
 
 const ZONE_SCENE := preload("res://scenes/RoomZone.tscn")
@@ -96,7 +96,7 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.clicked.connect(func(z: RoomZone): zone_clicked.emit(z.zone_id))
 	zone.hovered.connect(func(z: RoomZone): zone_hovered.emit(z.zone_id))
 	zone.unhovered.connect(func(z: RoomZone): zone_unhovered.emit(z.zone_id))
-	zone.energize_requested.connect(func(zid: String): energize_requested.emit(zid))
+	zone.powered_up.connect(func(zid: String): room_powered.emit(zid))
 	zone.slot_clicked.connect(func(zid: String, slot: ModuleSlot): slot_clicked.emit(zid, slot))
 
 	record["node"] = zone

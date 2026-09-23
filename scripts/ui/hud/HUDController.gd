@@ -42,8 +42,10 @@ func _ready() -> void:
 	_wire_chip_tooltip(chip_science, TOOLTIP_SCIENCE)
 	_wire_chip_tooltip(chip_dust, TOOLTIP_DUST)
 
-	if stat_tooltip and not stat_tooltip.resized.is_connected(_reposition_tooltip):
-		stat_tooltip.resized.connect(_reposition_tooltip)
+	if stat_tooltip:
+		stat_tooltip.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		if not stat_tooltip.resized.is_connected(_reposition_tooltip):
+			stat_tooltip.resized.connect(_reposition_tooltip)
 
 	var ps := ManagerLocator.get_player_stats()
 	if ps:
@@ -89,7 +91,8 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 		if not stats.hp_changed.is_connected(_on_hp_changed):
 			stats.hp_changed.connect(_on_hp_changed)
 
-	stat_panel.update_stats(stats)
+	if stat_panel:
+		stat_panel.update_stats(stats)
 
 
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:

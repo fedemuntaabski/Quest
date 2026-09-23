@@ -14,8 +14,9 @@ enum Highlight { NONE, CURRENT, REACHABLE, OPENABLE, BLOCKED }
 const SHAPE_INSET := 6.0
 const OUTLINE_WIDTH := 3.0
 const REVEALED_IDLE_OUTLINE := Color(1, 1, 1, 0.25)
-const POWERED_FILL_COLOR := Color(0.95, 0.78, 0.42, 0.28)
-const POWERED_OUTLINE_COLOR := Color(1.00, 0.88, 0.53, 0.9)
+const POWER_COST: int = 10
+const POWERED_FILL_COLOR := Color(1.0, 0.9, 0.5, 0.30)
+const POWERED_OUTLINE_COLOR := Color(1.0, 0.9, 0.5, 0.95)
 
 const FILL_COLORS := {
 	Highlight.NONE: Color(1, 1, 1, 0.0),
@@ -36,7 +37,7 @@ const ENERGY_BUTTON_SCENE := preload("res://scenes/world/EnergyButton.tscn")
 const MODULE_SLOT_SCENE := preload("res://scenes/world/ModuleSlot.tscn")
 const MODULE_SLOT_OFFSETS := [Vector2(0, -24), Vector2(-24, 20), Vector2(24, 20)]
 
-signal energize_requested(zone_id: String)
+signal powered_up(zone_id: String)
 signal slot_clicked(zone_id: String, slot: ModuleSlot)
 
 @onready var fill: Polygon2D = $Fill
@@ -92,7 +93,7 @@ func configure(p_zone_id: String, size_px: Vector2, p_kind: String) -> void:
 	if kind == "room":
 		_energy_button = ENERGY_BUTTON_SCENE.instantiate() as EnergyButton
 		add_child(_energy_button)
-		_energy_button.energy_button_clicked.connect(func(_zid: String): energize_requested.emit(zone_id))
+		_energy_button.energy_button_clicked.connect(func(_zid: String): try_power_up())
 		_update_energy_button_visibility()
 
 	set_visibility(false)
@@ -139,6 +140,22 @@ func set_powered(v: bool) -> void:
 	_update_energy_button_visibility()
 	if is_powered and _module_slots.is_empty() and kind == "room":
 		_spawn_module_slots()
+
+
+## Pays POWER_COST dust to light this room. No-op if already powered.
+func try_power_up() -> void:
+	if is_powered:
+		return
+	var resource_manager := ManagerLocator.get_resource_manager()
+	if resource_manager == null:
+		return
+	if not resource_manager.spend_resource("dust", POWER_COST):
+		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+		if text_mgr:
+			text_mgr.spawn_text(center_position, "Polvo insuficiente", QuestPalette.GOLD_DARK)
+		return
+	set_powered(true)
+	powered_up.emit(zone_id)
 
 
 func get_modules() -> Array[Module]:

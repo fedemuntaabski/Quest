@@ -3,20 +3,13 @@ class_name DoorTurnSystem
 
 ## DoorTurnSystem: minimal DotE-style turn/room stub. The global turn advances
 ## only when a door is opened — reveals the target room (basic fog-of-war),
-## ticks resource production (plus any built Generator modules' bonus), and
+## ticks resource production (in advance_turn; Generator modules' bonus is added in open_room), and
 ## spawns 1-2 enemies in a random unpowered revealed room via EnemyManager.
 
 signal turn_advanced(turn_number: int)
 signal door_opened(target_room_id: String)
 signal room_revealed(room_id: String, cells: Array[Vector2i])
 signal enemy_wave_requested(room_id: String)
-
-const RESOURCE_GAIN_PER_DOOR := {
-	"industry": 2,
-	"food": 2,
-	"science": 2,
-	"dust": 5,
-}
 
 var current_turn: int = 0
 var rooms: Dictionary = {}   # room_id:String -> {"cells": Array[Vector2i], "visited": bool}
@@ -40,6 +33,12 @@ func get_room_cells(room_id: String) -> Array[Vector2i]:
 func advance_turn(target_room_id: String) -> void:
 	current_turn += 1
 	turn_advanced.emit(current_turn)
+
+	var economy := ManagerLocator.get_resource_manager()
+	if economy:
+		economy.process_turn_production()
+		QuestLogger.info(QuestLogger.Category.DOOR, "Turn %d: production tick executed." % current_turn)
+
 	door_opened.emit(target_room_id)
 
 
@@ -65,13 +64,6 @@ func open_room(room_id: String) -> bool:
 	var room_manager := ManagerLocator.get_room_manager()
 
 	if resource_manager:
-		resource_manager.add_all(
-			RESOURCE_GAIN_PER_DOOR["industry"],
-			RESOURCE_GAIN_PER_DOOR["food"],
-			RESOURCE_GAIN_PER_DOOR["science"],
-			RESOURCE_GAIN_PER_DOOR["dust"]
-		)
-
 		if room_manager:
 			var industry_bonus := 0
 			var food_bonus := 0
