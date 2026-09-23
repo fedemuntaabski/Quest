@@ -1,11 +1,11 @@
 extends Area2D
-class_name Relic
+class_name Nexo
 
-## Relic: clickable pickup at the center of the start room. Click plumbing
-## mirrors Door.gd. RelicController owns the pickup rule (must be in
+## Nexo: clickable pickup at the center of the start room. Click plumbing
+## mirrors Door.gd. NexoController owns the pickup rule (must be in
 ## start_room) and kicks off the extraction phase.
 
-signal relic_clicked(relic: Relic)
+signal nexo_clicked(nexo: Nexo)
 
 var _picked_up: bool = false
 
@@ -22,7 +22,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 		return
 	if get_viewport().is_input_handled():
 		return
-	relic_clicked.emit(self)
+	nexo_clicked.emit(self)
 	get_viewport().set_input_as_handled()
 
 

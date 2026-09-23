@@ -151,7 +151,7 @@ func _run_move(waypoints: Array[Vector2], final_zone_id: String) -> void:
 	if waypoints.is_empty():
 		return
 
-	var speed := MoveAction.DEFAULT_SPEED_PX * (0.75 if player.is_carrying_relic else 1.0)
+	var speed := MoveAction.DEFAULT_SPEED_PX * (0.75 if player.is_carrying_nexo else 1.0)
 	var action := MoveAction.new(player, waypoints, speed)
 	if not action.can_execute():
 		return
@@ -166,7 +166,7 @@ func _run_move(waypoints: Array[Vector2], final_zone_id: String) -> void:
 	_action_in_flight = false
 	refresh_zones()
 
-	if player.is_carrying_relic and room_manager.is_exit_room(final_zone_id):
+	if player.is_carrying_nexo and room_manager.is_exit_room(final_zone_id):
 		var extraction := ManagerLocator.get_extraction_manager()
 		if extraction:
 			extraction.declare_victory()

@@ -44,7 +44,7 @@ func start_extraction() -> void:
 	current_phase = Phase.EXTRACTION
 	_spawn_timer.start()
 	phase_changed.emit(current_phase, old_phase)
-	QuestLogger.info(QuestLogger.Category.RELIC, "Extraction phase started.")
+	QuestLogger.info(QuestLogger.Category.NEXO, "Extraction phase started.")
 
 
 func can_open_doors() -> bool:
@@ -57,7 +57,7 @@ func declare_victory() -> void:
 	var gsm := ManagerLocator.get_game_state_manager()
 	if gsm:
 		gsm.request_victory()
-	QuestLogger.info(QuestLogger.Category.RELIC, "Victory: relic reached the exit room.")
+	QuestLogger.info(QuestLogger.Category.NEXO, "Victory: nexo reached the exit room.")
 
 
 func _on_spawn_timeout() -> void:

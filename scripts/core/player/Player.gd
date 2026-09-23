@@ -9,7 +9,7 @@ class_name Player
 
 var character_data: CharacterData = null
 var current_zone_id: String = ""
-var is_carrying_relic: bool = false
+var is_carrying_nexo: bool = false
 
 ## grid_pos is the cell under the hero's world position — debug/logging only.
 ## Movement, door access and reachability all key off current_zone_id.
@@ -53,5 +53,5 @@ func can_accept_input() -> bool:
 	return stats != null and stats.is_alive()
 
 
-func pick_up_relic() -> void:
-	is_carrying_relic = true
+func pick_up_nexo() -> void:
+	is_carrying_nexo = true

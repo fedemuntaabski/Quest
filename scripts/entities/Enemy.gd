@@ -89,7 +89,7 @@ func _on_ai_tick() -> void:
 			await _sapper_tick(room_manager)
 		Variant.HUNTER:
 			var player := ManagerLocator.get_player()
-			if player and player.is_carrying_relic:
+			if player and player.is_carrying_nexo:
 				await _pursue_zone(room_manager, player.current_zone_id)
 
 

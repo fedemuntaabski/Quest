@@ -8,7 +8,7 @@ extends Node2D
 # generation systems.
 
 const PLAYER_SCENE := preload("res://scenes/Player.tscn")
-const RELIC_SCENE := preload("res://scenes/world/Relic.tscn")
+const NEXO_SCENE := preload("res://scenes/world/Nexo.tscn")
 const SPAWN_ZONE_ID := "start_room"
 
 ## Static test layout: 5 rooms + 4 corridors, grouped into 5 reveal groups.
@@ -66,8 +66,8 @@ var room_power_system: RoomPowerSystem
 var module_build_system: ModuleBuildSystem
 var enemy_manager: EnemyManager
 var extraction_manager: ExtractionManager
-var relic: Relic
-var relic_controller: RelicController
+var nexo: Nexo
+var nexo_controller: NexoController
 
 # ─────────────────────────────────────────────
 # STATE
@@ -102,7 +102,7 @@ func _ready() -> void:
 	_setup_extraction_manager()
 	_register_groups_and_doors()
 	_spawn_player()
-	_spawn_relic()
+	_spawn_nexo()
 	_setup_player_action_controller()
 	_connect_signals()
 
@@ -160,16 +160,16 @@ func _setup_extraction_manager() -> void:
 	add_child(extraction_manager)
 	extraction_manager.setup(room_manager, enemy_manager)
 
-func _spawn_relic() -> void:
-	relic = RELIC_SCENE.instantiate() as Relic
-	relic.name = "Relic"
-	relic.global_position = room_manager.get_center("start_room")
-	add_child(relic)
+func _spawn_nexo() -> void:
+	nexo = NEXO_SCENE.instantiate() as Nexo
+	nexo.name = "Nexo"
+	nexo.global_position = room_manager.get_center("start_room")
+	add_child(nexo)
 
-	relic_controller = RelicController.new()
-	relic_controller.name = "RelicController"
-	add_child(relic_controller)
-	relic_controller.setup(relic, room_manager)
+	nexo_controller = NexoController.new()
+	nexo_controller.name = "NexoController"
+	add_child(nexo_controller)
+	nexo_controller.setup(nexo, room_manager)
 
 func _register_groups_and_doors() -> void:
 	var groups_def: Dictionary = LAYOUT["groups"]

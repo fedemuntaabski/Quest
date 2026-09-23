@@ -18,7 +18,7 @@ enum Category {
 	DOOR,
 	ROOM,
 	MODULE,
-	RELIC,
+	NEXO,
 	ENEMY
 }
 
@@ -43,7 +43,7 @@ static var enabled_categories: Dictionary = {
 	Category.DOOR: true,
 	Category.ROOM: true,
 	Category.MODULE: true,
-	Category.RELIC: true,
+	Category.NEXO: true,
 	Category.ENEMY: true,
 }
 
@@ -75,7 +75,7 @@ static func _category_name(cat: Category) -> String:
 		Category.DOOR: return "DOOR"
 		Category.ROOM: return "ROOM"
 		Category.MODULE: return "MODULE"
-		Category.RELIC: return "RELIC"
+		Category.NEXO: return "NEXO"
 		Category.ENEMY: return "ENEMY"
 		_: return "UNKNOWN"
 
