@@ -377,12 +377,21 @@ func clear_highlights(except_zone_id: String = "") -> void:
 		node.set_highlight(RoomZone.Highlight.CURRENT if zone_id == _current_zone_id else RoomZone.Highlight.NONE)
 
 
+## Single reveal path: shows the zone node, marks it visited and paints its
+## floor tiles. Zones stay hidden/inert until this runs.
+func reveal_room(room_id: String) -> void:
+	var node: RoomZone = zones.get(room_id, {}).get("node")
+	if node == null:
+		return
+	node.is_visited = true
+	node.set_revealed(true)
+	if tilemap is FloorGenerator:
+		(tilemap as FloorGenerator).fill_cells(get_cells(room_id))
+
+
 func on_group_revealed(group_id: String) -> void:
 	for zone_id in (groups.get(group_id, []) as Array):
-		var node: RoomZone = zones.get(zone_id, {}).get("node")
-		if node:
-			node.set_revealed(true)
-			node.is_visited = true
+		reveal_room(zone_id)
 	refresh_door_visibility()
 
 

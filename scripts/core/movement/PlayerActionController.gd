@@ -69,15 +69,8 @@ func _classify_zone(zone_id: String) -> int:
 	if player and zone_id == player.current_zone_id:
 		return RoomZone.Highlight.CURRENT
 
-	if room_manager.is_zone_revealed(zone_id):
-		if not room_manager.find_zone_path(player.current_zone_id, zone_id).is_empty():
-			return RoomZone.Highlight.REACHABLE
-		return RoomZone.Highlight.BLOCKED
-
-	var group_id := room_manager.get_group_id(zone_id)
-	var door := room_manager.get_door_for_group(group_id)
-	if door and not door.is_opened() and door.from_zone_id == player.current_zone_id:
-		return RoomZone.Highlight.OPENABLE
+	if not room_manager.find_zone_path(player.current_zone_id, zone_id).is_empty():
+		return RoomZone.Highlight.REACHABLE
 	return RoomZone.Highlight.BLOCKED
 
 
@@ -90,16 +83,9 @@ func _on_zone_clicked(zone_id: String) -> void:
 	if zone_id == player.current_zone_id:
 		return
 
+	# Unrevealed zones are hidden and non-pickable (fog of war); only doors open them.
 	if room_manager.is_zone_revealed(zone_id):
 		await _move_to_zone(zone_id)
-		return
-
-	var group_id := room_manager.get_group_id(zone_id)
-	var door := room_manager.get_door_for_group(group_id)
-	if door == null or door.is_opened():
-		QuestLogger.info(QuestLogger.Category.MAP, "Move rejected: zone '%s' has no openable door." % zone_id)
-		return
-	await _open_group(door)
 
 
 func _on_door_clicked(door: Door) -> void:

@@ -95,11 +95,31 @@ func configure(p_zone_id: String, size_px: Vector2, p_kind: String) -> void:
 		_energy_button.energy_button_clicked.connect(func(_zid: String): energize_requested.emit(zone_id))
 		_update_energy_button_visibility()
 
+	set_visibility(false)
+
 
 func set_revealed(v: bool) -> void:
 	_revealed = v
+	set_visibility(v)
 	_apply_visual()
 	_update_energy_button_visibility()
+
+
+## Fog-of-war switch: hidden zones draw nothing and cannot receive clicks.
+func set_visibility(p_visible: bool) -> void:
+	collision.set_deferred("disabled", not p_visible)
+	input_pickable = p_visible
+	fill.visible = p_visible
+	outline.visible = p_visible
+	for slot in _module_slots:
+		slot.visible = p_visible
+		slot.input_pickable = p_visible
+	if _energy_button != null:
+		if p_visible:
+			_update_energy_button_visibility()
+		else:
+			_energy_button.visible = false
+			_energy_button.input_pickable = false
 
 
 func is_revealed() -> bool:
