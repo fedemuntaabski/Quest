@@ -180,14 +180,10 @@ func _register_groups_and_doors() -> void:
 	for child in doors_root.get_children():
 		room_manager.register_door(child as Door)
 
-	room_manager.on_group_revealed("start")
+	room_manager.refresh_visibility()
+	room_manager.validate_graph()
 
 func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
-	var door := room_manager.get_door_for_group(group_id)
-	if door:
-		var door_cell: Array[Vector2i] = [door.cell]
-		floor_layer.fill_cells(door_cell)
-
 	room_manager.on_group_revealed(group_id)
 
 	if player_action_controller:

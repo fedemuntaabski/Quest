@@ -3,7 +3,10 @@ class_name RoomZone
 
 ## RoomZone: one clickable room or corridor in the room-graph. Replaces the
 ## old per-cell BFS Highlight overlay — hover/selection feedback is drawn
-## directly on this zone's Fill/Outline instead of painting tiles.
+## directly on this zone's Fill/Outline instead of painting tiles. Presentation
+## and input only: graph/geometry lives in RoomManager, lifecycle in DoorTurnSystem.
+## Never queries either: RoomManager pushes `set_shown()`; `_shown` is render
+## state, not the source of truth for discovery.
 
 signal clicked(zone: RoomZone)
 signal hovered(zone: RoomZone)
@@ -48,17 +51,17 @@ var zone_id: String = ""
 var kind: String = ""
 var is_powered: bool = false
 
-## Room-graph node data (Phase 1). `room_id` aliases `zone_id`; `is_visited`
-## mirrors DoorTurnSystem's visited state (synced by RoomManager.on_group_revealed).
+## Room-graph node data. `room_id` aliases `zone_id`. Visited/discovery state
+## is NOT stored here — DoorTurnSystem owns it (query RoomManager.is_zone_revealed).
+## `_shown` below is only what RoomManager last pushed for rendering.
 var room_id: String:
 	get: return zone_id
 	set(v): zone_id = v
 var center_position: Vector2 = Vector2.ZERO
-var is_visited: bool = false
 var connected_doors: Array[Door] = []
 
 var _state: int = Highlight.NONE
-var _revealed: bool = false
+var _shown: bool = false
 var _energy_button: EnergyButton = null
 var _building_slots: Array[BuildingSlot] = []
 @onready var _slots_container: Node2D = $BuildingSlots
@@ -97,18 +100,19 @@ func configure(p_zone_id: String, size_px: Vector2, p_kind: String) -> void:
 		_energy_button.energy_button_clicked.connect(func(_zid: String): try_power_up())
 		_update_energy_button_visibility()
 
-	set_visibility(false)
+	_set_render_visible(false)
 
 
-func set_revealed(v: bool) -> void:
-	_revealed = v
-	set_visibility(v)
+## Pushed by RoomManager.apply_zone_visibility(): show/hide this zone.
+func set_shown(v: bool) -> void:
+	_shown = v
+	_set_render_visible(v)
 	_apply_visual()
 	_update_energy_button_visibility()
 
 
 ## Fog-of-war switch: hidden zones draw nothing and cannot receive clicks.
-func set_visibility(p_visible: bool) -> void:
+func _set_render_visible(p_visible: bool) -> void:
 	collision.set_deferred("disabled", not p_visible)
 	input_pickable = p_visible
 	fill.visible = p_visible
@@ -124,8 +128,8 @@ func set_visibility(p_visible: bool) -> void:
 			_energy_button.input_pickable = false
 
 
-func is_revealed() -> bool:
-	return _revealed
+func is_shown() -> bool:
+	return _shown
 
 
 func set_highlight(state: int) -> void:
@@ -186,7 +190,7 @@ func _spawn_building_slots() -> void:
 func _update_energy_button_visibility() -> void:
 	if _energy_button == null:
 		return
-	var should_show := _revealed and not is_powered
+	var should_show := _shown and not is_powered
 	_energy_button.visible = should_show
 	_energy_button.input_pickable = should_show
 
@@ -197,14 +201,14 @@ func _apply_visual() -> void:
 		outline.default_color = POWERED_OUTLINE_COLOR
 		return
 	fill.color = FILL_COLORS.get(_state, FILL_COLORS[Highlight.NONE])
-	outline.default_color = REVEALED_IDLE_OUTLINE if (_state == Highlight.NONE and _revealed) \
+	outline.default_color = REVEALED_IDLE_OUTLINE if (_state == Highlight.NONE and _shown) \
 		else OUTLINE_COLORS.get(_state, OUTLINE_COLORS[Highlight.NONE])
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
-	if not is_visited:
+	if not _shown:
 		return
 	if get_viewport().is_input_handled():
 		return

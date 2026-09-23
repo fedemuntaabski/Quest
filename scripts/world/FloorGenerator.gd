@@ -4,6 +4,8 @@ class_name FloorGenerator
 ## FloorGenerator: fills floor tiles on demand, room by room, so unrevealed
 ## rooms stay both invisible and non-walkable (basic fog-of-war). Also
 ## supports the old "fill everything up front" mode for standalone/debug use.
+## Presentation only: RoomManager decides what is discovered/visible and calls
+## `fill_cells`; this class holds no discovery state.
 
 @export var floor_atlas_coords: Vector2i = Vector2i(0, 0)
 @export var floor_source_id: int = 0

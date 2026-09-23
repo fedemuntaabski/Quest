@@ -14,10 +14,10 @@ signal door_clicked(door: Door)
 @export var from_zone_id: String = ""
 @export var cell: Vector2i = Vector2i.ZERO
 
-## Graph edge: joins exactly two room nodes. Left empty in the scene, derived
+## Graph edge: joins exactly two room nodes. Never authored — always derived
 ## by RoomManager.register_door() from from_zone_id / target_room_id.
-@export var room_a_id: String = ""
-@export var room_b_id: String = ""
+var room_a_id: String = ""
+var room_b_id: String = ""
 
 var is_open: bool = false
 

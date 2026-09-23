@@ -89,10 +89,9 @@ func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
 func spawn_enemies_in_room(group_id: String, count: int) -> void:
 	if room_manager == null:
 		return
-	var zone_ids := room_manager.get_group_zone_ids(group_id)
-	if zone_ids.is_empty():
+	var room_zone_id := room_manager.get_room_zone_id_in_group(group_id)
+	if room_zone_id == "":
 		return
-	var room_zone_id: String = zone_ids[-1]
 
 	for i in range(count):
 		_spawn_enemy(room_zone_id, room_manager.get_center(room_zone_id))

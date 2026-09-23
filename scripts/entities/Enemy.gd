@@ -109,12 +109,9 @@ func on_zone_entered(zone_id: String) -> void:
 	if current_state == State.ATTACKING or not is_alive():
 		return
 	var room_manager := ManagerLocator.get_room_manager()
-	if room_manager == null or not room_manager.zones.has(zone_id):
+	if room_manager == null or room_manager.get_zone_kind(zone_id) != "room":
 		return
-	var zone: Dictionary = room_manager.zones[zone_id]
-	if zone["kind"] != "room":
-		return
-	var module := scan_room_for_modules(zone.get("node"))
+	var module := scan_room_for_modules(room_manager.get_zone_node(zone_id))
 	if module == null:
 		return
 	target_module = module
@@ -173,8 +170,8 @@ func _sapper_tick(room_manager: RoomManager) -> void:
 
 
 func _find_zone_with_modules(room_manager: RoomManager) -> String:
-	for zone_id in room_manager.zones.keys():
-		if room_manager.zones[zone_id]["kind"] != "room":
+	for zone_id in room_manager.get_zone_ids():
+		if room_manager.get_zone_kind(zone_id) != "room":
 			continue
 		if not room_manager.is_zone_revealed(zone_id):
 			continue

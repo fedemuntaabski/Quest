@@ -117,7 +117,7 @@ func _open_group(door: Door) -> void:
 	if door.get_target_room_for(player.current_zone_id) == "":
 		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: hero in '%s' is not adjacent (%s / %s)." % [door.door_id, player.current_zone_id, door.room_a_id, door.room_b_id])
 		return
-	if door_turn_system.is_room_visited(door.target_room_id):
+	if room_manager.is_group_revealed(door.target_room_id):
 		return
 
 	var opened := door_turn_system.open_room(door.target_room_id)
