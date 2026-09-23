@@ -266,6 +266,24 @@ func get_room(room_id: String) -> RoomZone:
 	return rooms_dict.get(room_id) as RoomZone
 
 
+## Visited rooms without power — vulnerable zones for enemy spawn risk.
+func get_dark_rooms() -> Array[RoomZone]:
+	var dark_rooms: Array[RoomZone] = []
+	for room: RoomZone in rooms_dict.values():
+		if room.is_visited and not room.is_powered:
+			dark_rooms.append(room)
+	return dark_rooms
+
+
+## Visited rooms with power — safe, buildable zones.
+func get_powered_rooms() -> Array[RoomZone]:
+	var powered_rooms: Array[RoomZone] = []
+	for room: RoomZone in rooms_dict.values():
+		if room.is_visited and room.is_powered:
+			powered_rooms.append(room)
+	return powered_rooms
+
+
 ## True if any door of room A has room B as its counterpart (open or not).
 func are_rooms_connected(room_a_id: String, room_b_id: String) -> bool:
 	return _shared_door(room_a_id, room_b_id) != null

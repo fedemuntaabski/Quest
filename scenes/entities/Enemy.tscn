@@ -2,10 +2,19 @@
 
 [ext_resource type="Script" path="res://scripts/entities/Enemy.gd" id="1_enemy_script"]
 
-[node name="Enemy" type="Node2D"]
+[sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
+radius = 14.0
+
+[node name="Enemy" type="CharacterBody2D"]
+collision_layer = 0
+collision_mask = 0
 script = ExtResource("1_enemy_script")
 
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_enemy")
+
 [node name="Icon" type="Polygon2D" parent="."]
+color = Color(0.85, 0.1, 0.1, 1)
 polygon = PackedVector2Array(0, -16, 14, 12, -14, 12)
 
 [node name="AiTimer" type="Timer" parent="."]

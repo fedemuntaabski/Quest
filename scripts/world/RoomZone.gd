@@ -158,6 +158,11 @@ func try_power_up() -> void:
 	powered_up.emit(zone_id)
 
 
+## Sole build gate: only powered rooms accept modules.
+func can_build() -> bool:
+	return is_powered
+
+
 func get_modules() -> Array[Module]:
 	var modules: Array[Module] = []
 	for slot in _module_slots:

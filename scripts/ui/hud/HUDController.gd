@@ -23,6 +23,11 @@ const _STAT_BAR_PATH := "Control/StatBarAnchor/StatBarCenter/StatBarPanel/Margin
 @onready var chip_science: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipScience")
 @onready var chip_dust: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipDust")
 
+@onready var invasion_flash: ColorRect = get_node_or_null("Control/InvasionFlash")
+
+const INVASION_FLASH_ALPHA := 0.3
+const INVASION_FLASH_HALF_TIME := 0.25
+
 const TOOLTIP_GAP := 12.0
 const TOOLTIP_SCREEN_PADDING := 8.0
 
@@ -31,6 +36,7 @@ var _bound_player_stats: PlayerStats
 
 var _tooltip_anchor: Vector2 = Vector2.ZERO
 var _tooltip_grow_up: bool = false
+var _invasion_tween: Tween
 
 
 func _ready() -> void:
@@ -57,6 +63,13 @@ func _ready() -> void:
 			rm.resource_changed.connect(_on_resource_changed)
 		for key in rm.KEYS:
 			_on_resource_changed(key, rm.get_resource(key), 0)
+
+	var em := ManagerLocator.get_enemy_manager()
+	if em:
+		if not em.invasion_triggered.is_connected(_on_invasion_triggered):
+			em.invasion_triggered.connect(_on_invasion_triggered)
+	else:
+		QuestLogger.warn(QuestLogger.Category.UI, "HUD: EnemyManager not found; invasion alert disabled.")
 
 
 # ---------------- PLAYER STATS BINDING ----------------
@@ -103,6 +116,24 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 func _on_resource_changed(key: String, amount: int, _delta: int) -> void:
 	if stat_panel:
 		stat_panel.update_resource(key, amount)
+
+
+# ---------------- INVASION ALERT ----------------
+
+func _on_invasion_triggered(_spawn_rooms: Array[RoomZone], _enemy_count: int) -> void:
+	trigger_invasion_alert()
+
+
+## Emergency-light pulse: red overlay alpha 0 -> 0.3 -> 0.
+func trigger_invasion_alert() -> void:
+	if invasion_flash == null:
+		return
+	if _invasion_tween and _invasion_tween.is_valid():
+		_invasion_tween.kill()
+	invasion_flash.color.a = 0.0
+	_invasion_tween = create_tween()
+	_invasion_tween.tween_property(invasion_flash, "color:a", INVASION_FLASH_ALPHA, INVASION_FLASH_HALF_TIME)
+	_invasion_tween.tween_property(invasion_flash, "color:a", 0.0, INVASION_FLASH_HALF_TIME)
 
 
 # ---------------- CHIP TOOLTIPS ----------------

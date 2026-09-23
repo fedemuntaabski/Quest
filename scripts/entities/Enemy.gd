@@ -1,4 +1,4 @@
-extends Node2D
+extends CharacterBody2D
 class_name Enemy
 
 ## Enemy: minimal DotE-style enemy. No real pathfinding — an AiTimer re-
@@ -32,6 +32,11 @@ var max_hp: int = 0
 var current_hp: int = 0
 var _slowed_until_msec: int = 0
 var _moving: bool = false
+
+
+## Call after add_child(): global_position needs the node in the tree.
+func setup(start_position: Vector2) -> void:
+	global_position = start_position
 
 
 func configure(p_variant: Variant, p_zone_id: String) -> void:

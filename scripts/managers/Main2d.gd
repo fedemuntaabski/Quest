@@ -152,7 +152,7 @@ func _setup_enemy_manager() -> void:
 	enemy_manager = EnemyManager.new()
 	enemy_manager.name = "EnemyManager"
 	add_child(enemy_manager)
-	enemy_manager.setup(room_manager)
+	enemy_manager.setup(room_manager, door_turn_system)
 
 func _setup_extraction_manager() -> void:
 	extraction_manager = ExtractionManager.new()
