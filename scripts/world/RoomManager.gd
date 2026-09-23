@@ -21,6 +21,7 @@ var door_turn_system: DoorTurnSystem
 var zones: Dictionary = {}          # zone_id -> {id, kind, rect, cells, center_position, neighbors, group_id, node}
 var groups: Dictionary = {}         # group_id -> Array[String] ordered zone ids (corridor-first)
 var _doors_by_group: Dictionary = {}  # group_id -> Door
+var rooms_dict: Dictionary = {}     # room_id -> RoomZone (room-kind zones only; graph nodes)
 var _current_zone_id: String = ""
 
 
@@ -42,6 +43,7 @@ func _tile_size() -> Vector2:
 func build_from_layout(layout: Dictionary) -> void:
 	zones.clear()
 	groups.clear()
+	rooms_dict.clear()
 
 	var tile_size := _tile_size()
 	var zones_def: Dictionary = layout.get("zones", {})
@@ -90,6 +92,7 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.position = record["center_position"]
 	add_child(zone)
 	zone.configure(zone_id, Vector2(rect.size) * _tile_size(), record["kind"])
+	zone.center_position = record["center_position"]
 	zone.clicked.connect(func(z: RoomZone): zone_clicked.emit(z.zone_id))
 	zone.hovered.connect(func(z: RoomZone): zone_hovered.emit(z.zone_id))
 	zone.unhovered.connect(func(z: RoomZone): zone_unhovered.emit(z.zone_id))
@@ -97,6 +100,15 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.slot_clicked.connect(func(zid: String, slot: ModuleSlot): slot_clicked.emit(zid, slot))
 
 	record["node"] = zone
+	if record["kind"] == "room":
+		register_room(zone)
+
+
+## Registers a room node in the graph. Only room-kind zones are graph nodes.
+func register_room(room: RoomZone) -> void:
+	if room == null or room.room_id == "":
+		return
+	rooms_dict[room.room_id] = room
 
 
 func register_door(door: Door) -> void:
@@ -104,6 +116,34 @@ func register_door(door: Door) -> void:
 		return
 	door.global_position = GridUtils.cell_to_world(tilemap, door.cell)
 	_doors_by_group[door.target_room_id] = door
+	_link_door_to_rooms(door)
+
+
+## Graph edge registration: resolves the door's two endpoints (deriving them
+## from from_zone_id / target group's room zone when unset) and injects the
+## door into both rooms' `connected_doors`.
+func _link_door_to_rooms(door: Door) -> void:
+	if door.room_a_id == "":
+		door.room_a_id = door.from_zone_id
+	if door.room_b_id == "":
+		door.room_b_id = _first_room_zone_in_group(door.target_room_id)
+
+	var room_a: RoomZone = get_room(door.room_a_id)
+	var room_b: RoomZone = get_room(door.room_b_id)
+	if room_a == null or room_b == null:
+		QuestLogger.warn(QuestLogger.Category.MAP, "RoomManager: door '%s' not linked, unknown room(s) '%s' / '%s'." % [door.door_id, door.room_a_id, door.room_b_id])
+		return
+
+	for room in [room_a, room_b]:
+		if not room.connected_doors.has(door):
+			room.connected_doors.append(door)
+
+
+func _first_room_zone_in_group(group_id: String) -> String:
+	for zone_id in (groups.get(group_id, []) as Array):
+		if zones.get(zone_id, {}).get("kind", "") == "room":
+			return zone_id
+	return ""
 
 
 # ─────────────────────────────────────────────
@@ -222,6 +262,52 @@ func get_unpowered_revealed_room_group_ids() -> Array[String]:
 	return result
 
 
+func get_room(room_id: String) -> RoomZone:
+	return rooms_dict.get(room_id) as RoomZone
+
+
+## True if any door of room A has room B as its counterpart (open or not).
+func are_rooms_connected(room_a_id: String, room_b_id: String) -> bool:
+	return _shared_door(room_a_id, room_b_id) != null
+
+
+## Like are_rooms_connected, but only when the shared door is open.
+func is_path_open(room_a_id: String, room_b_id: String) -> bool:
+	var door := _shared_door(room_a_id, room_b_id)
+	return door != null and door.is_open
+
+
+## IDs of all rooms directly linked to `room_id`, regardless of door state.
+func get_adjacent_rooms(room_id: String) -> Array[String]:
+	var result: Array[String] = []
+	var room := get_room(room_id)
+	if room == null:
+		return result
+	for door in room.connected_doors:
+		var other := _door_counterpart(door, room_id)
+		if other != "" and not result.has(other):
+			result.append(other)
+	return result
+
+
+func _shared_door(room_a_id: String, room_b_id: String) -> Door:
+	var room := get_room(room_a_id)
+	if room == null:
+		return null
+	for door in room.connected_doors:
+		if _door_counterpart(door, room_a_id) == room_b_id:
+			return door
+	return null
+
+
+func _door_counterpart(door: Door, room_id: String) -> String:
+	if door.room_a_id == room_id:
+		return door.room_b_id
+	if door.room_b_id == room_id:
+		return door.room_a_id
+	return ""
+
+
 func are_connected(a_id: String, b_id: String) -> bool:
 	if not zones.has(a_id):
 		return false
@@ -296,6 +382,7 @@ func on_group_revealed(group_id: String) -> void:
 		var node: RoomZone = zones.get(zone_id, {}).get("node")
 		if node:
 			node.set_revealed(true)
+			node.is_visited = true
 	refresh_door_visibility()
 
 

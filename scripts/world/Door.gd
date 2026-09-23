@@ -14,7 +14,12 @@ signal door_clicked(door: Door)
 @export var from_zone_id: String = ""
 @export var cell: Vector2i = Vector2i.ZERO
 
-var _is_opened: bool = false
+## Graph edge: joins exactly two room nodes. Left empty in the scene, derived
+## by RoomManager.register_door() from from_zone_id / target_room_id.
+@export var room_a_id: String = ""
+@export var room_b_id: String = ""
+
+var is_open: bool = false
 
 
 func _ready() -> void:
@@ -23,7 +28,7 @@ func _ready() -> void:
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
-	if _is_opened:
+	if is_open:
 		return
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
@@ -34,10 +39,10 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 
 
 func is_opened() -> bool:
-	return _is_opened
+	return is_open
 
 
 func mark_opened() -> void:
-	_is_opened = true
+	is_open = true
 	modulate = Color(0.5, 0.5, 0.5, 1.0)
 	input_pickable = false

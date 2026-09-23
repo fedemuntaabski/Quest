@@ -47,6 +47,15 @@ var zone_id: String = ""
 var kind: String = ""
 var is_powered: bool = false
 
+## Room-graph node data (Phase 1). `room_id` aliases `zone_id`; `is_visited`
+## mirrors DoorTurnSystem's visited state (synced by RoomManager.on_group_revealed).
+var room_id: String:
+	get: return zone_id
+	set(v): zone_id = v
+var center_position: Vector2 = Vector2.ZERO
+var is_visited: bool = false
+var connected_doors: Array[Door] = []
+
 var _state: int = Highlight.NONE
 var _revealed: bool = false
 var _energy_button: EnergyButton = null
