@@ -24,6 +24,7 @@ const _STAT_BAR_PATH := "Control/StatBarAnchor/StatBarCenter/StatBarPanel/Margin
 @onready var chip_dust: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipDust")
 
 @onready var invasion_flash: ColorRect = get_node_or_null("Control/InvasionFlash")
+@onready var building_menu: BuildingMenu = get_node_or_null("Control/BuildingMenu")
 
 const INVASION_FLASH_ALPHA := 0.3
 const INVASION_FLASH_HALF_TIME := 0.25
@@ -116,6 +117,15 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 func _on_resource_changed(key: String, amount: int, _delta: int) -> void:
 	if stat_panel:
 		stat_panel.update_resource(key, amount)
+
+
+# ---------------- BUILDING MENU ----------------
+
+func open_building_menu(slot: BuildingSlot) -> void:
+	if building_menu == null:
+		QuestLogger.warn(QuestLogger.Category.UI, "HUD: BuildingMenu node missing.")
+		return
+	building_menu.open_menu(slot)
 
 
 # ---------------- INVASION ALERT ----------------

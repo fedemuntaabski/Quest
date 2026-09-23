@@ -3,7 +3,7 @@ class_name DoorTurnSystem
 
 ## DoorTurnSystem: minimal DotE-style turn/room stub. The global turn advances
 ## only when a door is opened — reveals the target room (basic fog-of-war),
-## and ticks resource production (in advance_turn; Generator modules' bonus is added in open_room).
+## and ticks resource production (in advance_turn; includes Generator modules' bonus via ResourceManager).
 ## Enemy invasions are rolled by EnemyManager off turn_advanced.
 
 signal turn_advanced(turn_number: int)
@@ -59,24 +59,6 @@ func open_room(room_id: String) -> bool:
 	var cells: Array[Vector2i] = []
 	cells.assign(room["cells"])
 	room_revealed.emit(room_id, cells)
-
-	var resource_manager := ManagerLocator.get_resource_manager()
-	var room_manager := ManagerLocator.get_room_manager()
-
-	if resource_manager:
-		if room_manager:
-			var industry_bonus := 0
-			var food_bonus := 0
-			var science_bonus := 0
-			for module in room_manager.get_all_modules():
-				if module.is_generator():
-					var cfg: Dictionary = Module.CATALOG[Module.ModuleType.GENERATOR]
-					industry_bonus += int(cfg["industry"])
-					food_bonus += int(cfg["food"])
-					science_bonus += int(cfg["science"])
-			if industry_bonus > 0 or food_bonus > 0 or science_bonus > 0:
-				resource_manager.add_all(industry_bonus, food_bonus, science_bonus, 0)
-				QuestLogger.info(QuestLogger.Category.MODULE, "Generator bonus applied: +%d industry, +%d food, +%d science." % [industry_bonus, food_bonus, science_bonus])
 
 	enemy_wave_requested.emit(room_id)
 

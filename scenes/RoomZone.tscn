@@ -13,3 +13,5 @@ script = ExtResource("1_room_zone_script")
 width = 3.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="BuildingSlots" type="Node2D" parent="."]

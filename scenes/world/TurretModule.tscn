@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/TurretModule.gd" id="1_turret_script"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 180.0
+
+[node name="TurretModule" type="Node2D"]
+script = ExtResource("1_turret_script")
+
+[node name="Icon" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -14, 12, 6, -12, 6)
+
+[node name="DetectionZone" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionZone"]
+shape = SubResource("CircleShape2D_detect")
+
+[node name="FireTimer" type="Timer" parent="."]

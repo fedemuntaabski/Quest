@@ -8,12 +8,15 @@ class_name Enemy
 ## CharacterStats.take_damage's clamp/signal shape.
 
 enum Variant { SWARM, SAPPER, HUNTER }
+enum State { MOVING, ATTACKING }
 
 const VARIANT_CONFIG := {
 	Variant.SWARM: {"hp": 6, "speed": 500.0, "ai_interval": 1.2},
 	Variant.SAPPER: {"hp": 10, "speed": 380.0, "damage_per_tick": 3, "ai_interval": 2.0},
 	Variant.HUNTER: {"hp": 8, "speed": 400.0, "ai_interval": 1.2},
 }
+
+const DEFAULT_ATTACK_DAMAGE := 2
 
 const TYPE_COLORS := {
 	Variant.SWARM: Color(0.85, 0.25, 0.25, 1.0),
@@ -25,7 +28,13 @@ signal died(enemy: Enemy)
 
 @onready var icon: Polygon2D = $Icon
 @onready var ai_timer: Timer = $AiTimer
+@onready var attack_timer: Timer = $AttackTimer
 
+@export var attack_speed: float = 1.0
+var attack_damage: int = DEFAULT_ATTACK_DAMAGE
+
+var current_state: State = State.MOVING
+var target_module: Node2D = null
 var variant: Variant
 var current_zone_id: String = ""
 var max_hp: int = 0
@@ -55,6 +64,11 @@ func configure(p_variant: Variant, p_zone_id: String) -> void:
 	ai_timer.timeout.connect(_on_ai_tick)
 	ai_timer.start()
 
+	attack_damage = int(cfg.get("damage_per_tick", DEFAULT_ATTACK_DAMAGE))
+	attack_timer.wait_time = attack_speed
+	attack_timer.one_shot = false
+	attack_timer.timeout.connect(_perform_attack)
+
 
 func take_damage(amount: int) -> void:
 	if not is_alive():
@@ -80,8 +94,56 @@ func current_speed() -> float:
 	return base_speed * 0.5 if Time.get_ticks_msec() < _slowed_until_msec else base_speed
 
 
+## First active module built in `room`, or null.
+func scan_room_for_modules(room: RoomZone) -> Node2D:
+	if room == null:
+		return null
+	for module in room.get_modules():
+		if is_instance_valid(module) and module.is_active:
+			return module
+	return null
+
+
+## Called by EnemyMoveAction each time the enemy reaches a zone center.
+func on_zone_entered(zone_id: String) -> void:
+	if current_state == State.ATTACKING or not is_alive():
+		return
+	var room_manager := ManagerLocator.get_room_manager()
+	if room_manager == null or not room_manager.zones.has(zone_id):
+		return
+	var zone: Dictionary = room_manager.zones[zone_id]
+	if zone["kind"] != "room":
+		return
+	var module := scan_room_for_modules(zone.get("node"))
+	if module == null:
+		return
+	target_module = module
+	current_state = State.ATTACKING
+	attack_timer.start()
+
+
+func _perform_attack() -> void:
+	if not _target_is_valid():
+		_resume_moving()
+		return
+	target_module.take_damage(attack_damage)
+	if not _target_is_valid():
+		_resume_moving()
+
+
+func _target_is_valid() -> bool:
+	return is_instance_valid(target_module) and (target_module as Module).is_active
+
+
+func _resume_moving() -> void:
+	attack_timer.stop()
+	target_module = null
+	current_state = State.MOVING
+	_on_ai_tick()
+
+
 func _on_ai_tick() -> void:
-	if _moving or not is_alive():
+	if _moving or current_state == State.ATTACKING or not is_alive():
 		return
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager == null:
@@ -104,13 +166,6 @@ func _player_zone() -> String:
 
 
 func _sapper_tick(room_manager: RoomManager) -> void:
-	var group_id := room_manager.get_group_id(current_zone_id)
-	var modules := room_manager.get_modules_in_group(group_id)
-	if not modules.is_empty():
-		var cfg: Dictionary = VARIANT_CONFIG[Variant.SAPPER]
-		modules[0].take_damage(int(cfg["damage_per_tick"]))
-		return
-
 	var target_zone := _find_zone_with_modules(room_manager)
 	if target_zone == "":
 		target_zone = _player_zone()
@@ -137,12 +192,16 @@ func _pursue_zone(room_manager: RoomManager, target_zone_id: String) -> void:
 		return
 
 	var waypoints: Array[Vector2] = []
+	var zone_ids: Array[String] = []
 	for step_id in path.slice(1):
 		waypoints.append(room_manager.get_center(step_id))
+		zone_ids.append(step_id)
 
 	_moving = true
-	var action := EnemyMoveAction.new(self, waypoints, path[-1])
+	var action := EnemyMoveAction.new(self, waypoints, zone_ids)
 	await action.execute()
+	if not is_instance_valid(self):
+		return
 	_moving = false
 
 	_check_trap_in_current_room(room_manager)

@@ -7,5 +7,3 @@ script = ExtResource("1_module_script")
 
 [node name="Icon" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(0, -14, 12, 6, -12, 6)
-
-[node name="TickTimer" type="Timer" parent="."]

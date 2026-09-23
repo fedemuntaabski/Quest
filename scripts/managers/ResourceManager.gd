@@ -51,9 +51,13 @@ func add_all(industry_amt: int, food_amt: int, science_amt: int, dust_amt: int) 
 	add_resource("dust", dust_amt)
 
 
-## Placeholder hook: built modules will add per-resource bonus here later.
-func _calculate_module_bonus(_resource_key: String) -> int:
-	return 0
+## Sum of `yield_amount` from active GeneratorModules producing `resource_key`.
+func _calculate_module_bonus(resource_key: String) -> int:
+	var total: int = 0
+	for generator in get_tree().get_nodes_in_group("generators"):
+		if generator.is_active and generator.resource_type == resource_key:
+			total += generator.yield_amount
+	return total
 
 
 ## Pays out the per-turn production (base yield + module bonus). Called by DoorTurnSystem.advance_turn().

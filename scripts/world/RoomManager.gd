@@ -10,7 +10,7 @@ signal zone_clicked(zone_id: String)
 signal zone_hovered(zone_id: String)
 signal zone_unhovered(zone_id: String)
 signal room_powered(zone_id: String)
-signal slot_clicked(zone_id: String, slot: ModuleSlot)
+signal slot_clicked(zone_id: String, slot: BuildingSlot)
 
 const ZONE_SCENE := preload("res://scenes/RoomZone.tscn")
 const DEFAULT_TILE_SIZE := Vector2(64, 64)
@@ -97,7 +97,7 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.hovered.connect(func(z: RoomZone): zone_hovered.emit(z.zone_id))
 	zone.unhovered.connect(func(z: RoomZone): zone_unhovered.emit(z.zone_id))
 	zone.powered_up.connect(func(zid: String): room_powered.emit(zid))
-	zone.slot_clicked.connect(func(zid: String, slot: ModuleSlot): slot_clicked.emit(zid, slot))
+	zone.slot_clicked.connect(func(zid: String, slot: BuildingSlot): slot_clicked.emit(zid, slot))
 
 	record["node"] = zone
 	if record["kind"] == "room":

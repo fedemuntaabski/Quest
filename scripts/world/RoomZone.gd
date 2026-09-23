@@ -34,11 +34,11 @@ const OUTLINE_COLORS := {
 }
 
 const ENERGY_BUTTON_SCENE := preload("res://scenes/world/EnergyButton.tscn")
-const MODULE_SLOT_SCENE := preload("res://scenes/world/ModuleSlot.tscn")
-const MODULE_SLOT_OFFSETS := [Vector2(0, -24), Vector2(-24, 20), Vector2(24, 20)]
+const BUILDING_SLOT_SCENE := preload("res://scenes/world/BuildingSlot.tscn")
+const BUILDING_SLOT_OFFSETS := [Vector2(0, 0), Vector2(-28, 22), Vector2(28, 22)]
 
 signal powered_up(zone_id: String)
-signal slot_clicked(zone_id: String, slot: ModuleSlot)
+signal slot_clicked(zone_id: String, slot: BuildingSlot)
 
 @onready var fill: Polygon2D = $Fill
 @onready var outline: Line2D = $Outline
@@ -60,7 +60,8 @@ var connected_doors: Array[Door] = []
 var _state: int = Highlight.NONE
 var _revealed: bool = false
 var _energy_button: EnergyButton = null
-var _module_slots: Array[ModuleSlot] = []
+var _building_slots: Array[BuildingSlot] = []
+@onready var _slots_container: Node2D = $BuildingSlots
 
 
 func _ready() -> void:
@@ -112,7 +113,7 @@ func set_visibility(p_visible: bool) -> void:
 	input_pickable = p_visible
 	fill.visible = p_visible
 	outline.visible = p_visible
-	for slot in _module_slots:
+	for slot in _building_slots:
 		slot.visible = p_visible
 		slot.input_pickable = p_visible
 	if _energy_button != null:
@@ -138,8 +139,8 @@ func set_powered(v: bool) -> void:
 	is_powered = v
 	_apply_visual()
 	_update_energy_button_visibility()
-	if is_powered and _module_slots.is_empty() and kind == "room":
-		_spawn_module_slots()
+	if is_powered and _building_slots.is_empty() and kind == "room":
+		_spawn_building_slots()
 
 
 ## Pays POWER_COST dust to light this room. No-op if already powered.
@@ -165,21 +166,21 @@ func can_build() -> bool:
 
 func get_modules() -> Array[Module]:
 	var modules: Array[Module] = []
-	for slot in _module_slots:
+	for slot in _building_slots:
 		if not slot.is_empty():
 			modules.append(slot.built_module)
 	return modules
 
 
-func _spawn_module_slots() -> void:
-	var slot_types := [Module.SlotType.MAJOR, Module.SlotType.MINOR, Module.SlotType.MINOR]
+func _spawn_building_slots() -> void:
+	var slot_types := [BuildingSlot.SlotType.MAJOR, BuildingSlot.SlotType.MINOR, BuildingSlot.SlotType.MINOR]
 	for i in range(slot_types.size()):
-		var slot := MODULE_SLOT_SCENE.instantiate() as ModuleSlot
-		add_child(slot)
-		slot.position = MODULE_SLOT_OFFSETS[i]
+		var slot := BUILDING_SLOT_SCENE.instantiate() as BuildingSlot
+		_slots_container.add_child(slot)
+		slot.position = BUILDING_SLOT_OFFSETS[i]
 		slot.configure(zone_id, slot_types[i])
-		slot.slot_clicked.connect(func(s: ModuleSlot): slot_clicked.emit(zone_id, s))
-		_module_slots.append(slot)
+		slot.slot_clicked.connect(func(s: BuildingSlot): slot_clicked.emit(zone_id, s))
+		_building_slots.append(slot)
 
 
 func _update_energy_button_visibility() -> void:

@@ -4,6 +4,8 @@
 [ext_resource type="Script" uid="uid://dltjy630888ox" path="res://scripts/ui/hud/StatIcon.gd" id="2_stat_icon"]
 [ext_resource type="Script" uid="uid://dwdiup326a0h8" path="res://scripts/ui/hud/StatPanelUI.gd" id="3_nysna"]
 
+[ext_resource type="PackedScene" path="res://scenes/ui/BuildingMenu.tscn" id="4_building_menu"]
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stat_panel"]
 bg_color = Color(0.05, 0.05, 0.06, 0.8)
 corner_radius_top_left = 6
@@ -177,3 +179,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tooltip")
 [node name="Label" type="Label" parent="Control/StatTooltip"]
 layout_mode = 2
 autowrap_mode = 2
+
+[node name="BuildingMenu" parent="Control" instance=ExtResource("4_building_menu")]
+visible = false
+layout_mode = 0
