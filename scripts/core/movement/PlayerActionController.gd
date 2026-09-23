@@ -114,8 +114,8 @@ func _open_group(door: Door) -> void:
 	if extraction and not extraction.can_open_doors():
 		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: extraction phase active." % door.door_id)
 		return
-	if door.from_zone_id != "" and door.from_zone_id != player.current_zone_id:
-		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: hero is not in '%s'." % [door.door_id, door.from_zone_id])
+	if door.get_target_room_for(player.current_zone_id) == "":
+		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: hero in '%s' is not adjacent (%s / %s)." % [door.door_id, player.current_zone_id, door.room_a_id, door.room_b_id])
 		return
 	if door_turn_system.is_room_visited(door.target_room_id):
 		return
@@ -123,7 +123,7 @@ func _open_group(door: Door) -> void:
 	var opened := door_turn_system.open_room(door.target_room_id)
 	if not opened:
 		return
-	door.mark_opened()
+	door.disable_door()
 
 	var waypoints := room_manager.get_group_centers(door.target_room_id)
 	var group_zone_ids := room_manager.get_group_zone_ids(door.target_room_id)

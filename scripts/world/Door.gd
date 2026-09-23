@@ -42,7 +42,27 @@ func is_opened() -> bool:
 	return is_open
 
 
-func mark_opened() -> void:
+## Permanently disables the door: no more clicks, faded visual.
+func disable_door() -> void:
 	is_open = true
-	modulate = Color(0.5, 0.5, 0.5, 1.0)
+	modulate.a = 0.3
 	input_pickable = false
+	var shape := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape:
+		shape.set_deferred("disabled", true)
+
+
+func mark_opened() -> void:
+	disable_door()
+
+
+## Returns the room on the other side of this door as seen from `zone_id`,
+## or "" when `zone_id` is not one of the door's two rooms (not adjacent).
+func get_target_room_for(zone_id: String) -> String:
+	if zone_id == "":
+		return ""
+	if zone_id == room_a_id:
+		return room_b_id
+	if zone_id == room_b_id:
+		return room_a_id
+	return ""

@@ -7,6 +7,7 @@ class_name DoorTurnSystem
 ## spawns 1-2 enemies in a random unpowered revealed room via EnemyManager.
 
 signal turn_advanced(turn_number: int)
+signal door_opened(target_room_id: String)
 signal room_revealed(room_id: String, cells: Array[Vector2i])
 signal enemy_wave_requested(room_id: String)
 
@@ -35,6 +36,13 @@ func get_room_cells(room_id: String) -> Array[Vector2i]:
 	return cells
 
 
+## Global clock tick: the only place the turn counter moves.
+func advance_turn(target_room_id: String) -> void:
+	current_turn += 1
+	turn_advanced.emit(current_turn)
+	door_opened.emit(target_room_id)
+
+
 func open_room(room_id: String) -> bool:
 	if not rooms.has(room_id):
 		QuestLogger.warn(QuestLogger.Category.DOOR, "DoorTurnSystem: unknown room_id '%s'" % room_id)
@@ -47,8 +55,7 @@ func open_room(room_id: String) -> bool:
 	room["visited"] = true
 	rooms[room_id] = room
 
-	current_turn += 1
-	turn_advanced.emit(current_turn)
+	advance_turn(room_id)
 
 	var cells: Array[Vector2i] = []
 	cells.assign(room["cells"])
