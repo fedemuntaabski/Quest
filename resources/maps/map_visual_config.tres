@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="MapVisualConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/map/MapVisualConfig.gd" id="1_mvc"]
+
+[resource]
+script = ExtResource("1_mvc")
+exit_hint_mode = 0

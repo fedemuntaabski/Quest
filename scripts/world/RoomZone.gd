@@ -41,6 +41,8 @@ const BUILDING_SLOT_SCENE := preload("res://scenes/world/BuildingSlot.tscn")
 const BUILDING_SLOT_OFFSETS := [Vector2(0, 0), Vector2(-28, 22), Vector2(28, 22)]
 
 signal powered_up(zone_id: String)
+## Any power state change (player-paid or scripted). RoomLight listens.
+signal power_changed(zone_id: String, powered: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
 
 @onready var fill: Polygon2D = $Fill
@@ -63,6 +65,7 @@ var connected_doors: Array[Door] = []
 var _state: int = Highlight.NONE
 var _shown: bool = false
 var _energy_button: EnergyButton = null
+var _light: RoomLight = null
 var _building_slots: Array[BuildingSlot] = []
 @onready var _slots_container: Node2D = $BuildingSlots
 
@@ -117,6 +120,8 @@ func _set_render_visible(p_visible: bool) -> void:
 	input_pickable = p_visible
 	fill.visible = p_visible
 	outline.visible = p_visible
+	if _light != null:
+		_light.visible = p_visible
 	for slot in _building_slots:
 		slot.visible = p_visible
 		slot.input_pickable = p_visible
@@ -141,10 +146,26 @@ func set_powered(v: bool) -> void:
 	if is_powered == v:
 		return
 	is_powered = v
+	power_changed.emit(zone_id, v)
 	_apply_visual()
 	_update_energy_button_visibility()
 	if is_powered and _building_slots.is_empty() and kind == "room":
 		_spawn_building_slots()
+
+
+## Adds the dark/lit lighting layer (rooms only), drawn under Fill and the
+## energy button/slots. Call after configure(), once the zone is in the tree.
+func attach_light(size_px: Vector2, config: MapVisualConfig) -> void:
+	_light = RoomLight.new()
+	_light.name = "RoomLight"
+	add_child(_light)
+	move_child(_light, 0)
+	_light.setup(self, size_px - Vector2.ONE * SHAPE_INSET * 2.0, config)
+	_light.visible = _shown
+
+
+func get_light() -> RoomLight:
+	return _light
 
 
 ## Pays POWER_COST dust to light this room. No-op if already powered.

@@ -35,6 +35,9 @@ signal slot_clicked(zone_id: String, slot: BuildingSlot)
 const ZONE_SCENE := preload("res://scenes/RoomZone.tscn")
 const DEFAULT_TILE_SIZE := Vector2(64, 64)
 
+## Lighting + exit-hint tunables (shared with ExitIndicator via this node).
+@export var visual_config: MapVisualConfig = preload("res://resources/maps/map_visual_config.tres")
+
 var tilemap: TileMapLayer
 var door_turn_system: DoorTurnSystem
 
@@ -127,6 +130,7 @@ func _spawn_zone_node(zone_id: String) -> void:
 	record["node"] = zone
 	if record["kind"] == "room":
 		register_room(zone)
+		zone.attach_light(Vector2(rect.size) * _tile_size(), visual_config)
 
 
 ## Registers a room node in the graph. Only room-kind zones are graph nodes.
@@ -281,6 +285,14 @@ func is_exit_room(zone_id: String) -> bool:
 
 func is_vault_room(zone_id: String) -> bool:
 	return zones.get(zone_id, {}).get("is_vault_room", false)
+
+
+## The layout's is_exit room ("" if none). First match if several.
+func get_exit_zone_id() -> String:
+	for zone_id in zones.keys():
+		if is_exit_room(zone_id):
+			return zone_id
+	return ""
 
 
 ## The layout's is_start room (hero spawn + Nexo). Its group starts revealed.
