@@ -233,3 +233,20 @@ Prioridades cumplidas: (1) modelo de datos + fallback, (2) generador, (3) polvo 
 2. **Indicador de salida:** `RoomManager.is_exit_room()` ya existe — dibujar marcador (`Label`/`Polygon2D`) en la sala exit al revelarla, y opcional flecha/hint durante la extracción.
 3. Loops en el generador (ver riesgos) y tipos de sala (`RoomData.kind`) con efectos.
 4. Playtest de balance de polvo por piso.
+
+---
+
+# Sesión 4 — 2026-09-27 (branch `session/opus-2026-09-27-4`, from `session/opus-2026-09-27-3`)
+
+Godot 4.6.2 headless + `python -m gdtoolkit.parser`, igual que sesión 3.
+
+## Fase 1 — Diagnóstico
+
+- **`RoomZone.set_powered(v)`**: cambia `is_powered`, recolorea `Fill`/`Outline` a dorado (`POWERED_*_COLOR`), oculta `EnergyButton`, crea `BuildingSlot`s. No emite señal propia (solo `powered_up` desde `try_power_up`, es decir, solo cuando lo paga el jugador). Sala oscura revelada = relleno transparente + contorno blanco 25%: **no comunica peligro**, y no hay diferencia visual entre "oscura pero pagable" y "oscura sin polvo".
+- **`RoomManager`**: `is_exit_room(zone_id)` existe (dato desde `RoomData.is_exit`); fog = `apply_zone_visibility` → `RoomZone.set_shown` + tiles; `is_room_dark`/`get_dark_rooms` = revelada y no energizada (pool de spawn de enemigos).
+- **Estado del cristal (Nexo):** `Player.is_carrying_nexo` (bool, sin señal). La señal equivalente ya existe: `ExtractionManager.phase_changed` pasa a `EXTRACTION` exactamente al agarrarlo (`NexoController` → `start_extraction()`).
+- **HUD:** `HUD.tscn` vive en `Main.HUDContainer` (hermano de `WorldContainer`), autocableado vía autoloads/grupos. No hay nada de mapa/salida.
+- **Cámara:** `Camera2D` hija de `Player` (smoothing 10), sin límites ni zoom. Una salida lejana queda fuera de pantalla casi siempre → hace falta flecha de borde.
+- **Salida:** sin ningún indicador (riesgo #1 de sesión 3).
+
+**Errores viejos arreglados (extra 4, seguro):** `project.godot` apuntaba el cursor custom al UID de `assets/ui/gauntlet.png`, borrado en `40b6f37` → se quitó la línea (mismo comportamiento real: cursor por defecto). `OptionsMenu.tscn` usaba un UID viejo del script → UID actual (`uid://b6rlxicpb1un2`). Queda preexistente: `ObjectDB instances leaked / 1 resources still in use at exit` al salir con `--quit-after` (también en la rama anterior).
