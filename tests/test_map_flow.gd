@@ -1,7 +1,8 @@
 extends SceneTree
 
 ## Headless smoke test: boots Main2d (generated map, then fallback), opens
-## every door in reveal order and checks discovery dust + fog consistency.
+## every door in reveal order and checks discovery dust + fog consistency,
+## room lighting (dark/lit/affordable) and the exit hint modes.
 ##   godot --headless --path . --script res://tests/test_map_flow.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
@@ -10,6 +11,7 @@ var failures: Array[String] = []
 
 
 func _initialize() -> void:
+	_check_edge_point()
 	await _run(false)
 	await _run(true)
 	for failure in failures:
@@ -31,6 +33,13 @@ func _run(use_fallback: bool) -> void:
 	var label := "fallback" if use_fallback else "generated"
 	if use_fallback and room_manager.get_start_zone_id() != "start_room":
 		failures.append("fallback start is '%s'" % room_manager.get_start_zone_id())
+
+	_check_lighting(room_manager, label)
+	var indicator: ExitIndicator = main2d.exit_indicator
+	var config := room_manager.visual_config
+	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ALWAYS, true, "%s start" % label)
+	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_DISCOVERY, false, "%s start" % label)
+	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, false, "%s start" % label)
 
 	var per_room: int = main2d.floor_manager.config.discovery_dust(1)
 	var opened := 0
@@ -61,6 +70,14 @@ func _run(use_fallback: bool) -> void:
 	if not room_manager.find_zone_path(room_manager.get_start_zone_id(), _exit_zone(room_manager)).size() > 1:
 		failures.append("%s: no revealed path start -> exit" % label)
 
+	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_DISCOVERY, true, "%s explored" % label)
+	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, false, "%s explored" % label)
+	main2d.extraction_manager.start_extraction()
+	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, true, "%s carrying" % label)
+	if not indicator.is_emphasized():
+		failures.append("%s: exit hint not emphasized while carrying the crystal" % label)
+	config.exit_hint_mode = MapVisualConfig.ExitHintMode.ALWAYS
+
 	main2d.queue_free()
 	await process_frame
 
@@ -70,3 +87,36 @@ func _exit_zone(room_manager: RoomManager) -> String:
 		if room_manager.is_exit_room(zone_id):
 			return zone_id
 	return ""
+
+
+## Mode changes must propagate through config.changed alone (no manual refresh).
+func _expect_hint(indicator: ExitIndicator, config: MapVisualConfig, mode: MapVisualConfig.ExitHintMode, expected: bool, when: String) -> void:
+	config.exit_hint_mode = mode
+	if indicator.is_hint_visible() != expected:
+		failures.append("%s: exit hint mode %s visible=%s, expected %s" % [when, MapVisualConfig.ExitHintMode.keys()[mode], indicator.is_hint_visible(), expected])
+
+
+func _check_lighting(room_manager: RoomManager, label: String) -> void:
+	var zone := room_manager.get_zone_node(room_manager.get_start_zone_id())
+	var light := zone.get_light()
+	if light == null:
+		failures.append("%s: start room has no RoomLight" % label)
+		return
+	if not light.is_dark():
+		failures.append("%s: unpowered start room not dark" % label)
+	if not light.is_affordable_highlighted():
+		failures.append("%s: 20 dust >= cost but room not highlighted as affordable" % label)
+	zone.set_powered(true)
+	if light.is_dark() or light.is_affordable_highlighted():
+		failures.append("%s: powered room still dark/affordable" % label)
+	zone.set_powered(false)
+	if not light.is_dark():
+		failures.append("%s: unpowered-again room not dark" % label)
+
+
+func _check_edge_point() -> void:
+	var rect := Rect2(0, 0, 100, 100)
+	for case in [[Vector2(300, 50), Vector2(100, 50)], [Vector2(50, -200), Vector2(50, 0)], [Vector2(50, 50), Vector2(50, 50)]]:
+		var got := ExitIndicator.edge_point(rect, case[0])
+		if not got.is_equal_approx(case[1]):
+			failures.append("edge_point(%s) = %s, expected %s" % [case[0], got, case[1]])
