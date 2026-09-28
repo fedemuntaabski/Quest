@@ -170,3 +170,66 @@ Errores **preexistentes** en headless (no tocados): `project.godot` `mouse_curso
 - `DoorTurnSystem` señales `turn_advanced/door_opened/room_revealed/enemy_wave_requested`; `register_room/open_room/is_room_visited/get_room_cells`.
 - `Door`: `door_clicked`, `target_room_id` (= grupo), `from_zone_id`, `cell`, `get_target_room_for()`.
 - Consumidores: `EnemyManager` (`turn_advanced`, `get_dark_rooms`, `find_zone_path`), `ExtractionManager` (`get_unpowered_revealed_room_group_ids`), `PlayerActionController`, `Enemy`, `NexoController`, `RoomPowerSystem`, `ModuleBuildSystem`/`BuildingMenu` (`slot_clicked`), HUD (solo `ResourceManager`/`FloorManager`).
+
+## Fase 2/3 — Diseño e implementación (sesión 3)
+
+Prioridades cumplidas: (1) modelo de datos + fallback, (2) generador, (3) polvo por descubrimiento. Todo verificado en Godot headless.
+
+**Decisión de alcance:** "reescribir el interior del mapa" = se reescribió todo lo que *construye* el mapa (datos, generación, grupos de revelado, puertas). La API de consulta/presentación de `RoomManager` (fog, highlights, BFS, dark rooms) se mantuvo intacta porque *es* el contrato que consumen Enemy/Extraction/PlayerActionController; reescribirla sin cambio de comportamiento era riesgo puro.
+
+| Sistema | Archivo | Qué |
+|---|---|---|
+| Datos (nuevo) | `scripts/world/map/RoomData.gd` | Resource: `id`, `kind`, `pos`, `size`, `neighbors`, `is_start/is_exit/is_vault` |
+| Datos (nuevo) | `scripts/world/map/CorridorData.gd` | Pasillo como entidad: `id`, `room_a` (lado puerta), `room_b`, rect, `door_cell` |
+| Datos (nuevo) | `scripts/world/map/MapLayout.gd` | Resource: `rooms`, `corridors`, `map_seed`; `validate()` (1 start, ≥1 exit, 1 pasillo de entrada por sala, sin solapes, todo alcanzable) |
+| Fallback (nuevo) | `resources/maps/fallback_layout.tres` | El viejo `Main2d.LAYOUT` (mismas celdas/ids, `vault_room` = exit + vault) |
+| Generador (nuevo) | `scripts/world/map/MapGenerator.gd` | `generate(seed, room_count, branch_chance)`: árbol sobre grilla de slots (pitch 9, sala ≤5×5 → sin solapes), tamaños 5×5/5×3/3×5/3×3, exit = sala más lejana del start, vault = hoja más profunda restante. Determinista (`RandomNumberGenerator` con seed, nunca `shuffle()` global) |
+| Pisos | `FloorConfig.gd` | Grupos "Map" (`base_room_count=6`, `+1`/piso, máx 12; `branch_chance` 0.25 `+0.1`/piso) y "Discovery" (`dust_per_discovery=2`, `+0.5`/piso) |
+| Pisos | `FloorManager.gd` | `map_seed = hash([run_seed, floor])`, `room_count()`, `branch_chance()`, `on_room_discovered()` (+dust) |
+| Orquestador | `Main.gd` | `run_seed = randi()` en `_begin_new_run()` |
+| Mapa | `RoomManager.gd` | `build_from_map(MapLayout)` reemplaza `build_from_layout(dict)`; grupo = id de sala (+ su pasillo de entrada); nuevos `get_start_zone_id()`, `get_group_ids()`, `is_vault_room()` |
+| Gameplay | `Main2d.gd`, `Main2d.tscn` | Sin `LAYOUT`/`SPAWN_ZONE_ID`; genera layout (fallback si `force_fallback_layout` o `validate()` falla); instancia 1 `Door` por pasillo (los 4 nodos a mano se quitaron del `.tscn`); conecta `room_revealed → floor_manager.on_room_discovered` |
+| Nexo | `NexoController.gd` | Usa `room_manager.get_start_zone_id()` en vez de `"start_room"` |
+| Fix | `Player.tscn` | `Stats` `type="Node"` (antes placeholder) |
+| Tests (nuevos) | `tests/test_map_generator.gd`, `tests/test_map_flow.gd` | Ver abajo |
+| Legacy | `_deprecated/map_v1/` (+ `.gdignore`) | Copia de `Main2d.gd/.tscn`, `RoomManager.gd`, `NexoController.gd` previos |
+
+**Balance de polvo:** arranque 20, energizar 10. Piso 1 = 6 salas → 5 descubrimientos × 2 = +10 → 30 dust ≈ 3 de 6 salas. Piso 5 = 10 salas × 4 dust + bonus de descenso 10 + sobrante → ~5-6 de 10. Nunca todas si no se ahorra entre pisos.
+
+**Contratos preservados:** todas las señales/queries listadas en Fase 1 siguen con la misma firma. Cambios de *valores*: los group ids ahora son ids de sala (`"hub_room"` en vez de `"hub"`; nadie los hardcodeaba) y los ids generados son `room_N`/`corr_room_N`. `build_from_layout` desapareció (único caller era `Main2d`).
+
+## Verificación (sesión 3)
+
+- `godot --headless --path . res://scenes/{Main,Main2d,HUD}.tscn --quit-after 90`: sin errores nuevos (solo los 3 preexistentes: cursor UID, OptionsMenu UID, Steam).
+- `godot --headless --path . --script res://tests/test_map_generator.gd` → `OK`: 1000 layouts (5 pisos × 200 seeds) válidos, cantidad de salas correcta, determinismo por seed.
+- `godot --headless --path . --script res://tests/test_map_flow.gd` → `OK`: instancia `Main2d` (generado y fallback), abre todas las puertas en orden, cada descubrimiento da exactamente `discovery_dust`, `validate_visibility` OK, camino start→exit revelado. (El ruido `Identifier not found: ThemeManager` en ese modo es de `--script`, que no registra autoloads como identificadores; no pasa en F5.)
+- `python -m gdtoolkit.parser` sobre cada `.gd` tocado: OK.
+- Si Godot deja de ver una clase nueva (`Could not find type "RoomData"`): cache de clases viejo → `godot --headless --path . --editor --quit` para reescanear.
+
+## Checklist manual (sesión 3, F5 desde `Main.tscn`)
+
+1. Run offline: mapa distinto a los 5 cuartos de siempre; log `RoomManager: built N zones, M groups (seed X)` y `validate_graph: OK`.
+2. Solo la sala inicial visible con el Nexo en el centro; puertas marrones en sus paredes hacia cada vecino.
+3. Abrir puerta: se revela pasillo + sala; HUD Polvo +2; log `Discovered 'room_N': +2 dust.` (también cuando no hay invasión).
+4. Energizar con el polvo acumulado alcanza para ~3 salas del piso 1, no todas.
+5. Retry → otro mapa (seed nuevo). Descender → otro mapa, más salas (piso 2 = 7), polvo por sala 2 (piso 3+: 3).
+6. Nexo solo se agarra en la sala inicial; llevarlo a la sala más lejana (exit, sin indicador aún — ver log/`is_exit_room`) da victoria.
+7. Inspector de `Main2d.tscn` → `force_fallback_layout` ON → vuelve el mapa viejo (`start_room` … `vault_room`) y todo funciona igual.
+8. Regresión: enemigos caminan por pasillos generados, Turrets/Sappers/extracción igual que antes.
+
+## Riesgos a revisar antes de mergear (sesión 3)
+
+- **Salida invisible:** nada indica qué sala es la exit hasta sesión 4; el jugador tiene que explorar a ciegas (es la más lejana del start).
+- **Sin loops:** el generador produce árboles (cada sala 1 pasillo de entrada = 1 grupo de revelado). DotE tiene ciclos; agregarlos requiere grupos de solo-pasillo en `DoorTurnSystem`. Marcado `ponytail:` en `MapGenerator`.
+- **Mapa puede ir a coordenadas negativas** (slots arriba/izquierda del start): la cámara sigue al héroe, pero cualquier código futuro que asuma celdas ≥0 se rompe.
+- **Sin cota de tamaño en pantalla**: con 12 salas en línea el mapa mide ~100 celdas; no hay zoom/minimapa.
+- Group ids cambiaron de `"hub"` → `"hub_room"`: si algo externo (saves, logs parseados) guardaba ids de grupo, ya no coinciden. Hoy nadie lo hace.
+- Balance de polvo a ojo; sin playtest. Knobs en `default_floor_config.tres` grupo Discovery.
+- `Main2d.tscn` perdió los nodos `Doors/Door*`: cualquier edición manual del `.tscn` en el editor que los esperara ya no los ve (copia en `_deprecated/map_v1/Main2d.tscn`).
+
+## Pendiente — sesión 4
+
+1. **Luces por sala:** placeholder visual de sala oscura vs energizada (p.ej. `Polygon2D`/`PointLight2D` o `CanvasModulate` + overlay por `RoomZone`), manejado desde `RoomZone.set_powered`.
+2. **Indicador de salida:** `RoomManager.is_exit_room()` ya existe — dibujar marcador (`Label`/`Polygon2D`) en la sala exit al revelarla, y opcional flecha/hint durante la extracción.
+3. Loops en el generador (ver riesgos) y tipos de sala (`RoomData.kind`) con efectos.
+4. Playtest de balance de polvo por piso.
