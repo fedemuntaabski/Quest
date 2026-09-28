@@ -12,6 +12,12 @@ signal hit_landed(target: HurtboxComponent, amount: int)
 @export var damage: int = 1
 @export var hit_interval: float = 1.0
 
+@export_group("Feedback")
+## Spawns a FloatingText over the target on every hit (via hit_landed).
+@export var show_damage_numbers: bool = true
+@export var damage_number_color: Color = Color(1.0, 0.85, 0.3, 1.0)
+@export var damage_number_offset: Vector2 = Vector2(0, -28)
+
 var _tick_timer: Timer = Timer.new()
 
 
@@ -22,6 +28,8 @@ func _ready() -> void:
 	_tick_timer.wait_time = hit_interval
 	_tick_timer.one_shot = false
 	_tick_timer.timeout.connect(_on_tick)
+	if show_damage_numbers:
+		hit_landed.connect(_on_hit_landed)
 	add_child(_tick_timer)
 	_tick_timer.start()
 
@@ -41,3 +49,9 @@ func _on_tick() -> void:
 			continue
 		hurtbox.receive_hit(damage)
 		hit_landed.emit(hurtbox, damage)
+
+
+func _on_hit_landed(target: HurtboxComponent, amount: int) -> void:
+	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+	if text_mgr and is_instance_valid(target):
+		text_mgr.spawn_text(target.global_position + damage_number_offset, str(amount), damage_number_color)
