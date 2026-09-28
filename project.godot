@@ -74,6 +74,12 @@ mouse_left={
 
 locale/translations=PackedStringArray("res://translations.es.translation", "res://translations.en.translation")
 
+[layer_names]
+
+2d_physics/layer_2="enemy_body"
+2d_physics/layer_3="player_hurtbox"
+2d_physics/layer_4="enemy_hurtbox"
+
 [physics]
 
 2d/physics_engine="GodotPhysics2D"
