@@ -99,6 +99,13 @@ static func get_enemy_manager() -> EnemyManager:
 	return null
 
 
+static func get_floor_manager() -> FloorManager:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("floor_manager") as FloorManager
+	return null
+
+
 static func get_floating_text_manager() -> Node:
 	var ml = Engine.get_main_loop()
 	if not (ml and ml is SceneTree):
