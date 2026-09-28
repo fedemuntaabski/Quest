@@ -58,6 +58,8 @@ const LAYOUT := {
 
 @onready var return_button: Button = $VictoryOverlay/CenterContainer/VBoxContainer/ReturnButton
 @onready var victory_gold_label: Label = $VictoryOverlay/CenterContainer/VBoxContainer/GoldLabel
+@onready var victory_label: Label = $VictoryOverlay/CenterContainer/VBoxContainer/VictoryLabel
+@onready var next_floor_button: Button = $VictoryOverlay/CenterContainer/VBoxContainer/NextFloorButton
 
 var game_state_manager: GameStateManager
 var player: Player
@@ -66,6 +68,7 @@ var room_power_system: RoomPowerSystem
 var module_build_system: ModuleBuildSystem
 var enemy_manager: EnemyManager
 var extraction_manager: ExtractionManager
+var floor_manager: FloorManager
 var nexo: Nexo
 var nexo_controller: NexoController
 
@@ -98,6 +101,7 @@ func _ready() -> void:
 	_setup_room_manager()
 	_setup_room_power_system()
 	_setup_module_build_system()
+	_setup_floor_manager()
 	_setup_enemy_manager()
 	_setup_extraction_manager()
 	_register_groups_and_doors()
@@ -152,13 +156,22 @@ func _setup_enemy_manager() -> void:
 	enemy_manager = EnemyManager.new()
 	enemy_manager.name = "EnemyManager"
 	add_child(enemy_manager)
-	enemy_manager.setup(room_manager, door_turn_system)
+	enemy_manager.setup(room_manager, door_turn_system, floor_manager)
+
+func _setup_floor_manager() -> void:
+	floor_manager = FloorManager.new()
+	floor_manager.name = "FloorManager"
+	add_child(floor_manager)
+	var orchestrator := ManagerLocator.get_main_orchestrator()
+	floor_manager.setup(orchestrator.current_floor if orchestrator else 1)
+	floor_manager.floor_completed.connect(_on_floor_completed)
 
 func _setup_extraction_manager() -> void:
 	extraction_manager = ExtractionManager.new()
 	extraction_manager.name = "ExtractionManager"
 	add_child(extraction_manager)
-	extraction_manager.setup(room_manager, enemy_manager)
+	extraction_manager.setup(room_manager, enemy_manager, floor_manager.extraction_interval())
+	extraction_manager.victory_declared.connect(floor_manager.complete_floor)
 
 func _spawn_nexo() -> void:
 	nexo = NEXO_SCENE.instantiate() as Nexo
@@ -212,6 +225,9 @@ func _connect_signals() -> void:
 		if not pause_menu.exit_requested.is_connected(_go_to_main_menu):
 			pause_menu.exit_requested.connect(_go_to_main_menu)
 
+	if next_floor_button and not next_floor_button.pressed.is_connected(_go_to_next_floor):
+		next_floor_button.pressed.connect(_go_to_next_floor)
+
 	if return_button and not return_button.pressed.is_connected(_go_to_main_menu):
 		return_button.pressed.connect(_go_to_main_menu)
 
@@ -252,6 +268,16 @@ func _on_victory() -> void:
 	if victory_handler:
 		victory_handler.show_victory_screen(_get_run_gold_earned())
 
+## Fires before victory_entered (ExtractionManager emits victory_declared
+## before requesting the VICTORY state), so the overlay is ready when shown.
+func _on_floor_completed(completed_floor: int) -> void:
+	var has_next := not floor_manager.is_final_floor()
+	if next_floor_button:
+		next_floor_button.visible = has_next
+		next_floor_button.text = "Descender al piso %d" % (completed_floor + 1)
+	if victory_label and has_next:
+		victory_label.text = "¡Piso %d superado!" % completed_floor
+
 func _get_run_gold_earned() -> int:
 	var currency := ManagerLocator.get_currency_manager() as CurrencyManager
 	if currency:
@@ -265,6 +291,11 @@ func _go_to_main_menu() -> void:
 	var orchestrator := _get_orchestrator()
 	if orchestrator:
 		orchestrator.return_to_main_menu()
+
+func _go_to_next_floor() -> void:
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		orchestrator.advance_floor()
 
 func _reload_current_scene() -> void:
 	var orchestrator := _get_orchestrator()

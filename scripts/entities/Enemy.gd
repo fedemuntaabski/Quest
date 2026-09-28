@@ -56,12 +56,13 @@ func setup(start_position: Vector2) -> void:
 	global_position = start_position
 
 
-func configure(p_variant: Variant, p_zone_id: String) -> void:
+## Multipliers come from FloorManager (per-floor difficulty scaling).
+func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0, damage_multiplier: float = 1.0) -> void:
 	variant = p_variant
 	current_zone_id = p_zone_id
 
 	var cfg: Dictionary = VARIANT_CONFIG[variant]
-	max_hp = int(cfg["hp"])
+	max_hp = maxi(1, roundi(int(cfg["hp"]) * hp_multiplier))
 	current_hp = max_hp
 
 	if icon:
@@ -72,9 +73,9 @@ func configure(p_variant: Variant, p_zone_id: String) -> void:
 	ai_timer.timeout.connect(_on_ai_tick)
 	ai_timer.start()
 
-	hitbox.configure(int(cfg.get("contact_damage", 1)), CONTACT_HIT_INTERVAL)
+	hitbox.configure(maxi(1, roundi(int(cfg.get("contact_damage", 1)) * damage_multiplier)), CONTACT_HIT_INTERVAL)
 
-	attack_damage = int(cfg.get("damage_per_tick", DEFAULT_ATTACK_DAMAGE))
+	attack_damage = maxi(1, roundi(int(cfg.get("damage_per_tick", DEFAULT_ATTACK_DAMAGE)) * damage_multiplier))
 	attack_timer.wait_time = attack_speed
 	attack_timer.one_shot = false
 	attack_timer.timeout.connect(_perform_attack)

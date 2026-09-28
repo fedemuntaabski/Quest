@@ -25,6 +25,7 @@ const _STAT_BAR_PATH := "Control/StatBarAnchor/StatBarCenter/StatBarPanel/Margin
 
 @onready var invasion_flash: ColorRect = get_node_or_null("Control/InvasionFlash")
 @onready var building_menu: BuildingMenu = get_node_or_null("Control/BuildingMenu")
+@onready var floor_label: Label = get_node_or_null("Control/FloorLabel")
 
 const INVASION_FLASH_ALPHA := 0.3
 const INVASION_FLASH_HALF_TIME := 0.25
@@ -71,6 +72,12 @@ func _ready() -> void:
 			em.invasion_triggered.connect(_on_invasion_triggered)
 	else:
 		QuestLogger.warn(QuestLogger.Category.UI, "HUD: EnemyManager not found; invasion alert disabled.")
+
+	# Floor index is fixed for a Main2d instance (a new floor = new Main2d + new
+	# HUD), so one read at bind time is enough — no signal needed.
+	var fm := ManagerLocator.get_floor_manager()
+	if fm and floor_label:
+		floor_label.text = "Piso %d/%d" % [fm.floor_index, fm.config.max_floors]
 
 
 # ---------------- PLAYER STATS BINDING ----------------

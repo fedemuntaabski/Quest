@@ -25,13 +25,14 @@ func _ready() -> void:
 	add_to_group("extraction_manager")
 
 
-func setup(p_room_manager: RoomManager, p_enemy_manager: EnemyManager) -> void:
+## `spawn_interval` comes from FloorManager.extraction_interval() (shrinks per floor).
+func setup(p_room_manager: RoomManager, p_enemy_manager: EnemyManager, spawn_interval: float = SPAWN_INTERVAL) -> void:
 	room_manager = p_room_manager
 	enemy_manager = p_enemy_manager
 
 	_spawn_timer = Timer.new()
 	_spawn_timer.name = "SpawnTimer"
-	_spawn_timer.wait_time = SPAWN_INTERVAL
+	_spawn_timer.wait_time = spawn_interval
 	_spawn_timer.one_shot = false
 	add_child(_spawn_timer)
 	_spawn_timer.timeout.connect(_on_spawn_timeout)

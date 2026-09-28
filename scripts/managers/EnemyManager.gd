@@ -22,6 +22,8 @@ signal invasion_triggered(spawn_rooms: Array[RoomZone], enemy_count: int)
 
 var room_manager: RoomManager
 var door_turn_system: DoorTurnSystem
+## Optional: null = floor-1 baseline (no scaling).
+var floor_manager: FloorManager
 var _enemies: Array[Enemy] = []
 var _enemies_root: Node2D
 
@@ -34,9 +36,10 @@ func _ready() -> void:
 	invasion_triggered.connect(_on_invasion_triggered)
 
 
-func setup(p_room_manager: RoomManager, p_door_turn_system: DoorTurnSystem = null) -> void:
+func setup(p_room_manager: RoomManager, p_door_turn_system: DoorTurnSystem = null, p_floor_manager: FloorManager = null) -> void:
 	room_manager = p_room_manager
 	door_turn_system = p_door_turn_system
+	floor_manager = p_floor_manager
 	if door_turn_system and not door_turn_system.turn_advanced.is_connected(_on_turn_advanced):
 		door_turn_system.turn_advanced.connect(_on_turn_advanced)
 
@@ -48,8 +51,11 @@ func _on_turn_advanced(current_turn: int) -> void:
 	if dark_rooms.is_empty():
 		return
 
-	var spawn_chance: float = minf(MAX_CHANCE, BASE_CHANCE + (dark_rooms.size() * CHANCE_PER_DARK_ROOM) + (current_turn * CHANCE_PER_TURN))
+	var floor_chance_bonus: float = floor_manager.invasion_chance_bonus() if floor_manager else 0.0
+	var spawn_chance: float = minf(MAX_CHANCE, BASE_CHANCE + (dark_rooms.size() * CHANCE_PER_DARK_ROOM) + (current_turn * CHANCE_PER_TURN) + floor_chance_bonus)
 	var enemy_count: int = 1 + int(floor(current_turn / TURNS_PER_WAVE_STEP))
+	if floor_manager:
+		enemy_count += floor_manager.extra_invasion_enemies()
 	var roll: float = randf()
 	if roll > spawn_chance:
 		QuestLogger.info(QuestLogger.Category.ENEMY, "Turn %d: no invasion (chance %.1f%%, roll %.3f)." % [current_turn, spawn_chance * 100.0, roll])
@@ -80,7 +86,9 @@ func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
 	var enemy := ENEMY_SCENE.instantiate() as Enemy
 	_enemies_root.add_child(enemy)
 	enemy.setup(world_position)
-	enemy.configure(_roll_variant(), zone_id)
+	var hp_mult: float = floor_manager.enemy_hp_multiplier() if floor_manager else 1.0
+	var dmg_mult: float = floor_manager.enemy_damage_multiplier() if floor_manager else 1.0
+	enemy.configure(_roll_variant(), zone_id, hp_mult, dmg_mult)
 	enemy.died.connect(_on_enemy_died)
 	_enemies.append(enemy)
 	return enemy
