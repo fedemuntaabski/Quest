@@ -11,12 +11,14 @@ enum Variant { SWARM, SAPPER, HUNTER }
 enum State { MOVING, ATTACKING }
 
 const VARIANT_CONFIG := {
-	Variant.SWARM: {"hp": 6, "speed": 500.0, "ai_interval": 1.2},
-	Variant.SAPPER: {"hp": 10, "speed": 380.0, "damage_per_tick": 3, "ai_interval": 2.0},
-	Variant.HUNTER: {"hp": 8, "speed": 400.0, "ai_interval": 1.2},
+	Variant.SWARM: {"hp": 6, "speed": 500.0, "ai_interval": 1.2, "contact_damage": 2},
+	Variant.SAPPER: {"hp": 10, "speed": 380.0, "damage_per_tick": 3, "ai_interval": 2.0, "contact_damage": 1},
+	Variant.HUNTER: {"hp": 8, "speed": 400.0, "ai_interval": 1.2, "contact_damage": 3},
 }
 
 const DEFAULT_ATTACK_DAMAGE := 2
+## Seconds between contact-damage ticks against the hero (HitboxComponent).
+const CONTACT_HIT_INTERVAL := 1.0
 
 const TYPE_COLORS := {
 	Variant.SWARM: Color(0.85, 0.25, 0.25, 1.0),
@@ -29,6 +31,8 @@ signal died(enemy: Enemy)
 @onready var icon: Polygon2D = $Icon
 @onready var ai_timer: Timer = $AiTimer
 @onready var attack_timer: Timer = $AttackTimer
+@onready var hurtbox: HurtboxComponent = $Hurtbox
+@onready var hitbox: HitboxComponent = $Hitbox
 
 @export var attack_speed: float = 1.0
 var attack_damage: int = DEFAULT_ATTACK_DAMAGE
@@ -41,6 +45,10 @@ var max_hp: int = 0
 var current_hp: int = 0
 var _slowed_until_msec: int = 0
 var _moving: bool = false
+
+
+func _ready() -> void:
+	hurtbox.hurt.connect(take_damage)
 
 
 ## Call after add_child(): global_position needs the node in the tree.
@@ -63,6 +71,8 @@ func configure(p_variant: Variant, p_zone_id: String) -> void:
 	ai_timer.one_shot = false
 	ai_timer.timeout.connect(_on_ai_tick)
 	ai_timer.start()
+
+	hitbox.configure(int(cfg.get("contact_damage", 1)), CONTACT_HIT_INTERVAL)
 
 	attack_damage = int(cfg.get("damage_per_tick", DEFAULT_ATTACK_DAMAGE))
 	attack_timer.wait_time = attack_speed

@@ -1,9 +1,17 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/entities/Enemy.gd" id="1_enemy_script"]
+[ext_resource type="Script" path="res://scripts/core/combat/HurtboxComponent.gd" id="2_hurtbox"]
+[ext_resource type="Script" path="res://scripts/core/combat/HitboxComponent.gd" id="3_hitbox"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 radius = 14.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hurtbox"]
+radius = 14.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 24.0
 
 [node name="Enemy" type="CharacterBody2D" groups=["enemies"]]
 collision_layer = 2
@@ -20,3 +28,23 @@ polygon = PackedVector2Array(0, -16, 14, 12, -14, 12)
 [node name="AiTimer" type="Timer" parent="."]
 
 [node name="AttackTimer" type="Timer" parent="."]
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+input_pickable = false
+script = ExtResource("2_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("CircleShape2D_hurtbox")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 4
+monitorable = false
+input_pickable = false
+script = ExtResource("3_hitbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+shape = SubResource("CircleShape2D_hitbox")
