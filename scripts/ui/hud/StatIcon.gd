@@ -1,7 +1,7 @@
 extends Control
 class_name StatIcon
 
-@export_enum("hp", "industry", "food", "science", "dust", "potion", "lock")
+@export_enum("hp", "industry", "food", "science", "dust", "lock")
 var icon_type: String = "hp":
 	set(value):
 		if icon_type == value:
@@ -15,7 +15,6 @@ const BASE_COLORS := {
 	"food": QuestPalette.BLOOD_LIGHT,
 	"science": QuestPalette.VIOLET,
 	"dust": QuestPalette.PARCHMENT_LIGHT,
-	"potion": QuestPalette.GOLD,
 	"lock": QuestPalette.GOLD_DARK
 }
 
@@ -77,9 +76,6 @@ func _draw_icon(
 
 		"dust":
 			_draw_sparkle(draw_size, color, offset, expand)
-
-		"potion":
-			_draw_potion(draw_size, color, offset, expand)
 
 		"lock":
 			_draw_lock(draw_size, color, offset, expand)
@@ -182,32 +178,3 @@ func _draw_sparkle(draw_size: Vector2, color: Color, offset: Vector2, expand: fl
 	])
 
 	draw_polygon(points, PackedColorArray([color]))
-
-func _draw_potion(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
-	var w: float = draw_size.x
-	var h: float = draw_size.y
-
-	var bottle_points := PackedVector2Array([
-		Vector2(w * 0.36, h * 0.18) + offset,
-		Vector2(w * 0.64, h * 0.18) + offset,
-		Vector2(w * 0.72 + expand, h * 0.38) + offset,
-		Vector2(w * 0.68 + expand, h * 0.82 + expand) + offset,
-		Vector2(w * 0.32 - expand, h * 0.82 + expand) + offset,
-		Vector2(w * 0.28 - expand, h * 0.38) + offset
-	])
-
-	draw_polygon(bottle_points, PackedColorArray([color]))
-
-	var liquid := Rect2(
-		Vector2(w * 0.34, h * 0.54) + offset,
-		Vector2(w * 0.32, h * 0.2 + expand)
-	)
-
-	draw_rect(liquid, color.lightened(0.25), true)
-
-	var cork := Rect2(
-		Vector2(w * 0.42, h * 0.08 - expand * 0.5) + offset,
-		Vector2(w * 0.16, h * 0.12 + expand)
-	)
-
-	draw_rect(cork, color.darkened(0.5), true)

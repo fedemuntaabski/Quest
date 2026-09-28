@@ -25,7 +25,7 @@ class_name FloorConfig
 @export_group("Discovery")
 ## Dust granted every time a new room is discovered (door opened), whether or
 ## not an invasion happens. Tuned so a floor lights some rooms, not all
-## (energizing costs RoomZone.POWER_COST = 10; run starts with 20 dust).
+## (energizing costs RoomZone.get_power_cost(), base 10; run starts with 20 dust).
 ## Session 7: 2 → 4 (the start room is now lit for free, rooms can be switched
 ## off for a refund, and floors are bigger).
 @export var dust_per_discovery: int = 4

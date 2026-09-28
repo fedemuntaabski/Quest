@@ -156,6 +156,11 @@ func _on_ai_tick() -> void:
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager == null:
 		return
+	# Modules in the current room (built later, or a second one after a kill)
+	# are only scanned on arrival otherwise.
+	on_zone_entered(current_zone_id)
+	if current_state == State.ATTACKING:
+		return
 
 	match variant:
 		Variant.SWARM:

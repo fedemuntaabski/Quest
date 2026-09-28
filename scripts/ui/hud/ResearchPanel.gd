@@ -83,9 +83,10 @@ func _populate() -> void:
 
 
 func _make_card(entry: ResearchEntry) -> Control:
+	var rm := ManagerLocator.get_resource_manager()
 	var state := get_state(entry.id)
-	var available := state == "Disponible"
-	var done := state == "Investigada"
+	var available: bool = rm.can_research(entry.id)
+	var done: bool = rm.is_researched(entry.id)
 	var card := PanelContainer.new()
 	card.name = entry.id
 	card.mouse_filter = Control.MOUSE_FILTER_STOP

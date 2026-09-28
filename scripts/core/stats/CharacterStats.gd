@@ -7,12 +7,10 @@ const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
 # BASIC INFO
 # -------------------------
 var character_name: String = "Unnamed"
-var potions_owned: int = 1
 
 signal hp_changed(current, max)
 signal died
 signal stats_changed
-signal potion_used(heal_amount: int, remaining: int)
 signal attack_changed(damage: int, interval: float)
 
 # -------------------------
@@ -54,23 +52,6 @@ func take_damage(amount: int) -> void:
 func heal(amount: int) -> void:
 	current_hp = min(current_hp + max(amount, 0), max_hp)
 	hp_changed.emit(current_hp, max_hp)
-
-func use_potion() -> bool:
-	if potions_owned <= 0:
-		return false
-
-	if current_hp >= max_hp:
-		return false
-
-	var heal_amount := int(ceil(float(max_hp) * 0.5))
-
-	heal(heal_amount)
-
-	potions_owned -= 1
-	potion_used.emit(heal_amount, potions_owned)
-	stats_changed.emit()
-
-	return true
 
 func set_base_attack(damage: int, interval: float) -> void:
 	base_attack_damage = damage

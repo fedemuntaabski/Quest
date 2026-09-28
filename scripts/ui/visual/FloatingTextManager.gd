@@ -8,12 +8,8 @@ class_name FloatingTextManager
 
 const FloatingTextScene := preload("res://scenes/FloatingText.tscn")
 
-var _bound_stats: CharacterStats = null
-
-
 func _ready() -> void:
 	add_to_group("floating_text_manager")
-	call_deferred("_try_bind_player_stats")
 
 
 # =========================================================
@@ -32,29 +28,6 @@ func spawn_text(world_pos: Vector2, text: String, color: Color, crit: bool = fal
 	add_child(ft)
 
 	ft.setup(text, color, crit, intensity)
-
-
-func bind_character_stats(stats: CharacterStats) -> void:
-	if _bound_stats == stats:
-		return
-	if _bound_stats and _bound_stats.potion_used.is_connected(_on_potion_used):
-		_bound_stats.potion_used.disconnect(_on_potion_used)
-
-	_bound_stats = stats
-	if _bound_stats and not _bound_stats.potion_used.is_connected(_on_potion_used):
-		_bound_stats.potion_used.connect(_on_potion_used)
-
-
-func _try_bind_player_stats() -> void:
-	var ps := ManagerLocator.get_player_stats()
-	if ps == null or ps.stats == null:
-		return
-	bind_character_stats(ps.stats)
-
-
-func _on_potion_used(heal_amount: int, _remaining: int) -> void:
-	var player := get_tree().get_first_node_in_group("player") as Node2D
-	spawn_text_from_host(player, "+%d" % heal_amount, QuestPalette.COMBAT_TEXT_HEAL, false, Vector2(-12, -28), 1.0, true)
 
 
 # =========================================================

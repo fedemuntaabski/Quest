@@ -107,16 +107,6 @@ func spawn_enemies_in_room(group_id: String, count: int) -> void:
 	QuestLogger.info(QuestLogger.Category.ENEMY, "Spawned %d enemies in room '%s'." % [count, room_zone_id])
 
 
-func get_enemies_in_room(group_id: String) -> Array[Enemy]:
-	var result: Array[Enemy] = []
-	if room_manager == null:
-		return result
-	for enemy in _enemies:
-		if room_manager.get_group_id(enemy.current_zone_id) == group_id:
-			result.append(enemy)
-	return result
-
-
 func _roll_variant() -> Enemy.Variant:
 	var total := 0
 	for weight in VARIANT_WEIGHTS.values():
