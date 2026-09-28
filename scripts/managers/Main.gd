@@ -20,6 +20,9 @@ const FADE_DURATION := 0.25
 @onready var transition_rect: ColorRect = $TransitionOverlay/ColorRect
 
 var _is_transitioning: bool = false
+## Run-scoped floor counter (1-based). Lives here, not in Main2d, because
+## Main2d is freed/re-instantiated between floors. Read by Main2d → FloorManager.
+var current_floor: int = 1
 
 
 func _ready() -> void:
@@ -66,6 +69,7 @@ func start_gameplay() -> void:
 
 	await _fade_to_black()
 	await _clear_containers(true, true, true)
+	_begin_new_run()
 	_current_world_add(MAIN2D_SCENE.instantiate())
 	_current_hud_add(HUD_SCENE.instantiate())
 	await _fade_from_black()
@@ -86,7 +90,20 @@ func go_to_waiting_room() -> void:
 	_is_transitioning = false
 
 
+## Retry after death: restarts the run from floor 1.
 func reload_gameplay() -> void:
+	await _reload_world(true)
+
+
+## Floor cleared: same run, next floor. Resources carry over.
+func advance_floor() -> void:
+	if _is_transitioning:
+		return
+	current_floor += 1
+	await _reload_world(false)
+
+
+func _reload_world(new_run: bool) -> void:
 	if _is_transitioning:
 		return
 	_is_transitioning = true
@@ -95,11 +112,22 @@ func reload_gameplay() -> void:
 
 	await _fade_to_black()
 	await _clear_containers(true, false, true)
+	if new_run:
+		_begin_new_run()
 	_current_world_add(MAIN2D_SCENE.instantiate())
 	_current_hud_add(HUD_SCENE.instantiate())
 	await _fade_from_black()
 
 	_is_transitioning = false
+
+
+## ResourceManager is an autoload, so without this a run inherits the
+## previous run's resources (and the very first run starts at 0 dust).
+func _begin_new_run() -> void:
+	current_floor = 1
+	var resource_manager := ManagerLocator.get_resource_manager()
+	if resource_manager:
+		resource_manager.reset_resources()
 
 
 # ─────────────────────────────────────────────
