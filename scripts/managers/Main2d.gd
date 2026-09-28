@@ -46,6 +46,7 @@ var module_build_system: ModuleBuildSystem
 var enemy_manager: EnemyManager
 var extraction_manager: ExtractionManager
 var floor_manager: FloorManager
+var exit_indicator: ExitIndicator
 var nexo: Nexo
 var nexo_controller: NexoController
 var map_layout: MapLayout
@@ -83,6 +84,7 @@ func _ready() -> void:
 	_setup_enemy_manager()
 	_setup_extraction_manager()
 	_register_groups_and_doors()
+	_setup_exit_indicator()
 	_spawn_player()
 	_spawn_nexo()
 	_setup_player_action_controller()
@@ -167,6 +169,13 @@ func _setup_extraction_manager() -> void:
 	add_child(extraction_manager)
 	extraction_manager.setup(room_manager, enemy_manager, floor_manager.extraction_interval())
 	extraction_manager.victory_declared.connect(floor_manager.complete_floor)
+
+func _setup_exit_indicator() -> void:
+	exit_indicator = ExitIndicator.new()
+	exit_indicator.name = "ExitIndicator"
+	add_child(exit_indicator)
+	exit_indicator.setup(room_manager, door_turn_system, extraction_manager)
+
 
 func _spawn_nexo() -> void:
 	nexo = NEXO_SCENE.instantiate() as Nexo
