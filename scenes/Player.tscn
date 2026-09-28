@@ -104,7 +104,7 @@ autoplay = "idle"
 position_smoothing_enabled = true
 position_smoothing_speed = 10.0
 
-[node name="Stats" type="CharacterStats" parent="."]
+[node name="Stats" type="Node" parent="."]
 script = ExtResource("3_stats")
 
 [node name="Hurtbox" type="Area2D" parent="."]
