@@ -1,9 +1,10 @@
 extends Area2D
 class_name Nexo
 
-## Nexo: clickable pickup at the center of the start room. Click plumbing
-## mirrors Door.gd. NexoController owns the pickup rule (must be in
-## start_room) and kicks off the extraction phase.
+## Nexo: clickable pickup in the start room (just above its center). Click
+## plumbing mirrors Door.gd. NexoController owns the pickup rule (exit room
+## discovered + hero in the start room), the confirmation dialog and the
+## extraction kick-off.
 
 signal nexo_clicked(nexo: Nexo)
 

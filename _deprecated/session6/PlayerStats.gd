@@ -6,9 +6,7 @@ const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd
 signal stats_changed(stats: CharacterStats)
 signal upgrades_changed(upgrades: Array)
 signal player_died
-## Hero leveled up (in-run, paid in Comida). Since session 7 every level
-## raises all UpgradeConfig.STAT_KEYS together: stat_key is always "level" and
-## `level` is the number of levels bought this run (hero level - 1).
+## In-run (Ciencia) upgrade bought: stat_key in UpgradeConfig.STAT_KEYS.
 signal run_upgrades_changed(stat_key: String, level: int)
 
 const RUN_UPGRADE_CONFIG: UpgradeConfig = preload("res://resources/upgrades/run_upgrade_config.tres")
@@ -24,20 +22,10 @@ var upgrade_levels := {
 	"hp": 0
 }
 
-# IN-RUN HERO LEVEL (Comida, reset per run by Main._begin_new_run; survives
-# floors because this autoload outlives Main2d and refresh_stats() re-applies it).
-# ponytail: one level for the one hero; with several heroes this becomes a
-# per-hero dict (CharacterData id → levels) and the API takes the CharacterStats.
+# IN-RUN UPGRADES (Ciencia, reset per run by Main._begin_new_run; survive floors
+# because this autoload outlives Main2d and refresh_stats() re-applies them)
 var run_upgrade_config: UpgradeConfig = RUN_UPGRADE_CONFIG
-## Levels bought this run (hero level = 1 + run_level).
-var run_level: int = 0
-## Read-only compat view (session 6 per-stat levels): every stat == run_level.
-var run_upgrade_levels: Dictionary:
-	get:
-		var levels := {}
-		for key in UpgradeConfig.STAT_KEYS:
-			levels[key] = run_level
-		return levels
+var run_upgrade_levels := {"hp": 0, "damage": 0, "attack_speed": 0}
 
 func register(player_stats: CharacterStats) -> void:
 	if player_stats == null:
@@ -68,7 +56,7 @@ func refresh_stats() -> void:
 	_apply_base_stats()
 	_rebuild_upgrade_levels()
 	_reapply_upgrades()
-	for i in run_level:
+	for i in int(run_upgrade_levels["hp"]):
 		stats.apply_modifier("hp", run_upgrade_config.hp_per_level)
 	_apply_run_attack()
 
@@ -125,43 +113,26 @@ func _rebuild_upgrade_levels() -> void:
 		if upgrade_levels.has(stat_key):
 			upgrade_levels[stat_key] = min(StatBalance.MAX_UPGRADE_LEVEL, int(upgrade_levels[stat_key]) + 1)
 
-# ---------------- IN-RUN HERO LEVEL ----------------
+# ---------------- IN-RUN UPGRADES ----------------
 
-## Compat (session 6): all stats share the hero's run level now.
 func get_run_upgrade_level(stat_key: String) -> int:
-	return run_level if UpgradeConfig.STAT_KEYS.has(stat_key) else 0
+	return int(run_upgrade_levels.get(stat_key, 0))
 
 
-## 1 + levels bought this run (there is no XP system).
+## 1 + every in-run upgrade bought (there is no XP system).
 func get_hero_level() -> int:
-	return 1 + run_level
+	var total := 1
+	for key in run_upgrade_levels:
+		total += int(run_upgrade_levels[key])
+	return total
 
 
-## Popup data for "Subir de nivel": level, next level, cost (Comida), maxed,
-## affordable, and one row per stat with its current → next value.
-func get_level_up_preview() -> Dictionary:
-	var cfg := run_upgrade_config
-	var cost := cfg.get_cost(run_level)
-	var rm := ManagerLocator.get_resource_manager()
-	var rows: Array[Dictionary] = []
-	for key in UpgradeConfig.STAT_KEYS:
-		var row := get_run_upgrade_preview(key)
-		rows.append({"key": key, "label": UpgradeConfig.LABELS[key], "current": row["current"], "next": row["next"]})
-	return {
-		"level": get_hero_level(),
-		"next_level": get_hero_level() + 1,
-		"max_level": 1 + cfg.max_level,
-		"cost": cost,
-		"cost_resource": cfg.cost_resource,
-		"maxed": stats == null or cfg.is_maxed(run_level),
-		"affordable": rm != null and rm.get_resource(cfg.cost_resource) >= cost,
-		"rows": rows,
-	}
-
-
-## Compat (session 6) row for one stat: the values a level-up would give it.
+## Row data for the "Mejoras" panel: level, current/next display values, cost,
+## maxed (level cap, or the HP clamp would make the purchase a no-op),
+## affordable (against ResourceManager).
 func get_run_upgrade_preview(stat_key: String) -> Dictionary:
 	var cfg := run_upgrade_config
+	var level := get_run_upgrade_level(stat_key)
 	var current: Variant = 0
 	var next: Variant = 0
 	if stats:
@@ -171,55 +142,56 @@ func get_run_upgrade_preview(stat_key: String) -> Dictionary:
 				next = int(StatBalance.apply_hp_delta(stats.max_hp, stats.current_hp, cfg.hp_per_level)["max_hp"])
 			"damage":
 				current = stats.attack_damage
-				next = cfg.damage_at(stats.base_attack_damage, run_level + 1)
+				next = cfg.damage_at(stats.base_attack_damage, level + 1)
 			"attack_speed":
 				current = stats.attack_interval
-				next = cfg.interval_at(stats.base_attack_interval, run_level + 1)
-	var cost := cfg.get_cost(run_level)
+				next = cfg.interval_at(stats.base_attack_interval, level + 1)
+	var cost := cfg.get_cost(level)
 	var rm := ManagerLocator.get_resource_manager()
 	return {
-		"level": run_level,
+		"level": level,
 		"max_level": cfg.max_level,
 		"current": current,
 		"next": next,
 		"cost": cost,
 		"cost_resource": cfg.cost_resource,
-		"maxed": stats == null or cfg.is_maxed(run_level),
+		"maxed": stats == null or cfg.is_maxed(level) or current == next,
 		"affordable": rm != null and rm.get_resource(cfg.cost_resource) >= cost,
 	}
 
 
-## Spends Comida and raises every stat one level. false = maxed/unaffordable.
-func level_up_hero() -> bool:
-	if stats == null or run_upgrade_config.is_maxed(run_level):
+## Spends the config's resource and applies one level. false = maxed/unaffordable.
+func buy_run_upgrade(stat_key: String) -> bool:
+	if not run_upgrade_levels.has(stat_key):
+		return false
+	var preview := get_run_upgrade_preview(stat_key)
+	if preview["maxed"]:
 		return false
 	var rm := ManagerLocator.get_resource_manager()
-	if rm == null or not rm.spend_resource(run_upgrade_config.cost_resource, run_upgrade_config.get_cost(run_level)):
+	if rm == null or not rm.spend_resource(run_upgrade_config.cost_resource, int(preview["cost"])):
 		return false
 
-	run_level += 1
-	stats.apply_modifier("hp", run_upgrade_config.hp_per_level)
-	_apply_run_attack()
-	QuestLogger.info(QuestLogger.Category.UI, "Hero level up -> %d." % get_hero_level())
-	run_upgrades_changed.emit("level", run_level)
+	run_upgrade_levels[stat_key] = int(run_upgrade_levels[stat_key]) + 1
+	if stat_key == "hp":
+		stats.apply_modifier("hp", run_upgrade_config.hp_per_level)
+	else:
+		_apply_run_attack()
+	QuestLogger.info(QuestLogger.Category.UI, "Run upgrade '%s' -> level %d." % [stat_key, run_upgrade_levels[stat_key]])
+	run_upgrades_changed.emit(stat_key, int(run_upgrade_levels[stat_key]))
 	stats_changed.emit(stats)
 	return true
 
 
-## Compat (session 6): any stat key now levels the whole hero up.
-func buy_run_upgrade(stat_key: String) -> bool:
-	return UpgradeConfig.STAT_KEYS.has(stat_key) and level_up_hero()
-
-
 func reset_run_upgrades() -> void:
-	run_level = 0
+	for key in run_upgrade_levels:
+		run_upgrade_levels[key] = 0
 
 
 func _apply_run_attack() -> void:
 	var cfg := run_upgrade_config
 	stats.set_attack(
-		cfg.damage_at(stats.base_attack_damage, run_level),
-		cfg.interval_at(stats.base_attack_interval, run_level)
+		cfg.damage_at(stats.base_attack_damage, get_run_upgrade_level("damage")),
+		cfg.interval_at(stats.base_attack_interval, get_run_upgrade_level("attack_speed"))
 	)
 
 

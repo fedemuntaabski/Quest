@@ -67,6 +67,9 @@ var _shown: bool = false
 var _energy_button: EnergyButton = null
 var _light: RoomLight = null
 var _building_slots: Array[BuildingSlot] = []
+## Dust the player paid to light this room; refunded when switched off. 0 for
+## rooms lit for free (the start room), so toggling can't mint dust.
+var _power_paid: int = 0
 @onready var _slots_container: Node2D = $BuildingSlots
 
 
@@ -146,6 +149,14 @@ func set_powered(v: bool) -> void:
 	if is_powered == v:
 		return
 	is_powered = v
+	var had_generator := false
+	for module in get_modules():
+		module.powered = v
+		had_generator = had_generator or module is GeneratorModule
+	if had_generator:
+		var resources := ManagerLocator.get_resource_manager()
+		if resources:
+			resources.notify_production_changed()
 	power_changed.emit(zone_id, v)
 	_apply_visual()
 	_update_energy_button_visibility()
@@ -180,8 +191,30 @@ func try_power_up() -> void:
 		if text_mgr:
 			text_mgr.spawn_text(center_position, "Polvo insuficiente", QuestPalette.GOLD_DARK)
 		return
+	_power_paid = POWER_COST
 	set_powered(true)
 	powered_up.emit(zone_id)
+
+
+## Switches a lit room off and refunds the dust paid for it (DotE-style).
+func power_down() -> void:
+	if not is_powered:
+		return
+	var resource_manager := ManagerLocator.get_resource_manager()
+	if resource_manager and _power_paid > 0:
+		resource_manager.add_resource("dust", _power_paid)
+	_power_paid = 0
+	set_powered(false)
+
+
+## Middle-click on a revealed room: light it (pays dust) or switch it off.
+func toggle_power() -> void:
+	if kind != "room" or not _shown:
+		return
+	if is_powered:
+		power_down()
+	else:
+		try_power_up()
 
 
 ## Sole build gate: only powered rooms accept modules.
@@ -213,7 +246,8 @@ func _update_energy_button_visibility() -> void:
 		return
 	var should_show := _shown and not is_powered
 	_energy_button.visible = should_show
-	_energy_button.input_pickable = should_show
+	# Passive hint since session 7: the room is lit with middle-click (toggle_power).
+	_energy_button.input_pickable = false
 
 
 func _apply_visual() -> void:
@@ -227,11 +261,17 @@ func _apply_visual() -> void:
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+	if not (event is InputEventMouseButton and event.pressed):
 		return
-	if not _shown:
+	if not _shown or get_viewport().is_input_handled():
 		return
-	if get_viewport().is_input_handled():
-		return
-	clicked.emit(self)
+	match event.button_index:
+		MOUSE_BUTTON_LEFT:
+			clicked.emit(self)
+		MOUSE_BUTTON_MIDDLE:
+			if kind != "room":
+				return
+			toggle_power()
+		_:
+			return
 	get_viewport().set_input_as_handled()

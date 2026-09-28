@@ -15,6 +15,8 @@ class_name ExitIndicator
 ## Emitted by every _refresh() (visibility or carrying may have changed).
 signal hint_changed(hint_visible: bool)
 
+const UNSHADED: CanvasItemMaterial = preload("res://resources/maps/unshaded_material.tres")
+
 const HUD_LAYER := 5
 const MARKER_Z := 50
 
@@ -132,11 +134,14 @@ func _build_marker(world_pos: Vector2) -> void:
 	_marker.global_position = world_pos
 	add_child(_marker)
 
+	# Unshaded: the exit marker stays readable under the dark canvas.
 	_marker_shape = Polygon2D.new()
+	_marker_shape.material = UNSHADED
 	_marker_shape.polygon = PackedVector2Array([Vector2(0, -34), Vector2(24, 0), Vector2(0, 34), Vector2(-24, 0)])
 	_marker.add_child(_marker_shape)
 
 	_marker_label = Label.new()
+	_marker_label.material = UNSHADED
 	_marker_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_marker_label.position = Vector2(-120, 38)
 	_marker_label.size = Vector2(240, 24)

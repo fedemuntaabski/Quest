@@ -515,3 +515,87 @@ Loops en el generador y tipos de sala siguen como diseño (sesión 5). Se priori
 3. Loops en el generador y tipos de sala (diseños de la sesión 5).
 4. Sumidero para Comida (curar / subir de nivel, como dice su tooltip).
 5. Más héroes: `HUDController.add_hero_portrait()` ya apila; falta que `PlayerStats` maneje varios `CharacterStats`.
+
+---
+
+# Sesión 7 — 2026-09-28 (sobre `session/opus-2026-09-28-6`, sin commit)
+
+Reorientación DotE: recursos + construcción abajo, luz con clic central + oscuridad real, más Polvo y mapas más grandes, Nexo solo con la salida descubierta, progresión por niveles pagada en Comida.
+
+## Fase 1 — Reconocimiento (qué había)
+
+| Pieza | Estado al empezar |
+|---|---|
+| HUD | Recursos arriba-izquierda (`TopLeft/ResourcePanel`), retratos arriba-derecha, minimapa abajo-derecha. **Bug:** `HUDController.floor_label` apuntaba a `Control/FloorLabel` pero el nodo estaba en `Control/TopLeft/FloorLabel` → "Piso N/M" nunca se actualizaba (siempre "Piso 1"). |
+| `BuildingMenu` | Flotante sobre el slot clickeado (`_reposition`); única entrada = clic en slot vacío. |
+| Iluminación | `EnergyButton` (clic izquierdo) → `RoomZone.try_power_up()` (10 Polvo, permanente, sin apagar). `RoomLight` = overlay oscuro/rojo + `PointLight2D` cálido, pero **sin `CanvasModulate`**: la luz solo sumaba brillo, no había oscuridad real. La sala inicial empezaba apagada. |
+| Módulos | `Module.is_active` solo significaba "no destruido"; generadores/torretas/trampas no dependían de la luz. |
+| Descubrimiento | `FloorConfig.discovery_dust` 2 (+0.5/piso); mapas de 6 salas (+1/piso, máx 12). |
+| Nexo | Clic con el héroe en la sala inicial → se recogía al instante; no dependía de la salida. |
+| Mejoras | 3 filas independientes (vida/daño/vel.) pagadas en Ciencia; nivel = 1 + compras. |
+
+## Fase 2 — Implementado
+
+| Sistema | Archivos | Qué |
+|---|---|---|
+| HUD abajo | `scenes/HUD.tscn`, `HUDController.gd` | Nuevo `Control/BottomBar` (VBox anclado abajo-centro, crece hacia arriba): `BuildingMenu` acoplado arriba + `BottomRow` = `ResourcePanel` (mismos chips/ganancia) + `BuildPanel` ("Construir": **Producción** / **Defensa**). `TopLeft` queda solo con `FloorLabel` (ruta corregida). Tooltips de chips crecen hacia arriba. Retratos/popup/minimapa sin cambios de lugar. |
+| Construcción | `scripts/ui/BuildingMenu.gd` | Dos entradas, una sola compra (`_on_module_selected`): (a) **abajo**: `open_category(tab)` → tarjetas "Elegir" → módulo *armado*, contorno dorado en todos los slots libres del tamaño correcto en salas encendidas → clic en uno = construye (`ModuleBuildSystem` → `open_menu(slot)` detecta el armado); (b) clic en slot vacío = flujo de sesión 6 (tarjetas "Construir", slot resaltado). Clic derecho cancela; clic izquierdo afuera cierra solo si no está armado (ese clic es la elección del slot). Si no hay slots libres lo dice el título. `_reposition` eliminado (el menú vive en el contenedor). API intacta + `open_category()`/`is_armed()`. |
+| Luz con clic central | `RoomZone.gd`, `EnergyButton.gd/.tscn`, `RoomManager.gd`, `Minimap.gd` | MMB sobre una sala descubierta → `RoomZone.toggle_power()`: apagada → `try_power_up()` (10 Polvo, igual que antes); encendida → `power_down()` devuelve **lo pagado** (`_power_paid`; la inicial es gratis → no devuelve nada, no se fabrica Polvo). `EnergyButton` queda como cartel pasivo ("Clic central: encender (10 Polvo)", no pickable). Señal nueva `RoomManager.room_power_changed(zone_id, powered)` (burbujea `RoomZone.power_changed`); el minimapa la usa para redibujar también al apagar. |
+| Módulos y luz | `Module.gd`, `ResourceManager.gd`, `TurretModule.gd`, `Enemy.gd` | `Module.powered` + `is_working()` (= `is_active and powered`). `RoomZone.set_powered` lo propaga a sus módulos y emite `production_changed` si hay generadores. En salas apagadas: generadores no suman, torretas no disparan, trampas no ralentizan. Siguen siendo objetivos de los enemigos (`is_active` sin tocar). |
+| Oscuridad real | `MapVisualConfig.gd` (grupo "Dark canvas"), `RoomManager._ensure_dark_canvas()`, `resources/maps/unshaded_material.tres`, `ExitIndicator.gd`, `FloatingText.gd` | Un `CanvasModulate` (`RoomManager/DarkCanvas`, `dark_canvas_color` = 0.5/0.5/0.6) oscurece el canvas del mundo; las salas encendidas destacan por el `PointLight2D` que `RoomLight` ya tenía. No es negro: lo descubierto se sigue leyendo. El HUD (CanvasLayers) no se afecta. Marcador de salida y números flotantes usan material *unshaded*. Se desactiva con `dark_canvas_enabled = false`. |
+| Sala inicial encendida | `Main2d.gd` | `set_zone_powered(start, true)` al armar el mapa (gratis). Como sus 3 slots aparecen en el centro, el Nexo subió 56 px (`Main2d.NEXO_OFFSET`). |
+| Polvo / mapa | `FloorConfig.gd` | `dust_per_discovery` 2 → **4** (+0.5/piso igual). `base_room_count` 6 → **8**, `max_room_count` 12 → **14** (+1/piso igual). Sigue siendo árbol: sin loops ni tipos de sala. La salida sigue apareciendo solo al descubrir su sala (`ON_DISCOVERY`) y visible al llevar el Nexo. |
+| Nexo | `NexoController.gd`, `Nexo.gd` | `get_block_reason()`: "Descubrí la salida antes de llevarte el Nexo" / "Acercate al Nexo para recogerlo" (texto flotante). Si es válido abre un `ConfirmationDialog` nativo ("El Nexo", explica bloqueo de puertas/oleadas/lentitud; **Recoger** / **Cancelar**); `confirm_pickup()` revalida y sigue el flujo de siempre (`pick_up_nexo` → `pick_up` → `start_extraction`). |
+| Niveles del héroe | `PlayerStats.gd`, `UpgradeConfig.gd`, `run_upgrade_config.tres`, `CharacterPopup.gd`, `HUDController.gd` (tooltips) | `run_level` único: `level_up_hero()` gasta Comida y sube **las tres** stats juntas (+4 vida máx, +1 daño, −10 % intervalo). `get_level_up_preview()` arma todo lo que muestra el popup. Costo `round(8·1.4^n)` → 8, 11, 16, 22, 31 Comida, 5 subidas (nivel 1 → 6). Popup: sección fija "Subir de nivel: N → N+1", fila por stat actual → siguiente, botón "Subir de nivel (X Comida)" (gris/rojo si falta, "Nivel máximo" al tope). Tooltips: Comida = subir de nivel; Ciencia = sin uso por ahora. |
+| Tests | `tests/test_hud_ui.gd`, `tests/test_map_flow.gd` | HUD: barra inferior (padres, botones, piso, sin solape con minimapa), botón de nivel del popup, subida de nivel (Comida y no Ciencia, las tres stats, hitbox, tope, compat `buy_run_upgrade`), flujo armado desde Defensa (contornos, construye, gasta, limpia). Mapa: `DarkCanvas`, sala inicial encendida, apagarla no reembolsa, encender con MMB cuesta 10, apagar una pagada reembolsa 10, contorno "alcanza" al apagar; Nexo bloqueado antes de la salida (y `confirm_pickup` no lo saltea), luego sí inicia la extracción. |
+
+### Decisiones
+
+- **Construcción "armada" en vez de otro menú**: el `BuildingMenu` existente se acopló a la barra y ganó un modo sin slot; la compra sigue en un único lugar. Sin estructuras nuevas.
+- **Reembolso al apagar** (como DotE): sin eso el toggle no tiene sentido. Solo se devuelve lo pagado (la inicial no).
+- **Módulos en sala apagada = inertes** (`powered`), no invulnerables: sin esto, encender → construir → apagar (reembolso) dejaba generadores gratis.
+- **Dark canvas = `CanvasModulate` + las luces existentes**: ningún sistema paralelo; el overlay rojo de peligro sigue igual.
+- **Nivel en vez de stats**: se mantienen `buy_run_upgrade(key)` (ahora sube de nivel), `get_run_upgrade_level(key)`, `get_run_upgrade_preview(key)`, `run_upgrade_levels` (vista de solo lectura), `get_hero_level()`, `reset_run_upgrades()` y `run_upgrades_changed` (ahora `("level", n)`).
+- **Multi-héroe (solo preparado)**: el nivel vive en `PlayerStats.run_level` para el único héroe; un comentario `ponytail:` marca que pasa a un dict por héroe con la API recibiendo el `CharacterStats` (el popup ya abre con `stats` + `data` propios y `add_hero_portrait` ya apila).
+- Snapshots de lo reemplazado en `_deprecated/session6/` (README actualizado).
+
+## Verificación (sesión 7)
+
+- Al empezar: los 4 tests OK.
+- Al terminar: `test_map_generator` (1000 mapas con los tamaños nuevos), `test_map_flow`, `test_corridor_picking`, `test_hud_ui` → OK.
+- Carga normal de `Main.tscn`, `Main2d.tscn`, `HUD.tscn` (`--quit-after 90`): solo ruido de Steam; `HUD.tscn` solo, los warnings esperados de "sin mundo".
+- Ruido de `--script` (`Compilation failed` en menús por `ThemeManager`/`PauseMenu`): idéntico antes y después (17 líneas en `test_hud_ui` también con el árbol original).
+- `gdparse` OK en todos los `.gd` tocados; `--editor --quit` para reindexar.
+- Bug encontrado por el test nuevo y corregido: `RoomLight` no reevaluaba el contorno "alcanza el Polvo" al apagarse una sala.
+- **Nada visto en pantalla** (headless).
+
+## Checklist manual F5 (sesión 7)
+
+1. Abajo al centro: recursos (ícono, valor, `+N`) y a la derecha "Construir: Producción | Defensa". Arriba-izquierda "Piso 1/5". Minimapa abajo-derecha sin pisarse con la barra a 1280×720 y a la máxima.
+2. Hover en los chips: tooltip **arriba** del chip.
+3. La sala inicial arranca iluminada; el resto y las salas descubiertas apagadas se ven más oscuras pero legibles; el HUD no se oscurece. Si el centro de la luz queda quemado, bajar `warm_light_energy` o subir `dark_canvas_color` en `map_visual_config.tres`.
+4. Clic central en sala oscura: −10 Polvo, se enciende, aparecen slots. Otra vez: se apaga y vuelve el Polvo. En la inicial: se apaga sin devolver nada. Sin Polvo: "Polvo insuficiente". Clic izquierdo sobre el cartel mueve al héroe (ya no enciende).
+5. Construir un Gen. Ciencia y apagar su sala: la ganancia `+N` de Ciencia baja; al encender vuelve. Torreta en sala apagada no dispara.
+6. "Producción" → tarjetas "Elegir" sobre la barra → elegir una: slots mayores libres de salas encendidas en dorado + título explicativo → clic en uno: se construye y se gasta Industria. Clic derecho cancela. Sin slots libres el título lo avisa. Clic en un slot vacío sigue abriendo el menú con "Construir".
+7. Descubrir una sala da +4 Polvo (piso 1). Mapas de 8 salas en el piso 1.
+8. Nexo antes de ver la salida: "Descubrí la salida…". Con la salida descubierta y el héroe en la sala inicial: diálogo "El Nexo" → Cancelar no hace nada; Recoger inicia la extracción como antes. Fuera de la sala: "Acercate al Nexo…".
+9. Retrato → popup: "Subir de nivel: 1 → 2", tres filas actual → siguiente, botón "Subir de nivel (8 Comida)". Subir: −8 Comida, Ciencia intacta, vida/daño/velocidad suben juntos, Nivel 2. Sin Comida: botón gris/rojo. En nivel 6: "Nivel máximo".
+10. Bajar de piso: el nivel se mantiene; Retry/nueva partida: vuelve a 1.
+
+## Riesgos a revisar antes de mergear (sesión 7)
+
+- **Nada renderizado**: intensidad del `CanvasModulate` vs `PointLight2D` en GL Compatibility, legibilidad de enemigos/héroe en salas oscuras, tamaño de la barra inferior.
+- **Diálogo del Nexo**: `ConfirmationDialog` nativo (tema por defecto, ventana embebida); no pausa el juego.
+- **Esc con un módulo armado**: abre la pausa; al volver sigue armado (clic derecho lo cancela).
+- **Balance**: 4 Polvo por sala + inicial gratis + reembolso → sobra más Polvo; la Ciencia vuelve a no tener sumidero.
+- **Enemigos**: la sala inicial encendida ya no es "oscura" (menos invasiones al principio; no spawnean ahí salvo que el jugador la apague).
+- `run_upgrade_levels` ya no es asignable (nadie lo asignaba fuera de `PlayerStats`).
+- Módulos de salas apagadas siguen siendo atacables por Sappers aunque no funcionen (decisión).
+
+## Pendiente / próximos pasos (sesión 8+)
+
+1. Playtest visual (checklist arriba) y ajuste de `dark_canvas_color`/`warm_light_energy`.
+2. Sumidero para Ciencia (investigación).
+3. Cerrar popup/menú de construcción en `player_died`/`victory_entered` (pendiente de la sesión 6).
+4. Loops en el generador y tipos de sala (diseños de la sesión 5).
+5. Multi-héroe: `run_level` por héroe + `PlayerStats` con varios `CharacterStats`.

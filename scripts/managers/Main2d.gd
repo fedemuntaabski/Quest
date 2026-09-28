@@ -11,6 +11,9 @@ extends Node2D
 const PLAYER_SCENE := preload("res://scenes/Player.tscn")
 const NEXO_SCENE := preload("res://scenes/world/Nexo.tscn")
 const DOOR_SCENE := preload("res://scenes/Door.tscn")
+## Nexo sits above the start room's center: the lit start room's MAJOR build
+## slot occupies the center itself (RoomZone.BUILDING_SLOT_OFFSETS[0]).
+const NEXO_OFFSET := Vector2(0, -56)
 ## Hand-authored map (the pre-generator 5-room layout). Used when
 ## force_fallback_layout is on or the generated map fails validation.
 const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout.tres")
@@ -182,7 +185,7 @@ func _setup_exit_indicator() -> void:
 func _spawn_nexo() -> void:
 	nexo = NEXO_SCENE.instantiate() as Nexo
 	nexo.name = "Nexo"
-	nexo.global_position = room_manager.get_center(room_manager.get_start_zone_id())
+	nexo.global_position = room_manager.get_center(room_manager.get_start_zone_id()) + NEXO_OFFSET
 	add_child(nexo)
 
 	nexo_controller = NexoController.new()
@@ -208,6 +211,8 @@ func _register_groups_and_doors() -> void:
 
 	room_manager.refresh_visibility()
 	room_manager.validate_graph()
+	# The start room is lit for free (no dust paid → nothing to refund).
+	room_manager.set_zone_powered(room_manager.get_start_zone_id(), true)
 
 func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 	room_manager.on_group_revealed(group_id)

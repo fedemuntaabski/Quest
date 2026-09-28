@@ -9,6 +9,8 @@ class_name FloatingText
 
 @onready var label: Label = $Label
 
+const UNSHADED: CanvasItemMaterial = preload("res://resources/maps/unshaded_material.tres")
+
 var _is_healing: bool = false
 
 
@@ -23,6 +25,7 @@ func setup(
 	_is_healing = healing
 
 	if label:
+		label.material = UNSHADED  # readable under the dark canvas
 		label.text = text
 		label.modulate = color
 

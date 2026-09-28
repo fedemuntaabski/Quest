@@ -2,7 +2,8 @@ extends SceneTree
 
 ## Headless smoke test: boots Main2d (generated map, then fallback), opens
 ## every door in reveal order and checks discovery dust + fog consistency,
-## room lighting (dark/lit/affordable) and the exit hint modes.
+## room lighting (start lit, middle-click toggle + refund, dark canvas), the
+## exit hint modes and the exit-gated Nexo pickup.
 ##   godot --headless --path . --script res://tests/test_map_flow.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
@@ -41,7 +42,13 @@ func _run(use_fallback: bool) -> void:
 		failures.append("%s: minimap hid itself (no RoomManager?)" % label)
 	minimap.queue_free()
 
-	_check_lighting(room_manager, label)
+	_check_lighting(room_manager, resources, label)
+	var nexo_controller: NexoController = main2d.nexo_controller
+	if nexo_controller.get_block_reason() == "":
+		failures.append("%s: Nexo pickable before discovering the exit" % label)
+	nexo_controller.confirm_pickup()
+	if main2d.extraction_manager.current_phase != ExtractionManager.Phase.EXPLORATION or main2d.player.is_carrying_nexo:
+		failures.append("%s: confirm_pickup bypassed the exit gate" % label)
 	var indicator: ExitIndicator = main2d.exit_indicator
 	var config := room_manager.visual_config
 	if config.exit_hint_mode != MapVisualConfig.ExitHintMode.ON_DISCOVERY:
@@ -85,7 +92,11 @@ func _run(use_fallback: bool) -> void:
 
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_DISCOVERY, true, "%s explored" % label)
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, false, "%s explored" % label)
-	main2d.extraction_manager.start_extraction()
+	if nexo_controller.get_block_reason() != "":
+		failures.append("%s: Nexo still blocked after exploring: %s" % [label, nexo_controller.get_block_reason()])
+	nexo_controller.confirm_pickup()
+	if main2d.extraction_manager.current_phase != ExtractionManager.Phase.EXTRACTION or not main2d.player.is_carrying_nexo:
+		failures.append("%s: confirming the Nexo dialog did not start extraction" % label)
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, true, "%s carrying" % label)
 	if not indicator.is_emphasized():
 		failures.append("%s: exit hint not emphasized while carrying the crystal" % label)
@@ -120,22 +131,31 @@ func _expect_hint_drawn(indicator: ExitIndicator, expected: bool, when: String) 
 		failures.append("%s: arrow visible while hint hidden" % when)
 
 
-func _check_lighting(room_manager: RoomManager, label: String) -> void:
+## Start room lit for free; middle-click toggle pays/refunds POWER_COST; the
+## free start light refunds nothing; dark canvas present.
+func _check_lighting(room_manager: RoomManager, resources: ResourceManager, label: String) -> void:
+	if room_manager.get_node_or_null("DarkCanvas") == null:
+		failures.append("%s: no DarkCanvas CanvasModulate" % label)
 	var zone := room_manager.get_zone_node(room_manager.get_start_zone_id())
 	var light := zone.get_light()
 	if light == null:
 		failures.append("%s: start room has no RoomLight" % label)
 		return
-	if not light.is_dark():
-		failures.append("%s: unpowered start room not dark" % label)
+	if not zone.is_powered or light.is_dark():
+		failures.append("%s: start room not lit by default" % label)
+	var dust := resources.get_resource("dust")
+	zone.toggle_power()
+	if zone.is_powered or not light.is_dark() or resources.get_resource("dust") != dust:
+		failures.append("%s: switching the free start light off must darken it without refund (dust %d -> %d)" % [label, dust, resources.get_resource("dust")])
 	if not light.is_affordable_highlighted():
-		failures.append("%s: 20 dust >= cost but room not highlighted as affordable" % label)
-	zone.set_powered(true)
-	if light.is_dark() or light.is_affordable_highlighted():
-		failures.append("%s: powered room still dark/affordable" % label)
-	zone.set_powered(false)
-	if not light.is_dark():
-		failures.append("%s: unpowered-again room not dark" % label)
+		failures.append("%s: %d dust >= cost but room not highlighted as affordable" % [label, dust])
+	zone.toggle_power()
+	if not zone.is_powered or light.is_dark() or light.is_affordable_highlighted() or resources.get_resource("dust") != dust - RoomZone.POWER_COST:
+		failures.append("%s: middle-click light should cost %d dust" % [label, RoomZone.POWER_COST])
+	zone.toggle_power()
+	if zone.is_powered or resources.get_resource("dust") != dust:
+		failures.append("%s: switching a paid light off should refund it" % label)
+	zone.set_powered(true)  # restore the default for the rest of the run
 
 
 func _check_edge_point() -> void:

@@ -67,6 +67,9 @@ var module_type: ModuleType
 var zone_id: String = ""
 var current_hp: int
 var is_active: bool = true
+## False while the owning room is switched off (RoomZone.set_powered): the
+## module stays built and targetable but produces/fires/slows nothing.
+var powered: bool = true
 var _is_destroyed: bool = false
 
 
@@ -105,6 +108,10 @@ func die() -> void:
 	QuestLogger.info(QuestLogger.Category.MODULE, "Module '%s' in zone '%s' destroyed." % [ModuleType.keys()[module_type], zone_id])
 	module_destroyed.emit()
 	queue_free()
+
+
+func is_working() -> bool:
+	return is_active and powered
 
 
 func is_trap() -> bool:

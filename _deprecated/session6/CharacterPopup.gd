@@ -3,9 +3,8 @@ class_name CharacterPopup
 
 ## CharacterPopup: modal hero sheet opened by clicking a HeroPortrait. Full-rect
 ## veil (click = close) + centered panel: preview, name, level, exact HP, combat
-## stats from CharacterStats/CharacterData, and a "Subir de nivel" section:
-## next level, Comida cost and what each stat gains (PlayerStats.get_level_up_
-## preview → level_up_hero; the UI computes nothing). Closes with the
+## stats from CharacterStats/CharacterData, and a "Mejoras" section with one row
+## per UpgradeConfig stat (buys via PlayerStats.buy_run_upgrade). Closes with the
 ## X button, a click outside, or Esc — Esc is consumed here, so it never also
 ## toggles the pause menu (HUD's _input runs before Main2d's).
 ## Built in code by HUDController; refreshes on signals only.
@@ -23,9 +22,9 @@ var character_data: CharacterData
 var _title: Label
 var _preview: TextureRect
 var _info: Label
-var _level_title: Label
+var _upgrades_box: VBoxContainer
 var _upgrade_rows: GridContainer
-var _level_button: Button
+var _upgrades_button: Button
 
 
 func _ready() -> void:
@@ -51,6 +50,8 @@ func open_for(p_stats: CharacterStats, p_data: CharacterData) -> void:
 	if stats and not stats.hp_changed.is_connected(_on_hp_changed):
 		stats.hp_changed.connect(_on_hp_changed)
 	_preview.texture = _preview_texture()
+	_upgrades_box.visible = false
+	_upgrades_button.text = "Mejoras"
 	visible = true
 	_refresh()
 
@@ -125,28 +126,28 @@ func _build() -> void:
 	_info.add_theme_color_override("font_color", QuestPalette.PARCHMENT_LIGHT)
 	body.add_child(_info)
 
-	content.add_child(HSeparator.new())
-	_level_title = Label.new()
-	_level_title.add_theme_color_override("font_color", QuestPalette.GOLD)
-	content.add_child(_level_title)
-	_upgrade_rows = GridContainer.new()
-	_upgrade_rows.columns = 2
-	_upgrade_rows.add_theme_constant_override("h_separation", 16)
-	content.add_child(_upgrade_rows)
+	_upgrades_button = Button.new()
+	_upgrades_button.text = "Mejoras"
+	_upgrades_button.pressed.connect(_toggle_upgrades)
+	content.add_child(_upgrades_button)
+
+	_upgrades_box = VBoxContainer.new()
+	_upgrades_box.visible = false
+	content.add_child(_upgrades_box)
 	var hint := Label.new()
-	hint.text = "Los niveles se pierden al terminar la partida."
+	hint.text = "Mejoras de esta partida (se pierden al terminarla)."
 	hint.add_theme_color_override("font_color", QuestPalette.UI_TEXT_MUTED)
-	hint.add_theme_font_size_override("font_size", 13)
-	content.add_child(hint)
-	_level_button = Button.new()
-	_level_button.pressed.connect(_on_level_up_pressed)
-	content.add_child(_level_button)
+	_upgrades_box.add_child(hint)
+	_upgrade_rows = GridContainer.new()
+	_upgrade_rows.columns = 5
+	_upgrade_rows.add_theme_constant_override("h_separation", 12)
+	_upgrades_box.add_child(_upgrade_rows)
 
 
-func _on_level_up_pressed() -> void:
-	var ps := ManagerLocator.get_player_stats()
-	if ps:
-		ps.level_up_hero()
+func _toggle_upgrades() -> void:
+	_upgrades_box.visible = not _upgrades_box.visible
+	_upgrades_button.text = "Ocultar mejoras" if _upgrades_box.visible else "Mejoras"
+	_refresh()
 
 
 func _on_veil_input(event: InputEvent) -> void:
@@ -186,30 +187,31 @@ func _refresh() -> void:
 			lines.append("Activa: %s" % character_data.active_ability_name)
 	_info.text = "\n".join(lines)
 
-	if ps:
-		_rebuild_level_up(ps)
+	if _upgrades_box.visible and ps:
+		_rebuild_upgrade_rows(ps)
 
 
-func _rebuild_level_up(ps: PlayerStats) -> void:
+func _rebuild_upgrade_rows(ps: PlayerStats) -> void:
 	for child in _upgrade_rows.get_children():
 		_upgrade_rows.remove_child(child)
 		child.queue_free()
 
-	var p: Dictionary = ps.get_level_up_preview()
-	var maxed: bool = p["maxed"]
-	var affordable: bool = p["affordable"]
-	var resource_label := str(Module.RESOURCE_LABELS.get(p["cost_resource"], p["cost_resource"]))
-	_level_title.text = "Nivel máximo (%d)" % p["level"] if maxed else "Subir de nivel: %d → %d" % [p["level"], p["next_level"]]
-	for row: Dictionary in p["rows"]:
-		var key := str(row["key"])
-		_add_cell(str(row["label"]), QuestPalette.PARCHMENT)
-		var values := _format_value(key, row["current"]) if maxed else "%s → %s" % [_format_value(key, row["current"]), _format_value(key, row["next"])]
+	for key in UpgradeConfig.STAT_KEYS:
+		var p: Dictionary = ps.get_run_upgrade_preview(key)
+		var maxed: bool = p["maxed"]
+		var affordable: bool = p["affordable"]
+		_add_cell(str(UpgradeConfig.LABELS[key]), QuestPalette.PARCHMENT)
+		_add_cell("Nv %d/%d" % [p["level"], p["max_level"]], QuestPalette.UI_TEXT_SECONDARY)
+		var values := _format_value(key, p["current"]) if maxed else "%s → %s" % [_format_value(key, p["current"]), _format_value(key, p["next"])]
 		_add_cell(values, QuestPalette.UI_TEXT_PRIMARY)
-
-	_level_button.disabled = maxed or not affordable
-	_level_button.text = "Nivel máximo" if maxed else "Subir de nivel (%d %s)" % [p["cost"], resource_label]
-	_level_button.tooltip_text = "" if maxed or affordable else "%s insuficiente" % resource_label
-	_level_button.add_theme_color_override("font_color", StatIcon.BASE_COLORS.get(p["cost_resource"], QuestPalette.PARCHMENT) if affordable else QuestPalette.UI_TEXT_BLOCKED)
+		var cost_color: Color = StatIcon.BASE_COLORS.get(p["cost_resource"], QuestPalette.PARCHMENT) if affordable else QuestPalette.UI_TEXT_BLOCKED
+		_add_cell("MAX" if maxed else "%d %s" % [p["cost"], Module.RESOURCE_LABELS.get(p["cost_resource"], p["cost_resource"])], QuestPalette.UI_TEXT_MUTED if maxed else cost_color)
+		var buy := Button.new()
+		buy.text = "+"
+		buy.disabled = maxed or not affordable
+		buy.tooltip_text = "Nivel máximo" if maxed else ("Mejorar" if affordable else "Recursos insuficientes")
+		buy.pressed.connect(ps.buy_run_upgrade.bind(key))
+		_upgrade_rows.add_child(buy)
 
 
 func _add_cell(text: String, color: Color) -> void:

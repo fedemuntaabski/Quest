@@ -2,15 +2,14 @@ extends CanvasLayer
 class_name HUDController
 
 const TOOLTIP_INDUSTRY := "Industria: Se utiliza para construir módulos de apoyo y defensas en las salas."
-const TOOLTIP_FOOD := "Comida: Se utiliza para subir de nivel al héroe (clic en su retrato)."
-const TOOLTIP_SCIENCE := "Ciencia: Se acumula para investigaciones (todavía sin uso)."
+const TOOLTIP_FOOD := "Comida: Se utiliza para curar al héroe, subirlo de nivel y reclutar aliados."
+const TOOLTIP_SCIENCE := "Ciencia: Se utiliza para mejorar al héroe (clic en su retrato → Mejoras)."
 const TOOLTIP_DUST := "Polvo: Se utiliza para iluminar salas oscuras y evitar la aparición de enemigos."
 
-const _STAT_BAR_PATH := "Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"
-const _BUILD_BUTTONS_PATH := "Control/BottomBar/BottomRow/BuildPanel/MarginContainer/BuildButtons"
+const _STAT_BAR_PATH := "Control/TopLeft/ResourcePanel/MarginContainer/StatPanelUI"
 
 @onready var stat_panel: StatPanelUI = get_node(_STAT_BAR_PATH)
-@onready var stats_hud_panel: PanelContainer = $Control/BottomBar/BottomRow/ResourcePanel
+@onready var stats_hud_panel: PanelContainer = $Control/TopLeft/ResourcePanel
 @onready var portraits: VBoxContainer = $Control/Portraits
 
 @onready var stat_tooltip: PanelContainer = get_node_or_null("Control/StatTooltip")
@@ -22,10 +21,8 @@ const _BUILD_BUTTONS_PATH := "Control/BottomBar/BottomRow/BuildPanel/MarginConta
 @onready var chip_dust: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipDust")
 
 @onready var invasion_flash: ColorRect = get_node_or_null("Control/InvasionFlash")
-@onready var building_menu: BuildingMenu = get_node_or_null("Control/BottomBar/BuildingMenu")
-@onready var floor_label: Label = get_node_or_null("Control/TopLeft/FloorLabel")
-@onready var production_button: Button = get_node_or_null(_BUILD_BUTTONS_PATH + "/ProductionButton")
-@onready var defense_button: Button = get_node_or_null(_BUILD_BUTTONS_PATH + "/DefenseButton")
+@onready var building_menu: BuildingMenu = get_node_or_null("Control/BuildingMenu")
+@onready var floor_label: Label = get_node_or_null("Control/FloorLabel")
 
 const INVASION_FLASH_ALPHA := 0.3
 const INVASION_FLASH_HALF_TIME := 0.25
@@ -83,13 +80,6 @@ func _ready() -> void:
 	var fm := ManagerLocator.get_floor_manager()
 	if fm and floor_label:
 		floor_label.text = "Piso %d/%d" % [fm.floor_index, fm.config.max_floors]
-
-	# Bottom-bar build entry: tab index == Module.SlotType.
-	if building_menu:
-		if production_button:
-			production_button.pressed.connect(building_menu.open_category.bind(int(Module.SlotType.MAJOR)))
-		if defense_button:
-			defense_button.pressed.connect(building_menu.open_category.bind(int(Module.SlotType.MINOR)))
 
 	_add_minimap()
 	character_popup = CharacterPopup.new()
@@ -207,10 +197,11 @@ func _wire_chip_tooltip(chip: Control, text: String) -> void:
 	chip.mouse_exited.connect(hide_simple_tooltip)
 
 
-## Resource bar sits at the bottom → tooltip grows up above the chip.
+## Resource bar sits at the top now → tooltip grows down below the chip.
 func _on_chip_hovered(chip: Control, text: String) -> void:
 	var chip_rect := chip.get_global_rect()
-	show_simple_tooltip(text, chip_rect.position - Vector2(0.0, TOOLTIP_GAP), true)
+	var target_pos := chip_rect.position + Vector2(0.0, chip_rect.size.y + TOOLTIP_GAP)
+	show_simple_tooltip(text, target_pos, false)
 
 
 # ---------------- TOOLTIP ----------------

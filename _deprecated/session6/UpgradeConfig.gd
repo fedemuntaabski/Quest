@@ -1,10 +1,9 @@
 extends Resource
 class_name UpgradeConfig
 
-## UpgradeConfig: in-run hero level-ups bought from the character popup
-## ("Subir de nivel"). Each level raises every STAT_KEYS stat by its per-level
-## bonus. Paid with `cost_resource` (Comida in the shipped .tres since session
-## 7), reset every run (PlayerStats.reset_run_upgrades). Separate from the meta
+## UpgradeConfig: in-run hero upgrades bought from the character popup
+## ("Mejoras"). Paid with `cost_resource` (Ciencia by default — it had no sink),
+## reset every run (PlayerStats.reset_run_upgrades). Separate from the meta
 ## Oro store in the pause menu, which persists in the save.
 
 const STAT_KEYS: Array[String] = ["hp", "damage", "attack_speed"]
@@ -14,14 +13,13 @@ const LABELS := {
 	"attack_speed": "Velocidad de ataque",
 }
 
-@export var cost_resource: String = "food"
-## Level-ups per run (hero level 1 → 1 + max_level).
+@export var cost_resource: String = "science"
 @export var max_level: int = 5
 
 @export_group("Cost curve")
-## cost(level) = round(base_cost * cost_growth ^ level) → 8, 11, 16, 22, 31.
-@export var base_cost: int = 8
-@export var cost_growth: float = 1.4
+## cost(level) = round(base_cost * cost_growth ^ level) → 5, 8, 11, 17, 25.
+@export var base_cost: int = 5
+@export var cost_growth: float = 1.5
 
 @export_group("Bonus per level")
 @export var hp_per_level: int = 4

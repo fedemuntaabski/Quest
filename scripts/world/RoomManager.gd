@@ -30,6 +30,8 @@ signal zone_clicked(zone_id: String)
 signal zone_hovered(zone_id: String)
 signal zone_unhovered(zone_id: String)
 signal room_powered(zone_id: String)
+## Any power change (paid, refunded or scripted); bubbled from RoomZone.power_changed.
+signal room_power_changed(zone_id: String, powered: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
 
 const ZONE_SCENE := preload("res://scenes/RoomZone.tscn")
@@ -87,6 +89,7 @@ func build_from_map(layout: MapLayout) -> void:
 
 	for zone_id in zones.keys():
 		_spawn_zone_node(zone_id)
+	_ensure_dark_canvas()
 
 	QuestLogger.info(QuestLogger.Category.MAP, "RoomManager: built %d zones, %d groups (seed %d)." % [zones.size(), groups.size(), layout.map_seed])
 
@@ -126,12 +129,28 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.hovered.connect(func(z: RoomZone): zone_hovered.emit(z.zone_id))
 	zone.unhovered.connect(func(z: RoomZone): zone_unhovered.emit(z.zone_id))
 	zone.powered_up.connect(func(zid: String): room_powered.emit(zid))
+	zone.power_changed.connect(func(zid: String, on: bool): room_power_changed.emit(zid, on))
 	zone.slot_clicked.connect(func(zid: String, slot: BuildingSlot): slot_clicked.emit(zid, slot))
 
 	record["node"] = zone
 	if record["kind"] == "room":
 		register_room(zone)
 		zone.attach_light(Vector2(rect.size) * _tile_size(), visual_config)
+
+
+## Dark canvas: one CanvasModulate for the world canvas (HUD CanvasLayers are
+## unaffected). Lit rooms stand out through their RoomLight PointLight2D.
+func _ensure_dark_canvas() -> void:
+	var dark := get_node_or_null("DarkCanvas") as CanvasModulate
+	if visual_config == null or not visual_config.dark_canvas_enabled:
+		if dark:
+			dark.queue_free()
+		return
+	if dark == null:
+		dark = CanvasModulate.new()
+		dark.name = "DarkCanvas"
+		add_child(dark)
+	dark.color = visual_config.dark_canvas_color
 
 
 ## Registers a room node in the graph. Only room-kind zones are graph nodes.

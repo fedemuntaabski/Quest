@@ -63,7 +63,8 @@ func is_affordable_highlighted() -> bool:
 
 func _on_power_changed(_zone_id: String, powered: bool) -> void:
 	_powered = powered
-	_afford_outline.visible = false
+	var resources := ManagerLocator.get_resource_manager()
+	_on_resource_changed("dust", resources.get_resource("dust") if resources else 0, 0)
 	if _pulse:
 		_pulse.kill()
 	var tween := create_tween().set_parallel()

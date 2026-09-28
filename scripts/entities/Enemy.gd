@@ -218,7 +218,7 @@ func _pursue_zone(room_manager: RoomManager, target_zone_id: String) -> void:
 func _check_trap_in_current_room(room_manager: RoomManager) -> void:
 	var group_id := room_manager.get_group_id(current_zone_id)
 	for module in room_manager.get_modules_in_group(group_id):
-		if module.is_trap():
+		if module.is_trap() and module.is_working():
 			var cfg: Dictionary = Module.CATALOG[Module.ModuleType.TRAP]
 			apply_slow(float(cfg["slow_duration"]))
 			break

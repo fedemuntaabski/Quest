@@ -2,8 +2,9 @@ extends SceneTree
 
 ## Headless checks for the session-6 HUD logic (no rendering needed):
 ## HealthBarStyle thresholds, UpgradeConfig cost curve/bonuses, PlayerStats
-## in-run upgrades (spend Ciencia, cap, attack → hitbox values), per-turn
-## yield, Module effect text, and HUD + popup wiring over a live Main2d.
+## hero level-ups (session 7: spend Comida, all stats at once, cap, attack →
+## hitbox values), per-turn yield, Module effect text, HUD bottom bar (resources
+## + build entry, armed build flow) and popup wiring over a live Main2d.
 ##   godot --headless --path . --script res://tests/test_hud_ui.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
@@ -43,11 +44,11 @@ func _check_health_style() -> void:
 
 func _check_upgrade_config() -> void:
 	var cfg := load("res://resources/upgrades/run_upgrade_config.tres") as UpgradeConfig
-	_expect(cfg.cost_resource == "science", "upgrades should cost science")
+	_expect(cfg.cost_resource == "food", "level-ups should cost food")
 	var costs: Array[int] = []
 	for level in cfg.max_level:
 		costs.append(cfg.get_cost(level))
-	_expect(costs == [5, 8, 11, 17, 25], "cost curve %s" % [costs])
+	_expect(costs == [8, 11, 16, 22, 31], "cost curve %s" % [costs])
 	_expect(not cfg.is_maxed(cfg.max_level - 1) and cfg.is_maxed(cfg.max_level), "is_maxed boundary")
 	_expect(cfg.damage_at(3, 2) == 5, "damage_at(3, 2)")
 	_expect(is_equal_approx(cfg.interval_at(1.0, 3), 0.7), "interval_at(1.0, 3)")
@@ -95,31 +96,43 @@ func _check_live() -> void:
 		_expect(is_equal_approx(portrait.target_ratio, 1.0), "portrait ratio after heal")
 		portrait.portrait_clicked.emit(portrait)
 		_expect(hud.character_popup.visible, "popup should open on portrait click")
+		var level_button: Button = hud.character_popup._level_button
+		_expect(level_button.text == "Subir de nivel (8 Comida)" and not level_button.disabled, "popup level button '%s'" % level_button.text)
 		hud.character_popup.close()
+
+	# Bottom bar: resources + build entry share one row, menu docked above it.
+	_expect(hud.stats_hud_panel.get_parent().name == "BottomRow", "resource panel not in the bottom row")
+	_expect(hud.building_menu.get_parent().name == "BottomBar", "building menu not docked in the bottom bar")
+	_expect(hud.production_button != null and hud.defense_button != null, "bottom-bar build buttons missing")
+	_expect(hud.floor_label != null and hud.floor_label.text.begins_with("Piso 1/"), "floor label not bound")
+	var bottom_rect: Rect2 = hud.get_node("Control/BottomBar/BottomRow").get_global_rect()
+	var minimap_rect: Rect2 = hud.get_node("Control/Minimap").get_global_rect()
+	_expect(bottom_rect.size.x > 0 and not bottom_rect.intersects(minimap_rect), "bottom bar %s overlaps minimap %s" % [bottom_rect, minimap_rect])
 
 	# Per-turn gain = base yield (no generators yet).
 	_expect(resources.get_turn_yield("industry") == ResourceManager.BASE_YIELD_INDUSTRY, "industry turn yield")
 	_expect(resources.get_turn_yield("dust") == 0, "dust turn yield")
 
-	# Buy HP (5 science), damage (5), attack speed (5): 10 science → HP + damage, then short.
+	# Level-up (8 food, 15 available): every stat rises at once; the next (11) is short.
 	var max_before := stats.max_hp
-	_expect(ps.buy_run_upgrade("hp"), "buy hp")
-	_expect(stats.max_hp == max_before + ps.run_upgrade_config.hp_per_level, "max hp %d after upgrade" % stats.max_hp)
-	_expect(resources.get_resource("science") == 5, "science after hp upgrade: %d" % resources.get_resource("science"))
 	var dmg_before := stats.attack_damage
-	_expect(ps.buy_run_upgrade("damage"), "buy damage")
-	_expect(stats.attack_damage == dmg_before + 1 and player.hitbox.damage == stats.attack_damage, "damage upgrade reached hitbox")
-	_expect(not ps.get_run_upgrade_preview("attack_speed")["affordable"], "attack speed should be unaffordable at 0 science")
-	_expect(not ps.buy_run_upgrade("attack_speed"), "buy with 0 science must fail")
-	_expect(ps.get_run_upgrade_level("attack_speed") == 0, "failed buy must not level up")
-	_expect(ps.get_hero_level() == 3, "hero level %d" % ps.get_hero_level())
-	resources.add_resource("science", 1000)
-	_expect(ps.buy_run_upgrade("attack_speed"), "buy attack speed")
-	_expect(is_equal_approx(player.hitbox.hit_interval, stats.attack_interval) and stats.attack_interval < stats.base_attack_interval, "attack speed reached hitbox")
-	while ps.buy_run_upgrade("damage"):
+	var interval_before := stats.attack_interval
+	_expect(ps.level_up_hero(), "level up")
+	_expect(resources.get_resource("food") == 7, "food after level up: %d" % resources.get_resource("food"))
+	_expect(stats.max_hp == max_before + ps.run_upgrade_config.hp_per_level, "max hp %d after level up" % stats.max_hp)
+	_expect(stats.attack_damage == dmg_before + 1 and player.hitbox.damage == stats.attack_damage, "damage level reached hitbox")
+	_expect(stats.attack_interval < interval_before and is_equal_approx(player.hitbox.hit_interval, stats.attack_interval), "attack speed level reached hitbox")
+	_expect(ps.get_hero_level() == 2 and ps.get_run_upgrade_level("damage") == 1, "hero level %d" % ps.get_hero_level())
+	_expect(resources.get_resource("science") == 10, "level up must not spend science")
+	_expect(not ps.get_level_up_preview()["affordable"], "second level should be unaffordable at 7 food")
+	_expect(not ps.level_up_hero(), "level up with 7 food must fail")
+	_expect(ps.get_hero_level() == 2, "failed level up must not change the level")
+	resources.add_resource("food", 1000)
+	_expect(ps.buy_run_upgrade("hp"), "compat buy_run_upgrade levels the hero up")
+	while ps.level_up_hero():
 		pass
-	_expect(ps.get_run_upgrade_level("damage") == ps.run_upgrade_config.max_level, "damage capped at max level")
-	_expect(ps.get_run_upgrade_preview("damage")["maxed"], "damage preview maxed")
+	_expect(ps.get_hero_level() == 1 + ps.run_upgrade_config.max_level, "hero capped at max level")
+	_expect(ps.get_level_up_preview()["maxed"], "level preview maxed")
 
 	_check_building_menu(hud, main2d.room_manager, resources)
 
@@ -128,7 +141,7 @@ func _check_live() -> void:
 	fresh.set_base_attack(3, 1.0)
 	root.add_child(fresh)
 	ps.register(fresh)
-	_expect(fresh.max_hp == ps.base_hp + ps.run_upgrade_config.hp_per_level, "hp upgrade not re-applied on register: %d" % fresh.max_hp)
+	_expect(fresh.max_hp == ps.base_hp + ps.run_upgrade_config.hp_per_level * ps.run_level, "hp levels not re-applied on register: %d" % fresh.max_hp)
 	_expect(fresh.attack_damage == 3 + ps.run_upgrade_config.max_level, "damage upgrade not re-applied on register")
 	_expect(hud.portraits.get_child_count() == 1, "rebinding stats must reuse the portrait")
 
@@ -173,4 +186,23 @@ func _check_building_menu(hud: HUDController, room_manager: RoomManager, resourc
 	_expect(major.outline.default_color != BuildingSlot.HIGHLIGHT_OUTLINE, "highlight not cleared on close")
 	_expect(resources.get_turn_yield("science") == science_yield + 3, "science yield after generator")
 	_expect(gain_label.text == "+%d" % (science_yield + 3), "science gain label '%s'" % gain_label.text)
+
+	# Bottom-bar flow: Defensa → "Elegir" Torreta arms it and outlines both free
+	# MINOR slots; clicking one builds there.
+	hud.defense_button.pressed.emit()
+	_expect(menu.visible and menu.tabs.current_tab == 1, "Defensa button should open the defense tab")
+	var picks := menu.options.find_children("*", "Button", true, false)
+	_expect(picks.size() == 2 and picks.all(func(b: Button) -> bool: return not b.disabled and b.text == "Elegir"), "category cards should be 'Elegir' and enabled")
+	(picks[0] as Button).pressed.emit()
+	_expect(menu.is_armed(), "picking a card should arm the module")
+	var minors: Array[BuildingSlot] = []
+	for slot in room.find_children("*", "BuildingSlot", true, false):
+		if slot.slot_type == BuildingSlot.SlotType.MINOR:
+			minors.append(slot)
+	_expect(minors.size() == 2 and minors.all(func(m: BuildingSlot) -> bool: return m.outline.default_color == BuildingSlot.HIGHLIGHT_OUTLINE), "armed module should outline free minor slots")
+	var industry_before := resources.get_resource("industry")
+	hud.open_building_menu(minors[0])
+	_expect(not minors[0].is_empty() and not menu.visible and not menu.is_armed(), "armed build did not happen")
+	_expect(resources.get_resource("industry") < industry_before, "armed build did not spend industry")
+	_expect(minors[1].outline.default_color != BuildingSlot.HIGHLIGHT_OUTLINE, "other slot highlight not cleared")
 

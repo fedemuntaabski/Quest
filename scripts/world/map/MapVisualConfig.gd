@@ -24,6 +24,13 @@ enum ExitHintMode {
 ## Screen-edge inset (px) for the off-screen arrow.
 @export var arrow_margin: float = 56.0
 
+@export_group("Dark canvas")
+## Session 7: a CanvasModulate (RoomManager) dims the whole world canvas; each
+## lit room's RoomLight PointLight2D brings it back up. Not black: revealed dark
+## rooms must stay readable (discovered info is never hidden).
+@export var dark_canvas_enabled: bool = true
+@export var dark_canvas_color: Color = Color(0.5, 0.5, 0.6, 1.0)
+
 @export_group("Lighting")
 ## Unpowered (dark) revealed room: overlay pulses between these two colors.
 @export var dark_overlay_color: Color = Color(0.03, 0.0, 0.05, 0.6)

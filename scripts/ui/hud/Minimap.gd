@@ -4,7 +4,7 @@ class_name Minimap
 ## Minimap: HUD corner map drawn with _draw(). Revealed zones only (rooms
 ## filled, powered rooms gold), hero dot, exit marker only while
 ## ExitIndicator's hint is visible. Redraws on signals, never polls:
-## DoorTurnSystem.room_revealed, RoomManager.room_powered,
+## DoorTurnSystem.room_revealed, RoomManager.room_power_changed,
 ## Player.zone_changed, ExitIndicator.hint_changed.
 
 const MAP_SIZE := Vector2(200, 150)
@@ -39,7 +39,7 @@ func _ready() -> void:
 
 	if _room_manager.door_turn_system:
 		_room_manager.door_turn_system.room_revealed.connect(func(_id: String, _cells: Array[Vector2i]): queue_redraw())
-	_room_manager.room_powered.connect(func(_id: String): queue_redraw())
+	_room_manager.room_power_changed.connect(func(_id: String, _on: bool): queue_redraw())
 	_player = ManagerLocator.get_player()
 	if _player:
 		_player.zone_changed.connect(func(_id: String): queue_redraw())

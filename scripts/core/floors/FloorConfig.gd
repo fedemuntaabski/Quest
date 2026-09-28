@@ -14,9 +14,10 @@ class_name FloorConfig
 
 @export_group("Map")
 ## Rooms on floor 1 (MapGenerator room_count); grows per floor up to max.
-@export var base_room_count: int = 6
+## Session 7: 6 → 8 (max 12 → 14), bigger floors, still a tree (no loops).
+@export var base_room_count: int = 8
 @export var rooms_per_floor: float = 1.0
-@export var max_room_count: int = 12
+@export var max_room_count: int = 14
 ## MapGenerator branch_chance: higher = more side branches/dead ends.
 @export var base_branch_chance: float = 0.25
 @export var branch_chance_per_floor: float = 0.1
@@ -25,7 +26,9 @@ class_name FloorConfig
 ## Dust granted every time a new room is discovered (door opened), whether or
 ## not an invasion happens. Tuned so a floor lights some rooms, not all
 ## (energizing costs RoomZone.POWER_COST = 10; run starts with 20 dust).
-@export var dust_per_discovery: int = 2
+## Session 7: 2 → 4 (the start room is now lit for free, rooms can be switched
+## off for a refund, and floors are bigger).
+@export var dust_per_discovery: int = 4
 ## +X dust per discovery per floor (fractional, floored).
 @export var dust_per_discovery_growth: float = 0.5
 

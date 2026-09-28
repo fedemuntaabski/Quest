@@ -1,10 +1,8 @@
 extends Area2D
 class_name EnergyButton
 
-## EnergyButton: "Clic central: encender (10 Polvo)" prompt shown on a revealed,
-## unpowered RoomZone. Passive hint since session 7 (RoomZone keeps it
-## non-pickable; lighting is RoomZone.toggle_power on middle-click). The click
-## plumbing below is kept for the signal contract.
+## EnergyButton: clickable "Energize (10 Dust)" prompt shown on a revealed,
+## unpowered RoomZone. Click plumbing mirrors Door.gd exactly.
 
 signal energy_button_clicked(zone_id: String)
 
