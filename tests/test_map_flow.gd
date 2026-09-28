@@ -42,6 +42,13 @@ func _run(use_fallback: bool) -> void:
 		failures.append("%s: minimap hid itself (no RoomManager?)" % label)
 	minimap.queue_free()
 
+	var camera := main2d.player.get_node_or_null("Camera2D") as GameCamera
+	var start_bounds := Rect2()
+	if camera == null:
+		failures.append("%s: Player/Camera2D is not a GameCamera" % label)
+	else:
+		start_bounds = await _check_camera(camera, main2d.player, label)
+
 	_check_lighting(room_manager, resources, label)
 	var nexo_controller: NexoController = main2d.nexo_controller
 	if nexo_controller.get_block_reason() == "":
@@ -78,6 +85,9 @@ func _run(use_fallback: bool) -> void:
 				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, door.target_room_id, resources.get_resource("dust") - dust_before, per_room])
 			_expect_hint_drawn(indicator, room_manager.is_zone_revealed(exit_zone), "%s after opening '%s'" % [label, door.target_room_id])
 
+	if camera and not (camera.get_bounds().encloses(start_bounds) and camera.get_bounds().get_area() > start_bounds.get_area()):
+		failures.append("%s: camera bounds %s did not grow past %s after exploring" % [label, camera.get_bounds(), start_bounds])
+
 	if opened != main2d.map_layout.corridors.size():
 		failures.append("%s: opened %d of %d doors" % [label, opened, main2d.map_layout.corridors.size()])
 	if not room_manager.validate_visibility():
@@ -105,6 +115,39 @@ func _run(use_fallback: bool) -> void:
 
 	main2d.queue_free()
 	await process_frame
+
+
+## Follow, zoom limits, clamp to discovered rooms + margin, focus/recenter.
+## Returns the start-of-floor bounds so the caller can check they grow.
+func _check_camera(camera: GameCamera, player: Player, label: String) -> Rect2:
+	# Headless mouse sits at (0,0) = a screen corner → edge scroll off here.
+	camera.config = camera.config.duplicate()
+	camera.config.edge_scroll_enabled = false
+	await process_frame
+	if not camera.top_level or not camera.is_following() or camera.global_position.distance_to(player.global_position) > 1.0:
+		failures.append("%s: camera not following the hero at start (%s vs %s)" % [label, camera.global_position, player.global_position])
+	camera.set_target_zoom(1000.0)
+	if not is_equal_approx(camera.get_target_zoom(), camera.config.zoom_max):
+		failures.append("%s: zoom not clamped to max (%f)" % [label, camera.get_target_zoom()])
+	camera.set_target_zoom(0.0001)
+	if not is_equal_approx(camera.get_target_zoom(), camera.config.zoom_min):
+		failures.append("%s: zoom not clamped to min (%f)" % [label, camera.get_target_zoom()])
+	camera.set_target_zoom(1.0)
+	var bounds := camera.get_bounds()
+	if not bounds.has_point(player.global_position) or bounds.size.x < camera.config.bounds_margin * 2.0:
+		failures.append("%s: camera bounds %s miss the hero/margin" % [label, bounds])
+	var far := Vector2(1e6, -1e6)
+	var clamped := camera.clamp_to_bounds(far)
+	if not bounds.grow(0.01).has_point(clamped) or clamped == far:
+		failures.append("%s: clamp_to_bounds(%s) = %s outside %s" % [label, far, clamped, bounds])
+	camera.focus_on(far)
+	if camera.is_following() or not bounds.grow(0.01).has_point(camera.global_position):
+		failures.append("%s: focus_on should stop following and stay clamped" % label)
+	camera.recenter()
+	await process_frame
+	if not camera.is_following() or camera.global_position.distance_to(player.global_position) > 1.0:
+		failures.append("%s: recenter did not return to the hero" % label)
+	return bounds
 
 
 func _exit_zone(room_manager: RoomManager) -> String:

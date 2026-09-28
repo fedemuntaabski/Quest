@@ -2,18 +2,18 @@ extends PanelContainer
 class_name BuildingMenu
 
 ## BuildingMenu: DotE-style build panel docked in the HUD bottom bar, above
-## the resource/build row. Two entry points, one purchase path:
-##  - bottom-bar "Producción"/"Defensa" → open_category(): pick a card → the
-##    module is armed and every free matching slot in a powered room is
-##    highlighted → clicking one of them builds it (open_menu → purchase).
-##  - clicking an empty slot → open_menu(slot): cards for that slot, build now. Tabs by category (Producción =
-## MAJOR-slot generators, Defensa = MINOR-slot turret/trap), one card per
-## Module.CATALOG entry: color icon, name, cost colored by resource (red if
-## short), native tooltip with description + effect, "Construir" disabled when
-## unaffordable or the slot is the wrong size. Highlights the chosen slot while
-## open. Owns the purchase: spends Industria and asks the slot to build.
-## Closes on right-click, or left-click outside the panel (not while armed:
-## that click is the slot pick).
+## the resource/build row. Only entry point (session 8): bottom-bar
+## "Producción"/"Defensa" → open_category(): pick a card (or press 1-9) → the
+## module is *armed*: free matching slots in powered rooms are outlined, every
+## empty slot becomes pickable and shows a ghost of the module under the cursor
+## (green = buildable, red = floating text with the reason) → clicking a slot
+## (BuildingSlot → ModuleBuildSystem → open_menu) builds it. Tabs by category
+## (Producción = MAJOR-slot generators, Defensa = MINOR-slot turret/trap), one
+## card per Module.CATALOG entry. Owns the purchase: spends Industria and asks
+## the slot to build. Right-click or Esc cancels (Esc is consumed, so it never
+## reaches Main2d's pause toggle); left-click outside closes when not armed.
+## The session-7 "click an empty slot to open the menu" flow is gone
+## (_deprecated/session7/).
 
 ## Static style helper via preload (the ThemeManager autoload identifier is
 ## missing in --script test runs).
@@ -32,11 +32,13 @@ const SLOT_NAMES := ["mayor", "menor"]
 @onready var tabs: TabBar = $Margin/Content/Tabs
 @onready var title: Label = $Margin/Content/Title
 
-var _slot: BuildingSlot = null
 var _shake_tween: Tween
-## Module picked from the bottom bar with no slot yet; -1 = none.
+## Module picked from the bottom bar; -1 = none.
 var _armed_type: int = -1
+## Free matching slots in powered rooms (outlined).
 var _armed_slots: Array[BuildingSlot] = []
+## Every empty slot, pickable + ghost-on-hover while armed → its bound hover Callable.
+var _hover_slots: Dictionary = {}
 
 
 func _ready() -> void:
@@ -48,29 +50,26 @@ func _ready() -> void:
 	var rm := ManagerLocator.get_resource_manager()
 	if rm:
 		rm.resource_changed.connect(_on_resource_changed)
+	# A room lit/unlit while armed changes which slots are free/buildable.
+	var room_manager := ManagerLocator.get_room_manager()
+	if room_manager:
+		room_manager.room_power_changed.connect(func(_zone_id: String, _powered: bool) -> void:
+			if is_armed():
+				_arm(_armed_type as Module.ModuleType))
 
 
+## Slot click routed by ModuleBuildSystem. Builds the armed module; without
+## one armed it does nothing (slots aren't even pickable then).
 func open_menu(slot_node: BuildingSlot) -> void:
-	if slot_node == null or not slot_node.is_empty():
+	if slot_node == null or not slot_node.is_empty() or not is_armed() or not visible:
 		return
-	if _armed_type != -1 and visible:
-		_build_armed_into(slot_node)
-		return
-	_disarm()
-	if _slot and is_instance_valid(_slot):
-		_slot.set_highlighted(false)
-	_slot = slot_node
-	_slot.set_highlighted(true)
-	title.text = "Construir — slot %s" % SLOT_NAMES[int(slot_node.slot_type)]
-	tabs.current_tab = int(slot_node.slot_type)
-	_populate()
-	visible = true
+	_build_armed_into(slot_node)
 
 
-## Bottom-bar entry: cards for `tab` (== Module.SlotType) with no slot chosen.
+## Bottom-bar entry: cards for `tab` (== Module.SlotType).
 func open_category(tab: int) -> void:
 	close_menu()
-	title.text = "Construir — elegí un módulo"
+	title.text = "Construir — elegí un módulo (1-9)"
 	tabs.current_tab = tab
 	_disarm()
 	_populate()
@@ -84,9 +83,21 @@ func is_armed() -> bool:
 func close_menu() -> void:
 	visible = false
 	_disarm()
-	if _slot and is_instance_valid(_slot):
-		_slot.set_highlighted(false)
-	_slot = null
+
+
+## "" if the armed module can be built in `slot`, else why not.
+func get_block_reason(slot: BuildingSlot) -> String:
+	if not is_armed():
+		return "Ningún módulo elegido"
+	var cfg: Dictionary = Module.CATALOG[_armed_type]
+	if int(cfg["slot"]) != int(slot.slot_type):
+		return "Tamaño incorrecto: requiere un slot %s" % SLOT_NAMES[int(cfg["slot"])]
+	if not slot.room_can_build():
+		return "Sala apagada"
+	var rm := ManagerLocator.get_resource_manager()
+	if rm == null or rm.get_resource(COST_RESOURCE) < int(cfg["cost"]):
+		return "Falta Industria"
+	return ""
 
 
 ## Cards for the current tab. Resource changes and tab switches rebuild them.
@@ -96,26 +107,23 @@ func _populate() -> void:
 		child.queue_free()
 	var rm := ManagerLocator.get_resource_manager()
 	var available: int = rm.get_resource(COST_RESOURCE) if rm else 0
+	var index := 0
 	for module_type in Module.CATALOG.keys():
 		var cfg: Dictionary = Module.CATALOG[module_type]
 		if int(cfg["slot"]) != tabs.current_tab:
 			continue
-		var fits := _slot == null or int(cfg["slot"]) == int(_slot.slot_type)
-		options.add_child(_make_card(module_type, cfg, fits, available >= int(cfg["cost"])))
+		index += 1
+		options.add_child(_make_card(module_type, cfg, index, available >= int(cfg["cost"])))
 
 
-func _make_card(module_type: Module.ModuleType, cfg: Dictionary, fits_slot: bool, affordable: bool) -> Control:
+func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, affordable: bool) -> Control:
 	var cost := int(cfg["cost"])
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 1, 6, 6))
-	var reason := ""
-	if not fits_slot:
-		reason = "\nRequiere un slot %s." % SLOT_NAMES[int(cfg["slot"])]
-	elif not affordable:
-		reason = "\nIndustria insuficiente."
+	var reason := "" if affordable else "\nIndustria insuficiente."
 	card.tooltip_text = "%s\n%s\n%s\nVida: %d%s" % [cfg["label"], Module.DESCRIPTIONS.get(module_type, ""), Module.describe_effect(module_type), int(cfg["hp"]), reason]
-	if not (fits_slot and affordable):
+	if not affordable:
 		card.modulate = Color(1, 1, 1, 0.55)
 
 	var row := HBoxContainer.new()
@@ -135,7 +143,7 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, fits_slot: bool
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(column)
 	var name_label := Label.new()
-	name_label.text = str(cfg["label"])
+	name_label.text = "%d. %s" % [hotkey, cfg["label"]]
 	name_label.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
 	column.add_child(name_label)
 	var effect_label := Label.new()
@@ -158,20 +166,18 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, fits_slot: bool
 	cost_label.add_theme_color_override("font_color", StatIcon.BASE_COLORS[COST_RESOURCE] if affordable else QuestPalette.UI_TEXT_BLOCKED)
 	cost_row.add_child(cost_label)
 
-	var build_button := Button.new()
-	build_button.text = "Construir" if _slot else "Elegir"
-	build_button.disabled = not (fits_slot and affordable)
-	build_button.tooltip_text = card.tooltip_text
-	build_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	if _slot:
-		build_button.pressed.connect(_on_module_selected.bind(module_type, cost, String(cfg["scene"])))
-	else:
-		build_button.pressed.connect(_arm.bind(module_type))
-	row.add_child(build_button)
+	var pick_button := Button.new()
+	pick_button.text = "Elegir"
+	pick_button.disabled = not affordable
+	pick_button.tooltip_text = card.tooltip_text
+	pick_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pick_button.pressed.connect(_arm.bind(module_type))
+	row.add_child(pick_button)
 	return card
 
 
-## Bottom-bar flow: remember the module and outline every free slot it fits.
+## Remember the module, outline every free slot it fits, and make every empty
+## slot pickable with a ghost preview on hover.
 func _arm(module_type: Module.ModuleType) -> void:
 	_disarm()
 	_armed_type = int(module_type)
@@ -179,11 +185,16 @@ func _arm(module_type: Module.ModuleType) -> void:
 	_armed_slots = _free_slots(slot_type)
 	for slot in _armed_slots:
 		slot.set_highlighted(true)
+	for slot in _empty_slots():
+		_hover_slots[slot] = _on_slot_hovered.bind(slot)
+		slot.input_pickable = true
+		slot.mouse_entered.connect(_hover_slots[slot])
+		slot.mouse_exited.connect(slot.clear_ghost)
 	var label := str(Module.CATALOG[module_type]["label"])
 	if _armed_slots.is_empty():
 		title.text = "%s: no hay slots %ss libres — energizá una sala" % [label, SLOT_NAMES[slot_type]]
 	else:
-		title.text = "%s: clic en un slot %s resaltado (clic derecho cancela)" % [label, SLOT_NAMES[slot_type]]
+		title.text = "%s: clic en un slot %s resaltado (clic derecho / Esc cancela)" % [label, SLOT_NAMES[slot_type]]
 
 
 func _disarm() -> void:
@@ -191,21 +202,36 @@ func _disarm() -> void:
 		if is_instance_valid(slot):
 			slot.set_highlighted(false)
 	_armed_slots.clear()
+	for slot in _hover_slots:
+		if is_instance_valid(slot):
+			slot.input_pickable = false
+			slot.mouse_entered.disconnect(_hover_slots[slot])
+			slot.mouse_exited.disconnect(slot.clear_ghost)
+			slot.clear_ghost()
+	_hover_slots.clear()
 	_armed_type = -1
 
 
-func _build_armed_into(slot_node: BuildingSlot) -> void:
-	var module_type := _armed_type as Module.ModuleType
-	var cfg: Dictionary = Module.CATALOG[module_type]
-	if int(cfg["slot"]) != int(slot_node.slot_type):
-		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-		if text_mgr:
-			text_mgr.spawn_text(slot_node.global_position, "Requiere un slot %s" % SLOT_NAMES[int(cfg["slot"])], QuestPalette.GOLD_DARK)
+func _on_slot_hovered(slot: BuildingSlot) -> void:
+	if not is_armed() or not slot.is_empty():
 		return
-	_slot = slot_node
-	_on_module_selected(module_type, int(cfg["cost"]), String(cfg["scene"]))
-	if visible:  # purchase refused: stay armed, no slot chosen
-		_slot = null
+	var reason := get_block_reason(slot)
+	slot.set_ghost(_armed_type as Module.ModuleType, reason == "")
+	if reason != "":
+		_float_text(slot, reason)
+
+
+func _build_armed_into(slot_node: BuildingSlot) -> void:
+	var reason := get_block_reason(slot_node)
+	var module_type := _armed_type as Module.ModuleType
+	var resource_manager := ManagerLocator.get_resource_manager()
+	if reason != "" or resource_manager == null \
+			or not resource_manager.spend_resource(COST_RESOURCE, int(Module.CATALOG[module_type]["cost"])):
+		_reject(slot_node, reason if reason != "" else "Falta Industria")
+		return  # stay armed
+	slot_node.build(module_type)
+	QuestLogger.info(QuestLogger.Category.MODULE, "Built '%s' in zone '%s'." % [Module.CATALOG[module_type]["label"], slot_node.zone_id])
+	close_menu()
 
 
 ## Empty slots of `slot_type` in powered (buildable) rooms.
@@ -222,35 +248,35 @@ func _free_slots(slot_type: int) -> Array[BuildingSlot]:
 	return result
 
 
+## Every empty slot on the map (lit or not, any size) — hover explains why not.
+func _empty_slots() -> Array[BuildingSlot]:
+	var result: Array[BuildingSlot] = []
+	var rm := ManagerLocator.get_room_manager()
+	if rm == null:
+		return result
+	for zone_id in rm.get_zone_ids():
+		var zone := rm.get_zone_node(zone_id)
+		if zone == null:
+			continue
+		for node in zone.find_children("*", "BuildingSlot", true, false):
+			if (node as BuildingSlot).is_empty():
+				result.append(node)
+	return result
+
+
 func _on_resource_changed(key: String, _amount: int, _delta: int) -> void:
 	if visible and key == COST_RESOURCE and _armed_type == -1:
 		_populate()
 
 
-func _on_module_selected(module_type: Module.ModuleType, cost: int, _scene_path: String) -> void:
-	if _slot == null or not is_instance_valid(_slot) or not _slot.is_empty():
-		close_menu()
-		return
-
-	var resource_manager := ManagerLocator.get_resource_manager()
-	if resource_manager == null:
-		return
-
-	if not resource_manager.spend_resource(COST_RESOURCE, cost):
-		_reject_purchase()
-		return
-
-	var slot := _slot
-	slot.build(module_type)
-	QuestLogger.info(QuestLogger.Category.MODULE, "Built '%s' in zone '%s'." % [Module.CATALOG[module_type]["label"], slot.zone_id])
-	close_menu()
-
-
-func _reject_purchase() -> void:
+func _float_text(slot: BuildingSlot, text: String) -> void:
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr and _slot:
-		text_mgr.spawn_text(_slot.global_position, "Industria insuficiente", QuestPalette.GOLD_DARK)
+	if text_mgr:
+		text_mgr.spawn_text(slot.global_position, text, QuestPalette.GOLD_DARK)
 
+
+func _reject(slot: BuildingSlot, reason: String) -> void:
+	_float_text(slot, reason)
 	if _shake_tween and _shake_tween.is_valid():
 		_shake_tween.kill()
 	var origin_x := position.x
@@ -260,12 +286,23 @@ func _reject_purchase() -> void:
 	_shake_tween.tween_property(self, "position:x", origin_x, SHAKE_STEP)
 
 
-## Deliberately never marks input handled: `_input` runs before Area2D picking,
-## so swallowing here would block clicks on other slots/zones.
+## Mouse clicks are never marked handled: `_input` runs before Area2D picking,
+## so swallowing them would block the slot pick. Esc / 1-9 are consumed.
 func _input(event: InputEvent) -> void:
-	if not visible or not (event is InputEventMouseButton and event.pressed):
+	if not visible:
 		return
-	if event.button_index == MOUSE_BUTTON_RIGHT:
+	if event.is_action_pressed("ui_cancel"):
 		close_menu()
-	elif event.button_index == MOUSE_BUTTON_LEFT and _armed_type == -1 and not get_global_rect().has_point(event.position):
-		close_menu()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo \
+			and event.keycode >= KEY_1 and event.keycode <= KEY_9:
+		var buttons := options.find_children("*", "Button", true, false)
+		var index: int = event.keycode - KEY_1
+		if index < buttons.size() and not (buttons[index] as Button).disabled:
+			(buttons[index] as Button).pressed.emit()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			close_menu()
+		elif event.button_index == MOUSE_BUTTON_LEFT and _armed_type == -1 and not get_global_rect().has_point(event.position):
+			close_menu()

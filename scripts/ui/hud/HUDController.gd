@@ -173,6 +173,7 @@ func _refresh_gains() -> void:
 
 # ---------------- BUILDING MENU ----------------
 
+## Armed-mode slot pick (ModuleBuildSystem); a no-op unless a module is armed.
 func open_building_menu(slot: BuildingSlot) -> void:
 	if building_menu == null:
 		QuestLogger.warn(QuestLogger.Category.UI, "HUD: BuildingMenu node missing.")

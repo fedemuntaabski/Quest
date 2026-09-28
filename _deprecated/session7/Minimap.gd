@@ -6,8 +6,6 @@ class_name Minimap
 ## ExitIndicator's hint is visible. Redraws on signals, never polls:
 ## DoorTurnSystem.room_revealed, RoomManager.room_power_changed,
 ## Player.zone_changed, ExitIndicator.hint_changed.
-## Left-click moves the GameCamera there (and, being MOUSE_FILTER_STOP, the
-## minimap also blocks camera edge scrolling while hovered).
 
 const MAP_SIZE := Vector2(200, 150)
 const PADDING := 8.0
@@ -26,7 +24,7 @@ var _bounds := Rect2i()
 func _ready() -> void:
 	custom_minimum_size = MAP_SIZE
 	size = MAP_SIZE
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_room_manager = ManagerLocator.get_room_manager()
 	if _room_manager == null:
 		QuestLogger.warn(QuestLogger.Category.UI, "Minimap: RoomManager not found; minimap disabled.")
@@ -50,34 +48,13 @@ func _ready() -> void:
 		_exit_indicator.hint_changed.connect(func(_v: bool): queue_redraw())
 
 
-func _gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
-		return
-	var camera := get_viewport().get_camera_2d() as GameCamera
-	if camera == null or _room_manager == null or _bounds.size == Vector2i.ZERO:
-		return
-	var scale_px := _scale()
-	var cell: Vector2 = Vector2(_bounds.position) + (event.position - _offset(scale_px)) / scale_px
-	camera.focus_on(GridUtils.cell_to_world(_room_manager.tilemap, Vector2i(cell.floor())))
-	accept_event()
-
-
-func _scale() -> float:
-	var inner := size - Vector2.ONE * PADDING * 2.0
-	return minf(inner.x / _bounds.size.x, inner.y / _bounds.size.y)
-
-
-func _offset(scale_px: float) -> Vector2:
-	var inner := size - Vector2.ONE * PADDING * 2.0
-	return Vector2.ONE * PADDING + (inner - Vector2(_bounds.size) * scale_px) / 2.0
-
-
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), BG_COLOR)
 	if _room_manager == null or _bounds.size == Vector2i.ZERO:
 		return
-	var scale_px := _scale()
-	var offset := _offset(scale_px)
+	var inner := size - Vector2.ONE * PADDING * 2.0
+	var scale_px := minf(inner.x / _bounds.size.x, inner.y / _bounds.size.y)
+	var offset := Vector2.ONE * PADDING + (inner - Vector2(_bounds.size) * scale_px) / 2.0
 
 	for zone_id in _room_manager.get_zone_ids():
 		if not _room_manager.is_zone_revealed(zone_id):

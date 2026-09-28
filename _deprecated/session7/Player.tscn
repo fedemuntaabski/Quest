@@ -5,7 +5,6 @@
 [ext_resource type="Script" uid="uid://bmcr7emtpkrow" path="res://scripts/core/stats/CharacterStats.gd" id="3_stats"]
 [ext_resource type="Script" path="res://scripts/core/combat/HurtboxComponent.gd" id="4_hurtbox"]
 [ext_resource type="Script" path="res://scripts/core/combat/HitboxComponent.gd" id="5_hitbox"]
-[ext_resource type="Script" path="res://scripts/core/camera/GameCamera.gd" id="6_camera"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_p07f3"]
 atlas = ExtResource("2_idle")
@@ -102,10 +101,8 @@ animation = &"idle"
 autoplay = "idle"
 
 [node name="Camera2D" type="Camera2D" parent="."]
-top_level = true
 position_smoothing_enabled = true
 position_smoothing_speed = 10.0
-script = ExtResource("6_camera")
 
 [node name="Stats" type="Node" parent="."]
 script = ExtResource("3_stats")

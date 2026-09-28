@@ -2,9 +2,7 @@ extends Node
 class_name ModuleBuildSystem
 
 ## ModuleBuildSystem: routes an empty BuildingSlot click to the HUD's BuildingMenu,
-## which owns the purchase (Industria spend + slot.build()). Since session 8
-## slots are only pickable while a module is armed from the bottom bar, so
-## this only ever sees armed-mode slot picks.
+## which owns the purchase (Industria spend + slot.build()).
 ## Scene-instantiated per Main2d, like DoorTurnSystem/RoomPowerSystem.
 
 var room_manager: RoomManager

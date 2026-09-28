@@ -4,7 +4,8 @@ extends SceneTree
 ## HealthBarStyle thresholds, UpgradeConfig cost curve/bonuses, PlayerStats
 ## hero level-ups (session 7: spend Comida, all stats at once, cap, attack →
 ## hitbox values), per-turn yield, Module effect text, HUD bottom bar (resources
-## + build entry, armed build flow) and popup wiring over a live Main2d.
+## + build entry, armed-only build flow with ghost/reasons/hotkeys/Esc — session
+## 8) and popup wiring over a live Main2d.
 ##   godot --headless --path . --script res://tests/test_hud_ui.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
@@ -134,7 +135,7 @@ func _check_live() -> void:
 	_expect(ps.get_hero_level() == 1 + ps.run_upgrade_config.max_level, "hero capped at max level")
 	_expect(ps.get_level_up_preview()["maxed"], "level preview maxed")
 
-	_check_building_menu(hud, main2d.room_manager, resources)
+	_check_building_menu(hud, main2d, resources)
 
 	# New floor = new CharacterStats: upgrades re-applied by refresh_stats().
 	var fresh := CharacterStats.new()
@@ -152,57 +153,119 @@ func _check_live() -> void:
 	await process_frame
 
 
-## Powers the start room, opens the menu on its MAJOR slot, checks tab/cards/
-## highlight/affordability and builds a Gen. Ciencia (gain label follows).
-func _check_building_menu(hud: HUDController, room_manager: RoomManager, resources: ResourceManager) -> void:
+## Session 8: building only through the bottom bar's armed mode. Unarmed slot
+## clicks do nothing; Producción + key 3 arms Gen. Ciencia; ghost green/red
+## with reasons; Esc cancels without pausing; Defensa → Torreta builds.
+func _check_building_menu(hud: HUDController, main2d: Node, resources: ResourceManager) -> void:
+	var room_manager: RoomManager = main2d.room_manager
 	var room := room_manager.get_zone_node(room_manager.get_start_zone_id())
 	room.set_powered(true)
 	var major: BuildingSlot = null
+	var minors: Array[BuildingSlot] = []
 	for slot in room.find_children("*", "BuildingSlot", true, false):
 		if slot.slot_type == BuildingSlot.SlotType.MAJOR:
 			major = slot
-	_expect(major != null, "powered start room has no MAJOR slot")
-	if major == null:
+		else:
+			minors.append(slot)
+	_expect(major != null and minors.size() == 2, "powered start room should have 1 MAJOR + 2 MINOR slots")
+	if major == null or minors.size() != 2:
 		return
 	var menu: BuildingMenu = hud.building_menu
-	resources.spend_resource("industry", resources.get_resource("industry"))
+
+	# Unarmed: slots aren't pickable and a routed slot click does nothing.
+	_expect(not major.input_pickable and not minors[0].input_pickable, "unarmed slots must not be pickable")
+	var industry_before := resources.get_resource("industry")
 	hud.open_building_menu(major)
-	_expect(menu.visible and menu.tabs.current_tab == 0, "MAJOR slot should open on Producción")
-	_expect(major.outline.default_color == BuildingSlot.HIGHLIGHT_OUTLINE, "chosen slot not highlighted")
+	_expect(not menu.visible and major.is_empty() and resources.get_resource("industry") == industry_before, "slot click without an armed module must not open/build/spend")
+
+	# Producción with 0 industry: 3 disabled cards, hotkey can't arm.
+	resources.spend_resource("industry", resources.get_resource("industry"))
+	hud.production_button.pressed.emit()
+	_expect(menu.visible and menu.tabs.current_tab == 0, "Producción button should open the production tab")
 	_expect(menu.options.get_child_count() == 3, "production tab shows %d cards" % menu.options.get_child_count())
 	var buttons := menu.options.find_children("*", "Button", true, false)
-	_expect(buttons.all(func(b: Button) -> bool: return b.disabled), "cards must be disabled with 0 industry")
+	_expect(buttons.all(func(b: Button) -> bool: return b.disabled and b.text == "Elegir"), "cards must be 'Elegir' and disabled with 0 industry")
+	_press_key(KEY_3)
+	_expect(not menu.is_armed(), "hotkey must not arm an unaffordable card")
 	resources.add_resource("industry", 100)  # resource_changed → cards rebuilt
 	buttons = menu.options.find_children("*", "Button", true, false)
 	_expect(buttons.size() == 3 and buttons.all(func(b: Button) -> bool: return not b.disabled), "cards must enable once affordable")
-	menu.tabs.current_tab = 1
-	buttons = menu.options.find_children("*", "Button", true, false)
-	_expect(buttons.size() == 2 and buttons.all(func(b: Button) -> bool: return b.disabled), "defense cards must be disabled on a MAJOR slot")
-	menu.tabs.current_tab = 0
+	_press_key(KEY_3)  # Gen. Ciencia
+	_expect(menu.is_armed(), "key 3 should arm the third card")
+	_expect(major.outline.default_color == BuildingSlot.HIGHLIGHT_OUTLINE, "armed generator should outline the free MAJOR slot")
+	_expect(major.input_pickable and minors[0].input_pickable, "armed mode must make empty slots pickable")
+
+	# Ghost: green on the MAJOR slot, red + reason on a MINOR one.
+	major.mouse_entered.emit()
+	_expect(major.get_ghost() != null and major.get_ghost().modulate == BuildingSlot.GHOST_OK, "green ghost over a valid slot")
+	major.mouse_exited.emit()
+	_expect(major.get_ghost() == null, "ghost cleared on mouse exit")
+	minors[0].mouse_entered.emit()
+	_expect(minors[0].get_ghost() != null and minors[0].get_ghost().modulate == BuildingSlot.GHOST_BLOCKED, "red ghost over a wrong-size slot")
+	_expect(menu.get_block_reason(minors[0]).begins_with("Tamaño incorrecto"), "wrong-size reason: '%s'" % menu.get_block_reason(minors[0]))
+	minors[0].mouse_exited.emit()
+	var saved := resources.get_resource("industry")
+	resources.spend_resource("industry", saved)
+	_expect(menu.get_block_reason(major) == "Falta Industria", "no-industry reason: '%s'" % menu.get_block_reason(major))
+	hud.open_building_menu(major)
+	_expect(major.is_empty() and menu.is_armed(), "armed click without industry must not build nor disarm")
+	resources.add_resource("industry", saved)
+	room.set_powered(false)  # room_power_changed → re-arm
+	_expect(menu.is_armed() and menu.get_block_reason(major) == "Sala apagada", "unlit-room reason: '%s'" % menu.get_block_reason(major))
+	room.set_powered(true)
+
+	# Armed click builds, spends, and leaves armed mode clean.
 	var science_yield := resources.get_turn_yield("science")
 	var gain_label: Label = hud.stat_panel.gain_labels["science"]
-	(menu.options.find_children("*", "Button", true, false)[2] as Button).pressed.emit()  # Gen. Ciencia
-	_expect(not menu.visible and not major.is_empty(), "build did not happen")
-	_expect(major.outline.default_color != BuildingSlot.HIGHLIGHT_OUTLINE, "highlight not cleared on close")
+	industry_before = resources.get_resource("industry")
+	hud.open_building_menu(major)
+	_expect(not major.is_empty() and not menu.visible and not menu.is_armed(), "armed build did not happen")
+	_expect(resources.get_resource("industry") < industry_before, "armed build did not spend industry")
+	_expect(not minors[0].input_pickable and major.outline.default_color != BuildingSlot.HIGHLIGHT_OUTLINE, "armed state not cleared after build")
 	_expect(resources.get_turn_yield("science") == science_yield + 3, "science yield after generator")
 	_expect(gain_label.text == "+%d" % (science_yield + 3), "science gain label '%s'" % gain_label.text)
 
-	# Bottom-bar flow: Defensa → "Elegir" Torreta arms it and outlines both free
-	# MINOR slots; clicking one builds there.
+	# Esc cancels armed mode first — it must not reach Main2d's pause toggle.
 	hud.defense_button.pressed.emit()
 	_expect(menu.visible and menu.tabs.current_tab == 1, "Defensa button should open the defense tab")
-	var picks := menu.options.find_children("*", "Button", true, false)
-	_expect(picks.size() == 2 and picks.all(func(b: Button) -> bool: return not b.disabled and b.text == "Elegir"), "category cards should be 'Elegir' and enabled")
-	(picks[0] as Button).pressed.emit()
-	_expect(menu.is_armed(), "picking a card should arm the module")
-	var minors: Array[BuildingSlot] = []
-	for slot in room.find_children("*", "BuildingSlot", true, false):
-		if slot.slot_type == BuildingSlot.SlotType.MINOR:
-			minors.append(slot)
-	_expect(minors.size() == 2 and minors.all(func(m: BuildingSlot) -> bool: return m.outline.default_color == BuildingSlot.HIGHLIGHT_OUTLINE), "armed module should outline free minor slots")
-	var industry_before := resources.get_resource("industry")
+	_press_key(KEY_1)  # Ballesta
+	_expect(menu.is_armed(), "key 1 should arm the turret")
+	# PauseMenu doesn't compile under --script, so a probe sitting between
+	# Main2d and the HUD in input order tells whether Esc got past the HUD.
+	var probe := EscProbe.new()
+	root.add_child(probe)
+	root.move_child(probe, hud.get_index())
+	_press_key(KEY_ESCAPE)
+	_expect(not menu.is_armed() and not menu.visible, "Esc should cancel armed mode")
+	_expect(not probe.got_esc and not paused, "Esc while armed must be consumed before Main2d's pause toggle")
+	_press_key(KEY_ESCAPE)
+	_expect(probe.got_esc, "Esc with the menu closed must pass through to the pause toggle")
+	probe.queue_free()
+
+	# Defensa → Torreta → click a free MINOR slot builds there.
+	hud.defense_button.pressed.emit()
+	(menu.options.find_children("*", "Button", true, false)[0] as Button).pressed.emit()
+	_expect(minors.all(func(m: BuildingSlot) -> bool: return m.outline.default_color == BuildingSlot.HIGHLIGHT_OUTLINE), "armed turret should outline free minor slots")
 	hud.open_building_menu(minors[0])
-	_expect(not minors[0].is_empty() and not menu.visible and not menu.is_armed(), "armed build did not happen")
-	_expect(resources.get_resource("industry") < industry_before, "armed build did not spend industry")
+	_expect(not minors[0].is_empty() and not menu.visible and not menu.is_armed(), "armed turret build did not happen")
 	_expect(minors[1].outline.default_color != BuildingSlot.HIGHLIGHT_OUTLINE, "other slot highlight not cleared")
 
+
+class EscProbe extends Node:
+	var got_esc := false
+
+	func _input(event: InputEvent) -> void:
+		if event.is_action_pressed("ui_cancel"):
+			got_esc = true
+
+
+## Real key press through the viewport (HUD _input runs before Main2d's).
+func _press_key(keycode: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = keycode
+	event.physical_keycode = keycode
+	event.pressed = true
+	root.push_input(event)
+	var release := event.duplicate() as InputEventKey
+	release.pressed = false
+	root.push_input(release)

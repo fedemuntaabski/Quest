@@ -599,3 +599,89 @@ Reorientación DotE: recursos + construcción abajo, luz con clic central + oscu
 3. Cerrar popup/menú de construcción en `player_died`/`victory_entered` (pendiente de la sesión 6).
 4. Loops en el generador y tipos de sala (diseños de la sesión 5).
 5. Multi-héroe: `run_level` por héroe + `PlayerStats` con varios `CharacterStats`.
+
+# Sesión 8 — 2026-09-28 (rama `session/opus-2026-09-28-8`, sobre la sesión 7, sin commit)
+
+Cámara libre estilo DotE y construcción solo desde la barra inferior (modo armado con fantasma).
+
+## Fase 1 — Reconocimiento (qué había)
+
+| Pieza | Estado al empezar |
+|---|---|
+| Cámara | Un `Camera2D` hijo de `Player.tscn`, sin script: solo `position_smoothing` (10). Seguía al héroe por ser hijo. Sin zoom, sin límites, sin paneo. Las acciones `move_up/down/left/right` (WASD) existían en `project.godot` sin uso. |
+| Construcción (a) | Clic en slot vacío → `BuildingSlot.slot_clicked` → `ModuleBuildSystem` → `HUDController.open_building_menu` → `BuildingMenu.open_menu(slot)` → tarjetas "Construir" para ese slot. El slot marcaba el clic como manejado → tapaba el clic de mover al héroe. |
+| Construcción (b) | `open_category(tab)` → "Elegir" → módulo armado, slots libres resaltados → clic en slot (mismo camino `open_menu`) construye. Clic derecho cancelaba. |
+| Esc | Con un módulo armado, Esc llegaba a `Main2d._input` y abría la pausa (riesgo anotado en la sesión 7). |
+| Fantasma / atajos | No existían. |
+
+## Fase 2 — Implementado
+
+| Sistema | Archivos | Qué |
+|---|---|---|
+| Cámara | `scripts/core/camera/GameCamera.gd` (nuevo), `scenes/Player.tscn` | El mismo nodo `Player/Camera2D` con script y `top_level = true` (no hereda la posición del héroe). Sigue al héroe hasta que el jugador panea; primer frame `reset_smoothing()` (sin barrido desde 0,0). Paneo con `move_*` (WASD + flechas) y bordes de pantalla (no si `gui_get_hovered_control()` ≠ null: BottomBar, popup, minimapa, retratos). Velocidad ÷ zoom. Rueda → `set_target_zoom()` con clamp e interpolación exponencial. Posición clampeada a las zonas descubiertas + margen (`refresh_bounds()` en `room_revealed`). Tecla **C** (`camera_recenter`) vuelve a seguir. `PROCESS_MODE_PAUSABLE`: se congela en pausa/muerte/victoria. Piso nuevo = Player nuevo → vuelve a seguir. |
+| Config | `scripts/core/camera/CameraConfig.gd`, `resources/camera/camera_config.tres` (nuevos) | `pan_speed` 700, `edge_scroll_enabled`, `edge_scroll_margin` 16, `zoom_min` 0.5, `zoom_max` 2, `zoom_step` 1.15, `zoom_smoothing` 10, `bounds_margin` 160. Exportado en `GameCamera.config`. |
+| Input | `project.godot` | Flechas agregadas a `move_*`; acción nueva `camera_recenter` (C). |
+| Minimapa | `scripts/ui/hud/Minimap.gd` | `MOUSE_FILTER_STOP` + clic izquierdo → celda → mundo → `GameCamera.focus_on()` (deja de seguir). Al ser STOP también bloquea el scroll por borde encima. |
+| Slots | `scripts/world/BuildingSlot.gd` | `input_pickable = false` por defecto: sin armar, el clic cae en la `RoomZone` (mueve al héroe). `set_ghost(type, ok)`/`clear_ghost()`: el `Icon` de la propia escena del módulo, separado antes de entrar al árbol (no corre `_ready`, no entra a `"generators"`), color del tipo + tinte verde/rojo al 60 %. `room_can_build()`. `build()` limpia el fantasma. |
+| Menú | `scripts/ui/BuildingMenu.gd` | Quitado el flujo por slot (`_slot`, tarjetas "Construir", título por slot, resaltado del slot elegido). `open_menu(slot)` solo construye si hay módulo armado (sin armar no hace nada). Armado: resalta los libres que encajan en salas encendidas y vuelve pickables **todos** los slots vacíos con fantasma al pasar el cursor; rojo → texto flotante con `get_block_reason()`: "Tamaño incorrecto: requiere un slot …", "Sala apagada", "Falta Industria". Clic en slot inválido: texto + sacudida, sigue armado. Se re-arma en `room_power_changed`. Esc (`ui_cancel`) con el menú visible → cierra y consume el evento (no llega a la pausa). Clic derecho cancela. Teclas **1-9** eligen la tarjeta N (el nombre muestra "1. …"). API: `open_category`, `is_armed`, `open_menu`, `close_menu` + `get_block_reason`. |
+| Ruta | `ModuleBuildSystem.gd`, `HUDController.gd` | Solo comentarios: la ruta slot → HUD → `open_menu` sigue, pero solo se usa armado. |
+| Tests | `tests/test_hud_ui.gd`, `tests/test_map_flow.gd` | HUD: slot sin armar no pickable y su clic no abre/construye/gasta; tecla 3 no arma sin Industria y sí con; fantasma verde/rojo y los tres motivos; clic armado sin Industria no construye ni desarma; construye, gasta, sube el yield, limpia; Esc cancela y **no** pasa a la pausa (sonda de input entre Main2d y HUD), Esc con el menú cerrado sí pasa; Defensa → Torreta construye. Mapa (generado y fallback): `GameCamera` `top_level` siguiendo al héroe, zoom clampeado a min/max, los límites contienen al héroe con margen, `clamp_to_bounds` de un punto lejano cae adentro, `focus_on` deja de seguir y queda clampeado, `recenter` vuelve, los límites crecen al explorar. |
+
+### Decisiones
+
+- **"Modelo actual" de cámara** = el `Camera2D` existente en `Player.tscn`; se le puso script + `top_level` en vez de moverlo a `Main2d` (piso nuevo = Player nuevo = cámara nueva siguiendo, gratis).
+- **Seguimiento**: sigue al héroe hasta el primer paneo; después queda libre hasta apretar C (no se re-engancha sola cuando el héroe se mueve). Lo más simple y parecido a DotE.
+- **Sin arrastre con el mouse** (derecho = cancelar, central = luz): paneo solo con teclado + bordes.
+- **Zoom al centro** de la pantalla, no al cursor.
+- **Clamp del centro** de la cámara (no los `limit_*` nativos, que clampean los bordes de la vista): funciona igual con mapas más chicos que la pantalla.
+- **Recentrar = C**: Espacio queda libre para la pausa táctica propuesta.
+- **Causa raíz del clic en slot**: slots no pickables salvo armados (en vez de un guard en `open_menu`), así el clic sin armar mueve al héroe como en el resto de la sala.
+- **Fantasma = el `Icon` real del módulo**: si mañana el módulo tiene sprite, el fantasma lo sigue sin tocar código.
+- Colores del fantasma como `const` en `BuildingSlot` (como el resto de colores del slot); lo tunable de cámara, en recurso.
+- Snapshots en `_deprecated/session7/` (README actualizado).
+
+## Verificación (sesión 8)
+
+- Al empezar: los 4 tests OK.
+- Al terminar: `test_map_generator`, `test_map_flow`, `test_corridor_picking`, `test_hud_ui` → OK (exit 0).
+- Ruido `SCRIPT ERROR` de `--script` (ThemeManager/PauseMenu): idéntico al árbol original (11 / 35 / 10 líneas, mismos tipos), medido con `git stash`.
+- `Main.tscn --quit-after 90`: solo ruido de Steam.
+- `gdparse` OK en todos los `.gd` tocados/nuevos; `--editor --quit` para reindexar `GameCamera`/`CameraConfig`.
+- Trampa del test encontrada y corregida: con `PauseMenu` nulo bajo `--script`, el primer chequeo de Esc abortaba la función en silencio (y el test igual decía OK) → reemplazado por una sonda de input.
+- **Nada visto en pantalla** (todo headless): scroll por borde, rueda, suavizado y fantasma no se probaron con mouse real.
+
+## Checklist manual F5 (sesión 8)
+
+1. Al entrar al piso la cámara está sobre el héroe, sin barrido desde la esquina.
+2. WASD y flechas panean; el mouse contra cada borde panea; sobre la barra inferior, retratos, popup o minimapa **no** panea. La velocidad se siente igual con zoom in/out.
+3. Rueda: zoom suave, se detiene en 0.5× y 2×. La rueda sobre el HUD no hace zoom.
+4. Panear lejos: la cámara se frena a ~160 px de las salas descubiertas; al abrir puertas el límite crece.
+5. C: vuelve al héroe y lo sigue mientras camina.
+6. Clic en el minimapa: la cámara va a ese punto (clampeada).
+7. Clic izquierdo en un slot vacío sin nada armado: el héroe se mueve; no se abre nada.
+8. "Producción" → 1/2/3 o "Elegir": slots mayores libres en dorado; cursor encima: fantasma verde sobre el mayor, rojo + "Tamaño incorrecto…" sobre un menor; sala encendida y luego apagada: "Sala apagada"; sin Industria: "Falta Industria". Clic en uno verde: se construye y se gasta Industria.
+9. Armado + Esc: cancela, **no** abre la pausa. Esc otra vez: pausa. Armado + clic derecho: cancela.
+10. En pausa (Esc), WASD no mueve la cámara.
+11. Bajar de piso: la cámara arranca sobre el héroe del piso nuevo.
+
+## Riesgos a revisar antes de mergear (sesión 8)
+
+- **Nada renderizado**: `gui_get_hovered_control()` depende de que todo Control decorativo que cubra la pantalla sea `MOUSE_FILTER_IGNORE`; uno nuevo que no lo sea mata el scroll por borde.
+- Si el cursor queda en un borde/esquina al entrar, la cámara panea sola → `edge_scroll_enabled = false` en el `.tres` si molesta.
+- El fantasma se calcula al entrar el cursor; si cambia la Industria con el cursor quieto no se repinta hasta salir/entrar.
+- Texto flotante del motivo en cada entrada del cursor: puede spamear al barrer slots.
+- Las salas nunca encendidas no tienen slots, así que "Sala apagada" solo aparece en salas encendidas antes y apagadas después.
+- `project.godot` editado a mano (flechas + `camera_recenter`): si el editor estaba abierto, recargar el proyecto.
+- Sigue el pendiente de la sesión 6: popup/menú no se cierran solos en muerte/victoria.
+
+## Opcionales propuestos (no implementados)
+
+- **Pausa táctica con Espacio**: `get_tree().paused` congela también la construcción; lo simple es `Engine.time_scale = 0` (Tweens/Timers/movimiento lo respetan, el HUD sigue respondiendo) + etiqueta "PAUSA". ~15 líneas en `Main2d._input`. Ojo: la cámara usa `delta` → también se congelaría; habría que escalar su delta.
+- **Mover al héroe con clic derecho** fuera del modo armado: aceptar el botón derecho en `RoomZone.input_event` cuando `not is_armed()`. Choca con "clic derecho cierra el menú no armado".
+- **Cerrar popup/menú en `player_died`/`victory_entered`**: conectar en `HUDController._ready` → `character_popup.close()` + `building_menu.close_menu()`. ~4 líneas.
+
+## Pendiente / próximos pasos (sesión 9+)
+
+1. Playtest visual (checklist arriba) y ajuste de `camera_config.tres`.
+2. Decidir los opcionales de arriba.
+3. Pendientes de la sesión 7: sumidero de Ciencia, loops/tipos de sala, multi-héroe (la cámara sigue a `get_parent()`: con varios héroes, seguir al seleccionado).
