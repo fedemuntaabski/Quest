@@ -1,7 +1,7 @@
 extends Control
 class_name StatIcon
 
-@export_enum("hp", "industry", "food", "science", "dust", "potion", "lock")
+@export_enum("hp", "industry", "food", "science", "dust", "potion")
 var icon_type: String = "hp":
 	set(value):
 		if icon_type == value:
@@ -15,8 +15,7 @@ const BASE_COLORS := {
 	"food": QuestPalette.BLOOD_LIGHT,
 	"science": QuestPalette.VIOLET,
 	"dust": QuestPalette.PARCHMENT_LIGHT,
-	"potion": QuestPalette.GOLD,
-	"lock": QuestPalette.GOLD_DARK
+	"potion": QuestPalette.GOLD
 }
 
 const OUTLINE_COLOR = Color(0.05, 0.03, 0.02, 0.9)
@@ -80,16 +79,6 @@ func _draw_icon(
 
 		"potion":
 			_draw_potion(draw_size, color, offset, expand)
-
-		"lock":
-			_draw_lock(draw_size, color, offset, expand)
-
-## Padlock (BuildingMenu: module locked behind research).
-func _draw_lock(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
-	var w: float = draw_size.x
-	var h: float = draw_size.y
-	draw_arc(Vector2(w * 0.5, h * 0.42) + offset, w * 0.2, PI, TAU, 12, color, w * 0.1 + expand)
-	draw_rect(Rect2(Vector2(w * 0.2 - expand, h * 0.42 - expand) + offset, Vector2(w * 0.6 + expand * 2.0, h * 0.46 + expand * 2.0)), color, true)
 
 func _draw_heart(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
 	var w: float = draw_size.x

@@ -13,8 +13,6 @@ class_name CameraConfig
 @export var edge_scroll_margin: float = 16.0
 
 @export_group("Zoom")
-## Zoom applied on the first frame (clamped to min/max).
-@export var default_zoom: float = 1.5
 @export var zoom_min: float = 0.5
 @export var zoom_max: float = 2.0
 ## Multiplier per wheel notch.

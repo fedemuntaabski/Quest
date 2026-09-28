@@ -22,4 +22,4 @@ func setup(p_room_manager: RoomManager) -> void:
 
 func _on_room_powered(zone_id: String) -> void:
 	room_energized.emit(zone_id)
-	QuestLogger.info(QuestLogger.Category.ROOM, "Zone '%s' energized for %d dust." % [zone_id, RoomZone.get_power_cost()])
+	QuestLogger.info(QuestLogger.Category.ROOM, "Zone '%s' energized for %d dust." % [zone_id, RoomZone.POWER_COST])

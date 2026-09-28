@@ -4,6 +4,3 @@
 
 [resource]
 script = ExtResource("1_cam")
-default_zoom = 1.5
-zoom_min = 1.0
-zoom_max = 3.0

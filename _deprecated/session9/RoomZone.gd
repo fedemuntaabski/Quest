@@ -179,26 +179,19 @@ func get_light() -> RoomLight:
 	return _light
 
 
-## POWER_COST minus the research discount (min 1).
-static func get_power_cost() -> int:
-	var rm := ManagerLocator.get_resource_manager()
-	return maxi(1, POWER_COST - (roundi(rm.get_bonus(ResearchEntry.Effect.POWER_COST)) if rm else 0))
-
-
-## Pays get_power_cost() dust to light this room. No-op if already powered.
+## Pays POWER_COST dust to light this room. No-op if already powered.
 func try_power_up() -> void:
 	if is_powered:
 		return
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager == null:
 		return
-	var cost := get_power_cost()
-	if not resource_manager.spend_resource("dust", cost):
+	if not resource_manager.spend_resource("dust", POWER_COST):
 		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 		if text_mgr:
 			text_mgr.spawn_text(center_position, "Polvo insuficiente", QuestPalette.GOLD_DARK)
 		return
-	_power_paid = cost
+	_power_paid = POWER_COST
 	set_powered(true)
 	powered_up.emit(zone_id)
 

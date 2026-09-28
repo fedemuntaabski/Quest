@@ -179,26 +179,19 @@ func get_light() -> RoomLight:
 	return _light
 
 
-## POWER_COST minus the research discount (min 1).
-static func get_power_cost() -> int:
-	var rm := ManagerLocator.get_resource_manager()
-	return maxi(1, POWER_COST - (roundi(rm.get_bonus(ResearchEntry.Effect.POWER_COST)) if rm else 0))
-
-
-## Pays get_power_cost() dust to light this room. No-op if already powered.
+## Pays POWER_COST dust to light this room. No-op if already powered.
 func try_power_up() -> void:
 	if is_powered:
 		return
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager == null:
 		return
-	var cost := get_power_cost()
-	if not resource_manager.spend_resource("dust", cost):
+	if not resource_manager.spend_resource("dust", POWER_COST):
 		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 		if text_mgr:
 			text_mgr.spawn_text(center_position, "Polvo insuficiente", QuestPalette.GOLD_DARK)
 		return
-	_power_paid = cost
+	_power_paid = POWER_COST
 	set_powered(true)
 	powered_up.emit(zone_id)
 
@@ -273,9 +266,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 	if not _shown or get_viewport().is_input_handled():
 		return
 	match event.button_index:
-		# Right = move too (DotE). While a module is armed, BuildingMenu._input
-		# consumes the right click first, so it cancels instead of moving.
-		MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT:
+		MOUSE_BUTTON_LEFT:
 			clicked.emit(self)
 		MOUSE_BUTTON_MIDDLE:
 			if kind != "room":

@@ -685,3 +685,196 @@ Cámara libre estilo DotE y construcción solo desde la barra inferior (modo arm
 1. Playtest visual (checklist arriba) y ajuste de `camera_config.tres`.
 2. Decidir los opcionales de arriba.
 3. Pendientes de la sesión 7: sumidero de Ciencia, loops/tipos de sala, multi-héroe (la cámara sigue a `get_parent()`: con varios héroes, seguir al seleccionado).
+
+---
+
+# Sesión 9 — 2026-09-28 (rama `session/opus-2026-09-28-9`, sobre la sesión 8, sin commit)
+
+Zoom más cercano, pausa táctica con Espacio, mover con clic derecho y cierre de popup/menú en muerte/victoria.
+
+## Fase 1 — Reconocimiento (qué había)
+
+| Pieza | Estado al empezar |
+|---|---|
+| `CameraConfig` | pan 700, borde 16 px, zoom 0.5–2 (paso 1.15, suavizado 10), `bounds_margin` 160. `.tres` vacío (todo default). Sin zoom inicial: arrancaba en 1×. |
+| `GameCamera` | `_process` con `delta` escalado + suavizado nativo de `Camera2D` (también escalado) → con `time_scale = 0` se congelaba entera. |
+| `Main2d._input` | Solo `ui_cancel` → `pause_menu.toggle()` (si activo o menú abierto), consumía el evento. Espacio sin uso (libre desde la sesión 8). |
+| `RoomZone.input_event` | Izquierdo → `clicked` (mover), central → `toggle_power()`; derecho ignorado. Respeta `is_input_handled()`. |
+| `BuildingMenu._input` | Clic derecho cerraba el menú armado o no, sin consumir. |
+| Muerte/victoria | Popup del héroe y menú de construcción quedaban abiertos (pendiente desde la sesión 6). |
+
+## Fase 2 — Implementado
+
+| Sistema | Archivos | Qué |
+|---|---|---|
+| Zoom | `CameraConfig.gd`, `camera_config.tres`, `GameCamera.gd` | `default_zoom` (1.5) en el grupo Zoom, aplicado en `_ready` (antes del primer frame, clampeado). `.tres`: `zoom_min` 1.0, `zoom_max` 3.0. `bounds_margin` 160 y borde 16 px sin cambios (ver Decisiones). |
+| Cámara en tiempo real | `GameCamera.gd` | `delta` propio con `Time.get_ticks_usec()` (tope 0.1 s) para paneo y zoom; suavizado nativo apagado mientras `time_scale == 0` (si no, la cámara no se mueve en pantalla). |
+| Pausa táctica | `project.godot`, `Main2d.gd`, `Main.gd` | Acción `tactical_pause` (Espacio). `Main2d._input` alterna `_tactical_paused` solo si el juego está ACTIVE y vivo, y consume el evento (un botón con foco no se "aprieta" con Espacio). `_apply_time_scale()`: `time_scale = 0` solo si táctica + ACTIVE; se re-aplica en `GameStateManager.state_changed` → Esc/muerte/victoria corren a 1 (sus overlays animan) y al volver a ACTIVE se recupera la pausa táctica. `time_scale = 1` en `Main2d._exit_tree` y en `Main.gd` junto a cada `paused = false` (volver al menú, reintentar, bajar de piso), antes del fundido. |
+| Etiqueta PAUSA | `HUDController.gd` | `PauseLabel` creada en código (arriba al centro, 32 px, `MOUSE_FILTER_IGNORE`); `Main2d` la prende/apaga con `call_group("hud", "set_pause_label", v)`. |
+| Feedback en pausa | `RoomLight.gd`, `FloatingText.gd`, `BuildingMenu.gd` | `set_ignore_time_scale()` en el tween de encendido/apagado de sala, el texto flotante y la sacudida del menú: se ven durante la pausa. |
+| Clic derecho | `RoomZone.gd`, `BuildingMenu.gd` | `RoomZone`: derecho = izquierdo (`clicked`). `BuildingMenu`: armado → derecho cancela **y consume** (así no llega al picking y no mueve); sin armar → no hace nada (el héroe se mueve, el menú sigue abierto; se cierra con Esc o clic izquierdo afuera). |
+| Cierre fin de piso | `HUDController.gd` | `PlayerStats.player_died` y `GameStateManager.victory_entered` → `close_popups()` (`character_popup.close()` + `building_menu.close_menu()`). |
+| Tests | `tests/test_map_flow.gd`, `tests/test_hud_ui.gd` | Mapa: zoom inicial == `default_zoom` clampeado y dentro de min/max. HUD: Espacio → `time_scale` 0 + etiqueta; la cámara panea (`move_right` real) y hace zoom a `time_scale` 0; armar (tecla 2) + construir Trampa en pausa; apagar/encender sala con clic central en pausa; el popup abre en pausa; Esc (`request_pause`) → 1 y etiqueta oculta, Espacio ahí no alterna, resume → vuelve a 0; Espacio otra vez → 1. Derecho sin armar: el menú sigue abierto, el evento pasa la sonda y la zona emite `zone_clicked`; derecho armado: cancela y la sonda no lo ve (consumido). Victoria y muerte cierran popup + menú; la muerte baja `time_scale` a 1. `time_scale` 1 tras sacar `Main2d` del árbol. `EscProbe` → `InputProbe` (también registra el derecho). |
+
+### Decisiones
+
+- **Valor al reanudar = 1.0**, no "el previo": hoy no existe otra velocidad de juego; si aparece un x2, guardar el valor en `_apply_time_scale`.
+- **Esc pausa por completo a `time_scale` 1** (el árbol ya está pausado, y así los tweens del menú/overlays no se congelan); la pausa táctica vive en `_tactical_paused` y vuelve sola en `state_changed` → ACTIVE.
+- **Espacio solo se consume si alterna**: con el menú de pausa u overlays arriba queda como `ui_accept` para sus botones. Los `ConfirmationDialog` (Nexo) son ventanas embebidas que reciben el teclado antes que `Main2d`.
+- **En pausa táctica todo lo que es "orden" sigue permitido**, incluido abrir puertas (avanza el turno) y dar la orden de mover (el tween queda congelado hasta reanudar). Lo más simple; restringir puertas es una línea en `PlayerActionController._open_group` si molesta.
+- **Etiqueta por `call_group("hud", …)`** desde `Main2d` en vez de polling: el HUD es pausable y con polling quedaba "PAUSA" pegado sobre el overlay de muerte.
+- **Derecho sin armar no cierra el menú**, ni siquiera un clic derecho afuera: cerrar = Esc o clic izquierdo afuera (lo pedido).
+- **`bounds_margin` 160 y borde 16 px sin tocar**: el margen es en mundo (a 1.5× = 240 px de pantalla), el borde es en píxeles de pantalla y la velocidad ya se divide por el zoom (700 px de pantalla/s a cualquier zoom). Tunables en el `.tres` si el playtest dice otra cosa.
+- **Tweens de feedback en tiempo real** (luz, texto, sacudida): con `time_scale` 0 encender una sala o el texto "Falta Industria" no se verían hasta reanudar. El pulso rojo de peligro y la barra de HP siguen escalados (se congelan con el juego, a propósito).
+- Snapshots en `_deprecated/session8/` (README propio + línea en `_deprecated/README.md`; `project.godot` guardado como `.txt`).
+
+## Verificación (sesión 9)
+
+- Al empezar: los 4 tests OK.
+- Al terminar: `test_map_generator`, `test_map_flow`, `test_corridor_picking`, `test_hud_ui` → OK (exit 0). Ruido `SCRIPT ERROR` idéntico al baseline (0 / 11 / 35 / 10).
+- Mutación: sin el `set_input_as_handled()` del derecho armado, `test_hud_ui` falla ("armed right click must be consumed…").
+- Hallazgo: tras `root.push_input()` de un clic, `is_input_handled()` queda `true` (Godot lo encola para el picking) → los tests usan una sonda de input y una tecla dummy (`_clear_handled`) antes de llamar a `RoomZone._on_input_event` directo.
+- `gdparse` OK en todos los `.gd` tocados.
+- `Main.tscn --quit-after 90`: exit 0, solo ruido de Steam. `Main2d.tscn --quit-after 90`: 0 `SCRIPT ERROR` (igual que antes).
+- **Nada visto en pantalla** (todo headless): zoom, etiqueta, pausa, clic derecho real y picking bajo `time_scale` 0 no se probaron con mouse/teclado reales.
+
+## Checklist manual F5 (sesión 9)
+
+1. Al entrar al piso la cámara arranca más cerca (1.5×) y sin barrido; la rueda va de 1× a 3×.
+2. Espacio: aparece "PAUSA" arriba al centro; héroe, enemigos, torretas y timers se detienen.
+3. En pausa: WASD/bordes panean y la rueda hace zoom sin tirones.
+4. En pausa: Producción/Defensa, 1-9, fantasma verde/rojo, construir (gasta Industria), clic central enciende/apaga sala (la luz se ve cambiar), retrato → popup y subir de nivel.
+5. En pausa, clic en otra sala: el héroe no se mueve hasta volver a apretar Espacio, y ahí camina.
+6. Pausa táctica + Esc: el menú de pausa anima normal; Espacio dentro del menú no saca "PAUSA" ni rompe botones; al volver sigue la pausa táctica.
+7. Clic derecho en una sala sin armar: el héroe va. Con el menú abierto sin armar: el héroe va y el menú sigue abierto; Esc o clic izquierdo afuera lo cierran.
+8. Armado + clic derecho sobre una sala: cancela y el héroe **no** se mueve.
+9. Con popup y menú abiertos, morir: se cierran; ganar el piso: se cierran.
+10. Pausa táctica activa y morir / reintentar / bajar de piso / salir al menú: lo siguiente corre a velocidad normal y los fundidos animan.
+11. La etiqueta "PAUSA" no atrapa clics (el clic llega al mundo y el scroll por borde funciona debajo).
+
+## Riesgos a revisar antes de mergear (sesión 9)
+
+- **Picking a `time_scale` 0**: el picking de `Area2D` corre en el paso físico; Godot sigue contando pasos físicos con delta 0, así que debería andar, pero **no se verificó con clics reales** (los tests llaman `_on_input_event` / señales). Es lo primero a probar en F5.
+- Un segundo clic de mover durante la pausa se ignora (`_action_in_flight`: el primer tween está congelado).
+- Abrir puertas en pausa táctica avanza el turno y puede disparar invasiones (congeladas hasta reanudar).
+- Tweens que siguen escalados (HP del retrato, destello de invasión, flash de daño) quedan quietos en pausa; si alguno se nota raro, `set_ignore_time_scale()`.
+- `project.godot` editado a mano (`tactical_pause`): recargar el proyecto si el editor estaba abierto.
+- Si en el futuro se agrega otra velocidad de juego, `_apply_time_scale` la pisa con 1.0.
+
+## Pendiente / próximos pasos (sesión 10+)
+
+1. Playtest F5 con los checklists de las sesiones 8 y 9, y ajuste de `camera_config.tres`.
+2. Decidir si las puertas se bloquean en pausa táctica.
+3. Pendientes de la sesión 7: sumidero de Ciencia, loops/tipos de sala, multi-héroe.
+
+---
+
+# Sesión 10 — 2026-09-28 (rama `session/opus-2026-09-28-10`, sobre la sesión 9, sin commit)
+
+Investigación simple como sumidero de Ciencia: 7 investigaciones en 2 tiers, 2 módulos bloqueados, 4 mejoras globales, panel "Investigar" en la barra inferior.
+
+## Fase 1 — Reconocimiento (qué había)
+
+| Pieza | Estado al empezar |
+|---|---|
+| Módulos | `Module.CATALOG` (dict const por `ModuleType`: hp, label, slot MAJOR/MINOR, `cost` en Industria, números de efecto, escena). Generadores 6 (+3 de su recurso), Ballesta 4 (15 de daño cada 1 s), Trampa 3. Todos libres desde el inicio. |
+| Estado de la partida | Recursos en el autoload `ResourceManager` (`_resources`); niveles del héroe en el autoload `PlayerStats` (`run_level`). Los dos sobreviven al cambio de piso (Main2d/HUD se recrean) y se resetean en `Main._begin_new_run()` (`reset_resources()` + `reset_run_upgrades()`), que llaman `start_gameplay()` y `reload_gameplay()` (Retry); `advance_floor()` no. |
+| `BuildingMenu` | `_populate()` recorre `Module.CATALOG`, filtra por pestaña (= `SlotType`) y arma una tarjeta por módulo en `_make_card` (ícono de color, nombre con atajo, efecto, costo en Industria, botón "Elegir" deshabilitado si no alcanza). 1-9 aprietan el botón si no está deshabilitado. `get_block_reason(slot)`: sin armar / tamaño / sala apagada / Industria. |
+| Ciencia | +1 por turno de base, +3 por Gen. Ciencia, 10 al inicio. Sin ningún uso (tooltip "todavía sin uso"). |
+| Bonos a tocar | Generadores: `ResourceManager._calculate_module_bonus()` suma `yield_amount`. Torreta: export `damage` fijo en 15. Luz: `RoomZone.POWER_COST` const 10 (también en `RoomLight`, `RoomPowerSystem` y el texto de `EnergyButton.tscn`). Descubrimiento: `FloorManager.on_room_discovered()` ← `FloorConfig.discovery_dust()`. |
+
+## Fase 2 — Implementado
+
+| Sistema | Archivos | Qué |
+|---|---|---|
+| Datos | `scripts/core/research/ResearchEntry.gd`, `ResearchConfig.gd`, `resources/research/research_config.tres` | `ResearchEntry` (Resource): `id`, `display_name`, `description`, `cost` (Ciencia), `prerequisite` (id o ""), `effect` (`UNLOCK_MODULE`, `GENERATOR_YIELD_PCT`, `TURRET_DAMAGE`, `POWER_COST`, `DISCOVERY_DUST`), `value`, `module` (solo para desbloqueo) y `describe_effect()`. `ResearchConfig`: `entries` + `get_entry(id)` / `get_unlock_entry(module)`. Mismo patrón que `MapLayout`/`RoomData`. |
+| Árbol | `research_config.tres` | T1: Instrumental arcano (6, desbloquea Gen. Ciencia), Planos de ballesta (8, desbloquea Ballesta), Engranajes afinados (10, +25% generadores), Lentes de polvo (10, −3 Polvo por luz), Cartografía (8, +1 Polvo por descubrimiento). T2: Sobrecarga (30, otro +25%, requiere Engranajes), Virotes estriados (25, +10 de daño de torreta, requiere Planos). Total: 97 de Ciencia. |
+| Estado | `ResourceManager.gd`, `Main.gd` | `research_config`, `is_researched`, `get_research_block_reason` ("Investigada" / "Requiere: X" / "Falta Ciencia"), `can_research`, `research` (gasta solo Ciencia vía `spend_resource`), `is_unlocked(module)`, `get_bonus(effect)` (suma de los `value` investigados), `reset_research()`, señal `research_changed` (+ `production_changed` para el "+N"). `Main._begin_new_run()` llama `reset_research()` junto a `reset_run_upgrades()`. |
+| Bonos | `ResourceManager.gd`, `TurretModule.gd`, `RoomZone.gd`, `RoomLight.gd`, `EnergyButton.gd`, `RoomPowerSystem.gd`, `FloorManager.gd` | Generadores: `_calculate_module_bonus` = `roundi(suma × (1 + GENERATOR_YIELD_PCT))` → llega a `get_turn_yield` (HUD) y a `process_turn_production` (lo que se paga). Torreta: `get_damage()` = `damage` + bono, leído en cada disparo (vale también para torretas ya construidas). Luz: `RoomZone.get_power_cost()` estático = `max(1, POWER_COST − bono)`; `try_power_up` paga eso y `_power_paid` guarda lo pagado (reembolso exacto); el contorno "pagable" de `RoomLight` y el cartel de `EnergyButton` lo leen y se refrescan con `research_changed`. Descubrimiento: `FloorManager.on_room_discovered` suma el bono a `config.discovery_dust()`. |
+| Bloqueo | `BuildingMenu.gd`, `StatIcon.gd` | `BuildingMenu.get_lock_reason(module)` (estático) → "Requiere: <investigación>". Tarjeta bloqueada: candado (`StatIcon`, tipo nuevo `"lock"`) sobre el ícono, el efecto se reemplaza por el motivo, tooltip con el motivo, botón deshabilitado (así 1-9 la saltean). `_arm` rechaza módulos bloqueados y `get_block_reason` informa el bloqueo antes que el resto → `_build_armed_into` no construye ni cobra. Se repuebla con `research_changed`. |
+| UI | `HUD.tscn`, `HUDController.gd`, `scripts/ui/hud/ResearchPanel.gd` | Botón "Investigar" en `BuildButtons`, al lado de Producción/Defensa. `ResearchPanel` (armado en código, como `CharacterPopup`) se acopla en `BottomBar` entre `BuildingMenu` y `BottomRow`, con el mismo estilo de panel y tarjetas. Grilla de 2 columnas: "T1/T2 · nombre", efecto, estado (Disponible / Falta Ciencia / Requiere: X / Investigada), costo con ícono de Ciencia y botón "Investigar"/"Hecho". Se repuebla con `research_changed` y con cada cambio de Ciencia. Abrir uno cierra el otro (Investigar ↔ Producción/Defensa). Esc y clic derecho lo cierran y se consumen. `close_popups()` (muerte/victoria) también lo cierra. Tooltip de Ciencia actualizado. |
+| Tests | `tests/test_hud_ui.gd` | `_check_research`: 6-8 entradas; cada T2 con un prerrequisito que existe y es más barato; ≥2 módulos bloqueados y Gen. Industria/Comida/Trampa libres; la tarjeta bloqueada tiene candado + "Requiere"; ni la tecla 3 ni `_arm` arman; forzando `_armed_type`, `get_block_reason` da el bloqueo y no se construye ni se cobra; sin Ciencia o sin prerrequisito falla sin gastar; con `time_scale` 0 el botón "Investigar" abre el panel acoplado y el botón de la tarjeta investiga gastando **solo** 6 de Ciencia (los otros 3 recursos no cambian); estado "Investigada", botón deshabilitado, el T2 muestra "Requiere"; Esc cierra y no pasa la sonda (no pausa); clic derecho cierra y se consume; luz 10 → 7 (cartel "(7 Polvo)", paga 7, reembolsa 7); generador de industria 3 → 4 → 5 y el turno paga eso; disparo real de torreta 15 → 25; descubrimiento +1. `_check_research_lifetime`: un Main2d + HUD nuevos (piso siguiente) conservan lo investigado y el panel muestra "Investigada"; `Main.new()._begin_new_run()` lo resetea y el panel abierto se refresca. |
+
+### Decisiones
+
+- **El estado vive dentro de `ResourceManager`, no en un `ResearchManager` aparte**: tiene exactamente el mismo ciclo de vida (autoload, sobrevive a los pisos, se resetea en `_begin_new_run`), la investigación solo existe para gastar un recurso que ya maneja, y así no hace falta un autoload nuevo (editar `project.godot` a mano) ni otro acceso en `ManagerLocator`. Son ~70 líneas en una sección propia; si crece (T3, repetibles, UI de árbol) se puede extraer.
+- **Reset**: `reset_research()` va aparte, llamado en `_begin_new_run()` al lado de `reset_run_upgrades()` (el mismo punto que los niveles del héroe). No lo metí en `reset_resources()` para no cambiar lo que hace esa función pública (los tests la llaman sola).
+- **Módulos bloqueados: Gen. Ciencia y Ballesta.** Los básicos quedan libres: Gen. Industria, Gen. Comida y Trampa. Bloquear el Gen. Ciencia hace que la primera investigación sea la que arranca la economía de Ciencia (6 de los 10 iniciales); la Ballesta es la única defensa que hace daño, así que desbloquearla compite de verdad con las mejoras.
+- **"No se construye"** se garantiza en el camino del jugador (`BuildingMenu`: `_arm` + `get_block_reason`). `BuildingSlot.build()` sigue sin chequear: es API interna que usan los tests y el código, y dejarla así es lo más simple.
+- **El % de generadores se aplica sobre la suma**, no por generador: `roundi(total × (1 + %))`. Con un solo generador de 3: +25% → 4, +50% → 5 (el .5 redondea para arriba). Con varios, el redondeo favorece un poco más. Aplica solo a los generadores, no a la producción base por puerta.
+- **El costo de la luz tiene mínimo 1** y el reembolso devuelve lo que realmente se pagó (`_power_paid`), así que investigar con salas ya encendidas no crea ni quita Polvo.
+- **Clic derecho con el panel abierto: cierra y se consume** (el héroe no se mueve). Es lo mismo que hace el clic derecho armado del `BuildingMenu`; cerrar y además mover sería sorpresivo. El clic izquierdo afuera no lo cierra (no lo pedía el objetivo, y el panel no bloquea nada del mundo).
+- **Un panel a la vez**: "Investigar" cierra el `BuildingMenu` (y lo desarma), y Producción/Defensa cierran el panel. "Investigar" alterna abrir/cerrar.
+- **El candado está dibujado** con `StatIcon` (tipo nuevo `"lock"`) en vez de un emoji: la fuente por defecto no garantiza el glifo.
+
+#### Balance: Ciencia (cuentas)
+
+Supuestos: el piso N tiene 8 + (N−1) salas → N+6 puertas = turnos (7, 8, 9, 10, 11 → **45 turnos** en 5 pisos). Base: 1 de Ciencia por turno; 10 al inicio; Gen. Ciencia = +3 por turno por 6 de Industria. Los módulos **no** pasan de piso (el mapa es nuevo), así que el generador se reconstruye en cada piso en la sala inicial (encendida gratis, 1 slot mayor).
+
+- **Sin Gen. Ciencia**: 10 + 45 = **55** en toda la run → alcanza para los 5 T1 (42), pero no para ningún T2 (55 más). La Ciencia sigue siendo escasa si no se invierte.
+- **Con un Gen. Ciencia desde el turno 0 de cada piso** (4 por turno): piso 1 = 10 − 6 + 7×4 = **32** → al terminar el piso 1 se compraron ~3 T1 (p. ej. Ballesta 8 + Engranajes 10 + Lentes 10 = 28). El piso 2 suma 32 → T1 completo y ahorrando para los T2. En el piso 3 (+36) caen los dos T2 (55), entre el piso 3 y el 4. Total de la run ≈ 10 + 45 + 45×3 − 6 ≈ **184** contra **97** del árbol → sobran ~85 desde el piso 4.
+- Con Engranajes/Sobrecarga el generador pasa a 4 o 5 por turno → el árbol se completa medio piso antes.
+- **Lectura**: el sumidero funciona los primeros 3 pisos; en los 2 últimos la Ciencia vuelve a sobrar. Siguiente paso barato: un T3 caro o una investigación repetible (p. ej. +HP de módulos), que es solo datos en el `.tres` si el efecto ya existe.
+
+#### Balance: Polvo (riesgo de la sesión 7, NO corregido)
+
+Supuestos: 20 al inicio; `discovery_dust` = 4 + ⌊0.5×(N−1)⌋ por sala descubierta (4, 4, 5, 5, 6); +10 al bajar (pisos 2+); luz 10; sala inicial gratis; N+6 salas para encender por piso.
+
+| Piso | Ingreso de Polvo | Encender todo | Salas que se pueden encender |
+|---|---|---|---|
+| 1 | 20 + 7×4 = 48 | 7×10 = 70 | 4 de 7 |
+| 2 | 10 + 8×4 = 42 | 80 | 4 de 8 (+ lo que sobró) |
+| 3 | 10 + 9×5 = 55 | 90 | 5 de 9 |
+| 4 | 10 + 10×5 = 60 | 100 | 6 de 10 |
+| 5 | 10 + 11×6 = 76 | 110 | 7 de 11 |
+
+- En bruto no "sobra" (≈ 281 de ingreso contra 450 para encender todo). **Pero** apagar reembolsa todo lo pagado: antes de salir del piso (en la extracción) se pueden apagar todas las salas y llevarse el Polvo. En la práctica el Polvo **nunca se consume** y se acumula: 48 → 90 → 145 → 205 → 281 disponibles al llegar a cada piso, suficiente para encender todo desde el piso 3 (90 ≥ 90).
+- Con investigación: Lentes (−3) → piso 1 = 7×7 = 49 ≈ 48 de ingreso (casi todo encendido ya en el piso 1); Cartografía (+1) = +45 de Polvo en la run. Las dos T1 de Polvo agravan el excedente.
+- Sugerencias (no implementadas): que el reembolso no aplique al cambiar de piso ni durante la extracción, o que sea parcial (50%).
+
+#### Puertas en pausa táctica (pendiente de la s9) — NO implementado
+
+Hoy (desde la s9) se puede abrir una puerta en pausa táctica: el turno avanza al instante (producción, descubrimiento, tirada de invasión con los enemigos congelados) y el héroe recién camina al reanudar.
+
+- **A favor de permitir**: menos reglas; la pausa es "dar órdenes" y abrir es una orden; no rompe nada técnico (los tests de la s9 lo cubren); el turno es instantáneo de todos modos.
+- **En contra (a favor de bloquear)**: estado incoherente (sala revelada y turno avanzado con el héroe todavía en la otra sala). Y es **explotable**: abrir en pausa, ver dónde cayó la invasión con los enemigos congelados, encender esa sala y construir defensas (todo permitido en pausa) antes de que actúen. En DotE la puerta se abre cuando el héroe llega, no al hacer clic.
+- **Recomendación: bloquear** las puertas en pausa táctica con un texto flotante "En pausa": una guarda en `PlayerActionController._open_group()` que consulte `Main2d.is_tactically_paused()`, sin cola de órdenes. Encolar la apertura para cuando se reanude sería más fiel, pero agrega estado; se puede hacer después si el playtest lo pide.
+
+## Verificación (sesión 10)
+
+- Baseline (antes de tocar nada): `test_map_generator`, `test_map_flow`, `test_corridor_picking` y `test_hud_ui` OK; `SCRIPT ERROR` 0 / 11 / 35 / 10; `Main.tscn --quit-after 90` exit 0 con 0 `SCRIPT ERROR`.
+- Final: los 4 tests OK (exit 0). `SCRIPT ERROR` 0 / 11 / 35 / **11**. El +1 de `test_hud_ui` es el ruido ya conocido `Trying to assign value of type 'CanvasLayer' to a variable of type 'PauseMenu.gd'` (Main2d.gd:33), que sale una vez por cada `Main2d` que se arranca en `--script`, y el test nuevo de persistencia arranca un segundo `Main2d`. No hay errores nuevos distintos.
+- `Main.tscn --quit-after 90` y `Main2d.tscn --quit-after 90`: exit 0 y 0 `SCRIPT ERROR` (igual que el baseline).
+- Mutaciones: sin `reset_research()` en `_begin_new_run`, `test_hud_ui` falla ("_begin_new_run (Retry) must reset research"); sin el chequeo de bloqueo en `get_block_reason`, falla ("locked reason", "a locked module must not be built nor paid", …).
+- `gdparse` OK en todos los `.gd` tocados y nuevos. Corrí `--editor --quit` para indexar las clases nuevas (`ResearchEntry`, `ResearchConfig`, `ResearchPanel`).
+- **No se vio nada en pantalla** (todo fue headless): el panel, el candado, el layout de la barra inferior y los clics reales no se probaron con mouse ni teclado.
+
+## Checklist manual F5 (sesión 10)
+
+1. Barra inferior: "Construir: Producción · Defensa · Investigar". El tooltip de Ciencia habla de investigaciones.
+2. Producción: Gen. Ciencia con candado y "Requiere: Instrumental arcano"; no se puede elegir (ni con la tecla 3). Defensa: la Ballesta igual, con "Requiere: Planos de ballesta"; la Trampa está libre.
+3. Investigar: panel acoplado sobre la barra, 7 tarjetas en 2 columnas, mismo estilo que el de construcción; se ve bien sin tapar el minimapa ni los retratos (probar también en 720p).
+4. Investigar "Instrumental arcano" (Ciencia 10 → 4): la tarjeta pasa a "Investigada"/"Hecho", y en Producción el Gen. Ciencia ya se puede elegir.
+5. "Sobrecarga" y "Virotes estriados" muestran "Requiere: …" hasta comprar su T1; sin Ciencia dicen "Falta Ciencia" y el botón queda apagado.
+6. Engranajes con un generador construido: el "+N" del recurso sube (3 → 4). Lentes: el cartel de las salas oscuras dice "(7 Polvo)", encender cobra 7 y apagar devuelve 7. Cartografía: el contador de Polvo sube 1 más al descubrir una sala.
+7. Virotes: los números de daño de la Ballesta pasan de 15 a 25.
+8. Espacio (pausa táctica) → Investigar y comprar funciona; los tooltips se ven.
+9. Con el panel abierto: Esc lo cierra y **no** abre el menú de pausa; un segundo Esc sí pausa. El clic derecho lo cierra y el héroe no se mueve.
+10. Producción/Defensa cierran el panel; Investigar cierra el menú de construcción (y lo desarma).
+11. Bajar de piso: lo investigado sigue (panel y candados). Morir → Reintentar, o salir y empezar partida nueva: todo vuelve a estar bloqueado.
+
+## Riesgos a revisar antes de mergear (sesión 10)
+
+- **Picking real con `time_scale` 0** (heredado de la s9, sigue sin probarse con clics reales): los tests llaman `_on_input_event` o emiten señales. Es lo primero en F5: con Espacio, clic en salas, en slots armados y clic central. El panel de investigación es `Control` puro (no depende del picking físico), pero conviene confirmarlo también.
+- Layout: el panel de 2 columnas × 4 filas más la barra puede quedar alto en 720p; si tapa demasiado, `COLUMNS = 3` en `ResearchPanel.gd` o tarjetas más compactas.
+- Balance: la Ciencia vuelve a sobrar desde el piso 4 y el Polvo nunca se consume por el reembolso (ver Decisiones, con números).
+- Bloquear la Ballesta deja la Trampa como única defensa hasta gastar 8 de Ciencia: si el piso 1 se vuelve más duro, bajar Planos de ballesta a 4-6 en el `.tres`.
+- `BuildingSlot.build()` no respeta el bloqueo (solo lo hace el camino del menú): cualquier código nuevo que construya tiene que consultar `is_unlocked`.
+- El texto de `EnergyButton.tscn` ("10 Polvo") queda como valor del editor; en juego lo pisa `_refresh_label()`.
+
+## Pendiente / próximos pasos (sesión 11+)
+
+1. Playtest F5 con los checklists de las sesiones 8, 9 y 10 (sobre todo el picking con `time_scale` 0).
+2. Decidir las puertas en pausa táctica (recomendación: bloquear, ver Decisiones).
+3. Sumidero tardío de Ciencia (T3 o repetible) y reembolso de Polvo al cambiar de piso.
+4. Pendientes de la sesión 7: loops/tipos de sala, multi-héroe.

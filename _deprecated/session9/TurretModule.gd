@@ -41,10 +41,4 @@ func _on_fire_timer_timeout() -> void:
 	current_targets = current_targets.filter(func(t: Node2D) -> bool: return is_instance_valid(t))
 	if current_targets.is_empty():
 		return
-	current_targets[0].take_damage(get_damage())
-
-
-## Base damage + research bonus, read per shot (so it reaches built turrets).
-func get_damage() -> int:
-	var rm := ManagerLocator.get_resource_manager()
-	return damage + (roundi(rm.get_bonus(ResearchEntry.Effect.TURRET_DAMAGE)) if rm else 0)
+	current_targets[0].take_damage(damage)

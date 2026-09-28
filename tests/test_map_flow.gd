@@ -126,6 +126,11 @@ func _check_camera(camera: GameCamera, player: Player, label: String) -> Rect2:
 	await process_frame
 	if not camera.top_level or not camera.is_following() or camera.global_position.distance_to(player.global_position) > 1.0:
 		failures.append("%s: camera not following the hero at start (%s vs %s)" % [label, camera.global_position, player.global_position])
+	var cfg := camera.config
+	var expected_zoom := clampf(cfg.default_zoom, cfg.zoom_min, cfg.zoom_max)
+	if not (is_equal_approx(camera.zoom.x, expected_zoom) and is_equal_approx(camera.get_target_zoom(), expected_zoom)) \
+			or cfg.default_zoom < cfg.zoom_min or cfg.default_zoom > cfg.zoom_max:
+		failures.append("%s: default zoom %f not applied on the first frame / outside [%f, %f] (zoom %f)" % [label, cfg.default_zoom, cfg.zoom_min, cfg.zoom_max, camera.zoom.x])
 	camera.set_target_zoom(1000.0)
 	if not is_equal_approx(camera.get_target_zoom(), camera.config.zoom_max):
 		failures.append("%s: zoom not clamped to max (%f)" % [label, camera.get_target_zoom()])

@@ -6,8 +6,6 @@ class_name GameCamera
 ## pans (move_* keys / screen edges), wheel zoom with smoothing, position
 ## clamped to the discovered rooms + margin, camera_recenter resumes following.
 ## Tunables live in CameraConfig. A new floor = a new Player → follows again.
-## Runs on real time, not Engine.time_scale, so it still pans/zooms during the
-## tactical pause (time_scale 0).
 
 @export var config: CameraConfig = preload("res://resources/camera/camera_config.tres")
 
@@ -17,8 +15,6 @@ var _following := true
 var _snap := true
 var _target_zoom := 1.0
 var _bounds := Rect2()
-var _smoothing := true
-var _last_usec := 0
 
 
 func _ready() -> void:
@@ -26,21 +22,14 @@ func _ready() -> void:
 	# Main2d is PROCESS_MODE_ALWAYS; the camera must freeze with pause/death/victory.
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	_hero = get_parent() as Node2D
-	_smoothing = position_smoothing_enabled
-	set_target_zoom(config.default_zoom)
-	zoom = Vector2.ONE * _target_zoom
+	_target_zoom = zoom.x
 	_room_manager = ManagerLocator.get_room_manager()
 	if _room_manager and _room_manager.door_turn_system:
 		_room_manager.door_turn_system.room_revealed.connect(func(_id: String, _cells: Array[Vector2i]): refresh_bounds())
 	refresh_bounds()
 
 
-func _process(_delta: float) -> void:
-	var now := Time.get_ticks_usec()
-	var delta := 0.0 if _last_usec == 0 else minf((now - _last_usec) / 1e6, 0.1)
-	_last_usec = now
-	# Camera2D's built-in smoothing uses the scaled delta: frozen at time_scale 0.
-	position_smoothing_enabled = _smoothing and Engine.time_scale > 0.0
+func _process(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down") + _edge_direction()
 	if dir != Vector2.ZERO:
 		_following = false

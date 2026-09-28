@@ -3,7 +3,7 @@ class_name HUDController
 
 const TOOLTIP_INDUSTRY := "Industria: Se utiliza para construir módulos de apoyo y defensas en las salas."
 const TOOLTIP_FOOD := "Comida: Se utiliza para subir de nivel al héroe (clic en su retrato)."
-const TOOLTIP_SCIENCE := "Ciencia: Se gasta en investigaciones (botón Investigar): desbloquea módulos y mejora generadores, torretas y Polvo."
+const TOOLTIP_SCIENCE := "Ciencia: Se acumula para investigaciones (todavía sin uso)."
 const TOOLTIP_DUST := "Polvo: Se utiliza para iluminar salas oscuras y evitar la aparición de enemigos."
 
 const _STAT_BAR_PATH := "Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"
@@ -26,7 +26,6 @@ const _BUILD_BUTTONS_PATH := "Control/BottomBar/BottomRow/BuildPanel/MarginConta
 @onready var floor_label: Label = get_node_or_null("Control/TopLeft/FloorLabel")
 @onready var production_button: Button = get_node_or_null(_BUILD_BUTTONS_PATH + "/ProductionButton")
 @onready var defense_button: Button = get_node_or_null(_BUILD_BUTTONS_PATH + "/DefenseButton")
-@onready var research_button: Button = get_node_or_null(_BUILD_BUTTONS_PATH + "/ResearchButton")
 
 const INVASION_FLASH_ALPHA := 0.3
 const INVASION_FLASH_HALF_TIME := 0.25
@@ -44,8 +43,6 @@ var _invasion_tween: Tween
 var _portraits: Dictionary = {}
 var character_popup: CharacterPopup
 var pause_label: Label
-## Code-built, docked in BottomBar next to BuildingMenu (session 10).
-var research_panel: ResearchPanel
 
 
 func _ready() -> void:
@@ -89,16 +86,11 @@ func _ready() -> void:
 		floor_label.text = "Piso %d/%d" % [fm.floor_index, fm.config.max_floors]
 
 	# Bottom-bar build entry: tab index == Module.SlotType.
-	_add_research_panel()
 	if building_menu:
 		if production_button:
-			production_button.pressed.connect(research_panel.close)
 			production_button.pressed.connect(building_menu.open_category.bind(int(Module.SlotType.MAJOR)))
 		if defense_button:
-			defense_button.pressed.connect(research_panel.close)
 			defense_button.pressed.connect(building_menu.open_category.bind(int(Module.SlotType.MINOR)))
-	if research_button:
-		research_button.pressed.connect(_on_research_pressed)
 
 	_add_minimap()
 	character_popup = CharacterPopup.new()
@@ -116,25 +108,8 @@ func _ready() -> void:
 
 func close_popups() -> void:
 	character_popup.close()
-	research_panel.close()
 	if building_menu:
 		building_menu.close_menu()
-
-
-## Docked above the resource row, right under BuildingMenu; one open at a time.
-func _add_research_panel() -> void:
-	research_panel = ResearchPanel.new()
-	research_panel.name = "ResearchPanel"
-	research_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	var bar := $Control/BottomBar
-	bar.add_child(research_panel)
-	bar.move_child(research_panel, $Control/BottomBar/BottomRow.get_index())
-
-
-func _on_research_pressed() -> void:
-	if building_menu:
-		building_menu.close_menu()
-	research_panel.toggle()
 
 
 ## Tactical pause banner (Main2d → call_group("hud", "set_pause_label")).

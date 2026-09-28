@@ -1,0 +1,73 @@
+[gd_resource type="Resource" script_class="ResearchConfig" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/research/ResearchConfig.gd" id="1_config"]
+[ext_resource type="Script" path="res://scripts/core/research/ResearchEntry.gd" id="2_entry"]
+
+[sub_resource type="Resource" id="R_sci_gen"]
+script = ExtResource("2_entry")
+id = "science_generator"
+display_name = "Instrumental arcano"
+description = "Planos para aprovechar los instrumentos que zumban solos."
+cost = 6
+effect = 0
+module = 2
+
+[sub_resource type="Resource" id="R_turret"]
+script = ExtResource("2_entry")
+id = "turret_plans"
+display_name = "Planos de ballesta"
+description = "Mecanismos de disparo recuperados de las ruinas."
+cost = 8
+effect = 0
+module = 3
+
+[sub_resource type="Resource" id="R_gen_tuning"]
+script = ExtResource("2_entry")
+id = "generator_tuning"
+display_name = "Engranajes afinados"
+description = "Los generadores rinden más."
+cost = 10
+effect = 1
+value = 0.25
+
+[sub_resource type="Resource" id="R_dust_lenses"]
+script = ExtResource("2_entry")
+id = "dust_lenses"
+display_name = "Lentes de polvo"
+description = "Encender una sala consume menos Polvo."
+cost = 10
+effect = 3
+value = 3.0
+
+[sub_resource type="Resource" id="R_cartography"]
+script = ExtResource("2_entry")
+id = "cartography"
+display_name = "Cartografía"
+description = "Cada sala descubierta rinde más Polvo."
+cost = 8
+effect = 4
+value = 1.0
+
+[sub_resource type="Resource" id="R_overclock"]
+script = ExtResource("2_entry")
+id = "generator_overclock"
+display_name = "Sobrecarga"
+description = "Los generadores empujan al límite."
+cost = 30
+prerequisite = "generator_tuning"
+effect = 1
+value = 0.25
+
+[sub_resource type="Resource" id="R_rifling"]
+script = ExtResource("2_entry")
+id = "turret_rifling"
+display_name = "Virotes estriados"
+description = "Las ballestas pegan más fuerte."
+cost = 25
+prerequisite = "turret_plans"
+effect = 2
+value = 10.0
+
+[resource]
+script = ExtResource("1_config")
+entries = Array[ExtResource("2_entry")]([SubResource("R_sci_gen"), SubResource("R_turret"), SubResource("R_gen_tuning"), SubResource("R_dust_lenses"), SubResource("R_cartography"), SubResource("R_overclock"), SubResource("R_rifling")])

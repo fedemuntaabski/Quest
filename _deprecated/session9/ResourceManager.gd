@@ -7,8 +7,6 @@ extends Node
 signal resource_changed(resource_key: String, new_amount: int, delta: int)
 ## Per-turn yield may have changed (a generator was built/destroyed). HUD reads get_turn_yield().
 signal production_changed
-## A research was completed or the run's research was reset.
-signal research_changed
 
 const KEYS: Array[String] = ["industry", "food", "science", "dust"]
 
@@ -18,16 +16,7 @@ const BASE_YIELD_FOOD: int = 2
 const BASE_YIELD_SCIENCE: int = 1
 const BASE_YIELD_DUST: int = 0
 
-const RESEARCH_CONFIG_PATH := "res://resources/research/research_config.tres"
-const RESEARCH_RESOURCE := "science"
-
 var _resources: Dictionary = {"industry": 0, "food": 0, "science": 0, "dust": 0}
-## Research (session 10) lives here, not in its own autoload: same lifetime as
-## the resources (survives floors, reset by Main._begin_new_run) and it is only
-## a Ciencia sink. Tests may swap the config.
-var research_config: ResearchConfig = load(RESEARCH_CONFIG_PATH)
-## Ids researched this run.
-var _researched: Dictionary = {}
 
 
 func get_resource(key: String) -> int:
@@ -70,7 +59,7 @@ func _calculate_module_bonus(resource_key: String) -> int:
 	for generator in get_tree().get_nodes_in_group("generators"):
 		if generator.is_working() and generator.resource_type == resource_key:
 			total += generator.yield_amount
-	return roundi(total * (1.0 + get_bonus(ResearchEntry.Effect.GENERATOR_YIELD_PCT)))
+	return total
 
 
 ## Base yield + active generator bonus for one resource, paid every door-open.
@@ -101,60 +90,3 @@ func reset_resources(initial_industry: int = 15, initial_food: int = 15, initial
 		var new_amount: int = maxi(0, int(initial[key]))
 		_resources[key] = new_amount
 		resource_changed.emit(key, new_amount, new_amount - old_amount)
-
-
-# ---------------- RESEARCH ----------------
-
-func is_researched(id: String) -> bool:
-	return _researched.has(id)
-
-
-## "" if `id` can be researched now, else why not.
-func get_research_block_reason(id: String) -> String:
-	var entry := research_config.get_entry(id)
-	if entry == null:
-		return "Investigación desconocida"
-	if is_researched(id):
-		return "Investigada"
-	if entry.prerequisite != "" and not is_researched(entry.prerequisite):
-		var pre := research_config.get_entry(entry.prerequisite)
-		return "Requiere: %s" % (pre.display_name if pre else entry.prerequisite)
-	if get_resource(RESEARCH_RESOURCE) < entry.cost:
-		return "Falta Ciencia"
-	return ""
-
-
-func can_research(id: String) -> bool:
-	return get_research_block_reason(id) == ""
-
-
-## Spends the entry's Ciencia and applies it. False (nothing spent) if blocked.
-func research(id: String) -> bool:
-	if not can_research(id) or not spend_resource(RESEARCH_RESOURCE, research_config.get_entry(id).cost):
-		return false
-	_researched[id] = true
-	research_changed.emit()
-	production_changed.emit()
-	return true
-
-
-## False only while the entry that unlocks `module` isn't researched.
-func is_unlocked(module: Module.ModuleType) -> bool:
-	var entry := research_config.get_unlock_entry(module)
-	return entry == null or is_researched(entry.id)
-
-
-## Sum of `value` over researched entries with this effect.
-func get_bonus(kind: ResearchEntry.Effect) -> float:
-	var total := 0.0
-	for entry in research_config.entries:
-		if entry.effect == kind and is_researched(entry.id):
-			total += entry.value
-	return total
-
-
-## New run (Main._begin_new_run, next to PlayerStats.reset_run_upgrades).
-func reset_research() -> void:
-	_researched.clear()
-	research_changed.emit()
-	production_changed.emit()

@@ -64,9 +64,6 @@ var victory_handler: Main2dVictoryHandler
 var active_character_id: String = ""
 var _is_dead: bool = false
 var _run_gold_start: int = 0
-## Space: Engine.time_scale 0 (Tweens/Timers/physics delta stop, HUD/building
-## still work). Kept across the Esc pause, which forces 1 while open.
-var _tactical_paused: bool = false
 
 # ─────────────────────────────────────────────
 # INIT
@@ -255,9 +252,6 @@ func _connect_signals() -> void:
 	if game_state_manager and not game_state_manager.victory_entered.is_connected(_on_victory):
 		game_state_manager.victory_entered.connect(_on_victory)
 
-	if game_state_manager and not game_state_manager.state_changed.is_connected(_on_state_changed):
-		game_state_manager.state_changed.connect(_on_state_changed)
-
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and not _is_dead:
 		var can_toggle_pause := pause_menu != null \
@@ -265,31 +259,6 @@ func _input(event: InputEvent) -> void:
 		if can_toggle_pause:
 			pause_menu.toggle()
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("tactical_pause") and _is_gameplay_active():
-		# Only consumed while playing: with the pause menu/overlays up, Space
-		# stays ui_accept for their buttons.
-		_tactical_paused = not _tactical_paused
-		_apply_time_scale()
-		get_viewport().set_input_as_handled()
-
-func _exit_tree() -> void:
-	Engine.time_scale = 1.0
-
-func is_tactically_paused() -> bool:
-	return _tactical_paused
-
-func _is_gameplay_active() -> bool:
-	return not _is_dead and (game_state_manager == null or game_state_manager.is_active())
-
-func _on_state_changed(_new_state: int, _old_state: int) -> void:
-	_apply_time_scale()
-
-## Esc pause/death/victory run at 1 (their overlays tween); back to ACTIVE
-## restores the tactical pause.
-func _apply_time_scale() -> void:
-	var frozen := _tactical_paused and _is_gameplay_active()
-	Engine.time_scale = 0.0 if frozen else 1.0
-	get_tree().call_group("hud", "set_pause_label", frozen)
 
 # ─────────────────────────────────────────────
 # GAME EVENTS

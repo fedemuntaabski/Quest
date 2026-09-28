@@ -45,11 +45,9 @@ func complete_floor() -> void:
 ## DoorTurnSystem.room_revealed listener: every discovered room pays dust,
 ## regardless of invasions. Amount scales per floor (FloorConfig "Discovery").
 func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
+	var amount := config.discovery_dust(floor_index)
 	var resource_manager := ManagerLocator.get_resource_manager()
-	if resource_manager == null:
-		return
-	var amount := config.discovery_dust(floor_index) + roundi(resource_manager.get_bonus(ResearchEntry.Effect.DISCOVERY_DUST))
-	if amount <= 0:
+	if resource_manager == null or amount <= 0:
 		return
 	resource_manager.add_resource("dust", amount)
 	QuestLogger.info(QuestLogger.Category.MAP, "Discovered '%s': +%d dust." % [room_id, amount])

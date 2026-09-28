@@ -219,11 +219,6 @@ layout_mode = 2
 tooltip_text = "Módulos de defensa (slot menor)"
 text = "Defensa"
 
-[node name="ResearchButton" type="Button" parent="Control/BottomBar/BottomRow/BuildPanel/MarginContainer/BuildButtons"]
-layout_mode = 2
-tooltip_text = "Investigaciones pagadas con Ciencia"
-text = "Investigar"
-
 [node name="FloorLabel" type="Label" parent="Control/TopLeft"]
 layout_mode = 2
 mouse_filter = 2

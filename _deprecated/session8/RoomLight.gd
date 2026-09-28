@@ -5,7 +5,7 @@ class_name RoomLight
 ## Dark (unpowered) = pulsing dark-red overlay (enemies spawn in dark rooms);
 ## powered = overlay fades out and a warm PointLight2D fades in. Driven only
 ## by signals: RoomZone.power_changed and ResourceManager.resource_changed
-## (gold outline when the player can afford RoomZone.get_power_cost() right now).
+## (gold outline when the player can afford RoomZone.POWER_COST right now).
 
 const LIGHT_TEXTURE_SIZE := 256
 
@@ -50,8 +50,6 @@ func setup(zone: RoomZone, size_px: Vector2, p_config: MapVisualConfig) -> void:
 	if resources:
 		resources.resource_changed.connect(_on_resource_changed)
 		_on_resource_changed("dust", resources.get_resource("dust"), 0)
-		# Research can lower the light cost without any dust change.
-		resources.research_changed.connect(_on_research_changed)
 	_start_danger_pulse()
 
 
@@ -69,8 +67,7 @@ func _on_power_changed(_zone_id: String, powered: bool) -> void:
 	_on_resource_changed("dust", resources.get_resource("dust") if resources else 0, 0)
 	if _pulse:
 		_pulse.kill()
-	# Real time: lighting a room during the tactical pause (time_scale 0) shows at once.
-	var tween := create_tween().set_parallel().set_ignore_time_scale()
+	var tween := create_tween().set_parallel()
 	var t := config.power_transition_time
 	if powered:
 		_light.enabled = true
@@ -87,14 +84,9 @@ func _on_darkened() -> void:
 	_start_danger_pulse()
 
 
-func _on_research_changed() -> void:
-	var resources := ManagerLocator.get_resource_manager()
-	_on_resource_changed("dust", resources.get_resource("dust") if resources else 0, 0)
-
-
 func _on_resource_changed(key: String, amount: int, _delta: int) -> void:
 	if key == "dust":
-		_afford_outline.visible = not _powered and amount >= RoomZone.get_power_cost()
+		_afford_outline.visible = not _powered and amount >= RoomZone.POWER_COST
 
 
 func _start_danger_pulse() -> void:

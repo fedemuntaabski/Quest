@@ -51,7 +51,7 @@ func _play_float_animation() -> void:
 	var distance := heal_float_distance if _is_healing else float_distance
 	var target_pos := global_position + Vector2(0, -distance) + jitter
 
-	var tween := create_tween().set_ignore_time_scale()  # readable during the tactical pause
+	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_OUT)
 

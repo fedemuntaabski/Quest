@@ -11,15 +11,6 @@ signal energy_button_clicked(zone_id: String)
 func _ready() -> void:
 	z_index = 2
 	input_event.connect(_on_input_event)
-	_refresh_label()
-	var rm := ManagerLocator.get_resource_manager()
-	if rm:
-		rm.research_changed.connect(_refresh_label)
-
-
-## Cost text follows research (RoomZone.get_power_cost).
-func _refresh_label() -> void:
-	$Label.text = "Clic central: encender (%d Polvo)" % RoomZone.get_power_cost()
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:

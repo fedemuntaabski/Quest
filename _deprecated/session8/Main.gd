@@ -62,7 +62,6 @@ func return_to_main_menu() -> void:
 		return
 	ManagerLocator.flush_saves()
 	get_tree().paused = false
-	Engine.time_scale = 1.0  # tactical pause must not leak into the fade/next floor
 	await show_main_menu()
 
 
@@ -113,7 +112,6 @@ func _reload_world(new_run: bool) -> void:
 	_is_transitioning = true
 	ManagerLocator.flush_saves()
 	get_tree().paused = false
-	Engine.time_scale = 1.0  # tactical pause must not leak into the fade/next floor
 
 	await _fade_to_black()
 	await _clear_containers(true, false, true)
@@ -134,7 +132,6 @@ func _begin_new_run() -> void:
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager:
 		resource_manager.reset_resources()
-		resource_manager.reset_research()
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.reset_run_upgrades()

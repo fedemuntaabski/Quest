@@ -134,7 +134,6 @@ func _begin_new_run() -> void:
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager:
 		resource_manager.reset_resources()
-		resource_manager.reset_research()
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.reset_run_upgrades()

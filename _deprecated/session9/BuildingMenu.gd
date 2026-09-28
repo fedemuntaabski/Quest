@@ -14,9 +14,6 @@ class_name BuildingMenu
 ## reaches Main2d's pause toggle); left-click outside closes when not armed.
 ## The session-7 "click an empty slot to open the menu" flow is gone
 ## (_deprecated/session7/).
-## Session 10: modules locked behind research (ResourceManager.is_unlocked)
-## show a padlock + "Requiere: <research>", can't be armed (button disabled,
-## so 1-9 skip them too) and get_block_reason() reports the lock first.
 
 ## Static style helper via preload (the ThemeManager autoload identifier is
 ## missing in --script test runs).
@@ -53,7 +50,6 @@ func _ready() -> void:
 	var rm := ManagerLocator.get_resource_manager()
 	if rm:
 		rm.resource_changed.connect(_on_resource_changed)
-		rm.research_changed.connect(_on_research_changed)
 	# A room lit/unlit while armed changes which slots are free/buildable.
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager:
@@ -93,9 +89,6 @@ func close_menu() -> void:
 func get_block_reason(slot: BuildingSlot) -> String:
 	if not is_armed():
 		return "Ningún módulo elegido"
-	var lock := get_lock_reason(_armed_type as Module.ModuleType)
-	if lock != "":
-		return lock
 	var cfg: Dictionary = Module.CATALOG[_armed_type]
 	if int(cfg["slot"]) != int(slot.slot_type):
 		return "Tamaño incorrecto: requiere un slot %s" % SLOT_NAMES[int(cfg["slot"])]
@@ -105,14 +98,6 @@ func get_block_reason(slot: BuildingSlot) -> String:
 	if rm == null or rm.get_resource(COST_RESOURCE) < int(cfg["cost"]):
 		return "Falta Industria"
 	return ""
-
-
-## "Requiere: <research>" while `module_type` is locked behind research, else "".
-static func get_lock_reason(module_type: Module.ModuleType) -> String:
-	var rm := ManagerLocator.get_resource_manager()
-	if rm == null or rm.is_unlocked(module_type):
-		return ""
-	return "Requiere: %s" % rm.research_config.get_unlock_entry(module_type).display_name
 
 
 ## Cards for the current tab. Resource changes and tab switches rebuild them.
@@ -128,17 +113,17 @@ func _populate() -> void:
 		if int(cfg["slot"]) != tabs.current_tab:
 			continue
 		index += 1
-		options.add_child(_make_card(module_type, cfg, index, available >= int(cfg["cost"]), get_lock_reason(module_type)))
+		options.add_child(_make_card(module_type, cfg, index, available >= int(cfg["cost"])))
 
 
-func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, affordable: bool, lock := "") -> Control:
+func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, affordable: bool) -> Control:
 	var cost := int(cfg["cost"])
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 1, 6, 6))
-	var reason := "\n" + lock if lock != "" else ("" if affordable else "\nIndustria insuficiente.")
+	var reason := "" if affordable else "\nIndustria insuficiente."
 	card.tooltip_text = "%s\n%s\n%s\nVida: %d%s" % [cfg["label"], Module.DESCRIPTIONS.get(module_type, ""), Module.describe_effect(module_type), int(cfg["hp"]), reason]
-	if not affordable or lock != "":
+	if not affordable:
 		card.modulate = Color(1, 1, 1, 0.55)
 
 	var row := HBoxContainer.new()
@@ -152,12 +137,6 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(icon)
-	if lock != "":
-		var padlock := StatIcon.new()
-		padlock.icon_type = "lock"
-		icon.add_child(padlock)
-		padlock.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		padlock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -168,8 +147,8 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 	name_label.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
 	column.add_child(name_label)
 	var effect_label := Label.new()
-	effect_label.text = lock if lock != "" else Module.describe_effect(module_type)
-	effect_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_BLOCKED if lock != "" else QuestPalette.UI_TEXT_SECONDARY)
+	effect_label.text = Module.describe_effect(module_type)
+	effect_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_SECONDARY)
 	effect_label.add_theme_font_size_override("font_size", 13)
 	column.add_child(effect_label)
 
@@ -189,7 +168,7 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 
 	var pick_button := Button.new()
 	pick_button.text = "Elegir"
-	pick_button.disabled = not affordable or lock != ""
+	pick_button.disabled = not affordable
 	pick_button.tooltip_text = card.tooltip_text
 	pick_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	pick_button.pressed.connect(_arm.bind(module_type))
@@ -200,8 +179,6 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 ## Remember the module, outline every free slot it fits, and make every empty
 ## slot pickable with a ghost preview on hover.
 func _arm(module_type: Module.ModuleType) -> void:
-	if get_lock_reason(module_type) != "":
-		return
 	_disarm()
 	_armed_type = int(module_type)
 	var slot_type := int(Module.CATALOG[module_type]["slot"])
@@ -289,11 +266,6 @@ func _empty_slots() -> Array[BuildingSlot]:
 
 func _on_resource_changed(key: String, _amount: int, _delta: int) -> void:
 	if visible and key == COST_RESOURCE and _armed_type == -1:
-		_populate()
-
-
-func _on_research_changed() -> void:
-	if visible and not is_armed():
 		_populate()
 
 
