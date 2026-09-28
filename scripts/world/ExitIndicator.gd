@@ -12,6 +12,9 @@ class_name ExitIndicator
 ## DoorTurnSystem.room_revealed, ExtractionManager.phase_changed. _process
 ## only places the arrow (the camera moves every frame).
 
+## Emitted by every _refresh() (visibility or carrying may have changed).
+signal hint_changed(hint_visible: bool)
+
 const HUD_LAYER := 5
 const MARKER_Z := 50
 
@@ -82,6 +85,7 @@ func _refresh() -> void:
 	_arrow.visible = false  # placed by _process
 	set_process(_hint_visible)
 	_restart_pulse()
+	hint_changed.emit(_hint_visible)
 
 
 func _process(_delta: float) -> void:

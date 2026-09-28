@@ -4,6 +4,9 @@ class_name Player
 ## Player: test-scene actor. Owns a CharacterStats component and a grid cell
 ## position. Moves freely — no turn/AP gating.
 
+## Emitted by set_zone() (spawn and every arrival). Minimap listens.
+signal zone_changed(zone_id: String)
+
 @onready var stats: CharacterStats = $Stats
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hurtbox: HurtboxComponent = $Hurtbox
@@ -58,6 +61,7 @@ func set_zone(zone_id: String, center: Vector2, tilemap: TileMapLayer) -> void:
 	current_zone_id = zone_id
 	global_position = center
 	grid_pos = GridUtils.world_to_cell(tilemap, center)
+	zone_changed.emit(zone_id)
 
 
 func can_accept_input() -> bool:

@@ -34,6 +34,13 @@ func _run(use_fallback: bool) -> void:
 	if use_fallback and room_manager.get_start_zone_id() != "start_room":
 		failures.append("fallback start is '%s'" % room_manager.get_start_zone_id())
 
+	var minimap := Minimap.new()
+	root.add_child(minimap)
+	await process_frame
+	if not minimap.visible:
+		failures.append("%s: minimap hid itself (no RoomManager?)" % label)
+	minimap.queue_free()
+
 	_check_lighting(room_manager, label)
 	var indicator: ExitIndicator = main2d.exit_indicator
 	var config := room_manager.visual_config

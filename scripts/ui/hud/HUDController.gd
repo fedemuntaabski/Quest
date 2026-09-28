@@ -79,6 +79,16 @@ func _ready() -> void:
 	if fm and floor_label:
 		floor_label.text = "Piso %d/%d" % [fm.floor_index, fm.config.max_floors]
 
+	_add_minimap()
+
+
+## Built in code (not in HUD.tscn): bottom-right corner, self-wiring.
+func _add_minimap() -> void:
+	var minimap := Minimap.new()
+	minimap.name = "Minimap"
+	$Control.add_child(minimap)
+	minimap.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE, 16)
+
 
 # ---------------- PLAYER STATS BINDING ----------------
 
