@@ -17,6 +17,8 @@ const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout
 
 ## Debug: skip MapGenerator and always play FALLBACK_LAYOUT.
 @export var force_fallback_layout: bool = false
+## Debug/tests: floor index used when run without the Main orchestrator.
+@export var standalone_floor: int = 1
 
 # ─────────────────────────────────────────────
 # NODES
@@ -159,7 +161,7 @@ func _setup_floor_manager() -> void:
 	if orchestrator:
 		floor_manager.setup(orchestrator.current_floor, orchestrator.run_seed)
 	else:
-		floor_manager.setup(1, randi())
+		floor_manager.setup(standalone_floor, randi())
 	door_turn_system.room_revealed.connect(floor_manager.on_room_discovered)
 	floor_manager.floor_completed.connect(_on_floor_completed)
 

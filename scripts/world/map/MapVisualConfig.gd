@@ -13,7 +13,7 @@ enum ExitHintMode {
 }
 
 @export_group("Exit hint")
-@export var exit_hint_mode: ExitHintMode = ExitHintMode.ALWAYS:
+@export var exit_hint_mode: ExitHintMode = ExitHintMode.ON_DISCOVERY:
 	set(v):
 		if exit_hint_mode != v:
 			exit_hint_mode = v

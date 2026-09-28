@@ -77,7 +77,8 @@ func build_from_map(layout: MapLayout) -> void:
 		_add_zone(room.id, "room", room.get_rect(), room.id, room.is_exit, room.is_vault)
 		groups[room.id] = [] as Array[String]
 	for corridor in layout.corridors:
-		_add_zone(corridor.id, "corridor", corridor.get_rect(), corridor.room_b, false, false)
+		# Zone owns the door cell too (the Door is disabled once opened).
+		_add_zone(corridor.id, "corridor", corridor.get_zone_rect(), corridor.room_b, false, false)
 		_link_zones(corridor.room_a, corridor.id)
 		_link_zones(corridor.id, corridor.room_b)
 		(groups[corridor.room_b] as Array[String]).append(corridor.id)

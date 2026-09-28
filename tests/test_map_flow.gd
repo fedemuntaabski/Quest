@@ -37,10 +37,15 @@ func _run(use_fallback: bool) -> void:
 	_check_lighting(room_manager, label)
 	var indicator: ExitIndicator = main2d.exit_indicator
 	var config := room_manager.visual_config
+	if config.exit_hint_mode != MapVisualConfig.ExitHintMode.ON_DISCOVERY:
+		failures.append("%s: default exit_hint_mode is %s, expected ON_DISCOVERY" % [label, MapVisualConfig.ExitHintMode.keys()[config.exit_hint_mode]])
+	_expect_hint_drawn(indicator, false, "%s start (default mode)" % label)
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ALWAYS, true, "%s start" % label)
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_DISCOVERY, false, "%s start" % label)
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, false, "%s start" % label)
 
+	config.exit_hint_mode = MapVisualConfig.ExitHintMode.ON_DISCOVERY
+	var exit_zone := _exit_zone(room_manager)
 	var per_room: int = main2d.floor_manager.config.discovery_dust(1)
 	var opened := 0
 	var progress := true
@@ -57,6 +62,7 @@ func _run(use_fallback: bool) -> void:
 			progress = true
 			if resources.get_resource("dust") - dust_before != per_room:
 				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, door.target_room_id, resources.get_resource("dust") - dust_before, per_room])
+			_expect_hint_drawn(indicator, room_manager.is_zone_revealed(exit_zone), "%s after opening '%s'" % [label, door.target_room_id])
 
 	if opened != main2d.map_layout.corridors.size():
 		failures.append("%s: opened %d of %d doors" % [label, opened, main2d.map_layout.corridors.size()])
@@ -76,7 +82,8 @@ func _run(use_fallback: bool) -> void:
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, true, "%s carrying" % label)
 	if not indicator.is_emphasized():
 		failures.append("%s: exit hint not emphasized while carrying the crystal" % label)
-	config.exit_hint_mode = MapVisualConfig.ExitHintMode.ALWAYS
+	# Shared cached .tres: restore the default for the next run.
+	config.exit_hint_mode = MapVisualConfig.ExitHintMode.ON_DISCOVERY
 
 	main2d.queue_free()
 	await process_frame
@@ -94,6 +101,16 @@ func _expect_hint(indicator: ExitIndicator, config: MapVisualConfig, mode: MapVi
 	config.exit_hint_mode = mode
 	if indicator.is_hint_visible() != expected:
 		failures.append("%s: exit hint mode %s visible=%s, expected %s" % [when, MapVisualConfig.ExitHintMode.keys()[mode], indicator.is_hint_visible(), expected])
+
+
+## Marker drawn + arrow able to show (only _process places it) == `expected`.
+func _expect_hint_drawn(indicator: ExitIndicator, expected: bool, when: String) -> void:
+	var marker := indicator.get_node("ExitMarker") as Node2D
+	var arrow := indicator.get_node("ExitArrowLayer/ExitArrow") as Node2D
+	if marker.visible != expected or indicator.is_processing() != expected:
+		failures.append("%s: marker visible=%s arrow active=%s, expected %s" % [when, marker.visible, indicator.is_processing(), expected])
+	if not expected and arrow.visible:
+		failures.append("%s: arrow visible while hint hidden" % when)
 
 
 func _check_lighting(room_manager: RoomManager, label: String) -> void:

@@ -16,3 +16,10 @@ class_name CorridorData
 
 func get_rect() -> Rect2i:
 	return Rect2i(pos, size)
+
+
+## What the player sees and clicks as "the corridor": get_rect() plus the door
+## cell (always adjacent, same lane). Once the door opens it is disabled and
+## this zone must own the cell, or that tile of the corridor is dead to clicks.
+func get_zone_rect() -> Rect2i:
+	return get_rect().merge(Rect2i(door_cell, Vector2i.ONE))
