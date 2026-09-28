@@ -2,21 +2,44 @@ extends Node2D
 
 # Main2d: minimal gameplay scaffold.
 # Spawns the selected hero (HP-only stats from SaveManager/PlayerStats) into
-# a per-floor seeded MapGenerator map (fallback: FALLBACK_LAYOUT) built by
-# RoomManager, drives the DoorTurnSystem stub
+# a static room-graph test map (RoomManager), drives the DoorTurnSystem stub
 # (global turn advances on door-open, ticks ResourceManager, reveals rooms),
 # and wires the pause/death overlays. No combat, cards, or real enemy/dungeon-
 # generation systems.
 
 const PLAYER_SCENE := preload("res://scenes/Player.tscn")
 const NEXO_SCENE := preload("res://scenes/world/Nexo.tscn")
-const DOOR_SCENE := preload("res://scenes/Door.tscn")
-## Hand-authored map (the pre-generator 5-room layout). Used when
-## force_fallback_layout is on or the generated map fails validation.
-const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout.tres")
+const SPAWN_ZONE_ID := "start_room"
 
-## Debug: skip MapGenerator and always play FALLBACK_LAYOUT.
-@export var force_fallback_layout: bool = false
+## Static test layout: 5 rooms + 4 corridors, grouped into 5 reveal groups.
+## Rects are in cell space (tile = 64px, read from the Floor tileset at
+## runtime); "group" is the DoorTurnSystem room_id that reveals this zone.
+const LAYOUT := {
+	"zones": {
+		"start_room":  {"kind": "room",     "pos": Vector2i(1, 7),  "size": Vector2i(5, 5), "group": "start"},
+		"corr_hub":    {"kind": "corridor", "pos": Vector2i(7, 9),  "size": Vector2i(3, 1), "group": "hub"},
+		"hub_room":    {"kind": "room",     "pos": Vector2i(10, 7), "size": Vector2i(5, 5), "group": "hub"},
+		"corr_north":  {"kind": "corridor", "pos": Vector2i(12, 3), "size": Vector2i(1, 3), "group": "north"},
+		"north_room":  {"kind": "room",     "pos": Vector2i(10, 0), "size": Vector2i(5, 3), "group": "north"},
+		"corr_east":   {"kind": "corridor", "pos": Vector2i(16, 9), "size": Vector2i(3, 1), "group": "east"},
+		"east_room":   {"kind": "room",     "pos": Vector2i(19, 7), "size": Vector2i(5, 5), "group": "east"},
+		"corr_vault":  {"kind": "corridor", "pos": Vector2i(21, 3), "size": Vector2i(1, 3), "group": "vault"},
+		"vault_room":  {"kind": "room",     "pos": Vector2i(19, 0), "size": Vector2i(5, 3), "group": "vault", "is_exit_room": true},
+	},
+	"connections": [
+		["start_room", "corr_hub"], ["corr_hub", "hub_room"],
+		["hub_room", "corr_north"], ["corr_north", "north_room"],
+		["hub_room", "corr_east"], ["corr_east", "east_room"],
+		["east_room", "corr_vault"], ["corr_vault", "vault_room"],
+	],
+	"groups": {
+		"start": {"zones": ["start_room"], "visited": true},
+		"hub":   {"zones": ["corr_hub", "hub_room"], "visited": false},
+		"north": {"zones": ["corr_north", "north_room"], "visited": false},
+		"east":  {"zones": ["corr_east", "east_room"], "visited": false},
+		"vault": {"zones": ["corr_vault", "vault_room"], "visited": false},
+	},
+}
 
 # ─────────────────────────────────────────────
 # NODES
@@ -48,7 +71,6 @@ var extraction_manager: ExtractionManager
 var floor_manager: FloorManager
 var nexo: Nexo
 var nexo_controller: NexoController
-var map_layout: MapLayout
 
 # ─────────────────────────────────────────────
 # STATE
@@ -76,10 +98,10 @@ func _ready() -> void:
 
 	_ensure_game_state_manager()
 	_setup_door_turn_system()
-	_setup_floor_manager()
 	_setup_room_manager()
 	_setup_room_power_system()
 	_setup_module_build_system()
+	_setup_floor_manager()
 	_setup_enemy_manager()
 	_setup_extraction_manager()
 	_register_groups_and_doors()
@@ -105,9 +127,8 @@ func _spawn_player() -> void:
 	player.name = "Player"
 	player.configure(character_data)
 	add_child(player)
-	var spawn_zone_id := room_manager.get_start_zone_id()
-	player.set_zone(spawn_zone_id, room_manager.get_center(spawn_zone_id), floor_layer)
-	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned character '%s' at zone '%s'" % [active_character_id, spawn_zone_id])
+	player.set_zone(SPAWN_ZONE_ID, room_manager.get_center(SPAWN_ZONE_ID), floor_layer)
+	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned character '%s' at zone '%s'" % [active_character_id, SPAWN_ZONE_ID])
 
 func _setup_door_turn_system() -> void:
 	door_turn_system = DoorTurnSystem.new()
@@ -117,19 +138,7 @@ func _setup_door_turn_system() -> void:
 
 func _setup_room_manager() -> void:
 	room_manager.setup(floor_layer, door_turn_system)
-	map_layout = _build_map_layout()
-	room_manager.build_from_map(map_layout)
-
-
-func _build_map_layout() -> MapLayout:
-	if force_fallback_layout:
-		return FALLBACK_LAYOUT
-	var layout := MapGenerator.generate(floor_manager.map_seed, floor_manager.room_count(), floor_manager.branch_chance())
-	var problems := layout.validate()
-	if not problems.is_empty():
-		QuestLogger.error(QuestLogger.Category.MAP, "Main2d: generated map (seed %d) invalid, using fallback: %s" % [layout.map_seed, problems])
-		return FALLBACK_LAYOUT
-	return layout
+	room_manager.build_from_layout(LAYOUT)
 
 func _setup_room_power_system() -> void:
 	room_power_system = RoomPowerSystem.new()
@@ -154,11 +163,7 @@ func _setup_floor_manager() -> void:
 	floor_manager.name = "FloorManager"
 	add_child(floor_manager)
 	var orchestrator := ManagerLocator.get_main_orchestrator()
-	if orchestrator:
-		floor_manager.setup(orchestrator.current_floor, orchestrator.run_seed)
-	else:
-		floor_manager.setup(1, randi())
-	door_turn_system.room_revealed.connect(floor_manager.on_room_discovered)
+	floor_manager.setup(orchestrator.current_floor if orchestrator else 1)
 	floor_manager.floor_completed.connect(_on_floor_completed)
 
 func _setup_extraction_manager() -> void:
@@ -171,7 +176,7 @@ func _setup_extraction_manager() -> void:
 func _spawn_nexo() -> void:
 	nexo = NEXO_SCENE.instantiate() as Nexo
 	nexo.name = "Nexo"
-	nexo.global_position = room_manager.get_center(room_manager.get_start_zone_id())
+	nexo.global_position = room_manager.get_center("start_room")
 	add_child(nexo)
 
 	nexo_controller = NexoController.new()
@@ -180,20 +185,13 @@ func _spawn_nexo() -> void:
 	nexo_controller.setup(nexo, room_manager)
 
 func _register_groups_and_doors() -> void:
-	var start_group := room_manager.get_group_id(room_manager.get_start_zone_id())
-	for group_id in room_manager.get_group_ids():
-		door_turn_system.register_room(group_id, room_manager.get_group_cells(group_id), group_id == start_group)
+	var groups_def: Dictionary = LAYOUT["groups"]
+	for group_id in groups_def.keys():
+		var group_def: Dictionary = groups_def[group_id]
+		door_turn_system.register_room(group_id, room_manager.get_group_cells(group_id), group_def.get("visited", false))
 
-	# One Door per corridor, at room_a's wall; opening it reveals room_b's group.
-	for corridor in map_layout.corridors:
-		var door := DOOR_SCENE.instantiate() as Door
-		door.name = "Door_%s" % corridor.id
-		door.door_id = corridor.id
-		door.target_room_id = room_manager.get_group_id(corridor.room_b)
-		door.from_zone_id = corridor.room_a
-		door.cell = corridor.door_cell
-		doors_root.add_child(door)
-		room_manager.register_door(door)
+	for child in doors_root.get_children():
+		room_manager.register_door(child as Door)
 
 	room_manager.refresh_visibility()
 	room_manager.validate_graph()

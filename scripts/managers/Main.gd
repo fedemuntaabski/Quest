@@ -23,6 +23,9 @@ var _is_transitioning: bool = false
 ## Run-scoped floor counter (1-based). Lives here, not in Main2d, because
 ## Main2d is freed/re-instantiated between floors. Read by Main2d → FloorManager.
 var current_floor: int = 1
+## Picked per run in _begin_new_run(); FloorManager derives each floor's map
+## seed from it, so floors differ within a run and Retry gives a new dungeon.
+var run_seed: int = 0
 
 
 func _ready() -> void:
@@ -125,6 +128,7 @@ func _reload_world(new_run: bool) -> void:
 ## previous run's resources (and the very first run starts at 0 dust).
 func _begin_new_run() -> void:
 	current_floor = 1
+	run_seed = randi()
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager:
 		resource_manager.reset_resources()

@@ -1,9 +1,10 @@
 extends Node
 class_name NexoController
 
-## NexoController: gates Nexo pickup (hero must physically be in the map's
-## start room, RoomManager.get_start_zone_id()) and kicks off the extraction
-## phase on pickup.
+## NexoController: gates Nexo pickup (hero must physically be in
+## "start_room") and kicks off the extraction phase on pickup.
+
+const NEXO_ZONE_ID := "start_room"
 
 var nexo: Nexo
 var room_manager: RoomManager
@@ -18,9 +19,8 @@ func setup(p_nexo: Nexo, p_room_manager: RoomManager) -> void:
 
 func _on_nexo_clicked(p_nexo: Nexo) -> void:
 	var player := ManagerLocator.get_player()
-	var nexo_zone_id := room_manager.get_start_zone_id()
-	if player == null or player.current_zone_id != nexo_zone_id:
-		QuestLogger.info(QuestLogger.Category.NEXO, "Nexo pickup rejected: hero is not in '%s'." % nexo_zone_id)
+	if player == null or player.current_zone_id != NEXO_ZONE_ID:
+		QuestLogger.info(QuestLogger.Category.NEXO, "Nexo pickup rejected: hero is not in '%s'." % NEXO_ZONE_ID)
 		return
 
 	player.pick_up_nexo()

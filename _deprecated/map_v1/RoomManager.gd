@@ -11,7 +11,7 @@ class_name RoomManager
 ## query API below, never `zones[...]` directly.
 ##
 ## Two graph grains, one source of truth: the zone-graph (`zones[id].neighbors`,
-## derived from MapLayout corridors, includes corridors) is what movement
+## authored from layout["connections"], includes corridors) is what movement
 ## uses (`find_zone_path`, `are_connected`). The room-graph (door endpoints
 ## `Door.room_a_id`/`room_b_id`, `are_rooms_connected`/`is_path_open`/
 ## `get_adjacent_rooms`) only has rooms as nodes and is always derived from the
@@ -43,7 +43,6 @@ var groups: Dictionary = {}         # group_id -> Array[String] ordered zone ids
 var _doors_by_group: Dictionary = {}  # group_id -> Door
 var rooms_dict: Dictionary = {}     # room_id -> RoomZone (room-kind zones only; graph nodes)
 var _current_zone_id: String = ""
-var _start_zone_id: String = ""
 
 
 func _ready() -> void:
@@ -61,51 +60,47 @@ func _tile_size() -> Vector2:
 	return DEFAULT_TILE_SIZE
 
 
-## Builds zones/groups/RoomZone nodes from a MapLayout. Each room is its own
-## reveal group (group id = room id) together with its entry corridor, listed
-## corridor-first. Zone-graph edges: room_a <-> corridor <-> room_b.
-func build_from_map(layout: MapLayout) -> void:
+func build_from_layout(layout: Dictionary) -> void:
 	zones.clear()
 	groups.clear()
 	rooms_dict.clear()
-	_start_zone_id = layout.get_start_room_id()
 
-	for room in layout.rooms:
-		_add_zone(room.id, "room", room.get_rect(), room.id, room.is_exit, room.is_vault)
-		groups[room.id] = [] as Array[String]
-	for corridor in layout.corridors:
-		_add_zone(corridor.id, "corridor", corridor.get_rect(), corridor.room_b, false, false)
-		_link_zones(corridor.room_a, corridor.id)
-		_link_zones(corridor.id, corridor.room_b)
-		(groups[corridor.room_b] as Array[String]).append(corridor.id)
-	for room in layout.rooms:
-		(groups[room.id] as Array[String]).append(room.id)
+	var tile_size := _tile_size()
+	var zones_def: Dictionary = layout.get("zones", {})
+
+	for zone_id in zones_def.keys():
+		var def: Dictionary = zones_def[zone_id]
+		var rect := Rect2i(def["pos"], def["size"])
+		var center := (Vector2(rect.position) + Vector2(rect.size) / 2.0) * tile_size
+		zones[zone_id] = {
+			"id": zone_id,
+			"kind": def.get("kind", "room"),
+			"rect": rect,
+			"cells": _rect_cells(rect),
+			"center_position": center,
+			"neighbors": [],
+			"group_id": def.get("group", zone_id),
+			"is_exit_room": def.get("is_exit_room", false),
+			"node": null,
+		}
+
+	for pair in layout.get("connections", []):
+		var a: String = pair[0]
+		var b: String = pair[1]
+		if zones.has(a) and zones.has(b):
+			(zones[a]["neighbors"] as Array).append(b)
+			(zones[b]["neighbors"] as Array).append(a)
+
+	var groups_def: Dictionary = layout.get("groups", {})
+	for group_id in groups_def.keys():
+		var group_zone_ids: Array[String] = []
+		group_zone_ids.assign(groups_def[group_id].get("zones", []))
+		groups[group_id] = group_zone_ids
 
 	for zone_id in zones.keys():
 		_spawn_zone_node(zone_id)
 
-	QuestLogger.info(QuestLogger.Category.MAP, "RoomManager: built %d zones, %d groups (seed %d)." % [zones.size(), groups.size(), layout.map_seed])
-
-
-func _add_zone(zone_id: String, kind: String, rect: Rect2i, group_id: String, is_exit: bool, is_vault: bool) -> void:
-	zones[zone_id] = {
-		"id": zone_id,
-		"kind": kind,
-		"rect": rect,
-		"cells": _rect_cells(rect),
-		"center_position": (Vector2(rect.position) + Vector2(rect.size) / 2.0) * _tile_size(),
-		"neighbors": [],
-		"group_id": group_id,
-		"is_exit_room": is_exit,
-		"is_vault_room": is_vault,
-		"node": null,
-	}
-
-
-func _link_zones(a: String, b: String) -> void:
-	if zones.has(a) and zones.has(b):
-		(zones[a]["neighbors"] as Array).append(b)
-		(zones[b]["neighbors"] as Array).append(a)
+	QuestLogger.info(QuestLogger.Category.MAP, "RoomManager: built %d zones, %d groups." % [zones.size(), groups.size()])
 
 
 func _spawn_zone_node(zone_id: String) -> void:
@@ -277,21 +272,6 @@ func set_zone_powered(zone_id: String, v: bool) -> void:
 
 func is_exit_room(zone_id: String) -> bool:
 	return zones.get(zone_id, {}).get("is_exit_room", false)
-
-
-func is_vault_room(zone_id: String) -> bool:
-	return zones.get(zone_id, {}).get("is_vault_room", false)
-
-
-## The layout's is_start room (hero spawn + Nexo). Its group starts revealed.
-func get_start_zone_id() -> String:
-	return _start_zone_id
-
-
-func get_group_ids() -> Array[String]:
-	var ids: Array[String] = []
-	ids.assign(groups.keys())
-	return ids
 
 
 func get_modules_in_group(group_id: String) -> Array[Module]:

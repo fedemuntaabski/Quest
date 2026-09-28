@@ -14,6 +14,8 @@ const DEFAULT_CONFIG: FloorConfig = preload("res://resources/floors/default_floo
 @export var config: FloorConfig = DEFAULT_CONFIG
 
 var floor_index: int = 1
+## Deterministic MapGenerator seed for this floor (run seed + floor index).
+var map_seed: int = 0
 var _completed: bool = false
 
 
@@ -21,8 +23,9 @@ func _ready() -> void:
 	add_to_group("floor_manager")
 
 
-func setup(p_floor_index: int) -> void:
+func setup(p_floor_index: int, run_seed: int = 0) -> void:
 	floor_index = maxi(p_floor_index, 1)
+	map_seed = hash([run_seed, floor_index])
 	if floor_index > 1 and config.dust_bonus_on_descend > 0:
 		var resource_manager := ManagerLocator.get_resource_manager()
 		if resource_manager:
@@ -37,6 +40,25 @@ func complete_floor() -> void:
 	_completed = true
 	QuestLogger.info(QuestLogger.Category.MAP, "Floor %d completed." % floor_index)
 	floor_completed.emit(floor_index)
+
+
+## DoorTurnSystem.room_revealed listener: every discovered room pays dust,
+## regardless of invasions. Amount scales per floor (FloorConfig "Discovery").
+func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
+	var amount := config.discovery_dust(floor_index)
+	var resource_manager := ManagerLocator.get_resource_manager()
+	if resource_manager == null or amount <= 0:
+		return
+	resource_manager.add_resource("dust", amount)
+	QuestLogger.info(QuestLogger.Category.MAP, "Discovered '%s': +%d dust." % [room_id, amount])
+
+
+func room_count() -> int:
+	return config.room_count(floor_index)
+
+
+func branch_chance() -> float:
+	return config.branch_chance(floor_index)
 
 
 func is_final_floor() -> bool:
