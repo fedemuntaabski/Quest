@@ -3,6 +3,8 @@
 [ext_resource type="Script" path="res://scripts/core/player/Player.gd" id="1_player_script"]
 [ext_resource type="Texture2D" uid="uid://dy40revhclxqf" path="res://Sprites/Player/_Idle.png" id="2_idle"]
 [ext_resource type="Script" uid="uid://bmcr7emtpkrow" path="res://scripts/core/stats/CharacterStats.gd" id="3_stats"]
+[ext_resource type="Script" path="res://scripts/core/combat/HurtboxComponent.gd" id="4_hurtbox"]
+[ext_resource type="Script" path="res://scripts/core/combat/HitboxComponent.gd" id="5_hitbox"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_p07f3"]
 atlas = ExtResource("2_idle")
@@ -82,6 +84,12 @@ animations = [{
 "speed": 10.0
 }]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_hurtbox"]
+radius = 20.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 160.0
+
 [node name="Player" type="Node2D"]
 z_index = 2
 script = ExtResource("1_player_script")
@@ -98,3 +106,24 @@ position_smoothing_speed = 10.0
 
 [node name="Stats" type="CharacterStats" parent="."]
 script = ExtResource("3_stats")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+input_pickable = false
+script = ExtResource("4_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("CircleShape2D_hurtbox")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 8
+monitorable = false
+input_pickable = false
+script = ExtResource("5_hitbox")
+damage = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+shape = SubResource("CircleShape2D_hitbox")

@@ -12,6 +12,13 @@ class_name CharacterData
 
 @export var base_hp: int = 20
 
+@export_group("Combat")
+## Damage dealt to every enemy inside the hero's HitboxComponent per tick.
+@export var attack_damage: int = 3
+## Seconds between auto-attack ticks.
+@export var attack_interval: float = 1.0
+@export_group("")
+
 @export var passive_ability_name: String = ""
 @export var passive_ability_desc: String = ""
 @export var active_ability_name: String = ""

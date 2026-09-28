@@ -6,6 +6,8 @@ class_name Player
 
 @onready var stats: CharacterStats = $Stats
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var hurtbox: HurtboxComponent = $Hurtbox
+@onready var hitbox: HitboxComponent = $Hitbox
 
 var character_data: CharacterData = null
 var current_zone_id: String = ""
@@ -27,8 +29,17 @@ func _ready() -> void:
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.register(stats)
+	hurtbox.hurt.connect(_on_hurt)
 	if character_data:
 		_apply_character_visuals(character_data)
+		hitbox.configure(character_data.attack_damage, character_data.attack_interval)
+
+
+func _on_hurt(amount: int) -> void:
+	if not stats.is_alive():
+		return
+	stats.take_damage(amount)
+	QuestLogger.info(QuestLogger.Category.COMBAT, "Hero took %d damage (%d/%d HP)." % [amount, stats.current_hp, stats.max_hp])
 
 
 func _apply_character_visuals(data: CharacterData) -> void:
