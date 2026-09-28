@@ -250,3 +250,63 @@ Godot 4.6.2 headless + `python -m gdtoolkit.parser`, igual que sesión 3.
 - **Salida:** sin ningún indicador (riesgo #1 de sesión 3).
 
 **Errores viejos arreglados (extra 4, seguro):** `project.godot` apuntaba el cursor custom al UID de `assets/ui/gauntlet.png`, borrado en `40b6f37` → se quitó la línea (mismo comportamiento real: cursor por defecto). `OptionsMenu.tscn` usaba un UID viejo del script → UID actual (`uid://b6rlxicpb1un2`). Queda preexistente: `ObjectDB instances leaked / 1 resources still in use at exit` al salir con `--quit-after` (también en la rama anterior).
+
+## Fase 2/3 — Implementado (sesión 4)
+
+Prioridades: (1) luces ✅, (2) indicador de salida + flecha ✅, (3) extras: UIDs viejos ✅, **minimapa no** (tiempo; ver pendientes).
+
+| Sistema | Archivo | Qué |
+|---|---|---|
+| Config (nuevo) | `scripts/world/map/MapVisualConfig.gd`, `resources/maps/map_visual_config.tres` | Resource: grupo "Exit hint" (`exit_hint_mode` enum `ALWAYS`/`ON_DISCOVERY`/`ON_CRYSTAL`, default `ALWAYS`; colores; margen de flecha) y "Lighting" (overlay oscuro/peligro, pulso, contorno pagable, luz cálida, tiempo de transición). El setter de `exit_hint_mode` emite `changed` |
+| Luces (nuevo) | `scripts/world/RoomLight.gd` | Hijo de cada `RoomZone` sala (debajo de Fill/botón/slots). Oscura: overlay que pulsa oscuro↔rojo sangre (peligro, ahí spawnean enemigos). Energizada: tween → overlay a 0 + `PointLight2D` cálido (textura `GradientTexture2D` radial generada en código, sin assets). Contorno dorado si `dust >= POWER_COST` (vía `ResourceManager.resource_changed`) |
+| Salas | `RoomZone.gd` | Nueva señal `power_changed(zone_id, powered)` emitida en `set_powered` (cualquier cambio, no solo pagado); `attach_light()`, `get_light()`; fog oculta también la luz |
+| Mapa | `RoomManager.gd` | `@export visual_config` (default el `.tres`); adjunta `RoomLight` a cada sala; nuevo `get_exit_zone_id()` |
+| Salida (nuevo) | `scripts/world/ExitIndicator.gd` | Nodo por-`Main2d` (grupo `exit_indicator`, `ManagerLocator.get_exit_indicator()`). Marcador (rombo `Polygon2D` + `Label` "SALIDA", z 50, **por encima de la niebla**) + flecha en `CanvasLayer` (layer 5) que se clava al borde de pantalla cuando la salida está fuera de cámara. Llevando el Nexo: color dorado, texto "¡SALIDA! Traé el Nexo", pulso más grande/rápido — y se muestra en **cualquier** modo |
+| Gameplay | `Main2d.gd` | `_setup_exit_indicator()` tras registrar grupos/puertas |
+| Tests | `tests/test_map_flow.gd` | + luces (oscura, pagable, energizada, re-oscurecida), los 3 modos antes/después de explorar y con el cristal (cambio solo vía señal `changed`), `ExitIndicator.edge_point` |
+| Fix | `project.godot`, `OptionsMenu.tscn` | UIDs muertos (ver Fase 1) |
+
+**Señales, sin polling de estado:** estado del hint = `config.changed` + `DoorTurnSystem.room_revealed` + `ExtractionManager.phase_changed` (EXTRACTION = lleva el cristal; señal ya existente, no hizo falta agregar una a `Player`). Luces = `RoomZone.power_changed` + `ResourceManager.resource_changed`. Único `_process`: posicionar la flecha (la cámara se mueve cada frame), y solo corre mientras el hint es visible.
+
+**Decisión: la flecha vive en un `CanvasLayer` propio del `ExitIndicator`**, no dentro de `HUD.tscn`: el HUD está en `Main.HUDContainer` (otro subárbol) y tendría que buscar la salida del mapa cada piso; así el indicador y su flecha nacen y mueren con el piso, sin cableado cruzado. Visualmente es igual una capa de HUD.
+
+### Cómo cambiar el modo de salida
+
+- **Permanente:** abrir `resources/maps/map_visual_config.tres` en el Inspector → grupo *Exit hint* → `Exit Hint Mode`.
+- **Solo en un `Main2d`:** seleccionar el nodo `RoomManager` de `Main2d.tscn` → `Visual Config` → asignar otro `.tres` (o "Make Unique").
+- **En runtime:** `room_manager.visual_config.exit_hint_mode = MapVisualConfig.ExitHintMode.ON_CRYSTAL` (o desde el Remote inspector) → se actualiza al instante por `changed`.
+
+## Verificación (sesión 4)
+
+- `test_map_generator` OK, `test_map_flow` OK (x2 corridas, estables).
+- Carga headless de `Main`/`Main2d`/`HUD`: **0 errores** (se fueron los de UID). Solo quedan: warnings de Steam (no corre Steam) y `ObjectDB leaked / 1 resources still in use at exit` al cortar con `--quit-after` (preexistente, rama anterior igual).
+- `gdparse` OK en todos los `.gd` tocados.
+- Tras agregar clases, la **primera** corrida `--script` puede dar `Could not resolve external class member` → `--editor --quit` para reindexar y listo (pasó una vez esta sesión).
+
+## Checklist manual F5 (sesión 4)
+
+1. Arranque: sala inicial con overlay oscuro que late en rojo, contorno dorado (tenés 20 dust ≥ 10). Rombo verde "SALIDA" visible en su posición aunque esa zona siga en niebla; flecha verde en el borde de pantalla apuntando hacia él.
+2. Caminar hacia la salida: cuando entra en cámara la flecha desaparece; al salir de cámara vuelve.
+3. Energizar una sala: el rojo se desvanece (~0.6 s) y aparece un halo cálido; desaparece el contorno dorado. Con < 10 dust, las demás salas oscuras pierden el contorno dorado.
+4. Agarrar el Nexo: marcador y flecha pasan a dorado, texto "¡SALIDA! Traé el Nexo", pulso más fuerte.
+5. Cambiar `Exit Hint Mode` a `ON_DISCOVERY` en el `.tres` → F5: no hay marcador/flecha hasta descubrir la sala de salida (o agarrar el Nexo).
+6. `ON_CRYSTAL` → nada hasta agarrar el Nexo; después, marcador + flecha dorados.
+7. Regresión: salas en niebla no muestran overlay/luz; hover/click de salas, EnergyButton, BuildingSlots y módulos siguen clickeables encima del overlay; enemigos/héroe se dibujan por encima.
+8. Opciones del menú principal abren normal (UID corregido); cursor = cursor del sistema (igual que antes, el custom estaba roto).
+
+## Riesgos a revisar antes de mergear (sesión 4)
+
+- **`PointLight2D` sin `CanvasModulate`:** la luz solo suma brillo (blend ADD) sobre el tile; el contraste real viene del overlay oscuro. Si se agrega `CanvasModulate` global más adelante, revisar `warm_light_energy`. En GL Compatibility las luces 2D funcionan, pero no se vio en pantalla (headless).
+- **Overlay tapa el piso de salas oscuras al 60% + pulso:** puede ser demasiado oscuro/ruidoso con varias salas; knobs en el `.tres`.
+- **Contorno "pagable" en todas las salas oscuras a la vez** (misma condición global de dust). Con muchas salas reveladas puede ser mucho ruido visual; alternativa: solo salas adyacentes al héroe.
+- **ALWAYS revela la posición de la salida bajo niebla** (pedido explícito), lo que baja la tensión de exploración; `ON_DISCOVERY` es la alternativa "más DotE".
+- `ExitIndicator` asume una sola salida (`get_exit_zone_id()` = primera). El generador marca una sola; un `.tres` a mano con varias mostraría solo una.
+- El `.tres` de config es un recurso compartido: cambiarlo en runtime afecta a todos los pisos siguientes de la sesión (intencional para debug).
+- Nada de esto se vio renderizado (solo headless): colores/tamaños a ojo.
+
+## Pendiente / próximos pasos (sesión 5+)
+
+1. **Minimapa** (extra no hecho): `Control` en `HUD.tscn` que dibuje rects de `RoomManager` (salas reveladas, héroe, salida si el hint es visible) con `_draw()`, refrescado por `room_revealed`/`power_changed`/movimiento del héroe.
+2. **Loops en el generador:** grupos de solo-pasillo en `DoorTurnSystem` para permitir ciclos (DotE real).
+3. **Tipos de sala con efectos** (`RoomData.kind`: tienda, tesoro/vault con recompensa, sala de generador doble, etc.).
+4. **Playtest de balance:** polvo por descubrimiento vs costo de energizar, intensidad del overlay/pulso, tamaño de la flecha.
