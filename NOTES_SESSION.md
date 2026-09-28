@@ -398,3 +398,120 @@ Refresco solo por señales: `DoorTurnSystem.room_revealed`, `RoomManager.room_po
 2. Tipos de sala (diseño arriba).
 3. Playtest visual del minimapa y de la posición del waypoint del pasillo.
 4. Balance (igual que sesión 4).
+
+---
+
+# Sesión 6 — 2026-09-28 (branch `session/opus-2026-09-28-6`, from `session/opus-2026-09-28-5`)
+
+Interfaz estilo Dungeon of the Endless: retratos, popup de personaje, mejoras en Ciencia, menú de construcción por pestañas, barra de recursos con ganancia por turno.
+
+## Fase 1 — Reconocimiento
+
+| Pieza | Estado al empezar |
+|---|---|
+| `HUD.tscn` / `HUDController` | `CanvasLayer` (layer 2) → `Control` full-rect. Barra inferior centrada (`StatBarAnchor/.../StatPanelUI`) con 5 chips: HP como texto `"32/32"` + 4 recursos. `FloorLabel` arriba a la izquierda (offset fijo). `StatTooltip` (load-bearing para `StorePanel`), `InvasionFlash`, `BuildingMenu` (instancia). Minimapa agregado en código (abajo a la derecha). |
+| `StatPanelUI` | `update_stats/update_hp/update_resource` formatean labels. |
+| `BuildingMenu` | `PanelContainer` con `VBox` de `Button`s de `Module.CATALOG` filtrados por `slot_type`; gasta Industria (`spend_resource`), `slot.build()`, sacudida + texto flotante si falta. Sin señales propias. API pública: `open_menu(slot)`, `close_menu()`. Cierra con clic derecho / clic afuera vía `_input` sin marcar handled. |
+| `PlayerStats` (autoload) | `stats_changed`, `upgrades_changed`, `player_died`; `base_hp`, `active_upgrades` (meta, **persisten en el save**), `upgrade_levels{"hp"}`, `apply_upgrade(dict)`, `refresh_stats()`. |
+| `CharacterStats` | Solo HP (`hp_changed(current, max)`, `died`, `stats_changed`), `apply_modifier("hp", n)` con clamp `StatBalance.PLAYER_MAX_HP` = 40. |
+| `CharacterData` | `display_name`, `portrait` (hay PNGs), `base_hp`, `attack_damage`/`attack_interval` (grupo Combat), habilidades, `sprite_frames`. El `HitboxComponent` del héroe se configuraba una vez en `Player._ready` desde `CharacterData`. |
+| Store existente | `StorePanel` (menú de pausa): +2 vida máx por nivel, paga **Oro** (moneda meta, persistente), vía `PlayerStats.apply_upgrade()`. |
+| Minimapa | `Minimap.gd` 200×150, abajo a la derecha, `mouse_filter = IGNORE`, solo señales. |
+| Esc | `Main2d._input` (`ui_cancel`) abre/cierra la pausa y marca handled. `HUDContainer` va después de `WorldContainer` en `Main.tscn` → los `_input` del HUD corren **antes** que los de `Main2d`. |
+
+## Plano del HUD (sin solapes, todo con anclas/contenedores)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ [TopLeft VBox]                              [TopRight VBox]  │
+│  ResourceBar: ⚙ 15 +2 · 🍖 15 +2 ·          HeroPortrait ▣▬▬ │
+│               ⚗ 10 +1 · ✦ 20                 (uno por héroe,  │
+│  Piso 1/5                                    apilados)        │
+│                                                              │
+│            BuildingMenu: flota sobre el slot clickeado       │
+│            (clamp a pantalla, fuera de las 3 esquinas usadas)│
+│                                                              │
+│            CharacterPopup: modal centrado + velo oscuro      │
+│                                                   [Minimap]  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- **Arriba-izquierda** `TopLeft` (`VBoxContainer`, preset top-left, margen 16): `ResourceBar` (panel con 4 chips: ícono, valor, `+N`/turno) y debajo `FloorLabel`.
+- **Arriba-derecha** `Portraits` (`VBoxContainer`, preset top-right, `grow_horizontal = BEGIN`, margen 16): un `HeroPortrait` por héroe.
+- **Abajo-derecha** `Minimap` (sin cambios, preset bottom-right, margen 16).
+- **Abajo-centro** libre (la barra vieja desaparece).
+- `BuildingMenu`: contextual, posicionado sobre el slot en pantalla, clamped al viewport.
+- `CharacterPopup`: `Control` full-rect (velo que captura clics = cerrar), panel centrado (`CenterContainer`).
+- Tooltips de chips: ahora crecen hacia **abajo** (barra arriba).
+
+## Fase 2 — Implementado (sesión 6)
+
+| Sistema | Archivos | Qué |
+|---|---|---|
+| Retratos | `scripts/ui/hud/HeroPortrait.gd` (nuevo), `scripts/ui/hud/HealthBarStyle.gd` + `resources/ui/health_bar_style.tres` (nuevos) | `PanelContainer` armado en código: `CharacterData.portrait` (o círculo con la inicial si no hay), nombre y `ProgressBar` 0..1 sin números. `hp_changed` → tween de valor + color (verde > 60 %, amarillo 30–60 % inclusive, rojo < 30 %) y destello rojo (`modulate`) solo si bajó la vida. Umbrales/colores/tiempos en el Resource. Clic → `portrait_clicked`. |
+| HUD | `scenes/HUD.tscn`, `HUDController.gd`, `StatPanelUI.gd` | Nuevo plano (Fase 1): `TopLeft` (barra de recursos + piso), `Portraits` (arriba-derecha, `grow_horizontal = BEGIN`), minimapa igual. `add_hero_portrait(stats, data)` apila uno por héroe (`_portraits` = `CharacterStats → HeroPortrait`); si `PlayerStats` cambia de `CharacterStats` se re-bindea el mismo retrato. Tooltips de chips crecen hacia abajo. |
+| Popup | `scripts/ui/hud/CharacterPopup.gd` (nuevo) | Modal armado en código (hijo de `HUD/Control`, encima de todo menos `StatTooltip`). Velo que cierra al clic, botón X, Esc. Preview = primer frame `idle` de `sprite_frames` → `portrait` → marco vacío. Nombre, Nivel, Vida a/b, Ataque, Intervalo (y golpes/s), pasiva/activa. Botón "Mejoras" despliega la tabla. Refresca por `stats_changed`/`hp_changed`/`run_upgrades_changed`/`resource_changed` (solo si está visible). |
+| Mejoras | `scripts/core/stats/UpgradeConfig.gd` + `resources/upgrades/run_upgrade_config.tres` (nuevos), `PlayerStats.gd`, `CharacterStats.gd`, `Player.gd`, `Main.gd`, `StatBalance.gd` | Fila por stat (vida máx, daño, vel. de ataque): nivel, actual → siguiente, costo (rojo si falta), "+" deshabilitado si falta o MAX. `PlayerStats.buy_run_upgrade(key)` = único camino: gasta con `ResourceManager.spend_resource`, sube nivel, aplica, emite `run_upgrades_changed` + `stats_changed`. `get_run_upgrade_preview(key)` arma la fila (la UI no calcula nada). |
+| Construcción | `scripts/ui/BuildingMenu.gd`, `scenes/ui/BuildingMenu.tscn` (reescritos), `Module.gd`, `BuildingSlot.gd` | `TabBar` Producción/Defensa (índice = `Module.SlotType`), tarjeta por módulo: ícono de color, nombre, efecto, costo con ícono de Industria (rojo si falta), "Construir" deshabilitado si falta o el slot es de otro tamaño, tooltip nativo con descripción + efecto + vida + motivo. Slot elegido con contorno dorado (`BuildingSlot.set_highlighted`). Se re-arma con `resource_changed` mientras está abierto. API y flujo intactos (`open_menu`, `close_menu`, `_on_module_selected` → `spend_resource` → `slot.build`, sacudida si falla). Textos: `Module.DESCRIPTIONS` + `Module.describe_effect(type)` (derivado de los números del `CATALOG`). |
+| Recursos | `ResourceManager.gd`, `GeneratorModule.gd`, `StatPanelUI.gd` | Chip = ícono + valor + `+N` verde (oculto si 0). `ResourceManager.get_turn_yield(key)` (base + generadores; `process_turn_production` ahora lo usa, mismo orden y montos) y señal nueva `production_changed`, emitida por `GeneratorModule` al configurarse y al destruirse (`notify_production_changed`). |
+| Test | `tests/test_hud_ui.gd` (nuevo) | Umbrales, curva de costo, bonos, textos de efecto; en vivo (Main2d fallback + HUD): retrato (1, ratio tras daño/cura, clic abre popup), compras (gasta Ciencia, sube stats, llega al `HitboxComponent`, falla sin Ciencia, tope), re-aplicación al registrar otro `CharacterStats` (= piso nuevo), `BuildingMenu` (pestaña por slot, deshabilitadas sin Industria, se habilitan, defensa deshabilitada en slot mayor, highlight, construir Gen. Ciencia → `+4` en la barra). |
+
+### Decisiones
+
+- **Mejoras en Ciencia, por partida.** Ciencia no tenía sumidero; la tienda de Oro (pausa) es meta-progresión persistente y queda como está. No se duplicó lógica: las dos aplican vía `PlayerStats` → `CharacterStats` (`apply_modifier("hp")` para vida; ataque vía `set_attack`). Las mejoras de partida viven en el autoload (`run_upgrade_levels`), sobreviven a los pisos porque `refresh_stats()` las re-aplica al registrar el `Player` nuevo, y `Main._begin_new_run()` las resetea (Retry/nueva partida). No se guardan en el save (igual que los recursos).
+- **Curva:** `round(5 · 1.5^nivel)` → 5, 8, 11, 17, 25 Ciencia; tope 5 niveles; +4 vida, +1 daño, −10 % del intervalo base por nivel (piso 0.2 s). Todo en el `.tres`.
+- **Nivel del héroe** = 1 + mejoras de partida compradas (no hay XP).
+- **`StatBalance.PLAYER_MAX_HP` 40 → 60**: con el tope viejo, héroe base 22 + tienda de Oro (+20) ya llegaba al clamp y las mejoras de vida no hacían nada. Si igual se llega al tope, la fila muestra MAX (`maxed` cuando actual == siguiente).
+- **Ataque en `CharacterStats`** (`base_attack_*` desde `CharacterData`, `attack_*` actual, señal `attack_changed`); `Player` conecta `attack_changed → hitbox.configure` antes de `register()`. Antes el hitbox se configuraba una sola vez desde `CharacterData`.
+- **Esc del popup:** el `_input` del popup lo consume con `set_input_as_handled()`. `HUDContainer` va después de `WorldContainer` en `Main.tscn`, así que el `_input` del HUD corre antes que el de `Main2d` → Esc cierra el popup y no abre la pausa. Con el popup cerrado, Esc = pausa como siempre.
+- **El popup no pausa el juego**; el velo bloquea clics al mundo mientras está abierto.
+- **Tooltips del menú de construcción = `tooltip_text` nativo** (no el `StatTooltip` del HUD).
+- **`ThemeStyles` por `preload`** en los 3 scripts nuevos/reescritos: `ThemeManager.gd` es autoload sin `class_name`, su identificador no existe en `--script` y rompía compilar el HUD en el test. Mismo patrón que `StatBalanceScript` en `StorePanel`.
+- HUD mitad en `.tscn` (layout estático: anclas/contenedores) y mitad en código (retratos, popup, tarjetas: dependen de datos), igual que el minimapa de la sesión 5.
+- Reemplazados → `_deprecated/hud_v1/` (`HUD.tscn`, `BuildingMenu.gd`/`.tscn` viejos).
+
+## Fase 3 — no hecha
+
+Loops en el generador y tipos de sala siguen como diseño (sesión 5). Se priorizó cerrar y testear la UI.
+
+## Verificación (sesión 6)
+
+- Al empezar: `test_map_generator`, `test_map_flow`, `test_corridor_picking` OK.
+- Al terminar: los 3 OK + `test_hud_ui` OK.
+- Carga normal (con autoloads) de `Main.tscn`, `Main2d.tscn`, `HUD.tscn` con `--quit-after 90`: 0 `SCRIPT ERROR`/`ERROR` (fuera de Steam y leaks preexistentes). `HUD.tscn` solo: warnings esperados de "sin mundo".
+- `gdparse` OK en todos los `.gd` tocados y el test.
+- `.tscn`/`.tres` nuevos o reescritos revisados con script: sin ids de `ext_resource`/`sub_resource` duplicados, sin `ExtResource`/`SubResource` colgados, todos los `path=` existen, sin rutas de nodo duplicadas.
+- `--editor --quit` para registrar las clases nuevas (su ruido de "external text editor" es de la config local del editor).
+- **Nada visto en pantalla** (headless).
+
+## Checklist manual F5 (sesión 6)
+
+1. HUD: arriba-izquierda barra de recursos (ícono, valor, `+2`/`+2`/`+1` en verde, Polvo sin ganancia) y "Piso 1/5" debajo; arriba-derecha retrato del héroe (imagen del personaje) con barra verde sin números; abajo-derecha minimapa. Nada abajo al centro. Nada se pisa a 1280×720 ni a la resolución máxima.
+2. Hover en los chips: tooltip debajo del chip, dentro de pantalla.
+3. Recibir daño: la barra baja con animación y destello rojo del retrato; < 60 % amarilla, < 30 % roja.
+4. Clic en el retrato: popup centrado con velo; Vida exacta a/b, Ataque, Intervalo, Nivel 1. Cerrar con X, clic afuera y Esc (Esc **no** abre la pausa). Con el popup cerrado, Esc abre la pausa.
+5. "Mejoras": 3 filas. Con 10 de Ciencia: comprar Vida (−5, vida máx +4, Nivel 2), Daño (−5, los números de daño a enemigos suben 1); Vel. de ataque queda con costo rojo y "+" deshabilitado. Al juntar Ciencia el costo vuelve a color.
+6. Bajar al piso 2: las mejoras siguen. Retry o nueva partida: se pierden.
+7. Energizar una sala y clic en el slot mayor: contorno dorado en el slot, menú arriba del slot en la pestaña Producción, 3 tarjetas; pestaña Defensa con tarjetas grises (tooltip "Requiere un slot menor"). Slot menor: al revés.
+8. Sin Industria: costos en rojo, botones grises. Construir Gen. Ciencia: el menú se cierra, el contorno vuelve a normal, la barra muestra `+4` en Ciencia. Si un Sapper lo destruye, vuelve a `+1`.
+9. Clic derecho / clic afuera cierra el menú; clic en otro slot vacío lo reabre ahí.
+10. Tienda de Oro (pausa) sigue funcionando (+2 vida máx).
+
+## Riesgos a revisar antes de mergear (sesión 6)
+
+- **Nada renderizado:** tamaños, colores, fuentes y el recorte del retrato (`KEEP_ASPECT_COVERED` sobre los PNG de retrato) a ojo.
+- **`PLAYER_MAX_HP` 60:** cambia el clamp de la vida base del save y lo que muestra el selector de slots ("Vida base x/60").
+- **Orden de `_input` para Esc:** depende de que `HUDContainer` siga después de `WorldContainer` en `Main.tscn`. En F6 de `Main2d` no hay HUD, sin conflicto.
+- **Popup y muerte/victoria:** si el héroe muere con el popup abierto, queda abierto debajo del overlay (capa del HUD = 2). No se cierra solo.
+- **`BuildingMenu` se reconstruye en cada cambio de Industria** mientras está abierto (3 tarjetas, barato; si el hover parpadea al entrar recursos, actualizar en sitio).
+- **Tooltips nativos** del menú de construcción usan el tema por defecto de Godot.
+- El `+N` por turno no incluye el polvo de descubrimiento (`FloorConfig.discovery_dust`): no es producción por turno.
+- `run_upgrade_levels` no se guarda: salir al menú y continuar el slot = partida nueva (igual que los recursos).
+
+## Pendiente / próximos pasos (sesión 7+)
+
+1. Playtest visual del HUD nuevo (checklist arriba) y ajuste de tamaños.
+2. Cerrar el popup en `player_died`/`victory_entered`.
+3. Loops en el generador y tipos de sala (diseños de la sesión 5).
+4. Sumidero para Comida (curar / subir de nivel, como dice su tooltip).
+5. Más héroes: `HUDController.add_hero_portrait()` ya apila; falta que `PlayerStats` maneje varios `CharacterStats`.

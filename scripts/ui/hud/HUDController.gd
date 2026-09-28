@@ -1,23 +1,20 @@
 extends CanvasLayer
 class_name HUDController
 
-const TOOLTIP_HP := "Puntos de resistencia del héroe. Si llega a 0, la incursión fracasa."
 const TOOLTIP_INDUSTRY := "Industria: Se utiliza para construir módulos de apoyo y defensas en las salas."
 const TOOLTIP_FOOD := "Comida: Se utiliza para curar al héroe, subirlo de nivel y reclutar aliados."
-const TOOLTIP_SCIENCE := "Ciencia: Se utiliza para investigar nuevos módulos y tecnologías."
+const TOOLTIP_SCIENCE := "Ciencia: Se utiliza para mejorar al héroe (clic en su retrato → Mejoras)."
 const TOOLTIP_DUST := "Polvo: Se utiliza para iluminar salas oscuras y evitar la aparición de enemigos."
 
-const _STAT_BAR_PATH := "Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"
+const _STAT_BAR_PATH := "Control/TopLeft/ResourcePanel/MarginContainer/StatPanelUI"
 
 @onready var stat_panel: StatPanelUI = get_node(_STAT_BAR_PATH)
-@onready var stats_hud_panel: PanelContainer = $Control/StatBarAnchor/StatBarCenter/StatBarPanel
+@onready var stats_hud_panel: PanelContainer = $Control/TopLeft/ResourcePanel
+@onready var portraits: VBoxContainer = $Control/Portraits
 
 @onready var stat_tooltip: PanelContainer = get_node_or_null("Control/StatTooltip")
 @onready var stat_tooltip_label: Label = get_node_or_null("Control/StatTooltip/Label")
 
-@onready var icon_hp: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipHP/IconHP")
-
-@onready var chip_hp: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipHP")
 @onready var chip_industry: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipIndustry")
 @onready var chip_food: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipFood")
 @onready var chip_science: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipScience")
@@ -39,12 +36,14 @@ var _bound_player_stats: PlayerStats
 var _tooltip_anchor: Vector2 = Vector2.ZERO
 var _tooltip_grow_up: bool = false
 var _invasion_tween: Tween
+## One per hero; today only the player's. CharacterStats → HeroPortrait.
+var _portraits: Dictionary = {}
+var character_popup: CharacterPopup
 
 
 func _ready() -> void:
 	add_to_group("hud")
 
-	_wire_chip_tooltip(chip_hp, TOOLTIP_HP)
 	_wire_chip_tooltip(chip_industry, TOOLTIP_INDUSTRY)
 	_wire_chip_tooltip(chip_food, TOOLTIP_FOOD)
 	_wire_chip_tooltip(chip_science, TOOLTIP_SCIENCE)
@@ -63,8 +62,11 @@ func _ready() -> void:
 	if rm:
 		if not rm.resource_changed.is_connected(_on_resource_changed):
 			rm.resource_changed.connect(_on_resource_changed)
+		if not rm.production_changed.is_connected(_refresh_gains):
+			rm.production_changed.connect(_refresh_gains)
 		for key in rm.KEYS:
 			_on_resource_changed(key, rm.get_resource(key), 0)
+		_refresh_gains()
 
 	var em := ManagerLocator.get_enemy_manager()
 	if em:
@@ -80,6 +82,9 @@ func _ready() -> void:
 		floor_label.text = "Piso %d/%d" % [fm.floor_index, fm.config.max_floors]
 
 	_add_minimap()
+	character_popup = CharacterPopup.new()
+	character_popup.name = "CharacterPopup"
+	$Control.add_child(character_popup)
 
 
 ## Built in code (not in HUD.tscn): bottom-right corner, self-wiring.
@@ -112,28 +117,48 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 	if stats == null:
 		return
 
-	if _bound_stats != stats:
-		if _bound_stats:
-			if _bound_stats.hp_changed.is_connected(_on_hp_changed):
-				_bound_stats.hp_changed.disconnect(_on_hp_changed)
+	if _bound_stats == stats:
+		return
+	# New CharacterStats for the same (only) hero: move its portrait over.
+	var portrait: HeroPortrait = _portraits.get(_bound_stats)
+	_portraits.erase(_bound_stats)
+	_bound_stats = stats
+	if portrait:
+		_portraits[stats] = portrait
+		portrait.bind_stats(stats)
+	else:
+		var player := ManagerLocator.get_player()
+		add_hero_portrait(stats, player.character_data if player else null)
 
-		_bound_stats = stats
 
-		if not stats.hp_changed.is_connected(_on_hp_changed):
-			stats.hp_changed.connect(_on_hp_changed)
+# ---------------- PORTRAITS ----------------
 
-	if stat_panel:
-		stat_panel.update_stats(stats)
+## Stacks one more portrait in the top-right column (multi-hero ready).
+func add_hero_portrait(stats: CharacterStats, data: CharacterData) -> HeroPortrait:
+	var portrait := HeroPortrait.new()
+	portrait.setup(stats, data)
+	portrait.portrait_clicked.connect(_on_portrait_clicked)
+	portraits.add_child(portrait)
+	_portraits[stats] = portrait
+	return portrait
 
 
-func _on_hp_changed(current_hp: int, max_hp: int) -> void:
-	if stat_panel:
-		stat_panel.update_hp(current_hp, max_hp)
+func _on_portrait_clicked(portrait: HeroPortrait) -> void:
+	hide_simple_tooltip()
+	character_popup.open_for(portrait.stats, portrait.character_data)
 
 
 func _on_resource_changed(key: String, amount: int, _delta: int) -> void:
 	if stat_panel:
 		stat_panel.update_resource(key, amount)
+
+
+func _refresh_gains() -> void:
+	var rm := ManagerLocator.get_resource_manager()
+	if rm == null or stat_panel == null:
+		return
+	for key in rm.KEYS:
+		stat_panel.update_gain(key, rm.get_turn_yield(key))
 
 
 # ---------------- BUILDING MENU ----------------
@@ -172,10 +197,11 @@ func _wire_chip_tooltip(chip: Control, text: String) -> void:
 	chip.mouse_exited.connect(hide_simple_tooltip)
 
 
+## Resource bar sits at the top now → tooltip grows down below the chip.
 func _on_chip_hovered(chip: Control, text: String) -> void:
 	var chip_rect := chip.get_global_rect()
-	var target_pos := chip_rect.position - Vector2(0.0, TOOLTIP_GAP)
-	show_simple_tooltip(text, target_pos, true)
+	var target_pos := chip_rect.position + Vector2(0.0, chip_rect.size.y + TOOLTIP_GAP)
+	show_simple_tooltip(text, target_pos, false)
 
 
 # ---------------- TOOLTIP ----------------

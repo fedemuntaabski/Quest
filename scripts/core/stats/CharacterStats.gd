@@ -13,12 +13,22 @@ signal hp_changed(current, max)
 signal died
 signal stats_changed
 signal potion_used(heal_amount: int, remaining: int)
+signal attack_changed(damage: int, interval: float)
 
 # -------------------------
 # HEALTH
 # -------------------------
 var max_hp: int = StatBalance.PLAYER_BASE_HP
 var current_hp: int = StatBalance.PLAYER_BASE_HP
+
+# -------------------------
+# ATTACK (auto-combat hitbox)
+# -------------------------
+## Base = CharacterData values; current = base + in-run upgrades (PlayerStats).
+var base_attack_damage: int = 3
+var base_attack_interval: float = 1.0
+var attack_damage: int = 3
+var attack_interval: float = 1.0
 
 # -------------------------
 # RESET
@@ -61,6 +71,19 @@ func use_potion() -> bool:
 	stats_changed.emit()
 
 	return true
+
+func set_base_attack(damage: int, interval: float) -> void:
+	base_attack_damage = damage
+	base_attack_interval = interval
+	set_attack(damage, interval)
+
+
+func set_attack(damage: int, interval: float) -> void:
+	attack_damage = damage
+	attack_interval = interval
+	attack_changed.emit(attack_damage, attack_interval)
+	stats_changed.emit()
+
 
 func is_alive() -> bool:
 	return current_hp > 0

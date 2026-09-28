@@ -1,0 +1,196 @@
+[gd_scene format=3 uid="uid://b5v43ol8idshh"]
+
+[ext_resource type="Script" uid="uid://dwj0wcnf1blct" path="res://scripts/ui/hud/HUDController.gd" id="1_hud_script"]
+[ext_resource type="Script" uid="uid://dltjy630888ox" path="res://scripts/ui/hud/StatIcon.gd" id="2_stat_icon"]
+[ext_resource type="Script" uid="uid://dwdiup326a0h8" path="res://scripts/ui/hud/StatPanelUI.gd" id="3_nysna"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/BuildingMenu.tscn" id="4_building_menu"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stat_panel"]
+bg_color = Color(0.05, 0.05, 0.06, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stat_tooltip"]
+bg_color = Color(0.08, 0.08, 0.1, 0.92)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="HUD" type="CanvasLayer"]
+layer = 2
+script = ExtResource("1_hud_script")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="InvasionFlash" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 0, 0, 0)
+
+[node name="FloorLabel" type="Label" parent="Control"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 216.0
+offset_bottom = 52.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_font_sizes/font_size = 24
+text = "Piso 1"
+
+[node name="StatBarAnchor" type="Control" parent="Control"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -84.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="StatBarCenter" type="CenterContainer" parent="Control/StatBarAnchor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StatBarPanel" type="PanelContainer" parent="Control/StatBarAnchor/StatBarCenter"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 10
+
+[node name="StatPanelUI" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+script = ExtResource("3_nysna")
+
+[node name="ChipHP" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
+layout_mode = 2
+mouse_filter = 0
+theme_override_constants/separation = 6
+
+[node name="IconHP" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipHP"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_stat_icon")
+
+[node name="LabelHP" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipHP"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "20/20"
+
+[node name="ChipIndustry" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
+layout_mode = 2
+mouse_filter = 0
+theme_override_constants/separation = 6
+
+[node name="IconIndustry" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipIndustry"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "industry"
+
+[node name="LabelIndustry" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipIndustry"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "0"
+
+[node name="ChipFood" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
+layout_mode = 2
+mouse_filter = 0
+theme_override_constants/separation = 6
+
+[node name="IconFood" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipFood"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "food"
+
+[node name="LabelFood" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipFood"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "0"
+
+[node name="ChipScience" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
+layout_mode = 2
+mouse_filter = 0
+theme_override_constants/separation = 6
+
+[node name="IconScience" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipScience"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "science"
+
+[node name="LabelScience" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipScience"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "0"
+
+[node name="ChipDust" type="HBoxContainer" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI"]
+layout_mode = 2
+mouse_filter = 0
+theme_override_constants/separation = 6
+
+[node name="IconDust" type="Control" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipDust"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_stat_icon")
+icon_type = "dust"
+
+[node name="LabelDust" type="Label" parent="Control/StatBarAnchor/StatBarCenter/StatBarPanel/MarginContainer/StatPanelUI/ChipDust"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "0"
+
+[node name="StatTooltip" type="PanelContainer" parent="Control"]
+z_index = 300
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 0
+grow_vertical = 0
+mouse_filter = 2
+visible = false
+theme_override_styles/panel = SubResource("StyleBoxFlat_stat_tooltip")
+
+[node name="Label" type="Label" parent="Control/StatTooltip"]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="BuildingMenu" parent="Control" instance=ExtResource("4_building_menu")]
+visible = false
+layout_mode = 0

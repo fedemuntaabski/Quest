@@ -4,17 +4,35 @@
 
 [node name="BuildingMenu" type="PanelContainer"]
 visible = false
+custom_minimum_size = Vector2(300, 0)
 mouse_filter = 0
 script = ExtResource("1_menu")
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 8
+theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
-[node name="Options" type="VBoxContainer" parent="Margin"]
+[node name="Content" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+text = "Construir"
+
+[node name="Tabs" type="TabBar" parent="Margin/Content"]
+layout_mode = 2
+tab_count = 2
+tab_0/title = "Producción"
+tab_1/title = "Defensa"
+
+[node name="Options" type="VBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 6

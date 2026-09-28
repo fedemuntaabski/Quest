@@ -23,7 +23,15 @@ func configure(p_zone_id: String, p_module_type: ModuleType) -> void:
 			resource_type = key
 			yield_amount = int(cfg[key])
 			break
+	_notify_production()
 
 
 func _on_destroyed() -> void:
 	remove_from_group("generators")
+	_notify_production()
+
+
+func _notify_production() -> void:
+	var rm := ManagerLocator.get_resource_manager()
+	if rm:
+		rm.notify_production_changed()

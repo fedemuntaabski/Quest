@@ -5,6 +5,8 @@ extends Node
 ## No persistence yet — resources reset each run (intentional simplification).
 
 signal resource_changed(resource_key: String, new_amount: int, delta: int)
+## Per-turn yield may have changed (a generator was built/destroyed). HUD reads get_turn_yield().
+signal production_changed
 
 const KEYS: Array[String] = ["industry", "food", "science", "dust"]
 
@@ -60,17 +62,20 @@ func _calculate_module_bonus(resource_key: String) -> int:
 	return total
 
 
+## Base yield + active generator bonus for one resource, paid every door-open.
+func get_turn_yield(resource_key: String) -> int:
+	var base: int = {"industry": BASE_YIELD_INDUSTRY, "food": BASE_YIELD_FOOD, "science": BASE_YIELD_SCIENCE, "dust": BASE_YIELD_DUST}.get(resource_key, 0)
+	return base + _calculate_module_bonus(resource_key)
+
+
+func notify_production_changed() -> void:
+	production_changed.emit()
+
+
 ## Pays out the per-turn production (base yield + module bonus). Called by DoorTurnSystem.advance_turn().
 func process_turn_production() -> void:
-	var total_industry: int = BASE_YIELD_INDUSTRY + _calculate_module_bonus("industry")
-	var total_food: int = BASE_YIELD_FOOD + _calculate_module_bonus("food")
-	var total_science: int = BASE_YIELD_SCIENCE + _calculate_module_bonus("science")
-	var total_dust: int = BASE_YIELD_DUST + _calculate_module_bonus("dust")
-
-	add_resource("industry", total_industry)
-	add_resource("food", total_food)
-	add_resource("science", total_science)
-	add_resource("dust", total_dust)
+	for key: String in KEYS:
+		add_resource(key, get_turn_yield(key))
 
 
 func reset_resources(initial_industry: int = 15, initial_food: int = 15, initial_science: int = 10, initial_dust: int = 20) -> void:

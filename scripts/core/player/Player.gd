@@ -29,13 +29,17 @@ func configure(data: CharacterData) -> void:
 
 func _ready() -> void:
 	add_to_group("player")
+	# Hitbox follows CharacterStats (base from CharacterData + in-run upgrades),
+	# so wire it before register() re-applies upgrades.
+	stats.attack_changed.connect(hitbox.configure)
+	if character_data:
+		stats.character_name = character_data.display_name
+		stats.set_base_attack(character_data.attack_damage, character_data.attack_interval)
+		_apply_character_visuals(character_data)
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.register(stats)
 	hurtbox.hurt.connect(_on_hurt)
-	if character_data:
-		_apply_character_visuals(character_data)
-		hitbox.configure(character_data.attack_damage, character_data.attack_interval)
 
 
 func _on_hurt(amount: int) -> void:

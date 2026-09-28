@@ -14,6 +14,9 @@ const MAJOR_COLOR := Color(0.9, 0.9, 0.9, 0.18)
 const MINOR_COLOR := Color(0.7, 0.7, 0.7, 0.12)
 const MAJOR_OUTLINE := Color(0.9, 0.9, 0.9, 0.5)
 const MINOR_OUTLINE := Color(0.7, 0.7, 0.7, 0.4)
+const HIGHLIGHT_OUTLINE := Color(1.0, 0.85, 0.4, 1.0)
+const OUTLINE_WIDTH := 1.5
+const HIGHLIGHT_WIDTH := 3.0
 
 @export var slot_type: SlotType = SlotType.MINOR
 
@@ -68,6 +71,15 @@ func _apply_visual() -> void:
 	var is_major := slot_type == SlotType.MAJOR
 	marker.color = MAJOR_COLOR if is_major else MINOR_COLOR
 	outline.default_color = MAJOR_OUTLINE if is_major else MINOR_OUTLINE
+	outline.width = OUTLINE_WIDTH
+
+
+## BuildingMenu marks the slot it is building into.
+func set_highlighted(on: bool) -> void:
+	_apply_visual()
+	if on:
+		outline.default_color = HIGHLIGHT_OUTLINE
+		outline.width = HIGHLIGHT_WIDTH
 
 
 func _set_marker_visible(v: bool) -> void:

@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="UpgradeConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/UpgradeConfig.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")

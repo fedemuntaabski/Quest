@@ -5,7 +5,8 @@ class_name StatBalance
 # Keep gameplay formulas here so combat, upgrades, and UI stay aligned.
 
 const PLAYER_BASE_HP: int = 20
-const PLAYER_MAX_HP: int = 40
+# 60 (was 40): leaves room for in-run Ciencia upgrades on top of the Oro store.
+const PLAYER_MAX_HP: int = 60
 const MAX_UPGRADE_LEVEL: int = 10
 const BASE_UPGRADE_COST: int = 50
 const UPGRADE_COST_STEP: int = 25

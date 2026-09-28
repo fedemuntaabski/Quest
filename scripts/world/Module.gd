@@ -30,7 +30,32 @@ const TYPE_COLORS := {
 	ModuleType.TRAP: Color(0.8, 0.3, 0.3, 1.0),
 }
 
+## Flavor line for the build-menu tooltip (effect numbers come from describe_effect()).
+const DESCRIPTIONS := {
+	ModuleType.GENERATOR_INDUSTRY: "Engranajes oxidados que todavía giran.",
+	ModuleType.GENERATOR_FOOD: "Huerto de hongos bajo luz tenue.",
+	ModuleType.GENERATOR_SCIENCE: "Instrumentos antiguos que zumban solos.",
+	ModuleType.TURRET: "Dispara a los enemigos que entran en la sala.",
+	ModuleType.TRAP: "Frena a los enemigos que llegan a la sala.",
+}
+
+const RESOURCE_LABELS := {"industry": "Industria", "food": "Comida", "science": "Ciencia", "dust": "Polvo"}
+
 signal module_destroyed()
+
+
+## Human-readable effect of a catalog entry, derived from its numbers.
+static func describe_effect(type: ModuleType) -> String:
+	var cfg: Dictionary = CATALOG[type]
+	match type:
+		ModuleType.TURRET:
+			return "%d de daño cada %.1f s" % [int(cfg["damage"]), float(cfg["fire_rate"])]
+		ModuleType.TRAP:
+			return "Ralentiza %d%% durante %.0f s" % [roundi((1.0 - float(cfg["slow_factor"])) * 100.0), float(cfg["slow_duration"])]
+	for key: String in ["industry", "food", "science"]:
+		if int(cfg.get(key, 0)) > 0:
+			return "+%d %s por turno" % [int(cfg[key]), RESOURCE_LABELS[key]]
+	return ""
 
 @onready var icon: Polygon2D = $Icon
 
