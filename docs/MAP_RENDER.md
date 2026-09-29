@@ -28,5 +28,13 @@ Las zonas sin descubrir no tienen tile, ni fill, ni luz visible: fondo = clear c
 ## Colisiones
 No hay colisiones de muro: el movimiento es tween por centros de zona (`MoveAction`), los héroes son `Node2D` y los enemigos `CharacterBody2D` con capas de colisión 0. Capas de física del proyecto: 2 `enemy_body`, 3 `player_hurtbox`, 4 `enemy_hurtbox`.
 
-## Cambio en session/assets-2
-`MapTileRenderer` (4 `TileMapLayer`: Floor/Walls/Decor/Doors, tiles 16 px ×2, celda = 2×2 tiles) dibuja el arte y se engancha en los puntos 1-3 de arriba. `Floor` sigue como rejilla lógica **oculta**. El resto (Fill, luces, canvas oscuro, indicador de salida, minimapa) no cambia. Ver `docs/ASSETS.md` para la escala.
+## Después (session/assets-2)
+`MapTileRenderer` (`scenes/world/MapTileRenderer.tscn`, `scripts/world/map/MapTileRenderer.gd`): 4 `TileMapLayer` (Floor z -9 / Walls -8 / Decor -7 / Doors -6, bajo el `Fill` de `RoomZone` z -5), tiles de 16 px con `scale = ArtConfig.ART_SCALE`; 1 celda lógica = 2×2 tiles. Instanciado por `Main2d._setup_room_manager()` y asignado a `RoomManager.tile_renderer`.
+- **Plan puro** `MapTileRenderer.build_plan(layout, config)`: por zona `{floor, walls, decor}` (tile → `Vector4i(source, ax, ay, alt)`) + `doors`. Semillas `hash([map_seed, "floor"|"banners"|"decor"])`. Coordenadas de atlas en `DungeonTiles.gd`; los `.tres` (`assets/tilesets/`) se hornean con `tools/build_tilesets.gd`.
+- **Muros**: anillo de 1 celda (8-vecinos) alrededor de todo el suelo, 2 tiles de grosor. Fila que toca suelo debajo = cara de ladrillo (`wall_left/mid/right`, algunas con banner 0x72), fila sobre ella = tapa (`wall_top_*`), fila que toca suelo arriba = tapa invertida (`ALT_FLIP_V`), resto = relleno sólido. Reglas de vecinos en GDScript en vez de Terrain: la plantilla 3×3 de `atlas_walls_low` no encaja con un muro de 2 tiles + cara. Cada celda de muro pertenece a la primera zona vecina → solo se pinta al revelarla.
+- **Capa física**: los tiles de muro llevan polígono 16×16 en la capa 5 `wall` (máscara 0); nadie la enmascara aún, igual que hoy (sin colisiones de muro).
+- **Ocultamiento**: `RoomManager.apply_zone_visibility` → `tile_renderer.show_zone()`; `refresh_door_visibility` → `show_door()`. Escalera (`floor_stairs` 2×2) va en el suelo de la sala de salida → aparece solo al descubrirla. `Floor` (64 px) queda oculto como rejilla lógica; `validate_visibility()` sigue válido.
+- **Decor**: banners 0x72 en caras de muro (`wall_decor_density`), props Kenney (armarios, lápidas, yunque…) en el anillo exterior del suelo de las salas (`prop_density`), un cofre Kenney en salas LOOT. El pack no trae antorchas: sin antorchas por ahora.
+- **Puertas**: `doors_leaf_closed/open` 32×32 (= 1 celda); `ALT_TRANSPOSE` en pasillos E-O. El `Polygon2D` marrón de `Door` se oculta; el `Area2D` de clic sigue igual.
+- Sin cambios: descubrimiento, polvo, `RoomLight`, `DarkCanvas`, `ExitIndicator`, `Minimap` (lee `RoomManager.zones`), `fallback_layout.tres`.
+- Revisión visual: `godot --path . --script res://tests/tools/shot_map.gd -- out.png [full|close]` (ventana real, no headless).
