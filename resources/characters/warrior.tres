@@ -8,6 +8,7 @@
 script = ExtResource("1_character_data")
 character_id = "warrior"
 display_name = "Guerrero"
+role = "Tanque y Provocador"
 description = "Tanque y Provocador. Atrae el peligro y protege a la expedición en primera línea."
 portrait = ExtResource("2_portrait")
 base_hp = 22

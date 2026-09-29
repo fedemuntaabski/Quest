@@ -8,6 +8,7 @@
 script = ExtResource("1_character_data")
 character_id = "mage"
 display_name = "Mago"
+role = "Ciencia y Módulos"
 description = "Especialista en Ciencia y Módulos. Acelera la investigación y potencia la base."
 portrait = ExtResource("2_portrait")
 passive_ability_name = "Mente Analítica"

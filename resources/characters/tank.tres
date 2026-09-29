@@ -8,6 +8,7 @@
 script = ExtResource("1_character_data")
 character_id = "tank"
 display_name = "Tanque"
+role = "Defensor de Cristal"
 description = "Defensor de Cristal. Resistencia elevada para proteger el núcleo de la base."
 portrait = ExtResource("2_portrait")
 base_hp = 32

@@ -92,8 +92,8 @@ func _refresh_hero(s: CharacterStats) -> void:
 	stats_changed.emit(s)
 
 func _apply_base_stats(s: CharacterStats) -> void:
-	s.max_hp = base_hp
-	s.current_hp = base_hp
+	s.max_hp = s.base_hp
+	s.current_hp = s.base_hp
 
 func _reapply_upgrades(s: CharacterStats) -> void:
 	for upg in active_upgrades:

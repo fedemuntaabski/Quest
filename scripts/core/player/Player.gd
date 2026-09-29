@@ -41,6 +41,7 @@ func _ready() -> void:
 	if character_data:
 		stats.hero_id = character_data.character_id
 		stats.character_name = character_data.display_name
+		stats.base_hp = character_data.base_hp
 		stats.set_base_attack(character_data.attack_damage, character_data.attack_interval)
 		_apply_character_visuals(character_data)
 	var player_stats := ManagerLocator.get_player_stats()

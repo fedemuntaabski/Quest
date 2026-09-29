@@ -8,6 +8,7 @@
 script = ExtResource("1_character_data")
 character_id = "rogue"
 display_name = "Pícaro"
+role = "Explorador Rápido"
 description = "Explorador Rápido y Colector de Polvo. El primero en revelar cada sala nueva."
 portrait = ExtResource("2_portrait")
 passive_ability_name = "Paso Ligero"

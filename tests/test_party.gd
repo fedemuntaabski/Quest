@@ -363,7 +363,7 @@ func _expect_levels(main2d: Node, ids: Array[String], levels: Array, when: Strin
 		var s := hero.stats
 		var bought: int = levels[i] - 1
 		_expect(ps.get_hero_level(ids[i]) == levels[i], "%s: '%s' level %d, expected %d" % [when, ids[i], ps.get_hero_level(ids[i]), levels[i]])
-		_expect(s.max_hp == ps.base_hp + cfg.hp_per_level * bought, "%s: '%s' max hp %d" % [when, ids[i], s.max_hp])
+		_expect(s.max_hp == hero.character_data.base_hp + cfg.hp_per_level * bought, "%s: '%s' max hp %d" % [when, ids[i], s.max_hp])
 		_expect(s.attack_damage == cfg.damage_at(hero.character_data.attack_damage, bought), "%s: '%s' damage %d" % [when, ids[i], s.attack_damage])
 		_expect(s.current_hp == s.max_hp, "%s: '%s' should start the floor at full HP" % [when, ids[i]])
 

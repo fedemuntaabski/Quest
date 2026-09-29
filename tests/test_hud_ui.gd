@@ -155,7 +155,7 @@ func _check_live() -> void:
 	fresh.set_base_attack(3, 1.0)
 	root.add_child(fresh)
 	ps.register(fresh)
-	_expect(fresh.max_hp == ps.base_hp + ps.run_upgrade_config.hp_per_level * ps.run_level, "hp levels not re-applied on register: %d" % fresh.max_hp)
+	_expect(fresh.max_hp == fresh.base_hp +ps.run_upgrade_config.hp_per_level * ps.run_level, "hp levels not re-applied on register: %d" % fresh.max_hp)
 	_expect(fresh.attack_damage == 3 + ps.run_upgrade_config.max_level, "damage upgrade not re-applied on register")
 	_expect(hud.portraits.get_child_count() == 1, "rebinding stats must reuse the portrait")
 
