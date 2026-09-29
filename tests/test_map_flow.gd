@@ -250,8 +250,8 @@ func _run_types_and_loops() -> void:
 			if elite == null or base == null:
 				failures.append("%s: could not spawn in '%s'/'%s'" % [label, room.id, combat_room])
 			else:
-				var elite_hp := maxi(1, roundi(int(Enemy.VARIANT_CONFIG[elite.variant]["hp"]) * fm.enemy_hp_multiplier() * rule.enemy_hp_mult))
-				var base_hp := maxi(1, roundi(int(Enemy.VARIANT_CONFIG[base.variant]["hp"]) * fm.enemy_hp_multiplier()))
+				var elite_hp := maxi(1, roundi(int(Enemy.VARIANT_CONFIG[elite.variant]["hp"]) * fm.enemy_hp_multiplier() * rule.enemy_hp_mult * elite.type.hp_mult))
+				var base_hp := maxi(1, roundi(int(Enemy.VARIANT_CONFIG[base.variant]["hp"]) * fm.enemy_hp_multiplier() * base.type.hp_mult))
 				if elite.max_hp != elite_hp or base.max_hp != base_hp:
 					failures.append("%s: Elite hp %d (want %d), Combat hp %d (want %d)" % [label, elite.max_hp, elite_hp, base.max_hp, base_hp])
 

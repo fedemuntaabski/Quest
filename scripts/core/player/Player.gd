@@ -8,7 +8,7 @@ class_name Player
 signal zone_changed(zone_id: String)
 
 @onready var stats: CharacterStats = $Stats
-@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var animated_sprite: CharacterVisual = $AnimatedSprite2D
 @onready var hurtbox: HurtboxComponent = $Hurtbox
 @onready var hitbox: HitboxComponent = $Hitbox
 
@@ -22,6 +22,8 @@ var sprite_offset: Vector2 = Vector2.ZERO
 ## grid_pos is the cell under the hero's world position — debug/logging only.
 ## Movement, door access and reachability all key off current_zone_id.
 var grid_pos: Vector2i = Vector2i.ZERO
+
+var _last_hp: int = -1
 
 
 func configure(data: CharacterData) -> void:
@@ -45,6 +47,15 @@ func _ready() -> void:
 	if player_stats:
 		player_stats.register(stats)
 	hurtbox.hurt.connect(_on_hurt)
+	_last_hp = stats.current_hp
+	stats.hp_changed.connect(_on_hp_changed)
+
+
+## HP dropping = a hit: blink white (heals and level-ups only raise HP).
+func _on_hp_changed(current_hp: int, _max_hp: int) -> void:
+	if _last_hp >= 0 and current_hp < _last_hp:
+		animated_sprite.play_hit()
+	_last_hp = current_hp
 
 
 func _on_hurt(amount: int) -> void:
@@ -55,10 +66,16 @@ func _on_hurt(amount: int) -> void:
 
 
 func _apply_character_visuals(data: CharacterData) -> void:
-	if data.sprite_frames and animated_sprite:
-		animated_sprite.sprite_frames = data.sprite_frames
-		if data.sprite_frames.has_animation("idle"):
-			animated_sprite.play("idle")
+	if data.sprite_frames == null or animated_sprite == null:
+		return
+	animated_sprite.setup(data.sprite_frames)
+	# Hurtbox follows the drawn body (its shape resource is shared by every
+	# Player instance, so duplicate). The attack Hitbox (AoE) is independent.
+	var shape := hurtbox.get_node("CollisionShape2D") as CollisionShape2D
+	var circle := shape.shape.duplicate() as CircleShape2D
+	circle.radius = animated_sprite.fit_radius()
+	shape.shape = circle
+	shape.position = animated_sprite.body_center() - animated_sprite.position
 
 
 func set_grid_position(cell: Vector2i, tilemap: TileMapLayer) -> void:

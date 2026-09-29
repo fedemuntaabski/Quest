@@ -5,11 +5,8 @@ class_name EnemyManager
 ## Main2d (per-run state), not an autoload — same reasoning as DoorTurnSystem.
 
 const ENEMY_SCENE := preload("res://scenes/entities/Enemy.tscn")
-const VARIANT_WEIGHTS := {
-	Enemy.Variant.SWARM: 60,
-	Enemy.Variant.SAPPER: 25,
-	Enemy.Variant.HUNTER: 15,
-}
+## Used when there is no FloorManager / no pool (standalone scenes, tests).
+const FALLBACK_TYPE: EnemyType = preload("res://resources/enemies/goblin.tres")
 
 ## Risk engine: P(spawn) = clamp(BASE + dark_rooms*PER_DARK + turn*PER_TURN).
 const BASE_CHANCE := 0.05
@@ -112,7 +109,10 @@ func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
 	if rule:
 		hp_mult *= rule.enemy_hp_mult
 		dmg_mult *= rule.enemy_damage_mult
-	enemy.configure(_roll_variant(), zone_id, hp_mult, dmg_mult)
+	var type := floor_manager.roll_enemy_type() if floor_manager else null
+	if type == null:
+		type = FALLBACK_TYPE
+	enemy.configure(Enemy.Variant.SWARM, zone_id, hp_mult, dmg_mult, type)
 	enemy.died.connect(_on_enemy_died)
 	_enemies.append(enemy)
 	return enemy
@@ -129,19 +129,6 @@ func spawn_enemies_in_room(group_id: String, count: int) -> void:
 		_spawn_enemy(room_zone_id, room_manager.get_center(room_zone_id))
 
 	QuestLogger.info(QuestLogger.Category.ENEMY, "Spawned %d enemies in room '%s'." % [count, room_zone_id])
-
-
-func _roll_variant() -> Enemy.Variant:
-	var total := 0
-	for weight in VARIANT_WEIGHTS.values():
-		total += weight
-	var roll := randi() % total
-	var cumulative := 0
-	for variant in VARIANT_WEIGHTS.keys():
-		cumulative += VARIANT_WEIGHTS[variant]
-		if roll < cumulative:
-			return variant
-	return Enemy.Variant.SWARM
 
 
 func _on_enemy_died(enemy: Enemy) -> void:

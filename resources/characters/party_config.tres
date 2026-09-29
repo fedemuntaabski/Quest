@@ -6,4 +6,4 @@
 script = ExtResource("1_party_config")
 party_size = 2
 companion_ids = Array[String](["warrior", "mage", "rogue"])
-sprite_spacing = 28.0
+sprite_spacing = 36.0

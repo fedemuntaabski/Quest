@@ -20,15 +20,12 @@ const DEFAULT_ATTACK_DAMAGE := 2
 ## Seconds between contact-damage ticks against the hero (HitboxComponent).
 const CONTACT_HIT_INTERVAL := 1.0
 
-const TYPE_COLORS := {
-	Variant.SWARM: Color(0.85, 0.25, 0.25, 1.0),
-	Variant.SAPPER: Color(0.55, 0.4, 0.2, 1.0),
-	Variant.HUNTER: Color(0.3, 0.1, 0.5, 1.0),
-}
+## Contact Hitbox reaches this much past the body (px), like the old 14 -> 24.
+const CONTACT_REACH := 10.0
 
 signal died(enemy: Enemy)
 
-@onready var icon: Polygon2D = $Icon
+@onready var visual: CharacterVisual = $Visual
 @onready var ai_timer: Timer = $AiTimer
 @onready var attack_timer: Timer = $AttackTimer
 @onready var hurtbox: HurtboxComponent = $Hurtbox
@@ -40,6 +37,8 @@ var attack_damage: int = DEFAULT_ATTACK_DAMAGE
 var current_state: State = State.MOVING
 var target_module: Node2D = null
 var variant: Variant
+## Art + stat multipliers (null = plain variant, no art). Set by configure().
+var type: EnemyType
 var current_zone_id: String = ""
 var max_hp: int = 0
 var current_hp: int = 0
@@ -56,17 +55,21 @@ func setup(start_position: Vector2) -> void:
 	global_position = start_position
 
 
-## Multipliers come from FloorManager (per-floor difficulty scaling).
-func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0, damage_multiplier: float = 1.0) -> void:
-	variant = p_variant
+## Multipliers come from FloorManager (per-floor difficulty scaling); `p_type`
+## (EnemyType) overrides the behaviour variant and stacks its own multipliers.
+func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0, damage_multiplier: float = 1.0, p_type: EnemyType = null) -> void:
+	type = p_type
+	variant = p_type.behavior as Variant if p_type else p_variant
 	current_zone_id = p_zone_id
+	if p_type:
+		hp_multiplier *= p_type.hp_mult
+		damage_multiplier *= p_type.damage_mult
 
 	var cfg: Dictionary = VARIANT_CONFIG[variant]
 	max_hp = maxi(1, roundi(int(cfg["hp"]) * hp_multiplier))
 	current_hp = max_hp
 
-	if icon:
-		icon.color = TYPE_COLORS.get(variant, Color.WHITE)
+	_apply_visual()
 
 	ai_timer.wait_time = float(cfg.get("ai_interval", 1.5))
 	ai_timer.one_shot = false
@@ -85,6 +88,8 @@ func take_damage(amount: int) -> void:
 	if not is_alive():
 		return
 	current_hp = maxi(current_hp - maxi(amount, 0), 0)
+	if current_hp > 0:
+		visual.play_hit()
 	if current_hp <= 0:
 		QuestLogger.info(QuestLogger.Category.ENEMY, "Enemy '%s' died in zone '%s'." % [Variant.keys()[variant], current_zone_id])
 		died.emit(self)
@@ -102,7 +107,27 @@ func apply_slow(duration: float) -> void:
 func current_speed() -> float:
 	var cfg: Dictionary = VARIANT_CONFIG[variant]
 	var base_speed := float(cfg["speed"])
+	if type:
+		base_speed *= type.speed_mult
 	return base_speed * 0.5 if Time.get_ticks_msec() < _slowed_until_msec else base_speed
+
+
+## Sprite from the EnemyType; body, hurtbox and contact hitbox follow its drawn
+## size (their shape resources are shared by every Enemy instance: duplicate).
+## Hitbox damage/interval are untouched.
+func _apply_visual() -> void:
+	if type == null or type.sprite_frames == null:
+		visual.visible = false
+		return
+	visual.setup(type.sprite_frames, type.visual_scale)
+	var radius := visual.fit_radius()
+	var center := visual.body_center()
+	for path in ["CollisionShape2D", "Hurtbox/CollisionShape2D", "Hitbox/CollisionShape2D"]:
+		var collision := get_node(path) as CollisionShape2D
+		var circle := collision.shape.duplicate() as CircleShape2D
+		circle.radius = radius + (CONTACT_REACH if path.begins_with("Hitbox") else 0.0)
+		collision.shape = circle
+		collision.position = center
 
 
 ## First active module built in `room`, or null.
