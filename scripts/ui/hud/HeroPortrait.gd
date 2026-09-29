@@ -147,13 +147,25 @@ func _on_gui_input(event: InputEvent) -> void:
 		accept_event()
 
 
+## Idle sprite frame (pixel art, shown enlarged with Nearest) > portrait PNG > nothing.
+func _icon_texture() -> Texture2D:
+	if character_data == null:
+		return null
+	var frames := character_data.sprite_frames
+	if frames and frames.has_animation("idle") and frames.get_frame_count("idle") > 0:
+		return frames.get_frame_texture("idle", 0)
+	return character_data.portrait
+
+
 func _make_icon() -> Control:
-	if character_data and character_data.portrait:
+	var texture := _icon_texture()
+	if texture:
 		var texture_rect := TextureRect.new()
-		texture_rect.texture = character_data.portrait
+		texture_rect.texture = texture
 		texture_rect.custom_minimum_size = ICON_SIZE
 		texture_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		texture_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		texture_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return texture_rect
 	var icon := Control.new()
