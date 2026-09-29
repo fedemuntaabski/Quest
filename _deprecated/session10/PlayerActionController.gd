@@ -114,10 +114,6 @@ func _open_group(door: Door) -> void:
 	if extraction and not extraction.can_open_doors():
 		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: extraction phase active." % door.door_id)
 		return
-	# A loop door sits at room_a's wall: hidden (and not openable) while room_a
-	# is undiscovered, even if the hero stands in room_b.
-	if not room_manager.is_zone_revealed(door.from_zone_id):
-		return
 	if door.get_target_room_for(player.current_zone_id) == "":
 		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: hero in '%s' is not adjacent (%s / %s)." % [door.door_id, player.current_zone_id, door.room_a_id, door.room_b_id])
 		return

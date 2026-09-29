@@ -14,28 +14,13 @@ class_name FloorConfig
 
 @export_group("Map")
 ## Rooms on floor 1 (MapGenerator room_count); grows per floor up to max.
-## Session 7: 6 → 8 (max 12 → 14), bigger floors. Loops/room types never
-## change the room count.
+## Session 7: 6 → 8 (max 12 → 14), bigger floors, still a tree (no loops).
 @export var base_room_count: int = 8
 @export var rooms_per_floor: float = 1.0
 @export var max_room_count: int = 14
 ## MapGenerator branch_chance: higher = more side branches/dead ends.
 @export var base_branch_chance: float = 0.25
 @export var branch_chance_per_floor: float = 0.1
-## Session 11: loops (MapGenerator.add_loops) — extra corridors between rooms
-## in adjacent slots the tree didn't join. Each of max_loops() quota slots rolls
-## loop_chance(); a map without a valid pair just gets fewer/no loops.
-@export var base_loop_chance: float = 0.5
-@export var loop_chance_per_floor: float = 0.1
-@export var base_max_loops: int = 1
-## +X loop slots per floor (fractional, floored).
-@export var max_loops_per_floor: float = 0.5
-
-@export_group("Room types")
-## One RoomTypeRule per special type (Rest/Loot/Elite), applied in order by
-## MapGenerator.assign_room_types. Start/Exit are fixed by the generator;
-## every other room is Combat.
-@export var room_types: Array[RoomTypeRule] = []
 
 @export_group("Discovery")
 ## Dust granted every time a new room is discovered (door opened), whether or
@@ -90,22 +75,6 @@ func room_count(floor_index: int) -> int:
 
 func branch_chance(floor_index: int) -> float:
 	return clampf(base_branch_chance + branch_chance_per_floor * _steps(floor_index), 0.0, 1.0)
-
-
-func loop_chance(floor_index: int) -> float:
-	return clampf(base_loop_chance + loop_chance_per_floor * _steps(floor_index), 0.0, 1.0)
-
-
-func max_loops(floor_index: int) -> int:
-	return maxi(0, base_max_loops + int(floor(max_loops_per_floor * _steps(floor_index))))
-
-
-## The rule for `type`, or null (Combat/Start/Exit, or not configured).
-func get_room_type_rule(type: RoomData.RoomType) -> RoomTypeRule:
-	for rule in room_types:
-		if rule and rule.type == type:
-			return rule
-	return null
 
 
 func discovery_dust(floor_index: int) -> int:

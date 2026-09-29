@@ -42,21 +42,3 @@ enum ExitHintMode {
 @export var warm_light_energy: float = 0.9
 ## Seconds for the dark -> lit tween.
 @export var power_transition_time: float = 0.6
-
-@export_group("Room types")
-## Badge (RoomZone) + minimap marker colors. Lit or dark doesn't matter.
-@export var rest_room_color: Color = Color(0.45, 0.95, 0.85, 1.0)
-@export var loot_room_color: Color = Color(1.0, 0.6, 0.15, 1.0)
-@export var elite_room_color: Color = Color(0.85, 0.4, 1.0, 1.0)
-
-
-## Transparent for types without a marker (Combat/Start/Exit).
-func room_type_color(type: RoomData.RoomType) -> Color:
-	match type:
-		RoomData.RoomType.REST:
-			return rest_room_color
-		RoomData.RoomType.LOOT:
-			return loot_room_color
-		RoomData.RoomType.ELITE:
-			return elite_room_color
-	return Color.TRANSPARENT

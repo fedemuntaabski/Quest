@@ -4,8 +4,7 @@ class_name CorridorData
 ## CorridorData: a corridor entity — a straight 1-cell-wide segment joining
 ## `room_a` (the side you open it from) to `room_b`. `door_cell` is the Door
 ## at room_a's wall; the room_b end opens straight into room_b. Revealed
-## together with room_b (same DoorTurnSystem group = room_b's id) — unless
-## `is_loop`: then it is its own corridor-only group (group id = its id).
+## together with room_b (same DoorTurnSystem group = room_b's id).
 
 @export var id: String = ""
 @export var room_a: String = ""
@@ -13,9 +12,6 @@ class_name CorridorData
 @export var pos: Vector2i = Vector2i.ZERO
 @export var size: Vector2i = Vector2i(1, 1)
 @export var door_cell: Vector2i = Vector2i.ZERO
-## Extra corridor between two rooms already joined by the tree (a cycle).
-## Never an entry corridor: opening it reveals only itself, no room.
-@export var is_loop: bool = false
 
 
 func get_rect() -> Rect2i:

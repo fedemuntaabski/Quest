@@ -68,8 +68,7 @@ func _tile_size() -> Vector2:
 
 ## Builds zones/groups/RoomZone nodes from a MapLayout. Each room is its own
 ## reveal group (group id = room id) together with its entry corridor, listed
-## corridor-first. A loop corridor is its own corridor-only group (group id =
-## corridor id). Zone-graph edges: room_a <-> corridor <-> room_b.
+## corridor-first. Zone-graph edges: room_a <-> corridor <-> room_b.
 func build_from_map(layout: MapLayout) -> void:
 	zones.clear()
 	groups.clear()
@@ -77,17 +76,14 @@ func build_from_map(layout: MapLayout) -> void:
 	_start_zone_id = layout.get_start_room_id()
 
 	for room in layout.rooms:
-		_add_zone(room.id, "room", room.get_rect(), room.id, room.is_exit, room.is_vault, room.get_room_type())
+		_add_zone(room.id, "room", room.get_rect(), room.id, room.is_exit, room.is_vault)
 		groups[room.id] = [] as Array[String]
 	for corridor in layout.corridors:
-		var group_id := corridor.id if corridor.is_loop else corridor.room_b
 		# Zone owns the door cell too (the Door is disabled once opened).
-		_add_zone(corridor.id, "corridor", corridor.get_zone_rect(), group_id, false, false)
+		_add_zone(corridor.id, "corridor", corridor.get_zone_rect(), corridor.room_b, false, false)
 		_link_zones(corridor.room_a, corridor.id)
 		_link_zones(corridor.id, corridor.room_b)
-		if corridor.is_loop:
-			groups[group_id] = [] as Array[String]
-		(groups[group_id] as Array[String]).append(corridor.id)
+		(groups[corridor.room_b] as Array[String]).append(corridor.id)
 	for room in layout.rooms:
 		(groups[room.id] as Array[String]).append(room.id)
 
@@ -98,7 +94,7 @@ func build_from_map(layout: MapLayout) -> void:
 	QuestLogger.info(QuestLogger.Category.MAP, "RoomManager: built %d zones, %d groups (seed %d)." % [zones.size(), groups.size(), layout.map_seed])
 
 
-func _add_zone(zone_id: String, kind: String, rect: Rect2i, group_id: String, is_exit: bool, is_vault: bool, room_type: RoomData.RoomType = RoomData.RoomType.COMBAT) -> void:
+func _add_zone(zone_id: String, kind: String, rect: Rect2i, group_id: String, is_exit: bool, is_vault: bool) -> void:
 	zones[zone_id] = {
 		"id": zone_id,
 		"kind": kind,
@@ -109,7 +105,6 @@ func _add_zone(zone_id: String, kind: String, rect: Rect2i, group_id: String, is
 		"group_id": group_id,
 		"is_exit_room": is_exit,
 		"is_vault_room": is_vault,
-		"room_type": room_type,
 		"node": null,
 	}
 
@@ -141,7 +136,6 @@ func _spawn_zone_node(zone_id: String) -> void:
 	if record["kind"] == "room":
 		register_room(zone)
 		zone.attach_light(Vector2(rect.size) * _tile_size(), visual_config)
-		zone.set_room_type(record["room_type"], Vector2(rect.size) * _tile_size(), visual_config)
 
 
 ## Dark canvas: one CanvasModulate for the world canvas (HUD CanvasLayers are
@@ -180,8 +174,6 @@ func register_door(door: Door) -> void:
 func _link_door_to_rooms(door: Door) -> void:
 	door.room_a_id = door.from_zone_id
 	door.room_b_id = get_room_zone_id_in_group(door.target_room_id)
-	if door.room_b_id == "":
-		door.room_b_id = _far_room_of_group(door.target_room_id, door.from_zone_id)
 
 	var room_a: RoomZone = get_room(door.room_a_id)
 	var room_b: RoomZone = get_room(door.room_b_id)
@@ -200,15 +192,6 @@ func get_room_zone_id_in_group(group_id: String) -> String:
 	for zone_id in (groups.get(group_id, []) as Array):
 		if get_zone_kind(zone_id) == "room":
 			return zone_id
-	return ""
-
-
-## Corridor-only (loop) group: the room its corridor reaches that isn't `from_room`.
-func _far_room_of_group(group_id: String, from_room: String) -> String:
-	for zone_id in (groups.get(group_id, []) as Array):
-		for neighbor in (zones[zone_id]["neighbors"] as Array):
-			if get_zone_kind(neighbor) == "room" and neighbor != from_room:
-				return neighbor
 	return ""
 
 
@@ -322,11 +305,6 @@ func is_exit_room(zone_id: String) -> bool:
 
 func is_vault_room(zone_id: String) -> bool:
 	return zones.get(zone_id, {}).get("is_vault_room", false)
-
-
-## RoomData.get_room_type() of a room zone; COMBAT for corridors/unknown ids.
-func get_room_type(zone_id: String) -> RoomData.RoomType:
-	return zones.get(zone_id, {}).get("room_type", RoomData.RoomType.COMBAT)
 
 
 ## The layout's is_exit room ("" if none). First match if several.

@@ -3,13 +3,10 @@ extends SceneTree
 ## Headless smoke test: boots Main2d (generated map, then fallback), opens
 ## every door in reveal order and checks discovery dust + fog consistency,
 ## room lighting (start lit, middle-click toggle + refund, dark canvas), the
-## exit hint modes and the exit-gated Nexo pickup. Session 11: a map with a
-## loop + Rest/Loot/Elite rooms (rewards, heal, spawn rules, loop paths, badges).
+## exit hint modes and the exit-gated Nexo pickup.
 ##   godot --headless --path . --script res://tests/test_map_flow.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
-const FLOOR_CONFIG_PATH := "res://resources/floors/default_floor_config.tres"
-const REST_DAMAGE := 30
 
 var failures: Array[String] = []
 
@@ -18,7 +15,6 @@ func _initialize() -> void:
 	_check_edge_point()
 	await _run(false)
 	await _run(true)
-	await _run_types_and_loops()
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_map_flow: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
@@ -85,9 +81,8 @@ func _run(use_fallback: bool) -> void:
 			door.disable_door()
 			opened += 1
 			progress = true
-			var expected_dust := _expected_dust(main2d, door.target_room_id, per_room)
-			if resources.get_resource("dust") - dust_before != expected_dust:
-				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, door.target_room_id, resources.get_resource("dust") - dust_before, expected_dust])
+			if resources.get_resource("dust") - dust_before != per_room:
+				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, door.target_room_id, resources.get_resource("dust") - dust_before, per_room])
 			_expect_hint_drawn(indicator, room_manager.is_zone_revealed(exit_zone), "%s after opening '%s'" % [label, door.target_room_id])
 
 	if camera and not (camera.get_bounds().encloses(start_bounds) and camera.get_bounds().get_area() > start_bounds.get_area()):
@@ -120,177 +115,6 @@ func _run(use_fallback: bool) -> void:
 
 	main2d.queue_free()
 	await process_frame
-
-
-## Discovery dust for a group: 0 for a loop corridor (no room), else the
-## per-room amount plus the room type's reward when it pays in dust.
-func _expected_dust(main2d: Node, group_id: String, per_room: int) -> int:
-	var room_manager: RoomManager = main2d.room_manager
-	if room_manager.get_zone_kind(group_id) == "corridor":
-		return 0
-	var rule: RoomTypeRule = main2d.floor_manager.room_type_rule(room_manager.get_room_type(group_id))
-	return per_room + (rule.reward_at(main2d.floor_manager.floor_index) if rule and rule.reward_resource == "dust" else 0)
-
-
-## Session 11: boots a floor that has a loop + Rest + Loot + Elite (seed found
-## offline through the same randi() -> hash([run_seed, floor]) path Main2d uses
-## standalone), opens every door and checks each type's effect and the loops.
-func _run_types_and_loops() -> void:
-	var config := load(FLOOR_CONFIG_PATH) as FloorConfig
-	var found := -1
-	var floor_index := 0
-	var wanted: MapLayout = null
-	for n in range(500):
-		for f in [3, 4, 5]:
-			seed(n)
-			var layout := MapGenerator.generate_floor(hash([randi(), f]), config, f)
-			if _has_loop_and_types(layout):
-				found = n
-				floor_index = f
-				wanted = layout
-				break
-		if found >= 0:
-			break
-	if found < 0:
-		failures.append("types: no seed < 500 with a loop + Rest + Loot + Elite")
-		return
-
-	var resources := root.get_node("ResourceManager") as ResourceManager
-	resources.reset_resources()
-	seed(found)
-	var main2d := (load(MAIN2D_PATH) as PackedScene).instantiate()
-	main2d.standalone_floor = floor_index
-	root.add_child(main2d)
-	await process_frame
-	var label := "types (seed %d floor %d)" % [found, floor_index]
-	var layout: MapLayout = main2d.map_layout
-	if layout.map_seed != wanted.map_seed or not _has_loop_and_types(layout):
-		failures.append("%s: Main2d built another map (seed plumbing changed: %d vs %d)" % [label, layout.map_seed, wanted.map_seed])
-		main2d.queue_free()
-		await process_frame
-		return
-
-	var room_manager: RoomManager = main2d.room_manager
-	var doors: DoorTurnSystem = main2d.door_turn_system
-	var fm: FloorManager = main2d.floor_manager
-	var enemies: EnemyManager = main2d.enemy_manager
-	var hero_stats: CharacterStats = main2d.player.stats
-	var per_room := config.discovery_dust(floor_index)
-	var typed: Array[String] = []
-	for room in layout.rooms:
-		if RoomData.TYPE_LABELS.has(room.get_room_type()):
-			typed.append(room.id)
-			if room_manager.get_room_type(room.id) != room.get_room_type():
-				failures.append("%s: RoomManager type of '%s' differs from the layout" % [label, room.id])
-			var badge := room_manager.get_zone_node(room.id).get_node_or_null("TypeBadge") as Node2D
-			if badge == null or badge.visible:
-				failures.append("%s: '%s' badge missing or visible under fog" % [label, room.id])
-	if room_manager.get_zone_node(room_manager.get_start_zone_id()).get_node_or_null("TypeBadge") != null:
-		failures.append("%s: the start room got a type badge" % label)
-
-	var progress := true
-	while progress:
-		progress = false
-		for door in room_manager.get_all_doors():
-			if door.is_open or not room_manager.is_zone_revealed(door.from_zone_id):
-				continue
-			var group := door.target_room_id
-			var rule: RoomTypeRule = fm.room_type_rule(room_manager.get_room_type(group)) if room_manager.get_zone_kind(group) == "room" else null
-			var reward_key := rule.reward_resource if rule else ""
-			var reward_before := resources.get_resource(reward_key) if reward_key != "" else 0
-			var reward_yield := resources.get_turn_yield(reward_key) if reward_key != "" else 0
-			var dust_before := resources.get_resource("dust")
-			if rule and rule.heal_on_discovery > 0:
-				hero_stats.take_damage(REST_DAMAGE)
-			var hp_before := hero_stats.current_hp
-			if not doors.open_room(group):
-				failures.append("%s: open_room('%s') refused" % [label, group])
-			door.disable_door()
-			progress = true
-			var expected_dust := _expected_dust(main2d, group, per_room)
-			if resources.get_resource("dust") - dust_before != expected_dust:
-				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, group, resources.get_resource("dust") - dust_before, expected_dust])
-			if rule and reward_key != "" and reward_key != "dust":
-				# The turn tick also pays the resource's yield.
-				var got := resources.get_resource(reward_key) - reward_before - reward_yield
-				if got != rule.reward_at(floor_index):
-					failures.append("%s: '%s' reward %d %s, expected %d" % [label, group, got, reward_key, rule.reward_at(floor_index)])
-				var after := resources.get_resource(reward_key)
-				if doors.open_room(group) or resources.get_resource(reward_key) != after:
-					failures.append("%s: '%s' reward paid twice" % [label, group])
-			if rule and rule.heal_on_discovery > 0 and hero_stats.current_hp != mini(hero_stats.max_hp, hp_before + rule.heal_on_discovery):
-				failures.append("%s: Rest '%s' healed %d -> %d, expected +%d" % [label, group, hp_before, hero_stats.current_hp, rule.heal_on_discovery])
-
-	for room_id in typed:
-		var badge := room_manager.get_zone_node(room_id).get_node("TypeBadge") as Node2D
-		if not badge.visible:
-			failures.append("%s: '%s' badge hidden after discovery" % [label, room_id])
-
-	# Rest: never a spawn room (door-open invasions + extraction waves), lit or dark.
-	var combat_room := ""
-	for room in layout.rooms:
-		if room.get_room_type() == RoomData.RoomType.COMBAT and combat_room == "":
-			combat_room = room.id
-	for room in layout.rooms:
-		var type := room.get_room_type()
-		var in_pool := enemies.get_spawn_rooms().any(func(z: RoomZone) -> bool: return z.zone_id == room.id)
-		if type == RoomData.RoomType.REST:
-			var count := enemies._enemies.size()
-			enemies.spawn_enemies_in_room(room.id, 2)
-			if in_pool or enemies._enemies.size() != count or not room_manager.is_room_dark(room.id):
-				failures.append("%s: Rest room '%s' can host spawns (in pool %s)" % [label, room.id, in_pool])
-			if not (room.id in room_manager.get_unpowered_revealed_room_group_ids()):
-				failures.append("%s: Rest room '%s' should still count as dark" % [label, room.id])
-		elif type != RoomData.RoomType.START and not in_pool:
-			failures.append("%s: dark '%s' missing from the spawn pool" % [label, room.id])
-		if type == RoomData.RoomType.ELITE:
-			var rule := fm.room_type_rule(type)
-			var elite := _spawn_one(enemies, room.id)
-			var base := _spawn_one(enemies, combat_room)
-			if elite == null or base == null:
-				failures.append("%s: could not spawn in '%s'/'%s'" % [label, room.id, combat_room])
-			else:
-				var elite_hp := maxi(1, roundi(int(Enemy.VARIANT_CONFIG[elite.variant]["hp"]) * fm.enemy_hp_multiplier() * rule.enemy_hp_mult))
-				var base_hp := maxi(1, roundi(int(Enemy.VARIANT_CONFIG[base.variant]["hp"]) * fm.enemy_hp_multiplier()))
-				if elite.max_hp != elite_hp or base.max_hp != base_hp:
-					failures.append("%s: Elite hp %d (want %d), Combat hp %d (want %d)" % [label, elite.max_hp, elite_hp, base.max_hp, base_hp])
-
-	# Loops: once open, the shortcut is the shortest path between its rooms.
-	for corridor in layout.corridors:
-		if not corridor.is_loop:
-			continue
-		var path := room_manager.find_zone_path(corridor.room_a, corridor.room_b)
-		if " ".join(path) != "%s %s %s" % [corridor.room_a, corridor.id, corridor.room_b]:
-			failures.append("%s: loop '%s' path %s" % [label, corridor.id, path])
-		var door := room_manager.get_door_for_group(corridor.id)
-		if door == null or door.room_a_id != corridor.room_a or door.room_b_id != corridor.room_b:
-			failures.append("%s: loop '%s' door endpoints wrong" % [label, corridor.id])
-	if not room_manager.validate_graph() or not room_manager.validate_visibility():
-		failures.append("%s: graph/visibility validation failed" % label)
-
-	var minimap := Minimap.new()
-	root.add_child(minimap)
-	await process_frame
-	if not minimap.visible:
-		failures.append("%s: minimap hid itself" % label)
-	minimap.queue_free()
-	main2d.queue_free()
-	await process_frame
-
-
-func _has_loop_and_types(layout: MapLayout) -> bool:
-	var found: Dictionary = {}
-	for room in layout.rooms:
-		found[room.get_room_type()] = true
-	var has_loop := layout.corridors.any(func(c: CorridorData) -> bool: return c.is_loop)
-	return has_loop and found.has(RoomData.RoomType.REST) and found.has(RoomData.RoomType.LOOT) and found.has(RoomData.RoomType.ELITE)
-
-
-## Spawns one enemy in a room's group and returns it (null if none spawned).
-func _spawn_one(enemies: EnemyManager, room_id: String) -> Enemy:
-	var before := enemies._enemies.size()
-	enemies.spawn_enemies_in_room(room_id, 1)
-	return enemies._enemies[-1] if enemies._enemies.size() > before else null
 
 
 ## Follow, zoom limits, clamp to discovered rooms + margin, focus/recenter.

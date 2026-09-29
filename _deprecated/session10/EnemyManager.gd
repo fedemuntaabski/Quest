@@ -44,30 +44,10 @@ func setup(p_room_manager: RoomManager, p_door_turn_system: DoorTurnSystem = nul
 		door_turn_system.turn_advanced.connect(_on_turn_advanced)
 
 
-## Dark rooms enemies may spawn in: RoomManager.get_dark_rooms() minus room
-## types whose RoomTypeRule blocks spawns (Rest). Lit or not is the only
-## power check, and it lives in get_dark_rooms().
-func get_spawn_rooms() -> Array[RoomZone]:
-	var rooms: Array[RoomZone] = []
-	for room in room_manager.get_dark_rooms():
-		if not _spawns_blocked(room.zone_id):
-			rooms.append(room)
-	return rooms
-
-
-func _room_rule(zone_id: String) -> RoomTypeRule:
-	return floor_manager.room_type_rule(room_manager.get_room_type(zone_id)) if floor_manager else null
-
-
-func _spawns_blocked(zone_id: String) -> bool:
-	var rule := _room_rule(zone_id)
-	return rule != null and rule.blocks_spawns
-
-
 func _on_turn_advanced(current_turn: int) -> void:
 	if room_manager == null:
 		return
-	var dark_rooms: Array[RoomZone] = get_spawn_rooms()
+	var dark_rooms: Array[RoomZone] = room_manager.get_dark_rooms()
 	if dark_rooms.is_empty():
 		return
 
@@ -108,10 +88,6 @@ func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
 	enemy.setup(world_position)
 	var hp_mult: float = floor_manager.enemy_hp_multiplier() if floor_manager else 1.0
 	var dmg_mult: float = floor_manager.enemy_damage_multiplier() if floor_manager else 1.0
-	var rule := _room_rule(zone_id)  # Elite rooms: tougher enemies
-	if rule:
-		hp_mult *= rule.enemy_hp_mult
-		dmg_mult *= rule.enemy_damage_mult
 	enemy.configure(_roll_variant(), zone_id, hp_mult, dmg_mult)
 	enemy.died.connect(_on_enemy_died)
 	_enemies.append(enemy)
@@ -122,7 +98,7 @@ func spawn_enemies_in_room(group_id: String, count: int) -> void:
 	if room_manager == null:
 		return
 	var room_zone_id := room_manager.get_room_zone_id_in_group(group_id)
-	if room_zone_id == "" or _spawns_blocked(room_zone_id):
+	if room_zone_id == "":
 		return
 
 	for i in range(count):

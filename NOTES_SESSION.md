@@ -878,3 +878,100 @@ Hoy (desde la s9) se puede abrir una puerta en pausa táctica: el turno avanza a
 2. Decidir las puertas en pausa táctica (recomendación: bloquear, ver Decisiones).
 3. Sumidero tardío de Ciencia (T3 o repetible) y reembolso de Polvo al cambiar de piso.
 4. Pendientes de la sesión 7: loops/tipos de sala, multi-héroe.
+
+---
+
+# Sesión 11 — 2026-09-28 (rama `session/opus-2026-09-28-11`, sobre la sesión 10, sin commit)
+
+Tipos de sala (Descanso / Botín / Élite, además de Inicial / Salida / Combate) y loops opcionales en el generador. El árbol sigue siendo la base garantizada.
+
+## Fase 1 — Reconocimiento (qué había)
+
+| Pieza | Estado al empezar |
+|---|---|
+| Generador | `MapGenerator.generate(seed, room_count, branch_chance)`: árbol determinista sobre una grilla de slots (paso 9 celdas, salas ≤5×5 centradas → nunca se solapan). Cada sala nueva cuelga de la última (o, con `branch_chance`, de una anterior al azar) con un pasillo recto → 1 pasillo de entrada por sala. Salida = la sala más lejana; vault = la hoja más profunda que queda. |
+| Tamaños | `FloorConfig` "Map": 8 salas, +1 por piso, hasta 14 (8→12 en 5 pisos); `branch_chance` 0.25, +0.1 por piso; seed = `hash([run_seed, piso])`. Si `validate()` falla → `fallback_layout.tres` (5 salas). |
+| Qué distinguía una sala | Casi nada: `is_start` (spawn + Nexo, se enciende gratis), `is_exit` (victoria + `ExitIndicator`), `is_vault` (flag sin efecto). `RoomData.kind` siempre valía "room" y nadie lo leía. |
+| Identificación/dibujo | `RoomManager.build_from_map`: una zona por sala y otra por pasillo; grupo de revelado = id de la sala = [pasillo de entrada, sala]; un `RoomZone` por zona (Fill + Outline por highlight/encendida, `RoomLight` en salas); un `Door` por pasillo (Main2d). El minimapa dibujaba los rects revelados (gris / dorado encendida / pasillo) + héroe + salida. |
+
+## Fase 2 — Implementado
+
+| Sistema | Archivos | Qué |
+|---|---|---|
+| Datos | `RoomData.gd`, `CorridorData.gd` | `enum RoomType {COMBAT, START, EXIT, REST, LOOT, ELITE}`, `room_type`, `get_room_type()` (START/EXIT salen de `is_start`/`is_exit`), `TYPE_LABELS`; se quitó `kind` (código muerto). `CorridorData.is_loop`. |
+| Reglas | `scripts/core/floors/RoomTypeRule.gd` (nuevo), `FloorConfig.gd`, `default_floor_config.tres` | `RoomTypeRule`: `type`; generación (`chance` + `chance_per_floor`, `max_count` + `max_count_per_floor`); efectos (`reward_resource`/`reward_amount`/`reward_per_floor` al descubrir, `heal_on_discovery`, `blocks_spawns`, `enemy_hp_mult`/`enemy_damage_mult`). `FloorConfig`: `room_types: Array[RoomTypeRule]` + `get_room_type_rule()`; loops: `base_loop_chance` 0.5 (+0.1/piso), `base_max_loops` 1 (+0.5/piso) + `loop_chance()`/`max_loops()`. En el `.tres`: Descanso (60%, máx 1, bloquea spawns, cura 15), Botín (80%, máx 1 +0.5/piso, +6 Industria +1/piso), Élite (30% +10%/piso, máx 1 +0.25/piso, enemigos ×1.5 HP ×1.25 daño, +8 Ciencia +1/piso). |
+| Generador | `MapGenerator.gd`, `MapLayout.gd` | `generate()` sin cambios. Nuevos: `generate_floor(seed, config, piso)` = árbol → `add_loops` → `assign_room_types`; `_slot_of`, `_shuffle` (Fisher-Yates con RNG propio). `validate()`: 1 entrada **no-loop** por sala, alcanzabilidad **solo por pasillos no-loop**, loops entre 2 salas distintas y no unidas ya, ids de pasillo únicos. `get_entry_corridor` ignora loops. |
+| Mapa en juego | `RoomManager.gd`, `Main2d.gd`, `PlayerActionController.gd` | Loop = grupo propio de solo pasillo (group id = corridor id). El tipo va en el registro de zona + `get_room_type()`. Extremos de la puerta de loop (`_far_room_of_group`). Main2d usa `generate_floor`, la puerta apunta a `get_group_id(corridor.id)` (vale para árbol y loop) y conecta `floor_manager.room_manager`. `_open_group` rechaza una puerta cuya `from_zone_id` no está descubierta. |
+| Efectos | `FloorManager.gd`, `EnemyManager.gd` | `on_room_discovered`: un grupo de loop no da nada; una sala da el Polvo de siempre + la regla de su tipo (recompensa con texto flotante "Botín: +6 Industria", cura). `EnemyManager.get_spawn_rooms()` = salas oscuras menos las `blocks_spawns` (la usa la tirada de invasión); guarda en `spawn_enemies_in_room` (oleadas de extracción); `_spawn_enemy` aplica los multiplicadores de la sala. |
+| Visual | `RoomZone.gd`, `MapVisualConfig.gd`, `Minimap.gd` | `RoomZone.set_room_type()` → `TypeBadge` (rombo + nombre, esquina superior izquierda, material unshaded, aparece y desaparece con la niebla) solo en Descanso/Botín/Élite. Colores `rest/loot/elite_room_color` + `room_type_color()`. El minimapa agrega un cuadradito del color del tipo en la esquina de la sala. |
+| Tests | `test_map_generator.gd`, `test_map_flow.gd`, `test_corridor_picking.gd` | Ver Verificación. |
+
+### Decisiones
+
+- **"Generar" separado de "tipar".** `generate()` no se tocó: misma firma y mismo stream de RNG, así que el árbol de cada seed es idéntico al de la s10 (el test lo verifica en los 1000 mapas). Loops y tipos son pasadas posteriores con RNG propio y sal distinta (`hash([map_seed, "loops"])`, `hash([map_seed, "room_types"])`): no mueven el árbol ni se afectan entre sí. La API solo crece (`generate_floor`, `add_loops`, `assign_room_types`); `generate_floor` recibe el `FloorConfig` porque es un generador de datos puro y los tests lo usan sin `FloorManager`.
+- **Inicial/Salida no se guardan como tipo**: se derivan de los flags (`get_room_type()`). Así hay una sola fuente de verdad y el fallback `.tres` (recurso cacheado: no se muta) queda Inicial/Salida/Combate sin pasar por el tipado. El fallback no recibe loops ni tipos: es la red de seguridad.
+- **Los tipos son datos (`RoomTypeRule`), no `match`**: el código lee campos (`blocks_spawns`, `reward_*`, multiplicadores). Es el mismo patrón que `ResearchEntry`. Se dejó en `FloorConfig` porque ahí se escala por piso, igual que `dust_per_discovery`.
+- **Asignación por cupos**: los candidatos (ni inicio ni salida) se mezclan; cada regla, en el orden del array, tiene `max_count_at(piso)` cupos, y cada cupo tira `chance_at(piso)` y ocupa el siguiente candidato. La cantidad y la probabilidad son perillas independientes. Una regla START/EXIT se saltea.
+- **Nada depende de si la sala está encendida.** Recompensa y cura se dan **al descubrir** (una sola vez, porque `room_revealed` sale una vez por grupo). Descanso sale del pool de spawn tanto en la invasión al abrir puertas como en la extracción. Élite solo cambia cómo salen los enemigos que spawnean ahí, que ya exigía sala oscura (regla existente, no del tipo). **Simplificación:** Élite = enemigos más fuertes, no más numerosos (un solo punto: `_spawn_enemy`). La "mejor recompensa" es Ciencia (el recurso escaso) contra la Industria del Botín.
+- **Loops (el diseño de la s5, con ajustes).** Candidatos = pares de salas en slots adyacentes que el árbol no unió. Por construcción, un pasillo entre slots adyacentes solo ocupa el hueco entre esos dos slots, así que no puede cruzar otras salas ni pasillos; igual cada loop se valida con `MapLayout.validate()` (se reutiliza el chequeo de solapes) y se descarta si falla. "N intentos" = los candidatos que quedan: si se acaban, el mapa queda con menos loops o sin loop, sin error. No se prefieren hojas: cualquier par adyacente cuenta como "cercano".
+- **Un loop es un grupo de solo pasillo con su propia puerta** (del lado de `room_a`). Abrirlo cuesta un turno como cualquier puerta (producción + tirada de invasión), **no da Polvo** (no se descubre una sala) y no tiene tipo. Solo el árbol revela salas, por eso `validate()` exige alcanzabilidad **sin** loops: una sala a la que solo se llega por un loop nunca se revelaría.
+- **Se permiten loops que tocan la sala inicial o la de salida** (lo más simple). El costo está medido en Riesgos.
+- **`RoomData.kind` eliminado**: ningún `.tres` lo escribía y nadie lo leía.
+- **El editor estaba abierto** y re-guardó `default_floor_config.tres`: agregó uids y **omitió los valores iguales al default del script** (p. ej. `max_count = 1`, `max_floors = 5`). El significado no cambia (igual que en la s5 con `exit_hint_mode`), pero si alguien cambia un default del script, el `.tres` lo sigue sin aviso.
+
+#### Números (200 mapas por piso, config por defecto)
+
+| Piso | Descanso | Botín | Élite | Loops | Mapas donde un loop acorta inicio→salida |
+|---|---|---|---|---|---|
+| 1 | 0.62 | 0.80 | 0.31 | 0.41 | 26% |
+| 2 | 0.57 | 0.86 | 0.39 | 0.54 | 27% |
+| 3 | 0.64 | 1.61 | 0.52 | 1.13 | 36% |
+| 4 | 0.58 | 1.55 | 0.65 | 1.50 | 36% |
+| 5 | 0.59 | 2.43 | 1.42 | 2.45 | 48% |
+
+(Salas por mapa en promedio; "acorta" = la distancia en salas inicio→salida contando loops es menor que por el árbol.)
+
+## Verificación (sesión 11)
+
+- **Baseline** (antes de tocar nada): los 4 tests OK; `SCRIPT ERROR` 0 / 11 / 35 / 11; `Main.tscn` y `Main2d.tscn --quit-after 90` con exit 0 y 0 `SCRIPT ERROR`. Coincide con el final de la s10.
+- **Final**: los 4 tests OK (exit 0). `SCRIPT ERROR` 0 / **12** / 35 / 11. El +1 de `test_map_flow` es el ruido ya conocido `Trying to assign value of type 'CanvasLayer' to a variable of type 'PauseMenu.gd'` (Main2d.gd:33), que sale una vez por cada `Main2d` en `--script`, y el test nuevo arranca un tercer `Main2d`. Comparé los tipos de `SCRIPT ERROR` contra el baseline: no hay ninguno nuevo. `Main.tscn` y `Main2d.tscn`: exit 0, 0 `SCRIPT ERROR`. Sin warnings de mapa en ningún log (puertas sin enlazar, `validate_graph`/`validate_visibility`, uso del fallback).
+- **`test_map_generator`** (1000 mapas = 200 seeds × 5 pisos, vía `generate_floor`): `validate()` vacío; cantidad de salas == `room_count(piso)`; salas + pasillos no-loop idénticos a `generate()` (los tipos y loops no alteran ni el layout ni el tamaño); exactamente 1 Inicial y 1 Salida, distintas y en las mismas salas que el árbol puro; por tipo ≤ `max_count_at`, nunca en inicio/salida; loops ≤ `max_loops`, cada uno entre slots adyacentes que en el árbol no estaban unidos; todo alcanzable. En conjunto: hay mapas con loop y con cada tipo; loops por mapa 0.41 → 2.45 del piso 1 al 5; chances y cupos no bajan con el piso. **Estrés**: `add_loops(árbol de 14 salas, 1.0, 999)` sobre 200 árboles (todos los candidatos) → válidos. **Negativos** armados a mano: sala alcanzable solo por un loop ("unreachable" + "0 entry corridors"), loop que duplica un pasillo del árbol, id de pasillo repetido. Determinismo de `generate_floor` con loops y tipos.
+- **`test_map_flow`**: el Polvo por puerta ahora espera 0 en grupos de loop. Corrida nueva: busca una seed con loop + los 3 tipos (encontró seed 0, piso 3: 10 salas, 10 puertas), arranca Main2d por el mismo camino `randi()` y verifica que el mapa coincida. Chequea: Botín +8 Industria exacto y una sola vez (reabrir no paga), Élite +10 Ciencia; Descanso cura 15 (se daña al héroe antes de abrir), sigue contando como oscura pero no está en `get_spawn_rooms()` y `spawn_enemies_in_room` no crea nada; el resto de las salas oscuras sí están en el pool; enemigo en Élite `max_hp` = base × piso × 1.5 (y en Combate sin el ×1.5); loop abierto → camino `[room_a, loop, room_b]` y extremos de su puerta correctos; `validate_graph`/`validate_visibility` OK; `TypeBadge` oculto bajo la niebla y visible al descubrir, sin badge en la sala inicial; minimapa sin errores.
+- **`test_corridor_picking`**: sin cambios de lógica; ahora recorre **29 pasillos de loop** en los 25 mapas (falla si fueran 0): puerta cerrada = solo `Door`, pasillo abierto = solo su `RoomZone`, bordes de sala sin ambigüedad.
+- **Mutaciones** (revertidas): alcanzabilidad contando loops → `test_map_generator` falla ("room only reachable through a loop"); Descanso sin bloquear spawns → `test_map_flow` falla; loops pagando Polvo → `test_map_flow` falla.
+- `gdparse` OK en todos los `.gd` tocados y nuevos; `--editor --quit` para indexar `RoomTypeRule`.
+- **No se vio nada en pantalla** (todo headless): ni el badge, ni los colores, ni el cuadradito del minimapa, ni el texto flotante del botín, ni clics reales sobre puertas/pasillos de loop.
+
+## Checklist manual F5 (sesión 11)
+
+1. Piso 1: explorar. Las salas Descanso/Botín/Élite muestran, al descubrirlas, un rombo + nombre en la esquina superior izquierda (verde agua / naranja / violeta). Se lee igual con la sala oscura o encendida, y no aparece antes de descubrirla.
+2. Minimapa: esas salas tienen un cuadradito del mismo color en la esquina; encender la sala la pone dorada y el cuadradito sigue.
+3. Botín: al descubrirla, texto flotante "Botín: +6 Industria" y la Industria sube 6 (más la producción del turno). Élite: "Élite: +8 Ciencia".
+4. Descanso: con el héroe herido, descubrirla cura 15. Dejarla oscura varios turnos y en extracción: nunca aparecen enemigos ahí. **Ojo:** sigue pulsando en rojo mientras está oscura (ver Riesgos).
+5. Élite: los enemigos que salen ahí aguantan visiblemente más (números de daño de la Ballesta).
+6. Loops (más probables desde el piso 3): una sala con dos puertas. Abrir la puerta del loop cuesta un turno, revela solo el pasillo, **no** suma Polvo, y el héroe camina por el atajo. Los enemigos también lo usan.
+7. Puerta de loop vista desde `room_b`: con `room_a` sin descubrir, la puerta no se ve y un clic en la niebla no hace nada. Con `room_a` descubierta se ve y se puede abrir desde cualquiera de las dos salas.
+8. Clic en las 4 celdas de un pasillo de loop abierto (incluida la de la puerta) → el héroe va al pasillo.
+9. La sala de salida y la inicial nunca tienen badge; la salida sigue apareciendo solo al descubrirla (`ON_DISCOVERY`).
+10. Pisos 2+: mapa nuevo con sus tipos; bajar de piso no arrastra badges.
+
+## Riesgos a revisar antes de mergear (sesión 11)
+
+- **Loops y la salida**: en el 26% (piso 1) al 48% (piso 5) de los mapas, un loop acorta el camino inicio→salida, y en el piso 5 hay 60 loops (de 490) que tocan la sala de salida. Baja la tensión de la extracción. Si molesta en el playtest: excluir la sala de salida de los candidatos (1 condición en `add_loops`) o bajar `base_max_loops`.
+- **Descanso oscura sigue pulsando en rojo** (`RoomLight` no conoce las reglas): contradice "sin invasiones"; el badge lo compensa. Siguiente paso: pasarle `blocks_spawns` al `RoomZone`/`RoomLight`.
+- La invasión ahora cuenta solo las salas oscuras **spawneables** para la probabilidad (`get_spawn_rooms().size()`): una sala Descanso oscura no suma riesgo.
+- Abrir un loop da un turno más (producción + tirada de invasión) sin Polvo; es "barato" en producción. Revisar en playtest si se abusa.
+- Si una puerta de loop se abre desde `room_a` con `room_b` sin descubrir, queda un pasillo sin salida hasta que `room_b` se revele por el árbol (no rompe nada; el test lo recorre).
+- Los loops dependen de la geometría de slots de `MapGenerator` (`_slot_of`); un layout a mano no pasa por `add_loops`. El `validate()` por loop protege si esa geometría cambia.
+- `default_floor_config.tres` omite los valores iguales al default del script (lo re-guardó el editor abierto).
+- Badge (tamaño de fuente 14, posición) y colores elegidos a ojo; en salas 3×3 el nombre entra justo.
+- Todo lo visual y los clics reales sin probar en pantalla.
+
+## Pendiente / próximos pasos (sesión 12+)
+
+1. Playtest F5 con el checklist de arriba (y los de las s8–s10, sobre todo el picking con `time_scale` 0).
+2. Decidir si los loops pueden tocar la sala de salida (números arriba).
+3. `RoomLight` sin pulso rojo en salas `blocks_spawns`.
+4. Élite con más enemigos además de más fuertes, si el ×1.5/×1.25 no se nota.
+5. Vault (`is_vault`) como candidato preferido para Botín (idea de la s5).
+6. Pendientes de la s10: puertas en pausa táctica, sumidero tardío de Ciencia, reembolso de Polvo al cambiar de piso, multi-héroe.

@@ -129,13 +129,12 @@ func _setup_room_manager() -> void:
 	room_manager.setup(floor_layer, door_turn_system)
 	map_layout = _build_map_layout()
 	room_manager.build_from_map(map_layout)
-	floor_manager.room_manager = room_manager
 
 
 func _build_map_layout() -> MapLayout:
 	if force_fallback_layout:
 		return FALLBACK_LAYOUT
-	var layout := MapGenerator.generate_floor(floor_manager.map_seed, floor_manager.config, floor_manager.floor_index)
+	var layout := MapGenerator.generate(floor_manager.map_seed, floor_manager.room_count(), floor_manager.branch_chance())
 	var problems := layout.validate()
 	if not problems.is_empty():
 		QuestLogger.error(QuestLogger.Category.MAP, "Main2d: generated map (seed %d) invalid, using fallback: %s" % [layout.map_seed, problems])
@@ -202,13 +201,12 @@ func _register_groups_and_doors() -> void:
 	for group_id in room_manager.get_group_ids():
 		door_turn_system.register_room(group_id, room_manager.get_group_cells(group_id), group_id == start_group)
 
-	# One Door per corridor, at room_a's wall; opening it reveals the corridor's
-	# group (room_b's group, or the loop corridor alone).
+	# One Door per corridor, at room_a's wall; opening it reveals room_b's group.
 	for corridor in map_layout.corridors:
 		var door := DOOR_SCENE.instantiate() as Door
 		door.name = "Door_%s" % corridor.id
 		door.door_id = corridor.id
-		door.target_room_id = room_manager.get_group_id(corridor.id)
+		door.target_room_id = room_manager.get_group_id(corridor.room_b)
 		door.from_zone_id = corridor.room_a
 		door.cell = corridor.door_cell
 		doors_root.add_child(door)

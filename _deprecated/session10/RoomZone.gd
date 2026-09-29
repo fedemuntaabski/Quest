@@ -36,11 +36,6 @@ const OUTLINE_COLORS := {
 	Highlight.BLOCKED: Color(0.9, 0.25, 0.25, 0.85),
 }
 
-const UNSHADED: CanvasItemMaterial = preload("res://resources/maps/unshaded_material.tres")
-## Room-type badge: small diamond + name, inset from the room's top-left corner.
-const TYPE_BADGE_INSET := Vector2(18, 18)
-const TYPE_BADGE_RADIUS := 7.0
-
 const ENERGY_BUTTON_SCENE := preload("res://scenes/world/EnergyButton.tscn")
 const BUILDING_SLOT_SCENE := preload("res://scenes/world/BuildingSlot.tscn")
 const BUILDING_SLOT_OFFSETS := [Vector2(0, 0), Vector2(-28, 22), Vector2(28, 22)]
@@ -71,7 +66,6 @@ var _state: int = Highlight.NONE
 var _shown: bool = false
 var _energy_button: EnergyButton = null
 var _light: RoomLight = null
-var _type_badge: Node2D = null
 var _building_slots: Array[BuildingSlot] = []
 ## Dust the player paid to light this room; refunded when switched off. 0 for
 ## rooms lit for free (the start room), so toggling can't mint dust.
@@ -131,8 +125,6 @@ func _set_render_visible(p_visible: bool) -> void:
 	outline.visible = p_visible
 	if _light != null:
 		_light.visible = p_visible
-	if _type_badge != null:
-		_type_badge.visible = p_visible
 	for slot in _building_slots:
 		slot.visible = p_visible
 		slot.input_pickable = p_visible
@@ -185,37 +177,6 @@ func attach_light(size_px: Vector2, config: MapVisualConfig) -> void:
 
 func get_light() -> RoomLight:
 	return _light
-
-
-## Rest/Loot/Elite get a badge (diamond + name) in the type color, unshaded so
-## it reads in dark rooms too; shown/hidden with the fog like the rest of the
-## zone. Combat/Start/Exit get none (the exit keeps its own hint-gated marker).
-func set_room_type(type: RoomData.RoomType, size_px: Vector2, config: MapVisualConfig) -> void:
-	var text: String = RoomData.TYPE_LABELS.get(type, "")
-	if text == "" or config == null:
-		return
-	var color := config.room_type_color(type)
-	_type_badge = Node2D.new()
-	_type_badge.name = "TypeBadge"
-	_type_badge.position = -size_px / 2.0 + Vector2.ONE * SHAPE_INSET + TYPE_BADGE_INSET
-	add_child(_type_badge)
-
-	var diamond := Polygon2D.new()
-	diamond.material = UNSHADED
-	diamond.color = color
-	var r := TYPE_BADGE_RADIUS
-	diamond.polygon = PackedVector2Array([Vector2(0, -r), Vector2(r, 0), Vector2(0, r), Vector2(-r, 0)])
-	_type_badge.add_child(diamond)
-
-	var label := Label.new()
-	label.material = UNSHADED
-	label.text = text
-	label.add_theme_color_override("font_color", color)
-	label.add_theme_font_size_override("font_size", 14)
-	label.position = Vector2(r + 4.0, -11.0)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_type_badge.add_child(label)
-	_type_badge.visible = _shown
 
 
 ## POWER_COST minus the research discount (min 1).

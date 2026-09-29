@@ -2,8 +2,7 @@ extends Control
 class_name Minimap
 
 ## Minimap: HUD corner map drawn with _draw(). Revealed zones only (rooms
-## filled, powered rooms gold, Rest/Loot/Elite with a corner square in
-## MapVisualConfig.room_type_color), hero dot, exit marker only while
+## filled, powered rooms gold), hero dot, exit marker only while
 ## ExitIndicator's hint is visible. Redraws on signals, never polls:
 ## DoorTurnSystem.room_revealed, RoomManager.room_power_changed,
 ## Player.zone_changed, ExitIndicator.hint_changed.
@@ -17,9 +16,6 @@ const ROOM_COLOR := Color(0.55, 0.55, 0.6, 0.9)
 const POWERED_COLOR := Color(1.0, 0.85, 0.4, 0.95)
 const CORRIDOR_COLOR := Color(0.4, 0.4, 0.45, 0.9)
 const HERO_COLOR := Color(0.3, 0.8, 1.0, 1.0)
-## Room-type marker: corner square, this fraction of the room's short side.
-const TYPE_MARKER_FRACTION := 0.45
-const TYPE_MARKER_MIN := 3.0
 
 var _room_manager: RoomManager
 var _player: Player
@@ -89,12 +85,7 @@ func _draw() -> void:
 		var color := CORRIDOR_COLOR
 		if _room_manager.get_zone_kind(zone_id) == "room":
 			color = POWERED_COLOR if _room_manager.is_zone_powered(zone_id) else ROOM_COLOR
-		var zone_rect := _to_map(_room_manager.get_zone(zone_id)["rect"], scale_px, offset)
-		draw_rect(zone_rect, color)
-		# Room type (Rest/Loot/Elite): corner square, independent of power.
-		var type_color := _room_manager.visual_config.room_type_color(_room_manager.get_room_type(zone_id))
-		if type_color.a > 0.0:
-			draw_rect(Rect2(zone_rect.position, Vector2.ONE * maxf(TYPE_MARKER_MIN, minf(zone_rect.size.x, zone_rect.size.y) * TYPE_MARKER_FRACTION)), type_color)
+		draw_rect(_to_map(_room_manager.get_zone(zone_id)["rect"], scale_px, offset), color)
 
 	if _exit_indicator and _exit_indicator.is_hint_visible():
 		var exit_id := _room_manager.get_exit_zone_id()

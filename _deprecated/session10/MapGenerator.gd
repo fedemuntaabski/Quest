@@ -9,11 +9,8 @@ class_name MapGenerator
 ## Start = first room; exit = the room farthest from it (so the start->exit
 ## path always exists and is the longest one); vault = deepest other dead end.
 ##
-## Session 11: generate() stays the tree, byte-for-byte (same RNG stream).
-## Loops and room types are separate post-passes with their own salted RNGs,
-## so they never move the tree nor each other: add_loops() appends is_loop
-## corridors (each its own corridor-only reveal group), assign_room_types()
-## tags rooms. generate_floor() chains the three for a FloorConfig floor.
+## ponytail: tree only (no loops) because a reveal group needs a single entry
+## corridor; add loop corridors once DoorTurnSystem supports corridor-only groups.
 
 const SLOT_PITCH := 9
 const MAX_ROOM_SIZE := 5
@@ -64,96 +61,6 @@ static func generate(p_seed: int, room_count: int, branch_chance: float) -> MapL
 
 	_mark_exit_and_vault(layout, start)
 	return layout
-
-
-## Full per-floor pipeline: tree -> optional loops -> room types.
-static func generate_floor(p_seed: int, config: FloorConfig, floor_index: int) -> MapLayout:
-	var layout := generate(p_seed, config.room_count(floor_index), config.branch_chance(floor_index))
-	add_loops(layout, config.loop_chance(floor_index), config.max_loops(floor_index))
-	assign_room_types(layout, config.room_types, floor_index)
-	return layout
-
-
-## Up to `max_loops` extra corridors, each slot rolling `loop_chance`.
-## Candidates = rooms in 4-adjacent slots not joined yet: such a corridor only
-## ever occupies the gap between those two slots, so it can't cross anything;
-## each one is still re-checked with validate() and dropped if it breaks the
-## map. Runs out of candidates (the "N attempts") -> fewer/no loops, never fails.
-static func add_loops(layout: MapLayout, loop_chance: float, max_loops: int) -> void:
-	if max_loops <= 0 or loop_chance <= 0.0:
-		return
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash([layout.map_seed, "loops"])
-
-	var room_at: Dictionary = {}   # Vector2i slot -> RoomData
-	for room in layout.rooms:
-		room_at[_slot_of(room)] = room
-	var candidates: Array = []     # [from: RoomData, to: RoomData, dir: Vector2i]
-	for room in layout.rooms:
-		for dir: Vector2i in [Vector2i.RIGHT, Vector2i.DOWN]:  # each pair once
-			var other: RoomData = room_at.get(_slot_of(room) + dir)
-			if other and not room.neighbors.has(other.id):
-				candidates.append([room, other, dir])
-	_shuffle(candidates, rng)
-
-	var next := 0
-	for i in max_loops:
-		if rng.randf() >= loop_chance:
-			continue
-		while next < candidates.size():
-			var from: RoomData = candidates[next][0]
-			var to: RoomData = candidates[next][1]
-			var corridor := _make_corridor(from, to, candidates[next][2], _slot_of(from))
-			next += 1
-			corridor.id = "loop_%s_%s" % [from.id, to.id]
-			corridor.is_loop = true
-			layout.corridors.append(corridor)
-			if layout.validate().is_empty():
-				from.neighbors.append(to.id)
-				to.neighbors.append(from.id)
-				break
-			layout.corridors.pop_back()
-
-
-## Tags non-start/exit rooms with the special types of `rules`, in rule order:
-## each rule gets max_count_at(floor) slots, each rolling chance_at(floor) and
-## taking the next (shuffled) candidate. Geometry is never touched.
-static func assign_room_types(layout: MapLayout, rules: Array[RoomTypeRule], floor_index: int) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash([layout.map_seed, "room_types"])
-	var candidates: Array = []
-	for room in layout.rooms:
-		room.room_type = RoomData.RoomType.COMBAT
-		if not (room.is_start or room.is_exit):
-			candidates.append(room)
-	_shuffle(candidates, rng)
-
-	var next := 0
-	for rule in rules:
-		# Start/Exit are fixed by the tree (is_start/is_exit), never rolled.
-		if rule == null or rule.type == RoomData.RoomType.START or rule.type == RoomData.RoomType.EXIT:
-			continue
-		for i in rule.max_count_at(floor_index):
-			if next >= candidates.size():
-				return
-			if rng.randf() < rule.chance_at(floor_index):
-				(candidates[next] as RoomData).room_type = rule.type
-				next += 1
-
-
-## Slot of a generated room (rooms sit inside their slot box, inset < SLOT_PITCH;
-## floor() keeps negative slots right).
-static func _slot_of(room: RoomData) -> Vector2i:
-	return Vector2i((Vector2(room.pos) / SLOT_PITCH).floor())
-
-
-## Fisher-Yates on our own RNG (never the global shuffle(): determinism).
-static func _shuffle(items: Array, rng: RandomNumberGenerator) -> void:
-	for i in range(items.size() - 1, 0, -1):
-		var j := rng.randi_range(0, i)
-		var tmp = items[i]
-		items[i] = items[j]
-		items[j] = tmp
 
 
 static func _make_room(id: String, slot: Vector2i, size: Vector2i) -> RoomData:

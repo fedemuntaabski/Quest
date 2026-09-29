@@ -5,10 +5,8 @@ class_name MapLayout
 ## MapGenerator or authored as .tres (resources/maps/fallback_layout.tres);
 ## RoomManager.build_from_map() turns it into zones/groups/RoomZone nodes.
 ## Invariants (checked by validate()): one start, >=1 exit, every non-start
-## room entered by exactly one non-loop corridor (its reveal group), loops
-## join two distinct known rooms not already joined, unique ids, no
-## overlapping cells, every room reachable from the start through non-loop
-## corridors alone (loops never reveal rooms, so they can't be the only way in).
+## room entered by exactly one corridor (its reveal group), no overlapping
+## cells, every room reachable from the start.
 
 @export var map_seed: int = 0
 @export var rooms: Array[RoomData] = []
@@ -29,11 +27,10 @@ func get_start_room_id() -> String:
 	return ""
 
 
-## The corridor that leads into `room_id` (null for the start room). Loops
-## are never entry corridors.
+## The corridor that leads into `room_id` ("" for the start room).
 func get_entry_corridor(room_id: String) -> CorridorData:
 	for corridor in corridors:
-		if corridor.room_b == room_id and not corridor.is_loop:
+		if corridor.room_b == room_id:
 			return corridor
 	return null
 
@@ -56,23 +53,10 @@ func validate() -> Array[String]:
 		problems.append("no exit room")
 
 	var entries: Dictionary = {}
-	var pairs: Dictionary = {}
-	var corridor_ids: Dictionary = {}
 	for corridor in corridors:
-		# Corridor ids are zone ids, and a loop's id is also its reveal group id.
-		if ids.has(corridor.id) or corridor_ids.has(corridor.id):
-			problems.append("duplicate id '%s' (corridor)" % corridor.id)
-		corridor_ids[corridor.id] = true
 		if not (ids.has(corridor.room_a) and ids.has(corridor.room_b)):
 			problems.append("corridor '%s' joins unknown room(s)" % corridor.id)
-		if corridor.room_a == corridor.room_b:
-			problems.append("corridor '%s' joins '%s' to itself" % [corridor.id, corridor.room_a])
-		var pair := "%s|%s" % ([corridor.room_a, corridor.room_b] if corridor.room_a < corridor.room_b else [corridor.room_b, corridor.room_a])
-		if pairs.has(pair):
-			problems.append("corridors '%s' and '%s' join the same rooms" % [pairs[pair], corridor.id])
-		pairs[pair] = corridor.id
-		if not corridor.is_loop:
-			entries[corridor.room_b] = int(entries.get(corridor.room_b, 0)) + 1
+		entries[corridor.room_b] = int(entries.get(corridor.room_b, 0)) + 1
 	for room in rooms:
 		var expected := 0 if room.is_start else 1
 		if int(entries.get(room.id, 0)) != expected:
@@ -100,8 +84,6 @@ func validate() -> Array[String]:
 	while not frontier.is_empty():
 		var current: String = frontier.pop_front()
 		for corridor in corridors:
-			if corridor.is_loop:
-				continue
 			var other := ""
 			if corridor.room_a == current:
 				other = corridor.room_b

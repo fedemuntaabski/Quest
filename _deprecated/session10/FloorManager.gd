@@ -16,9 +16,6 @@ const DEFAULT_CONFIG: FloorConfig = preload("res://resources/floors/default_floo
 var floor_index: int = 1
 ## Deterministic MapGenerator seed for this floor (run seed + floor index).
 var map_seed: int = 0
-## Set by Main2d; read by on_room_discovered (room types, loop groups).
-## Null = no map info: every discovery pays plain dust (as before session 11).
-var room_manager: RoomManager
 var _completed: bool = false
 
 
@@ -47,42 +44,15 @@ func complete_floor() -> void:
 
 ## DoorTurnSystem.room_revealed listener: every discovered room pays dust,
 ## regardless of invasions. Amount scales per floor (FloorConfig "Discovery").
-## Fires once per group, so room-type rewards/heals are one-time. A loop
-## corridor group (group id = corridor zone id) discovers no room: nothing.
 func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager == null:
 		return
-	if room_manager and room_manager.get_zone_kind(room_id) == "corridor":
-		return
 	var amount := config.discovery_dust(floor_index) + roundi(resource_manager.get_bonus(ResearchEntry.Effect.DISCOVERY_DUST))
-	if amount > 0:
-		resource_manager.add_resource("dust", amount)
-		QuestLogger.info(QuestLogger.Category.MAP, "Discovered '%s': +%d dust." % [room_id, amount])
-	if room_manager:
-		_apply_room_type_discovery(room_id, resource_manager)
-
-
-func _apply_room_type_discovery(room_id: String, resource_manager: ResourceManager) -> void:
-	var type := room_manager.get_room_type(room_id)
-	var rule := config.get_room_type_rule(type)
-	if rule == null:
+	if amount <= 0:
 		return
-	var reward := rule.reward_at(floor_index)
-	if reward > 0 and rule.reward_resource != "":
-		resource_manager.add_resource(rule.reward_resource, reward)
-		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-		if text_mgr:
-			text_mgr.spawn_text(room_manager.get_center(room_id), "%s: +%d %s" % [RoomData.TYPE_LABELS.get(type, ""), reward, Module.RESOURCE_LABELS.get(rule.reward_resource, rule.reward_resource)], room_manager.visual_config.room_type_color(type))
-		QuestLogger.info(QuestLogger.Category.MAP, "Room type reward in '%s': +%d %s." % [room_id, reward, rule.reward_resource])
-	var player_stats := ManagerLocator.get_player_stats()
-	if rule.heal_on_discovery > 0 and player_stats and player_stats.stats:
-		player_stats.stats.heal(rule.heal_on_discovery)
-
-
-## RoomTypeRule for `type` on this run's config (null for Combat/Start/Exit).
-func room_type_rule(type: RoomData.RoomType) -> RoomTypeRule:
-	return config.get_room_type_rule(type)
+	resource_manager.add_resource("dust", amount)
+	QuestLogger.info(QuestLogger.Category.MAP, "Discovered '%s': +%d dust." % [room_id, amount])
 
 
 func room_count() -> int:
