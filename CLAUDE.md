@@ -38,6 +38,8 @@ QUEST: 2D tactical/roguelite game built in Godot 4.6, GDScript only (no C#/.NET)
 
 **Assets 1-2** (`session/assets-1`, `session/assets-2`, on top of session 12): pixel-art base + tile rendering. `assets/art/_source` = untouched packs (0x72, Kenney Tiny Dungeon, Tiny Creatures; CC0, `CREDITS.md`), copies by category in `assets/art/{tiles,characters,enemies,items,ui}`, `docs/ASSETS.md`. `ArtConfig` (`TILE_SIZE` 16, `ART_SCALE` 2, `CELL_TILES` 2, `CELL_PX` 64 = logical cell; `tests/test_art_config.gd` ties it to the logical `Floor` tile_size and `RoomManager.DEFAULT_TILE_SIZE`). `MapTileRenderer` (Floor/Walls/Decor/Doors `TileMapLayer`s, deterministic per-seed plan, `assets/tilesets/*.tres` baked by `tools/build_tilesets.gd` from `DungeonTiles` coords) is fed by `RoomManager.apply_zone_visibility`/`refresh_door_visibility`; the old `Floor` `FloorGenerator` stays as the hidden logical grid; `MapVisualConfig` "Tile decor" tunables; physics layer 5 `wall` on wall tiles (unmasked). How the map is drawn: `docs/MAP_RENDER.md`. Tests: `tests/test_tile_renderer.gd`; visual check `tests/tools/shot_map.gd` (real window).
 
+**Session 13** (`session/select-1`, on top of assets-3): 2-hero selection. `HeroSelectMenu` (pick 2 of 4 + preview/stats) replaces `CharacterSelection`; the pick lives in the `GameSession` autoload and `Main2d._spawn_heroes()` reads it (fallback = old `PartyConfig` party). `CharacterData` doubles as HeroData (+ `role`); max HP is per hero (`CharacterStats.base_hp`). Details: `NOTES_SESSION.md` "Sesión 13".
+
 ## Commands
 
 No build system, linter, CI, or export presets exist in this repo. Only real dev commands:

@@ -1058,12 +1058,29 @@ Party de 2 héroes fijos (sin roster ni reclutamiento) + los loops ya no tocan l
 - El borde se ve también con un solo héroe.
 - El Nexo lo recoge el seleccionado.
 
+## Sesión 13 — selección de 2 héroes (`session/select-1`)
+
+### Cómo se crean hoy los héroes (antes de esta sesión)
+
+1. `MainMenuFlow` → slot → `CharacterSelection` (1 héroe, solo en slot nuevo) → `SaveManager.apply_character_selection(id)` guarda `selected_character_id` y pisa `PlayerStats.base_hp` (global).
+2. `Main2d._ready` lee `selected_character_id`; `_spawn_heroes()` pide `PartyConfig.get_party_ids()` (seleccionado + `companion_ids` hasta `party_size`).
+3. Por id: `CharacterDatabase.get_by_id` (4 `CharacterData` `.tres`) → `Player.configure(data)` → `Player._ready` fija `hero_id`, ataque base y `sprite_frames`, y llama `PlayerStats.register(stats)`.
+4. `PlayerStats._refresh_hero` aplicaba el `base_hp` **global** a todos: ambos héroes tenían la vida del elegido.
+5. `HUDController._on_player_stats_changed` crea un `HeroPortrait` por `hero_id`; todo sale de `CharacterData`, nada asume héroes fijos.
+
+### Decisiones
+
+- `CharacterData` ya hacía de HeroData: se reutiliza y solo gana `role`. Stats reales: vida, daño, intervalo (sin defensa/velocidad).
+- `HeroSelectMenu` reemplaza a `CharacterSelection` (offline: slot → selección, siempre). HOST/UNIRSE siguen en `WaitingRoom` (1 héroe + compañero por defecto).
+- Selección en el autoload `GameSession`; sin selección, `Main2d` mantiene el fallback anterior (warrior + mage).
+- HP por héroe real: `CharacterStats.base_hp` viene de `CharacterData.base_hp`. `PlayerStats.base_hp` queda solo como valor persistido de cuenta (ya no manda en el spawn).
+
 ## Próximos pasos (sesión 13+)
 
 1. Playtest F5.
 2. Mutaciones pendientes.
 3. Lock de movimiento por héroe.
 4. Muerte estilo DotE (seguir con el resto).
-5. `base_hp` por héroe.
+5. ~~`base_hp` por héroe~~ (hecho en la s13).
 6. Roster, teclas 1-2-3.
 7. Pendientes de la s11.
