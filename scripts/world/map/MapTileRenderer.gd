@@ -202,8 +202,8 @@ static func _plan_walls(config: MapVisualConfig, layout: MapLayout, zones: Dicti
 
 
 ## Kenney props on each room's outermost floor-tile ring (never beside a
-## corridor mouth), plus one chest in LOOT rooms. The centre stays free for
-## build slots / the Nexo.
+## corridor mouth). The centre stays free for build slots / the Nexo. (LOOT
+## rooms' chest is a floating Pickup spawned on discovery, not a tile.)
 static func _plan_props(layout: MapLayout, config: MapVisualConfig, zones: Dictionary, floor_tiles: Dictionary) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([layout.map_seed, "decor"])
@@ -219,8 +219,6 @@ static func _plan_props(layout: MapLayout, config: MapVisualConfig, zones: Dicti
 		for tile in ring:
 			if rng.randf() < config.prop_density:
 				decor[tile] = DungeonTiles.tile(DungeonTiles.SRC_PROPS, DungeonTiles.PROPS[rng.randi() % DungeonTiles.PROPS.size()])
-		if room.get_room_type() == RoomData.RoomType.LOOT and not ring.is_empty():
-			decor[ring[rng.randi() % ring.size()]] = DungeonTiles.tile(DungeonTiles.SRC_PROPS, DungeonTiles.CHEST)
 
 
 static func _touches_outside_floor(tile: Vector2i, rect: Rect2i, floor_tiles: Dictionary) -> bool:

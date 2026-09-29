@@ -16,6 +16,9 @@ const DOOR_SCENE := preload("res://scenes/Door.tscn")
 ## Nexo sits above the start room's center: the lit start room's MAJOR build
 ## slot occupies the center itself (RoomZone.BUILDING_SLOT_OFFSETS[0]).
 const NEXO_OFFSET := Vector2(0, -56)
+## Loot rooms show a floating chest at the same spot when they are discovered.
+const LOOT_CHEST_OFFSET := Vector2(0, -56)
+const PICKUP_SCENE := preload("res://scenes/world/Pickup.tscn")
 ## Hand-authored map (the pre-generator 5-room layout). Used when
 ## force_fallback_layout is on or the generated map fails validation.
 const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout.tres")
@@ -261,6 +264,13 @@ func _register_groups_and_doors() -> void:
 
 func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 	room_manager.on_group_revealed(group_id)
+	for zone_id in room_manager.get_group_zone_ids(group_id):
+		if room_manager.get_room_type(zone_id) == RoomData.RoomType.LOOT:
+			var chest := PICKUP_SCENE.instantiate() as Pickup
+			chest.kind = Pickup.Kind.CHEST
+			chest.position = room_manager.get_center(zone_id) + LOOT_CHEST_OFFSET
+			chest.z_index = 2
+			add_child(chest)
 
 	if player_action_controller:
 		player_action_controller.refresh_zones()
