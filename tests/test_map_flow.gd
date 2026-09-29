@@ -9,7 +9,7 @@ extends SceneTree
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
 const FLOOR_CONFIG_PATH := "res://resources/floors/default_floor_config.tres"
-const REST_DAMAGE := 30
+const REST_DAMAGE := 10
 
 var failures: Array[String] = []
 
@@ -201,6 +201,10 @@ func _run_types_and_loops() -> void:
 			var reward_yield := resources.get_turn_yield(reward_key) if reward_key != "" else 0
 			var dust_before := resources.get_resource("dust")
 			if rule and rule.heal_on_discovery > 0:
+				# A wave may have killed the test hero, and a dead hero leaves the
+				# selection (the heal targets the primary hero): revive + reselect.
+				hero_stats.current_hp = hero_stats.max_hp
+				root.get_node("SelectionManager").select_only(hero_stats.hero_id)
 				hero_stats.take_damage(REST_DAMAGE)
 			var hp_before := hero_stats.current_hp
 			if not doors.open_room(group):
