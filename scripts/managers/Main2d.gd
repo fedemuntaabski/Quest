@@ -52,7 +52,7 @@ const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout
 
 var game_state_manager: GameStateManager
 ## Party in spawn order; `player` = heroes[0] (the hero picked in
-## CharacterSelection, holder of the only camera) — not the selected one.
+## HeroSelectMenu, holder of the only camera) — not the selected one.
 var heroes: Array[Player] = []
 var player: Player
 var camera: GameCamera
@@ -127,7 +127,9 @@ func _spawn_heroes() -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps:
 		ps.clear_party()
-	var ids := party_config.get_party_ids(active_character_id)
+	var session := ManagerLocator.get_game_session()
+	var ids: Array[String] = session.get_party_ids() if session and session.has_selection() else party_config.get_party_ids(active_character_id)
+	ids.resize(mini(ids.size(), party_config.party_size))
 	var spawn_zone_id := room_manager.get_start_zone_id()
 	for i in ids.size():
 		var hero := PLAYER_SCENE.instantiate() as Player

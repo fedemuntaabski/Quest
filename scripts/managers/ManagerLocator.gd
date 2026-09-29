@@ -31,6 +31,10 @@ static func get_player_stats() -> PlayerStats:
 	return get_autoload("PlayerStats") as PlayerStats
 
 
+static func get_game_session() -> Node:
+	return get_autoload("GameSession")
+
+
 static func get_settings_manager() -> Node:
 	return get_autoload("SettingsManager")
 

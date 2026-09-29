@@ -2,9 +2,10 @@ extends Resource
 class_name PartyConfig
 
 ## PartyConfig: which heroes Main2d spawns every floor (session 12; fixed
-## party, no roster/recruiting yet). The hero picked in CharacterSelection
-## always comes first, then `companion_ids` in order (skipping the picked one)
-## until `party_size`. party_size 1 = the single-hero game.
+## party, no roster/recruiting yet). Fallback when GameSession holds no pick
+## (editor F6, multiplayer): the saved hero comes first, then `companion_ids`
+## in order (skipping it) until `party_size`, which also caps a GameSession pick.
+## party_size 1 = the single-hero game.
 
 @export_range(1, 3) var party_size: int = 2
 ## CharacterDatabase ids, in fill order.
