@@ -25,6 +25,8 @@ const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout
 
 ## Extra px around a hero's body that still count as a click on it.
 const HERO_PICK_MARGIN := 10.0
+## Real-time window (ms) for the second tap of a group key.
+const GROUP_DOUBLE_TAP_MS := 300
 
 ## Debug: skip MapGenerator and always play FALLBACK_LAYOUT.
 @export var force_fallback_layout: bool = false
@@ -82,6 +84,8 @@ var _run_gold_start: int = 0
 ## Space: Engine.time_scale 0 (Tweens/Timers/physics delta stop, HUD/building
 ## still work). Kept across the Esc pause, which forces 1 while open.
 var _tactical_paused: bool = false
+var _last_group_key: int = 0
+var _last_group_msec: int = -10000
 
 # ─────────────────────────────────────────────
 # INIT
@@ -344,6 +348,8 @@ func _input(event: InputEvent) -> void:
 		_tactical_paused = not _tactical_paused
 		_apply_time_scale()
 		get_viewport().set_input_as_handled()
+	elif _is_gameplay_active() and _handle_selection_key(event):
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("hero_cycle") and _is_gameplay_active():
 		# Consumed so Tab never also moves GUI focus (ui_focus_next).
 		var player_stats := ManagerLocator.get_player_stats()
@@ -391,6 +397,46 @@ func click_hero(hero: Player, additive: bool) -> void:
 		selection.toggle(hero.stats.hero_id)
 	else:
 		selection.select_only(hero.stats.hero_id)
+
+
+## F1/F2 select hero 1/2 (Ctrl adds/removes), Ctrl+1..3 assigns the current
+## selection to a control group, 1..3 recalls it (a second tap within
+## GROUP_DOUBLE_TAP_MS also centers the camera on it). true = key consumed.
+func _handle_selection_key(event: InputEvent) -> bool:
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return false
+	var selection := ManagerLocator.get_selection_manager()
+	if selection == null:
+		return false
+	for i in mini(heroes.size(), 2):
+		if event.is_action_pressed("select_hero_%d" % (i + 1)):
+			click_hero(heroes[i], event.ctrl_pressed)
+			return true
+	for n in range(1, selection.GROUP_COUNT + 1):
+		if event.is_action_pressed("group_assign_%d" % n, false, true):
+			selection.assign_group(n)
+			return true
+		if event.is_action_pressed("group_select_%d" % n, false, true):
+			if selection.select_group(n):
+				var now := Time.get_ticks_msec()
+				if n == _last_group_key and now - _last_group_msec <= GROUP_DOUBLE_TAP_MS:
+					_center_camera_on_selection()
+				_last_group_key = n
+				_last_group_msec = now
+			return true
+	return false
+
+
+func _center_camera_on_selection() -> void:
+	var selection := ManagerLocator.get_selection_manager()
+	var sum := Vector2.ZERO
+	var count := 0
+	for hero in heroes:
+		if selection.is_selected(hero.stats.hero_id):
+			sum += hero.global_position
+			count += 1
+	if count > 0:
+		camera.focus_on(sum / count)
 
 
 func _exit_tree() -> void:

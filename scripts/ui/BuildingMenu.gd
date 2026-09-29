@@ -318,14 +318,15 @@ func _reject(slot: BuildingSlot, reason: String) -> void:
 ## swallowing them would block the slot pick) except the armed right click:
 ## consumed on purpose so the cancel doesn't also move the hero (RoomZone).
 ## Unarmed, right click moves the hero and the menu stays; Esc / left click
-## outside close it. Esc / 1-9 are consumed.
+## outside close it. Esc / 1-9 are consumed while the menu is visible (closed,
+## 1-3 are control groups; Ctrl+N always assigns a group, so it is skipped here).
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
 	if event.is_action_pressed("ui_cancel"):
 		close_menu()
 		get_viewport().set_input_as_handled()
-	elif event is InputEventKey and event.pressed and not event.echo \
+	elif event is InputEventKey and event.pressed and not event.echo and not event.ctrl_pressed \
 			and event.keycode >= KEY_1 and event.keycode <= KEY_9:
 		var buttons := options.find_children("*", "Button", true, false)
 		var index: int = event.keycode - KEY_1
