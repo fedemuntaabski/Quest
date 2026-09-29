@@ -5,7 +5,6 @@ class_name HeroPortrait
 ## texture (CharacterData.portrait) or a placeholder circle with the initial,
 ## name, and an HP bar driven by CharacterStats.hp_changed — no numbers (the
 ## exact value lives in CharacterPopup). Bar color/timings: HealthBarStyle.
-## The selected hero gets a bright gold border (set_selected, session 12).
 ## Built in code; `setup()` before add_child().
 
 ## Static style helper via preload (the ThemeManager autoload identifier is
@@ -13,24 +12,17 @@ class_name HeroPortrait
 const ThemeStyles = preload("res://scripts/core/theme/ThemeManager.gd")
 
 signal portrait_clicked(portrait: HeroPortrait)
-## Right click: open this hero's sheet without selecting it.
-signal portrait_right_clicked(portrait: HeroPortrait)
 
 const DEFAULT_STYLE: HealthBarStyle = preload("res://resources/ui/health_bar_style.tres")
 const ICON_SIZE := Vector2(56, 56)
 const BAR_SIZE := Vector2(120, 12)
 const INITIAL_BG := Color(0.25, 0.2, 0.16, 1.0)
-const PANEL_BG := Color(0.05, 0.05, 0.06, 0.8)
-const BORDER_WIDTH := 2
-const SELECTED_BORDER_WIDTH := 4
 
 var style: HealthBarStyle = DEFAULT_STYLE
 var stats: CharacterStats
 var character_data: CharacterData
 ## Fill fraction the bar is heading to (tests read this; `_bar.value` tweens).
 var target_ratio: float = 1.0
-## Selected (active) hero: gold border.
-var is_selected: bool = false
 
 var _bar: ProgressBar
 var _fill: StyleBoxFlat
@@ -50,8 +42,8 @@ func setup(p_stats: CharacterStats, p_data: CharacterData) -> void:
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	tooltip_text = "Clic: seleccionar (si ya está elegido, ver ficha)\nClic derecho: ver ficha"
-	_apply_panel_style()
+	tooltip_text = "Clic para ver el personaje"
+	add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(Color(0.05, 0.05, 0.06, 0.8), QuestPalette.GOLD_DARK, 2, 6, 6))
 
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -124,26 +116,9 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 		_flash_tween.tween_property(self, "modulate", Color.WHITE, style.flash_time)
 
 
-func set_selected(value: bool) -> void:
-	is_selected = value
-	if is_node_ready():
-		_apply_panel_style()
-
-
-func _apply_panel_style() -> void:
-	var border := QuestPalette.GOLD_LIGHT if is_selected else QuestPalette.GOLD_DARK
-	var width := SELECTED_BORDER_WIDTH if is_selected else BORDER_WIDTH
-	add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(PANEL_BG, border, width, 6, 6))
-
-
 func _on_gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed):
-		return
-	if event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		portrait_clicked.emit(self)
-		accept_event()
-	elif event.button_index == MOUSE_BUTTON_RIGHT:
-		portrait_right_clicked.emit(self)
 		accept_event()
 
 

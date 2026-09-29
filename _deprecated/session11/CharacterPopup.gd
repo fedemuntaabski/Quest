@@ -5,8 +5,7 @@ class_name CharacterPopup
 ## veil (click = close) + centered panel: preview, name, level, exact HP, combat
 ## stats from CharacterStats/CharacterData, and a "Subir de nivel" section:
 ## next level, Comida cost and what each stat gains (PlayerStats.get_level_up_
-## preview → level_up_hero, for this popup's hero — not necessarily the
-## active one; the UI computes nothing). Closes with the
+## preview → level_up_hero; the UI computes nothing). Closes with the
 ## X button, a click outside, or Esc — Esc is consumed here, so it never also
 ## toggles the pause menu (HUD's _input runs before Main2d's).
 ## Built in code by HUDController; refreshes on signals only.
@@ -38,7 +37,7 @@ func _ready() -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps:
 		ps.stats_changed.connect(func(_s: CharacterStats) -> void: _refresh())
-		ps.run_upgrades_changed.connect(func(_k: String, _l: int, _id: String) -> void: _refresh())
+		ps.run_upgrades_changed.connect(func(_k: String, _l: int) -> void: _refresh())
 	var rm := ManagerLocator.get_resource_manager()
 	if rm:
 		rm.resource_changed.connect(func(_k: String, _a: int, _d: int) -> void: _refresh())
@@ -146,8 +145,8 @@ func _build() -> void:
 
 func _on_level_up_pressed() -> void:
 	var ps := ManagerLocator.get_player_stats()
-	if ps and stats:
-		ps.level_up_hero(stats.hero_id)
+	if ps:
+		ps.level_up_hero()
 
 
 func _on_veil_input(event: InputEvent) -> void:
@@ -171,7 +170,7 @@ func _refresh() -> void:
 	if not visible or stats == null:
 		return
 	var ps := ManagerLocator.get_player_stats()
-	var level: int = ps.get_hero_level(stats.hero_id) if ps else 1
+	var level: int = ps.get_hero_level() if ps else 1
 	_title.text = character_data.display_name if character_data else stats.character_name
 
 	var lines: Array[String] = [
@@ -196,7 +195,7 @@ func _rebuild_level_up(ps: PlayerStats) -> void:
 		_upgrade_rows.remove_child(child)
 		child.queue_free()
 
-	var p: Dictionary = ps.get_level_up_preview(stats.hero_id)
+	var p: Dictionary = ps.get_level_up_preview()
 	var maxed: bool = p["maxed"]
 	var affordable: bool = p["affordable"]
 	var resource_label := str(Module.RESOURCE_LABELS.get(p["cost_resource"], p["cost_resource"]))

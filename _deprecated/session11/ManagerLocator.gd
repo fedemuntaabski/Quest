@@ -64,25 +64,11 @@ static func get_room_manager() -> RoomManager:
 	return null
 
 
-## The active (selected) hero; every hero is in group "player" (session 12).
 static func get_player() -> Player:
-	var ps := get_player_stats()
-	var heroes := get_heroes()
-	for hero in heroes:
-		if ps and hero.stats.hero_id == ps.active_hero_id:
-			return hero
-	return heroes[0] if not heroes.is_empty() else null
-
-
-## Every hero of the floor, in party (spawn) order.
-static func get_heroes() -> Array[Player]:
-	var out: Array[Player] = []
 	var ml = Engine.get_main_loop()
 	if ml and ml is SceneTree:
-		for node in ml.get_nodes_in_group("player"):
-			if node is Player:
-				out.append(node)
-	return out
+		return ml.get_first_node_in_group("player") as Player
+	return null
 
 
 static func get_room_power_system() -> RoomPowerSystem:

@@ -2,7 +2,7 @@ extends CanvasLayer
 class_name HUDController
 
 const TOOLTIP_INDUSTRY := "Industria: Se utiliza para construir módulos de apoyo y defensas en las salas."
-const TOOLTIP_FOOD := "Comida: Se utiliza para subir de nivel a los héroes (clic derecho en su retrato)."
+const TOOLTIP_FOOD := "Comida: Se utiliza para subir de nivel al héroe (clic en su retrato)."
 const TOOLTIP_SCIENCE := "Ciencia: Se gasta en investigaciones (botón Investigar): desbloquea módulos y mejora generadores, torretas y Polvo."
 const TOOLTIP_DUST := "Polvo: Se utiliza para iluminar salas oscuras y evitar la aparición de enemigos."
 
@@ -34,12 +34,13 @@ const INVASION_FLASH_HALF_TIME := 0.25
 const TOOLTIP_GAP := 12.0
 const TOOLTIP_SCREEN_PADDING := 8.0
 
+var _bound_stats: CharacterStats
 var _bound_player_stats: PlayerStats
 
 var _tooltip_anchor: Vector2 = Vector2.ZERO
 var _tooltip_grow_up: bool = false
 var _invasion_tween: Tween
-## One per hero, in party order. hero_id → HeroPortrait.
+## One per hero; today only the player's. CharacterStats → HeroPortrait.
 var _portraits: Dictionary = {}
 var character_popup: CharacterPopup
 var pause_label: Label
@@ -174,25 +175,27 @@ func _bind_player_stats(ps: PlayerStats) -> void:
 
 	if not ps.stats_changed.is_connected(_on_player_stats_changed):
 		ps.stats_changed.connect(_on_player_stats_changed)
-	if not ps.active_hero_changed.is_connected(_refresh_selection):
-		ps.active_hero_changed.connect(_refresh_selection)
 
-	for stats in ps.get_all_stats():
-		_on_player_stats_changed(stats)
+	if ps.stats:
+		_on_player_stats_changed(ps.stats)
 
 
-## One portrait per hero id; a new CharacterStats for a hero that already has
-## one (re-register) just rebinds it.
 func _on_player_stats_changed(stats: CharacterStats) -> void:
 	if stats == null:
 		return
 
-	var portrait: HeroPortrait = _portraits.get(stats.hero_id)
-	if portrait == null:
-		var owner_player := stats.get_parent() as Player
-		add_hero_portrait(stats, owner_player.character_data if owner_player else null)
-	elif portrait.stats != stats:
+	if _bound_stats == stats:
+		return
+	# New CharacterStats for the same (only) hero: move its portrait over.
+	var portrait: HeroPortrait = _portraits.get(_bound_stats)
+	_portraits.erase(_bound_stats)
+	_bound_stats = stats
+	if portrait:
+		_portraits[stats] = portrait
 		portrait.bind_stats(stats)
+	else:
+		var player := ManagerLocator.get_player()
+		add_hero_portrait(stats, player.character_data if player else null)
 
 
 # ---------------- PORTRAITS ----------------
@@ -202,34 +205,14 @@ func add_hero_portrait(stats: CharacterStats, data: CharacterData) -> HeroPortra
 	var portrait := HeroPortrait.new()
 	portrait.setup(stats, data)
 	portrait.portrait_clicked.connect(_on_portrait_clicked)
-	portrait.portrait_right_clicked.connect(open_hero_sheet)
 	portraits.add_child(portrait)
-	_portraits[stats.hero_id] = portrait
-	_refresh_selection()
+	_portraits[stats] = portrait
 	return portrait
 
 
-## Left click: select that hero; on the already-selected one, open its sheet
-## (single-hero play: always the sheet, as before session 12).
 func _on_portrait_clicked(portrait: HeroPortrait) -> void:
-	var ps := ManagerLocator.get_player_stats()
-	if ps and portrait.stats and portrait.stats.hero_id != ps.active_hero_id:
-		hide_simple_tooltip()
-		ps.select_hero(portrait.stats.hero_id)
-	else:
-		open_hero_sheet(portrait)
-
-
-## CharacterPopup for this portrait's hero (not necessarily the selected one).
-func open_hero_sheet(portrait: HeroPortrait) -> void:
 	hide_simple_tooltip()
 	character_popup.open_for(portrait.stats, portrait.character_data)
-
-
-func _refresh_selection(_hero_id: String = "") -> void:
-	var ps := ManagerLocator.get_player_stats()
-	for hero_id: String in _portraits:
-		(_portraits[hero_id] as HeroPortrait).set_selected(ps != null and hero_id == ps.active_hero_id)
 
 
 func _on_resource_changed(key: String, amount: int, _delta: int) -> void:

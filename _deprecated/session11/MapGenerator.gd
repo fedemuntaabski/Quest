@@ -75,8 +75,7 @@ static func generate_floor(p_seed: int, config: FloorConfig, floor_index: int) -
 
 
 ## Up to `max_loops` extra corridors, each slot rolling `loop_chance`.
-## Candidates = rooms in 4-adjacent slots not joined yet, never the exit room
-## (session 12): such a corridor only
+## Candidates = rooms in 4-adjacent slots not joined yet: such a corridor only
 ## ever occupies the gap between those two slots, so it can't cross anything;
 ## each one is still re-checked with validate() and dropped if it breaks the
 ## map. Runs out of candidates (the "N attempts") -> fewer/no loops, never fails.
@@ -93,9 +92,7 @@ static func add_loops(layout: MapLayout, loop_chance: float, max_loops: int) -> 
 	for room in layout.rooms:
 		for dir: Vector2i in [Vector2i.RIGHT, Vector2i.DOWN]:  # each pair once
 			var other: RoomData = room_at.get(_slot_of(room) + dir)
-			# Session 12: never a shortcut into the exit room (keeps the extraction
-			# walk); the start room may still get one.
-			if other and not room.neighbors.has(other.id) and not (room.is_exit or other.is_exit):
+			if other and not room.neighbors.has(other.id):
 				candidates.append([room, other, dir])
 	_shuffle(candidates, rng)
 

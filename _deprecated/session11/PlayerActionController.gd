@@ -6,8 +6,6 @@ class_name PlayerActionController
 ## straight there; clicking an unrevealed zone or a closed door opens it
 ## (DoorTurnSystem tick + ResourceManager gain) and auto-walks the hero in.
 ## All input arrives as RoomZone/Door Area2D signals — no raw mouse polling.
-## Session 12: `player` is the selected hero (Main2d → set_player); one order
-## at a time for the whole party (a hero still walking blocks new orders).
 
 var player: Player
 var tilemap: TileMapLayer
@@ -32,12 +30,6 @@ func setup(p_player: Player, p_tilemap: TileMapLayer, p_room_manager: RoomManage
 			if not door.door_clicked.is_connected(_on_door_clicked):
 				door.door_clicked.connect(_on_door_clicked)
 
-	refresh_zones()
-
-
-## Selected hero changed (Main2d). The others wait where they are.
-func set_player(p_player: Player) -> void:
-	player = p_player
 	refresh_zones()
 
 
@@ -149,10 +141,8 @@ func _run_move(waypoints: Array[Vector2], final_zone_id: String) -> void:
 	if waypoints.is_empty():
 		return
 
-	# The selection may change mid-walk (Tab): finish with the hero that left.
-	var mover := player
-	var speed := MoveAction.DEFAULT_SPEED_PX * (0.75 if mover.is_carrying_nexo else 1.0)
-	var action := MoveAction.new(mover, waypoints, speed)
+	var speed := MoveAction.DEFAULT_SPEED_PX * (0.75 if player.is_carrying_nexo else 1.0)
+	var action := MoveAction.new(player, waypoints, speed)
 	if not action.can_execute():
 		return
 
@@ -161,11 +151,12 @@ func _run_move(waypoints: Array[Vector2], final_zone_id: String) -> void:
 
 	await action.execute()
 
-	mover.set_zone(final_zone_id, room_manager.get_center(final_zone_id), tilemap)
+	player.set_zone(final_zone_id, room_manager.get_center(final_zone_id), tilemap)
+	room_manager.set_current_zone(final_zone_id)
 	_action_in_flight = false
 	refresh_zones()
 
-	if mover.is_carrying_nexo and room_manager.is_exit_room(final_zone_id):
+	if player.is_carrying_nexo and room_manager.is_exit_room(final_zone_id):
 		var extraction := ManagerLocator.get_extraction_manager()
 		if extraction:
 			extraction.declare_victory()

@@ -7,9 +7,7 @@ extends SceneTree
 ## + build entry, armed-only build flow with ghost/reasons/hotkeys/Esc — session
 ## 8), tactical pause / right-click move / close on death-victory (session 9),
 ## research (session 10: locks, prerequisites, bonuses, panel, floor/run
-## lifetime) and popup wiring over a live Main2d. Session 12: runs a 1-hero
-## party (PartyConfig.party_size 1) = the single-hero regression; the
-## multi-hero checks live in test_party.gd.
+## lifetime) and popup wiring over a live Main2d.
 ##   godot --headless --path . --script res://tests/test_hud_ui.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
@@ -76,15 +74,12 @@ func _check_live() -> void:
 	ps.reset_run_upgrades()
 	var main2d := (load(MAIN2D_PATH) as PackedScene).instantiate()
 	main2d.force_fallback_layout = true
-	main2d.party_config = main2d.party_config.duplicate()
-	main2d.party_config.party_size = 1
 	root.add_child(main2d)
 	await process_frame
 	var hud := (load(HUD_PATH) as PackedScene).instantiate()
 	root.add_child(hud)
 	await process_frame
 
-	_expect(main2d.heroes.size() == 1 and ps.get_hero_ids().size() == 1, "party_size 1 must spawn one hero")
 	var stats: CharacterStats = ps.stats
 	var player := main2d.get_tree().get_first_node_in_group("player") as Player
 	_expect(stats != null and player != null, "hero not registered")
@@ -149,9 +144,8 @@ func _check_live() -> void:
 	_check_right_click(hud, main2d)
 	_check_close_on_end(hud, main2d, ps)
 
-	# New floor = new CharacterStats (same hero id): upgrades re-applied by refresh_stats().
+	# New floor = new CharacterStats: upgrades re-applied by refresh_stats().
 	var fresh := CharacterStats.new()
-	fresh.hero_id = stats.hero_id
 	fresh.set_base_attack(3, 1.0)
 	root.add_child(fresh)
 	ps.register(fresh)

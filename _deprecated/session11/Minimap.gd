@@ -3,7 +3,7 @@ class_name Minimap
 
 ## Minimap: HUD corner map drawn with _draw(). Revealed zones only (rooms
 ## filled, powered rooms gold, Rest/Loot/Elite with a corner square in
-## MapVisualConfig.room_type_color), one dot per hero, exit marker only while
+## MapVisualConfig.room_type_color), hero dot, exit marker only while
 ## ExitIndicator's hint is visible. Redraws on signals, never polls:
 ## DoorTurnSystem.room_revealed, RoomManager.room_power_changed,
 ## Player.zone_changed, ExitIndicator.hint_changed.
@@ -22,7 +22,7 @@ const TYPE_MARKER_FRACTION := 0.45
 const TYPE_MARKER_MIN := 3.0
 
 var _room_manager: RoomManager
-var _heroes: Array[Player] = []
+var _player: Player
 var _exit_indicator: ExitIndicator
 var _bounds := Rect2i()
 
@@ -46,9 +46,9 @@ func _ready() -> void:
 	if _room_manager.door_turn_system:
 		_room_manager.door_turn_system.room_revealed.connect(func(_id: String, _cells: Array[Vector2i]): queue_redraw())
 	_room_manager.room_power_changed.connect(func(_id: String, _on: bool): queue_redraw())
-	_heroes = ManagerLocator.get_heroes()
-	for hero in _heroes:
-		hero.zone_changed.connect(func(_id: String): queue_redraw())
+	_player = ManagerLocator.get_player()
+	if _player:
+		_player.zone_changed.connect(func(_id: String): queue_redraw())
 	_exit_indicator = ManagerLocator.get_exit_indicator()
 	if _exit_indicator:
 		_exit_indicator.hint_changed.connect(func(_v: bool): queue_redraw())
@@ -102,14 +102,9 @@ func _draw() -> void:
 		var cfg := _room_manager.visual_config
 		draw_rect(exit_rect, cfg.exit_crystal_color if _exit_indicator.is_emphasized() else cfg.exit_color, false, 2.0)
 
-	# Side by side (party order), so heroes sharing a zone stay readable.
-	var radius := maxf(3.0, scale_px * 0.8)
-	for i in _heroes.size():
-		var hero := _heroes[i]
-		if not is_instance_valid(hero) or hero.current_zone_id == "":
-			continue
-		var hero_rect := _to_map(_room_manager.get_zone(hero.current_zone_id)["rect"], scale_px, offset)
-		draw_circle(hero_rect.get_center() + Vector2((i - (_heroes.size() - 1) * 0.5) * radius * 2.0, 0.0), radius, HERO_COLOR)
+	if _player and _player.current_zone_id != "":
+		var hero_rect := _to_map(_room_manager.get_zone(_player.current_zone_id)["rect"], scale_px, offset)
+		draw_circle(hero_rect.get_center(), maxf(3.0, scale_px * 0.8), HERO_COLOR)
 
 
 func _to_map(rect: Rect2i, scale_px: float, offset: Vector2) -> Rect2:

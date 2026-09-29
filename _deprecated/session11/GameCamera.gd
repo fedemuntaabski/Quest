@@ -6,8 +6,6 @@ class_name GameCamera
 ## pans (move_* keys / screen edges), wheel zoom with smoothing, position
 ## clamped to the discovered rooms + margin, camera_recenter resumes following.
 ## Tunables live in CameraConfig. A new floor = a new Player → follows again.
-## Session 12: follows `_hero` (default: the parent Player; Main2d calls
-## follow() with the selected hero), so C recenters on the selection.
 ## Runs on real time, not Engine.time_scale, so it still pans/zooms during the
 ## tactical pause (time_scale 0).
 
@@ -82,15 +80,6 @@ func recenter() -> void:
 
 func is_following() -> bool:
 	return _following
-
-
-## Selected hero changed: follow it. A panned camera stays put until C.
-func follow(target: Node2D) -> void:
-	_hero = target
-
-
-func get_target() -> Node2D:
-	return _hero
 
 
 ## Minimap click: look at `world_pos` and stop following.

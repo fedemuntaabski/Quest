@@ -15,9 +15,6 @@ signal zone_changed(zone_id: String)
 var character_data: CharacterData = null
 var current_zone_id: String = ""
 var is_carrying_nexo: bool = false
-## Sprite-only shift so heroes sharing a zone don't overlap (PartyConfig);
-## position, zone logic and hit/hurtboxes stay on the zone center.
-var sprite_offset: Vector2 = Vector2.ZERO
 
 ## grid_pos is the cell under the hero's world position — debug/logging only.
 ## Movement, door access and reachability all key off current_zone_id.
@@ -35,9 +32,7 @@ func _ready() -> void:
 	# Hitbox follows CharacterStats (base from CharacterData + in-run upgrades),
 	# so wire it before register() re-applies upgrades.
 	stats.attack_changed.connect(hitbox.configure)
-	animated_sprite.position += sprite_offset
 	if character_data:
-		stats.hero_id = character_data.character_id
 		stats.character_name = character_data.display_name
 		stats.set_base_attack(character_data.attack_damage, character_data.attack_interval)
 		_apply_character_visuals(character_data)

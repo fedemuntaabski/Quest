@@ -1,8 +1,7 @@
 extends Node2D
 
 # Main2d: minimal gameplay scaffold.
-# Spawns the party (PartyConfig: the selected hero + companions; HP-only
-# stats from SaveManager/PlayerStats; Tab/portrait selects who moves) into
+# Spawns the selected hero (HP-only stats from SaveManager/PlayerStats) into
 # a per-floor seeded MapGenerator map (fallback: FALLBACK_LAYOUT) built by
 # RoomManager, drives the DoorTurnSystem stub
 # (global turn advances on door-open, ticks ResourceManager, reveals rooms),
@@ -23,8 +22,6 @@ const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout
 @export var force_fallback_layout: bool = false
 ## Debug/tests: floor index used when run without the Main orchestrator.
 @export var standalone_floor: int = 1
-## Heroes spawned every floor (session 12).
-@export var party_config: PartyConfig = preload("res://resources/characters/party_config.tres")
 
 # ─────────────────────────────────────────────
 # NODES
@@ -47,11 +44,7 @@ const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout
 @onready var next_floor_button: Button = $VictoryOverlay/CenterContainer/VBoxContainer/NextFloorButton
 
 var game_state_manager: GameStateManager
-## Party in spawn order; `player` = heroes[0] (the hero picked in
-## CharacterSelection, holder of the only camera) — not the selected one.
-var heroes: Array[Player] = []
 var player: Player
-var camera: GameCamera
 var door_turn_system: DoorTurnSystem
 var room_power_system: RoomPowerSystem
 var module_build_system: ModuleBuildSystem
@@ -100,7 +93,7 @@ func _ready() -> void:
 	_setup_extraction_manager()
 	_register_groups_and_doors()
 	_setup_exit_indicator()
-	_spawn_heroes()
+	_spawn_player()
 	_spawn_nexo()
 	_setup_player_action_controller()
 	_connect_signals()
@@ -116,38 +109,15 @@ func _ensure_game_state_manager() -> void:
 		game_state_manager.name = "GameStateManager"
 		add_child(game_state_manager)
 
-## Every hero in the start room, like every floor. clear_party() first, so the
-## first hero registered (heroes[0]) starts selected; run levels carry over.
-func _spawn_heroes() -> void:
-	var ps := ManagerLocator.get_player_stats()
-	if ps:
-		ps.clear_party()
-	var ids := party_config.get_party_ids(active_character_id)
+func _spawn_player() -> void:
+	var character_data := CharacterDatabase.get_by_id(active_character_id)
+	player = PLAYER_SCENE.instantiate() as Player
+	player.name = "Player"
+	player.configure(character_data)
+	add_child(player)
 	var spawn_zone_id := room_manager.get_start_zone_id()
-	for i in ids.size():
-		var hero := PLAYER_SCENE.instantiate() as Player
-		hero.name = "Player" if i == 0 else "Player%d" % (i + 1)
-		hero.configure(CharacterDatabase.get_by_id(ids[i]))
-		hero.sprite_offset = party_config.sprite_offset(i, ids.size())
-		if i > 0:
-			# ponytail: one camera, on heroes[0], following the selection. Move it
-			# to Main2d if a hero can ever be freed mid-floor (permadeath).
-			hero.get_node("Camera2D").free()
-		add_child(hero)
-		hero.set_zone(spawn_zone_id, room_manager.get_center(spawn_zone_id), floor_layer)
-		heroes.append(hero)
-	player = heroes[0]
-	camera = player.get_node("Camera2D") as GameCamera
-	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned party %s at zone '%s'" % [ids, spawn_zone_id])
-
-
-## Tab / portrait click (PlayerStats.select_hero): control + camera move over.
-func _on_active_hero_changed(hero_id: String) -> void:
-	for hero in heroes:
-		if hero.stats.hero_id == hero_id:
-			player_action_controller.set_player(hero)
-			camera.follow(hero)
-			return
+	player.set_zone(spawn_zone_id, room_manager.get_center(spawn_zone_id), floor_layer)
+	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned character '%s' at zone '%s'" % [active_character_id, spawn_zone_id])
 
 func _setup_door_turn_system() -> void:
 	door_turn_system = DoorTurnSystem.new()
@@ -266,8 +236,6 @@ func _connect_signals() -> void:
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats and not player_stats.player_died.is_connected(_on_player_died):
 		player_stats.player_died.connect(_on_player_died)
-	if player_stats and not player_stats.active_hero_changed.is_connected(_on_active_hero_changed):
-		player_stats.active_hero_changed.connect(_on_active_hero_changed)
 
 	if retry_button and not retry_button.pressed.is_connected(_reload_current_scene):
 		retry_button.pressed.connect(_reload_current_scene)
@@ -304,12 +272,6 @@ func _input(event: InputEvent) -> void:
 		# stays ui_accept for their buttons.
 		_tactical_paused = not _tactical_paused
 		_apply_time_scale()
-		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("hero_cycle") and _is_gameplay_active():
-		# Consumed so Tab never also moves GUI focus (ui_focus_next).
-		var player_stats := ManagerLocator.get_player_stats()
-		if player_stats:
-			player_stats.cycle_active_hero()
 		get_viewport().set_input_as_handled()
 
 func _exit_tree() -> void:

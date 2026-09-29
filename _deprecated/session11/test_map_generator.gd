@@ -121,8 +121,6 @@ func _check_layout(layout: MapLayout, tree: MapLayout, config: FloorConfig, floo
 			failures.append("%s: loop '%s' joins unknown or already-joined rooms" % [where, corridor.id])
 		elif (MapGenerator._slot_of(room_a) - MapGenerator._slot_of(room_b)).abs() not in [Vector2i(1, 0), Vector2i(0, 1)]:
 			failures.append("%s: loop '%s' joins non-adjacent slots" % [where, corridor.id])
-		elif room_a.is_exit or room_b.is_exit:
-			failures.append("%s: loop '%s' touches the exit room" % [where, corridor.id])
 	if loops > config.max_loops(floor_index):
 		failures.append("%s: %d loops > max %d" % [where, loops, config.max_loops(floor_index)])
 	if not _all_reachable(layout):
@@ -141,9 +139,6 @@ func _stress_loops(config: FloorConfig) -> void:
 		var problems := layout.validate()
 		if not problems.is_empty():
 			failures.append("stress seed %d: %s" % [s, problems])
-		for corridor in layout.corridors:
-			if corridor.is_loop and (layout.get_room(corridor.room_a).is_exit or layout.get_room(corridor.room_b).is_exit):
-				failures.append("stress seed %d: loop '%s' touches the exit room" % [s, corridor.id])
 	if total == 0:
 		failures.append("stress: no loops added at all")
 

@@ -7,9 +7,6 @@ const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
 # BASIC INFO
 # -------------------------
 var character_name: String = "Unnamed"
-## Stable per-hero key (CharacterData.character_id, set by Player): PlayerStats
-## keys run levels and the active hero by it. "" for bare test instances.
-var hero_id: String = ""
 
 signal hp_changed(current, max)
 signal died

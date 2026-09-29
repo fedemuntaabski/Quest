@@ -164,35 +164,24 @@ func _on_ai_tick() -> void:
 
 	match variant:
 		Variant.SWARM:
-			await _pursue_zone(room_manager, _player_zone(room_manager))
+			await _pursue_zone(room_manager, _player_zone())
 		Variant.SAPPER:
 			await _sapper_tick(room_manager)
 		Variant.HUNTER:
-			for hero in ManagerLocator.get_heroes():
-				if hero.is_carrying_nexo:
-					await _pursue_zone(room_manager, hero.current_zone_id)
-					break
+			var player := ManagerLocator.get_player()
+			if player and player.is_carrying_nexo:
+				await _pursue_zone(room_manager, player.current_zone_id)
 
 
-## Zone of the closest hero (fewest zones over the revealed graph), so the
-## hero selection never redirects enemies. "" if none is reachable.
-func _player_zone(room_manager: RoomManager) -> String:
-	var best := ""
-	var best_len := 0
-	for hero in ManagerLocator.get_heroes():
-		if hero.current_zone_id == current_zone_id:
-			return current_zone_id
-		var path_len := room_manager.find_zone_path(current_zone_id, hero.current_zone_id).size()
-		if path_len > 0 and (best == "" or path_len < best_len):
-			best = hero.current_zone_id
-			best_len = path_len
-	return best
+func _player_zone() -> String:
+	var player := ManagerLocator.get_player()
+	return player.current_zone_id if player else ""
 
 
 func _sapper_tick(room_manager: RoomManager) -> void:
 	var target_zone := _find_zone_with_modules(room_manager)
 	if target_zone == "":
-		target_zone = _player_zone(room_manager)
+		target_zone = _player_zone()
 	await _pursue_zone(room_manager, target_zone)
 
 

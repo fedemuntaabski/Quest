@@ -9,3 +9,4 @@ Code replaced but kept for reference (`.gdignore` → Godot never loads it).
 - `session8/` (sesión 9): snapshots before session 9 edits — camera without `default_zoom` on scaled delta, Esc-only pause, left-only room move, always-closing right click in `BuildingMenu`, HUD without PAUSA/close-on-end. See its README.
 - `session9/` (sesión 10): snapshots before the research system (Ciencia sink): `ResourceManager` without research, BuildingMenu without locks, HUD without "Investigar", fixed light cost/turret damage/discovery dust. See its README.
 - `session10/` (sesión 11): snapshots before room types + loops: tree-only generator, `RoomData.kind`, one reveal group per room, every dark room a spawn room, plain discovery dust. See its README.
+- `session11/` (sesión 12): snapshots before multi-hero: single `run_level`, one `Player`, camera on `get_parent()`, loops allowed into the exit room. See its README.

@@ -975,3 +975,95 @@ Tipos de sala (Descanso / Botín / Élite, además de Inicial / Salida / Combate
 4. Élite con más enemigos además de más fuertes, si el ×1.5/×1.25 no se nota.
 5. Vault (`is_vault`) como candidato preferido para Botín (idea de la s5).
 6. Pendientes de la s10: puertas en pausa táctica, sumidero tardío de Ciencia, reembolso de Polvo al cambiar de piso, multi-héroe.
+
+---
+
+# Sesión 12 — 2026-09-28 (rama `session/opus-2026-09-28-12`, sobre la sesión 11, sin commit)
+
+Party de 2 héroes fijos (sin roster ni reclutamiento) + los loops ya no tocan la sala de Salida. La s11 la commiteó el usuario en esta rama (`c3cd2e6`); lo de esta sesión está sin commit.
+
+## Fase 1 — Qué había
+
+- `PlayerStats`: un `stats` y un `run_level` globales (el `ponytail:` de la s7 pedía un dict por héroe).
+- `CharacterPopup`: stats y data propios, pero el nivel lo pedía sin id.
+- `add_hero_portrait`: apilaba, pero se llamaba una sola vez.
+- `GameCamera`: seguía a `get_parent()`.
+- Un solo `Player`, y `get_player()` = el primero del grupo.
+
+## Fase 2 — Qué se hizo
+
+| Sistema | Archivos | Qué |
+|---|---|---|
+| Datos por héroe | `CharacterStats.gd` (`hero_id`), `PlayerStats.gd`, `Player.gd` | `heroes`, `run_levels`, `active_hero_id`. `stats`/`run_level` = vistas del activo. API de niveles con `hero_id` opcional (vacío = activo). Nuevos: `get_hero_stats`/`get_all_stats`/`get_hero_ids`/`select_hero`/`cycle_active_hero`/`clear_party`, señal `active_hero_changed`. `run_upgrades_changed` suma `hero_id`. Las mejoras de Oro se aplican a todos. |
+| Spawn | `PartyConfig.gd` + `resources/characters/party_config.tres` (nuevos), `Main2d.gd` | Elegido + compañeros hasta `party_size` 2, todos en la sala inicial, sprite corrido `sprite_spacing`. Una cámara (en `heroes[0]`). |
+| Selección | `project.godot` (`hero_cycle` = Tab), `Main2d.gd`, `PlayerActionController.gd` (`set_player`, `mover`), `GameCamera.gd` (`follow`/`get_target`) | Tab cicla; control y cámara pasan al seleccionado. |
+| HUD | `HUDController.gd`, `HeroPortrait.gd`, `CharacterPopup.gd`, `Minimap.gd` | Retratos por id; el seleccionado con borde `GOLD_LIGHT` de 4 px. Clic izquierdo = seleccionar (sobre el seleccionado: ficha). Clic derecho = ficha sin cambiar la selección. El popup sube de nivel a su héroe. Minimapa: un punto por héroe. |
+| Otros | `ManagerLocator.gd`, `Enemy.gd` | `get_player()` = activo, `get_heroes()`. SWARM/SAPPER → héroe más cercano; HUNTER → portador. |
+| Loops | `MapGenerator.gd` | `add_loops` saltea la sala de Salida. |
+
+### Decisiones
+
+- **Datos por héroe, separados del spawn.** Id estable = `CharacterData.character_id`, copiado a `CharacterStats.hero_id`. `PlayerStats` guarda `heroes` (id → CharacterStats vivo, orden de party), `run_levels` (id → niveles; en el autoload porque el CharacterStats muere con el piso) y `active_hero_id`. `stats`/`run_level` quedan como propiedades de solo lectura del héroe activo; la API de niveles recibe `hero_id` opcional (vacío = activo). `run_upgrades_changed` suma el id.
+- **Spawn**: `PartyConfig` (recurso) = el elegido en CharacterSelection + compañeros hasta `party_size` (2). Todos en la sala inicial. Una sola cámara (la de `heroes[0]`, `follow()` al seleccionado). Los no seleccionados esperan quietos; una orden de movimiento a la vez.
+- **Muerte: si cae cualquier héroe, termina la partida.** Razón: cero estados nuevos (cadáver como objetivo, Nexo huérfano, selección que saltee muertos). Es el mismo camino de hoy.
+- **Vida base compartida**: `base_hp` es progresión de cuenta. El `base_hp` de la `CharacterData` del compañero no se usa.
+- **Cámara**: se descartó moverla a `Main2d.tscn` porque su `_ready` correría antes que `room_manager.setup`. `follow()` no toca `_following`: si el jugador paneó, queda quieta hasta C.
+- **"El héroe" singular, caso por caso**:
+  - `get_player()`, el Nexo y la cura del Descanso → el activo.
+  - Velocidad con el Nexo y victoria → el que se mueve.
+  - SWARM → el más cercano (así Tab no redirige enemigos).
+  - HUNTER → el portador.
+  - Minimapa y retratos → todos.
+  - `Main2d.player` → `heroes[0]`.
+- Cada piso arranca con el elegido seleccionado (`clear_party` + primer `register`).
+- **Loops**: solo se excluye la Salida. Loops por mapa (pisos 1–5): 0.41/0.54/1.13/1.50/2.45 → 0.35/0.50/1.10/1.47/2.36. Pasillos de loop en picking: 29 → 25.
+
+## Verificación (sesión 12)
+
+- **Baseline** 0/12/35/11 `SCRIPT ERROR`, escenas exit 0. **Final: idéntico** 0/12/35/11, con diff vacío de tipos ERROR/WARNING. `Main.tscn`/`Main2d.tscn`: exit 0, 0 errores. `map_flow`/`corridor_picking` ya corren con 2 héroes.
+- **`test_party.gd` nuevo**: OK. Sus 12 `SCRIPT ERROR` son ruido conocido (3× `PauseMenu`, uno por `Main2d`, + 9 de compilación de `ThemeManager`).
+- **Qué cubre `test_party`**:
+  - spawn, con una sola cámara;
+  - nivel y vida independientes, API sin id = activo, payload de la señal;
+  - Tab: control, cámara y resaltado;
+  - un clic mueve solo al seleccionado; Tab a mitad de camino;
+  - cámara paneada y C;
+  - clics izquierdo y derecho en retratos, y el popup del no seleccionado que sube de nivel a su héroe;
+  - construir, investigar y luces con 2 héroes;
+  - muerte del no seleccionado = fin;
+  - bajar de piso conserva niveles con la vida llena;
+  - Retry (`Main._begin_new_run`) deja a ambos en nivel 1.
+- **`test_hud_ui`** = regresión de un solo héroe (`party_size` 1). **`test_map_generator`**: ningún loop toca la Salida (1000 mapas + estrés).
+- `gdparse` OK; `--editor --quit` para `PartyConfig`.
+- **No se hicieron** las mutaciones (se acabó el tiempo de sesión).
+- **No se vio nada en pantalla**: todo headless (eventos inyectados y señales).
+
+## Checklist manual F5 (sesión 12)
+
+1. 2 héroes en la sala inicial, sprites lado a lado, 2 retratos; borde claro en el seleccionado.
+2. Tab: se mueve el borde, la cámara va al nuevo, los clics mueven solo a ese. Tab no mueve el foco.
+3. Clic izquierdo en el otro retrato → lo selecciona; otra vez → ficha. Clic derecho → ficha sin cambiar la selección; "Subir de nivel" sube a ese héroe.
+4. Panear + Tab → la cámara no se mueve; C → al seleccionado.
+5. Tab a mitad de camino: el que caminaba llega; el otro espera a que termine.
+6. Si muere cualquiera → pantalla de muerte. Al bajar de piso, los dos aparecen con sus niveles; Retry → nivel 1.
+
+## Riesgos (sesión 12)
+
+- Nada probado con mouse o teclado reales.
+- Lock global de movimiento.
+- Si muere uno se pierde la partida.
+- Vida base compartida.
+- La cámara vive en `heroes[0]` (ver `ponytail:`).
+- La victoria cuenta solo al portador.
+- El borde se ve también con un solo héroe.
+- El Nexo lo recoge el seleccionado.
+
+## Próximos pasos (sesión 13+)
+
+1. Playtest F5.
+2. Mutaciones pendientes.
+3. Lock de movimiento por héroe.
+4. Muerte estilo DotE (seguir con el resto).
+5. `base_hp` por héroe.
+6. Roster, teclas 1-2-3.
+7. Pendientes de la s11.
