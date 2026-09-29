@@ -4,8 +4,7 @@ class_name UpgradeConfig
 ## UpgradeConfig: in-run hero level-ups bought from the character popup
 ## ("Subir de nivel"). Each level raises every STAT_KEYS stat by its per-level
 ## bonus. Paid with `cost_resource` (Comida in the shipped .tres since session
-## 7), reset every run (PlayerStats.reset_run_upgrades). Separate from the meta
-## Oro store in the pause menu, which persists in the save.
+## 7), reset every run (PlayerStats.reset_run_upgrades).
 
 const STAT_KEYS: Array[String] = ["hp", "damage", "attack_speed"]
 const LABELS := {

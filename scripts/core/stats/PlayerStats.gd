@@ -4,7 +4,6 @@ const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
 const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd")
 
 signal stats_changed(stats: CharacterStats)
-signal upgrades_changed(upgrades: Array)
 ## Any hero died. Session 12: one hero down ends the run (see NOTES_SESSION.md).
 signal player_died
 ## A hero leveled up (in-run, paid in Comida). Since session 7 every level
@@ -15,14 +14,8 @@ signal run_upgrades_changed(stat_key: String, level: int, hero_id: String)
 const RUN_UPGRADE_CONFIG: UpgradeConfig = preload("res://resources/upgrades/run_upgrade_config.tres")
 
 
-# BASE STATS (PERSISTENCIA) — account-wide: every hero starts from base_hp
-# plus the meta (Oro) upgrades.
+# BASE STATS (PERSISTENCIA) — account-wide: every hero starts from base_hp.
 var base_hp: int = CharacterDatabase.get_default().base_hp
-
-var active_upgrades: Array = []
-var upgrade_levels := {
-	"hp": 0
-}
 
 # PARTY (session 12). hero_id = CharacterData.character_id (CharacterStats.hero_id).
 ## hero_id → live CharacterStats, in party order. Rebuilt every floor
@@ -80,15 +73,13 @@ func refresh_stats() -> void:
 	for s in get_all_stats():
 		_refresh_hero(s)
 
-## Base HP + meta upgrades + this hero's run levels onto its CharacterStats.
+## Base HP + this hero's run levels onto its CharacterStats.
 func _refresh_hero(s: CharacterStats) -> void:
 	var hp_state := StatBalance.clamp_player_hp(base_hp, base_hp)
 	base_hp = int(hp_state.get("max_hp", base_hp))
 
 	s.reset_modifiers()
 	_apply_base_stats(s)
-	_rebuild_upgrade_levels()
-	_reapply_upgrades(s)
 	var levels := _levels_of(s.hero_id)
 	for i in levels:
 		s.apply_modifier("hp", run_upgrade_config.hp_per_level)
@@ -99,57 +90,6 @@ func _refresh_hero(s: CharacterStats) -> void:
 func _apply_base_stats(s: CharacterStats) -> void:
 	s.max_hp = s.base_hp
 	s.current_hp = s.base_hp
-
-func _reapply_upgrades(s: CharacterStats) -> void:
-	for upg in active_upgrades:
-		s.apply_modifier(
-			upg.get("stat_affected", ""),
-			upg.get("value_change", 0)
-		)
-
-## Meta (Oro) upgrade: account-wide, so every hero gets it right away.
-func apply_upgrade(upgrade: Dictionary) -> bool:
-	var party := get_all_stats()
-	if party.is_empty():
-		return false
-
-	var stat_key := str(upgrade.get("stat_affected", ""))
-	if not upgrade_levels.has(stat_key):
-		return false
-	if not can_upgrade_stat(stat_key):
-		return false
-
-	active_upgrades.append(upgrade)
-	upgrade_levels[stat_key] = int(upgrade_levels[stat_key]) + 1
-
-	for s in party:
-		s.apply_modifier(
-			stat_key,
-			upgrade.get("value_change", 0)
-		)
-
-	upgrades_changed.emit(active_upgrades)
-	for s in party:
-		stats_changed.emit(s)
-	return true
-
-func can_upgrade_stat(stat_key: String) -> bool:
-	return int(upgrade_levels.get(stat_key, 0)) < StatBalance.MAX_UPGRADE_LEVEL
-
-func get_upgrade_level(stat_key: String) -> int:
-	return int(upgrade_levels.get(stat_key, 0))
-
-func get_max_upgrade_level() -> int:
-	return StatBalance.MAX_UPGRADE_LEVEL
-
-func _rebuild_upgrade_levels() -> void:
-	for key in upgrade_levels.keys():
-		upgrade_levels[key] = 0
-
-	for upg in active_upgrades:
-		var stat_key := str(upg.get("stat_affected", ""))
-		if upgrade_levels.has(stat_key):
-			upgrade_levels[stat_key] = min(StatBalance.MAX_UPGRADE_LEVEL, int(upgrade_levels[stat_key]) + 1)
 
 # ---------------- PARTY ----------------
 

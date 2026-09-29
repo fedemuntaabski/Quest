@@ -80,11 +80,9 @@ func save_game(slot: int = current_slot) -> void:
 	if player_stats_autoload:
 		var hp_state = StatBalance.clamp_player_hp(player_stats_autoload.base_hp, player_stats_autoload.base_hp)
 		cfg.set_value(SAVE_SECTION, "base_hp", int(hp_state.get("max_hp", player_stats_autoload.base_hp)))
-		cfg.set_value(SAVE_SECTION, "active_upgrades", player_stats_autoload.active_upgrades)
 	else:
 		var fallback_data := CharacterDatabase.get_by_id(get_selected_character_id())
 		cfg.set_value(SAVE_SECTION, "base_hp", fallback_data.base_hp)
-		cfg.set_value(SAVE_SECTION, "active_upgrades", [])
 
 	cfg.set_value(SAVE_SECTION, "selected_character_id", selected_character_id)
 	cfg.set_value(SAVE_SECTION, "first_time_player", first_time_player)
@@ -131,7 +129,6 @@ func load_game(slot: int = current_slot) -> void:
 			var loaded_base_hp := int(cfg.get_value(SAVE_SECTION, "base_hp", StatBalance.PLAYER_BASE_HP))
 			var hp_state := StatBalance.clamp_player_hp(loaded_base_hp, loaded_base_hp)
 			player_stats_autoload.base_hp = int(hp_state.get("max_hp", StatBalance.PLAYER_BASE_HP))
-			player_stats_autoload.active_upgrades = cfg.get_value(SAVE_SECTION, "active_upgrades", [])
 			player_stats_autoload.refresh_stats()
 	else:
 		QuestLogger.info(QuestLogger.Category.SAVE, "No save file found for slot %d, starting fresh." % slot)
@@ -150,7 +147,6 @@ func load_game(slot: int = current_slot) -> void:
 		if player_stats_autoload:
 			var default_data := CharacterDatabase.get_default()
 			player_stats_autoload.base_hp = default_data.base_hp
-			player_stats_autoload.active_upgrades = []
 			player_stats_autoload.refresh_stats()
 
 

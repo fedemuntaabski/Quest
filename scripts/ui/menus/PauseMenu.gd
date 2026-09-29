@@ -11,15 +11,13 @@ signal exit_requested
 @onready var blur_rect: ColorRect = %BlurRect
 @onready var dim_rect: ColorRect = %DimRect
 @onready var options_menu: OptionsMenu = %OptionsMenu
-@onready var store_panel: StorePanel = %StorePanel
 @onready var exit_confirm_dialog: ExitConfirmDialog = %ExitConfirmDialog
 
 @onready var options_button: Button = %OptionsButton
-@onready var store_button: Button = %StoreButton
 @onready var exit_button: Button = %ExitButton
 @onready var pause_gold_label: Label = %PauseGoldLabel
 
-@onready var panels: Array[Control] = [pause_panel, options_menu, store_panel]
+@onready var panels: Array[Control] = [pause_panel, options_menu]
 
 # ---------------- INIT ----------------
 
@@ -38,8 +36,6 @@ func _on_base_ready() -> void:
 
 	_connect()
 
-	if store_panel and not store_panel.menu_closed.is_connected(_on_store_panel_closed):
-		store_panel.menu_closed.connect(_on_store_panel_closed)
 	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
 		options_menu.closed.connect(_on_options_menu_closed)
 	if exit_confirm_dialog and not exit_confirm_dialog.confirmed.is_connected(_on_exit_confirmed):
@@ -74,8 +70,6 @@ func _on_before_open() -> void:
 func _on_before_close() -> void:
 	if options_menu:
 		options_menu.close()
-	if store_panel and store_panel.is_open:
-		store_panel.close()
 	if exit_confirm_dialog and exit_confirm_dialog.is_open:
 		exit_confirm_dialog.close()
 
@@ -86,23 +80,12 @@ func _set_panel(i: int) -> void:
 		p.visible = false
 
 	if i == 1:
-		if store_panel and store_panel.is_open:
-			store_panel.close()
 		if options_menu:
 			options_menu.open()
 		return
 
-	if i == 2:
-		if options_menu:
-			options_menu.close()
-		if store_panel:
-			store_panel.open()
-		return
-
 	if options_menu:
 		options_menu.close()
-	if store_panel and store_panel.is_open:
-		store_panel.close()
 	panels[i].visible = true
 
 
@@ -110,14 +93,10 @@ func _on_options_menu_closed() -> void:
 	_set_panel(0)
 
 
-func _on_store_panel_closed() -> void:
-	_set_panel(0)
-
 # ---------------- CONNECT ----------------
 
 func _connect() -> void:
 	connect_button(options_button, func(): _set_panel(1))
-	connect_button(store_button, func(): _set_panel(2))
 	connect_button(exit_button, _request_exit)
 
 
@@ -165,8 +144,6 @@ func _apply_theme() -> void:
 		pause_gold_label.add_theme_color_override("font_color", QuestPalette.GOLD)
 	if options_button:
 		_style_button(options_button)
-	if store_button:
-		_style_button(store_button)
 	if exit_button:
 		_style_button(exit_button, true)
 

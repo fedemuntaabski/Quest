@@ -20,7 +20,7 @@ signal attack_changed(damage: int, interval: float)
 # HEALTH
 # -------------------------
 ## Per-hero starting max HP (CharacterData.base_hp, set by Player); PlayerStats
-## adds meta/run upgrades on top.
+## adds run upgrades on top.
 var base_hp: int = StatBalance.PLAYER_BASE_HP
 var max_hp: int = StatBalance.PLAYER_BASE_HP
 var current_hp: int = StatBalance.PLAYER_BASE_HP

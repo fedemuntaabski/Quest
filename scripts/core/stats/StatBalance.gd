@@ -5,11 +5,8 @@ class_name StatBalance
 # Keep gameplay formulas here so combat, upgrades, and UI stay aligned.
 
 const PLAYER_BASE_HP: int = 20
-# 60 (was 40): leaves room for in-run Ciencia upgrades on top of the Oro store.
+# 60 (was 40): leaves room for in-run hero levels on top of the base HP.
 const PLAYER_MAX_HP: int = 60
-const MAX_UPGRADE_LEVEL: int = 10
-const BASE_UPGRADE_COST: int = 50
-const UPGRADE_COST_STEP: int = 25
 
 static func clamp_player_hp(max_hp: int, current_hp: int) -> Dictionary:
 	var clamped_max := clampi(max_hp, PLAYER_BASE_HP, PLAYER_MAX_HP)
@@ -26,6 +23,3 @@ static func apply_hp_delta(max_hp: int, current_hp: int, value: int) -> Dictiona
 		"max_hp": next_max,
 		"current_hp": next_current,
 	}
-
-static func get_upgrade_cost(level: int) -> int:
-	return BASE_UPGRADE_COST + (max(level, 0) * UPGRADE_COST_STEP)

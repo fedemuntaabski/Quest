@@ -1092,6 +1092,28 @@ Party de 2 héroes fijos (sin roster ni reclutamiento) + los loops ya no tocan l
 - Formación: se reutiliza `Player.sprite_offset` (separación lateral desde el spawn); no hay offsets nuevos. No existe orden de ataque (auto-combate), no se agregó.
 - Los grupos sobreviven a los pisos y se borran al empezar una partida nueva; un héroe muerto sale de selección y grupos.
 
+## Sesión fix-3 — puertas, salas especiales, sin tienda (`session/fix-3`)
+
+### A. Puertas descentradas
+- **Diagnóstico**: la lógica estaba bien (`MapGenerator._make_corridor` da a la puerta y al pasillo el mismo carril; salas de 3/5 celdas centradas; `RoomManager.register_door` = centro de celda; el fallback `.tres` también). El error era de render: el leaf `doors_leaf_*` (32×32) era un tile atlas 2×2 en la capa `Doors` de `MapTileRenderer`, y Godot dibuja un tile multi-celda centrado sobre el centro de su celda *origen* (el `transpose` de los pasillos E-O gira alrededor del mismo punto) → el arte quedaba ~½ celda arriba-izquierda de la `Door` (Area2D) y del pasillo. Confirmado con `tests/tools/shot_map.gd` (antes/después).
+- **Fix**: `Door.tscn` lleva un `Sprite2D` `Leaf` hijo, centrado en el origen de la puerta (= centro de celda), transpuesto si `Door.east_west` (`CorridorData.is_east_west(room_a)`). Sprite, forma de clic y posición comparten origen. `RoomManager.refresh_door_visibility` → `door.visible` + `set_leaf(abierta)`. Ya no se atenúa al abrir. Se borra la capa `Doors`, `show_door`, el plan `doors`, `ALT_TRANSPOSE` y las alternativas de puerta del tileset.
+- **Test**: `tests/test_door_alignment.gd` (25 seed×piso + fallback, 4 orientaciones vistas, 1000 layouts puros). Mutación (leaf con offset) → 508 fallas.
+
+### B. Salas especiales
+- Ya existían REST/LOOT/ELITE con efectos. Ahora su display es dato: `RoomTypeVisual` (nombre, cartel, ícono, color, `show_marker`, props Kenney) en `resources/maps/room_type_visual_config.tres`, colgado de `MapVisualConfig.room_type_visuals`. Se fueron `RoomData.TYPE_LABELS` y los `*_room_color`.
+- Badge con ícono, ícono en el minimapa, cartel flotante al descubrir (una vez; Salida incluida, solo al descubrirla), props propios en el anillo (RNG `"type_decor"` aparte: los props genéricos no se mueven). `build_tilesets.gd` hornea los 132 tiles Kenney.
+- SHOP y GENERATOR (diseño de la s5): solo display (enum + entrada), sin `RoomTypeRule` → nunca se generan, sin efectos. `docs/ROOMS.md`.
+- Tests: `test_room_type_visuals.gd` (nuevo), cartel en `test_map_flow.gd` (mutación: sin `_show_room_banner` falla).
+
+### C. Tienda fuera del menú de pausa
+- Borrado: `StorePanel`/`StoreUpgradeCard` (escena + script), botón/nodo/estilo/panel 2 en `PauseMenu`, `PlayerStats.{apply_upgrade, can_upgrade_stat, get_upgrade_level, get_max_upgrade_level, active_upgrades, upgrade_levels, upgrades_changed}`, costos de mejora en `StatBalance`, `active_upgrades` en saves (las saves viejas con la clave se ignoran), `QuestPalette.CARD_VITALITY`.
+- Se conserva lo compartido: `HUDController.show/hide_simple_tooltip` + `StatTooltip` (chips del HUD), `CurrencyManager`/Oro, `BuildingMenu`, niveles de héroe (Comida).
+- Pausa: PAUSA / Oro / OPCIONES / SALIR (panel 560×380, sin hueco). No hay botón "Continuar" (Esc reanuda), no se agregó.
+- **Consecuencia a decidir**: el Oro se sigue ganando y mostrando pero ya no tiene en qué gastarse; el +HP meta guardado en saves viejas deja de aplicarse.
+
+### Playtest pendiente
+Leaf centrado en los 4 sentidos y clic en las 4 celdas; carteles (no se pisan con "Botín: +6 Industria"); legibilidad de íconos en badge/minimapa; props (arte Kenney) bien elegidos; pausa → Opciones → volver → Salir.
+
 ## Próximos pasos (sesión 13+)
 
 1. Playtest F5.
