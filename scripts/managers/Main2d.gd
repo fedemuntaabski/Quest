@@ -11,6 +11,7 @@ extends Node2D
 
 const PLAYER_SCENE := preload("res://scenes/Player.tscn")
 const NEXO_SCENE := preload("res://scenes/world/Nexo.tscn")
+const TILE_RENDERER_SCENE := preload("res://scenes/world/MapTileRenderer.tscn")
 const DOOR_SCENE := preload("res://scenes/Door.tscn")
 ## Nexo sits above the start room's center: the lit start room's MAJOR build
 ## slot occupies the center itself (RoomZone.BUILDING_SLOT_OFFSETS[0]).
@@ -62,6 +63,7 @@ var exit_indicator: ExitIndicator
 var nexo: Nexo
 var nexo_controller: NexoController
 var map_layout: MapLayout
+var tile_renderer: MapTileRenderer
 
 # ─────────────────────────────────────────────
 # STATE
@@ -160,6 +162,13 @@ func _setup_room_manager() -> void:
 	map_layout = _build_map_layout()
 	room_manager.build_from_map(map_layout)
 	floor_manager.room_manager = room_manager
+	# Art: tiles are drawn by the renderer; `Floor` stays as the hidden logical grid.
+	tile_renderer = TILE_RENDERER_SCENE.instantiate() as MapTileRenderer
+	tile_renderer.name = "MapTileRenderer"
+	add_child(tile_renderer)
+	tile_renderer.build(map_layout, room_manager.visual_config)
+	room_manager.tile_renderer = tile_renderer
+	floor_layer.visible = false
 
 
 func _build_map_layout() -> MapLayout:
@@ -241,6 +250,7 @@ func _register_groups_and_doors() -> void:
 		door.target_room_id = room_manager.get_group_id(corridor.id)
 		door.from_zone_id = corridor.room_a
 		door.cell = corridor.door_cell
+		door.get_node("Polygon2D").visible = false  # the door leaf is a tile (MapTileRenderer)
 		doors_root.add_child(door)
 		room_manager.register_door(door)
 

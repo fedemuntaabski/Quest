@@ -41,6 +41,8 @@ const DEFAULT_TILE_SIZE := Vector2(64, 64)
 @export var visual_config: MapVisualConfig = preload("res://resources/maps/map_visual_config.tres")
 
 var tilemap: TileMapLayer
+## Art layer (set by Main2d); receives the same reveal events as the logical `tilemap`.
+var tile_renderer: MapTileRenderer
 var door_turn_system: DoorTurnSystem
 
 var zones: Dictionary = {}          # zone_id -> {id, kind, rect, cells, center_position, neighbors, group_id, node}
@@ -597,6 +599,8 @@ func apply_zone_visibility(zone_id: String) -> void:
 	node.set_shown(v)
 	if v:
 		_paint_cells(get_cells(zone_id))
+		if tile_renderer:
+			tile_renderer.show_zone(zone_id)
 
 
 ## Discovery event handler: presents one newly revealed group (door tile first,
@@ -625,6 +629,8 @@ func refresh_door_visibility() -> void:
 		var door: Door = _doors_by_group[group_id]
 		var from_visible := is_zone_visible(door.from_zone_id) if door.from_zone_id != "" else true
 		door.visible = from_visible and not door.is_opened()
+		if tile_renderer:
+			tile_renderer.show_door(door.door_id, from_visible, door.is_opened())
 
 
 ## Dev check: fog tiles and RoomZone display must agree with is_zone_visible
