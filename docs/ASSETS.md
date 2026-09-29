@@ -21,11 +21,11 @@ Todo el arte es 16×16 px por tile, licencia CC0 (ver `CREDITS.md`). Originales 
 
 ### Kenney Tiny Dungeon — `_source/kenney_tinyDungeon/`
 - `Tilemap/tilemap_packed.png` 192×176 = 12×11 = 132 tiles 16×16 (sin separación); `tilemap.png` con 1 px de separación; 132 PNG sueltos `Tiles/tile_0000..0131`; `Tiled/` (tmx/tsx), `Tilesheet.txt`, `Sample.png`.
-- Contenido: suelos, muros, puertas, escaleras, cofres, antorchas, props de mazmorra, héroes/enemigos chibi, armas, pociones.
+- Contenido: suelos, muros, puertas, cofres, barriles/props, héroes (y algunos monstruos), armas, pociones.
 
 ### Tiny Creatures (Clint Bellanger) — `_source/tiny-creatures/`
 - `Tilemap/tilemap_packed.png` 160×288 = 10×18 = 180 tiles 16×16; `tilemap.png` (1 px separación); `Kenney_tiny_dungeon.png` (hoja de referencia); 180 PNG en `Tiles/`; `Examples/`, `Tiled/`.
-- Contenido: criaturas y animales, **todos miran a la derecha** (usar `flip_h` para izquierda). Sin animación (1 frame por criatura).
+- Contenido: monstruos fantásticos (goblins, esqueletos, slimes, dragones, demonios, no-muertos) y animales; fuente extra de enemigos/jefes. **Todos miran a la derecha** (usar `flip_h` para izquierda). Sin animación (1 frame por criatura).
 
 ## Qué asset para qué (propuesta para etapas siguientes)
 | Uso | Asset |
