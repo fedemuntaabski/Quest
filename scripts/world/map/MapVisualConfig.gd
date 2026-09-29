@@ -43,6 +43,14 @@ enum ExitHintMode {
 ## Seconds for the dark -> lit tween.
 @export var power_transition_time: float = 0.6
 
+@export_group("Tile decor")
+## MapTileRenderer: banners replace this share of north-wall face tiles of rooms.
+@export_range(0.0, 1.0) var wall_decor_density: float = 0.12
+## Chance per tile on a room's outermost floor ring to hold a Kenney prop.
+@export_range(0.0, 1.0) var prop_density: float = 0.06
+## Chance a room floor tile uses a variant (cracks/stains) instead of plain.
+@export_range(0.0, 1.0) var floor_variant_chance: float = 0.25
+
 @export_group("Room types")
 ## Badge (RoomZone) + minimap marker colors. Lit or dark doesn't matter.
 @export var rest_room_color: Color = Color(0.45, 0.95, 0.85, 1.0)

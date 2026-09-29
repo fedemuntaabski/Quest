@@ -1,0 +1,24 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/map/MapTileRenderer.gd" id="1_renderer"]
+[ext_resource type="TileSet" path="res://assets/tilesets/dungeon_tileset.tres" id="2_dungeon"]
+[ext_resource type="TileSet" path="res://assets/tilesets/props_tileset.tres" id="3_props"]
+
+[node name="MapTileRenderer" type="Node2D"]
+script = ExtResource("1_renderer")
+
+[node name="Floor" type="TileMapLayer" parent="."]
+z_index = -9
+tile_set = ExtResource("2_dungeon")
+
+[node name="Walls" type="TileMapLayer" parent="."]
+z_index = -8
+tile_set = ExtResource("2_dungeon")
+
+[node name="Decor" type="TileMapLayer" parent="."]
+z_index = -7
+tile_set = ExtResource("3_props")
+
+[node name="Doors" type="TileMapLayer" parent="."]
+z_index = -6
+tile_set = ExtResource("2_dungeon")
