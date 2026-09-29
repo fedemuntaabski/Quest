@@ -14,7 +14,6 @@ const SRC_PROPS := 0
 
 const ALT_NONE := 0
 const ALT_FLIP_V := 1     # wall tiles: cap of a south wall
-const ALT_TRANSPOSE := 1  # door leaf on E-W corridors
 
 const FLOOR_PLAIN := Vector2i(1, 4)                       # floor_1
 const FLOOR_ROOM_VARIANTS: Array[Vector2i] = [            # floor_2,3 cracks; 4 rune; 5,6 marks; 7,8 stains
@@ -32,8 +31,8 @@ const WALL_FILL := Vector2i(9, 2)  # in SRC_FILL
 const BANNERS: Array[Vector2i] = [Vector2i(1, 2), Vector2i(2, 2), Vector2i(1, 3), Vector2i(2, 3)]  # red, blue, green, yellow (face tiles)
 
 const STAIRS := Vector2i(5, 12)     # floor_stairs
-const DOOR_CLOSED := Vector2i(2, 15)  # doors_leaf_closed, 2x2 tiles
-const DOOR_OPEN := Vector2i(5, 15)    # doors_leaf_open, 2x2 tiles
+const DOOR_CLOSED := Vector2i(2, 15)  # doors_leaf_closed, 32x32 (Door.gd draws it, not the TileMap)
+const DOOR_OPEN := Vector2i(5, 15)    # doors_leaf_open, 32x32
 
 # props_tileset.tres (Kenney)
 const PROPS: Array[Vector2i] = [Vector2i(3, 5), Vector2i(3, 6), Vector2i(4, 5), Vector2i(5, 5), Vector2i(2, 6), Vector2i(6, 5)]

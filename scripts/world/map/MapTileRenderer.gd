@@ -1,15 +1,16 @@
 class_name MapTileRenderer
 extends Node2D
 
-## Draws a MapLayout with tiles: Floor / Walls / Decor / Doors TileMapLayers of
+## Draws a MapLayout with tiles: Floor / Walls / Decor TileMapLayers of
 ## 16 px tiles scaled by ArtConfig.ART_SCALE. One logical cell = CELL_TILES x
 ## CELL_TILES tiles. Presentation only: RoomManager decides what is discovered
-## and calls show_zone()/show_door(); nothing here holds gameplay state.
+## and calls show_zone(); nothing here holds gameplay state. Door leaves are not
+## tiles: a multi-cell atlas tile is drawn centered on its origin cell, which
+## shifted them off the corridor lane; Door.tscn owns its own centered Sprite2D.
 ##
 ## build_plan() is pure and deterministic (same layout + config -> same plan),
 ## keyed by zone id so a zone's tiles are only painted when it is revealed:
-##   {"zones": {zone_id: {"floor": {tile: Vector4i}, "walls": {...}, "decor": {...}}},
-##    "doors": {corridor_id: {"tile": Vector2i, "alt": int}}}
+##   {"zones": {zone_id: {"floor": {tile: Vector4i}, "walls": {...}, "decor": {...}}}}
 ## Tile values are DungeonTiles.tile(source, atlas, alt). Walls are the 1-cell
 ## ring around all floor (2 tiles thick): the row touching floor below is a
 ## brick face, the row above it its cap, the row touching floor above a flipped
@@ -24,7 +25,6 @@ const DIRS8: Array[Vector2i] = [
 @onready var floor_layer: TileMapLayer = $Floor
 @onready var walls_layer: TileMapLayer = $Walls
 @onready var decor_layer: TileMapLayer = $Decor
-@onready var doors_layer: TileMapLayer = $Doors
 
 var _plan: Dictionary = {}
 var _shown: Dictionary = {}  # zone_id -> true
@@ -37,7 +37,7 @@ func _ready() -> void:
 func build(layout: MapLayout, config: MapVisualConfig) -> void:
 	_plan = build_plan(layout, config)
 	_shown.clear()
-	for layer in [floor_layer, walls_layer, decor_layer, doors_layer]:
+	for layer in [floor_layer, walls_layer, decor_layer]:
 		layer.clear()
 
 
@@ -54,19 +54,6 @@ func show_zone(zone_id: String) -> void:
 	_paint(floor_layer, zone["floor"])
 	_paint(walls_layer, zone["walls"])
 	_paint(decor_layer, zone["decor"])
-
-
-## Door leaf of a corridor: nothing until its origin room is visible, then
-## closed, then open once the door has been opened.
-func show_door(corridor_id: String, origin_visible: bool, opened: bool) -> void:
-	var door: Dictionary = _plan.get("doors", {}).get(corridor_id, {})
-	if door.is_empty():
-		return
-	if not origin_visible:
-		doors_layer.erase_cell(door["tile"])
-		return
-	var atlas := DungeonTiles.DOOR_OPEN if opened else DungeonTiles.DOOR_CLOSED
-	doors_layer.set_cell(door["tile"], DungeonTiles.SRC_SHEET, atlas, door["alt"])
 
 
 func _paint(layer: TileMapLayer, tiles: Dictionary) -> void:
@@ -105,15 +92,7 @@ static func build_plan(layout: MapLayout, config: MapVisualConfig) -> Dictionary
 	_plan_walls(config, layout, zones, floor_tiles, wall_tiles)
 	_plan_props(layout, config, zones, floor_tiles)
 
-	var doors: Dictionary = {}
-	for corridor in layout.corridors:
-		var room_a := layout.get_room(corridor.room_a).get_rect()
-		var east_west := corridor.door_cell.x < room_a.position.x or corridor.door_cell.x >= room_a.end.x
-		doors[corridor.id] = {
-			"tile": corridor.door_cell * T,
-			"alt": DungeonTiles.ALT_TRANSPOSE if east_west else DungeonTiles.ALT_NONE,
-		}
-	return {"zones": zones, "doors": doors}
+	return {"zones": zones}
 
 
 static func _add_zone(id: String, rect: Rect2i, order: Array[String], zone_cells: Dictionary, floor_cells: Dictionary) -> void:

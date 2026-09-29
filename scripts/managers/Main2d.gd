@@ -275,7 +275,7 @@ func _register_groups_and_doors() -> void:
 		door.target_room_id = room_manager.get_group_id(corridor.id)
 		door.from_zone_id = corridor.room_a
 		door.cell = corridor.door_cell
-		door.get_node("Polygon2D").visible = false  # the door leaf is a tile (MapTileRenderer)
+		door.east_west = corridor.is_east_west(map_layout.get_room(corridor.room_a))
 		doors_root.add_child(door)
 		room_manager.register_door(door)
 

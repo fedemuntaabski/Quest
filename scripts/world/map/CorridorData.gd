@@ -22,6 +22,12 @@ func get_rect() -> Rect2i:
 	return Rect2i(pos, size)
 
 
+## True when the corridor runs east-west (its door cell sits left/right of room_a).
+func is_east_west(origin_room: RoomData) -> bool:
+	var rect := origin_room.get_rect()
+	return door_cell.x < rect.position.x or door_cell.x >= rect.end.x
+
+
 ## What the player sees and clicks as "the corridor": get_rect() plus the door
 ## cell (always adjacent, same lane). Once the door opens it is disabled and
 ## this zone must own the cell, or that tile of the corridor is dead to clicks.

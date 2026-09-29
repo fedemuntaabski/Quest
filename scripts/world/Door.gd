@@ -19,12 +19,33 @@ signal door_clicked(door: Door)
 var room_a_id: String = ""
 var room_b_id: String = ""
 
+## Set before add_child(): the leaf art is drawn transposed on E-W corridors.
+var east_west: bool = false
+
 var is_open: bool = false
+
+const SHEET := preload("res://assets/art/_source/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png")
+const LEAF_PX := Vector2(32, 32)
+
+@onready var leaf: Sprite2D = $Leaf
 
 
 func _ready() -> void:
 	z_index = 1
 	input_event.connect(_on_input_event)
+	# The leaf is a child, centered on the door origin (= cell center), so the art,
+	# the click shape and the corridor lane can never drift apart.
+	leaf.texture = AtlasTexture.new()
+	(leaf.texture as AtlasTexture).atlas = SHEET
+	var s := float(ArtConfig.ART_SCALE)
+	leaf.transform = Transform2D(Vector2(0, s), Vector2(s, 0), Vector2.ZERO) if east_west else Transform2D(Vector2(s, 0), Vector2(0, s), Vector2.ZERO)
+	set_leaf(is_open)
+
+
+## Closed or open leaf art (0x72 `doors_leaf_*`, 32x32 = one logical cell).
+func set_leaf(open: bool) -> void:
+	var atlas := DungeonTiles.DOOR_OPEN if open else DungeonTiles.DOOR_CLOSED
+	(leaf.texture as AtlasTexture).region = Rect2(Vector2(atlas * ArtConfig.TILE_SIZE), LEAF_PX)
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
@@ -42,10 +63,11 @@ func is_opened() -> bool:
 	return is_open
 
 
-## Permanently disables the door: no more clicks, faded visual.
+## Permanently disables the door: no more clicks, open leaf.
 func disable_door() -> void:
 	is_open = true
-	modulate.a = 0.3
+	if leaf:
+		set_leaf(true)
 	input_pickable = false
 	var shape := get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if shape:

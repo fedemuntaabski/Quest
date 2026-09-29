@@ -628,9 +628,8 @@ func refresh_door_visibility() -> void:
 	for group_id in _doors_by_group.keys():
 		var door: Door = _doors_by_group[group_id]
 		var from_visible := is_zone_visible(door.from_zone_id) if door.from_zone_id != "" else true
-		door.visible = from_visible and not door.is_opened()
-		if tile_renderer:
-			tile_renderer.show_door(door.door_id, from_visible, door.is_opened())
+		door.visible = from_visible
+		door.set_leaf(door.is_opened())
 
 
 ## Dev check: fog tiles and RoomZone display must agree with is_zone_visible

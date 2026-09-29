@@ -65,11 +65,6 @@ func _build_dungeon() -> void:
 	for coords in DungeonTiles.BANNERS:
 		_add(sheet, coords)
 	_add(sheet, DungeonTiles.STAIRS)
-	# Doors: 2x2 tiles, transposed alternative for E-W corridors.
-	for coords in [DungeonTiles.DOOR_CLOSED, DungeonTiles.DOOR_OPEN]:
-		_add(sheet, coords, Vector2i(2, 2))
-		sheet.create_alternative_tile(coords, DungeonTiles.ALT_TRANSPOSE)
-		sheet.get_tile_data(coords, DungeonTiles.ALT_TRANSPOSE).transpose = true
 
 	var fill := _source(ts, DungeonTiles.SRC_FILL, FILL)
 	_solid(_add(fill, DungeonTiles.WALL_FILL))

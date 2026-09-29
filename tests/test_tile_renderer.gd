@@ -116,7 +116,7 @@ func _check_live(layout: MapLayout, visual: MapVisualConfig) -> void:
 	root.add_child(renderer)
 	await process_frame
 	renderer.build(layout, visual)
-	var layers: Array[TileMapLayer] = [renderer.floor_layer, renderer.walls_layer, renderer.decor_layer, renderer.doors_layer]
+	var layers: Array[TileMapLayer] = [renderer.floor_layer, renderer.walls_layer, renderer.decor_layer]
 	for layer in layers:
 		if not layer.get_used_cells().is_empty():
 			failures.append("live: %s has tiles before any show_zone" % layer.name)
@@ -149,11 +149,4 @@ func _check_live(layout: MapLayout, visual: MapVisualConfig) -> void:
 	if renderer.floor_layer.get_used_cells().size() != zone["floor"].size():
 		failures.append("live: show_zone not idempotent")
 
-	var corridor := layout.corridors[0]
-	renderer.show_door(corridor.id, false, false)
-	if not renderer.doors_layer.get_used_cells().is_empty():
-		failures.append("live: door drawn while its origin room is hidden")
-	renderer.show_door(corridor.id, true, false)
-	if renderer.doors_layer.get_used_cells().size() != 1:
-		failures.append("live: closed door not drawn")
 	renderer.queue_free()
