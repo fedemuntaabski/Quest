@@ -57,7 +57,6 @@ const TIMER_NORMAL: Color = Color(1.00, 1.00, 1.00, 1.0)
 const TIMER_WARNING: Color = Color(1.00, 0.85, 0.20, 1.0)
 const TIMER_CRITICAL: Color = Color(1.00, 0.24, 0.20, 1.0)
 
-const CURRENCY_GOLD_POPUP: Color = Color(1.00, 0.84, 0.10, 1.0)
 
 const CARD_STRENGTH: Color = BLOOD_LIGHT
 const CARD_AGILITY: Color = STEEL

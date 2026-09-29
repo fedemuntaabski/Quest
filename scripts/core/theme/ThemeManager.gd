@@ -45,7 +45,6 @@ static func get_combat_feedback_palette() -> Dictionary:
 		"timer_normal": QuestPalette.TIMER_NORMAL,
 		"timer_warning": QuestPalette.TIMER_WARNING,
 		"timer_critical": QuestPalette.TIMER_CRITICAL,
-		"gold_popup": QuestPalette.CURRENCY_GOLD_POPUP,
 	}
 
 static func get_combat_feedback_timing() -> Dictionary:

@@ -217,7 +217,6 @@ func _get_slot_summary(slot_id: int) -> String:
 		QuestLogger.error(QuestLogger.Category.SAVE, "Failed to read slot %d summary (Error code: %d)." % [slot_id, err])
 		return "No se pudo leer la ranura %d. El archivo de guardado podria estar danado." % slot_id
 
-	var gold = cfg.get_value("save_data", "gold", 0)
 	var contracts = cfg.get_value("save_data", "run_cycle", cfg.get_value("save_data", "contracts_completed", 0))
 	var s_hp = cfg.get_value("save_data", "base_hp", StatBalance.PLAYER_BASE_HP)
 	var saved_at_unix = cfg.get_value("save_data", "saved_at_unix", 0)
@@ -237,7 +236,6 @@ func _get_slot_summary(slot_id: int) -> String:
 		"DATOS DE LA RANURA %d:\n\n" +
 		"• Guardado: %s\n" +
 		"• Tiempo jugado: %s\n" +
-		"• Oro acumulado: %s\n" +
 		"• Ciclo de contratos: %d\n" +
 		"• Vida base: %d/%d\n\n" +
 		"Haz clic para continuar la aventura."
@@ -245,20 +243,7 @@ func _get_slot_summary(slot_id: int) -> String:
 		slot_id,
 		date_str,
 		playtime_str,
-		_format_thousands(int(gold)),
 		contracts,
 		s_hp,
 		StatBalance.PLAYER_MAX_HP
 	]
-
-
-static func _format_thousands(n: int) -> String:
-	var s := str(n)
-	var out := ""
-	var count := 0
-	for i in range(s.length() - 1, -1, -1):
-		out = s[i] + out
-		count += 1
-		if count % 3 == 0 and i != 0:
-			out = "." + out
-	return out

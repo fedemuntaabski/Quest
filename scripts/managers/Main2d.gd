@@ -48,10 +48,8 @@ const GROUP_DOUBLE_TAP_MS := 300
 
 @onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
 @onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
-@onready var death_gold_label: Label = $DeathOverlay/CenterContainer/VBoxContainer/GoldLabel
 
 @onready var return_button: Button = $VictoryOverlay/CenterContainer/VBoxContainer/ReturnButton
-@onready var victory_gold_label: Label = $VictoryOverlay/CenterContainer/VBoxContainer/GoldLabel
 @onready var victory_label: Label = $VictoryOverlay/CenterContainer/VBoxContainer/VictoryLabel
 @onready var next_floor_button: Button = $VictoryOverlay/CenterContainer/VBoxContainer/NextFloorButton
 
@@ -80,7 +78,6 @@ var death_handler: Main2dDeathHandler
 var victory_handler: Main2dVictoryHandler
 var active_character_id: String = ""
 var _is_dead: bool = false
-var _run_gold_start: int = 0
 ## Space: Engine.time_scale 0 (Tweens/Timers/physics delta stop, HUD/building
 ## still work). Kept across the Esc pause, which forces 1 while open.
 var _tactical_paused: bool = false
@@ -94,10 +91,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 	death_handler = Main2dDeathHandler.new()
-	death_handler.setup(self, death_overlay, death_gold_label)
+	death_handler.setup(self, death_overlay)
 
 	victory_handler = Main2dVictoryHandler.new()
-	victory_handler.setup(self, victory_overlay, victory_gold_label)
+	victory_handler.setup(self, victory_overlay)
 
 	var save_mgr := ManagerLocator.get_save_manager()
 	active_character_id = save_mgr.get_selected_character_id() if save_mgr else CharacterDatabase.get_default_id()
@@ -116,10 +113,6 @@ func _ready() -> void:
 	_spawn_nexo()
 	_setup_player_action_controller()
 	_connect_signals()
-
-	var currency := ManagerLocator.get_currency_manager() as CurrencyManager
-	if currency:
-		_run_gold_start = int(currency.get_gold())
 
 func _ensure_game_state_manager() -> void:
 	game_state_manager = get_node_or_null("GameStateManager") as GameStateManager
@@ -475,14 +468,14 @@ func _on_player_died() -> void:
 		get_tree().paused = true
 
 	if death_handler:
-		death_handler.show_death_screen(0, 0, _get_run_gold_earned())
+		death_handler.show_death_screen()
 
 func _on_victory() -> void:
 	if pause_menu:
 		pause_menu.close()
 
 	if victory_handler:
-		victory_handler.show_victory_screen(_get_run_gold_earned())
+		victory_handler.show_victory_screen()
 
 ## Fires before victory_entered (ExtractionManager emits victory_declared
 ## before requesting the VICTORY state), so the overlay is ready when shown.
@@ -493,12 +486,6 @@ func _on_floor_completed(completed_floor: int) -> void:
 		next_floor_button.text = "Descender al piso %d" % (completed_floor + 1)
 	if victory_label and has_next:
 		victory_label.text = "¡Piso %d superado!" % completed_floor
-
-func _get_run_gold_earned() -> int:
-	var currency := ManagerLocator.get_currency_manager() as CurrencyManager
-	if currency:
-		return max(0, int(currency.get_gold() - _run_gold_start))
-	return 0
 
 # ─────────────────────────────────────────────
 # PAUSE / SCENE FLOW

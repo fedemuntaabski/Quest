@@ -1109,7 +1109,7 @@ Party de 2 héroes fijos (sin roster ni reclutamiento) + los loops ya no tocan l
 - Borrado: `StorePanel`/`StoreUpgradeCard` (escena + script), botón/nodo/estilo/panel 2 en `PauseMenu`, `PlayerStats.{apply_upgrade, can_upgrade_stat, get_upgrade_level, get_max_upgrade_level, active_upgrades, upgrade_levels, upgrades_changed}`, costos de mejora en `StatBalance`, `active_upgrades` en saves (las saves viejas con la clave se ignoran), `QuestPalette.CARD_VITALITY`.
 - Se conserva lo compartido: `HUDController.show/hide_simple_tooltip` + `StatTooltip` (chips del HUD), `CurrencyManager`/Oro, `BuildingMenu`, niveles de héroe (Comida).
 - Pausa: PAUSA / Oro / OPCIONES / SALIR (panel 560×380, sin hueco). No hay botón "Continuar" (Esc reanuda), no se agregó.
-- **Consecuencia a decidir**: el Oro se sigue ganando y mostrando pero ya no tiene en qué gastarse; el +HP meta guardado en saves viejas deja de aplicarse.
+- **Oro eliminado** (commit posterior): sin la tienda no tenía uso (nada llamaba a `add_gold`; siempre 0). Fuera `CurrencyManager` (autoload), `SaveManager.gold`, `PauseGoldLabel`, los `GoldLabel` de muerte/victoria (los handlers pierden el parámetro), la línea del resumen de slot y `CURRENCY_GOLD_POPUP`. Las saves viejas con `gold` se ignoran, igual que el +HP meta guardado.
 
 ### Playtest pendiente
 Leaf centrado en los 4 sentidos y clic en las 4 celdas; carteles (no se pisan con "Botín: +6 Industria"); legibilidad de íconos en badge/minimapa; props (arte Kenney) bien elegidos; pausa → Opciones → volver → Salir.

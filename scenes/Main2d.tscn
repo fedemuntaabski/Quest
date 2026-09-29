@@ -55,13 +55,6 @@ theme_override_font_sizes/font_size = 48
 text = "La mazmorra reclama su tributo..."
 horizontal_alignment = 1
 
-[node name="GoldLabel" type="Label" parent="DeathOverlay/CenterContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.84, 0, 1)
-theme_override_font_sizes/font_size = 32
-text = "Oro ganado: 0"
-horizontal_alignment = 1
-
 [node name="ButtonsHBox" type="HBoxContainer" parent="DeathOverlay/CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 40
@@ -107,13 +100,6 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_font_sizes/font_size = 48
 text = "¡Reliquia extraída con éxito!"
-horizontal_alignment = 1
-
-[node name="GoldLabel" type="Label" parent="VictoryOverlay/CenterContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.84, 0, 1)
-theme_override_font_sizes/font_size = 32
-text = "Oro ganado: 0"
 horizontal_alignment = 1
 
 [node name="NextFloorButton" type="Button" parent="VictoryOverlay/CenterContainer/VBoxContainer"]

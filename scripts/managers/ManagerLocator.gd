@@ -23,8 +23,6 @@ static func get_save_manager() -> SaveManager:
 	return get_autoload("SaveManager") as SaveManager
 
 
-static func get_currency_manager() -> CurrencyManager:
-	return get_autoload("CurrencyManager") as CurrencyManager
 
 
 static func get_player_stats() -> PlayerStats:
@@ -159,9 +157,6 @@ static func get_floating_text_manager() -> Node:
 
 
 static func flush_saves() -> void:
-	var currency := get_currency_manager()
-	if currency and currency.has_method("flush_save"):
-		currency.flush_save()
 	var save_mgr := get_save_manager()
 	if save_mgr and save_mgr.has_method("save_game"):
 		save_mgr.save_game()

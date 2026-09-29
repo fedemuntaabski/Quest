@@ -146,7 +146,7 @@ grow_vertical = 2
 
 [node name="PausePanel" type="Panel" parent="CenterContainer" unique_id=1211186564]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(560, 380)
+custom_minimum_size = Vector2(560, 330)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -157,9 +157,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -210.0
-offset_top = -155.0
+offset_top = -126.0
 offset_right = 210.0
-offset_bottom = 155.0
+offset_bottom = 126.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 20
@@ -173,16 +173,6 @@ theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("2_title_font")
 theme_override_font_sizes/font_size = 56
 text = "PAUSA"
-horizontal_alignment = 1
-
-[node name="PauseGoldLabel" type="Label" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1182267748]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
-theme_override_fonts/font = ExtResource("3_ui_font")
-theme_override_font_sizes/font_size = 24
-text = "Oro: 0"
 horizontal_alignment = 1
 
 [node name="OptionsButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=1136326752]

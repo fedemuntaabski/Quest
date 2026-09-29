@@ -3,7 +3,6 @@ class_name PauseMenu
 
 signal exit_requested
 
-@export var save_mgr: SaveManager
 @export var player_stats: PlayerStats
 @export var confirm_exit_on_run: bool = true
 
@@ -15,7 +14,6 @@ signal exit_requested
 
 @onready var options_button: Button = %OptionsButton
 @onready var exit_button: Button = %ExitButton
-@onready var pause_gold_label: Label = %PauseGoldLabel
 
 @onready var panels: Array[Control] = [pause_panel, options_menu]
 
@@ -27,8 +25,6 @@ func _on_base_ready() -> void:
 
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-	if save_mgr == null:
-		save_mgr = ManagerLocator.get_save_manager()
 	if player_stats == null:
 		player_stats = ManagerLocator.get_player_stats()
 
@@ -54,17 +50,11 @@ func _on_base_ready() -> void:
 	add_scale_target(pause_panel)
 
 	_set_panel(0)
-	_update_gold_label()
-
-	var currency := ManagerLocator.get_currency_manager()
-	if currency and not currency.gold_changed.is_connected(_on_gold_changed):
-		currency.gold_changed.connect(_on_gold_changed)
 
 # ---------------- OPEN / CLOSE ----------------
 
 func _on_before_open() -> void:
 	_set_panel(0)
-	_update_gold_label()
 
 
 func _on_before_close() -> void:
@@ -123,25 +113,11 @@ func _show_exit_confirm_dialog() -> void:
 func _emit_exit_requested() -> void:
 	exit_requested.emit()
 
-# ---------------- GOLD ----------------
-
-func _update_gold_label() -> void:
-	var currency := ManagerLocator.get_currency_manager()
-	var current_gold: int = currency.get_gold() if currency else (save_mgr.gold if save_mgr else 0)
-	if pause_gold_label:
-		pause_gold_label.text = "Oro: %d" % current_gold
-
-
-func _on_gold_changed(_amount: int) -> void:
-	_update_gold_label()
-
 # ---------------- THEME ----------------
 
 func _apply_theme() -> void:
 	if pause_panel:
 		pause_panel.add_theme_stylebox_override("panel", ThemeManager.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 20))
-	if pause_gold_label:
-		pause_gold_label.add_theme_color_override("font_color", QuestPalette.GOLD)
 	if options_button:
 		_style_button(options_button)
 	if exit_button:

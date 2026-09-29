@@ -3,23 +3,18 @@ class_name Main2dVictoryHandler
 
 # Main2dVictoryHandler: presentation helper for victory overlay.
 # Responsibilities:
-# - Show victory UI and populate run summary labels; does not perform state changes.
+# - Show victory UI; does not perform state changes.
 
 var owner: Node = null
 var victory_overlay: CanvasLayer = null
-var victory_gold_label: Label = null
 
-func setup(p_owner: Node, p_victory_overlay: CanvasLayer, p_victory_gold_label: Label) -> void:
+func setup(p_owner: Node, p_victory_overlay: CanvasLayer) -> void:
 	owner = p_owner
 	victory_overlay = p_victory_overlay
-	victory_gold_label = p_victory_gold_label
 
-func show_victory_screen(run_gold: int) -> void:
+func show_victory_screen() -> void:
 	if owner == null:
 		return
-
-	if victory_gold_label:
-		victory_gold_label.text = "Oro ganado: %d" % run_gold
 
 	if victory_overlay:
 		victory_overlay.visible = true
