@@ -3,10 +3,11 @@
 Todo el arte es 16×16 px por tile, licencia CC0 (ver `CREDITS.md`). Originales intactos en `assets/art/_source/`; copias por categoría en `assets/art/{tiles,characters,enemies,items,ui}/` (las que usa el juego). Tras copiar, mantener PNG en Nearest / lossless / sin mipmaps (default del proyecto).
 
 ## Escala y celda lógica
-- `ArtConfig` (`scripts/core/art/ArtConfig.gd`): `TILE_SIZE = 16`, `ART_SCALE = 4`, `CELL_PX = 64`.
-- **1 celda lógica de `MapLayout`/`MapGenerator` = 1 tile de arte (16 px) dibujado ×4 = 64 px**. Ya coincide con `tile_size` de `resources/tileset/placeholder_tileset.tres` y `RoomManager.DEFAULT_TILE_SIZE` (64). Sala máx 5×5 celdas = 80×80 px de arte = 320 px de mundo; `MapGenerator.SLOT_PITCH` = 9 celdas.
-- Sprites: dibujar con `scale = Vector2(ART_SCALE, ART_SCALE)`; colisiones/radios en px de mundo (arte × 4). Héroe 16×28 → 64×112 px.
-- Cambiar `ART_SCALE` obliga a cambiar `tile_size` del tileset y `DEFAULT_TILE_SIZE`; `tests/test_art_config.gd` falla si divergen.
+- `ArtConfig` (`scripts/core/art/ArtConfig.gd`): `TILE_SIZE = 16`, `ART_SCALE = 2`, `CELL_TILES = 2`, `CELL_PX = 64`.
+- **1 celda lógica de `MapLayout`/`MapGenerator` = 2×2 tiles de arte (16 px) dibujados ×2 = 64 px de mundo**. Coincide con `tile_size` de `resources/tileset/placeholder_tileset.tres` (rejilla lógica oculta) y `RoomManager.DEFAULT_TILE_SIZE` (64). Sala máx 5×5 celdas = 10×10 tiles = 320 px de mundo; `MapGenerator.SLOT_PITCH` = 9 celdas.
+- Muro de 1 celda = 2 tiles (tapa + cara de 0x72); puerta `doors_leaf_*` (32×32) = 1 celda; pasillo (1 celda) = 2 tiles de ancho.
+- Sprites: dibujar con `scale = Vector2(ART_SCALE, ART_SCALE)`; colisiones/radios en px de mundo (arte × 2). Héroe 16×28 → 32×56 px.
+- `tests/test_art_config.gd` falla si `CELL_PX`, el `tile_size` del tileset lógico y `DEFAULT_TILE_SIZE` divergen.
 
 ## Inventario por pack
 
