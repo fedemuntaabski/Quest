@@ -2,7 +2,7 @@ extends PanelContainer
 class_name CharacterCardOption
 
 ## CharacterCardOption owns the visual structure for one selectable hero tile.
-## Reused by CharacterSelection (single-player) and WaitingRoom (multiplayer lobby picker).
+## Used by WaitingRoom (multiplayer lobby picker).
 
 signal selected(character_id: String)
 

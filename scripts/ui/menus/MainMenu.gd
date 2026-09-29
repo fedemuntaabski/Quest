@@ -41,7 +41,7 @@ func _ready() -> void:
 
 	flow.build_slot_selector(start_button)
 	flow.build_network_mode_select()
-	flow.build_character_selection()
+	flow.build_hero_select()
 
 	if options_menu:
 		options_menu.close(false)

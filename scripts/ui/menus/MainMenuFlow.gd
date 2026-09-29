@@ -6,7 +6,7 @@ class_name MainMenuFlow
 
 const SLOT_SELECTION_SCENE := preload("res://scenes/SlotSelection.tscn")
 const NETWORK_MODE_SELECT_SCENE := preload("res://scenes/NetworkModeSelect.tscn")
-const CHARACTER_SELECTION_SCENE := preload("res://scenes/CharacterSelection.tscn")
+const HERO_SELECT_SCENE := preload("res://scenes/HeroSelectMenu.tscn")
 
 enum MenuState {
 	MAIN,
@@ -27,7 +27,7 @@ var hover_sound: AudioStreamPlayer = null
 
 var slot_selector: SaveSlotSelector = null
 var network_mode_select: NetworkModeSelect = null
-var character_selection: CharacterSelection = null
+var hero_select: HeroSelectMenu = null
 
 var _is_hosting: bool = false
 
@@ -101,21 +101,21 @@ func build_network_mode_select() -> void:
 			steam_mgr.lobby_manager.lobby_failed.connect(_on_lobby_failed)
 
 
-func build_character_selection() -> void:
+func build_hero_select() -> void:
 	if owner == null:
 		return
 
-	character_selection = CHARACTER_SELECTION_SCENE.instantiate() as CharacterSelection
-	character_selection.setup(click_sound, hover_sound)
-	character_selection.visible = false
+	hero_select = HERO_SELECT_SCENE.instantiate() as HeroSelectMenu
+	hero_select.setup(click_sound, hover_sound)
+	hero_select.visible = false
 
-	owner.add_child(character_selection)
+	owner.add_child(hero_select)
 
-	if not character_selection.character_confirmed.is_connected(_on_character_confirmed):
-		character_selection.character_confirmed.connect(_on_character_confirmed)
+	if not hero_select.heroes_confirmed.is_connected(_on_heroes_confirmed):
+		hero_select.heroes_confirmed.connect(_on_heroes_confirmed)
 
-	if not character_selection.back_pressed.is_connected(_on_character_back_pressed):
-		character_selection.back_pressed.connect(_on_character_back_pressed)
+	if not hero_select.back_pressed.is_connected(_on_hero_select_back_pressed):
+		hero_select.back_pressed.connect(_on_hero_select_back_pressed)
 
 
 func show_main_menu() -> void:
@@ -126,8 +126,8 @@ func show_main_menu() -> void:
 		slot_selector.close(true)
 	if network_mode_select:
 		network_mode_select.close(false)
-	if character_selection:
-		character_selection.close(false)
+	if hero_select:
+		hero_select.close(false)
 	if options_menu:
 		options_menu.close(false)
 
@@ -220,17 +220,17 @@ func _on_slot_selected(slot_id: int) -> void:
 		is_transitioning = false
 		return
 
-	var is_fresh_slot := not save_mgr.has_save(slot_id)
 	save_mgr.load_game(slot_id)
 
-	if is_fresh_slot:
+	# Offline picks its 2 heroes every run; the host picks in the WaitingRoom.
+	if _is_hosting:
+		await _proceed_after_character_ready()
+	else:
 		current_state = MenuState.CHARACTER_SELECT
 		if slot_selector:
 			slot_selector.close(true)
-		if character_selection:
-			character_selection.open()
-	else:
-		await _proceed_after_character_ready()
+		if hero_select:
+			hero_select.open()
 
 
 func _proceed_after_character_ready() -> void:
@@ -240,26 +240,26 @@ func _proceed_after_character_ready() -> void:
 		await _change_to_game_scene()
 
 
-func _on_character_confirmed(character_id: String) -> void:
+func _on_heroes_confirmed(hero_ids: Array[String]) -> void:
+	var session := ManagerLocator.get_game_session()
+	if session == null or not session.set_selection(hero_ids):
+		QuestLogger.error(QuestLogger.Category.UI, "MainMenuFlow: invalid hero pick %s" % [hero_ids])
+		return
+
 	var save_mgr := ManagerLocator.get_save_manager()
 	if save_mgr:
-		save_mgr.apply_character_selection(character_id)
+		save_mgr.apply_character_selection(hero_ids[0])
 
-	if character_selection:
-		character_selection.close(true)
+	if hero_select:
+		hero_select.close(true)
 
 	await _proceed_after_character_ready()
 
 
-func _on_character_back_pressed() -> void:
-	is_transitioning = false
-
-	if character_selection:
-		character_selection.close(true)
-
-	current_state = MenuState.SLOT_SELECT
-	if slot_selector:
-		slot_selector.open()
+func _on_hero_select_back_pressed() -> void:
+	if hero_select:
+		hero_select.close(false)
+	show_main_menu()
 
 
 func _on_host_selected() -> void:
@@ -342,6 +342,11 @@ func _change_to_game_scene() -> void:
 func _change_to_waiting_room() -> void:
 	if owner == null:
 		return
+
+	# The WaitingRoom hero pick rules multiplayer: drop any earlier offline pick.
+	var session := ManagerLocator.get_game_session()
+	if session:
+		session.clear()
 
 	if slot_selector:
 		slot_selector.close(true)
