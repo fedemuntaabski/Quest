@@ -1075,6 +1075,23 @@ Party de 2 héroes fijos (sin roster ni reclutamiento) + los loops ya no tocan l
 - Selección en el autoload `GameSession`; sin selección, `Main2d` mantiene el fallback anterior (warrior + mage).
 - HP por héroe real: `CharacterStats.base_hp` viene de `CharacterData.base_hp`. `PlayerStats.base_hp` queda solo como valor persistido de cuenta (ya no manda en el spawn).
 
+## Sesión 14 — selección multi-héroe y grupos (`session/select-2`)
+
+### Flujo anterior y qué incomodaba
+
+- Un solo héroe "activo": `PlayerStats.active_hero_id` (`select_hero`/`cycle_active_hero`/`active_hero_changed`). Tab cicla; clic en retrato selecciona (o abre la ficha si ya era el activo).
+- La orden es un clic en destino (`RoomZone.clicked` → `PlayerActionController._on_zone_clicked` → `find_zone_path` → `MoveAction`); la ejecutaba solo el activo y un `_action_in_flight` global bloqueaba el resto. Puertas: `_open_group` exige que el héroe esté adyacente.
+- Incómodo: mover a los dos = seleccionar, ordenar, Tab, ordenar; los héroes no se pueden clicar (`Hurtbox.input_pickable = false`, el clic cae en la `RoomZone`); sin grupos ni atajos; el estado de selección estaba repartido (PlayerStats, HUD, Main2d).
+
+### Decisiones
+
+- `SelectionManager` (autoload) es la única fuente de verdad; `PlayerStats.active_hero_id` pasó a ser una vista del héroe principal.
+- Clic en héroe = seleccionar (se marca handled para que no mueva); clic en el resto de la sala sigue siendo la orden de mover, para toda la selección.
+- Atajos: F1/F2 seleccionan, Ctrl+F1/F2 agregan/quitan, Ctrl+1..3 asignan grupo, 1..3 lo recuperan, doble pulsación centra la cámara. Tab se conserva.
+- **Conflicto de teclas**: 1-9 ya eligen carta en `BuildingMenu` mientras está visible. Con el menú abierto mandan las cartas; cerrado, son grupos. Ctrl+N siempre asigna grupo.
+- Formación: se reutiliza `Player.sprite_offset` (separación lateral desde el spawn); no hay offsets nuevos. No existe orden de ataque (auto-combate), no se agregó.
+- Los grupos sobreviven a los pisos y se borran al empezar una partida nueva; un héroe muerto sale de selección y grupos.
+
 ## Próximos pasos (sesión 13+)
 
 1. Playtest F5.

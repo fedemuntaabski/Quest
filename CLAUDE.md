@@ -40,6 +40,8 @@ QUEST: 2D tactical/roguelite game built in Godot 4.6, GDScript only (no C#/.NET)
 
 **Session 13** (`session/select-1`, on top of assets-3): 2-hero selection. `HeroSelectMenu` (pick 2 of 4 + preview/stats) replaces `CharacterSelection`; the pick lives in the `GameSession` autoload and `Main2d._spawn_heroes()` reads it (fallback = old `PartyConfig` party). `CharacterData` doubles as HeroData (+ `role`); max HP is per hero (`CharacterStats.base_hp`). Details: `NOTES_SESSION.md` "Sesión 13".
 
+**Session 14** (`session/select-2`, on top of select-1): multi-hero selection + control groups. `SelectionManager` autoload owns the selection (`selected_ids`, first = primary) and `groups` 1-3; `PlayerStats.active_hero_id` is now a view of the primary and `active_hero_changed` is gone (use `SelectionManager.selection_changed`). Click a hero / portrait (Ctrl = add), F1/F2 (+Ctrl), Ctrl+1..3 assigns, 1..3 recalls (double tap centers the camera); move orders act on the whole selection. Details: `NOTES_SESSION.md` "Sesión 14".
+
 ## Commands
 
 No build system, linter, CI, or export presets exist in this repo. Only real dev commands:
