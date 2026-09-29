@@ -203,6 +203,7 @@ func add_hero_portrait(stats: CharacterStats, data: CharacterData) -> HeroPortra
 	var portrait := HeroPortrait.new()
 	portrait.setup(stats, data)
 	portrait.portrait_clicked.connect(_on_portrait_clicked)
+	portrait.portrait_ctrl_clicked.connect(_on_portrait_ctrl_clicked)
 	portrait.portrait_right_clicked.connect(open_hero_sheet)
 	portraits.add_child(portrait)
 	_portraits[stats.hero_id] = portrait
@@ -219,6 +220,13 @@ func _on_portrait_clicked(portrait: HeroPortrait) -> void:
 		selection.select_only(portrait.stats.hero_id)
 	else:
 		open_hero_sheet(portrait)
+
+
+## Ctrl + left click: add/remove that hero.
+func _on_portrait_ctrl_clicked(portrait: HeroPortrait) -> void:
+	var selection := ManagerLocator.get_selection_manager()
+	if selection and portrait.stats:
+		selection.toggle(portrait.stats.hero_id)
 
 
 ## CharacterPopup for this portrait's hero (not necessarily the selected one).

@@ -13,6 +13,8 @@ class_name HeroPortrait
 const ThemeStyles = preload("res://scripts/core/theme/ThemeManager.gd")
 
 signal portrait_clicked(portrait: HeroPortrait)
+## Ctrl + left click: add/remove this hero from the selection.
+signal portrait_ctrl_clicked(portrait: HeroPortrait)
 ## Right click: open this hero's sheet without selecting it.
 signal portrait_right_clicked(portrait: HeroPortrait)
 
@@ -50,7 +52,7 @@ func setup(p_stats: CharacterStats, p_data: CharacterData) -> void:
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	tooltip_text = "Clic: seleccionar (si ya está elegido, ver ficha)\nClic derecho: ver ficha"
+	tooltip_text = "Clic: seleccionar (si ya está elegido, ver ficha)\nCtrl+clic: agregar/quitar de la selección\nClic derecho: ver ficha"
 	_apply_panel_style()
 
 	var row := HBoxContainer.new()
@@ -140,7 +142,10 @@ func _on_gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	if event.button_index == MOUSE_BUTTON_LEFT:
-		portrait_clicked.emit(self)
+		if event.ctrl_pressed:
+			portrait_ctrl_clicked.emit(self)
+		else:
+			portrait_clicked.emit(self)
 		accept_event()
 	elif event.button_index == MOUSE_BUTTON_RIGHT:
 		portrait_right_clicked.emit(self)

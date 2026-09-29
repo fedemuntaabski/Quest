@@ -23,6 +23,9 @@ const PICKUP_SCENE := preload("res://scenes/world/Pickup.tscn")
 ## force_fallback_layout is on or the generated map fails validation.
 const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout.tres")
 
+## Extra px around a hero's body that still count as a click on it.
+const HERO_PICK_MARGIN := 10.0
+
 ## Debug: skip MapGenerator and always play FALLBACK_LAYOUT.
 @export var force_fallback_layout: bool = false
 ## Debug/tests: floor index used when run without the Main orchestrator.
@@ -347,6 +350,48 @@ func _input(event: InputEvent) -> void:
 		if player_stats:
 			player_stats.cycle_active_hero()
 		get_viewport().set_input_as_handled()
+
+## Left click on a hero selects it (Ctrl adds/removes). Consumed on purpose so the
+## RoomZone under the hero doesn't also read it as a move order; a click anywhere
+## else stays a move order. Not while a module is armed (its slots need the click).
+func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	if not _is_gameplay_active():
+		return
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud and hud.building_menu and hud.building_menu.is_armed():
+		return
+	var hero := pick_hero_at(get_canvas_transform().affine_inverse() * event.position)
+	if hero == null:
+		return
+	click_hero(hero, event.ctrl_pressed)
+	get_viewport().set_input_as_handled()
+
+
+## Living hero whose drawn body contains `world_pos` (the closest one), or null.
+func pick_hero_at(world_pos: Vector2) -> Player:
+	var best: Player = null
+	var best_dist := INF
+	for hero in heroes:
+		if not hero.can_accept_input():
+			continue
+		var dist := world_pos.distance_to(hero.to_global(hero.animated_sprite.body_center()))
+		if dist <= hero.animated_sprite.fit_radius() + HERO_PICK_MARGIN and dist < best_dist:
+			best = hero
+			best_dist = dist
+	return best
+
+
+func click_hero(hero: Player, additive: bool) -> void:
+	var selection := ManagerLocator.get_selection_manager()
+	if selection == null:
+		return
+	if additive:
+		selection.toggle(hero.stats.hero_id)
+	else:
+		selection.select_only(hero.stats.hero_id)
+
 
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
