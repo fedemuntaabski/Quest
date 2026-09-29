@@ -174,8 +174,9 @@ func _bind_player_stats(ps: PlayerStats) -> void:
 
 	if not ps.stats_changed.is_connected(_on_player_stats_changed):
 		ps.stats_changed.connect(_on_player_stats_changed)
-	if not ps.active_hero_changed.is_connected(_refresh_selection):
-		ps.active_hero_changed.connect(_refresh_selection)
+	var selection := ManagerLocator.get_selection_manager()
+	if selection and not selection.selection_changed.is_connected(_refresh_selection):
+		selection.selection_changed.connect(_refresh_selection)
 
 	for stats in ps.get_all_stats():
 		_on_player_stats_changed(stats)
@@ -209,13 +210,13 @@ func add_hero_portrait(stats: CharacterStats, data: CharacterData) -> HeroPortra
 	return portrait
 
 
-## Left click: select that hero; on the already-selected one, open its sheet
+## Left click: select only that hero; on the sole selected one, open its sheet
 ## (single-hero play: always the sheet, as before session 12).
 func _on_portrait_clicked(portrait: HeroPortrait) -> void:
-	var ps := ManagerLocator.get_player_stats()
-	if ps and portrait.stats and portrait.stats.hero_id != ps.active_hero_id:
+	var selection := ManagerLocator.get_selection_manager()
+	if selection and portrait.stats and not selection.is_only(portrait.stats.hero_id):
 		hide_simple_tooltip()
-		ps.select_hero(portrait.stats.hero_id)
+		selection.select_only(portrait.stats.hero_id)
 	else:
 		open_hero_sheet(portrait)
 
@@ -226,10 +227,10 @@ func open_hero_sheet(portrait: HeroPortrait) -> void:
 	character_popup.open_for(portrait.stats, portrait.character_data)
 
 
-func _refresh_selection(_hero_id: String = "") -> void:
-	var ps := ManagerLocator.get_player_stats()
+func _refresh_selection(_selected_ids: Array[String] = []) -> void:
+	var selection := ManagerLocator.get_selection_manager()
 	for hero_id: String in _portraits:
-		(_portraits[hero_id] as HeroPortrait).set_selected(ps != null and hero_id == ps.active_hero_id)
+		(_portraits[hero_id] as HeroPortrait).set_selected(selection != null and selection.is_selected(hero_id))
 
 
 func _on_resource_changed(key: String, amount: int, _delta: int) -> void:

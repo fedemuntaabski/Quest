@@ -35,6 +35,10 @@ static func get_game_session() -> Node:
 	return get_autoload("GameSession")
 
 
+static func get_selection_manager() -> Node:
+	return get_autoload("SelectionManager")
+
+
 static func get_settings_manager() -> Node:
 	return get_autoload("SettingsManager")
 

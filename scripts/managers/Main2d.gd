@@ -145,16 +145,29 @@ func _spawn_heroes() -> void:
 		heroes.append(hero)
 	player = heroes[0]
 	camera = player.get_node("Camera2D") as GameCamera
+	var selection := ManagerLocator.get_selection_manager()
+	if selection:
+		selection.on_party_spawned(ids)
+	camera.follow(_primary_hero())
 	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned party %s at zone '%s'" % [ids, spawn_zone_id])
 
 
-## Tab / portrait click (PlayerStats.select_hero): control + camera move over.
-func _on_active_hero_changed(hero_id: String) -> void:
+## The primary selected hero (SelectionManager); heroes[0] as a fallback.
+func _primary_hero() -> Player:
+	var selection := ManagerLocator.get_selection_manager()
+	var id: String = selection.get_primary_id() if selection else ""
 	for hero in heroes:
-		if hero.stats.hero_id == hero_id:
-			player_action_controller.set_player(hero)
-			camera.follow(hero)
-			return
+		if hero.stats.hero_id == id:
+			return hero
+	return heroes[0]
+
+
+## Any selection change (click, portrait, F-keys, group, Tab): the primary hero
+## takes the controller's highlight and the camera.
+func _on_selection_changed(_selected_ids: Array[String]) -> void:
+	var primary := _primary_hero()
+	player_action_controller.set_player(primary)
+	camera.follow(primary)
 
 func _setup_door_turn_system() -> void:
 	door_turn_system = DoorTurnSystem.new()
@@ -279,7 +292,7 @@ func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 
 func _setup_player_action_controller() -> void:
 	if player_action_controller:
-		player_action_controller.setup(player, floor_layer, room_manager, door_turn_system)
+		player_action_controller.setup(_primary_hero(), floor_layer, room_manager, door_turn_system)
 
 # ─────────────────────────────────────────────
 # SIGNALS
@@ -288,8 +301,9 @@ func _connect_signals() -> void:
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats and not player_stats.player_died.is_connected(_on_player_died):
 		player_stats.player_died.connect(_on_player_died)
-	if player_stats and not player_stats.active_hero_changed.is_connected(_on_active_hero_changed):
-		player_stats.active_hero_changed.connect(_on_active_hero_changed)
+	var selection := ManagerLocator.get_selection_manager()
+	if selection and not selection.selection_changed.is_connected(_on_selection_changed):
+		selection.selection_changed.connect(_on_selection_changed)
 
 	if retry_button and not retry_button.pressed.is_connected(_reload_current_scene):
 		retry_button.pressed.connect(_reload_current_scene)

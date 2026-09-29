@@ -11,9 +11,6 @@ signal player_died
 ## raises all UpgradeConfig.STAT_KEYS together: stat_key is always "level" and
 ## `level` is the number of levels that hero bought this run (hero level - 1).
 signal run_upgrades_changed(stat_key: String, level: int, hero_id: String)
-## Selection changed (Tab / portrait click): Main2d moves this hero, the camera
-## follows it, and the level API defaults to it.
-signal active_hero_changed(hero_id: String)
 
 const RUN_UPGRADE_CONFIG: UpgradeConfig = preload("res://resources/upgrades/run_upgrade_config.tres")
 
@@ -31,7 +28,17 @@ var upgrade_levels := {
 ## hero_id → live CharacterStats, in party order. Rebuilt every floor
 ## (Main2d: clear_party() + one register() per spawned Player).
 var heroes: Dictionary = {}
-var active_hero_id: String = ""
+## The primary selected hero (SelectionManager owns the selection); falls back
+## to the first registered hero (bare CharacterStats in tests, floor start).
+var active_hero_id: String:
+	get:
+		var selection := ManagerLocator.get_selection_manager()
+		var id: String = selection.get_primary_id() if selection else ""
+		if id != "" and heroes.has(id):
+			return id
+		for first_id: String in heroes:
+			return first_id
+		return ""
 
 # IN-RUN HERO LEVELS (Comida, reset per run by Main._begin_new_run; survive
 # floors because this autoload outlives Main2d and register() re-applies them).
@@ -63,12 +70,10 @@ func register(player_stats: CharacterStats) -> void:
 	# First time this CharacterStats registers (re-registering must not double-connect).
 	if not player_stats.died.is_connected(_on_stats_died):
 		player_stats.died.connect(_on_stats_died)
+		player_stats.died.connect(_on_hero_died.bind(player_stats.hero_id))
 		player_stats.stats_changed.connect(_on_stats_updated.bind(player_stats))
 
 	heroes[player_stats.hero_id] = player_stats
-	# First hero of the party (after clear_party) starts selected.
-	if get_hero_stats(active_hero_id) == null:
-		active_hero_id = player_stats.hero_id
 	_refresh_hero(player_stats)
 
 func refresh_stats() -> void:
@@ -171,15 +176,11 @@ func get_hero_ids() -> Array[String]:
 	return out
 
 
-## false if no live hero has that id.
+## Compat: select only this hero (SelectionManager.select_only). false if no
+## live hero has that id.
 func select_hero(hero_id: String) -> bool:
-	if not is_instance_valid(heroes.get(hero_id)):
-		return false
-	if hero_id != active_hero_id:
-		active_hero_id = hero_id
-		QuestLogger.info(QuestLogger.Category.UI, "Active hero -> '%s'." % hero_id)
-		active_hero_changed.emit(hero_id)
-	return true
+	var selection := ManagerLocator.get_selection_manager()
+	return selection != null and selection.select_only(hero_id)
 
 
 ## Tab: next hero in party order, wrapping. false with fewer than 2 heroes.
@@ -194,7 +195,6 @@ func cycle_active_hero() -> bool:
 ## Run levels stay (reset_run_upgrades is the per-run reset).
 func clear_party() -> void:
 	heroes.clear()
-	active_hero_id = ""
 
 
 func _resolve(hero_id: String) -> String:
@@ -315,6 +315,12 @@ func _apply_run_attack(s: CharacterStats, levels: int) -> void:
 
 func _on_stats_updated(s: CharacterStats) -> void:
 	stats_changed.emit(s)
+
+func _on_hero_died(hero_id: String) -> void:
+	var selection := ManagerLocator.get_selection_manager()
+	if selection:
+		selection.remove_hero(hero_id)
+
 
 func _on_stats_died() -> void:
 	player_died.emit()

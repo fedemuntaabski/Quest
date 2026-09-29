@@ -138,6 +138,9 @@ func _begin_new_run() -> void:
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.reset_run_upgrades()
+	var selection := ManagerLocator.get_selection_manager()
+	if selection:
+		selection.reset()
 
 
 # ─────────────────────────────────────────────
