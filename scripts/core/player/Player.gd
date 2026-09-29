@@ -7,6 +7,10 @@ class_name Player
 ## Emitted by set_zone() (spawn and every arrival). Minimap listens.
 signal zone_changed(zone_id: String)
 
+const SELECTION_RING_COLOR := Color(0.95, 0.78, 0.35, 0.95)
+## Vertical squash of the selection ring (a circle seen on the floor).
+const SELECTION_RING_SQUASH := 0.4
+
 @onready var stats: CharacterStats = $Stats
 @onready var animated_sprite: CharacterVisual = $AnimatedSprite2D
 @onready var hurtbox: HurtboxComponent = $Hurtbox
@@ -50,6 +54,25 @@ func _ready() -> void:
 	hurtbox.hurt.connect(_on_hurt)
 	_last_hp = stats.current_hp
 	stats.hp_changed.connect(_on_hp_changed)
+	stats.died.connect(queue_redraw)
+	var selection := ManagerLocator.get_selection_manager()
+	if selection:
+		selection.selection_changed.connect(_on_selection_changed)
+
+
+func _on_selection_changed(_selected_ids: Array[String]) -> void:
+	queue_redraw()
+
+
+## Ring under the feet while this hero is selected (drawn before the child
+## sprite, so it sits behind it).
+func _draw() -> void:
+	var selection := ManagerLocator.get_selection_manager()
+	if selection == null or not selection.is_selected(stats.hero_id) or not stats.is_alive():
+		return
+	draw_set_transform(animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
+	draw_arc(Vector2.ZERO, animated_sprite.fit_radius() * 1.2, 0.0, TAU, 32, SELECTION_RING_COLOR, 2.5)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## HP dropping = a hit: blink white (heals and level-ups only raise HP).

@@ -34,6 +34,8 @@ var target_ratio: float = 1.0
 ## Selected (active) hero: gold border.
 var is_selected: bool = false
 
+var _group_label: Label
+var _group_nums: Array = []
 var _bar: ProgressBar
 var _fill: StyleBoxFlat
 var _last_hp: int = -1
@@ -66,10 +68,17 @@ func _ready() -> void:
 	column.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(column)
 
+	var name_row := HBoxContainer.new()
+	name_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(name_row)
 	var name_label := Label.new()
 	name_label.text = character_data.display_name if character_data else "Héroe"
 	name_label.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
-	column.add_child(name_label)
+	name_row.add_child(name_label)
+	_group_label = Label.new()
+	_group_label.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
+	name_row.add_child(_group_label)
+	set_groups(_group_nums)
 
 	_bar = ProgressBar.new()
 	_bar.custom_minimum_size = BAR_SIZE
@@ -124,6 +133,16 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 		modulate = style.flash_color
 		_flash_tween = create_tween()
 		_flash_tween.tween_property(self, "modulate", Color.WHITE, style.flash_time)
+
+
+## Control groups this hero belongs to, shown next to the name ("[1] [3]").
+func set_groups(nums: Array) -> void:
+	_group_nums = nums
+	if _group_label:
+		var parts: Array[String] = []
+		for n in nums:
+			parts.append("[%d]" % n)
+		_group_label.text = " " + " ".join(parts) if not parts.is_empty() else ""
 
 
 func set_selected(value: bool) -> void:

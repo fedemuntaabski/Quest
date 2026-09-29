@@ -177,6 +177,8 @@ func _bind_player_stats(ps: PlayerStats) -> void:
 	var selection := ManagerLocator.get_selection_manager()
 	if selection and not selection.selection_changed.is_connected(_refresh_selection):
 		selection.selection_changed.connect(_refresh_selection)
+	if selection and not selection.groups_changed.is_connected(_refresh_groups):
+		selection.groups_changed.connect(_refresh_groups)
 
 	for stats in ps.get_all_stats():
 		_on_player_stats_changed(stats)
@@ -208,6 +210,7 @@ func add_hero_portrait(stats: CharacterStats, data: CharacterData) -> HeroPortra
 	portraits.add_child(portrait)
 	_portraits[stats.hero_id] = portrait
 	_refresh_selection()
+	_refresh_groups()
 	return portrait
 
 
@@ -239,6 +242,12 @@ func _refresh_selection(_selected_ids: Array[String] = []) -> void:
 	var selection := ManagerLocator.get_selection_manager()
 	for hero_id: String in _portraits:
 		(_portraits[hero_id] as HeroPortrait).set_selected(selection != null and selection.is_selected(hero_id))
+
+
+func _refresh_groups() -> void:
+	var selection := ManagerLocator.get_selection_manager()
+	for hero_id: String in _portraits:
+		(_portraits[hero_id] as HeroPortrait).set_groups(selection.group_of(hero_id) if selection else [])
 
 
 func _on_resource_changed(key: String, amount: int, _delta: int) -> void:
