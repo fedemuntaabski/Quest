@@ -1,9 +1,7 @@
-[gd_resource type="Resource" script_class="PartyConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PartyConfig" format=3 uid="uid://c6yur5dbuf2ll"]
 
-[ext_resource type="Script" path="res://scripts/core/stats/PartyConfig.gd" id="1_party_config"]
+[ext_resource type="Script" uid="uid://b7p6qrb0kjf7t" path="res://scripts/core/stats/PartyConfig.gd" id="1_party_config"]
 
 [resource]
 script = ExtResource("1_party_config")
-party_size = 2
-companion_ids = Array[String](["warrior", "mage", "rogue"])
 sprite_spacing = 36.0

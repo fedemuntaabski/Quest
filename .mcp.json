@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "godot": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@coding-solo/godot-mcp"
+      ],
+      "env": {
+        "GODOT_PATH": "E:\\Descargas\\Godot_v4.6.2-stable_win64.exe\\Godot_v4.6.2-stable_win64_console.exe"
+      }
+    }
+  }
+}
