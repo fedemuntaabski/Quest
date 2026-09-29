@@ -28,21 +28,21 @@ Todo el arte es 16×16 px por tile, licencia CC0 (ver `CREDITS.md`). Originales 
 - `Tilemap/tilemap_packed.png` 160×288 = 10×18 = 180 tiles 16×16; `tilemap.png` (1 px separación); `Kenney_tiny_dungeon.png` (hoja de referencia); 180 PNG en `Tiles/`; `Examples/`, `Tiled/`.
 - Contenido: monstruos fantásticos (goblins, esqueletos, slimes, dragones, demonios, no-muertos) y animales; fuente extra de enemigos/jefes. **Todos miran a la derecha** (usar `flip_h` para izquierda). Sin animación (1 frame por criatura).
 
-## Qué asset para qué (propuesta para etapas siguientes)
+## Qué asset para qué (session/assets-3)
+Recursos: `assets/characters/*.tres` (SpriteFrames), `resources/enemies/*.tres` (`EnemyType`), `resources/floors/enemy_pool_f1..f5.tres` (`EnemyPool`, enlazados en `default_floor_config.tres`). Se regeneran con `tools/build_characters.gd`; después se pueden ajustar a mano. Los sprites miran a la derecha (`CharacterVisual` hace `flip_h`).
+
 | Uso | Asset |
 |---|---|
-| Héroes (guerrero/mago/pícaro/tanque) | 0x72 `knight_m` / `wizzard_m` / `elf_m` (pícaro) / `dwarf_m` (tanque): idle+run+hit |
-| Compañeros | variantes `_f` (knight_f, elf_f, dwarf_f, wizzard_f) |
-| Enemigos piso 1 | goblin, skelet, tiny_zombie, tiny_slug (Swarm) |
-| Enemigos piso 2 | imp, chort, masked_orc, wogol |
-| Enemigos piso 3 | orc_warrior, orc_shaman, zombie/ice_zombie, swampy/muddy |
-| Enemigos piso 4-5 / élite | ogre, big_zombie, big_demon, necromancer (Hunter/élite); Sapper → `pumpkin_dude` o `bomb` |
-| Suelo | `atlas_floor-16x16` / `floor_1..8` (Kenney packed como alternativa) |
-| Paredes | `atlas_walls_low-16x16` (+ `walls_high` para profundidad), `wall_*` |
-| Puertas | `doors_frame_*` + `doors_leaf_closed/open` (32×32 en corredor) |
-| Salida | `floor_stairs` (ladder alternativa `floor_ladder`) |
-| Cristal / El Nexo | `flask_big_blue` (o tile de gema Kenney) |
-| Polvo | `coin` (4 frames) |
-| Cofres (sala LOOT) | `chest_full_open` (3 frames) / `chest_mimic_open` (trampa) |
-| Torretas / trampas | ballesta = `weapon_bow`; trampa = `floor_spikes` |
-| HUD vida | `ui_heart_*` |
+| Guerrero / Mago / Pícaro / Tanque | 0x72 `knight_m` / `wizzard_m` / `elf_m` / `dwarf_m` (idle 4, run 4, hit 1; 16×28) |
+| Retrato HUD y popup | frame idle del héroe (Nearest, ×2); `portrait` PNG solo en selección de héroe |
+| Piso 1 | 0x72 goblin, skelet, tiny_zombie |
+| Piso 2 | goblin, skelet, tiny_zombie, imp, masked_orc + Tiny Creatures ojo flotante |
+| Piso 3 | skelet, imp, masked_orc, orc_warrior, orc_shaman + TC lobo, calavera ígnea |
+| Piso 4 | masked_orc, orc_warrior, chort, wogol, big_zombie (32×36) + TC ogro verde, demonio rojo, lobo |
+| Piso 5 | chort, orc_warrior, ogre, big_demon (32×36), necromancer + TC dragón, demonio mayor, ogro |
+| Comportamiento | cada `EnemyType.behavior` = Swarm/Sapper/Hunter; stats = variante × piso × multiplicadores del tipo |
+| Cristal (Nexo) | 0x72 `flask_big_blue` vía `Pickup` |
+| Polvo / Arma | 0x72 `coin` / `weapon_regular_sword` (`Pickup`, aún sin cablear) |
+| Cofre (sala Botín) | Kenney `(5,7)` vía `Pickup`, aparece al descubrir la sala |
+| Suelo / muros / puertas / escalera | ver etapa 2 (`docs/MAP_RENDER.md`) |
+| HUD vida | `ui_heart_*` (pendiente) |

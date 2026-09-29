@@ -2,7 +2,7 @@ extends PanelContainer
 class_name HeroPortrait
 
 ## HeroPortrait: one hero in the HUD's top-right Portraits column. Portrait
-## texture (CharacterData.portrait) or a placeholder circle with the initial,
+## texture (idle sprite frame, else CharacterData.portrait) or a placeholder circle with the initial,
 ## name, and an HP bar driven by CharacterStats.hp_changed — no numbers (the
 ## exact value lives in CharacterPopup). Bar color/timings: HealthBarStyle.
 ## The selected hero gets a bright gold border (set_selected, session 12).

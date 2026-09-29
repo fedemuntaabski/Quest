@@ -42,6 +42,7 @@ func _ready() -> void:
 	_last_position = global_position
 	_material = ShaderMaterial.new()
 	_material.shader = FLASH_SHADER
+	_material.set_shader_parameter("flash", 0.0)
 	material = _material
 
 
