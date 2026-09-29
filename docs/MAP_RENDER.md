@@ -9,7 +9,7 @@ Estado **antes** de `session/assets-2` (referencia; la sección final resume qu�
 | Capa | Nodo / script | Qué dibuja |
 |---|---|---|
 | Suelo | `Main2d/Floor` (`FloorGenerator`, `TileMapLayer`, z -10, `placeholder_tileset` 64 px) | Una celda de 64 px por celda lógica, pintada **al revelar** (`fill_cells`). No hay muros ni bordes. |
-| Highlight | `RoomZone/Fill` (`Polygon2D`) + `Outline` (`Line2D`), z -5 | Color translúcido según `Highlight` (CURRENT/REACHABLE/OPENABLE/BLOCKED) + contorno; poderosa = dorado. |
+| Highlight | `RoomZone/Fill` (`Polygon2D`) + `Outline` (`Line2D`), z -5 | Color translúcido según `Highlight` (CURRENT/REACHABLE/OPENABLE/BLOCKED) + contorno; encendida = dorado. |
 | Luz por sala | `RoomLight` (hijo de `RoomZone`) | Sala oscura: overlay que pulsa negro↔rojo; sala encendida: overlay se desvanece y `PointLight2D` cálido entra. Contorno dorado si alcanza el polvo. |
 | Oscuridad global | `RoomManager/DarkCanvas` (`CanvasModulate`, `MapVisualConfig` "Dark canvas") | Atenúa todo el canvas del mundo; el HUD (CanvasLayer) no. |
 | Puertas | `Door.tscn` (`Area2D`): `Polygon2D` marrón 48×48 + `CollisionShape2D` | Se oculta al abrirse (`refresh_door_visibility`). El `Area2D` es el clic. |

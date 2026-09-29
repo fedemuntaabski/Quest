@@ -1,0 +1,16 @@
+[gd_resource type="TileSet" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png" id="1_02gpq"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_w05a0"]
+texture = ExtResource("1_02gpq")
+3:5/0 = 0
+3:6/0 = 0
+4:5/0 = 0
+5:5/0 = 0
+2:6/0 = 0
+6:5/0 = 0
+5:7/0 = 0
+
+[resource]
+sources/0 = SubResource("TileSetAtlasSource_w05a0")
