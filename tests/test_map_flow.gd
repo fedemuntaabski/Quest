@@ -4,7 +4,7 @@ extends SceneTree
 ## every door in reveal order and checks discovery dust + fog consistency,
 ## room lighting (start lit, middle-click toggle + refund, dark canvas), the
 ## exit hint modes and the exit-gated Nexo pickup. Session 11: a map with a
-## loop + Rest/Loot/Elite rooms (rewards, heal, spawn rules, loop paths, badges).
+## loop + Rest/Loot/Elite rooms (rewards, heal, spawn rules, loop paths, badges, discovery banners).
 ##   godot --headless --path . --script res://tests/test_map_flow.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
@@ -178,7 +178,7 @@ func _run_types_and_loops() -> void:
 	var per_room := config.discovery_dust(floor_index)
 	var typed: Array[String] = []
 	for room in layout.rooms:
-		if RoomData.TYPE_LABELS.has(room.get_room_type()):
+		if room_manager.visual_config.room_type_color(room.get_room_type()).a > 0.0:
 			typed.append(room.id)
 			if room_manager.get_room_type(room.id) != room.get_room_type():
 				failures.append("%s: RoomManager type of '%s' differs from the layout" % [label, room.id])
@@ -200,6 +200,8 @@ func _run_types_and_loops() -> void:
 			var reward_before := resources.get_resource(reward_key) if reward_key != "" else 0
 			var reward_yield := resources.get_turn_yield(reward_key) if reward_key != "" else 0
 			var dust_before := resources.get_resource("dust")
+			var visual := room_manager.visual_config.room_type_visual(room_manager.get_room_type(group)) if room_manager.get_zone_kind(group) == "room" else null
+			var banners_before := _count_banners(visual.banner_text) if visual else 0
 			if rule and rule.heal_on_discovery > 0:
 				# A wave may have killed the test hero, and a dead hero leaves the
 				# selection (the heal targets the primary hero): revive + reselect.
@@ -211,6 +213,8 @@ func _run_types_and_loops() -> void:
 				failures.append("%s: open_room('%s') refused" % [label, group])
 			door.disable_door()
 			progress = true
+			if visual and visual.banner_text != "" and _count_banners(visual.banner_text) != banners_before + 1:
+				failures.append("%s: discovering '%s' did not show the banner '%s' exactly once" % [label, group, visual.banner_text])
 			var expected_dust := _expected_dust(main2d, group, per_room)
 			if resources.get_resource("dust") - dust_before != expected_dust:
 				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, group, resources.get_resource("dust") - dust_before, expected_dust])
@@ -392,3 +396,13 @@ func _check_edge_point() -> void:
 		var got := ExitIndicator.edge_point(rect, case[0])
 		if not got.is_equal_approx(case[1]):
 			failures.append("edge_point(%s) = %s, expected %s" % [case[0], got, case[1]])
+
+
+## FloatingText labels currently alive with exactly `text` (discovery banners).
+func _count_banners(text: String) -> int:
+	var count := 0
+	for manager in get_nodes_in_group("floating_text_manager"):
+		for child in manager.get_children():
+			if child is FloatingText and (child as FloatingText).label.text == text:
+				count += 1
+	return count

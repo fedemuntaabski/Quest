@@ -187,29 +187,38 @@ func get_light() -> RoomLight:
 	return _light
 
 
-## Rest/Loot/Elite get a badge (diamond + name) in the type color, unshaded so
-## it reads in dark rooms too; shown/hidden with the fog like the rest of the
-## zone. Combat/Start/Exit get none (the exit keeps its own hint-gated marker).
+## Types with a marker (RoomTypeVisual.show_marker) get a badge (icon or diamond
+## + name) in the type color, unshaded so it reads in dark rooms too; shown/hidden
+## with the fog like the rest of the zone. Combat/Start/Exit get none (the exit
+## keeps its own hint-gated marker).
 func set_room_type(type: RoomData.RoomType, size_px: Vector2, config: MapVisualConfig) -> void:
-	var text: String = RoomData.TYPE_LABELS.get(type, "")
-	if text == "" or config == null:
+	var visual := config.room_type_visual(type) if config else null
+	if visual == null or not visual.show_marker:
 		return
-	var color := config.room_type_color(type)
+	var color := visual.color
 	_type_badge = Node2D.new()
 	_type_badge.name = "TypeBadge"
 	_type_badge.position = -size_px / 2.0 + Vector2.ONE * SHAPE_INSET + TYPE_BADGE_INSET
 	add_child(_type_badge)
 
-	var diamond := Polygon2D.new()
-	diamond.material = UNSHADED
-	diamond.color = color
 	var r := TYPE_BADGE_RADIUS
-	diamond.polygon = PackedVector2Array([Vector2(0, -r), Vector2(r, 0), Vector2(0, r), Vector2(-r, 0)])
-	_type_badge.add_child(diamond)
+	if visual.icon:
+		var icon := Sprite2D.new()
+		icon.material = UNSHADED
+		icon.texture = visual.icon
+		icon.scale = Vector2.ONE * ArtConfig.ART_SCALE
+		_type_badge.add_child(icon)
+		r = visual.icon.get_width() * ArtConfig.ART_SCALE / 2.0
+	else:
+		var diamond := Polygon2D.new()
+		diamond.material = UNSHADED
+		diamond.color = color
+		diamond.polygon = PackedVector2Array([Vector2(0, -r), Vector2(r, 0), Vector2(0, r), Vector2(-r, 0)])
+		_type_badge.add_child(diamond)
 
 	var label := Label.new()
 	label.material = UNSHADED
-	label.text = text
+	label.text = visual.display_name
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_font_size_override("font_size", 14)
 	label.position = Vector2(r + 4.0, -11.0)

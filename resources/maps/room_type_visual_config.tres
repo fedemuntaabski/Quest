@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="RoomTypeVisualConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/map/RoomTypeVisualConfig.gd" id="1_cfg"]
+[ext_resource type="Script" path="res://scripts/world/map/RoomTypeVisual.gd" id="2_vis"]
+[ext_resource type="Texture2D" path="res://assets/art/items/flask_big_red.png" id="icon_rest"]
+[ext_resource type="Texture2D" path="res://assets/art/items/chest_full_open_anim_f0.png" id="icon_loot"]
+[ext_resource type="Texture2D" path="res://assets/art/items/weapon_double_axe.png" id="icon_elite"]
+[ext_resource type="Texture2D" path="res://assets/art/items/flask_big_yellow.png" id="icon_shop"]
+[ext_resource type="Texture2D" path="res://assets/art/ui/button_blue_up.png" id="icon_generator"]
+
+[sub_resource type="Resource" id="Resource_start"]
+script = ExtResource("2_vis")
+type = 1
+display_name = "Inicio"
+color = Color(0.9, 0.9, 0.9, 1)
+show_marker = false
+
+[sub_resource type="Resource" id="Resource_exit"]
+script = ExtResource("2_vis")
+type = 2
+display_name = "Salida"
+banner_text = "Salida encontrada"
+color = Color(0.35, 1.0, 0.6, 1)
+show_marker = false
+
+[sub_resource type="Resource" id="Resource_rest"]
+script = ExtResource("2_vis")
+type = 3
+display_name = "Descanso"
+banner_text = "Sala de descanso"
+icon = ExtResource("icon_rest")
+color = Color(0.45, 0.95, 0.85, 1)
+decor_props = Array[Vector2i]([Vector2i(6, 9), Vector2i(7, 9), Vector2i(8, 9), Vector2i(1, 6)])
+decor_count = 2
+
+[sub_resource type="Resource" id="Resource_loot"]
+script = ExtResource("2_vis")
+type = 4
+display_name = "Botín"
+banner_text = "Sala de botín"
+icon = ExtResource("icon_loot")
+color = Color(1.0, 0.6, 0.15, 1)
+decor_props = Array[Vector2i]([Vector2i(5, 7), Vector2i(6, 7), Vector2i(7, 7)])
+decor_count = 2
+
+[sub_resource type="Resource" id="Resource_elite"]
+script = ExtResource("2_vis")
+type = 5
+display_name = "Élite"
+banner_text = "Sala de élite"
+icon = ExtResource("icon_elite")
+color = Color(0.85, 0.4, 1.0, 1)
+decor_props = Array[Vector2i]([Vector2i(9, 9), Vector2i(10, 9), Vector2i(11, 9), Vector2i(8, 8)])
+decor_count = 2
+
+[sub_resource type="Resource" id="Resource_shop"]
+script = ExtResource("2_vis")
+type = 6
+display_name = "Tienda"
+banner_text = "Tienda"
+icon = ExtResource("icon_shop")
+color = Color(1.0, 0.9, 0.35, 1)
+decor_props = Array[Vector2i]([Vector2i(0, 6), Vector2i(6, 9), Vector2i(8, 9)])
+decor_count = 2
+
+[sub_resource type="Resource" id="Resource_generator"]
+script = ExtResource("2_vis")
+type = 7
+display_name = "Generador"
+banner_text = "Sala de generadores"
+icon = ExtResource("icon_generator")
+color = Color(0.4, 0.7, 1.0, 1)
+decor_props = Array[Vector2i]([Vector2i(7, 4), Vector2i(8, 4)])
+decor_count = 2
+
+[resource]
+script = ExtResource("1_cfg")
+entries = Array[ExtResource("2_vis")]([SubResource("Resource_start"), SubResource("Resource_exit"), SubResource("Resource_rest"), SubResource("Resource_loot"), SubResource("Resource_elite"), SubResource("Resource_shop"), SubResource("Resource_generator")])

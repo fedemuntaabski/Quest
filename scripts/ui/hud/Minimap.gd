@@ -19,7 +19,7 @@ const CORRIDOR_COLOR := Color(0.4, 0.4, 0.45, 0.9)
 const HERO_COLOR := Color(0.3, 0.8, 1.0, 1.0)
 ## Room-type marker: corner square, this fraction of the room's short side.
 const TYPE_MARKER_FRACTION := 0.45
-const TYPE_MARKER_MIN := 3.0
+const TYPE_MARKER_MIN := 8.0
 
 var _room_manager: RoomManager
 var _heroes: Array[Player] = []
@@ -91,10 +91,16 @@ func _draw() -> void:
 			color = POWERED_COLOR if _room_manager.is_zone_powered(zone_id) else ROOM_COLOR
 		var zone_rect := _to_map(_room_manager.get_zone(zone_id)["rect"], scale_px, offset)
 		draw_rect(zone_rect, color)
-		# Room type (Rest/Loot/Elite): corner square, independent of power.
-		var type_color := _room_manager.visual_config.room_type_color(_room_manager.get_room_type(zone_id))
-		if type_color.a > 0.0:
-			draw_rect(Rect2(zone_rect.position, Vector2.ONE * maxf(TYPE_MARKER_MIN, minf(zone_rect.size.x, zone_rect.size.y) * TYPE_MARKER_FRACTION)), type_color)
+		# Room type marker (RoomTypeVisual): corner square in the type color with
+		# its icon on top, independent of power.
+		var visual := _room_manager.visual_config.room_type_visual(_room_manager.get_room_type(zone_id))
+		if visual and visual.show_marker:
+			var side := maxf(TYPE_MARKER_MIN, minf(zone_rect.size.x, zone_rect.size.y) * TYPE_MARKER_FRACTION)
+			var marker := Rect2(zone_rect.position, Vector2.ONE * side)
+			draw_rect(marker, visual.color)
+			if visual.icon:
+				var fit := side / maxf(visual.icon.get_width(), visual.icon.get_height())
+				draw_texture_rect(visual.icon, Rect2(marker.position, visual.icon.get_size() * fit), false)
 
 	if _exit_indicator and _exit_indicator.is_hint_visible():
 		var exit_id := _room_manager.get_exit_zone_id()

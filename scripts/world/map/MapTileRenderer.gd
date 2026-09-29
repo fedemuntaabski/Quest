@@ -186,6 +186,9 @@ static func _plan_walls(config: MapVisualConfig, layout: MapLayout, zones: Dicti
 static func _plan_props(layout: MapLayout, config: MapVisualConfig, zones: Dictionary, floor_tiles: Dictionary) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([layout.map_seed, "decor"])
+	# Own stream: type props never move the generic ones.
+	var type_rng := RandomNumberGenerator.new()
+	type_rng.seed = hash([layout.map_seed, "type_decor"])
 	for room in layout.rooms:
 		var rect := Rect2i(room.pos * T, room.size * T)
 		var ring: Array[Vector2i] = []
@@ -198,6 +201,12 @@ static func _plan_props(layout: MapLayout, config: MapVisualConfig, zones: Dicti
 		for tile in ring:
 			if rng.randf() < config.prop_density:
 				decor[tile] = DungeonTiles.tile(DungeonTiles.SRC_PROPS, DungeonTiles.PROPS[rng.randi() % DungeonTiles.PROPS.size()])
+		# Special rooms: their own props (RoomTypeVisual.decor_props) on the same ring.
+		var visual := config.room_type_visual(room.get_room_type())
+		if visual and not visual.decor_props.is_empty() and not ring.is_empty():
+			for i in mini(visual.decor_count, ring.size()):
+				var tile: Vector2i = ring[type_rng.randi() % ring.size()]
+				decor[tile] = DungeonTiles.tile(DungeonTiles.SRC_PROPS, visual.decor_props[type_rng.randi() % visual.decor_props.size()])
 
 
 static func _touches_outside_floor(tile: Vector2i, rect: Rect2i, floor_tiles: Dictionary) -> bool:

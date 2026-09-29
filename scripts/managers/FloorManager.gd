@@ -10,6 +10,9 @@ class_name FloorManager
 signal floor_completed(floor_index: int)
 
 const DEFAULT_CONFIG: FloorConfig = preload("res://resources/floors/default_floor_config.tres")
+## Discovery banner: above the room center (reward text floats at the center).
+const BANNER_OFFSET := Vector2(0, -56)
+const BANNER_INTENSITY := 1.5
 
 @export var config: FloorConfig = DEFAULT_CONFIG
 
@@ -60,7 +63,18 @@ func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
 		resource_manager.add_resource("dust", amount)
 		QuestLogger.info(QuestLogger.Category.MAP, "Discovered '%s': +%d dust." % [room_id, amount])
 	if room_manager:
+		_show_room_banner(room_id)
 		_apply_room_type_discovery(room_id, resource_manager)
+
+
+## Brief floating name of a special room, once, when it is discovered
+## (RoomTypeVisual.banner_text). Above the reward text so they don't overlap.
+func _show_room_banner(room_id: String) -> void:
+	var visual := room_manager.visual_config.room_type_visual(room_manager.get_room_type(room_id))
+	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+	if visual == null or visual.banner_text == "" or text_mgr == null:
+		return
+	text_mgr.spawn_text(room_manager.get_center(room_id) + BANNER_OFFSET, visual.banner_text, visual.color, true, BANNER_INTENSITY)
 
 
 func _apply_room_type_discovery(room_id: String, resource_manager: ResourceManager) -> void:
@@ -68,12 +82,14 @@ func _apply_room_type_discovery(room_id: String, resource_manager: ResourceManag
 	var rule := config.get_room_type_rule(type)
 	if rule == null:
 		return
+	var visual := room_manager.visual_config.room_type_visual(type)
+	var name_of_type := visual.display_name if visual else ""
 	var reward := rule.reward_at(floor_index)
 	if reward > 0 and rule.reward_resource != "":
 		resource_manager.add_resource(rule.reward_resource, reward)
 		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 		if text_mgr:
-			text_mgr.spawn_text(room_manager.get_center(room_id), "%s: +%d %s" % [RoomData.TYPE_LABELS.get(type, ""), reward, Module.RESOURCE_LABELS.get(rule.reward_resource, rule.reward_resource)], room_manager.visual_config.room_type_color(type))
+			text_mgr.spawn_text(room_manager.get_center(room_id), "%s: +%d %s" % [name_of_type, reward, Module.RESOURCE_LABELS.get(rule.reward_resource, rule.reward_resource)], room_manager.visual_config.room_type_color(type))
 		QuestLogger.info(QuestLogger.Category.MAP, "Room type reward in '%s': +%d %s." % [room_id, reward, rule.reward_resource])
 	var player_stats := ManagerLocator.get_player_stats()
 	if rule.heal_on_discovery > 0 and player_stats and player_stats.stats:

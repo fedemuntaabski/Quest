@@ -75,7 +75,9 @@ func _build_dungeon() -> void:
 func _build_props() -> void:
 	var ts := _new_tileset(false)
 	var src := _source(ts, DungeonTiles.SRC_PROPS, KENNEY)
-	for coords in DungeonTiles.PROPS:
-		_add(src, coords)
-	_add(src, DungeonTiles.CHEST)
+	# Every tile of the sheet (12 x 11): DungeonTiles.PROPS, CHEST and any
+	# RoomTypeVisual.decor_props coordinate then just work.
+	for y in 11:
+		for x in 12:
+			_add(src, Vector2i(x, y))
 	print("props_tileset save: ", error_string(ResourceSaver.save(ts, "res://assets/tilesets/props_tileset.tres")))

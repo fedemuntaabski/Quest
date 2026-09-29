@@ -6,15 +6,11 @@ class_name RoomData
 
 ## START/EXIT are never stored: get_room_type() derives them from is_start/
 ## is_exit. The rest come from MapGenerator.assign_room_types (FloorConfig
-## RoomTypeRules); COMBAT is the plain default.
-enum RoomType { COMBAT, START, EXIT, REST, LOOT, ELITE }
-
-## Short in-world/minimap name per special type (none for COMBAT/START/EXIT).
-const TYPE_LABELS := {
-	RoomType.REST: "Descanso",
-	RoomType.LOOT: "Botín",
-	RoomType.ELITE: "Élite",
-}
+## RoomTypeRules); COMBAT is the plain default. SHOP and GENERATOR are design-only
+## (display ready in RoomTypeVisualConfig, no RoomTypeRule: never generated, no
+## effect; see docs/ROOMS.md). Names, icons, colors and banners live in
+## resources/maps/room_type_visual_config.tres, not here.
+enum RoomType { COMBAT, START, EXIT, REST, LOOT, ELITE, SHOP, GENERATOR }
 
 @export var id: String = ""
 @export var room_type: RoomType = RoomType.COMBAT

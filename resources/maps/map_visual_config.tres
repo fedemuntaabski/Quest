@@ -1,6 +1,8 @@
 [gd_resource type="Resource" script_class="MapVisualConfig" format=3 uid="uid://cwkg1ajw6yk6g"]
 
 [ext_resource type="Script" uid="uid://dvdh8dfpbeeex" path="res://scripts/world/map/MapVisualConfig.gd" id="1_mvc"]
+[ext_resource type="Resource" path="res://resources/maps/room_type_visual_config.tres" id="2_rtv"]
 
 [resource]
 script = ExtResource("1_mvc")
+room_type_visuals = ExtResource("2_rtv")

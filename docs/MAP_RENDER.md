@@ -13,7 +13,7 @@ Estado **antes** de `session/assets-2` (referencia; la sección final resume qu�
 | Luz por sala | `RoomLight` (hijo de `RoomZone`) | Sala oscura: overlay que pulsa negro↔rojo; sala encendida: overlay se desvanece y `PointLight2D` cálido entra. Contorno dorado si alcanza el polvo. |
 | Oscuridad global | `RoomManager/DarkCanvas` (`CanvasModulate`, `MapVisualConfig` "Dark canvas") | Atenúa todo el canvas del mundo; el HUD (CanvasLayer) no. |
 | Puertas | `Door.tscn` (`Area2D`): `Polygon2D` marrón 48×48 + `CollisionShape2D` | Se oculta al abrirse (`refresh_door_visibility`). El `Area2D` es el clic. |
-| Tipo de sala | `RoomZone.set_room_type` → `TypeBadge` (rombo + nombre, unshaded) | Solo Descanso/Botín/Élite. |
+| Tipo de sala | `RoomZone.set_room_type` → `TypeBadge` (ícono o rombo + nombre, unshaded), datos en `RoomTypeVisualConfig` | Ver `docs/ROOMS.md`. |
 | Salida | `ExitIndicator` (marcador z 50 + flecha en CanvasLayer 5) | Marcador sobre la sala `is_exit`; visible según `MapVisualConfig.exit_hint_mode`. No es un tile. |
 | Minimapa | `Minimap` (`Control._draw`) | Lee `RoomManager.zones`/reveal/power/`ExitIndicator`; **no** lee tiles. |
 

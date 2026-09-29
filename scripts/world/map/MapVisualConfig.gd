@@ -52,19 +52,18 @@ enum ExitHintMode {
 @export_range(0.0, 1.0) var floor_variant_chance: float = 0.25
 
 @export_group("Room types")
-## Badge (RoomZone) + minimap marker colors. Lit or dark doesn't matter.
-@export var rest_room_color: Color = Color(0.45, 0.95, 0.85, 1.0)
-@export var loot_room_color: Color = Color(1.0, 0.6, 0.15, 1.0)
-@export var elite_room_color: Color = Color(0.85, 0.4, 1.0, 1.0)
+## Name / icon / color / banner / decor per RoomType (badge, minimap, discovery
+## banner, tile props). Lit or dark doesn't matter.
+@export var room_type_visuals: RoomTypeVisualConfig
 
 
-## Transparent for types without a marker (Combat/Start/Exit).
+## Null when the type has no entry (or no config is assigned).
+func room_type_visual(type: RoomData.RoomType) -> RoomTypeVisual:
+	return room_type_visuals.get_visual(type) if room_type_visuals else null
+
+
+## The type's badge/minimap marker color; transparent when it has no marker
+## (Combat, Start, Exit keep their own hints).
 func room_type_color(type: RoomData.RoomType) -> Color:
-	match type:
-		RoomData.RoomType.REST:
-			return rest_room_color
-		RoomData.RoomType.LOOT:
-			return loot_room_color
-		RoomData.RoomType.ELITE:
-			return elite_room_color
-	return Color.TRANSPARENT
+	var visual := room_type_visual(type)
+	return visual.color if visual and visual.show_marker else Color.TRANSPARENT
