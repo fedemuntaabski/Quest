@@ -1,0 +1,47 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/enemies/goblin_idle_anim_f0.png" id="1_vwamu"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/goblin_idle_anim_f1.png" id="2_gncgm"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/goblin_idle_anim_f2.png" id="3_m6o3i"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/goblin_idle_anim_f3.png" id="4_nwpg6"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/goblin_run_anim_f0.png" id="5_awjlk"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/goblin_run_anim_f1.png" id="6_f6oia"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/goblin_run_anim_f2.png" id="7_80gxp"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/goblin_run_anim_f3.png" id="8_ew7vs"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_vwamu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_gncgm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_m6o3i")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_nwpg6")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_awjlk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_f6oia")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_80gxp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_ew7vs")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

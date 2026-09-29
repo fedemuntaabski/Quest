@@ -1,0 +1,56 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/characters/wizzard_m_hit_anim_f0.png" id="1_dwycr"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/wizzard_m_idle_anim_f0.png" id="2_2towt"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/wizzard_m_idle_anim_f1.png" id="3_cvo0s"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/wizzard_m_idle_anim_f2.png" id="4_bpabw"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/wizzard_m_idle_anim_f3.png" id="5_onanl"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/wizzard_m_run_anim_f0.png" id="6_1p4kp"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/wizzard_m_run_anim_f1.png" id="7_nuf8y"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/wizzard_m_run_anim_f2.png" id="8_cowe6"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/wizzard_m_run_anim_f3.png" id="9_cth3v"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_dwycr")
+}],
+"loop": false,
+"name": &"hit",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_2towt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_cvo0s")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_bpabw")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_onanl")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_1p4kp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_nuf8y")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_cowe6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_cth3v")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

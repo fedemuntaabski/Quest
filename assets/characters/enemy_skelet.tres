@@ -1,0 +1,47 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/enemies/skelet_idle_anim_f0.png" id="1_aanrq"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/skelet_idle_anim_f1.png" id="2_1e04w"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/skelet_idle_anim_f2.png" id="3_fer3k"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/skelet_idle_anim_f3.png" id="4_ftpm2"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/skelet_run_anim_f0.png" id="5_xmvpu"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/skelet_run_anim_f1.png" id="6_flc7u"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/skelet_run_anim_f2.png" id="7_mkdpi"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/skelet_run_anim_f3.png" id="8_5exy6"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_aanrq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_1e04w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_fer3k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_ftpm2")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_xmvpu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_flc7u")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_mkdpi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_5exy6")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

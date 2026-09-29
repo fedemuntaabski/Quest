@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyPool" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyPool.gd" id="1_x2p46"]
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="2_1iysq"]
+[ext_resource type="Resource" path="res://resources/enemies/chort.tres" id="3_axlvt"]
+[ext_resource type="Resource" path="res://resources/enemies/orc_warrior.tres" id="4_0a0bw"]
+[ext_resource type="Resource" path="res://resources/enemies/ogre.tres" id="5_yhlc2"]
+[ext_resource type="Resource" path="res://resources/enemies/big_demon.tres" id="6_vqvrr"]
+[ext_resource type="Resource" path="res://resources/enemies/necromancer.tres" id="7_4v0y0"]
+[ext_resource type="Resource" path="res://resources/enemies/tc_dragon.tres" id="8_igx21"]
+[ext_resource type="Resource" path="res://resources/enemies/tc_demon.tres" id="9_6jgej"]
+[ext_resource type="Resource" path="res://resources/enemies/tc_ogre.tres" id="10_xbop1"]
+
+[resource]
+script = ExtResource("1_x2p46")
+types = Array[ExtResource("2_1iysq")]([ExtResource("3_axlvt"), ExtResource("4_0a0bw"), ExtResource("5_yhlc2"), ExtResource("6_vqvrr"), ExtResource("7_4v0y0"), ExtResource("8_igx21"), ExtResource("9_6jgej"), ExtResource("10_xbop1")])
+weights = PackedFloat32Array(2, 2, 3, 2, 2, 2, 3, 1)

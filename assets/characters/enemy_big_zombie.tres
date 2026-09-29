@@ -1,0 +1,47 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/enemies/big_zombie_idle_anim_f0.png" id="1_umesx"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/big_zombie_idle_anim_f1.png" id="2_w4wqg"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/big_zombie_idle_anim_f2.png" id="3_poa36"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/big_zombie_idle_anim_f3.png" id="4_wrbey"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/big_zombie_run_anim_f0.png" id="5_w5b6i"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/big_zombie_run_anim_f1.png" id="6_k1vp5"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/big_zombie_run_anim_f2.png" id="7_hen0h"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/big_zombie_run_anim_f3.png" id="8_ht6ga"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_umesx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_w4wqg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_poa36")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_wrbey")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_w5b6i")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_k1vp5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_hen0h")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_ht6ga")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

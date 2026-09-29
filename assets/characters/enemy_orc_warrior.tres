@@ -1,0 +1,47 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/enemies/orc_warrior_idle_anim_f0.png" id="1_87v00"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/orc_warrior_idle_anim_f1.png" id="2_gaom7"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/orc_warrior_idle_anim_f2.png" id="3_7uue0"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/orc_warrior_idle_anim_f3.png" id="4_t0pji"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/orc_warrior_run_anim_f0.png" id="5_c77dg"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/orc_warrior_run_anim_f1.png" id="6_nc2qt"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/orc_warrior_run_anim_f2.png" id="7_67xc5"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/orc_warrior_run_anim_f3.png" id="8_o1t0v"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_87v00")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_gaom7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_7uue0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_t0pji")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_c77dg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_nc2qt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_67xc5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_o1t0v")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

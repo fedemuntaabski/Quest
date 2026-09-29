@@ -85,6 +85,12 @@ func room_type_rule(type: RoomData.RoomType) -> RoomTypeRule:
 	return config.get_room_type_rule(type)
 
 
+## Weighted EnemyType from this floor's pool (null = no pool configured).
+func roll_enemy_type() -> EnemyType:
+	var pool := config.enemy_pool(floor_index)
+	return pool.roll() if pool else null
+
+
 func room_count() -> int:
 	return config.room_count(floor_index)
 

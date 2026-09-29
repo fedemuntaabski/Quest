@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_73kjm"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/tc_wolf.tres" id="2_qrk2w"]
+
+[resource]
+script = ExtResource("1_73kjm")
+id = "tc_wolf"
+display_name = "Lobo"
+sprite_frames = ExtResource("2_qrk2w")
+hp_mult = 1.2
+damage_mult = 1.2
+speed_mult = 1.4

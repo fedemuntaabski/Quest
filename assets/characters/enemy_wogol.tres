@@ -1,0 +1,47 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/enemies/wogol_idle_anim_f0.png" id="1_bvnkg"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/wogol_idle_anim_f1.png" id="2_w5a1t"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/wogol_idle_anim_f2.png" id="3_k14e7"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/wogol_idle_anim_f3.png" id="4_dcaab"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/wogol_run_anim_f0.png" id="5_0oaca"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/wogol_run_anim_f1.png" id="6_qkfam"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/wogol_run_anim_f2.png" id="7_64bsn"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/wogol_run_anim_f3.png" id="8_2mcq4"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_bvnkg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_w5a1t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_k14e7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_dcaab")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_0oaca")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_qkfam")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_64bsn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_2mcq4")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

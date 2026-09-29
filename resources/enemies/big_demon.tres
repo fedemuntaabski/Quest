@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_b3ef1"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/enemy_big_demon.tres" id="2_ki0ra"]
+
+[resource]
+script = ExtResource("1_b3ef1")
+id = "big_demon"
+display_name = "Gran demonio"
+behavior = 2
+sprite_frames = ExtResource("2_ki0ra")
+hp_mult = 3.0
+damage_mult = 2.0
+speed_mult = 0.9

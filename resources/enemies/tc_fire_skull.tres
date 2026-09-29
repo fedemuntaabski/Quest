@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_xnehn"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/tc_fire_skull.tres" id="2_fk60e"]
+
+[resource]
+script = ExtResource("1_xnehn")
+id = "tc_fire_skull"
+display_name = "Calavera ígnea"
+behavior = 1
+sprite_frames = ExtResource("2_fk60e")
+damage_mult = 1.4

@@ -1,0 +1,43 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/enemies/necromancer_anim_f0.png" id="1_1ipka"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/necromancer_anim_f1.png" id="2_74qx5"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/necromancer_anim_f2.png" id="3_smiev"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/necromancer_anim_f3.png" id="4_lkmm4"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_1ipka")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_74qx5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_smiev")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_lkmm4")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_1ipka")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_74qx5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_smiev")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_lkmm4")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

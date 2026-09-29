@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_8h4yg"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/enemy_skelet.tres" id="2_1jrar"]
+
+[resource]
+script = ExtResource("1_8h4yg")
+id = "skelet"
+display_name = "Esqueleto"
+sprite_frames = ExtResource("2_1jrar")
+hp_mult = 1.2
+speed_mult = 0.9

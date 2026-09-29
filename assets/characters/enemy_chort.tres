@@ -1,0 +1,47 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/enemies/chort_idle_anim_f0.png" id="1_ye5uy"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/chort_idle_anim_f1.png" id="2_oitu7"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/chort_idle_anim_f2.png" id="3_gr7ul"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/chort_idle_anim_f3.png" id="4_ecwpq"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/chort_run_anim_f0.png" id="5_qmdoj"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/chort_run_anim_f1.png" id="6_h2pv5"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/chort_run_anim_f2.png" id="7_ipmj5"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/chort_run_anim_f3.png" id="8_nwimp"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_ye5uy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_oitu7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_gr7ul")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_ecwpq")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_qmdoj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_h2pv5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_ipmj5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_nwimp")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

@@ -1,0 +1,56 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/characters/dwarf_m_hit_anim_f0.png" id="1_e7570"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/dwarf_m_idle_anim_f0.png" id="2_tdd3o"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/dwarf_m_idle_anim_f1.png" id="3_ts3xq"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/dwarf_m_idle_anim_f2.png" id="4_0680u"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/dwarf_m_idle_anim_f3.png" id="5_2d32f"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/dwarf_m_run_anim_f0.png" id="6_2haje"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/dwarf_m_run_anim_f1.png" id="7_5tb8w"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/dwarf_m_run_anim_f2.png" id="8_o6f1k"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/dwarf_m_run_anim_f3.png" id="9_s8yku"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_e7570")
+}],
+"loop": false,
+"name": &"hit",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_tdd3o")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_ts3xq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_0680u")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_2d32f")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_2haje")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_5tb8w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_o6f1k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_s8yku")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

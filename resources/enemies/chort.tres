@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_1wjcg"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/enemy_chort.tres" id="2_qb47u"]
+
+[resource]
+script = ExtResource("1_1wjcg")
+id = "chort"
+display_name = "Chort"
+sprite_frames = ExtResource("2_qb47u")
+hp_mult = 1.8
+damage_mult = 1.4
+speed_mult = 1.1

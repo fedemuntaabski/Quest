@@ -1,7 +1,13 @@
 [gd_resource type="Resource" script_class="FloorConfig" format=3 uid="uid://byqvovujwl0lq"]
 
-[ext_resource type="Script" uid="uid://blnmwdtwhuark" path="res://scripts/core/floors/FloorConfig.gd" id="1_floor_config"]
-[ext_resource type="Script" uid="uid://cvqaah7y6ydju" path="res://scripts/core/floors/RoomTypeRule.gd" id="2_room_type_rule"]
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyPool.gd" id="1_7csa3"]
+[ext_resource type="Script" path="res://scripts/core/floors/FloorConfig.gd" id="1_floor_config"]
+[ext_resource type="Resource" path="res://resources/floors/enemy_pool_f1.tres" id="2_j5m1i"]
+[ext_resource type="Script" path="res://scripts/core/floors/RoomTypeRule.gd" id="2_room_type_rule"]
+[ext_resource type="Resource" path="res://resources/floors/enemy_pool_f2.tres" id="3_kvag3"]
+[ext_resource type="Resource" path="res://resources/floors/enemy_pool_f3.tres" id="4_533ib"]
+[ext_resource type="Resource" path="res://resources/floors/enemy_pool_f4.tres" id="5_erun4"]
+[ext_resource type="Resource" path="res://resources/floors/enemy_pool_f5.tres" id="6_41g3f"]
 
 [sub_resource type="Resource" id="RoomTypeRule_rest"]
 script = ExtResource("2_room_type_rule")
@@ -34,3 +40,4 @@ enemy_damage_mult = 1.25
 [resource]
 script = ExtResource("1_floor_config")
 room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite")])
+enemy_pools = Array[ExtResource("1_7csa3")]([ExtResource("2_j5m1i"), ExtResource("3_kvag3"), ExtResource("4_533ib"), ExtResource("5_erun4"), ExtResource("6_41g3f")])

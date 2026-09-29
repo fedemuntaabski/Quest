@@ -1,17 +1,16 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="CharacterData" format=3]
 
 [ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
-[ext_resource type="Texture2D" uid="uid://cs8h2ibaxwnty" path="res://assets/portraits/mago.png" id="2_portrait"]
-[ext_resource type="SpriteFrames" path="res://resources/sprites/shared_player_idle_frames.tres" id="3_sprite_frames"]
+[ext_resource type="Texture2D" path="res://assets/portraits/mago.png" id="2_portrait"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/hero_wizzard_m.tres" id="3_gosk6"]
 
 [resource]
 script = ExtResource("1_character_data")
-portrait = ExtResource("2_portrait")
-sprite_frames = ExtResource("3_sprite_frames")
 character_id = "mage"
 display_name = "Mago"
 description = "Especialista en Ciencia y Módulos. Acelera la investigación y potencia la base."
-base_hp = 20
+portrait = ExtResource("2_portrait")
 passive_ability_name = "Mente Analítica"
 passive_ability_desc = "Genera Ciencia adicional al abrir una puerta nueva."
 active_ability_name = "Sobrecarga de Módulo"
+sprite_frames = ExtResource("3_gosk6")

@@ -1,0 +1,56 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/characters/knight_m_hit_anim_f0.png" id="1_66wna"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/knight_m_idle_anim_f0.png" id="2_dx4v8"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/knight_m_idle_anim_f1.png" id="3_ib5de"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/knight_m_idle_anim_f2.png" id="4_46cgl"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/knight_m_idle_anim_f3.png" id="5_6gi65"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/knight_m_run_anim_f0.png" id="6_d71dp"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/knight_m_run_anim_f1.png" id="7_3deq5"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/knight_m_run_anim_f2.png" id="8_kj8la"]
+[ext_resource type="Texture2D" path="res://assets/art/characters/knight_m_run_anim_f3.png" id="9_0mqth"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_66wna")
+}],
+"loop": false,
+"name": &"hit",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_dx4v8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_ib5de")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_46cgl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_6gi65")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_d71dp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_3deq5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_kj8la")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_0mqth")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

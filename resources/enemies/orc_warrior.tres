@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_mf1cr"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/enemy_orc_warrior.tres" id="2_nsdm4"]
+
+[resource]
+script = ExtResource("1_mf1cr")
+id = "orc_warrior"
+display_name = "Orco guerrero"
+sprite_frames = ExtResource("2_nsdm4")
+hp_mult = 1.6
+damage_mult = 1.3
+speed_mult = 0.95

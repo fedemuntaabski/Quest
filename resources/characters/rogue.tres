@@ -1,17 +1,16 @@
-[gd_resource type="Resource" script_class="CharacterData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="CharacterData" format=3]
 
 [ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
-[ext_resource type="Texture2D" uid="uid://dtm5sxr07k2ao" path="res://assets/portraits/picaro.png" id="2_portrait"]
-[ext_resource type="SpriteFrames" path="res://resources/sprites/shared_player_idle_frames.tres" id="3_sprite_frames"]
+[ext_resource type="Texture2D" path="res://assets/portraits/picaro.png" id="2_portrait"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/hero_elf_m.tres" id="3_1l3ae"]
 
 [resource]
 script = ExtResource("1_character_data")
-portrait = ExtResource("2_portrait")
-sprite_frames = ExtResource("3_sprite_frames")
 character_id = "rogue"
 display_name = "Pícaro"
 description = "Explorador Rápido y Colector de Polvo. El primero en revelar cada sala nueva."
-base_hp = 20
+portrait = ExtResource("2_portrait")
 passive_ability_name = "Paso Ligero"
 passive_ability_desc = "Obtiene Polvo extra al revelar una sala por primera vez."
 active_ability_name = "Golpe Furtivo"
+sprite_frames = ExtResource("3_1l3ae")

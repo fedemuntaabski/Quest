@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_btpux"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/enemy_orc_shaman.tres" id="2_lhfsj"]
+
+[resource]
+script = ExtResource("1_btpux")
+id = "orc_shaman"
+display_name = "Orco chamán"
+behavior = 2
+sprite_frames = ExtResource("2_lhfsj")
+damage_mult = 1.5

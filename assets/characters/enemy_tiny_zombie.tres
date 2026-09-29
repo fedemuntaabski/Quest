@@ -1,0 +1,47 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/enemies/tiny_zombie_idle_anim_f0.png" id="1_rhvg1"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/tiny_zombie_idle_anim_f1.png" id="2_8e3fi"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/tiny_zombie_idle_anim_f2.png" id="3_slk07"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/tiny_zombie_idle_anim_f3.png" id="4_4r0sq"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/tiny_zombie_run_anim_f0.png" id="5_i0a0x"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/tiny_zombie_run_anim_f1.png" id="6_hlm6k"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/tiny_zombie_run_anim_f2.png" id="7_n8nwx"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/tiny_zombie_run_anim_f3.png" id="8_akwuf"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_rhvg1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_8e3fi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_slk07")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_4r0sq")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_i0a0x")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_hlm6k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_n8nwx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_akwuf")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

@@ -53,6 +53,10 @@ class_name FloorConfig
 ## +X enemy damage (hero contact + module attacks) per floor.
 @export var enemy_damage_growth: float = 0.2
 
+@export_group("Enemy pools")
+## One EnemyPool per floor (index = floor - 1; floors past the end reuse the last).
+@export var enemy_pools: Array[EnemyPool] = []
+
 @export_group("Wave scaling")
 ## Flat bonus added to the per-door invasion chance per floor.
 @export var invasion_chance_bonus_per_floor: float = 0.05
@@ -70,6 +74,13 @@ func enemy_hp_multiplier(floor_index: int) -> float:
 
 func enemy_damage_multiplier(floor_index: int) -> float:
 	return 1.0 + enemy_damage_growth * _steps(floor_index)
+
+
+## The roster of `floor_index` (clamped to the configured pools); null if none.
+func enemy_pool(floor_index: int) -> EnemyPool:
+	if enemy_pools.is_empty():
+		return null
+	return enemy_pools[clampi(floor_index - 1, 0, enemy_pools.size() - 1)]
 
 
 func invasion_chance_bonus(floor_index: int) -> float:
