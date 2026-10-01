@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/weapons/weapons.png" id="1_67to2"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_4jety"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j8tcy"]
+atlas = ExtResource("1_67to2")
+region = Rect2(32, 32, 16, 16)
+
+[resource]
+script = ExtResource("2_4jety")
+id = "sword_iron"
+display_name = "Espada de hierro"
+icon = SubResource("AtlasTexture_j8tcy")
+rarity = 1
+modifiers = {
+"attack_damage": 2
+}

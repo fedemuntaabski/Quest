@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/weapons/weapons.png" id="1_ws63c"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_kqay8"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ujbfm"]
+atlas = ExtResource("1_ws63c")
+region = Rect2(96, 96, 16, 16)
+
+[resource]
+script = ExtResource("2_kqay8")
+id = "sword_jade"
+display_name = "Hoja de jade"
+icon = SubResource("AtlasTexture_ujbfm")
+rarity = 2
+modifiers = {
+"attack_damage": 4
+}

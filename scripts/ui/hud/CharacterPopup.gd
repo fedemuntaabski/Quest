@@ -27,6 +27,8 @@ var _info: Label
 var _level_title: Label
 var _upgrade_rows: GridContainer
 var _level_button: Button
+var _found_title: Label
+var _found_rows: VBoxContainer
 
 
 func _ready() -> void:
@@ -39,6 +41,7 @@ func _ready() -> void:
 	if ps:
 		ps.stats_changed.connect(func(_s: CharacterStats) -> void: _refresh())
 		ps.run_upgrades_changed.connect(func(_k: String, _l: int, _id: String) -> void: _refresh())
+		ps.found_items_changed.connect(_refresh)
 	var rm := ManagerLocator.get_resource_manager()
 	if rm:
 		rm.resource_changed.connect(func(_k: String, _a: int, _d: int) -> void: _refresh())
@@ -143,6 +146,13 @@ func _build() -> void:
 	_level_button.pressed.connect(_on_level_up_pressed)
 	content.add_child(_level_button)
 
+	content.add_child(HSeparator.new())
+	_found_title = Label.new()
+	_found_title.add_theme_color_override("font_color", QuestPalette.GOLD)
+	content.add_child(_found_title)
+	_found_rows = VBoxContainer.new()
+	content.add_child(_found_rows)
+
 
 func _on_level_up_pressed() -> void:
 	var ps := ManagerLocator.get_player_stats()
@@ -189,6 +199,7 @@ func _refresh() -> void:
 
 	if ps:
 		_rebuild_level_up(ps)
+		_rebuild_found_items(ps)
 
 
 func _rebuild_level_up(ps: PlayerStats) -> void:
@@ -211,6 +222,31 @@ func _rebuild_level_up(ps: PlayerStats) -> void:
 	_level_button.text = "Nivel máximo" if maxed else "Subir de nivel (%d %s)" % [p["cost"], resource_label]
 	_level_button.tooltip_text = "" if maxed or affordable else "%s insuficiente" % resource_label
 	_level_button.add_theme_color_override("font_color", StatIcon.BASE_COLORS.get(p["cost_resource"], QuestPalette.PARCHMENT) if affordable else QuestPalette.UI_TEXT_BLOCKED)
+
+
+## Objetos hallados en cofres: solo lectura (aún no hay sistema de equipo).
+func _rebuild_found_items(ps: PlayerStats) -> void:
+	for child in _found_rows.get_children():
+		_found_rows.remove_child(child)
+		child.queue_free()
+	_found_title.text = "Hallazgos (%d)" % ps.found_items.size() if not ps.found_items.is_empty() else "Hallazgos: ninguno todavía"
+	for item in ps.found_items:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var icon := TextureRect.new()
+		icon.texture = item.icon
+		icon.custom_minimum_size = Vector2(32, 32)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		row.add_child(icon)
+		var label := Label.new()
+		label.text = "%s (%s) %s" % [item.display_name, ItemData.RARITY_LABELS[item.rarity], item.describe_modifiers()]
+		label.add_theme_color_override("font_color", ItemData.RARITY_COLORS[item.rarity])
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(label)
+		_found_rows.add_child(row)
 
 
 func _add_cell(text: String, color: Color) -> void:

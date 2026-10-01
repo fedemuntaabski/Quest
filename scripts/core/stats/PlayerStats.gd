@@ -6,6 +6,8 @@ const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd
 signal stats_changed(stats: CharacterStats)
 ## Any hero died. Session 12: one hero down ends the run (see NOTES_SESSION.md).
 signal player_died
+## Objetos hallados en cofres esta partida (solo registro: no hay sistema de equipo).
+signal found_items_changed
 ## A hero leveled up (in-run, paid in Comida). Since session 7 every level
 ## raises all UpgradeConfig.STAT_KEYS together: stat_key is always "level" and
 ## `level` is the number of levels that hero bought this run (hero level - 1).
@@ -35,6 +37,7 @@ var active_hero_id: String:
 
 # IN-RUN HERO LEVELS (Comida, reset per run by Main._begin_new_run; survive
 # floors because this autoload outlives Main2d and register() re-applies them).
+var found_items: Array[ItemData] = []
 var run_upgrade_config: UpgradeConfig = RUN_UPGRADE_CONFIG
 ## hero_id → levels bought this run (hero level = 1 + levels).
 var run_levels: Dictionary = {}
@@ -264,3 +267,15 @@ func _on_hero_died(hero_id: String) -> void:
 
 func _on_stats_died() -> void:
 	player_died.emit()
+
+
+func add_found_item(item: ItemData) -> void:
+	if item == null:
+		return
+	found_items.append(item)
+	found_items_changed.emit()
+
+
+func clear_found_items() -> void:
+	found_items.clear()
+	found_items_changed.emit()

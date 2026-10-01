@@ -283,6 +283,16 @@ func _register_groups_and_doors() -> void:
 	# The start room is lit for free (no dust paid → nothing to refund).
 	room_manager.set_zone_powered(room_manager.get_start_zone_id(), true)
 
+## Contenido del cofre: sorteo por rareza, sembrado con (semilla del piso, sala).
+func _roll_chest_item(zone_id: String) -> ItemData:
+	var catalog := ItemCatalog.get_default()
+	if catalog == null:
+		return null
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([floor_manager.map_seed if floor_manager else 0, zone_id, "chest"])
+	return catalog.pick(rng)
+
+
 func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 	room_manager.on_group_revealed(group_id)
 	for zone_id in room_manager.get_group_zone_ids(group_id):
@@ -291,7 +301,11 @@ func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 			chest.kind = Pickup.Kind.CHEST
 			chest.position = room_manager.get_center(zone_id) + LOOT_CHEST_OFFSET
 			chest.z_index = 2
+			chest.item = _roll_chest_item(zone_id)
 			add_child(chest)
+			var player_stats := ManagerLocator.get_player_stats()
+			if player_stats:
+				player_stats.add_found_item(chest.item)
 
 	if player_action_controller:
 		player_action_controller.refresh_zones()

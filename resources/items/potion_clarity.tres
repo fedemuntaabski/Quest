@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/items/potions.png" id="1_avlfr"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_aqs4b"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jaf7m"]
+atlas = ExtResource("1_avlfr")
+region = Rect2(176, 64, 16, 16)
+
+[resource]
+script = ExtResource("2_aqs4b")
+id = "potion_clarity"
+display_name = "Poción de claridad"
+icon = SubResource("AtlasTexture_jaf7m")
+slot = 2
+rarity = 1
+modifiers = {
+"attack_interval": -0.05
+}

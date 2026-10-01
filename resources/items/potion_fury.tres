@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/items/potions.png" id="1_v5si5"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_pqejd"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_n14qi"]
+atlas = ExtResource("1_v5si5")
+region = Rect2(208, 64, 16, 16)
+
+[resource]
+script = ExtResource("2_pqejd")
+id = "potion_fury"
+display_name = "Poción de furia"
+icon = SubResource("AtlasTexture_n14qi")
+slot = 2
+rarity = 2
+modifiers = {
+"attack_damage": 2
+}

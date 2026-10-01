@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/armor/armours.png" id="1_klyr6"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_srxoj"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q42w4"]
+atlas = ExtResource("1_klyr6")
+region = Rect2(0, 0, 16, 16)
+
+[resource]
+script = ExtResource("2_srxoj")
+id = "armor_leather"
+display_name = "Coraza de cuero"
+icon = SubResource("AtlasTexture_q42w4")
+slot = 1
+modifiers = {
+"hp": 5
+}

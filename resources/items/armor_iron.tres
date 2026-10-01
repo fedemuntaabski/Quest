@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/armor/armours.png" id="1_xok54"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_8jmfj"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vxt8h"]
+atlas = ExtResource("1_xok54")
+region = Rect2(32, 128, 16, 16)
+
+[resource]
+script = ExtResource("2_8jmfj")
+id = "armor_iron"
+display_name = "Coraza de hierro"
+icon = SubResource("AtlasTexture_vxt8h")
+slot = 1
+rarity = 1
+modifiers = {
+"hp": 10
+}

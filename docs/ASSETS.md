@@ -113,3 +113,8 @@ Reproducible: `godot --headless --path . --script res://tools/normalize_assets.g
 - Héroe 16×28 y jefes 32×36 son de 0x72 (ya integrados antes); no cambian, así que colisiones/hitboxes/hurtboxes existentes siguen vigentes.
 - Los `.import` no se versionan (`.gitignore`); el proyecto ya fuerza `default_texture_filter=0` (Nearest) y el importador 2D por defecto es lossless sin mipmaps. `tests/test_assets_art.gd` lo verifica.
 - `art/vfx/index.json`: por FX `frame_w/frame_h`, `frames` (nº real), `columns` (frames por fila de la hoja; casi todas son tira de 1 fila) y `fps` 15.
+
+## Ítems (session/assets-4)
+`ItemData` (`scripts/core/items/`) + 18 `.tres` en `resources/items/` (6 espadas, 7 armaduras, 3 pociones, 2 grimorios) y `item_catalog.tres`; se regeneran con `tools/build_items.gd` (tabla id → hoja/celda) y se pueden editar a mano. Modificadores solo con stats existentes: `hp` (vida máx.), `attack_damage`, `attack_interval` (delta en s).
+- **Sin sistema de equipo**: los ítems no se aplican a los héroes. Se muestran: `Pickup.item` (ícono; en un cofre flota encima), cofre de sala Botín (`Main2d._roll_chest_item`, sorteo por rareza sembrado por piso+sala), y sección "Hallazgos" de solo lectura en `CharacterPopup` (`PlayerStats.found_items`, se vacía al empezar partida). Equipar/aplicar modificadores queda para una sesión de diseño aparte.
+- Test: `tests/test_items.gd`.

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ItemCatalog" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="1_yr5ic"]
+[ext_resource type="Resource" path="res://resources/items/sword_bronze.tres" id="2_olnit"]
+[ext_resource type="Resource" path="res://resources/items/sword_iron.tres" id="3_afsof"]
+[ext_resource type="Resource" path="res://resources/items/sword_steel.tres" id="4_kfgcf"]
+[ext_resource type="Resource" path="res://resources/items/sword_ember.tres" id="5_wsfoh"]
+[ext_resource type="Resource" path="res://resources/items/sword_jade.tres" id="6_fogxd"]
+[ext_resource type="Resource" path="res://resources/items/sword_gold.tres" id="7_lhv76"]
+[ext_resource type="Resource" path="res://resources/items/armor_leather.tres" id="8_hptgk"]
+[ext_resource type="Resource" path="res://resources/items/armor_robe.tres" id="9_rh50l"]
+[ext_resource type="Resource" path="res://resources/items/armor_iron.tres" id="10_cpl8c"]
+[ext_resource type="Resource" path="res://resources/items/armor_copper.tres" id="11_axyve"]
+[ext_resource type="Resource" path="res://resources/items/armor_steel.tres" id="12_i8m33"]
+[ext_resource type="Resource" path="res://resources/items/armor_gold.tres" id="13_7ptma"]
+[ext_resource type="Resource" path="res://resources/items/armor_jade.tres" id="14_jsqpy"]
+[ext_resource type="Resource" path="res://resources/items/potion_health.tres" id="15_y2d41"]
+[ext_resource type="Resource" path="res://resources/items/potion_clarity.tres" id="16_5itpl"]
+[ext_resource type="Resource" path="res://resources/items/potion_fury.tres" id="17_kt7is"]
+[ext_resource type="Resource" path="res://resources/items/book_embers.tres" id="18_5ebln"]
+[ext_resource type="Resource" path="res://resources/items/book_tides.tres" id="19_n2mex"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemCatalog.gd" id="20_fdljv"]
+
+[resource]
+script = ExtResource("20_fdljv")
+items = Array[ExtResource("1_yr5ic")]([ExtResource("2_olnit"), ExtResource("3_afsof"), ExtResource("4_kfgcf"), ExtResource("5_wsfoh"), ExtResource("6_fogxd"), ExtResource("7_lhv76"), ExtResource("8_hptgk"), ExtResource("9_rh50l"), ExtResource("10_cpl8c"), ExtResource("11_axyve"), ExtResource("12_i8m33"), ExtResource("13_7ptma"), ExtResource("14_jsqpy"), ExtResource("15_y2d41"), ExtResource("16_5itpl"), ExtResource("17_kt7is"), ExtResource("18_5ebln"), ExtResource("19_n2mex")])

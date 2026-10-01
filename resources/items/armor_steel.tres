@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/armor/armours.png" id="1_8qxkc"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_d8hya"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lslgg"]
+atlas = ExtResource("1_8qxkc")
+region = Rect2(112, 208, 16, 16)
+
+[resource]
+script = ExtResource("2_d8hya")
+id = "armor_steel"
+display_name = "Coraza de acero"
+icon = SubResource("AtlasTexture_lslgg")
+slot = 1
+rarity = 3
+modifiers = {
+"hp": 20
+}

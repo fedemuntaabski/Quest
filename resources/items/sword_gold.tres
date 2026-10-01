@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/weapons/weapons.png" id="1_smcc5"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_dm2we"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_itlek"]
+atlas = ExtResource("1_smcc5")
+region = Rect2(80, 128, 16, 16)
+
+[resource]
+script = ExtResource("2_dm2we")
+id = "sword_gold"
+display_name = "Espada dorada"
+icon = SubResource("AtlasTexture_itlek")
+rarity = 3
+modifiers = {
+"attack_damage": 5,
+"attack_interval": -0.1
+}

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/armor/armours.png" id="1_alw1y"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_88aqj"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bn3m1"]
+atlas = ExtResource("1_alw1y")
+region = Rect2(128, 272, 16, 16)
+
+[resource]
+script = ExtResource("2_88aqj")
+id = "armor_jade"
+display_name = "Coraza de jade"
+icon = SubResource("AtlasTexture_bn3m1")
+slot = 1
+rarity = 4
+modifiers = {
+"attack_damage": 2,
+"hp": 30
+}

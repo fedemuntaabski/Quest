@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/items/books.png" id="1_k7prs"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_kxp8a"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b1lku"]
+atlas = ExtResource("1_k7prs")
+region = Rect2(48, 0, 16, 16)
+
+[resource]
+script = ExtResource("2_kxp8a")
+id = "book_embers"
+display_name = "Grimorio de brasas"
+icon = SubResource("AtlasTexture_b1lku")
+slot = 3
+rarity = 1
+modifiers = {
+"attack_damage": 2
+}

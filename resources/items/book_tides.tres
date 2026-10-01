@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/items/books.png" id="1_k84cd"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_ewp1p"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_v5mbu"]
+atlas = ExtResource("1_k84cd")
+region = Rect2(176, 0, 16, 16)
+
+[resource]
+script = ExtResource("2_ewp1p")
+id = "book_tides"
+display_name = "Grimorio de mareas"
+icon = SubResource("AtlasTexture_v5mbu")
+slot = 3
+rarity = 2
+modifiers = {
+"attack_interval": -0.15
+}

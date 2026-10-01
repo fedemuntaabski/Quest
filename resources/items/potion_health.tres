@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/items/potions.png" id="1_sh4xf"]
+[ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_eucp7"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lcncv"]
+atlas = ExtResource("1_sh4xf")
+region = Rect2(48, 64, 16, 16)
+
+[resource]
+script = ExtResource("2_eucp7")
+id = "potion_health"
+display_name = "Poción de vida"
+icon = SubResource("AtlasTexture_lcncv")
+slot = 2
+modifiers = {
+"hp": 10
+}
