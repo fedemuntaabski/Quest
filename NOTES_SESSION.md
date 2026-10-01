@@ -1123,3 +1123,24 @@ Leaf centrado en los 4 sentidos y clic en las 4 celdas; carteles (no se pisan co
 5. ~~`base_hp` por héroe~~ (hecho en la s13).
 6. Roster, teclas 1-2-3.
 7. Pendientes de la s11.
+
+
+## Sesión enemies-2 — cazadores y saqueadores (`session/enemies-2`)
+
+### Flujo anterior
+Ver `docs/ENEMY_TARGETING.md`: todos perseguían héroes o módulos; el Nexo no tenía PV y nadie lo atacaba.
+
+### Decisiones
+- No existe `EnemyData`: se amplió `EnemyType`. Stats actuales intactos (campos nuevos con 0 = valor del variant).
+- Rol manda el destino; `behavior` sigue dando stats base y el Sapper sigue buscando módulos. El HUNTER viejo (quieto sin Nexo) ahora persigue.
+- El Nexo es atacable siempre (en su sala inicial o en el portador). 0 PV = misma derrota que un héroe muerto (`Main2d._on_player_died`).
+- Daño al Nexo directo (`Nexo.take_damage`), sin hurtbox ni capas nuevas: torres y cuerpos de enemigo (capa 2) no cambian.
+- Tiempo de reacción: un saqueador solo spawnea si `raider_arrival_sec >= raider_min_arrival_sec` (4 s); si no, spawnea un cazador.
+- Anti-apilado por anillo de 8 slots consecutivos (`Enemy.slot`); no hay colisión entre enemigos.
+
+### Tests
+`tests/test_enemy_roles.gd` (cazador, ruta y daño del saqueador, reacción, proporciones, Nexo/HUD/derrota, 30 seeds x pisos 1 y 5 sin atascos ni apilados), `tests/test_raider_timing.gd` (30 seeds x 5 pisos). Mutación comprobada: `RING_RADIUS = 0` rompe el test de apilado.
+
+### Playtest pendiente
+PV del Nexo (100) y `damage_vs_nexus` (4/s por saqueador); proporciones por piso; 4 s de llegada mínima (a 500 px/s son ~2000 px de ruta: puede dejar sin saqueadores a las primeras salas reveladas; no medido por piso); Nexo atacable durante la exploración; grietas (líneas de código, sin arte, posiciones sin afinar) y destello (se ve solo mientras el Nexo está en su sala; llevado, sólo hay número flotante + alerta HUD); borde rojo y anillo del minimapa; tinte/rombo de saqueador sobre cada sprite; sensación de la reacción a héroes (48 px / 3 s); `attack_range` del cazador (40 px).
+Candidatos a sacar de los pools por desentonar con lo medieval: `tc_dragon`, `tc_eyeball`, `tc_fire_skull`, `tc_demon`, `tc_red_imp`, `big_demon` (no se tocaron).

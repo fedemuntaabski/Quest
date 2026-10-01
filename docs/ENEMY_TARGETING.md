@@ -35,3 +35,10 @@ Estado **antes** de `session/enemies-2` (referencia; los roles nuevos están al 
 
 ## Roles (session enemies-2)
 Ver `NOTES_SESSION.md` "Sesión enemies-2".
+
+### Resumen
+- `EnemyType.role` HUNTER/RAIDER, `aggro_range` 320 px, `attack_range` 40 (cazador) / 56 (saqueador), `damage_vs_heroes` (0 = daño de contacto del variant), `damage_vs_nexus`.
+- Cazador: héroe vivo más cercano dentro de `aggro_range` (alcanzable por el grafo revelado) -> va a su posición; si no, a la zona del héroe más cercano por ruta. Ataca héroes por contacto y módulos como antes.
+- Saqueador: ignora héroes y módulos; ruta más corta (`find_zone_path`) a `Nexo.get_target_zone()`; en `attack_range` golpea al Nexo cada `attack_speed` s. Si un héroe está a <= 48 px o lo golpeó hace < 3 s, actúa como cazador hasta que pase.
+- Re-planifica tras cada tramo si el objetivo cambió de zona; se reparten en un anillo de 8 slots (sin física).
+- Proporción por piso: `FloorConfig.raider_ratio_by_floor`; un saqueador no spawnea si llegaría al Nexo en menos de `raider_min_arrival_sec` (pasa a cazador).

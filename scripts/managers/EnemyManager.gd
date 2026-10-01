@@ -23,6 +23,7 @@ var door_turn_system: DoorTurnSystem
 var floor_manager: FloorManager
 var _enemies: Array[Enemy] = []
 var _enemies_root: Node2D
+var _spawn_count: int = 0
 
 
 func _ready() -> void:
@@ -103,6 +104,8 @@ func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
 	var enemy := ENEMY_SCENE.instantiate() as Enemy
 	_enemies_root.add_child(enemy)
 	enemy.setup(world_position)
+	enemy.slot = _spawn_count
+	_spawn_count += 1
 	var hp_mult: float = floor_manager.enemy_hp_multiplier() if floor_manager else 1.0
 	var dmg_mult: float = floor_manager.enemy_damage_multiplier() if floor_manager else 1.0
 	var rule := _room_rule(zone_id)  # Elite rooms: tougher enemies

@@ -58,6 +58,8 @@ var _moving: bool = false
 var _active_goal: String = ""
 var _provoked_until_msec: int = 0
 var target_nexo: Nexo = null
+## Ring slot (set by EnemyManager, consecutive) so enemies converging on a point spread out.
+var slot: int = 0
 
 
 func _ready() -> void:
@@ -380,9 +382,9 @@ func _pursue_zone(room_manager: RoomManager, target_zone_id: String, point: Vect
 	_check_trap_in_current_room(room_manager)
 
 
-## Fixed per-enemy offset (8 slots) so enemies converging on one point don't stack.
+## Fixed per-enemy offset (8 consecutive slots) so enemies converging on one point don't stack.
 func _ring_offset() -> Vector2:
-	return Vector2.from_angle((get_instance_id() % 8) * TAU / 8.0) * RING_RADIUS
+	return Vector2.from_angle((slot % 8) * TAU / 8.0) * RING_RADIUS
 
 
 func _check_trap_in_current_room(room_manager: RoomManager) -> void:
