@@ -47,3 +47,7 @@ extra_major_slots = 1
 script = ExtResource("1_floor_config")
 room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite"), SubResource("RoomTypeRule_generator")])
 enemy_pools = Array[ExtResource("1_7csa3")]([ExtResource("2_j5m1i"), ExtResource("3_kvag3"), ExtResource("4_533ib"), ExtResource("5_erun4"), ExtResource("6_41g3f")])
+enemy_hp_growth = 0.15
+enemy_damage_growth = 0.1
+extra_invasion_enemies_per_floor = 0.34
+nexo_max_hp = 120

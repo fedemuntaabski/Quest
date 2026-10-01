@@ -25,6 +25,16 @@ func _ready() -> void:
 	fire_timer.start()
 
 
+## Module.CATALOG is the single source for damage / fire rate (the exports are
+## only fallbacks for a turret placed without configure()).
+func configure(p_zone_id: String, p_module_type: ModuleType) -> void:
+	super(p_zone_id, p_module_type)
+	var cfg: Dictionary = CATALOG[p_module_type]
+	damage = int(cfg["damage"])
+	fire_rate = float(cfg["fire_rate"])
+	fire_timer.wait_time = fire_rate
+
+
 func _on_body_entered(body: Node2D) -> void:
 	if (body.is_in_group("enemies") or body.has_method("take_damage")) and not current_targets.has(body):
 		current_targets.append(body)

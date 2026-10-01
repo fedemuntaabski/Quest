@@ -9,4 +9,4 @@ id = "orc_shaman"
 display_name = "Orco chamán"
 behavior = 2
 sprite_frames = ExtResource("2_lhfsj")
-damage_mult = 1.5
+damage_mult = 1.2

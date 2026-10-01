@@ -100,7 +100,8 @@ func _check_menu() -> void:
 	var frames: SpriteFrames = CharacterDatabase.get_by_id("tank").sprite_frames
 	_expect(menu._preview_sprite.sprite_frames == frames and menu._preview_sprite.animation == &"idle", "preview should play the hero's idle")
 	_expect(menu._preview_sprite.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "preview must use Nearest")
-	_expect(menu._preview_info.text.contains("Vida: 32"), "preview stats: %s" % menu._preview_info.text)
+	var tank_hp: int = CharacterDatabase.get_by_id("tank").base_hp
+	_expect(menu._preview_info.text.contains("Vida: %d" % tank_hp), "preview stats: %s" % menu._preview_info.text)
 
 	menu.start_button.pressed.emit()
 	_expect(confirmed.size() == 1 and confirmed[0] == _ids(["warrior", "tank"]), "confirm payload %s" % [confirmed])

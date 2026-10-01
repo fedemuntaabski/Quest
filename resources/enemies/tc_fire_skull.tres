@@ -9,4 +9,4 @@ id = "tc_fire_skull"
 display_name = "Calavera ígnea"
 behavior = 1
 sprite_frames = ExtResource("2_fk60e")
-damage_mult = 1.4
+damage_mult = 1.16

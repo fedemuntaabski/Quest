@@ -9,5 +9,5 @@ id = "tiny_zombie"
 display_name = "Zombi menor"
 behavior = 1
 sprite_frames = ExtResource("2_b5hyo")
-hp_mult = 0.9
 speed_mult = 0.9
+hp_mult = 0.8

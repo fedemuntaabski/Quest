@@ -9,5 +9,5 @@ id = "wogol"
 display_name = "Wogol"
 behavior = 2
 sprite_frames = ExtResource("2_fxt7o")
-hp_mult = 1.5
-damage_mult = 1.5
+hp_mult = 1.3
+damage_mult = 1.2

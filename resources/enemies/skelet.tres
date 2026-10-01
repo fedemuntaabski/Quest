@@ -8,5 +8,4 @@ script = ExtResource("1_8h4yg")
 id = "skelet"
 display_name = "Esqueleto"
 sprite_frames = ExtResource("2_1jrar")
-hp_mult = 1.2
 speed_mult = 0.9

@@ -4,3 +4,5 @@
 
 [resource]
 script = ExtResource("1_config")
+attack_speed_per_level = 0.05
+min_attack_interval = 0.3

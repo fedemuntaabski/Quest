@@ -9,5 +9,5 @@ id = "necromancer"
 display_name = "Nigromante"
 behavior = 2
 sprite_frames = ExtResource("2_818re")
-hp_mult = 1.8
-damage_mult = 2.0
+hp_mult = 1.48
+damage_mult = 1.4

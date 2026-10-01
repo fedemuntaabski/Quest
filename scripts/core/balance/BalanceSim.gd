@@ -6,9 +6,10 @@ class_name BalanceSim
 ## (Enemy.resolved_*, FloorConfig multipliers, UpgradeConfig curves). No scene,
 ## no randomness: tools/balance_sim.gd exports it as CSV, tests/test_balance.gd
 ## asserts the targets on it. Model (documented in docs/BALANCE.md):
-##  - hero AoE hits every enemy in range each `interval`; the first tick lands one
-##    interval after contact (Timer), enemies hit on contact every CONTACT_HIT_INTERVAL
-##    from t=0 (conservative for the hero: it ignores the ~0.3 s approach);
+##  - hero AoE hits every enemy in range each `interval` (free-running Timer: the
+##    first tick lands uniformly within one interval, so the enemy is exposed for
+##    (hits - 0.5) * interval on average); enemies hit on contact every
+##    CONTACT_HIT_INTERVAL. Damage taken is the expectation (no rounding to whole ticks);
 ##  - an encounter = the floor's invasion wave at turn WAVE_TURN, all in range at once;
 ##  - hero level on floor f = f - 1 (one level-up bought per floor).
 
@@ -91,12 +92,14 @@ static func duel(hero_id: String, level: int, type: EnemyType, floor_index: int)
 	var hit := maxi(1, int(enemy["contact"]) - int(hero["flat_reduction"]))
 	hit = maxi(1, roundi(hit * (1.0 - float(hero["reduction_pct"]))))
 	var ttk_hero := ceili(float(hero["hp"]) / float(hit)) * Enemy.CONTACT_HIT_INTERVAL
+	var exposure := (hits - 0.5) * float(hero["interval"])
 	return {
 		"hero": hero_id, "level": level, "enemy": type.id, "floor": floor_index,
 		"enemy_hp": enemy["hp"], "hero_dmg": hero["damage"], "hits_to_kill": hits,
 		"ttk_enemy_s": ttk_enemy, "ttk_hero_s": ttk_hero,
 		"enemy_dps": float(hit) / Enemy.CONTACT_HIT_INTERVAL, "hero_dps": hero["dps"],
-		"hp_lost": hit * int(floor(ttk_enemy / Enemy.CONTACT_HIT_INTERVAL)),
+		"exposure_s": exposure,
+		"hp_lost": hit * exposure / Enemy.CONTACT_HIT_INTERVAL,
 		"hit_taken": hit,
 	}
 
@@ -105,7 +108,7 @@ static func duel(hero_id: String, level: int, type: EnemyType, floor_index: int)
 static func encounter_loss(hero_id: String, level: int, type: EnemyType, floor_index: int) -> float:
 	var d := duel(hero_id, level, type, floor_index)
 	var hero := hero_stats(hero_id, level)
-	return float(wave_size(floor_index) * int(d["hp_lost"])) / float(hero["hp"])
+	return wave_size(floor_index) * float(d["hp_lost"]) / float(hero["hp"])
 
 
 ## Weighted mean of encounter_loss over the floor's pool.
@@ -140,7 +143,7 @@ static func duel_rows() -> Array[Dictionary]:
 		for type in pool_types(f):
 			for hero_id in HERO_IDS:
 				var d := duel(hero_id, f - 1, type, f)
-				for key in ["ttk_enemy_s", "ttk_hero_s", "enemy_dps", "hero_dps"]:
+				for key in ["ttk_enemy_s", "ttk_hero_s", "enemy_dps", "hero_dps", "exposure_s", "hp_lost"]:
 					d[key] = snappedf(float(d[key]), 0.01)
 				rows.append(d)
 	return rows

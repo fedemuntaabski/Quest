@@ -159,11 +159,16 @@ func apply_slow(duration: float) -> void:
 	_slowed_until_msec = Time.get_ticks_msec() + int(duration * 1000)
 
 
+## Speed factor while slowed: the Trap's catalog slow_factor.
+static func slow_factor() -> float:
+	return float(Module.CATALOG[Module.ModuleType.TRAP]["slow_factor"])
+
+
 func current_speed() -> float:
 	var base_speed := float(VARIANT_CONFIG[variant]["speed"])
 	if type:
 		base_speed = resolved_speed(type) * type.speed_mult
-	return base_speed * 0.5 if Time.get_ticks_msec() < _slowed_until_msec else base_speed
+	return base_speed * slow_factor() if Time.get_ticks_msec() < _slowed_until_msec else base_speed
 
 
 ## Sprite from the EnemyType; body, hurtbox and contact hitbox follow its drawn

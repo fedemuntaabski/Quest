@@ -5,7 +5,8 @@ extends SceneTree
 ##   resources/enemies/*.tres                   EnemyType
 ##   resources/floors/enemy_pool_f1..f5.tres    EnemyPool
 ## and links hero sprite_frames + FloorConfig.enemy_pools. Run once, then tune
-## the .tres by hand (re-running overwrites them):
+## the .tres by hand (re-running overwrites them: hp/damage mult + pools here were
+## synced with the balance-4 values, but the role/base-stat/Nexus fields are NOT baked):
 ##   godot --headless --path . --script res://tools/build_characters.gd
 
 const HEROES := {  # character_id -> 0x72 hero prefix (assets/art/characters)
@@ -22,33 +23,33 @@ const RUN_FPS := 10.0
 ## (0 Swarm, 1 Sapper, 2 Hunter), hp_mult, damage_mult, speed_mult, visual_scale
 const TYPES := [
 	["goblin", "Goblin", "0x72:goblin", 0, 1.0, 1.0, 1.0, 1.0],
-	["skelet", "Esqueleto", "0x72:skelet", 0, 1.2, 1.0, 0.9, 1.0],
-	["tiny_zombie", "Zombi menor", "0x72:tiny_zombie", 1, 0.9, 1.0, 0.9, 1.0],
-	["imp", "Diablillo", "0x72:imp", 0, 0.8, 1.1, 1.3, 1.0],
-	["masked_orc", "Orco enmascarado", "0x72:masked_orc", 0, 1.5, 1.2, 0.9, 1.0],
+	["skelet", "Esqueleto", "0x72:skelet", 0, 1.0, 1.0, 0.9, 1.0],
+	["tiny_zombie", "Zombi menor", "0x72:tiny_zombie", 1, 0.8, 1.0, 0.9, 1.0],
+	["imp", "Diablillo", "0x72:imp", 0, 0.88, 1.04, 1.3, 1.0],
+	["masked_orc", "Orco enmascarado", "0x72:masked_orc", 0, 1.3, 1.08, 0.9, 1.0],
 	["tc_eyeball", "Ojo flotante", "tc:5,0", 2, 1.0, 1.0, 1.0, 1.0],
-	["orc_warrior", "Orco guerrero", "0x72:orc_warrior", 0, 1.6, 1.3, 0.95, 1.0],
-	["orc_shaman", "Orco chamán", "0x72:orc_shaman", 2, 1.0, 1.5, 1.0, 1.0],
-	["tc_wolf", "Lobo", "tc:3,2", 0, 1.2, 1.2, 1.4, 1.0],
-	["tc_fire_skull", "Calavera ígnea", "tc:3,0", 1, 1.0, 1.4, 1.0, 1.0],
-	["chort", "Chort", "0x72:chort", 0, 1.8, 1.4, 1.1, 1.0],
-	["wogol", "Wogol", "0x72:wogol", 2, 1.5, 1.5, 1.0, 1.0],
-	["big_zombie", "Zombi gigante", "0x72:big_zombie", 1, 3.0, 1.5, 0.7, 1.0],
-	["tc_ogre", "Ogro verde", "tc:2,4", 1, 2.2, 1.6, 0.8, 1.2],
-	["tc_red_imp", "Demonio rojo", "tc:8,3", 0, 1.2, 1.5, 1.3, 1.0],
-	["ogre", "Ogro", "0x72:ogre", 1, 3.5, 1.8, 0.75, 1.0],
-	["big_demon", "Gran demonio", "0x72:big_demon", 2, 3.0, 2.0, 0.9, 1.0],
-	["necromancer", "Nigromante", "0x72:necromancer", 2, 1.8, 2.0, 1.0, 1.0],
-	["tc_dragon", "Dragón", "tc:3,3", 2, 2.5, 2.0, 1.1, 1.3],
-	["tc_demon", "Demonio mayor", "tc:3,12", 0, 2.0, 1.8, 1.1, 1.2],
+	["orc_warrior", "Orco guerrero", "0x72:orc_warrior", 0, 1.36, 1.12, 0.95, 1.0],
+	["orc_shaman", "Orco chamán", "0x72:orc_shaman", 2, 1.0, 1.2, 1.0, 1.0],
+	["tc_wolf", "Lobo", "tc:3,2", 0, 1.12, 1.08, 1.4, 1.0],
+	["tc_fire_skull", "Calavera ígnea", "tc:3,0", 1, 1.0, 1.16, 1.0, 1.0],
+	["chort", "Chort", "0x72:chort", 0, 1.48, 1.16, 1.1, 1.0],
+	["wogol", "Wogol", "0x72:wogol", 2, 1.3, 1.2, 1.0, 1.0],
+	["big_zombie", "Zombi gigante", "0x72:big_zombie", 1, 2.2, 1.2, 0.7, 1.0],
+	["tc_ogre", "Ogro verde", "tc:2,4", 1, 1.72, 1.24, 0.8, 1.2],
+	["tc_red_imp", "Demonio rojo", "tc:8,3", 0, 1.12, 1.2, 1.3, 1.0],
+	["ogre", "Ogro", "0x72:ogre", 1, 2.5, 1.32, 0.75, 1.0],
+	["big_demon", "Gran demonio", "0x72:big_demon", 2, 2.2, 1.4, 0.9, 1.0],
+	["necromancer", "Nigromante", "0x72:necromancer", 2, 1.48, 1.4, 1.0, 1.0],
+	["tc_dragon", "Dragón", "tc:3,3", 2, 1.9, 1.4, 1.1, 1.3],
+	["tc_demon", "Demonio mayor", "tc:3,12", 0, 1.6, 1.32, 1.1, 1.2],
 ]
 ## Floor 1..5 rosters: [type id, weight]. Weak types drop out, tougher/odder ones join.
 const POOLS := [
 	[["goblin", 5], ["skelet", 4], ["tiny_zombie", 2]],
 	[["goblin", 3], ["skelet", 2], ["tiny_zombie", 2], ["imp", 3], ["masked_orc", 3], ["tc_eyeball", 1]],
 	[["skelet", 2], ["imp", 2], ["masked_orc", 3], ["orc_warrior", 3], ["orc_shaman", 2], ["tc_wolf", 3], ["tc_fire_skull", 2]],
-	[["masked_orc", 2], ["orc_warrior", 3], ["chort", 3], ["wogol", 2], ["big_zombie", 2], ["tc_ogre", 2], ["tc_red_imp", 3], ["tc_wolf", 2]],
-	[["chort", 2], ["orc_warrior", 2], ["ogre", 3], ["big_demon", 2], ["necromancer", 2], ["tc_dragon", 2], ["tc_demon", 3], ["tc_ogre", 1]],
+	[["masked_orc", 3], ["orc_warrior", 3], ["chort", 3], ["wogol", 1], ["big_zombie", 1], ["tc_ogre", 1], ["tc_red_imp", 3], ["tc_wolf", 3]],
+	[["chort", 3], ["orc_warrior", 2], ["ogre", 2], ["big_demon", 1], ["necromancer", 1], ["tc_dragon", 1], ["tc_demon", 3], ["tc_ogre", 2]],
 ]
 
 

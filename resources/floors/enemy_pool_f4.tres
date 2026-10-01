@@ -14,4 +14,4 @@
 [resource]
 script = ExtResource("1_81o8m")
 types = Array[ExtResource("2_cyy4q")]([ExtResource("3_6he7a"), ExtResource("4_3hqp2"), ExtResource("5_awd11"), ExtResource("6_oop3q"), ExtResource("7_4ued4"), ExtResource("8_kgn05"), ExtResource("9_0etrb"), ExtResource("10_bi346")])
-weights = PackedFloat32Array(2, 3, 3, 2, 2, 2, 3, 2)
+weights = PackedFloat32Array(3, 3, 3, 1, 1, 1, 3, 3)
