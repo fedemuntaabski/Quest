@@ -119,9 +119,23 @@ func room_type_rule(type: RoomData.RoomType) -> RoomTypeRule:
 
 
 ## Weighted EnemyType from this floor's pool (null = no pool configured).
-func roll_enemy_type() -> EnemyType:
+## `role` (EnemyType.Role, -1 = any) restricts it; no type of that role = any type.
+func roll_enemy_type(role: int = -1, rng: RandomNumberGenerator = null) -> EnemyType:
 	var pool := config.enemy_pool(floor_index)
-	return pool.roll() if pool else null
+	if pool == null:
+		return null
+	var type := pool.roll(rng, role) if role >= 0 else null
+	return type if type else pool.roll(rng)
+
+
+func raider_ratio() -> float:
+	return config.raider_ratio(floor_index)
+
+
+## Role of the next spawn: RAIDER with probability raider_ratio().
+func roll_role(rng: RandomNumberGenerator = null) -> EnemyType.Role:
+	var roll := rng.randf() if rng else randf()
+	return EnemyType.Role.RAIDER if roll < raider_ratio() else EnemyType.Role.HUNTER
 
 
 func room_count() -> int:

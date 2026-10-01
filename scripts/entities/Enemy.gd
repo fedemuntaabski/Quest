@@ -26,6 +26,7 @@ const CONTACT_REACH := 10.0
 const RING_RADIUS := 14.0
 ## A raider turns on a hero closer than this (px) or one that hit it in the last REACT_SEC.
 const BLOCK_RANGE := 48.0
+const RAIDER_TINT := Color(1.0, 0.72, 0.66)
 const REACT_SEC := 3.0
 
 signal died(enemy: Enemy)
@@ -147,6 +148,8 @@ func _apply_visual() -> void:
 		visual.visible = false
 		return
 	visual.setup(type.sprite_frames, type.visual_scale)
+	if type.role == EnemyType.Role.RAIDER:
+		_mark_as_raider()
 	var radius := visual.fit_radius()
 	var center := visual.body_center()
 	for path in ["CollisionShape2D", "Hurtbox/CollisionShape2D", "Hitbox/CollisionShape2D"]:
@@ -155,6 +158,17 @@ func _apply_visual() -> void:
 		circle.radius = radius + (CONTACT_REACH if path.begins_with("Hitbox") else 0.0)
 		collision.shape = circle
 		collision.position = center
+
+
+## Raiders: reddish tint + a red diamond over the head (hunters stay plain).
+func _mark_as_raider() -> void:
+	visual.modulate = RAIDER_TINT
+	var marker := Polygon2D.new()
+	marker.name = "RaiderMarker"
+	marker.polygon = PackedVector2Array([Vector2(0, -6), Vector2(5, 0), Vector2(0, 6), Vector2(-5, 0)])
+	marker.color = QuestPalette.BLOOD_LIGHT
+	marker.position = visual.position + Vector2(0.0, -visual.body_size().y - 8.0)
+	add_child(marker)
 
 
 ## First active module built in `room`, or null.

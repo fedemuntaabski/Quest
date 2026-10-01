@@ -61,6 +61,14 @@ class_name FloorConfig
 ## Nexo hit points: raiders wear them down, 0 = the usual defeat.
 @export var nexo_max_hp: int = 100
 
+@export_group("Enemy roles")
+## Share of spawns that are RAIDERS (go for the Nexo); the rest are HUNTERS.
+## Index = floor - 1, floors past the end reuse the last. Early floors: almost only hunters.
+@export var raider_ratio_by_floor: PackedFloat32Array = PackedFloat32Array([0.05, 0.2, 0.35, 0.5, 0.6])
+## A raider never spawns where it could reach the Nexo sooner than this (seconds
+## at its own speed); that spawn becomes a hunter. Time for the player to react.
+@export var raider_min_arrival_sec: float = 4.0
+
 @export_group("Wave scaling")
 ## Flat bonus added to the per-door invasion chance per floor.
 @export var invasion_chance_bonus_per_floor: float = 0.05
@@ -85,6 +93,12 @@ func enemy_pool(floor_index: int) -> EnemyPool:
 	if enemy_pools.is_empty():
 		return null
 	return enemy_pools[clampi(floor_index - 1, 0, enemy_pools.size() - 1)]
+
+
+func raider_ratio(floor_index: int) -> float:
+	if raider_ratio_by_floor.is_empty():
+		return 0.0
+	return clampf(raider_ratio_by_floor[clampi(floor_index - 1, 0, raider_ratio_by_floor.size() - 1)], 0.0, 1.0)
 
 
 func invasion_chance_bonus(floor_index: int) -> float:

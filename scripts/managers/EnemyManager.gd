@@ -109,13 +109,39 @@ func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
 	if rule:
 		hp_mult *= rule.enemy_hp_mult
 		dmg_mult *= rule.enemy_damage_mult
-	var type := floor_manager.roll_enemy_type() if floor_manager else null
-	if type == null:
-		type = FALLBACK_TYPE
+	var type := _roll_type(zone_id)
 	enemy.configure(Enemy.Variant.SWARM, zone_id, hp_mult, dmg_mult, type)
 	enemy.died.connect(_on_enemy_died)
 	_enemies.append(enemy)
 	return enemy
+
+
+## Role by the floor's ratio, then a type of that role. A raider that could
+## reach the Nexo sooner than raider_min_arrival_sec from here is swapped for a hunter.
+func _roll_type(zone_id: String) -> EnemyType:
+	if floor_manager == null:
+		return FALLBACK_TYPE
+	var role := floor_manager.roll_role()
+	var type := floor_manager.roll_enemy_type(role)
+	if type == null:
+		return FALLBACK_TYPE
+	if type.role == EnemyType.Role.RAIDER and raider_arrival_sec(zone_id, type) < floor_manager.config.raider_min_arrival_sec:
+		type = floor_manager.roll_enemy_type(EnemyType.Role.HUNTER)
+	return type if type else FALLBACK_TYPE
+
+
+## Seconds a `type` raider spawned in `zone_id` needs to reach the Nexo (INF = unreachable).
+func raider_arrival_sec(zone_id: String, type: EnemyType) -> float:
+	var nexo := ManagerLocator.get_nexo()
+	if nexo == null or room_manager == null:
+		return INF
+	var path := room_manager.find_zone_path(zone_id, nexo.get_target_zone(room_manager))
+	if path.is_empty():
+		return INF
+	var length := 0.0
+	for i in range(1, path.size()):
+		length += room_manager.get_center(path[i - 1]).distance_to(room_manager.get_center(path[i]))
+	return length / (float(Enemy.VARIANT_CONFIG[type.behavior]["speed"]) * type.speed_mult)
 
 
 func spawn_enemies_in_room(group_id: String, count: int) -> void:
