@@ -5,4 +5,23 @@
 
 [resource]
 script = ExtResource("1_mvc")
+exit_hint_mode = null
+exit_color = null
+exit_crystal_color = null
+arrow_margin = null
+dark_canvas_enabled = null
+dark_canvas_color = null
+dark_overlay_color = null
+danger_overlay_color = null
+danger_pulse_time = null
+affordable_outline_color = null
+warm_light_color = null
+warm_light_energy = null
+power_transition_time = null
+wall_decor_density = null
+prop_density = null
+floor_variant_chance = null
+rest_room_color = null
+loot_room_color = null
+elite_room_color = null
 room_type_visuals = ExtResource("2_rtv")
