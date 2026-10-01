@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="EnemyType" format=3]
+[gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://dtsoyc0veuvxs"]
 
-[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_ifxtm"]
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/floors/EnemyType.gd" id="1_ifxtm"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/enemy_imp.tres" id="2_lyhjy"]
 
 [resource]
@@ -8,6 +8,6 @@ script = ExtResource("1_ifxtm")
 id = "imp"
 display_name = "Diablillo"
 sprite_frames = ExtResource("2_lyhjy")
-speed_mult = 1.3
 hp_mult = 0.88
 damage_mult = 1.04
+speed_mult = 1.3

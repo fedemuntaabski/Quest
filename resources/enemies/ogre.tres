@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="EnemyType" format=3]
+[gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://mxic4wtdk2wr"]
 
-[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_5mrol"]
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/floors/EnemyType.gd" id="1_5mrol"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/enemy_ogre.tres" id="2_l4sh8"]
 
 [resource]
@@ -9,6 +9,6 @@ id = "ogre"
 display_name = "Ogro"
 behavior = 1
 sprite_frames = ExtResource("2_l4sh8")
-speed_mult = 0.75
 hp_mult = 2.5
 damage_mult = 1.32
+speed_mult = 0.75

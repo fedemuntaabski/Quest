@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="VfxConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/vfx/VfxConfig.gd" id="1_vfx"]
+
+[resource]
+script = ExtResource("1_vfx")
+effects = {
+&"hit_slash": {"scene": "slash_arc", "sheet": "directional_impact_002_white", "tint": true, "duration": 0.28, "scale": 1.0},
+&"hit_sparks": {"scene": "impact_sparks", "sheet": "symmetrical_impact_001_yellow", "tint": false, "duration": 0.35, "scale": 0.6},
+&"projectile_trail": {"scene": "projectile_trail", "sheet": "", "tint": false, "duration": 0.16, "scale": 1.0},
+&"heal_glow": {"scene": "heal_glow", "sheet": "round_sparkle_burst_002_green", "tint": false, "duration": 0.9, "scale": 1.0},
+&"buff_attack": {"scene": "buff_aura", "sheet": "spell_attack_up_001_red", "tint": false, "duration": 0.9, "scale": 1.0},
+&"buff_shield": {"scene": "buff_aura", "sheet": "spell_defense_up_001_blue", "tint": false, "duration": 0.9, "scale": 1.0},
+&"buff_module": {"scene": "buff_aura", "sheet": "symbol_magic_up_001_violet", "tint": false, "duration": 0.9, "scale": 1.5},
+&"level_up": {"scene": "buff_aura", "sheet": "spell_haste_001_green", "tint": false, "duration": 1.0, "scale": 1.0},
+&"death_dust": {"scene": "death_dust", "sheet": "symmetrical_smoke_burst_001_brown", "tint": false, "duration": 0.6, "scale": 1.0},
+&"damage_flash": {"scene": "damage_flash", "sheet": "", "tint": false, "duration": 0.25, "scale": 1.0}
+}

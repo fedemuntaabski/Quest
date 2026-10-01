@@ -9,4 +9,4 @@ effect = 5
 value = 1.0
 duration = 8.0
 cooldown = 30.0
-vfx = &"buff_aura"
+vfx = &"buff_module"

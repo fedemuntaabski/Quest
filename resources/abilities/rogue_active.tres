@@ -8,4 +8,4 @@ id = "rogue_active"
 effect = 6
 value = 3.0
 cooldown = 12.0
-vfx = &"slash_arc"
+vfx = &"hit_slash"

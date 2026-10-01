@@ -21,6 +21,9 @@ var _target_zoom := 1.0
 var _bounds := Rect2()
 var _smoothing := true
 var _last_usec := 0
+var _shake_left := 0.0
+var _shake_total := 0.0
+var _shake_strength := 0.0
 
 
 func _ready() -> void:
@@ -54,6 +57,28 @@ func _process(_delta: float) -> void:
 		_snap = false
 		reset_smoothing()
 	zoom = zoom.lerp(Vector2.ONE * _target_zoom, 1.0 - exp(-config.zoom_smoothing * delta))
+	_update_shake(delta)
+
+
+## Short, tiny screen shake (VfxManager, strong hits only). `strength` = world px at
+## SettingsManager.screen_shake_intensity 1; 0 turns it off. Real time, so it also works
+## in the tactical pause; amplitude is constant on screen whatever the zoom.
+func shake(strength: float, duration: float) -> void:
+	var settings := ManagerLocator.get_settings_manager()
+	var intensity := clampf(float(settings.screen_shake_intensity) if settings else 1.0, 0.0, 1.0)
+	var running := _shake_strength * _shake_left / maxf(_shake_total, 0.001)
+	_shake_strength = maxf(running, strength * intensity)
+	_shake_left = duration
+	_shake_total = duration
+
+
+func _update_shake(delta: float) -> void:
+	if _shake_left <= 0.0:
+		offset = Vector2.ZERO
+		return
+	_shake_left = maxf(_shake_left - delta, 0.0)
+	var fade := _shake_left / maxf(_shake_total, 0.001)
+	offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _shake_strength * fade / zoom.x
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyType" format=3]
+[gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://cbp7q1mpba06h"]
 
-[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_mle6j"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/tc_dragon.tres" id="2_k6r1n"]
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/floors/EnemyType.gd" id="1_mle6j"]
+[ext_resource type="SpriteFrames" uid="uid://be8xhkswjukdh" path="res://assets/characters/tc_dragon.tres" id="2_k6r1n"]
 
 [resource]
 script = ExtResource("1_mle6j")
@@ -9,7 +9,7 @@ id = "tc_dragon"
 display_name = "Dragón"
 behavior = 2
 sprite_frames = ExtResource("2_k6r1n")
-speed_mult = 1.1
-visual_scale = 1.3
 hp_mult = 1.9
 damage_mult = 1.4
+speed_mult = 1.1
+visual_scale = 1.3

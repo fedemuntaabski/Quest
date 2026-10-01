@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="EnemyType" format=3]
+[gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://bu4b248sn0hs7"]
 
-[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_mf1cr"]
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/floors/EnemyType.gd" id="1_mf1cr"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/enemy_orc_warrior.tres" id="2_nsdm4"]
 
 [resource]
@@ -8,9 +8,9 @@ script = ExtResource("1_mf1cr")
 id = "orc_warrior"
 display_name = "Orco guerrero"
 sprite_frames = ExtResource("2_nsdm4")
+hp_mult = 1.36
+damage_mult = 1.12
 speed_mult = 0.95
 role = 1
 attack_range = 56.0
 damage_vs_nexus = 4
-hp_mult = 1.36
-damage_mult = 1.12

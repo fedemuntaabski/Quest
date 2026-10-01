@@ -163,6 +163,20 @@ static func get_floating_text_manager() -> Node:
 	return mgr
 
 
+## Lazy like the floating text manager: created under the scene root on first use.
+static func get_vfx_manager() -> VfxManager:
+	var ml = Engine.get_main_loop()
+	if not (ml and ml is SceneTree):
+		return null
+	var existing = ml.get_first_node_in_group("vfx_manager")
+	if existing:
+		return existing as VfxManager
+	var mgr := VfxManager.new()
+	mgr.name = "VfxManager"
+	ml.get_root().add_child(mgr)
+	return mgr
+
+
 static func flush_saves() -> void:
 	var save_mgr := get_save_manager()
 	if save_mgr and save_mgr.has_method("save_game"):

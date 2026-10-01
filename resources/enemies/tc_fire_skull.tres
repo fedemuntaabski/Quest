@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="EnemyType" format=3]
+[gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://c2pxpht8dvwum"]
 
-[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_xnehn"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/tc_fire_skull.tres" id="2_fk60e"]
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/floors/EnemyType.gd" id="1_xnehn"]
+[ext_resource type="SpriteFrames" uid="uid://dt0ijshq18eke" path="res://assets/characters/tc_fire_skull.tres" id="2_fk60e"]
 
 [resource]
 script = ExtResource("1_xnehn")

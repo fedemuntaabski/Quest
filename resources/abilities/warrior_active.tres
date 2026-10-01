@@ -9,4 +9,4 @@ effect = 4
 value = 0.5
 duration = 8.0
 cooldown = 25.0
-vfx = &"buff_aura"
+vfx = &"buff_attack"

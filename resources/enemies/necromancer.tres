@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="EnemyType" format=3]
+[gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://bopqvg6lyiqgq"]
 
-[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="1_q53aa"]
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/floors/EnemyType.gd" id="1_q53aa"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/enemy_necromancer.tres" id="2_818re"]
 
 [resource]
