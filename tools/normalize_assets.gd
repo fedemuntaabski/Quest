@@ -38,10 +38,43 @@ const FX_REJECT_CATEGORIES := ["Sci-fi", "Splatters"]
 var _sizes := {}  # "Epic Explosion 001 Small (Explosions/epic_explosion_001)" -> Vector2i
 
 
+## Íconos que ningún pack cubre (docs/MISSING_ICONS.md). Se generan 16x16 en
+## assets/art/ui/placeholder_<nombre>.png con color por categoría y una X para
+## que se note a simple vista. Reemplazar por arte real conservando el tamaño.
+const PLACEHOLDERS := {
+	"module": ["gen_industry", "gen_food", "gen_science", "turret", "trap"],
+	"nexo": ["nexo"],
+	"resource": ["res_industry", "res_food", "res_science", "res_dust", "res_lock"],
+	"room": ["room_start", "room_exit"],
+	"status": ["status_slow"],
+	"research": ["research_science_generator", "research_turret_plans", "research_generator_tuning", "research_dust_lenses", "research_cartography", "research_generator_overclock", "research_turret_rifling"],
+	"ability": ["ability_warrior_passive", "ability_warrior_active", "ability_mage_passive", "ability_mage_active", "ability_rogue_passive", "ability_rogue_active", "ability_tank_passive", "ability_tank_active"],
+}
+const PLACEHOLDER_COLORS := {
+	"module": Color(0.55, 1.0, 0.1), "nexo": Color(0.1, 0.9, 1.0), "resource": Color(0.2, 0.6, 1.0),
+	"room": Color(1.0, 0.55, 0.1), "status": Color(1.0, 0.15, 0.15), "research": Color(1.0, 0.1, 0.8),
+	"ability": Color(1.0, 0.95, 0.1),
+}
+
+
 func _init() -> void:
 	_items()
 	_fx()
+	_placeholders()
 	quit()
+
+
+func _placeholders() -> void:
+	_ensure_dir(ART + "ui/")
+	for category: String in PLACEHOLDERS:
+		var color: Color = PLACEHOLDER_COLORS[category]
+		for icon_name: String in PLACEHOLDERS[category]:
+			var img := Image.create(CELL, CELL, false, Image.FORMAT_RGBA8)
+			img.fill(color.darkened(0.45))
+			for i in CELL:
+				for edge: Vector2i in [Vector2i(i, 0), Vector2i(i, CELL - 1), Vector2i(0, i), Vector2i(CELL - 1, i), Vector2i(i, i), Vector2i(CELL - 1 - i, i)]:
+					img.set_pixelv(edge, color)
+			img.save_png(ProjectSettings.globalize_path(ART + "ui/placeholder_%s.png" % icon_name))
 
 
 func _items() -> void:

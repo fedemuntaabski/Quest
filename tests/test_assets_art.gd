@@ -30,6 +30,17 @@ func _init() -> void:
 		var cols := int(e["columns"])
 		var rows := ceili(float(e["frames"]) / cols)
 		_check(img != null and cols * int(e["frame_w"]) <= img.get_width() and rows * int(e["frame_h"]) <= img.get_height() and int(e["frames"]) > 0, "FX %s: frames caben en la hoja" % fx)
+	var doc := FileAccess.get_file_as_string("res://docs/MISSING_ICONS.md")
+	var listed := 0
+	for line in doc.split("\n"):
+		if line.begins_with("| `") and not "placeholder_" in line:
+			var icon_name := line.get_slice("`", 1)
+			var path := "res://assets/art/ui/placeholder_%s.png" % icon_name
+			var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+			listed += 1 if img != null else 0
+			if img != null:
+				_check(img.get_size() == Vector2i(16, 16), "placeholder_%s es 16x16" % icon_name)
+	_check(listed == 29, "MISSING_ICONS.md lista 29 placeholders existentes (hay %d)" % listed)
 	for dir: String in IMPORT_DIRS:
 		_check_imports("res://assets/art/" + dir)
 	QuestLogger.info(QuestLogger.Category.GENERAL, "test_assets_art: %d fallos" % _failures)
