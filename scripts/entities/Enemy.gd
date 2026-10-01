@@ -39,6 +39,10 @@ var target_module: Node2D = null
 var variant: Variant
 ## Art + stat multipliers (null = plain variant, no art). Set by configure().
 var type: EnemyType
+var role: EnemyType.Role = EnemyType.Role.HUNTER
+var aggro_range: float = 320.0
+var attack_range: float = 40.0
+var nexus_damage: int = 0
 var current_zone_id: String = ""
 var max_hp: int = 0
 var current_hp: int = 0
@@ -76,7 +80,15 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 	ai_timer.timeout.connect(_on_ai_tick)
 	ai_timer.start()
 
-	hitbox.configure(maxi(1, roundi(int(cfg.get("contact_damage", 1)) * damage_multiplier)), CONTACT_HIT_INTERVAL)
+	var contact_damage := int(cfg.get("contact_damage", 1))
+	if p_type:
+		role = p_type.role
+		aggro_range = p_type.aggro_range
+		attack_range = p_type.attack_range
+		nexus_damage = maxi(1, roundi(p_type.damage_vs_nexus * damage_multiplier)) if p_type.damage_vs_nexus > 0 else 0
+		if p_type.damage_vs_heroes > 0:
+			contact_damage = p_type.damage_vs_heroes
+	hitbox.configure(maxi(1, roundi(contact_damage * damage_multiplier)), CONTACT_HIT_INTERVAL)
 
 	attack_damage = maxi(1, roundi(int(cfg.get("damage_per_tick", DEFAULT_ATTACK_DAMAGE)) * damage_multiplier))
 	attack_timer.wait_time = attack_speed

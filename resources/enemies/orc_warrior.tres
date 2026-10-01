@@ -11,3 +11,6 @@ sprite_frames = ExtResource("2_nsdm4")
 hp_mult = 1.6
 damage_mult = 1.3
 speed_mult = 0.95
+role = 1
+attack_range = 56.0
+damage_vs_nexus = 4
