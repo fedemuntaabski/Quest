@@ -37,6 +37,8 @@ var is_selected: bool = false
 var _group_label: Label
 var _group_nums: Array = []
 var _bar: ProgressBar
+var _ability_bar: ProgressBar
+var _abilities: HeroAbilities
 var _fill: StyleBoxFlat
 var _last_hp: int = -1
 var _bar_tween: Tween
@@ -94,8 +96,42 @@ func _ready() -> void:
 	_bar.add_theme_stylebox_override("background", background)
 	column.add_child(_bar)
 
+	# Thin Q-ability bar: gold = ready, dim = recharging.
+	_ability_bar = ProgressBar.new()
+	_ability_bar.custom_minimum_size = Vector2(BAR_SIZE.x, 4)
+	_ability_bar.show_percentage = false
+	_ability_bar.max_value = 1.0
+	_ability_bar.step = 0.0
+	_ability_bar.value = 1.0
+	_ability_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var ability_fill := StyleBoxFlat.new()
+	ability_fill.bg_color = QuestPalette.GOLD_LIGHT
+	_ability_bar.add_theme_stylebox_override("fill", ability_fill)
+	_ability_bar.add_theme_stylebox_override("background", StyleBoxFlat.new())
+	_ability_bar.visible = false
+	column.add_child(_ability_bar)
+
 	gui_input.connect(_on_gui_input)
 	bind_stats(stats)
+	if _abilities:
+		bind_abilities(_abilities)
+
+
+## Shows the hero's active-ability cooldown (Q) under the HP bar.
+func bind_abilities(p_abilities: HeroAbilities) -> void:
+	_abilities = p_abilities
+	if _ability_bar == null or p_abilities == null or p_abilities.active == null:
+		return
+	_ability_bar.visible = true
+	_ability_bar.tooltip_text = "%s (Q)" % p_abilities.ability_name
+	if not p_abilities.cooldown_changed.is_connected(_on_cooldown_changed):
+		p_abilities.cooldown_changed.connect(_on_cooldown_changed)
+	_on_cooldown_changed(p_abilities.cooldown_left, p_abilities.active.cooldown)
+
+
+func _on_cooldown_changed(left: float, total: float) -> void:
+	_ability_bar.value = 1.0 - left / maxf(total, 0.001)
+	_ability_bar.modulate = Color.WHITE if left <= 0.0 else Color(1, 1, 1, 0.45)
 
 
 func bind_stats(p_stats: CharacterStats) -> void:

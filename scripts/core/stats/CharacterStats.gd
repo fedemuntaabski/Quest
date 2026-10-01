@@ -33,6 +33,9 @@ var base_attack_damage: int = 3
 var base_attack_interval: float = 1.0
 var attack_damage: int = 3
 var attack_interval: float = 1.0
+## Temporary multipliers set by HeroAbilities (buffs/shields); 1.0 = none.
+var attack_mult: float = 1.0
+var damage_taken_mult: float = 1.0
 
 # -------------------------
 # RESET
@@ -63,6 +66,16 @@ func set_base_attack(damage: int, interval: float) -> void:
 	base_attack_damage = damage
 	base_attack_interval = interval
 	set_attack(damage, interval)
+
+
+## Damage the hitbox actually deals: attack_damage x any active buff.
+func effective_attack_damage() -> int:
+	return maxi(1, roundi(attack_damage * attack_mult))
+
+
+func set_attack_mult(mult: float) -> void:
+	attack_mult = mult
+	attack_changed.emit(attack_damage, attack_interval)
 
 
 func set_attack(damage: int, interval: float) -> void:

@@ -4,6 +4,9 @@
 [ext_resource type="Texture2D" path="res://assets/portraits/picaro.png" id="2_portrait"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/hero_elf_m.tres" id="3_1l3ae"]
 
+[ext_resource type="Resource" path="res://resources/abilities/rogue_passive.tres" id="4_passive"]
+[ext_resource type="Resource" path="res://resources/abilities/rogue_active.tres" id="5_active"]
+
 [resource]
 script = ExtResource("1_character_data")
 character_id = "rogue"
@@ -19,3 +22,6 @@ passive_ability_name = "Paso Ligero"
 passive_ability_desc = "Obtiene Polvo extra al revelar una sala por primera vez."
 active_ability_name = "Golpe Furtivo"
 sprite_frames = ExtResource("3_1l3ae")
+passive = ExtResource("4_passive")
+active = ExtResource("5_active")
+vfx_color = Color(0.45, 0.92, 0.5, 1)

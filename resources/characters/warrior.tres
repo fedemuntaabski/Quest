@@ -4,6 +4,9 @@
 [ext_resource type="Texture2D" path="res://assets/portraits/guerrero.png" id="2_portrait"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/hero_knight_m.tres" id="3_e7muu"]
 
+[ext_resource type="Resource" path="res://resources/abilities/warrior_passive.tres" id="4_passive"]
+[ext_resource type="Resource" path="res://resources/abilities/warrior_active.tres" id="5_active"]
+
 [resource]
 script = ExtResource("1_character_data")
 character_id = "warrior"
@@ -19,3 +22,6 @@ passive_ability_name = "Piel de Hierro"
 passive_ability_desc = "Reduce el daño que recibe mientras protege la sala actual."
 active_ability_name = "Grito de Guerra"
 sprite_frames = ExtResource("3_e7muu")
+passive = ExtResource("4_passive")
+active = ExtResource("5_active")
+vfx_color = Color(0.92, 0.36, 0.26, 1)

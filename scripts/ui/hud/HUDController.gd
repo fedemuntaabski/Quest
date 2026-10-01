@@ -292,6 +292,9 @@ func _on_player_stats_changed(stats: CharacterStats) -> void:
 func add_hero_portrait(stats: CharacterStats, data: CharacterData) -> HeroPortrait:
 	var portrait := HeroPortrait.new()
 	portrait.setup(stats, data)
+	var owner_player := stats.get_parent() as Player
+	if owner_player and owner_player.abilities:
+		portrait.bind_abilities(owner_player.abilities)
 	portrait.portrait_clicked.connect(_on_portrait_clicked)
 	portrait.portrait_ctrl_clicked.connect(_on_portrait_ctrl_clicked)
 	portrait.portrait_right_clicked.connect(open_hero_sheet)

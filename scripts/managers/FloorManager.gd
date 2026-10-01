@@ -65,9 +65,20 @@ func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
 	if amount > 0:
 		resource_manager.add_resource("dust", amount)
 		QuestLogger.info(QuestLogger.Category.MAP, "Discovered '%s': +%d dust." % [room_id, amount])
+	_apply_hero_passives(resource_manager)
 	if room_manager:
 		_show_room_banner(room_id)
 		_apply_room_type_discovery(room_id, resource_manager)
+
+
+## Living heroes' discovery passives (Mente Analítica: Ciencia, Paso Ligero: Polvo).
+func _apply_hero_passives(resource_manager: ResourceManager) -> void:
+	for hero in ManagerLocator.get_heroes():
+		if hero.abilities == null or not hero.stats.is_alive():
+			continue
+		var bonus := hero.abilities.passive_discovery_bonus()
+		for key in bonus:
+			resource_manager.add_resource(key, int(bonus[key]))
 
 
 static func reset_seen_types() -> void:

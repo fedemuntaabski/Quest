@@ -1,0 +1,163 @@
+extends Node
+class_name HeroAbilities
+
+## HeroAbilities: runtime of one hero's passive + active (AbilityData). Child of
+## Player. Passives are read where they act: incoming_damage() (Player._on_hurt)
+## and FloorManager.on_room_discovered (passive_discovery_bonus). The active
+## fires on the `hero_ability` action (Q) for every selected hero, then waits
+## `cooldown` seconds. Cooldowns and buff timers run on game time, so the
+## tactical pause (time_scale 0) freezes them.
+
+signal ability_used(hero_id: String, ability: AbilityData)
+signal cooldown_changed(left: float, total: float)
+
+const MAX_REDUCTION := 0.9
+
+var hero: Player
+var passive: AbilityData
+var active: AbilityData
+var ability_name: String = ""
+var cooldown_left: float = 0.0
+
+
+func setup(p_hero: Player, data: CharacterData) -> void:
+	hero = p_hero
+	passive = data.passive
+	active = data.active
+	ability_name = data.active_ability_name
+
+
+func _process(delta: float) -> void:
+	if cooldown_left <= 0.0:
+		return
+	cooldown_left = maxf(cooldown_left - delta, 0.0)
+	cooldown_changed.emit(cooldown_left, active.cooldown)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("hero_ability") and not event.is_echo() and _input_allowed():
+		try_activate()
+
+
+func _input_allowed() -> bool:
+	var selection := ManagerLocator.get_selection_manager()
+	var state := ManagerLocator.get_game_state_manager()
+	return Engine.time_scale > 0.0 and (state == null or state.is_active()) \
+		and selection != null and selection.is_selected(hero.stats.hero_id)
+
+
+# ---------------- passives ----------------
+
+## Fraction of incoming damage ignored by this hero's passive right now.
+func passive_reduction() -> float:
+	if passive == null:
+		return 0.0
+	match passive.effect:
+		AbilityData.Effect.DAMAGE_REDUCTION_PCT:
+			return passive.value
+		AbilityData.Effect.NEXUS_PROXIMITY_REDUCTION:
+			var nexo := ManagerLocator.get_nexo()
+			if nexo == null or passive.radius <= 0.0:
+				return 0.0
+			return passive.value * clampf(1.0 - hero.global_position.distance_to(nexo.get_target_position()) / passive.radius, 0.0, 1.0)
+	return 0.0
+
+
+## Damage after the passive and any TEAM_SHIELD (never below 1).
+func incoming_damage(amount: int) -> int:
+	var keep := (1.0 - minf(passive_reduction(), MAX_REDUCTION)) * hero.stats.damage_taken_mult
+	return maxi(1, roundi(amount * keep))
+
+
+## Resource gained when a room is discovered: {"science": n, "dust": n}.
+func passive_discovery_bonus() -> Dictionary:
+	if passive == null:
+		return {}
+	match passive.effect:
+		AbilityData.Effect.SCIENCE_ON_DISCOVERY:
+			return {"science": roundi(passive.value)}
+		AbilityData.Effect.DUST_ON_DISCOVERY:
+			return {"dust": roundi(passive.value)}
+	return {}
+
+
+# ---------------- active ----------------
+
+func is_ready() -> bool:
+	return active != null and cooldown_left <= 0.0 and hero.stats.is_alive()
+
+
+## Fires the active if it is off cooldown. Returns whether it fired.
+func try_activate() -> bool:
+	if active == null or not hero.stats.is_alive():
+		return false
+	if cooldown_left > 0.0:
+		_say("%s (%d s)" % [ability_name, ceili(cooldown_left)], QuestPalette.PARCHMENT)
+		return false
+	match active.effect:
+		AbilityData.Effect.TEAM_ATTACK_BUFF:
+			for ally in _allies_in_room():
+				_buff(ally.stats, "attack_buff", func() -> void: ally.stats.set_attack_mult(1.0 + active.value), func() -> void: ally.stats.set_attack_mult(1.0))
+		AbilityData.Effect.TEAM_SHIELD:
+			for ally in ManagerLocator.get_heroes():
+				if ally.stats.is_alive():
+					_buff(ally.stats, "shield", func() -> void: ally.stats.damage_taken_mult = 1.0 - active.value, func() -> void: ally.stats.damage_taken_mult = 1.0)
+		AbilityData.Effect.MODULE_OVERCHARGE:
+			_overcharge_room()
+		AbilityData.Effect.BURST_STRIKE:
+			_burst_strike()
+		_:
+			return false
+	cooldown_left = active.cooldown
+	cooldown_changed.emit(cooldown_left, active.cooldown)
+	_say(ability_name, hero.character_data.vfx_color if hero.character_data else QuestPalette.GOLD_LIGHT)
+	ability_used.emit(hero.stats.hero_id, active)
+	QuestLogger.info(QuestLogger.Category.COMBAT, "%s used '%s'." % [hero.stats.hero_id, active.id])
+	return true
+
+
+func _allies_in_room() -> Array[Player]:
+	var allies: Array[Player] = []
+	for ally in ManagerLocator.get_heroes():
+		if ally.stats.is_alive() and ally.current_zone_id == hero.current_zone_id:
+			allies.append(ally)
+	return allies
+
+
+## Applies a timed effect on `target`; a newer cast of the same `key` supersedes
+## the revert of an older one.
+func _buff(target: Object, key: String, apply: Callable, revert: Callable) -> void:
+	apply.call()
+	var token := Time.get_ticks_usec()
+	target.set_meta(key, token)
+	await get_tree().create_timer(active.duration).timeout
+	if is_instance_valid(target) and target.get_meta(key, 0) == token:
+		revert.call()
+
+
+func _overcharge_room() -> void:
+	var room_manager := ManagerLocator.get_room_manager()
+	var resources := ManagerLocator.get_resource_manager()
+	if room_manager == null:
+		return
+	for module in room_manager.get_modules_in_group(room_manager.get_group_id(hero.current_zone_id)):
+		if module is TurretModule:
+			_buff(module, "overcharge", func() -> void: module.damage_mult = 1.0 + active.value, func() -> void: module.damage_mult = 1.0)
+		elif module is GeneratorModule and resources:
+			resources.add_resource(module.resource_type, module.yield_amount)
+
+
+func _burst_strike() -> void:
+	var damage := roundi(hero.stats.effective_attack_damage() * active.value)
+	for area in hero.hitbox.get_overlapping_areas():
+		var hurtbox := area as HurtboxComponent
+		if hurtbox == null:
+			continue
+		hurtbox.receive_hit(damage)
+		hero.hitbox.hit_landed.emit(hurtbox, damage)
+
+
+func _say(text: String, color: Color) -> void:
+	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+	if text_mgr:
+		text_mgr.spawn_text(hero.global_position + Vector2(0.0, -48.0), text, color)

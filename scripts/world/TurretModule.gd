@@ -11,6 +11,8 @@ class_name TurretModule
 @onready var detection_zone: Area2D = $DetectionZone
 @onready var fire_timer: Timer = $FireTimer
 
+## Set by a hero ability (Sobrecarga de Módulo); 1.0 = none.
+var damage_mult: float = 1.0
 var current_targets: Array[Node2D] = []
 
 
@@ -57,4 +59,4 @@ func _on_fire_timer_timeout() -> void:
 ## Base damage + research bonus, read per shot (so it reaches built turrets).
 func get_damage() -> int:
 	var rm := ManagerLocator.get_resource_manager()
-	return damage + (roundi(rm.get_bonus(ResearchEntry.Effect.TURRET_DAMAGE)) if rm else 0)
+	return roundi((damage + (roundi(rm.get_bonus(ResearchEntry.Effect.TURRET_DAMAGE)) if rm else 0)) * damage_mult)

@@ -4,6 +4,9 @@
 [ext_resource type="Texture2D" path="res://assets/portraits/tanque.png" id="2_portrait"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/hero_dwarf_m.tres" id="3_2o3rv"]
 
+[ext_resource type="Resource" path="res://resources/abilities/tank_passive.tres" id="4_passive"]
+[ext_resource type="Resource" path="res://resources/abilities/tank_active.tres" id="5_active"]
+
 [resource]
 script = ExtResource("1_character_data")
 character_id = "tank"
@@ -19,3 +22,6 @@ passive_ability_name = "Muro Viviente"
 passive_ability_desc = "Aumenta su resistencia cuanto más cerca está del cristal."
 active_ability_name = "Interposición"
 sprite_frames = ExtResource("3_2o3rv")
+passive = ExtResource("4_passive")
+active = ExtResource("5_active")
+vfx_color = Color(0.62, 0.78, 1, 1)

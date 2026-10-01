@@ -43,21 +43,35 @@ static func hero_stats(hero_id: String, level: int) -> Dictionary:
 	var interval := up.interval_at(data.attack_interval, level)
 	var hp := data.base_hp + up.hp_per_level * level
 	var reduction := damage_reduction_pct(data)
+	var dps := damage / interval
+	var ehp := hp / maxf(1.0 - reduction, 0.01)
+	var active := data.active
+	var active_dps := dps
+	var active_ehp := ehp
+	if active:
+		var uptime := minf(active.duration / maxf(active.cooldown, 0.001), 1.0)
+		match active.effect:
+			AbilityData.Effect.TEAM_ATTACK_BUFF:
+				active_dps = dps * (1.0 + active.value * uptime)
+			AbilityData.Effect.BURST_STRIKE:
+				active_dps = dps + damage * active.value / active.cooldown
+			AbilityData.Effect.TEAM_SHIELD:
+				active_ehp = ehp / (1.0 - active.value * uptime)
 	return {
 		"hero": hero_id, "level": level, "hp": hp, "damage": damage, "interval": interval,
-		"dps": damage / interval, "range": data.attack_range,
-		"flat_reduction": flat_reduction(data),
+		"dps": dps, "range": data.attack_range,
 		"reduction_pct": reduction,
-		"ehp": hp / maxf(1.0 - reduction, 0.01),
+		"ehp": ehp,
+		"active_dps": active_dps, "active_ehp": active_ehp,
 	}
 
 
-static func damage_reduction_pct(_data: CharacterData) -> float:
+## Always-on passive reduction (Piel de Hierro). Position-dependent ones
+## (Muro Viviente, only near the Nexo) are not counted: conservative.
+static func damage_reduction_pct(data: CharacterData) -> float:
+	if data.passive and data.passive.effect == AbilityData.Effect.DAMAGE_REDUCTION_PCT:
+		return data.passive.value
 	return 0.0
-
-
-static func flat_reduction(_data: CharacterData) -> int:
-	return 0
 
 
 ## Enemy numbers after floor + type multipliers, exactly as Enemy.configure() applies them.
@@ -89,8 +103,7 @@ static func duel(hero_id: String, level: int, type: EnemyType, floor_index: int)
 	var enemy := enemy_stats(type, floor_index)
 	var hits := ceili(float(enemy["hp"]) / float(hero["damage"]))
 	var ttk_enemy := hits * float(hero["interval"])
-	var hit := maxi(1, int(enemy["contact"]) - int(hero["flat_reduction"]))
-	hit = maxi(1, roundi(hit * (1.0 - float(hero["reduction_pct"]))))
+	var hit := maxi(1, roundi(int(enemy["contact"]) * (1.0 - float(hero["reduction_pct"]))))
 	var ttk_hero := ceili(float(hero["hp"]) / float(hit)) * Enemy.CONTACT_HIT_INTERVAL
 	var exposure := (hits - 0.5) * float(hero["interval"])
 	return {
@@ -154,8 +167,8 @@ static func hero_rows() -> Array[Dictionary]:
 	for hero_id in HERO_IDS:
 		for level in [0, 5]:
 			var s := hero_stats(hero_id, level)
-			s["dps"] = snappedf(float(s["dps"]), 0.01)
-			s["ehp"] = snappedf(float(s["ehp"]), 0.1)
+			for key in ["dps", "ehp", "active_dps", "active_ehp"]:
+				s[key] = snappedf(float(s[key]), 0.01)
 			rows.append(s)
 	return rows
 

@@ -4,6 +4,9 @@
 [ext_resource type="Texture2D" path="res://assets/portraits/mago.png" id="2_portrait"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/hero_wizzard_m.tres" id="3_gosk6"]
 
+[ext_resource type="Resource" path="res://resources/abilities/mage_passive.tres" id="4_passive"]
+[ext_resource type="Resource" path="res://resources/abilities/mage_active.tres" id="5_active"]
+
 [resource]
 script = ExtResource("1_character_data")
 character_id = "mage"
@@ -19,3 +22,6 @@ passive_ability_name = "Mente Analítica"
 passive_ability_desc = "Genera Ciencia adicional al abrir una puerta nueva."
 active_ability_name = "Sobrecarga de Módulo"
 sprite_frames = ExtResource("3_gosk6")
+passive = ExtResource("4_passive")
+active = ExtResource("5_active")
+vfx_color = Color(0.62, 0.52, 1, 1)

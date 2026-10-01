@@ -28,6 +28,7 @@ var sprite_offset: Vector2 = Vector2.ZERO
 var grid_pos: Vector2i = Vector2i.ZERO
 
 var _last_hp: int = -1
+var abilities: HeroAbilities
 
 
 func configure(data: CharacterData) -> void:
@@ -40,7 +41,7 @@ func _ready() -> void:
 	add_to_group("player")
 	# Hitbox follows CharacterStats (base from CharacterData + in-run upgrades),
 	# so wire it before register() re-applies upgrades.
-	stats.attack_changed.connect(hitbox.configure)
+	stats.attack_changed.connect(_on_attack_changed)
 	animated_sprite.position += sprite_offset
 	if character_data:
 		stats.hero_id = character_data.character_id
@@ -49,6 +50,10 @@ func _ready() -> void:
 		stats.set_base_attack(character_data.attack_damage, character_data.attack_interval)
 		_apply_attack_range(character_data.attack_range)
 		_apply_character_visuals(character_data)
+		abilities = HeroAbilities.new()
+		abilities.name = "Abilities"
+		add_child(abilities)
+		abilities.setup(self, character_data)
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.register(stats)
@@ -83,9 +88,15 @@ func _on_hp_changed(current_hp: int, _max_hp: int) -> void:
 	_last_hp = current_hp
 
 
+func _on_attack_changed(_damage: int, interval: float) -> void:
+	hitbox.configure(stats.effective_attack_damage(), interval)
+
+
 func _on_hurt(amount: int) -> void:
 	if not stats.is_alive():
 		return
+	if abilities:
+		amount = abilities.incoming_damage(amount)
 	stats.take_damage(amount)
 	QuestLogger.info(QuestLogger.Category.COMBAT, "Hero took %d damage (%d/%d HP)." % [amount, stats.current_hp, stats.max_hp])
 

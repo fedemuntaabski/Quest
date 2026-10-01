@@ -23,6 +23,14 @@ class_name CharacterData
 @export var attack_range: float = 160.0
 @export_group("")
 
+@export_group("Abilities")
+## Gameplay numbers of the abilities named below (the *_name/_desc strings are UI text).
+@export var passive: AbilityData
+@export var active: AbilityData
+## Palette of this hero's VFX (attack arcs, auras, sparks).
+@export var vfx_color: Color = Color.WHITE
+@export_group("")
+
 @export var passive_ability_name: String = ""
 @export var passive_ability_desc: String = ""
 @export var active_ability_name: String = ""
