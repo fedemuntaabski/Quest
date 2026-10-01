@@ -75,8 +75,12 @@ func _fx() -> void:
 				_copy(from, ART + "vfx/" + file)
 				var frame: Vector2i = _sizes.get("%s/%s" % [category, anim], Vector2i.ZERO)
 				var tex := Image.load_from_file(ProjectSettings.globalize_path(from))
-				var frames := int(tex.get_width() / max(frame.x, 1))
-				index[file.get_basename()] = {"category": category, "frame_w": frame.x, "frame_h": frame.y, "frames": frames, "fps": 15}
+				# Hojas = rejilla de `columns` frames por fila (una sola fila en la mayoría); nº de frames = PNG sueltos.
+				var frames := 0
+				for png in DirAccess.get_files_at(FX + "PNG/%s/%s/%s/" % [category, anim, variant]):
+					if png.begins_with("frame") and png.ends_with(".png"):
+						frames += 1
+				index[file.get_basename()] = {"category": category, "frame_w": frame.x, "frame_h": frame.y, "frames": frames, "columns": int(tex.get_width() / max(frame.x, 1)), "fps": 15}
 	var f := FileAccess.open(ART + "vfx/index.json", FileAccess.WRITE)
 	f.store_string(JSON.stringify(index, "\t", true))
 	print("vfx kept=%d rejected=%d" % [index.size(), rejected])

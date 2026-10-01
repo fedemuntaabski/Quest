@@ -112,3 +112,4 @@ Reproducible: `godot --headless --path . --script res://tools/normalize_assets.g
 - **Excepción FX**: las 96 hojas `small` se probaron contra reducción ×½ por Nearest y **ninguna** es exacta (0/96), así que no se pueden bajar a 16 px sin perder calidad. No son personajes/ítems/íconos: se mantienen nativas y se dibujan a `ART_SCALE` (misma densidad de píxel que el resto). Las `large` no se usan.
 - Héroe 16×28 y jefes 32×36 son de 0x72 (ya integrados antes); no cambian, así que colisiones/hitboxes/hurtboxes existentes siguen vigentes.
 - Los `.import` no se versionan (`.gitignore`); el proyecto ya fuerza `default_texture_filter=0` (Nearest) y el importador 2D por defecto es lossless sin mipmaps. `tests/test_assets_art.gd` lo verifica.
+- `art/vfx/index.json`: por FX `frame_w/frame_h`, `frames` (nº real), `columns` (frames por fila de la hoja; casi todas son tira de 1 fila) y `fps` 15.
