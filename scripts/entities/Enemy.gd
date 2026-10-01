@@ -22,6 +22,8 @@ const CONTACT_HIT_INTERVAL := 1.0
 
 ## Contact Hitbox reaches this much past the body (px), like the old 14 -> 24.
 const CONTACT_REACH := 10.0
+## Slot ring (px) around the point an enemy closes in on.
+const RING_RADIUS := 14.0
 
 signal died(enemy: Enemy)
 
@@ -48,6 +50,8 @@ var max_hp: int = 0
 var current_hp: int = 0
 var _slowed_until_msec: int = 0
 var _moving: bool = false
+## Zone the current trip was planned for (see goal_changed()).
+var _active_goal: String = ""
 
 
 func _ready() -> void:
@@ -199,16 +203,53 @@ func _on_ai_tick() -> void:
 	if current_state == State.ATTACKING:
 		return
 
-	match variant:
-		Variant.SWARM:
-			await _pursue_zone(room_manager, _player_zone(room_manager))
-		Variant.SAPPER:
-			await _sapper_tick(room_manager)
-		Variant.HUNTER:
-			for hero in ManagerLocator.get_heroes():
-				if hero.is_carrying_nexo:
-					await _pursue_zone(room_manager, hero.current_zone_id)
-					break
+	var goal := _goal_zone(room_manager)
+	_active_goal = goal
+	await _pursue_zone(room_manager, goal, _goal_point(goal))
+
+
+## True when the zone this enemy wants changed since its current trip began;
+## EnemyMoveAction checks it after each leg so a trip is re-planned mid-path.
+func goal_changed() -> bool:
+	var room_manager := ManagerLocator.get_room_manager()
+	return room_manager != null and _goal_zone(room_manager) != _active_goal
+
+
+## Zone this enemy heads for right now ("" = nowhere). HUNTER role: a hero
+## inside aggro_range, else the closest hero's zone; a Sapper first hunts modules.
+func _goal_zone(room_manager: RoomManager) -> String:
+	if variant == Variant.SAPPER:
+		var module_zone := _find_zone_with_modules(room_manager)
+		if module_zone != "":
+			return module_zone
+	var hero := _aggro_hero(room_manager)
+	return hero.current_zone_id if hero else _player_zone(room_manager)
+
+
+## Exact spot to close in on inside the goal zone (Vector2.INF = zone center).
+func _goal_point(goal_zone: String) -> Vector2:
+	var room_manager := ManagerLocator.get_room_manager()
+	var hero := _aggro_hero(room_manager) if room_manager else null
+	if hero and hero.current_zone_id == goal_zone:
+		return hero.global_position
+	return Vector2.INF
+
+
+## Closest living hero within aggro_range (px) that is reachable over the revealed graph.
+func _aggro_hero(room_manager: RoomManager) -> Player:
+	var best: Player = null
+	var best_dist := aggro_range
+	for hero in ManagerLocator.get_heroes():
+		if not hero.stats.is_alive():
+			continue
+		var dist := global_position.distance_to(hero.global_position)
+		if dist > best_dist:
+			continue
+		if hero.current_zone_id != current_zone_id and room_manager.find_zone_path(current_zone_id, hero.current_zone_id).size() < 2:
+			continue
+		best = hero
+		best_dist = dist
+	return best
 
 
 ## Zone of the closest hero (fewest zones over the revealed graph), so the
@@ -226,13 +267,6 @@ func _player_zone(room_manager: RoomManager) -> String:
 	return best
 
 
-func _sapper_tick(room_manager: RoomManager) -> void:
-	var target_zone := _find_zone_with_modules(room_manager)
-	if target_zone == "":
-		target_zone = _player_zone(room_manager)
-	await _pursue_zone(room_manager, target_zone)
-
-
 func _find_zone_with_modules(room_manager: RoomManager) -> String:
 	for zone_id in room_manager.get_zone_ids():
 		if room_manager.get_zone_kind(zone_id) != "room":
@@ -245,18 +279,25 @@ func _find_zone_with_modules(room_manager: RoomManager) -> String:
 	return ""
 
 
-func _pursue_zone(room_manager: RoomManager, target_zone_id: String) -> void:
-	if target_zone_id == "" or target_zone_id == current_zone_id:
+## Glides to `target_zone_id`, then (if `point` is given and farther than
+## attack_range) to a spot on a small ring around it so several enemies spread out.
+func _pursue_zone(room_manager: RoomManager, target_zone_id: String, point: Vector2 = Vector2.INF) -> void:
+	if target_zone_id == "":
 		return
-	var path := room_manager.find_zone_path(current_zone_id, target_zone_id)
-	if path.size() < 2:
-		return
-
 	var waypoints: Array[Vector2] = []
 	var zone_ids: Array[String] = []
-	for step_id in path.slice(1):
-		waypoints.append(room_manager.get_center(step_id))
-		zone_ids.append(step_id)
+	if target_zone_id != current_zone_id:
+		var path := room_manager.find_zone_path(current_zone_id, target_zone_id)
+		if path.size() < 2:
+			return
+		for step_id in path.slice(1):
+			waypoints.append(room_manager.get_center(step_id))
+			zone_ids.append(step_id)
+	if point != Vector2.INF and (not waypoints.is_empty() or global_position.distance_to(point) > attack_range):
+		waypoints.append(point + _ring_offset())
+		zone_ids.append(target_zone_id)
+	if waypoints.is_empty():
+		return
 
 	_moving = true
 	var action := EnemyMoveAction.new(self, waypoints, zone_ids)
@@ -266,6 +307,11 @@ func _pursue_zone(room_manager: RoomManager, target_zone_id: String) -> void:
 	_moving = false
 
 	_check_trap_in_current_room(room_manager)
+
+
+## Fixed per-enemy offset (8 slots) so enemies converging on one point don't stack.
+func _ring_offset() -> Vector2:
+	return Vector2.from_angle((get_instance_id() % 8) * TAU / 8.0) * RING_RADIUS
 
 
 func _check_trap_in_current_room(room_manager: RoomManager) -> void:

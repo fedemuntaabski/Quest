@@ -46,5 +46,8 @@ func execute() -> void:
 			enemy.on_zone_entered(zone_ids[i])
 			if enemy.current_state == Enemy.State.ATTACKING:
 				break
+		# Target moved (hero changed room, Nexo picked up): let the AI re-plan.
+		if enemy.goal_changed():
+			break
 
 	finish({"status": "ok", "position": enemy.global_position})
