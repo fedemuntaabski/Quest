@@ -88,3 +88,9 @@ Sin readme/licencia. Todas en celdas 16×16 sin separación. `all-assets-preview
 | Raven Fantasy Icons | ⚠ sin archivo de licencia | confirmar en la página del autor (uso comercial/atribución) |
 | Super Pixel Effects | atribución obligatoria | acreditar en créditos del juego: "Super Pixel Effects Gigapack - Will Tice / unTied Games"; no subir el pack crudo a repos públicos |
 | 0x72 / Kenney / Tiny Creatures | CC0 | sin obligación |
+
+## Filtro de estética (session/assets-4)
+Criterio: medieval fantástico oscuro. Rechazados → `assets/art/_rejected/` (lista y motivos en `assets/art/_rejected/README.md`):
+- FX: todo `Sci-fi`, todo `Splatters`, `stylized_explosion_*`, Magic Bursts festivos (bubble/music/firework/heart) y Symbols de UI arcade (texto, ranking, pulgares…). Conservados: 42 animaciones (Fantasy Spells 9, Impacts 9, Lightning 4, Magic Bursts 5, Smoke 3, Explosions 5, Symbols 7).
+- Raven Fantasy Icons: la hoja usa colores saturados y contorno grueso (más "cartoon" que 0x72/Kenney). No se importa en bloque; solo íconos concretos elegidos a mano si el juego los necesita.
+- Hojas de ítems (armours, weapons, chests, consumables, potions, books, cave): conservadas (paleta apagada, medieval).
