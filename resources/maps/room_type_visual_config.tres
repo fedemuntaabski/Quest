@@ -1,12 +1,11 @@
 [gd_resource type="Resource" script_class="RoomTypeVisualConfig" format=3 uid="uid://c0w781yjlc3as"]
 
-[ext_resource type="Script" path="res://scripts/world/map/RoomTypeVisualConfig.gd" id="1_cfg"]
+[ext_resource type="Script" uid="uid://56eq7lb023g1" path="res://scripts/world/map/RoomTypeVisualConfig.gd" id="1_cfg"]
 [ext_resource type="Script" uid="uid://cwpk6fhgdv6k1" path="res://scripts/world/map/RoomTypeVisual.gd" id="2_vis"]
 [ext_resource type="Texture2D" uid="uid://cjoql0hf6nby6" path="res://assets/art/items/weapon_double_axe.png" id="icon_elite"]
 [ext_resource type="Texture2D" uid="uid://wtnwoh5hpoyd" path="res://assets/art/ui/button_blue_up.png" id="icon_generator"]
 [ext_resource type="Texture2D" uid="uid://b5kodgkdoloto" path="res://assets/art/items/chest_full_open_anim_f0.png" id="icon_loot"]
 [ext_resource type="Texture2D" uid="uid://clrxpiehnhwt3" path="res://assets/art/items/flask_big_red.png" id="icon_rest"]
-[ext_resource type="Texture2D" uid="uid://wbj7uo8mi778" path="res://assets/art/items/flask_big_yellow.png" id="icon_shop"]
 
 [sub_resource type="Resource" id="Resource_start"]
 script = ExtResource("2_vis")
@@ -53,19 +52,9 @@ color = Color(0.85, 0.4, 1, 1)
 decor_props = Array[Vector2i]([Vector2i(9, 9), Vector2i(10, 9), Vector2i(11, 9), Vector2i(8, 8)])
 decor_count = 2
 
-[sub_resource type="Resource" id="Resource_shop"]
-script = ExtResource("2_vis")
-type = 6
-display_name = "Tienda"
-banner_text = "Tienda"
-icon = ExtResource("icon_shop")
-color = Color(1, 0.9, 0.35, 1)
-decor_props = Array[Vector2i]([Vector2i(0, 6), Vector2i(6, 9), Vector2i(8, 9)])
-decor_count = 2
-
 [sub_resource type="Resource" id="Resource_generator"]
 script = ExtResource("2_vis")
-type = 7
+type = 6
 display_name = "Generador"
 banner_text = "Sala de generadores"
 icon = ExtResource("icon_generator")
@@ -75,4 +64,4 @@ decor_count = 2
 
 [resource]
 script = ExtResource("1_cfg")
-entries = Array[ExtResource("2_vis")]([SubResource("Resource_start"), SubResource("Resource_exit"), SubResource("Resource_rest"), SubResource("Resource_loot"), SubResource("Resource_elite"), SubResource("Resource_shop"), SubResource("Resource_generator")])
+entries = Array[ExtResource("2_vis")]([SubResource("Resource_start"), SubResource("Resource_exit"), SubResource("Resource_rest"), SubResource("Resource_loot"), SubResource("Resource_elite"), SubResource("Resource_generator")])

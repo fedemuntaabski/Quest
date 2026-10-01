@@ -28,6 +28,8 @@ class_name RoomTypeRule
 ## Multipliers for enemies spawned in this room (on top of floor scaling).
 @export var enemy_hp_mult: float = 1.0
 @export var enemy_damage_mult: float = 1.0
+## Extra MAJOR build slots once the room is lit (Generator room: 2 majors).
+@export var extra_major_slots: int = 0
 
 
 func chance_at(floor_index: int) -> float:

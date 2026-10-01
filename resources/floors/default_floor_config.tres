@@ -37,7 +37,13 @@ reward_per_floor = 1.0
 enemy_hp_mult = 1.5
 enemy_damage_mult = 1.25
 
+[sub_resource type="Resource" id="RoomTypeRule_generator"]
+script = ExtResource("2_room_type_rule")
+type = 6
+chance = 0.5
+extra_major_slots = 1
+
 [resource]
 script = ExtResource("1_floor_config")
-room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite")])
+room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite"), SubResource("RoomTypeRule_generator")])
 enemy_pools = Array[ExtResource("1_7csa3")]([ExtResource("2_j5m1i"), ExtResource("3_kvag3"), ExtResource("4_533ib"), ExtResource("5_erun4"), ExtResource("6_41g3f")])

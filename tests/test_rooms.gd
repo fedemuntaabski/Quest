@@ -22,6 +22,7 @@ func _initialize() -> void:
 	_check_generation(config)
 	_check_display(config, visual)
 	await _check_rest_heals_party(config)
+	await _check_generator_slots(config)
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_rooms: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
@@ -160,5 +161,53 @@ func _check_rest_heals_party(config: FloorConfig) -> void:
 		var expected := mini(stats[i].max_hp, before[i] + rule.heal_on_discovery)
 		if stats[i].current_hp != expected:
 			failures.append("%s: hero '%s' hp %d -> %d, expected %d" % [label, stats[i].hero_id, before[i], stats[i].current_hp, expected])
+	main2d.queue_free()
+	await process_frame
+
+
+## Generator room: lit, it offers 2 MAJOR + 2 MINOR slots (others: 1 + 2).
+func _check_generator_slots(config: FloorConfig) -> void:
+	var found_seed := -1
+	var found_floor := 0
+	var gen_id := ""
+	for n in 500:
+		for f in range(1, FLOORS + 1):
+			seed(n)
+			var layout := MapGenerator.generate_floor(hash([randi(), f]), config, f)
+			for room in layout.rooms:
+				if room.get_room_type() == RoomData.RoomType.GENERATOR and gen_id == "":
+					gen_id = room.id
+			if gen_id != "":
+				found_seed = n
+				found_floor = f
+				break
+		if gen_id != "":
+			break
+	if gen_id == "":
+		failures.append("generator slots: no seed < 500 with a Generator room")
+		return
+	seed(found_seed)
+	var main2d := (load(MAIN2D_PATH) as PackedScene).instantiate()
+	main2d.standalone_floor = found_floor
+	root.add_child(main2d)
+	await process_frame
+	var room_manager: RoomManager = main2d.room_manager
+	var label := "generator slots (seed %d floor %d '%s')" % [found_seed, found_floor, gen_id]
+	var plain := ""
+	for room in main2d.map_layout.rooms:
+		if room.get_room_type() == RoomData.RoomType.COMBAT and not room.is_start and plain == "":
+			plain = room.id
+	for pair in [[gen_id, 2], [plain, 1]]:
+		var zone := room_manager.get_zone_node(pair[0])
+		zone.set_powered(true)
+		var majors := 0
+		var minors := 0
+		for slot in zone._building_slots:
+			if slot.slot_type == BuildingSlot.SlotType.MAJOR:
+				majors += 1
+			else:
+				minors += 1
+		if majors != pair[1] or minors != 2:
+			failures.append("%s: '%s' has %d major / %d minor slots, expected %d / 2" % [label, pair[0], majors, minors, pair[1]])
 	main2d.queue_free()
 	await process_frame

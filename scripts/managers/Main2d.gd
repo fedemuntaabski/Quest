@@ -272,6 +272,12 @@ func _register_groups_and_doors() -> void:
 		doors_root.add_child(door)
 		room_manager.register_door(door)
 
+	# Room-type build slots (Generator room: a second MAJOR slot).
+	for room in map_layout.rooms:
+		var rule := floor_manager.room_type_rule(room.get_room_type()) if floor_manager else null
+		if rule and rule.extra_major_slots > 0:
+			room_manager.get_zone_node(room.id).extra_major_slots = rule.extra_major_slots
+
 	room_manager.refresh_visibility()
 	room_manager.validate_graph()
 	# The start room is lit for free (no dust paid → nothing to refund).

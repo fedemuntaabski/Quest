@@ -2,15 +2,13 @@ extends SceneTree
 
 ## Room type display (session fix-3): every RoomType except COMBAT has an entry in
 ## resources/maps/room_type_visual_config.tres with a name and color; Rest/Loot/
-## Elite (the implemented types) also have icon, banner and props; Shop/Generator
-## are display-only (no RoomTypeRule) and never generated. The tile plan stays
+## Elite/Generator (the generated types) also have icon, banner and props. The tile plan stays
 ## deterministic and special props only land in rooms of their own type.
 ##   godot --headless --path . --script res://tests/test_room_type_visuals.gd
 
 const FLOOR_CONFIG_PATH := "res://resources/floors/default_floor_config.tres"
 const VISUAL_PATH := "res://resources/maps/map_visual_config.tres"
-const IMPLEMENTED := [RoomData.RoomType.REST, RoomData.RoomType.LOOT, RoomData.RoomType.ELITE]
-const DESIGN_ONLY := [RoomData.RoomType.SHOP, RoomData.RoomType.GENERATOR]
+const IMPLEMENTED := [RoomData.RoomType.REST, RoomData.RoomType.LOOT, RoomData.RoomType.ELITE, RoomData.RoomType.GENERATOR]
 
 var failures: Array[String] = []
 
@@ -51,11 +49,6 @@ func _check_entries(visual: MapVisualConfig, config: FloorConfig) -> void:
 				failures.append("%s: needs marker, icon, banner and decor" % name)
 			if visual.room_type_color(type) != entry.color:
 				failures.append("%s: room_type_color() != entry color" % name)
-		if type in DESIGN_ONLY:
-			if has_rule:
-				failures.append("%s: design-only type must not have a RoomTypeRule (no effects yet)" % name)
-			if not (entry.show_marker and entry.icon):
-				failures.append("%s: display must be ready (marker + icon)" % name)
 	# Start/Exit keep their own hints: no badge/minimap marker, and the exit only
 	# announces itself once discovered (banner), never before.
 	for type in [RoomData.RoomType.START, RoomData.RoomType.EXIT]:
@@ -67,7 +60,7 @@ func _check_entries(visual: MapVisualConfig, config: FloorConfig) -> void:
 		failures.append("START: banner would show at run start")
 
 
-## Design-only types must never come out of the generator.
+## Every implemented type must come out of the generator.
 func _check_generation(config: FloorConfig) -> void:
 	var seen: Dictionary = {}
 	for s in 1000:
@@ -75,9 +68,6 @@ func _check_generation(config: FloorConfig) -> void:
 		var layout := MapGenerator.generate_floor(s, config, floor_index)
 		for room in layout.rooms:
 			seen[room.get_room_type()] = true
-	for type in DESIGN_ONLY:
-		if seen.has(type):
-			failures.append("%s was generated without a RoomTypeRule" % RoomData.RoomType.find_key(type))
 	for type in IMPLEMENTED:
 		if not seen.has(type):
 			failures.append("%s never generated in 1000 maps" % RoomData.RoomType.find_key(type))

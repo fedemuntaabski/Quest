@@ -92,8 +92,10 @@ func _apply_room_type_discovery(room_id: String, resource_manager: ResourceManag
 			text_mgr.spawn_text(room_manager.get_center(room_id), "%s: +%d %s" % [name_of_type, reward, Module.RESOURCE_LABELS.get(rule.reward_resource, rule.reward_resource)], room_manager.visual_config.room_type_color(type))
 		QuestLogger.info(QuestLogger.Category.MAP, "Room type reward in '%s': +%d %s." % [room_id, reward, rule.reward_resource])
 	var player_stats := ManagerLocator.get_player_stats()
-	if rule.heal_on_discovery > 0 and player_stats and player_stats.stats:
-		player_stats.stats.heal(rule.heal_on_discovery)
+	if rule.heal_on_discovery > 0 and player_stats:
+		for hero_stats in player_stats.get_all_stats():
+			if hero_stats.is_alive():
+				hero_stats.heal(rule.heal_on_discovery)
 
 
 ## RoomTypeRule for `type` on this run's config (null for Combat/Start/Exit).

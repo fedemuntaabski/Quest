@@ -44,6 +44,7 @@ const TYPE_BADGE_RADIUS := 7.0
 const ENERGY_BUTTON_SCENE := preload("res://scenes/world/EnergyButton.tscn")
 const BUILDING_SLOT_SCENE := preload("res://scenes/world/BuildingSlot.tscn")
 const BUILDING_SLOT_OFFSETS := [Vector2(0, 0), Vector2(-28, 22), Vector2(28, 22)]
+const MAJOR_SLOT_SPACING := 56.0
 
 signal powered_up(zone_id: String)
 ## Any power state change (player-paid or scripted). RoomLight listens.
@@ -73,6 +74,9 @@ var _energy_button: EnergyButton = null
 var _light: RoomLight = null
 var _type_badge: Node2D = null
 var _building_slots: Array[BuildingSlot] = []
+## Extra MAJOR slots on top of the usual one (RoomTypeRule.extra_major_slots,
+## set by Main2d before the room is lit).
+var extra_major_slots: int = 0
 ## Dust the player paid to light this room; refunded when switched off. 0 for
 ## rooms lit for free (the start room), so toggling can't mint dust.
 var _power_paid: int = 0
@@ -286,11 +290,20 @@ func get_modules() -> Array[Module]:
 
 
 func _spawn_building_slots() -> void:
-	var slot_types := [BuildingSlot.SlotType.MAJOR, BuildingSlot.SlotType.MINOR, BuildingSlot.SlotType.MINOR]
+	var majors := 1 + maxi(extra_major_slots, 0)
+	var slot_types: Array[BuildingSlot.SlotType] = []
+	var offsets: Array[Vector2] = []
+	for i in majors:
+		slot_types.append(BuildingSlot.SlotType.MAJOR)
+		# One major sits in the center; several share a row above the minors.
+		offsets.append(BUILDING_SLOT_OFFSETS[0] if majors == 1 else Vector2((i - (majors - 1) * 0.5) * MAJOR_SLOT_SPACING, -14.0))
+	for i in [1, 2]:
+		slot_types.append(BuildingSlot.SlotType.MINOR)
+		offsets.append(BUILDING_SLOT_OFFSETS[i])
 	for i in range(slot_types.size()):
 		var slot := BUILDING_SLOT_SCENE.instantiate() as BuildingSlot
 		_slots_container.add_child(slot)
-		slot.position = BUILDING_SLOT_OFFSETS[i]
+		slot.position = offsets[i]
 		slot.configure(zone_id, slot_types[i])
 		slot.slot_clicked.connect(func(s: BuildingSlot): slot_clicked.emit(zone_id, s))
 		_building_slots.append(slot)
