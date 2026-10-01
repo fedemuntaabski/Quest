@@ -131,6 +131,7 @@ func _reload_world(new_run: bool) -> void:
 func _begin_new_run() -> void:
 	current_floor = 1
 	run_seed = randi()
+	FloorManager.reset_seen_types()
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager:
 		resource_manager.reset_resources()

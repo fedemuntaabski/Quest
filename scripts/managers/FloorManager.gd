@@ -13,6 +13,7 @@ const DEFAULT_CONFIG: FloorConfig = preload("res://resources/floors/default_floo
 ## Discovery banner: above the room center (reward text floats at the center).
 const BANNER_OFFSET := Vector2(0, -56)
 const BANNER_INTENSITY := 1.5
+const DESCRIPTION_OFFSET := Vector2(0, -32)
 
 @export var config: FloorConfig = DEFAULT_CONFIG
 
@@ -23,6 +24,8 @@ var map_seed: int = 0
 ## Null = no map info: every discovery pays plain dust (as before session 11).
 var room_manager: RoomManager
 var _completed: bool = false
+## Types whose long hint was already shown this run (survives floors).
+static var _seen_types: Dictionary = {}
 
 
 func _ready() -> void:
@@ -67,14 +70,26 @@ func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
 		_apply_room_type_discovery(room_id, resource_manager)
 
 
-## Brief floating name of a special room, once, when it is discovered
-## (RoomTypeVisual.banner_text). Above the reward text so they don't overlap.
+static func reset_seen_types() -> void:
+	_seen_types.clear()
+
+
+## Brief floating name + one-line effect of a special room, once, when it is
+## discovered (RoomTypeVisual.banner_text/description), above the reward text so
+## they don't overlap. The first time a type shows up its long hint opens on the HUD.
 func _show_room_banner(room_id: String) -> void:
-	var visual := room_manager.visual_config.room_type_visual(room_manager.get_room_type(room_id))
+	var type := room_manager.get_room_type(room_id)
+	var visual := room_manager.visual_config.room_type_visual(type)
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if visual == null or visual.banner_text == "" or text_mgr == null:
 		return
-	text_mgr.spawn_text(room_manager.get_center(room_id) + BANNER_OFFSET, visual.banner_text, visual.color, true, BANNER_INTENSITY)
+	var center := room_manager.get_center(room_id)
+	text_mgr.spawn_text(center + BANNER_OFFSET, visual.banner_text, visual.color, true, BANNER_INTENSITY)
+	if visual.description != "":
+		text_mgr.spawn_text(center + DESCRIPTION_OFFSET, visual.description, visual.color)
+	if visual.hint != "" and not _seen_types.has(type) and not get_tree().get_nodes_in_group("hud").is_empty():
+		_seen_types[type] = true
+		get_tree().call_group("hud", "show_hint", visual.display_name, visual.hint, visual.color)
 
 
 func _apply_room_type_discovery(room_id: String, resource_manager: ResourceManager) -> void:

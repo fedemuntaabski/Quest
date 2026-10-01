@@ -10,6 +10,11 @@ class_name RoomTypeVisual
 @export var display_name: String = ""
 ## Floating text shown once when the room is discovered ("" = none).
 @export var banner_text: String = ""
+## One short sentence of what the room does: second line of the discovery
+## banner and the minimap tooltip ("" = none).
+@export var description: String = ""
+## Longer tip shown once per run, the first time this type is discovered.
+@export_multiline var hint: String = ""
 @export var icon: Texture2D
 @export var color: Color = Color.WHITE
 ## Badge in the room + marker on the minimap. Off for Start/Exit: they keep the

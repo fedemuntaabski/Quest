@@ -23,6 +23,7 @@ func _initialize() -> void:
 	_check_display(config, visual)
 	await _check_rest_heals_party(config)
 	await _check_generator_slots(config)
+	await _check_understanding(config)
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_rooms: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
@@ -110,6 +111,9 @@ func _check_display(config: FloorConfig, visual: MapVisualConfig) -> void:
 			continue
 		if entry.display_name == "" or entry.color.a <= 0.0 or entry.banner_text == "" and type != RoomData.RoomType.START:
 			failures.append("%s: needs display_name, opaque color and banner_text" % name)
+		# Everything the player reads comes from the config: one-liner + long hint.
+		if type != RoomData.RoomType.START and (entry.description == "" or entry.hint.length() <= entry.description.length()):
+			failures.append("%s: needs a description and a longer hint" % name)
 		var generated := config.get_room_type_rule(type) != null
 		if generated and not (entry.show_marker and entry.icon):
 			failures.append("%s: generated type needs marker + icon (minimap/badge)" % name)
@@ -117,35 +121,34 @@ func _check_display(config: FloorConfig, visual: MapVisualConfig) -> void:
 			failures.append("%s: has a visual but no RoomTypeRule (never generated: design-only)" % name)
 
 
-## Rest heals every living hero once (not just the primary one).
-func _check_rest_heals_party(config: FloorConfig) -> void:
-	var found_seed := -1
-	var found_floor := 0
-	var rest_id := ""
+## Boots a standalone Main2d on the first (seed, floor) that has a room of `type`.
+## Returns {"main2d", "room_id", "label"} or {} (failure already recorded).
+func _boot_with_type(config: FloorConfig, type: RoomData.RoomType) -> Dictionary:
 	for n in 500:
 		for f in range(1, FLOORS + 1):
 			seed(n)
 			var layout := MapGenerator.generate_floor(hash([randi(), f]), config, f)
 			for room in layout.rooms:
-				if room.get_room_type() == RoomData.RoomType.REST and rest_id == "":
-					rest_id = room.id
-			if rest_id != "":
-				found_seed = n
-				found_floor = f
-				break
-		if rest_id != "":
-			break
-	if rest_id == "":
-		failures.append("rest heal: no seed < 500 with a Rest room")
+				if room.get_room_type() != type:
+					continue
+				(root.get_node("ResourceManager") as ResourceManager).reset_resources()
+				seed(n)
+				var main2d := (load(MAIN2D_PATH) as PackedScene).instantiate()
+				main2d.standalone_floor = f
+				root.add_child(main2d)
+				await process_frame
+				return {"main2d": main2d, "room_id": room.id, "label": "%s (seed %d floor %d '%s')" % [_type_name(type), n, f, room.id]}
+	failures.append("%s: no seed < 500 with such a room" % _type_name(type))
+	return {}
+
+
+## Rest heals every living hero once (not just the primary one).
+func _check_rest_heals_party(config: FloorConfig) -> void:
+	var boot := await _boot_with_type(config, RoomData.RoomType.REST)
+	if boot.is_empty():
 		return
-	var resources := root.get_node("ResourceManager") as ResourceManager
-	resources.reset_resources()
-	seed(found_seed)
-	var main2d := (load(MAIN2D_PATH) as PackedScene).instantiate()
-	main2d.standalone_floor = found_floor
-	root.add_child(main2d)
-	await process_frame
-	var label := "rest heal (seed %d floor %d '%s')" % [found_seed, found_floor, rest_id]
+	var main2d: Node = boot["main2d"]
+	var label: String = "rest heal " + boot["label"]
 	var stats: Array[CharacterStats] = root.get_node("PlayerStats").get_all_stats()
 	if stats.size() < 2:
 		failures.append("%s: expected a 2-hero party, got %d" % [label, stats.size()])
@@ -156,7 +159,7 @@ func _check_rest_heals_party(config: FloorConfig) -> void:
 	var before: Array[int] = []
 	for s in stats:
 		before.append(s.current_hp)
-	main2d.floor_manager.on_room_discovered(rest_id, [] as Array[Vector2i])
+	main2d.floor_manager.on_room_discovered(boot["room_id"], [] as Array[Vector2i])
 	for i in stats.size():
 		var expected := mini(stats[i].max_hp, before[i] + rule.heal_on_discovery)
 		if stats[i].current_hp != expected:
@@ -167,37 +170,17 @@ func _check_rest_heals_party(config: FloorConfig) -> void:
 
 ## Generator room: lit, it offers 2 MAJOR + 2 MINOR slots (others: 1 + 2).
 func _check_generator_slots(config: FloorConfig) -> void:
-	var found_seed := -1
-	var found_floor := 0
-	var gen_id := ""
-	for n in 500:
-		for f in range(1, FLOORS + 1):
-			seed(n)
-			var layout := MapGenerator.generate_floor(hash([randi(), f]), config, f)
-			for room in layout.rooms:
-				if room.get_room_type() == RoomData.RoomType.GENERATOR and gen_id == "":
-					gen_id = room.id
-			if gen_id != "":
-				found_seed = n
-				found_floor = f
-				break
-		if gen_id != "":
-			break
-	if gen_id == "":
-		failures.append("generator slots: no seed < 500 with a Generator room")
+	var boot := await _boot_with_type(config, RoomData.RoomType.GENERATOR)
+	if boot.is_empty():
 		return
-	seed(found_seed)
-	var main2d := (load(MAIN2D_PATH) as PackedScene).instantiate()
-	main2d.standalone_floor = found_floor
-	root.add_child(main2d)
-	await process_frame
+	var main2d: Node = boot["main2d"]
+	var label: String = "generator slots " + boot["label"]
 	var room_manager: RoomManager = main2d.room_manager
-	var label := "generator slots (seed %d floor %d '%s')" % [found_seed, found_floor, gen_id]
 	var plain := ""
 	for room in main2d.map_layout.rooms:
 		if room.get_room_type() == RoomData.RoomType.COMBAT and not room.is_start and plain == "":
 			plain = room.id
-	for pair in [[gen_id, 2], [plain, 1]]:
+	for pair in [[boot["room_id"], 2], [plain, 1]]:
 		var zone := room_manager.get_zone_node(pair[0])
 		zone.set_powered(true)
 		var majors := 0
@@ -209,5 +192,53 @@ func _check_generator_slots(config: FloorConfig) -> void:
 				minors += 1
 		if majors != pair[1] or minors != 2:
 			failures.append("%s: '%s' has %d major / %d minor slots, expected %d / 2" % [label, pair[0], majors, minors, pair[1]])
+	main2d.queue_free()
+	await process_frame
+
+
+## What the player sees: minimap tooltip (only once revealed, from the config),
+## long hint on the HUD the first time per type and not again.
+func _check_understanding(config: FloorConfig) -> void:
+	var boot := await _boot_with_type(config, RoomData.RoomType.ELITE)
+	if boot.is_empty():
+		return
+	var main2d: Node = boot["main2d"]
+	var elite_id: String = boot["room_id"]
+	var label: String = "understanding " + boot["label"]
+	var visual := (load(VISUAL_PATH) as MapVisualConfig).room_type_visual(RoomData.RoomType.ELITE)
+	var room_manager: RoomManager = main2d.room_manager
+	FloorManager.reset_seen_types()
+	var hud := (load("res://scenes/HUD.tscn") as PackedScene).instantiate()
+	root.add_child(hud)
+	var minimap := Minimap.new()
+	root.add_child(minimap)
+	await process_frame
+	var zone_rect: Rect2i = room_manager.get_zone(elite_id)["rect"]
+	var map_pos := minimap._to_map(zone_rect, minimap._scale(), minimap._offset(minimap._scale())).get_center()
+	if minimap._get_tooltip(map_pos) != "" or minimap.tooltip_for_zone(elite_id) != "":
+		failures.append("%s: tooltip leaks an undiscovered room" % label)
+	if minimap.tooltip_for_zone(room_manager.get_start_zone_id()) != "":
+		failures.append("%s: start room has a tooltip" % label)
+
+	main2d.door_turn_system.open_room(elite_id)
+	var want := "%s: %s" % [visual.display_name, visual.description]
+	if minimap._get_tooltip(map_pos) != want:
+		failures.append("%s: tooltip '%s', expected '%s'" % [label, minimap._get_tooltip(map_pos), want])
+	var panel := hud.get_node("Control/HintPanel") as PanelContainer
+	var title := panel.find_children("*", "Label", true, false)[0] as Label
+	var body := panel.find_children("*", "Label", true, false)[1] as Label
+	if not panel.visible or title.text != visual.display_name or body.text != visual.hint:
+		failures.append("%s: first discovery did not open the long hint" % label)
+	panel.hide()
+	main2d.floor_manager.on_room_discovered(elite_id, [] as Array[Vector2i])
+	if panel.visible:
+		failures.append("%s: the long hint showed twice" % label)
+	FloorManager.reset_seen_types()
+	main2d.floor_manager.on_room_discovered(elite_id, [] as Array[Vector2i])
+	if not panel.visible:
+		failures.append("%s: hint did not come back after reset_seen_types()" % label)
+	FloorManager.reset_seen_types()
+	minimap.queue_free()
+	hud.queue_free()
 	main2d.queue_free()
 	await process_frame

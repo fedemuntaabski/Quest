@@ -31,6 +31,11 @@ const _BUILD_BUTTONS_PATH := "Control/BottomBar/BottomRow/BuildPanel/MarginConta
 const INVASION_FLASH_ALPHA := 0.3
 const INVASION_FLASH_HALF_TIME := 0.25
 
+const HINT_WIDTH := 440.0
+const HINT_TOP := 72
+const HINT_HOLD := 8.0
+const HINT_FADE := 0.6
+
 const TOOLTIP_GAP := 12.0
 const TOOLTIP_SCREEN_PADDING := 8.0
 
@@ -43,6 +48,10 @@ var _invasion_tween: Tween
 var _portraits: Dictionary = {}
 var character_popup: CharacterPopup
 var pause_label: Label
+var _hint_panel: PanelContainer
+var _hint_title: Label
+var _hint_body: Label
+var _hint_tween: Tween
 ## Code-built, docked in BottomBar next to BuildingMenu (session 10).
 var research_panel: ResearchPanel
 
@@ -104,6 +113,7 @@ func _ready() -> void:
 	character_popup.name = "CharacterPopup"
 	$Control.add_child(character_popup)
 	_add_pause_label()
+	_add_hint_panel()
 
 	# Death/victory: nothing modal may stay open over the overlays.
 	if ps and not ps.player_died.is_connected(close_popups):
@@ -146,6 +156,51 @@ func _add_pause_label() -> void:
 	pause_label.visible = false
 	$Control.add_child(pause_label)
 	pause_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, 24)
+
+
+## First-discovery tip of a room type (FloorManager -> call_group("hud", "show_hint")):
+## top-center card that fades by itself; a newer hint replaces the old one.
+func _add_hint_panel() -> void:
+	_hint_panel = PanelContainer.new()
+	_hint_panel.name = "HintPanel"
+	_hint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint_panel.custom_minimum_size = Vector2(HINT_WIDTH, 0)
+	_hint_panel.visible = false
+	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 12)
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint_title = Label.new()
+	_hint_title.add_theme_font_size_override("font_size", 20)
+	_hint_body = Label.new()
+	_hint_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hint_body.custom_minimum_size = Vector2(HINT_WIDTH - 24.0, 0)
+	box.add_child(_hint_title)
+	box.add_child(_hint_body)
+	margin.add_child(box)
+	_hint_panel.add_child(margin)
+	$Control.add_child(_hint_panel)
+	_hint_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, HINT_TOP)
+
+
+func show_hint(title: String, text: String, color: Color) -> void:
+	if _hint_panel == null:
+		return
+	_hint_title.text = title
+	_hint_title.add_theme_color_override("font_color", color)
+	_hint_body.text = text
+	_hint_panel.reset_size()
+	_hint_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, HINT_TOP)
+	if _hint_tween:
+		_hint_tween.kill()
+	_hint_panel.modulate.a = 1.0
+	_hint_panel.visible = true
+	_hint_tween = create_tween().set_ignore_time_scale()
+	_hint_tween.tween_interval(HINT_HOLD)
+	_hint_tween.tween_property(_hint_panel, "modulate:a", 0.0, HINT_FADE)
+	_hint_tween.tween_callback(_hint_panel.hide)
 
 
 func set_pause_label(v: bool) -> void:

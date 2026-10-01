@@ -54,6 +54,28 @@ func _ready() -> void:
 		_exit_indicator.hint_changed.connect(func(_v: bool): queue_redraw())
 
 
+## Native tooltip: name + one-liner of the revealed room type under the mouse
+## (RoomTypeVisual). Unrevealed rooms and plain ones give nothing (no spoilers).
+func _get_tooltip(at_position: Vector2) -> String:
+	if _room_manager == null or _bounds.size == Vector2i.ZERO:
+		return ""
+	var scale_px := _scale()
+	var cell := Vector2i((Vector2(_bounds.position) + (at_position - _offset(scale_px)) / scale_px).floor())
+	for zone_id in _room_manager.get_zone_ids():
+		if _room_manager.get_zone_kind(zone_id) == "room" and _room_manager.get_zone(zone_id)["rect"].has_point(cell):
+			return tooltip_for_zone(zone_id)
+	return ""
+
+
+func tooltip_for_zone(zone_id: String) -> String:
+	if _room_manager == null or not _room_manager.is_zone_revealed(zone_id):
+		return ""
+	var visual := _room_manager.visual_config.room_type_visual(_room_manager.get_room_type(zone_id))
+	if visual == null or visual.display_name == "" or visual.description == "":
+		return ""
+	return "%s: %s" % [visual.display_name, visual.description]
+
+
 func _gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
