@@ -31,6 +31,29 @@ const REACT_SEC := 3.0
 
 signal died(enemy: Enemy)
 
+
+## Base stats of `p_type`: its own override when >= 0, else its behavior's
+## VARIANT_CONFIG entry. Single source for Enemy, EnemyManager and BalanceSim.
+static func resolved_hp(p_type: EnemyType) -> int:
+	return p_type.base_hp if p_type.base_hp >= 0 else int(VARIANT_CONFIG[p_type.behavior]["hp"])
+
+
+static func resolved_speed(p_type: EnemyType) -> float:
+	return p_type.base_speed if p_type.base_speed >= 0.0 else float(VARIANT_CONFIG[p_type.behavior]["speed"])
+
+
+## Hero contact damage per hit (damage_vs_heroes wins over contact_damage).
+static func resolved_contact_damage(p_type: EnemyType) -> int:
+	if p_type.damage_vs_heroes > 0:
+		return p_type.damage_vs_heroes
+	return p_type.contact_damage if p_type.contact_damage >= 0 else int(VARIANT_CONFIG[p_type.behavior]["contact_damage"])
+
+
+static func resolved_module_damage(p_type: EnemyType) -> int:
+	if p_type.module_damage >= 0:
+		return p_type.module_damage
+	return int(VARIANT_CONFIG[p_type.behavior].get("damage_per_tick", DEFAULT_ATTACK_DAMAGE))
+
 @onready var visual: CharacterVisual = $Visual
 @onready var ai_timer: Timer = $AiTimer
 @onready var attack_timer: Timer = $AttackTimer
@@ -82,7 +105,8 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 		damage_multiplier *= p_type.damage_mult
 
 	var cfg: Dictionary = VARIANT_CONFIG[variant]
-	max_hp = maxi(1, roundi(int(cfg["hp"]) * hp_multiplier))
+	var base_hp := resolved_hp(p_type) if p_type else int(cfg["hp"])
+	max_hp = maxi(1, roundi(base_hp * hp_multiplier))
 	current_hp = max_hp
 
 	_apply_visual()
@@ -93,16 +117,17 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 	ai_timer.start()
 
 	var contact_damage := int(cfg.get("contact_damage", 1))
+	var module_damage := int(cfg.get("damage_per_tick", DEFAULT_ATTACK_DAMAGE))
 	if p_type:
 		role = p_type.role
 		aggro_range = p_type.aggro_range
 		attack_range = p_type.attack_range
 		nexus_damage = maxi(1, roundi(p_type.damage_vs_nexus * damage_multiplier)) if p_type.damage_vs_nexus > 0 else 0
-		if p_type.damage_vs_heroes > 0:
-			contact_damage = p_type.damage_vs_heroes
+		contact_damage = resolved_contact_damage(p_type)
+		module_damage = resolved_module_damage(p_type)
 	hitbox.configure(maxi(1, roundi(contact_damage * damage_multiplier)), CONTACT_HIT_INTERVAL)
 
-	attack_damage = maxi(1, roundi(int(cfg.get("damage_per_tick", DEFAULT_ATTACK_DAMAGE)) * damage_multiplier))
+	attack_damage = maxi(1, roundi(module_damage * damage_multiplier))
 	attack_timer.wait_time = attack_speed
 	attack_timer.one_shot = false
 	attack_timer.timeout.connect(_perform_attack)
@@ -135,10 +160,9 @@ func apply_slow(duration: float) -> void:
 
 
 func current_speed() -> float:
-	var cfg: Dictionary = VARIANT_CONFIG[variant]
-	var base_speed := float(cfg["speed"])
+	var base_speed := float(VARIANT_CONFIG[variant]["speed"])
 	if type:
-		base_speed *= type.speed_mult
+		base_speed = resolved_speed(type) * type.speed_mult
 	return base_speed * 0.5 if Time.get_ticks_msec() < _slowed_until_msec else base_speed
 
 

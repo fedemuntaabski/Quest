@@ -19,6 +19,8 @@ class_name CharacterData
 @export var attack_damage: int = 3
 ## Seconds between auto-attack ticks.
 @export var attack_interval: float = 1.0
+## Radius (px) of the auto-attack AoE (Player/Hitbox circle). Default = the scene's 160.
+@export var attack_range: float = 160.0
 @export_group("")
 
 @export var passive_ability_name: String = ""

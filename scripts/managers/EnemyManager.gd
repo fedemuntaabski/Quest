@@ -144,7 +144,7 @@ func raider_arrival_sec(zone_id: String, type: EnemyType) -> float:
 	var length := 0.0
 	for i in range(1, path.size()):
 		length += room_manager.get_center(path[i - 1]).distance_to(room_manager.get_center(path[i]))
-	return length / (float(Enemy.VARIANT_CONFIG[type.behavior]["speed"]) * type.speed_mult)
+	return length / (Enemy.resolved_speed(type) * type.speed_mult)
 
 
 func spawn_enemies_in_room(group_id: String, count: int) -> void:

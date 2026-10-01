@@ -17,6 +17,16 @@ class_name EnemyType
 ## On top of ArtConfig.ART_SCALE (e.g. 1.5 for a boss-sized Tiny Creature).
 @export var visual_scale: float = 1.0
 
+@export_group("Base stats")
+## -1 = the behavior's default in Enemy.VARIANT_CONFIG (resolved by Enemy.resolved_*()).
+## Floor / room-type / *_mult multipliers still stack on top.
+@export var base_hp: int = -1
+@export var base_speed: float = -1.0
+## Contact damage to heroes per hit (overridden by damage_vs_heroes when > 0).
+@export var contact_damage: int = -1
+## Damage per AttackTimer tick to modules.
+@export var module_damage: int = -1
+
 @export_group("Role")
 ## HUNTER chases heroes; RAIDER ignores them and goes for the Nexo. Decides the
 ## destination; `behavior` keeps deciding base stats (and the Sapper's module hunt).

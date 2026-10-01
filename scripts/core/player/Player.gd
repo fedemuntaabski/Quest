@@ -47,6 +47,7 @@ func _ready() -> void:
 		stats.character_name = character_data.display_name
 		stats.base_hp = character_data.base_hp
 		stats.set_base_attack(character_data.attack_damage, character_data.attack_interval)
+		_apply_attack_range(character_data.attack_range)
 		_apply_character_visuals(character_data)
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
@@ -87,6 +88,14 @@ func _on_hurt(amount: int) -> void:
 		return
 	stats.take_damage(amount)
 	QuestLogger.info(QuestLogger.Category.COMBAT, "Hero took %d damage (%d/%d HP)." % [amount, stats.current_hp, stats.max_hp])
+
+
+## The Hitbox circle is a shared sub-resource: duplicate before resizing.
+func _apply_attack_range(radius: float) -> void:
+	var shape := hitbox.get_node("CollisionShape2D") as CollisionShape2D
+	var circle := shape.shape.duplicate() as CircleShape2D
+	circle.radius = radius
+	shape.shape = circle
 
 
 func _apply_character_visuals(data: CharacterData) -> void:
