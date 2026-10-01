@@ -46,3 +46,45 @@ Recursos: `assets/characters/*.tres` (SpriteFrames), `resources/enemies/*.tres` 
 | Cofre (sala Botín) | Kenney `(5,7)` vía `Pickup`, aparece al descubrir la sala |
 | Suelo / muros / puertas / escalera | ver etapa 2 (`docs/MAP_RENDER.md`) |
 | HUD vida | `ui_heart_*` (pendiente) |
+
+## Packs nuevos (session/assets-4)
+Originales intactos en `assets/art/_source/` (los `.import` no se versionan, ver `.gitignore`). **Raven y el pack FX crudo no se suben al repo** (ver Licencias).
+
+### Hojas de ítems sueltas — `_source/items_sheets/` ⚠ autor/licencia DESCONOCIDOS
+Sin readme/licencia. Todas en celdas 16×16 sin separación. `all-assets-preview.png` = vista previa de todo el set.
+| Hoja | Tamaño | Celdas | Contenido |
+|---|---|---|---|
+| `armours.png` | 144×304 | 9×19 | cascos/armaduras por material (cuero, tela, hierro, acero, cobre, oro, verde…) |
+| `weapons.png` | 128×144 | 8×9 | espadas, hachas, mazas, lanzas, arcos |
+| `chests.png` | 128×96 | 8×6 | cofres (madera, hierro, oro; cerrado/abierto) |
+| `consumables.png` | 704×272 | 44×17 | frascos, bolsas, barriles, comida, jarras (muy variados) |
+| `potions.png` | 336×240 | 21×15 | pociones por color y forma |
+| `books.png` | 224×192 | 14×12 | libros/grimorios por color |
+| `pixelquest16-july-2025-cave.png` | 99×64 (→96×64) | 6×4 | gemas, pico, mineral, herramientas; 3 px sobrantes a la derecha (se recortan) |
+
+### Raven Fantasy Icons (free) — `_source/raven_fantasy_icons/` ⚠ licencia DESCONOCIDA (sin archivo)
+- `Full Spritesheet/16x16.png` 256×2192 (16×137 = 2192 íconos), `32x32.png` 512×4384 (mismos íconos ×2), `RPG Maker MV and MZ/IconSet.png`, `Separated Files/{16x16,32x32}/faN.png` (2192 c/u).
+- Contenido: íconos RPG de ítems, habilidades, estados, recursos. Fuente para íconos de HUD/habilidades (ver `docs/MISSING_ICONS.md`). Se usa solo la copia 16×16.
+
+### Super Pixel Effects Gigapack (free) v2.9.0 — `_source/super_pixel_effects/` — unTied Games / Will Tice
+- Licencia propia (`license.txt`): comercial OK, **atribución obligatoria**, prohibido redistribuir el pack, prohibido usarlo para entrenar IA, 15 FPS por animación.
+- Cada animación existe en variante `large_*` y `small_*` por color; frames **no son 16 px**: small = 16–64 px, large = 32–128 px (múltiplos de 8). Hojas en `spritesheet/`, frames sueltos en `PNG/`.
+| Categoría | Animaciones | Frame small | Veredicto |
+|---|---|---|---|
+| Fantasy Spells (absorb, attack/defense up, death, haste, heal, poison, status) | 9 | 32–64 | conservar |
+| Magic Bursts | 11 | 32–48 | conservar |
+| Impacts (directional/symmetrical) | 9 | 32–48 | conservar salvo `toon` |
+| Lightning | 4 | 32–64 | conservar |
+| Smoke Bursts | 3 | 32 | conservar |
+| Symbols (iconos de estado: alert, level_up, crown…) | 38 | 32–40 | conservar solo símbolos sin texto |
+| Explosions | 8 | 32–48 | conservar `epic`/`symmetrical`; `stylized` rechazado |
+| Splatters | 4 | 24–48 | rechazado (caricaturesco) |
+| Sci-fi | 10 | 16–48 | rechazado (no medieval) |
+
+## Licencias a verificar para Steam
+| Pack | Estado | Acción |
+|---|---|---|
+| items_sheets (armours, weapons, chests, consumables, potions, books, cave) | ⚠ autor y licencia desconocidos | identificar origen y licencia **antes de publicar**; si no hay permiso comercial, reemplazar |
+| Raven Fantasy Icons | ⚠ sin archivo de licencia | confirmar en la página del autor (uso comercial/atribución) |
+| Super Pixel Effects | atribución obligatoria | acreditar en créditos del juego: "Super Pixel Effects Gigapack - Will Tice / unTied Games"; no subir el pack crudo a repos públicos |
+| 0x72 / Kenney / Tiny Creatures | CC0 | sin obligación |

@@ -94,3 +94,12 @@ desktop.ini
 
 # Archivos de usuario (config local)
 *.local
+# =========================
+# ASSETS CRUDOS CON LICENCIA RESTRICTIVA (solo locales)
+# =========================
+# Super Pixel Effects (unTied Games) prohíbe redistribuir el pack crudo, en todo o en parte.
+# Se versionan solo license/readme/guide y los assets curados en assets/art/vfx.
+assets/art/_source/super_pixel_effects/PNG/
+assets/art/_source/super_pixel_effects/spritesheet/
+# Raven Fantasy Icons: licencia desconocida; se versionan solo los íconos usados (assets/art/ui).
+assets/art/_source/raven_fantasy_icons/
