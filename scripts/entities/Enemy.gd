@@ -24,6 +24,9 @@ const CONTACT_HIT_INTERVAL := 1.0
 const CONTACT_REACH := 10.0
 ## Slot ring (px) around the point an enemy closes in on.
 const RING_RADIUS := 14.0
+## A raider turns on a hero closer than this (px) or one that hit it in the last REACT_SEC.
+const BLOCK_RANGE := 48.0
+const REACT_SEC := 3.0
 
 signal died(enemy: Enemy)
 
@@ -52,10 +55,12 @@ var _slowed_until_msec: int = 0
 var _moving: bool = false
 ## Zone the current trip was planned for (see goal_changed()).
 var _active_goal: String = ""
+var _provoked_until_msec: int = 0
+var target_nexo: Nexo = null
 
 
 func _ready() -> void:
-	hurtbox.hurt.connect(take_damage)
+	hurtbox.hurt.connect(_on_hurt)
 
 
 ## Call after add_child(): global_position needs the node in the tree.
@@ -98,6 +103,12 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 	attack_timer.wait_time = attack_speed
 	attack_timer.one_shot = false
 	attack_timer.timeout.connect(_perform_attack)
+
+
+## Hurtbox hits only come from heroes (turrets call take_damage directly).
+func _on_hurt(amount: int) -> void:
+	_provoked_until_msec = Time.get_ticks_msec() + int(REACT_SEC * 1000)
+	take_damage(amount)
 
 
 func take_damage(amount: int) -> void:
@@ -161,7 +172,7 @@ func on_zone_entered(zone_id: String) -> void:
 	if current_state == State.ATTACKING or not is_alive():
 		return
 	var room_manager := ManagerLocator.get_room_manager()
-	if room_manager == null or room_manager.get_zone_kind(zone_id) != "room":
+	if room_manager == null or room_manager.get_zone_kind(zone_id) != "room" or _is_raiding():
 		return
 	var module := scan_room_for_modules(room_manager.get_zone_node(zone_id))
 	if module == null:
@@ -172,6 +183,12 @@ func on_zone_entered(zone_id: String) -> void:
 
 
 func _perform_attack() -> void:
+	if target_nexo != null:
+		if not (_is_raiding() and _nexus_in_range()):
+			_resume_moving()
+			return
+		target_nexo.take_damage(nexus_damage)
+		return
 	if not _target_is_valid():
 		_resume_moving()
 		return
@@ -187,6 +204,7 @@ func _target_is_valid() -> bool:
 func _resume_moving() -> void:
 	attack_timer.stop()
 	target_module = null
+	target_nexo = null
 	current_state = State.MOVING
 	_on_ai_tick()
 
@@ -202,10 +220,15 @@ func _on_ai_tick() -> void:
 	on_zone_entered(current_zone_id)
 	if current_state == State.ATTACKING:
 		return
+	_note_blocking_hero()
+	if _try_attack_nexus():
+		return
 
 	var goal := _goal_zone(room_manager)
 	_active_goal = goal
 	await _pursue_zone(room_manager, goal, _goal_point(goal))
+	if is_instance_valid(self):
+		_try_attack_nexus()
 
 
 ## True when the zone this enemy wants changed since its current trip began;
@@ -218,6 +241,8 @@ func goal_changed() -> bool:
 ## Zone this enemy heads for right now ("" = nowhere). HUNTER role: a hero
 ## inside aggro_range, else the closest hero's zone; a Sapper first hunts modules.
 func _goal_zone(room_manager: RoomManager) -> String:
+	if _is_raiding():
+		return ManagerLocator.get_nexo().get_target_zone(room_manager)
 	if variant == Variant.SAPPER:
 		var module_zone := _find_zone_with_modules(room_manager)
 		if module_zone != "":
@@ -228,11 +253,43 @@ func _goal_zone(room_manager: RoomManager) -> String:
 
 ## Exact spot to close in on inside the goal zone (Vector2.INF = zone center).
 func _goal_point(goal_zone: String) -> Vector2:
+	if _is_raiding():
+		return ManagerLocator.get_nexo().get_target_position()
 	var room_manager := ManagerLocator.get_room_manager()
 	var hero := _aggro_hero(room_manager) if room_manager else null
 	if hero and hero.current_zone_id == goal_zone:
 		return hero.global_position
 	return Vector2.INF
+
+
+## RAIDER role, a Nexo to hit and no hero provoking it: head for the Nexo and
+## ignore heroes and modules. Otherwise it acts like a hunter.
+func _is_raiding() -> bool:
+	return role == EnemyType.Role.RAIDER and Time.get_ticks_msec() >= _provoked_until_msec and ManagerLocator.get_nexo() != null
+
+
+## A hero within BLOCK_RANGE of a raider counts as provoking it.
+func _note_blocking_hero() -> void:
+	if role != EnemyType.Role.RAIDER:
+		return
+	for hero in ManagerLocator.get_heroes():
+		if hero.stats.is_alive() and global_position.distance_to(hero.global_position) <= BLOCK_RANGE:
+			_provoked_until_msec = Time.get_ticks_msec() + int(REACT_SEC * 1000)
+			return
+
+
+func _nexus_in_range() -> bool:
+	var nexo := ManagerLocator.get_nexo()
+	return nexo != null and nexo.is_alive() and global_position.distance_to(nexo.get_target_position()) <= attack_range
+
+
+func _try_attack_nexus() -> bool:
+	if not (_is_raiding() and nexus_damage > 0 and _nexus_in_range()):
+		return false
+	target_nexo = ManagerLocator.get_nexo()
+	current_state = State.ATTACKING
+	attack_timer.start()
+	return true
 
 
 ## Closest living hero within aggro_range (px) that is reachable over the revealed graph.

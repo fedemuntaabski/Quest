@@ -105,6 +105,13 @@ static func get_module_build_system() -> ModuleBuildSystem:
 	return null
 
 
+static func get_nexo() -> Nexo:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("nexo") as Nexo
+	return null
+
+
 static func get_extraction_manager() -> ExtractionManager:
 	var ml = Engine.get_main_loop()
 	if ml and ml is SceneTree:
