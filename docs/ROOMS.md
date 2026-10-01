@@ -14,17 +14,19 @@
 
 Reglas que **no** cambian: Polvo por sala descubierta (`FloorManager.on_room_discovered`), luz por sala (`RoomLight`), la salida solo se ve al descubrir su sala (`ExitIndicator`, `ON_DISCOVERY`); su cartel también sale solo al descubrirla. START/EXIT tienen `show_marker = false`: no llevan badge ni marcador de minimapa (conservan su propia pista).
 
-## Estado por tipo
-| Tipo | Estado | Efecto | Display |
-|---|---|---|---|
-| COMBAT | implementado (default) | ninguno | ninguno (a propósito) |
-| START | implementado | spawn + Nexo, luz gratis | sin marcador ni cartel |
-| EXIT | implementado | victoria | cartel "Salida encontrada" al descubrir; marcador = `ExitIndicator` |
-| REST (Descanso) | implementado | cura al descubrir, sin invasiones | flasco rojo, verde agua, cartel, frascos |
-| LOOT (Botín) | implementado | recompensa (Industria) + cofre `Pickup` | cofre, naranja, cartel, cofres |
-| ELITE (Élite) | implementado | enemigos más fuertes + recompensa (Ciencia) | hacha doble, violeta, cartel, armas |
-| SHOP (Tienda) | **solo display, sin efecto** | ninguno; sin `RoomTypeRule`, nunca se genera | frasco amarillo, dorado, cartel, mesa/frascos |
-| GENERATOR (Generador doble) | **solo display, sin efecto** | ninguno; diseño de la sesión 5: slot MAJOR ×2 | botón azul, celeste, cartel, maquinaria |
+## Auditoría (session/rooms-1)
+Medido con `tests/test_rooms.gd` (30 seeds x pisos 1-5 = 150 layouts; todos válidos, todas las salas alcanzables desde el inicio, ningún loop toca la salida) + `tests/test_map_flow.gd` (recompensas, spawns, multiplicadores, cartel).
+
+| Tipo | Se define | Cuándo se genera | Qué hace al descubrirla | Cómo se ve | Estado | Evidencia |
+|---|---|---|---|---|---|---|
+| COMBAT | `RoomData.room_type` default | resto de salas | nada | nada (a propósito) | funciona | `MapGenerator.assign_room_types` |
+| START | `RoomData.is_start` | `room_0` | spawn de héroes + Nexo, luz gratis | sin marcador | funciona | `Main2d._register_groups_and_doors`, `_spawn_heroes` |
+| EXIT | `RoomData.is_exit` | sala más lejana del inicio, nunca con loops | victoria si llevas el Nexo | cartel al descubrir; `ExitIndicator` | funciona | `MapGenerator._mark_exit_and_vault`, `ExtractionManager.declare_victory` |
+| REST | `RoomTypeRule` (`default_floor_config.tres`) | chance 0.6, cupo 1 | cura + sin spawns | badge, minimapa, cartel, props | **parcial: curaba solo al primario** (hallado por la auditoría) | `FloorManager._apply_room_type_discovery`, `EnemyManager.get_spawn_rooms/_spawns_blocked` |
+| LOOT | idem | chance 0.8, cupo 1 (+0.5/piso) | +Industria, cofre `Pickup` decorativo | badge, minimapa, cartel, props | funciona | `FloorManager._apply_room_type_discovery`, `Main2d._on_room_revealed` |
+| ELITE | idem | chance 0.3 (+0.1/piso), cupo 1 (+0.25/piso) | enemigos x1.5 HP / x1.25 daño + Ciencia | badge, minimapa, cartel, props | funciona | `EnemyManager._spawn_enemy` |
+| SHOP | solo `RoomTypeVisual` | nunca (sin regla) | nada | frasco amarillo | **solo diseño** | sin `RoomTypeRule`; Oro eliminado en fix-3 |
+| GENERATOR | solo `RoomTypeVisual` | nunca (sin regla) | nada | botón azul | **solo diseño** | sin `RoomTypeRule` |
 
 `is_vault` sigue siendo un flag de datos sin tipo (candidato natural a Botín, ver `NOTES_SESSION.md` sesión 5/11). Un "santuario/enfermería" ya está cubierto por REST.
 
