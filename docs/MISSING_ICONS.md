@@ -2,7 +2,7 @@
 
 Todos 16×16 (se dibujan ×2 = 32×32, `ArtConfig`). Cada uno tiene un **placeholder** `assets/art/ui/placeholder_<nombre>.png` (color por categoría + X, generado por `tools/normalize_assets.gd`). Al conseguir el arte real: guardarlo como `assets/art/ui/<nombre>.png` y cablearlo; borrar el placeholder. Estilo pedido: medieval oscuro, contorno oscuro, paleta apagada (como 0x72/Kenney), **no** el estilo saturado de Raven.
 
-Hoy ninguno de estos íconos está cableado en la UI (todo se dibuja con `Polygon2D`/`StatIcon` vectorial o con texto); los placeholders dejan el asset listo para cuando se conecten.
+Hoy ninguno de estos íconos está cableado en la UI (las habilidades ya existen desde balance-4 y sus íconos irían junto a la barra de enfriamiento del retrato); todo se dibuja con `Polygon2D`/`StatIcon` vectorial o con texto.
 
 ## Faltan (29)
 | Placeholder | Dónde se usa | Qué dibujar |

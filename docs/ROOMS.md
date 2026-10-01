@@ -42,3 +42,6 @@ Reglas verificadas (`test_map_flow.gd`/`test_rooms.gd`): Polvo solo al descubrir
 4. Si su efecto no cabe en los campos de `RoomTypeRule`, leerlo en el sistema dueño (`FloorManager`, `EnemyManager`, `ResourceManager`), nunca con un `match` sobre el tipo en el render.
 
 Los props usan coordenadas de `assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png` (12×11, 16 px); `tools/build_tilesets.gd` hornea todos los tiles en `props_tileset.tres`. Test: `tests/test_room_type_visuals.gd`.
+
+## VFX (balance-4)
+Descubrir una sala Rest muestra `heal_glow` sobre cada héroe curado. No hay otros efectos por tipo de sala.
