@@ -148,3 +148,6 @@ func _play_hit(amount: int) -> void:
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr:
 		text_mgr.spawn_text(get_target_position(), "-%d" % amount, QuestPalette.BLOOD_LIGHT)
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx:
+		vfx.hurt(get_target_position(), amount, max_hp)

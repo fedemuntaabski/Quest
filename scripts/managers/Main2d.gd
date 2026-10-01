@@ -456,6 +456,9 @@ func _center_camera_on_selection() -> void:
 
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
+	var vfx := get_tree().get_first_node_in_group("vfx_manager") if is_inside_tree() else null
+	if vfx:
+		vfx.clear()
 
 func is_tactically_paused() -> bool:
 	return _tactical_paused

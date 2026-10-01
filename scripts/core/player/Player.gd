@@ -58,6 +58,7 @@ func _ready() -> void:
 	if player_stats:
 		player_stats.register(stats)
 	hurtbox.hurt.connect(_on_hurt)
+	hitbox.hit_landed.connect(_on_attack_landed)
 	_last_hp = stats.current_hp
 	stats.hp_changed.connect(_on_hp_changed)
 	stats.died.connect(queue_redraw)
@@ -82,10 +83,27 @@ func _draw() -> void:
 
 
 ## HP dropping = a hit: blink white (heals and level-ups only raise HP).
-func _on_hp_changed(current_hp: int, _max_hp: int) -> void:
+func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	if _last_hp >= 0 and current_hp < _last_hp:
 		animated_sprite.play_hit()
+		var vfx := ManagerLocator.get_vfx_manager()
+		if vfx:
+			vfx.hurt(global_position, _last_hp - current_hp, max_hp)
 	_last_hp = current_hp
+
+
+## Palette of this hero's effects (CharacterData.vfx_color).
+func vfx_color() -> Color:
+	return character_data.vfx_color if character_data else Color.WHITE
+
+
+## Auto-attack / burst landed on an enemy: slash + sparks (shake only if it is a strong hit).
+func _on_attack_landed(target: HurtboxComponent, amount: int) -> void:
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx == null or not is_instance_valid(target):
+		return
+	var enemy := target.get_parent() as Enemy
+	vfx.hit(global_position, target.global_position, vfx_color(), amount, enemy.max_hp if enemy else 1)
 
 
 func _on_attack_changed(_damage: int, interval: float) -> void:

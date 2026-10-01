@@ -65,6 +65,9 @@ func build(module_type: Module.ModuleType) -> Module:
 	built_module = module
 	is_occupied = true
 	_set_marker_visible(false)
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx:
+		vfx.play(&"hit_sparks", global_position, vfx.config.build_color)
 	return module
 
 

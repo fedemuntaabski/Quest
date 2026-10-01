@@ -122,6 +122,11 @@ func _apply_room_type_discovery(room_id: String, resource_manager: ResourceManag
 		for hero_stats in player_stats.get_all_stats():
 			if hero_stats.is_alive():
 				hero_stats.heal(rule.heal_on_discovery)
+	var vfx := ManagerLocator.get_vfx_manager() if rule.heal_on_discovery > 0 else null
+	if vfx:
+		for hero in ManagerLocator.get_heroes():
+			if hero.stats.is_alive():
+				vfx.play(&"heal_glow", hero.global_position)
 
 
 ## RoomTypeRule for `type` on this run's config (null for Combat/Start/Exit).

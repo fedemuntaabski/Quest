@@ -23,6 +23,9 @@ var cooldown_left: float = 0.0
 func setup(p_hero: Player, data: CharacterData) -> void:
 	hero = p_hero
 	passive = data.passive
+	var player_stats := ManagerLocator.get_player_stats()
+	if player_stats:
+		player_stats.run_upgrades_changed.connect(_on_upgrade)
 	active = data.active
 	ability_name = data.active_ability_name
 
@@ -110,10 +113,38 @@ func try_activate() -> bool:
 			return false
 	cooldown_left = active.cooldown
 	cooldown_changed.emit(cooldown_left, active.cooldown)
-	_say(ability_name, hero.character_data.vfx_color if hero.character_data else QuestPalette.GOLD_LIGHT)
+	_say(ability_name, hero.vfx_color())
+	_play_cast_vfx()
 	ability_used.emit(hero.stats.hero_id, active)
 	QuestLogger.info(QuestLogger.Category.COMBAT, "%s used '%s'." % [hero.stats.hero_id, active.id])
 	return true
+
+
+func _play_cast_vfx() -> void:
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx == null or active.vfx == &"":
+		return
+	var targets: Array[Player] = []
+	match active.effect:
+		AbilityData.Effect.TEAM_ATTACK_BUFF:
+			targets = _allies_in_room()
+		AbilityData.Effect.TEAM_SHIELD:
+			for ally in ManagerLocator.get_heroes():
+				if ally.stats.is_alive():
+					targets.append(ally)
+		_:
+			targets = [hero]
+	for target in targets:
+		vfx.play(active.vfx, target.global_position, hero.vfx_color())
+	if active.effect == AbilityData.Effect.BURST_STRIKE:
+		vfx.shake()
+
+
+## Level-up aura on the hero that just bought a level.
+func _on_upgrade(stat_key: String, _level: int, hero_id: String) -> void:
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx and stat_key == "level" and hero_id == hero.stats.hero_id:
+		vfx.play(&"level_up", hero.global_position, hero.vfx_color())
 
 
 func _allies_in_room() -> Array[Player]:

@@ -5,6 +5,8 @@ class_name TurretModule
 ## DetectionZone every `fire_rate` seconds. Enemies expose collision layer 2
 ## and the "enemies" group.
 
+const TRAIL_COLOR := Color(0.7, 0.8, 1.0, 1.0)
+
 @export var damage: int = 15
 @export var fire_rate: float = 1.0
 
@@ -53,7 +55,14 @@ func _on_fire_timer_timeout() -> void:
 	current_targets = current_targets.filter(func(t: Node2D) -> bool: return is_instance_valid(t))
 	if current_targets.is_empty():
 		return
-	current_targets[0].take_damage(get_damage())
+	var target := current_targets[0]
+	var from := global_position
+	var to := target.global_position
+	target.take_damage(get_damage())
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx:
+		vfx.play(&"projectile_trail", from, TRAIL_COLOR, 0.0, to)
+		vfx.play(&"hit_sparks", to, TRAIL_COLOR)
 
 
 ## Base damage + research bonus, read per shot (so it reaches built turrets).

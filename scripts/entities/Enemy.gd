@@ -87,6 +87,7 @@ var slot: int = 0
 
 func _ready() -> void:
 	hurtbox.hurt.connect(_on_hurt)
+	hitbox.hit_landed.connect(_on_contact_landed)
 
 
 ## Call after add_child(): global_position needs the node in the tree.
@@ -133,6 +134,13 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 	attack_timer.timeout.connect(_perform_attack)
 
 
+## Contact hit on a hero: sparks in the enemy palette (the hero's own flash is Player's).
+func _on_contact_landed(target: HurtboxComponent, _amount: int) -> void:
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx and is_instance_valid(target):
+		vfx.play(&"hit_sparks", target.global_position, vfx.config.enemy_hit_color)
+
+
 ## Hurtbox hits only come from heroes (turrets call take_damage directly).
 func _on_hurt(amount: int) -> void:
 	_provoked_until_msec = Time.get_ticks_msec() + int(REACT_SEC * 1000)
@@ -147,6 +155,9 @@ func take_damage(amount: int) -> void:
 		visual.play_hit()
 	if current_hp <= 0:
 		QuestLogger.info(QuestLogger.Category.ENEMY, "Enemy '%s' died in zone '%s'." % [Variant.keys()[variant], current_zone_id])
+		var vfx := ManagerLocator.get_vfx_manager()
+		if vfx:
+			vfx.play(&"death_dust", global_position, vfx.config.dust_color)
 		died.emit(self)
 		queue_free()
 
@@ -237,7 +248,11 @@ func _perform_attack() -> void:
 	if not _target_is_valid():
 		_resume_moving()
 		return
+	var module_pos := target_module.global_position
 	target_module.take_damage(attack_damage)
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx:
+		vfx.play(&"hit_sparks", module_pos, vfx.config.enemy_hit_color)
 	if not _target_is_valid():
 		_resume_moving()
 
@@ -422,4 +437,7 @@ func _check_trap_in_current_room(room_manager: RoomManager) -> void:
 		if module.is_trap() and module.is_working():
 			var cfg: Dictionary = Module.CATALOG[Module.ModuleType.TRAP]
 			apply_slow(float(cfg["slow_duration"]))
+			var vfx := ManagerLocator.get_vfx_manager()
+			if vfx:
+				vfx.play(&"hit_sparks", global_position, vfx.config.dust_color)
 			break

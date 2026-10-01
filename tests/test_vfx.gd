@@ -20,6 +20,8 @@ func _initialize() -> void:
 	_check_cap(vfx)
 	_check_shake(vfx)
 	await _check_ability_ids(vfx)
+	vfx.free()  # the hooks below create their own (default-config) manager lazily
+	await _check_hooks()
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_vfx: %s (%d checks, %d failures)" % ["OK" if failures.is_empty() else "FAILED", checks, failures.size()])
@@ -107,3 +109,42 @@ func _check_ability_ids(vfx: VfxManager) -> void:
 	for id in BalanceSim.HERO_IDS:
 		var active := BalanceSim.hero_data(id).active
 		_expect(active.vfx != &"" and not vfx.config.get_effect(active.vfx).is_empty(), "%s: active vfx '%s' not configured" % [id, active.vfx])
+
+
+func _active_scenes(vfx: VfxManager) -> Array[String]:
+	var names: Array[String] = []
+	for effect: VfxEffect in vfx.get_children():
+		if effect.visible:
+			names.append(effect.scene_name)
+	return names
+
+
+## Live Main2d: combat events spawn effects, effects never change the combat result, the cap holds.
+func _check_hooks() -> void:
+	var main2d := (load("res://scenes/Main2d.tscn") as PackedScene).instantiate()
+	main2d.force_fallback_layout = true
+	root.add_child(main2d)
+	await process_frame
+	var vfx := ManagerLocator.get_vfx_manager()
+	vfx.clear()
+	var hero: Player = main2d.heroes[0]
+	var start_id: String = main2d.room_manager.get_start_zone_id()
+	var enemy := main2d.enemy_manager._spawn_enemy(start_id, hero.global_position) as Enemy
+
+	hero.hitbox.hit_landed.emit(enemy.hurtbox, 3)
+	_expect(_active_scenes(vfx).has("slash_arc") and _active_scenes(vfx).has("impact_sparks"), "hero hit: no slash/sparks (%s)" % [_active_scenes(vfx)])
+	var hp := hero.stats.current_hp
+	hero.stats.take_damage(2)
+	_expect(hero.stats.current_hp == hp - 2 and _active_scenes(vfx).has("damage_flash"), "hero hurt: wrong HP or no flash")
+	enemy.take_damage(9999)
+	_expect(not enemy.is_alive() and _active_scenes(vfx).has("death_dust"), "enemy death: no dust")
+	hero.stats.heal(2)
+	_expect(hero.stats.current_hp == hp, "heal altered by effects")
+
+	for i in 200:
+		hero.hitbox.hit_landed.emit(hero.hurtbox, 3)
+	_expect(vfx.get_active_count() <= vfx.config.max_active, "cap exceeded: %d" % vfx.get_active_count())
+	main2d.queue_free()
+	await process_frame
+	await process_frame
+	_expect(vfx.get_active_count() == 0, "effects left after the floor was freed")
