@@ -1,9 +1,9 @@
 hero,floor,level,wave,hp,loss_pct
 warrior,1,0,2,26,25.2
-warrior,2,1,2,30,22.0
-warrior,3,2,2,34,26.0
-warrior,4,3,3,38,42.9
-warrior,5,4,3,42,56.5
+warrior,2,1,2,30,21.2
+warrior,3,2,2,34,19.8
+warrior,4,3,3,38,31.8
+warrior,5,4,3,42,47.1
 mage,1,0,2,18,29.1
 mage,2,1,2,22,28.6
 mage,3,2,2,26,28.8
