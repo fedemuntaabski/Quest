@@ -57,6 +57,10 @@ class_name FloorConfig
 ## One EnemyPool per floor (index = floor - 1; floors past the end reuse the last).
 @export var enemy_pools: Array[EnemyPool] = []
 
+@export_group("Nexo")
+## Nexo hit points: raiders wear them down, 0 = the usual defeat.
+@export var nexo_max_hp: int = 100
+
 @export_group("Wave scaling")
 ## Flat bonus added to the per-door invasion chance per floor.
 @export var invasion_chance_bonus_per_floor: float = 0.05

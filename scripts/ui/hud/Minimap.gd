@@ -21,9 +21,12 @@ const HERO_COLOR := Color(0.3, 0.8, 1.0, 1.0)
 const TYPE_MARKER_FRACTION := 0.45
 const TYPE_MARKER_MIN := 8.0
 
+const NEXO_ALERT_COLOR := Color(0.95, 0.2, 0.2)
+
 var _room_manager: RoomManager
 var _heroes: Array[Player] = []
 var _exit_indicator: ExitIndicator
+var _nexo: Nexo
 var _bounds := Rect2i()
 
 
@@ -49,6 +52,10 @@ func _ready() -> void:
 	_heroes = ManagerLocator.get_heroes()
 	for hero in _heroes:
 		hero.zone_changed.connect(func(_id: String): queue_redraw())
+	_nexo = ManagerLocator.get_nexo()
+	if _nexo:
+		_nexo.under_attack_changed.connect(func(active: bool): set_process(active); queue_redraw())
+	set_process(false)
 	_exit_indicator = ManagerLocator.get_exit_indicator()
 	if _exit_indicator:
 		_exit_indicator.hint_changed.connect(func(_v: bool): queue_redraw())
@@ -138,6 +145,17 @@ func _draw() -> void:
 			continue
 		var hero_rect := _to_map(_room_manager.get_zone(hero.current_zone_id)["rect"], scale_px, offset)
 		draw_circle(hero_rect.get_center() + Vector2((i - (_heroes.size() - 1) * 0.5) * radius * 2.0, 0.0), radius, HERO_COLOR)
+
+	# Nexo under attack: blinking red ring on the room (or carrier's room) it is in.
+	if _nexo and _nexo.under_attack and (Time.get_ticks_msec() / 250) % 2 == 0:
+		var nexo_zone := _nexo.get_target_zone(_room_manager)
+		if nexo_zone != "" and _room_manager.is_zone_revealed(nexo_zone):
+			var nexo_rect := _to_map(_room_manager.get_zone(nexo_zone)["rect"], scale_px, offset)
+			draw_arc(nexo_rect.get_center(), radius * 2.2, 0.0, TAU, 24, NEXO_ALERT_COLOR, 2.0)
+
+
+func _process(_delta: float) -> void:
+	queue_redraw()  # only runs while the Nexo is under attack (blinking marker)
 
 
 func _to_map(rect: Rect2i, scale_px: float, offset: Vector2) -> Rect2:

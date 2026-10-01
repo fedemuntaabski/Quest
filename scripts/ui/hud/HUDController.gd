@@ -52,6 +52,9 @@ var _hint_panel: PanelContainer
 var _hint_title: Label
 var _hint_body: Label
 var _hint_tween: Tween
+## Red blinking screen border while raiders hit the Nexo (Nexo.under_attack_changed).
+var nexo_alert: Panel
+var _alert_tween: Tween
 ## Code-built, docked in BottomBar next to BuildingMenu (session 10).
 var research_panel: ResearchPanel
 
@@ -113,6 +116,7 @@ func _ready() -> void:
 	character_popup.name = "CharacterPopup"
 	$Control.add_child(character_popup)
 	_add_pause_label()
+	_add_nexo_alert()
 	_add_hint_panel()
 
 	# Death/victory: nothing modal may stay open over the overlays.
@@ -156,6 +160,35 @@ func _add_pause_label() -> void:
 	pause_label.visible = false
 	$Control.add_child(pause_label)
 	pause_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, 24)
+
+
+func _add_nexo_alert() -> void:
+	nexo_alert = Panel.new()
+	nexo_alert.name = "NexoAlert"
+	nexo_alert.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nexo_alert.visible = false
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0)
+	style.border_color = QuestPalette.BLOOD
+	style.set_border_width_all(10)
+	nexo_alert.add_theme_stylebox_override("panel", style)
+	$Control.add_child(nexo_alert)
+	nexo_alert.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var nexo := ManagerLocator.get_nexo()
+	if nexo:
+		nexo.under_attack_changed.connect(set_nexo_alert)
+
+
+func set_nexo_alert(active: bool) -> void:
+	if _alert_tween:
+		_alert_tween.kill()
+	nexo_alert.visible = active
+	if not active:
+		return
+	nexo_alert.modulate.a = 1.0
+	_alert_tween = create_tween().set_loops().set_ignore_time_scale()
+	_alert_tween.tween_property(nexo_alert, "modulate:a", 0.25, 0.3)
+	_alert_tween.tween_property(nexo_alert, "modulate:a", 1.0, 0.3)
 
 
 ## First-discovery tip of a room type (FloorManager -> call_group("hud", "show_hint")):

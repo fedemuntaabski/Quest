@@ -247,7 +247,9 @@ func _spawn_nexo() -> void:
 	nexo = NEXO_SCENE.instantiate() as Nexo
 	nexo.name = "Nexo"
 	nexo.global_position = room_manager.get_center(room_manager.get_start_zone_id()) + NEXO_OFFSET
+	nexo.max_hp = floor_manager.config.nexo_max_hp if floor_manager and floor_manager.config else nexo.max_hp
 	add_child(nexo)
+	nexo.destroyed.connect(_on_player_died)  # same defeat as a dead hero
 
 	nexo_controller = NexoController.new()
 	nexo_controller.name = "NexoController"
