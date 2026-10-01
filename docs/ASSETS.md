@@ -94,3 +94,21 @@ Criterio: medieval fantástico oscuro. Rechazados → `assets/art/_rejected/` (l
 - FX: todo `Sci-fi`, todo `Splatters`, `stylized_explosion_*`, Magic Bursts festivos (bubble/music/firework/heart) y Symbols de UI arcade (texto, ranking, pulgares…). Conservados: 42 animaciones (Fantasy Spells 9, Impacts 9, Lightning 4, Magic Bursts 5, Smoke 3, Explosions 5, Symbols 7).
 - Raven Fantasy Icons: la hoja usa colores saturados y contorno grueso (más "cartoon" que 0x72/Kenney). No se importa en bloque; solo íconos concretos elegidos a mano si el juego los necesita.
 - Hojas de ítems (armours, weapons, chests, consumables, potions, books, cave): conservadas (paleta apagada, medieval).
+
+## Tamaños finales (session/assets-4)
+Reproducible: `godot --headless --path . --script res://tools/normalize_assets.gd` (copia de `_source` → carpeta final; idempotente). Ningún pack nuevo se reescaló: ítems/íconos ya vienen en celdas 16×16 (factor 1). El escalado en pantalla siempre es `ArtConfig.ART_SCALE`.
+
+| Destino | Contenido | Tamaño en disco | Celda / frame | En pantalla (×2) |
+|---|---|---|---|---|
+| `art/armor/armours.png` | armaduras/cascos | 144×304 | 16×16 (9×19) | 32×32 |
+| `art/weapons/weapons.png` | armas | 128×144 | 16×16 (8×9) | 32×32 |
+| `art/items/{chests,consumables,potions,books}.png` | cofres, consumibles, pociones, libros | ver inventario | 16×16 | 32×32 |
+| `art/items/cave_gems.png` | gemas/herramientas (recortada de 99×64) | 96×64 | 16×16 (6×4) | 32×32 |
+| `art/vfx/*.png` + `index.json` | 42 FX `small`, tira horizontal, 15 FPS | frames 25–96 px (ver `index.json`) | variable (excepción) | ×2 = 1 px FX = 1 px arte |
+| personajes (existentes) | 0x72 héroes | — | 16×28 | 32×56 |
+| enemigos (existentes) | pequeños 16×16 / 16×23; grandes 32×36 | — | — | ×2 |
+| íconos UI | 16×16 | — | 16×16 | 32×32 |
+
+- **Excepción FX**: las 96 hojas `small` se probaron contra reducción ×½ por Nearest y **ninguna** es exacta (0/96), así que no se pueden bajar a 16 px sin perder calidad. No son personajes/ítems/íconos: se mantienen nativas y se dibujan a `ART_SCALE` (misma densidad de píxel que el resto). Las `large` no se usan.
+- Héroe 16×28 y jefes 32×36 son de 0x72 (ya integrados antes); no cambian, así que colisiones/hitboxes/hurtboxes existentes siguen vigentes.
+- Los `.import` no se versionan (`.gitignore`); el proyecto ya fuerza `default_texture_filter=0` (Nearest) y el importador 2D por defecto es lossless sin mipmaps. `tests/test_assets_art.gd` lo verifica.

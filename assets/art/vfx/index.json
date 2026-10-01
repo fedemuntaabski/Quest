@@ -1,0 +1,296 @@
+{
+	"directional_coin_burst_001_yellow": {
+		"category": "Magic Bursts",
+		"fps": 15,
+		"frame_h": 64,
+		"frame_w": 64,
+		"frames": 31
+	},
+	"directional_impact_001_blue": {
+		"category": "Impacts",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 7
+	},
+	"directional_impact_002_white": {
+		"category": "Impacts",
+		"fps": 15,
+		"frame_h": 25,
+		"frame_w": 70,
+		"frames": 7
+	},
+	"directional_impact_003_violet": {
+		"category": "Impacts",
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 6
+	},
+	"directional_impact_004_yellow": {
+		"category": "Impacts",
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 5
+	},
+	"directional_smoke_burst_001_white": {
+		"category": "Smoke Bursts",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 21
+	},
+	"epic_explosion_001_orange": {
+		"category": "Explosions",
+		"fps": 15,
+		"frame_h": 64,
+		"frame_w": 64,
+		"frames": 13
+	},
+	"epic_explosion_002_yellow": {
+		"category": "Explosions",
+		"fps": 15,
+		"frame_h": 96,
+		"frame_w": 96,
+		"frames": 15
+	},
+	"lightning_burst_001_violet": {
+		"category": "Lightning",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 8
+	},
+	"lightning_burst_002_violet": {
+		"category": "Lightning",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 9
+	},
+	"lightning_burst_003_violet": {
+		"category": "Lightning",
+		"fps": 15,
+		"frame_h": 48,
+		"frame_w": 48,
+		"frames": 10
+	},
+	"lightning_strike_001_violet": {
+		"category": "Lightning",
+		"fps": 15,
+		"frame_h": 64,
+		"frame_w": 64,
+		"frames": 7
+	},
+	"round_light_burst_001_yellow": {
+		"category": "Magic Bursts",
+		"fps": 15,
+		"frame_h": 72,
+		"frame_w": 128,
+		"frames": 9
+	},
+	"round_sparkle_burst_001_blue": {
+		"category": "Magic Bursts",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 14
+	},
+	"round_sparkle_burst_002_green": {
+		"category": "Magic Bursts",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 18
+	},
+	"round_sparkle_burst_003_red": {
+		"category": "Magic Bursts",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 17
+	},
+	"spell_absorb_001_violet": {
+		"category": "Fantasy Spells",
+		"fps": 15,
+		"frame_h": 64,
+		"frame_w": 64,
+		"frames": 31
+	},
+	"spell_attack_up_001_red": {
+		"category": "Fantasy Spells",
+		"fps": 15,
+		"frame_h": 64,
+		"frame_w": 64,
+		"frames": 18
+	},
+	"spell_death_001_red": {
+		"category": "Fantasy Spells",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 50
+	},
+	"spell_defense_up_001_blue": {
+		"category": "Fantasy Spells",
+		"fps": 15,
+		"frame_h": 64,
+		"frame_w": 64,
+		"frames": 18
+	},
+	"spell_haste_001_green": {
+		"category": "Fantasy Spells",
+		"fps": 15,
+		"frame_h": 64,
+		"frame_w": 64,
+		"frames": 29
+	},
+	"spell_heal_001_red": {
+		"category": "Fantasy Spells",
+		"fps": 15,
+		"frame_h": 64,
+		"frame_w": 64,
+		"frames": 16
+	},
+	"spell_poison_001_green": {
+		"category": "Fantasy Spells",
+		"fps": 15,
+		"frame_h": 64,
+		"frame_w": 64,
+		"frames": 17
+	},
+	"status_poison_001_green": {
+		"category": "Fantasy Spells",
+		"fps": 15,
+		"frame_h": 48,
+		"frame_w": 48,
+		"frames": 5
+	},
+	"status_sparkling_001_yellow": {
+		"category": "Fantasy Spells",
+		"fps": 15,
+		"frame_h": 48,
+		"frame_w": 48,
+		"frames": 5
+	},
+	"stylized_skull_smoke_burst_001_white": {
+		"category": "Smoke Bursts",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 12
+	},
+	"symbol_alert_001_red": {
+		"category": "Symbols",
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 14
+	},
+	"symbol_alert_002_red": {
+		"category": "Symbols",
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 16
+	},
+	"symbol_attack_up_001_red": {
+		"category": "Symbols",
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 12
+	},
+	"symbol_defense_up_001_blue": {
+		"category": "Symbols",
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 12
+	},
+	"symbol_magic_up_001_violet": {
+		"category": "Symbols",
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 12
+	},
+	"symbol_question_001_red": {
+		"category": "Symbols",
+		"fps": 15,
+		"frame_h": 48,
+		"frame_w": 48,
+		"frames": 10
+	},
+	"symbol_warning_001_yellow": {
+		"category": "Symbols",
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 60
+	},
+	"symmetrical_explosion_001_orange": {
+		"category": "Explosions",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 8
+	},
+	"symmetrical_explosion_002_orange": {
+		"category": "Explosions",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 11
+	},
+	"symmetrical_explosion_004_orange": {
+		"category": "Explosions",
+		"fps": 15,
+		"frame_h": 48,
+		"frame_w": 48,
+		"frames": 10
+	},
+	"symmetrical_impact_001_yellow": {
+		"category": "Impacts",
+		"fps": 15,
+		"frame_h": 48,
+		"frame_w": 48,
+		"frames": 7
+	},
+	"symmetrical_impact_002_blue": {
+		"category": "Impacts",
+		"fps": 15,
+		"frame_h": 48,
+		"frame_w": 48,
+		"frames": 10
+	},
+	"symmetrical_impact_003_yellow": {
+		"category": "Impacts",
+		"fps": 15,
+		"frame_h": 48,
+		"frame_w": 48,
+		"frames": 7
+	},
+	"symmetrical_impact_004_yellow": {
+		"category": "Impacts",
+		"fps": 15,
+		"frame_h": 48,
+		"frame_w": 48,
+		"frames": 8
+	},
+	"symmetrical_impact_006_yellow": {
+		"category": "Impacts",
+		"fps": 15,
+		"frame_h": 80,
+		"frame_w": 80,
+		"frames": 8
+	},
+	"symmetrical_smoke_burst_001_brown": {
+		"category": "Smoke Bursts",
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 10
+	}
+}
