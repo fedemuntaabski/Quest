@@ -153,7 +153,7 @@ func _on_research_pressed() -> void:
 	research_panel.toggle()
 
 
-## Tactical pause banner (Main2d → call_group("hud", "set_pause_label")).
+## Tactical pause banner (PauseController → ManagerLocator.get_hud().set_pause_label).
 func _add_pause_label() -> void:
 	pause_label = Label.new()
 	pause_label.name = "PauseLabel"
@@ -194,7 +194,7 @@ func set_nexo_alert(active: bool) -> void:
 	_alert_tween.tween_property(nexo_alert, "modulate:a", 1.0, 0.3)
 
 
-## First-discovery tip of a room type (FloorManager -> call_group("hud", "show_hint")):
+## First-discovery tip of a room type (FloorManager → ManagerLocator.get_hud().show_hint):
 ## top-center card that fades by itself; a newer hint replaces the old one.
 func _add_hint_panel() -> void:
 	_hint_panel = PanelContainer.new()

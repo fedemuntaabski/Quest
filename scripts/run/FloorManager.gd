@@ -98,9 +98,10 @@ func _show_room_banner(room_id: String) -> void:
 	text_mgr.spawn_text(center + BANNER_OFFSET, visual.banner_text, visual.color, true, BANNER_INTENSITY)
 	if visual.description != "":
 		text_mgr.spawn_text(center + DESCRIPTION_OFFSET, visual.description, visual.color)
-	if visual.hint != "" and not _seen_types.has(type) and not get_tree().get_nodes_in_group("hud").is_empty():
+	var hud := ManagerLocator.get_hud()
+	if visual.hint != "" and not _seen_types.has(type) and hud:
 		_seen_types[type] = true
-		get_tree().call_group("hud", "show_hint", visual.display_name, visual.hint, visual.color)
+		hud.show_hint(visual.display_name, visual.hint, visual.color)
 
 
 func _apply_room_type_discovery(room_id: String, resource_manager: ResourceManager) -> void:

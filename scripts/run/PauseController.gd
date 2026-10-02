@@ -36,7 +36,9 @@ func _on_state_changed(_new_state: int, _old_state: int) -> void:
 func _apply() -> void:
 	var frozen := _paused and _state.is_active()
 	Engine.time_scale = 0.0 if frozen else 1.0
-	get_tree().call_group("hud", "set_pause_label", frozen)
+	var hud := ManagerLocator.get_hud()
+	if hud:
+		hud.set_pause_label(frozen)
 
 
 func _exit_tree() -> void:

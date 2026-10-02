@@ -27,20 +27,20 @@ static func get_player_stats() -> PlayerStats:
 	return get_autoload("PlayerStats") as PlayerStats
 
 
-static func get_game_session() -> Node:
-	return get_autoload("GameSession")
+static func get_game_session() -> GameSession:
+	return get_autoload("GameSession") as GameSession
 
 
-static func get_selection_manager() -> Node:
-	return get_autoload("SelectionManager")
+static func get_selection_manager() -> SelectionManager:
+	return get_autoload("SelectionManager") as SelectionManager
 
 
-static func get_settings_manager() -> Node:
-	return get_autoload("SettingsManager")
+static func get_settings_manager() -> SettingsManager:
+	return get_autoload("SettingsManager") as SettingsManager
 
 
-static func get_steam_manager() -> Node:
-	return get_autoload("SteamManager")
+static func get_steam_manager() -> SteamManager:
+	return get_autoload("SteamManager") as SteamManager
 
 
 static func get_resource_manager() -> ResourceManager:
@@ -89,6 +89,13 @@ static func get_heroes() -> Array[Player]:
 	return out
 
 
+static func get_hud() -> HUDController:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("hud") as HUDController
+	return null
+
+
 static func get_nexo() -> Nexo:
 	var ml = Engine.get_main_loop()
 	if ml and ml is SceneTree:
@@ -124,14 +131,14 @@ static func get_floor_manager() -> FloorManager:
 	return null
 
 
-static func get_floating_text_manager() -> Node:
+static func get_floating_text_manager() -> FloatingTextManager:
 	var ml = Engine.get_main_loop()
 	if not (ml and ml is SceneTree):
 		return null
 
 	var existing = ml.get_first_node_in_group("floating_text_manager")
 	if existing:
-		return existing
+		return existing as FloatingTextManager
 
 	var parent: Node = null
 	var map_nodes = ml.get_nodes_in_group("map_manager")
@@ -140,8 +147,7 @@ static func get_floating_text_manager() -> Node:
 	else:
 		parent = ml.get_root()
 
-	var fscene := preload("res://scripts/ui/visual/FloatingTextManager.gd")
-	var mgr := fscene.new()
+	var mgr := FloatingTextManager.new()
 	mgr.name = "FloatingTextManager"
 	parent.add_child(mgr)
 	return mgr

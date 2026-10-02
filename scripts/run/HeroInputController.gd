@@ -34,7 +34,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not _is_gameplay_active.call():
 		return
-	var hud := get_tree().get_first_node_in_group("hud")
+	var hud := ManagerLocator.get_hud()
 	if hud and hud.building_menu and hud.building_menu.is_armed():
 		return
 	var hero := pick_hero_at(get_viewport().get_canvas_transform().affine_inverse() * event.position)
