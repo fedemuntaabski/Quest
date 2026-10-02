@@ -7,10 +7,10 @@ class_name Main
 ## calls so gameplay/menu subscenes can be swapped without reloading the
 ## whole tree (autoloads, main_orchestrator group lookup, etc. stay alive).
 
-const MAIN_MENU_SCENE := preload("res://scenes/MainMenu.tscn")
-const WAITING_ROOM_SCENE := preload("res://scenes/WaitingRoom.tscn")
+const MAIN_MENU_SCENE := preload("res://scenes/menus/MainMenu.tscn")
+const WAITING_ROOM_SCENE := preload("res://scenes/menus/WaitingRoom.tscn")
 const MAIN2D_SCENE := preload("res://scenes/Main2d.tscn")
-const HUD_SCENE := preload("res://scenes/HUD.tscn")
+const HUD_SCENE := preload("res://scenes/hud/HUD.tscn")
 
 const FADE_DURATION := 0.25
 

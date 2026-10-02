@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://dd4wo0jqedqpr" path="res://scripts/ui/menus/PauseMenu.gd" id="1_pause_script"]
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
-[ext_resource type="PackedScene" uid="uid://baeb8xmga0bum" path="res://scenes/OptionsMenu.tscn" id="4_options_menu"]
-[ext_resource type="PackedScene" path="res://scenes/ExitConfirmDialog.tscn" id="6_exit_confirm_dialog"]
+[ext_resource type="PackedScene" uid="uid://baeb8xmga0bum" path="res://scenes/menus/OptionsMenu.tscn" id="4_options_menu"]
+[ext_resource type="PackedScene" path="res://scenes/menus/ExitConfirmDialog.tscn" id="6_exit_confirm_dialog"]
 
 [sub_resource type="Shader" id="Shader_pause_blur"]
 code = "shader_type canvas_item;

@@ -208,7 +208,7 @@ func _check_understanding(config: FloorConfig) -> void:
 	var visual := (load(VISUAL_PATH) as MapVisualConfig).room_type_visual(RoomData.RoomType.ELITE)
 	var room_manager: RoomManager = main2d.room_manager
 	FloorManager.reset_seen_types()
-	var hud := (load("res://scenes/HUD.tscn") as PackedScene).instantiate()
+	var hud := (load("res://scenes/hud/HUD.tscn") as PackedScene).instantiate()
 	root.add_child(hud)
 	var minimap := Minimap.new()
 	root.add_child(minimap)

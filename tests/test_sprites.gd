@@ -111,7 +111,7 @@ func _check_enemy(config: FloorConfig) -> void:
 
 
 func _check_player() -> void:
-	var scene := load("res://scenes/Player.tscn") as PackedScene
+	var scene := load("res://scenes/entities/Player.tscn") as PackedScene
 	var heroes: Array[Player] = []
 	for id in ["warrior", "mage"]:
 		var hero := scene.instantiate() as Player

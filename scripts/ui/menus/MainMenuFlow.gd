@@ -4,9 +4,9 @@ class_name MainMenuFlow
 ## MainMenuFlow — Navigation coordinator for MainMenu.
 ## Coordinates transitions between Main buttons, OptionsMenu and SlotSelection.
 
-const SLOT_SELECTION_SCENE := preload("res://scenes/SlotSelection.tscn")
-const NETWORK_MODE_SELECT_SCENE := preload("res://scenes/NetworkModeSelect.tscn")
-const HERO_SELECT_SCENE := preload("res://scenes/HeroSelectMenu.tscn")
+const SLOT_SELECTION_SCENE := preload("res://scenes/menus/SlotSelection.tscn")
+const NETWORK_MODE_SELECT_SCENE := preload("res://scenes/menus/NetworkModeSelect.tscn")
+const HERO_SELECT_SCENE := preload("res://scenes/menus/HeroSelectMenu.tscn")
 
 enum MenuState {
 	MAIN,

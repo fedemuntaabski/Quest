@@ -13,7 +13,7 @@ extends SceneTree
 ##   godot --headless --path . --script res://tests/test_hud_ui.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
-const HUD_PATH := "res://scenes/HUD.tscn"
+const HUD_PATH := "res://scenes/hud/HUD.tscn"
 
 var failures: Array[String] = []
 

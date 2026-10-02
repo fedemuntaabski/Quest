@@ -9,10 +9,10 @@ extends Node2D
 # and wires the pause/death overlays. No combat, cards, or real enemy/dungeon-
 # generation systems.
 
-const PLAYER_SCENE := preload("res://scenes/Player.tscn")
+const PLAYER_SCENE := preload("res://scenes/entities/Player.tscn")
 const NEXO_SCENE := preload("res://scenes/world/Nexo.tscn")
 const TILE_RENDERER_SCENE := preload("res://scenes/world/MapTileRenderer.tscn")
-const DOOR_SCENE := preload("res://scenes/Door.tscn")
+const DOOR_SCENE := preload("res://scenes/world/Door.tscn")
 ## Nexo sits above the start room's center: the lit start room's MAJOR build
 ## slot occupies the center itself (RoomZone.BUILDING_SLOT_OFFSETS[0]).
 const NEXO_OFFSET := Vector2(0, -56)

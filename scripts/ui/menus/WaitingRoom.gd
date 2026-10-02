@@ -2,7 +2,7 @@ extends Control
 class_name WaitingRoom
 
 const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd")
-const CharacterCardOptionScene := preload("res://scenes/CharacterCardOption.tscn")
+const CharacterCardOptionScene := preload("res://scenes/menus/CharacterCardOption.tscn")
 
 @onready var lobby_id_label: Label = $CenterContainer/RoomCard/VBoxContainer/LobbyIdLabel
 @onready var players_list: VBoxContainer = $CenterContainer/RoomCard/VBoxContainer/PlayersPanel/PlayersList

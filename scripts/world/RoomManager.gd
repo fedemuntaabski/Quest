@@ -34,7 +34,7 @@ signal room_powered(zone_id: String)
 signal room_power_changed(zone_id: String, powered: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
 
-const ZONE_SCENE := preload("res://scenes/RoomZone.tscn")
+const ZONE_SCENE := preload("res://scenes/world/RoomZone.tscn")
 const DEFAULT_TILE_SIZE := Vector2(64, 64)
 
 ## Lighting + exit-hint tunables (shared with ExitIndicator via this node).

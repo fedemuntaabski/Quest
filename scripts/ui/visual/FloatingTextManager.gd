@@ -4,7 +4,7 @@ class_name FloatingTextManager
 @export var float_distance: float = 18.0
 @export var float_time: float = 0.6
 
-const FloatingTextScene := preload("res://scenes/FloatingText.tscn")
+const FloatingTextScene := preload("res://scenes/vfx/FloatingText.tscn")
 
 func _ready() -> void:
 	add_to_group("floating_text_manager")

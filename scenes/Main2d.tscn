@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://u03qppfja2kb"]
 
 [ext_resource type="Script" uid="uid://di5s00uwo18xr" path="res://scripts/run/Main2d.gd" id="4_main2d_script"]
-[ext_resource type="PackedScene" uid="uid://h3720oxsybma" path="res://scenes/PauseMenu.tscn" id="5_pause_menu"]
+[ext_resource type="PackedScene" uid="uid://h3720oxsybma" path="res://scenes/menus/PauseMenu.tscn" id="5_pause_menu"]
 [ext_resource type="Script" path="res://scripts/world/FloorGenerator.gd" id="6_floor_generator"]
 [ext_resource type="TileSet" path="res://resources/tilesets/placeholder_tileset.tres" id="7_floor_tileset"]
 [ext_resource type="Script" path="res://scripts/core/movement/PlayerActionController.gd" id="9_player_action_controller"]

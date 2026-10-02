@@ -7,8 +7,8 @@ extends SceneTree
 ##   godot --headless --path . --script res://tests/test_hero_select.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
-const HUD_PATH := "res://scenes/HUD.tscn"
-const MENU_PATH := "res://scenes/HeroSelectMenu.tscn"
+const HUD_PATH := "res://scenes/hud/HUD.tscn"
+const MENU_PATH := "res://scenes/menus/HeroSelectMenu.tscn"
 
 var failures: Array[String] = []
 var session: Node
