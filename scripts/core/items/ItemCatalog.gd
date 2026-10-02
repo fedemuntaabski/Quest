@@ -20,13 +20,6 @@ static func get_default() -> ItemCatalog:
 	return load(DEFAULT_PATH) as ItemCatalog
 
 
-func get_item(item_id: String) -> ItemData:
-	for item in items:
-		if item.id == item_id:
-			return item
-	return null
-
-
 ## Sorteo ponderado por rareza; `rng` sembrado = mismo cofre en la misma semilla.
 func pick(rng: RandomNumberGenerator) -> ItemData:
 	var total := 0

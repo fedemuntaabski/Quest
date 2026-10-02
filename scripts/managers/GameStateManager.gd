@@ -36,27 +36,8 @@ func get_state() -> State:
 func is_active() -> bool:
 	return current_state == State.ACTIVE
 
-func is_paused() -> bool:
-	return current_state == State.PAUSED
-
 func is_dead() -> bool:
 	return current_state == State.DEAD
-
-func is_victory() -> bool:
-	return current_state == State.VICTORY
-
-func can_process_input() -> bool:
-	return current_state == State.ACTIVE
-
-func can_process_turns() -> bool:
-	return current_state == State.ACTIVE
-
-func set_state(new_state: State) -> void:
-	if current_state == new_state:
-		return
-	_state_stack.clear()
-	_state_stack.append(new_state)
-	_apply_state_change(new_state, current_state)
 
 func push_state(new_state: State) -> void:
 	if current_state == new_state:
@@ -98,15 +79,6 @@ func request_victory() -> void:
 		_state_stack.append(State.VICTORY)
 		_apply_state_change(State.VICTORY, current_state)
 		victory_entered.emit()
-
-func toggle_pause() -> void:
-	if current_state == State.ACTIVE:
-		request_pause()
-	elif current_state == State.PAUSED:
-		request_resume()
-
-func return_to_previous_state() -> void:
-	pop_state()
 
 func _apply_state_change(new_state: State, old_state: State) -> void:
 	_previous_state = old_state

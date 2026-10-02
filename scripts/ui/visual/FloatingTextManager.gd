@@ -3,8 +3,6 @@ class_name FloatingTextManager
 
 @export var float_distance: float = 18.0
 @export var float_time: float = 0.6
-@export var heal_float_time: float = 1.05
-@export var heal_float_distance: float = 22.0
 
 const FloatingTextScene := preload("res://scenes/FloatingText.tscn")
 
@@ -28,48 +26,6 @@ func spawn_text(world_pos: Vector2, text: String, color: Color, crit: bool = fal
 	add_child(ft)
 
 	ft.setup(text, color, crit, intensity)
-
-
-# =========================================================
-# 🎯 HOST BASED SPAWN (ENEMIES / PLAYERS)
-# =========================================================
-func spawn_text_from_host(
-	host: Node2D,
-	text: String,
-	color: Color,
-	crit: bool = false,
-	local_offset: Vector2 = Vector2(-12, -28),
-	intensity: float = 1.0,
-	healing: bool = false
-) -> void:
-
-	if host == null:
-		return
-
-	var ft := _create_text()
-
-	if ft == null:
-		return
-
-	var random_offset := Vector2(
-		randf_range(-6 if not healing else -4, 6 if not healing else 4),
-		randf_range(-3 if not healing else -2, 3 if not healing else 2)
-	)
-
-	if healing:
-		ft.float_distance = heal_float_distance
-		ft.float_time = heal_float_time
-		ft.heal_float_time = heal_float_time
-		ft.heal_float_distance = heal_float_distance
-	else:
-		ft.float_distance = float_distance
-		ft.float_time = float_time
-
-	ft.global_position = host.global_position + local_offset + random_offset
-
-	add_child(ft)
-
-	ft.setup(text, color, crit, intensity, healing)
 
 
 # =========================================================

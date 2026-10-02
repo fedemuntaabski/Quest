@@ -140,11 +140,6 @@ func _apply_character_visuals(data: CharacterData) -> void:
 	shape.position = animated_sprite.body_center() - animated_sprite.position
 
 
-func set_grid_position(cell: Vector2i, tilemap: TileMapLayer) -> void:
-	grid_pos = cell
-	global_position = GridUtils.cell_to_world(tilemap, cell)
-
-
 func set_zone(zone_id: String, center: Vector2, tilemap: TileMapLayer) -> void:
 	current_zone_id = zone_id
 	global_position = center

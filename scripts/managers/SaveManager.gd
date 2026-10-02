@@ -30,25 +30,8 @@ func get_save_path(slot: int = current_slot) -> String:
 	return SAVE_PATH_TEMPLATE % slot
 
 
-func get_run_cycle() -> int:
-	return run_cycle
-
-
-func set_run_cycle(value: int) -> void:
-	run_cycle = max(0, value)
-
-
-func increment_run_cycle() -> int:
-	run_cycle += 1
-	return run_cycle
-
-
 func get_selected_character_id() -> String:
 	return selected_character_id if selected_character_id != "" else CharacterDatabase.get_default_id()
-
-
-func set_selected_character_id(character_id: String) -> void:
-	selected_character_id = character_id
 
 
 func apply_character_selection(character_id: String) -> void:

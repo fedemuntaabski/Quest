@@ -74,10 +74,6 @@ func disable_door() -> void:
 		shape.set_deferred("disabled", true)
 
 
-func mark_opened() -> void:
-	disable_door()
-
-
 ## Returns the room on the other side of this door as seen from `zone_id`,
 ## or "" when `zone_id` is not one of the door's two rooms (not adjacent).
 func get_target_room_for(zone_id: String) -> String:

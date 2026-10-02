@@ -49,12 +49,6 @@ static var enabled_categories: Dictionary = {
 
 static var min_level: int = Level.INFO
 
-static func set_category_enabled(cat: Category, enabled: bool) -> void:
-	enabled_categories[cat] = enabled
-
-static func set_min_level(level: int) -> void:
-	min_level = level
-
 static func is_enabled(cat: Category, level: int) -> bool:
 	if level < min_level:
 		return false

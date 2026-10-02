@@ -12,10 +12,10 @@ class_name RoomManager
 ##
 ## Two graph grains, one source of truth: the zone-graph (`zones[id].neighbors`,
 ## derived from MapLayout corridors, includes corridors) is what movement
-## uses (`find_zone_path`, `are_connected`). The room-graph (door endpoints
-## `Door.room_a_id`/`room_b_id`, `are_rooms_connected`/`is_path_open`/
-## `get_adjacent_rooms`) only has rooms as nodes and is always derived from the
-## zone-graph by `register_door()`, never authored separately.
+## uses (`find_zone_path`). The room-graph (door endpoints `Door.room_a_id`/
+## `room_b_id`, `RoomZone.connected_doors`) only has rooms as nodes and is
+## always derived from the zone-graph by `register_door()`, never authored
+## separately.
 ##
 ## Discovery vs visibility (all derived from DoorTurnSystem, none stored here):
 ##   revealed/discovered — lifecycle state (`is_zone_revealed`/`is_group_revealed`);
@@ -214,13 +214,6 @@ func _far_room_of_group(group_id: String, from_room: String) -> String:
 	return ""
 
 
-# ─────────────────────────────────────────────
-# QUERIES
-# ─────────────────────────────────────────────
-func has_zone(zone_id: String) -> bool:
-	return zones.has(zone_id)
-
-
 func get_zone(zone_id: String) -> Dictionary:
 	return zones.get(zone_id, {})
 
@@ -281,13 +274,6 @@ func get_all_doors() -> Array[Door]:
 	for door in _doors_by_group.values():
 		doors.append(door)
 	return doors
-
-
-func get_zone_at_cell(cell: Vector2i) -> String:
-	for zone_id in zones.keys():
-		if (zones[zone_id]["cells"] as Array).has(cell):
-			return zone_id
-	return ""
 
 
 ## Discovery (gameplay semantics): has the hero opened this zone's reveal group?
@@ -359,15 +345,6 @@ func get_modules_in_group(group_id: String) -> Array[Module]:
 	return modules
 
 
-func get_all_modules() -> Array[Module]:
-	var modules: Array[Module] = []
-	for zone_id in zones.keys():
-		var node: RoomZone = zones[zone_id]["node"]
-		if node:
-			modules.append_array(node.get_modules())
-	return modules
-
-
 ## Group ids whose room-kind zone is revealed but not yet powered — the
 ## dark-room pool for enemy spawns (extraction ticks and door-open waves).
 func get_unpowered_revealed_room_group_ids() -> Array[String]:
@@ -404,48 +381,6 @@ func get_powered_rooms() -> Array[RoomZone]:
 		if is_zone_revealed(room.zone_id) and room.is_powered:
 			powered_rooms.append(room)
 	return powered_rooms
-
-
-## True if any door of room A has room B as its counterpart (open or not).
-func are_rooms_connected(room_a_id: String, room_b_id: String) -> bool:
-	return _shared_door(room_a_id, room_b_id) != null
-
-
-## Like are_rooms_connected, but only when the shared door is open.
-func is_path_open(room_a_id: String, room_b_id: String) -> bool:
-	var door := _shared_door(room_a_id, room_b_id)
-	return door != null and door.is_open
-
-
-## IDs of all rooms directly linked to `room_id`, regardless of door state.
-func get_adjacent_rooms(room_id: String) -> Array[String]:
-	var result: Array[String] = []
-	var room := get_room(room_id)
-	if room == null:
-		return result
-	for door in room.connected_doors:
-		var other := _door_counterpart(door, room_id)
-		if other != "" and not result.has(other):
-			result.append(other)
-	return result
-
-
-func _shared_door(room_a_id: String, room_b_id: String) -> Door:
-	var room := get_room(room_a_id)
-	if room == null:
-		return null
-	for door in room.connected_doors:
-		if _door_counterpart(door, room_a_id) == room_b_id:
-			return door
-	return null
-
-
-func _door_counterpart(door: Door, room_id: String) -> String:
-	if door.room_a_id == room_id:
-		return door.room_b_id
-	if door.room_b_id == room_id:
-		return door.room_a_id
-	return ""
 
 
 ## Integrity check: the door-graph must match the room-graph derived from the
@@ -515,12 +450,6 @@ func _derive_room_edges() -> Dictionary:
 
 func _edge_key(a_id: String, b_id: String) -> String:
 	return "%s<->%s" % ([a_id, b_id] if a_id < b_id else [b_id, a_id])
-
-
-func are_connected(a_id: String, b_id: String) -> bool:
-	if not zones.has(a_id):
-		return false
-	return (zones[a_id]["neighbors"] as Array).has(b_id)
 
 
 ## BFS over `neighbors`, traversing only revealed zones. Returns the full

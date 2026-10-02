@@ -28,12 +28,6 @@ func is_room_visited(room_id: String) -> bool:
 	return rooms.get(room_id, {}).get("visited", false)
 
 
-func get_room_cells(room_id: String) -> Array[Vector2i]:
-	var cells: Array[Vector2i] = []
-	cells.assign(rooms.get(room_id, {}).get("cells", []))
-	return cells
-
-
 ## Global clock tick: the only place the turn counter moves.
 func advance_turn(target_room_id: String) -> void:
 	current_turn += 1

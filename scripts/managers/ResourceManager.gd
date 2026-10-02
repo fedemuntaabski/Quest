@@ -57,13 +57,6 @@ func spend_resource(key: String, amount: int) -> bool:
 	return true
 
 
-func add_all(industry_amt: int, food_amt: int, science_amt: int, dust_amt: int) -> void:
-	add_resource("industry", industry_amt)
-	add_resource("food", food_amt)
-	add_resource("science", science_amt)
-	add_resource("dust", dust_amt)
-
-
 ## Sum of `yield_amount` from active GeneratorModules producing `resource_key`.
 func _calculate_module_bonus(resource_key: String) -> int:
 	var total: int = 0

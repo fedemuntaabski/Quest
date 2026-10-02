@@ -23,8 +23,6 @@ static func get_save_manager() -> SaveManager:
 	return get_autoload("SaveManager") as SaveManager
 
 
-
-
 static func get_player_stats() -> PlayerStats:
 	return get_autoload("PlayerStats") as PlayerStats
 
@@ -89,20 +87,6 @@ static func get_heroes() -> Array[Player]:
 			if node is Player:
 				out.append(node)
 	return out
-
-
-static func get_room_power_system() -> RoomPowerSystem:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("room_power_system") as RoomPowerSystem
-	return null
-
-
-static func get_module_build_system() -> ModuleBuildSystem:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("module_build_system") as ModuleBuildSystem
-	return null
 
 
 static func get_nexo() -> Nexo:

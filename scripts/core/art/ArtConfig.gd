@@ -11,8 +11,3 @@ const TILE_SIZE := 16
 const ART_SCALE := 2
 const CELL_TILES := 2
 const CELL_PX := TILE_SIZE * ART_SCALE * CELL_TILES  # 64: world px of one logical cell
-
-
-## World px for a length given in art pixels (e.g. a 16x28 sprite).
-static func art_px(px: float) -> float:
-	return px * ART_SCALE

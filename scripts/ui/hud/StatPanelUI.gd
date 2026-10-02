@@ -3,7 +3,7 @@ class_name StatPanelUI
 
 ## Top-left resource bar: per resource an icon, the amount and the per-turn
 ## gain (ResourceManager.get_turn_yield). HP moved to HeroPortrait in session 6;
-## update_stats/update_hp stay as no-ops-if-missing for old callers.
+## update_hp stays as a no-op-if-missing for old callers.
 
 const HP_FORMAT := "%d/%d"
 const RESOURCE_FORMAT := "%d"
@@ -22,16 +22,6 @@ const GAIN_FORMAT := "+%d"
 	"science": $ChipScience/GainScience as Label,
 	"dust": $ChipDust/GainDust as Label,
 }
-
-
-func update_stats(stats: CharacterStats) -> void:
-	if stats == null:
-		return
-
-	update_hp(
-		stats.current_hp,
-		stats.max_hp
-	)
 
 
 func update_hp(
