@@ -120,7 +120,7 @@ func _click_hero(main2d: Node, hero: Player, ctrl: bool = false) -> void:
 	event.pressed = true
 	event.ctrl_pressed = ctrl
 	event.position = main2d.get_canvas_transform() * hero.to_global(hero.animated_sprite.body_center())
-	main2d._unhandled_input(event)
+	main2d.hero_input._unhandled_input(event)
 
 
 # ---------------- SIMPLE / CTRL SELECTION ----------------
@@ -135,9 +135,9 @@ func _check_mouse(main2d: Node) -> void:
 	var a: Player = main2d.heroes[0]
 	var b: Player = main2d.heroes[1]
 	var far: Vector2 = a.global_position + Vector2(500, 500)
-	_expect(main2d.pick_hero_at(a.to_global(a.animated_sprite.body_center())) == a, "pick_hero_at(a)")
-	_expect(main2d.pick_hero_at(b.to_global(b.animated_sprite.body_center())) == b, "pick_hero_at(b)")
-	_expect(main2d.pick_hero_at(far) == null, "pick_hero_at(empty ground) should be null")
+	_expect(main2d.hero_input.pick_hero_at(a.to_global(a.animated_sprite.body_center())) == a, "pick_hero_at(a)")
+	_expect(main2d.hero_input.pick_hero_at(b.to_global(b.animated_sprite.body_center())) == b, "pick_hero_at(b)")
+	_expect(main2d.hero_input.pick_hero_at(far) == null, "pick_hero_at(empty ground) should be null")
 
 	_click_hero(main2d, b)
 	_expect(_selected() == _ids(["mage"]), "click on the second hero should replace the selection: %s" % [_selected()])
@@ -157,7 +157,7 @@ func _check_mouse(main2d: Node) -> void:
 	event.button_index = MOUSE_BUTTON_LEFT
 	event.pressed = true
 	event.position = main2d.get_canvas_transform() * far
-	main2d._unhandled_input(event)
+	main2d.hero_input._unhandled_input(event)
 	_expect(_selected() == _ids(["warrior"]), "click on empty ground changed the selection")
 
 
@@ -216,7 +216,7 @@ func _check_groups_and_camera(main2d: Node, hud: HUDController) -> void:
 	_expect(sel.get_group(2) == _ids(["mage"]) and pb._group_label.text.contains("[1]") and pb._group_label.text.contains("[2]"), "second group / labels: '%s'" % pb._group_label.text)
 	_expect(not pa._group_label.text.contains("[2]"), "the warrior is not in group 2")
 
-	main2d._last_group_msec = -10000
+	main2d.hero_input._last_group_msec = -10000
 	_press(KEY_1)
 	_expect(_selected() == _ids(["warrior", "mage"]), "1 should recall group 1: %s" % [_selected()])
 	_press(KEY_2)
@@ -226,7 +226,7 @@ func _check_groups_and_camera(main2d: Node, hud: HUDController) -> void:
 
 	# Double tap centers the camera on the group; a single tap doesn't.
 	var camera: GameCamera = main2d.camera
-	main2d._last_group_msec = -10000
+	main2d.hero_input._last_group_msec = -10000
 	camera.focus_on(camera.global_position + Vector2(300, 300))
 	var panned := camera.global_position
 	_press(KEY_1)
@@ -235,7 +235,7 @@ func _check_groups_and_camera(main2d: Node, hud: HUDController) -> void:
 	_press(KEY_1)
 	var centroid: Vector2 = (a.global_position + b.global_position) * 0.5
 	_expect(camera.global_position.is_equal_approx(camera.clamp_to_bounds(centroid)), "double tap: camera %s, group centroid %s" % [camera.global_position, centroid])
-	main2d._last_group_msec = -10000
+	main2d.hero_input._last_group_msec = -10000
 	camera.recenter()
 
 	# Build menu open: digits pick cards (menu wins), Ctrl+N still assigns.

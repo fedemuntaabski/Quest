@@ -16,17 +16,9 @@ const DOOR_SCENE := preload("res://scenes/world/Door.tscn")
 ## Nexo sits above the start room's center: the lit start room's MAJOR build
 ## slot occupies the center itself (RoomZone.BUILDING_SLOT_OFFSETS[0]).
 const NEXO_OFFSET := Vector2(0, -56)
-## Loot rooms show a floating chest at the same spot when they are discovered.
-const LOOT_CHEST_OFFSET := Vector2(0, -56)
-const PICKUP_SCENE := preload("res://scenes/world/Pickup.tscn")
 ## Hand-authored map (the pre-generator 5-room layout). Used when
 ## force_fallback_layout is on or the generated map fails validation.
 const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout.tres")
-
-## Extra px around a hero's body that still count as a click on it.
-const HERO_PICK_MARGIN := 10.0
-## Real-time window (ms) for the second tap of a group key.
-const GROUP_DOUBLE_TAP_MS := 300
 
 ## Debug: skip MapGenerator and always play FALLBACK_LAYOUT.
 @export var force_fallback_layout: bool = false
@@ -66,11 +58,9 @@ var tile_renderer: MapTileRenderer
 # STATE
 # ─────────────────────────────────────────────
 var _is_dead: bool = false
-## Space: Engine.time_scale 0 (Tweens/Timers/physics delta stop, HUD/building
-## still work). Kept across the Esc pause, which forces 1 while open.
-var _tactical_paused: bool = false
-var _last_group_key: int = 0
-var _last_group_msec: int = -10000
+var pause_controller: PauseController
+var hero_input: HeroInputController
+var loot_spawner: LootSpawner
 
 # ─────────────────────────────────────────────
 # INIT
@@ -89,7 +79,24 @@ func _ready() -> void:
 	_spawn_heroes()
 	_spawn_nexo()
 	_setup_player_action_controller()
+	_setup_controllers()
 	_connect_signals()
+
+func _setup_controllers() -> void:
+	pause_controller = PauseController.new()
+	pause_controller.name = "PauseController"
+	add_child(pause_controller)
+	pause_controller.setup(game_state_manager)
+
+	hero_input = HeroInputController.new()
+	hero_input.name = "HeroInputController"
+	add_child(hero_input)
+	hero_input.setup(heroes, camera, _is_gameplay_active)
+
+	loot_spawner = LootSpawner.new()
+	loot_spawner.name = "LootSpawner"
+	add_child(loot_spawner)
+	loot_spawner.setup(room_manager, door_turn_system, floor_manager)
 
 func _ensure_game_state_manager() -> void:
 	game_state_manager = get_node_or_null("GameStateManager") as GameStateManager
@@ -255,29 +262,8 @@ func _register_groups_and_doors() -> void:
 	# The start room is lit for free (no dust paid → nothing to refund).
 	room_manager.set_zone_powered(room_manager.get_start_zone_id(), true)
 
-## Contenido del cofre: sorteo por rareza, sembrado con (semilla del piso, sala).
-func _roll_chest_item(zone_id: String) -> ItemData:
-	var catalog := ItemCatalog.get_default()
-	if catalog == null:
-		return null
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash([floor_manager.map_seed if floor_manager else 0, zone_id, "chest"])
-	return catalog.pick(rng)
-
-
 func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 	room_manager.on_group_revealed(group_id)
-	for zone_id in room_manager.get_group_zone_ids(group_id):
-		if room_manager.get_room_type(zone_id) == RoomData.RoomType.LOOT:
-			var chest := PICKUP_SCENE.instantiate() as Pickup
-			chest.kind = Pickup.Kind.CHEST
-			chest.position = room_manager.get_center(zone_id) + LOOT_CHEST_OFFSET
-			chest.z_index = 2
-			chest.item = _roll_chest_item(zone_id)
-			add_child(chest)
-			var player_stats := ManagerLocator.get_player_stats()
-			if player_stats:
-				player_stats.add_found_item(chest.item)
 
 	if player_action_controller:
 		player_action_controller.refresh_zones()
@@ -310,9 +296,6 @@ func _connect_signals() -> void:
 	if game_state_manager and not game_state_manager.victory_entered.is_connected(_on_victory):
 		game_state_manager.victory_entered.connect(_on_victory)
 
-	if game_state_manager and not game_state_manager.state_changed.is_connected(_on_state_changed):
-		game_state_manager.state_changed.connect(_on_state_changed)
-
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and not _is_dead:
 		var can_toggle_pause := pause_menu != null \
@@ -321,12 +304,9 @@ func _input(event: InputEvent) -> void:
 			pause_menu.toggle()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("tactical_pause") and _is_gameplay_active():
-		# Only consumed while playing: with the pause menu/overlays up, Space
-		# stays ui_accept for their buttons.
-		_tactical_paused = not _tactical_paused
-		_apply_time_scale()
+		pause_controller.toggle()
 		get_viewport().set_input_as_handled()
-	elif _is_gameplay_active() and _handle_selection_key(event):
+	elif _is_gameplay_active() and hero_input.handle_key(event):
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("hero_cycle") and _is_gameplay_active():
 		# Consumed so Tab never also moves GUI focus (ui_focus_next).
@@ -335,109 +315,13 @@ func _input(event: InputEvent) -> void:
 			player_stats.cycle_active_hero()
 		get_viewport().set_input_as_handled()
 
-## Left click on a hero selects it (Ctrl adds/removes). Consumed on purpose so the
-## RoomZone under the hero doesn't also read it as a move order; a click anywhere
-## else stays a move order. Not while a module is armed (its slots need the click).
-func _unhandled_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
-		return
-	if not _is_gameplay_active():
-		return
-	var hud := get_tree().get_first_node_in_group("hud")
-	if hud and hud.building_menu and hud.building_menu.is_armed():
-		return
-	var hero := pick_hero_at(get_canvas_transform().affine_inverse() * event.position)
-	if hero == null:
-		return
-	click_hero(hero, event.ctrl_pressed)
-	get_viewport().set_input_as_handled()
-
-
-## Living hero whose drawn body contains `world_pos` (the closest one), or null.
-func pick_hero_at(world_pos: Vector2) -> Player:
-	var best: Player = null
-	var best_dist := INF
-	for hero in heroes:
-		if not hero.can_accept_input():
-			continue
-		var dist := world_pos.distance_to(hero.to_global(hero.animated_sprite.body_center()))
-		if dist <= hero.animated_sprite.fit_radius() + HERO_PICK_MARGIN and dist < best_dist:
-			best = hero
-			best_dist = dist
-	return best
-
-
-func click_hero(hero: Player, additive: bool) -> void:
-	var selection := ManagerLocator.get_selection_manager()
-	if selection == null:
-		return
-	if additive:
-		selection.toggle(hero.stats.hero_id)
-	else:
-		selection.select_only(hero.stats.hero_id)
-
-
-## F1/F2 select hero 1/2 (Ctrl adds/removes), Ctrl+1..3 assigns the current
-## selection to a control group, 1..3 recalls it (a second tap within
-## GROUP_DOUBLE_TAP_MS also centers the camera on it). true = key consumed.
-func _handle_selection_key(event: InputEvent) -> bool:
-	if not (event is InputEventKey and event.pressed and not event.echo):
-		return false
-	var selection := ManagerLocator.get_selection_manager()
-	if selection == null:
-		return false
-	for i in mini(heroes.size(), 2):
-		if event.is_action_pressed("select_hero_%d" % (i + 1)):
-			click_hero(heroes[i], event.ctrl_pressed)
-			return true
-	for n in range(1, selection.GROUP_COUNT + 1):
-		if event.is_action_pressed("group_assign_%d" % n, false, true):
-			selection.assign_group(n)
-			return true
-		if event.is_action_pressed("group_select_%d" % n, false, true):
-			if selection.select_group(n):
-				var now := Time.get_ticks_msec()
-				if n == _last_group_key and now - _last_group_msec <= GROUP_DOUBLE_TAP_MS:
-					_center_camera_on_selection()
-				_last_group_key = n
-				_last_group_msec = now
-			return true
-	return false
-
-
-func _center_camera_on_selection() -> void:
-	var selection := ManagerLocator.get_selection_manager()
-	var sum := Vector2.ZERO
-	var count := 0
-	for hero in heroes:
-		if selection.is_selected(hero.stats.hero_id):
-			sum += hero.global_position
-			count += 1
-	if count > 0:
-		camera.focus_on(sum / count)
-
-
 func _exit_tree() -> void:
-	Engine.time_scale = 1.0
 	var vfx := get_tree().get_first_node_in_group("vfx_manager") if is_inside_tree() else null
 	if vfx:
 		vfx.clear()
 
-func is_tactically_paused() -> bool:
-	return _tactical_paused
-
 func _is_gameplay_active() -> bool:
 	return not _is_dead and (game_state_manager == null or game_state_manager.is_active())
-
-func _on_state_changed(_new_state: int, _old_state: int) -> void:
-	_apply_time_scale()
-
-## Esc pause/death/victory run at 1 (their overlays tween); back to ACTIVE
-## restores the tactical pause.
-func _apply_time_scale() -> void:
-	var frozen := _tactical_paused and _is_gameplay_active()
-	Engine.time_scale = 0.0 if frozen else 1.0
-	get_tree().call_group("hud", "set_pause_label", frozen)
 
 # ─────────────────────────────────────────────
 # GAME EVENTS

@@ -468,7 +468,7 @@ func _check_tactical_pause(hud: HUDController, main2d: Node, resources: Resource
 	_expect(hud.pause_label != null and not hud.pause_label.visible, "PAUSA label hidden while playing")
 	_expect(hud.pause_label.mouse_filter == Control.MOUSE_FILTER_IGNORE, "PAUSA label must ignore the mouse")
 	_press_key(KEY_SPACE)
-	_expect(Engine.time_scale == 0.0 and main2d.is_tactically_paused(), "Space should freeze time_scale (%f)" % Engine.time_scale)
+	_expect(Engine.time_scale == 0.0 and main2d.pause_controller.is_paused(), "Space should freeze time_scale (%f)" % Engine.time_scale)
 	_expect(hud.pause_label.visible, "PAUSA label should show in tactical pause")
 
 	# Camera keeps panning and zooming at time_scale 0.
@@ -519,12 +519,12 @@ func _check_tactical_pause(hud: HUDController, main2d: Node, resources: Resource
 	gsm.request_pause()
 	_expect(Engine.time_scale == 1.0 and not hud.pause_label.visible, "Esc pause should run at time_scale 1")
 	_press_key(KEY_SPACE)
-	_expect(main2d.is_tactically_paused() and Engine.time_scale == 1.0, "Space must not toggle while the pause menu is up")
+	_expect(main2d.pause_controller.is_paused() and Engine.time_scale == 1.0, "Space must not toggle while the pause menu is up")
 	gsm.request_resume()
 	_expect(Engine.time_scale == 0.0 and hud.pause_label.visible, "resume should give the tactical pause back")
 
 	_press_key(KEY_SPACE)
-	_expect(Engine.time_scale == 1.0 and not main2d.is_tactically_paused() and not hud.pause_label.visible, "Space again should resume")
+	_expect(Engine.time_scale == 1.0 and not main2d.pause_controller.is_paused() and not hud.pause_label.visible, "Space again should resume")
 
 
 ## Session 9: unarmed right click on a room moves (same path as left click)

@@ -16,7 +16,10 @@ $failed = @()
 foreach ($t in (Get-ChildItem "$root\tests\test_*.gd" | Where-Object { $_.Name -like "*$Filter*" })) {
 	$p = Start-Process -FilePath $Godot -ArgumentList "--headless --path `"$root`" --script res://tests/$($t.Name)" `
 		-Wait -NoNewWindow -PassThru -RedirectStandardOutput "$logs\$($t.BaseName).out" -RedirectStandardError "$logs\$($t.BaseName).err"
-	$status = if ($p.ExitCode -eq 0) { "OK  " } else { "FAIL"; $failed += $t.BaseName }
+	# Godot 4.6.2 sometimes segfaults on shutdown after the test already printed "OK (0 failures)":
+	# reported as "OK* " (assertions passed, engine crash on exit), not as a failure.
+	$passed = (Select-String -Path "$logs\$($t.BaseName).out" -Pattern ": OK \(0 failures\)" -Quiet)
+	$status = if ($p.ExitCode -eq 0) { "OK  " } elseif ($passed) { "OK* " } else { "FAIL"; $failed += $t.BaseName }
 	"{0} {1}" -f $status, $t.BaseName
 }
 "--- {0} fallo(s). Logs en {1}" -f $failed.Count, $logs
