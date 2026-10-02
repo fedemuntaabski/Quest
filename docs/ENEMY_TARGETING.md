@@ -34,7 +34,7 @@ Estado **antes** de `session/enemies-2` (referencia; los roles nuevos están al 
 - Trampas: `apply_slow` al llegar a una sala con trampa. Rest: `blocks_spawns`. Elite: multiplicadores.
 
 ## Roles (session enemies-2)
-Ver `NOTES_SESSION.md` "Sesión enemies-2".
+Ver `docs/archive/NOTES_SESSION.md` "Sesión enemies-2".
 
 ### Resumen
 - `EnemyType.role` HUNTER/RAIDER, `aggro_range` 320 px, `attack_range` 40 (cazador) / 56 (saqueador), `damage_vs_heroes` (0 = daño de contacto del variant), `damage_vs_nexus`.

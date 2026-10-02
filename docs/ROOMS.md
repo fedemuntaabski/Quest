@@ -33,7 +33,7 @@ Medido con `tests/test_rooms.gd` (30 seeds x pisos 1-5 = 150 layouts; todos vál
 
 Reglas verificadas (`test_map_flow.gd`/`test_rooms.gd`): Polvo solo al descubrir (y 0 en loops), solo el inicio revelado al empezar, la salida solo se marca al descubrir su sala, el minimapa lee zonas/layout (no tiles), tooltip vacío en salas sin revelar, puertas centradas en el carril (`test_door_alignment.gd`), todas las salas alcanzables y ningún loop toca la salida (150 layouts).
 
-`is_vault` sigue siendo un flag de datos sin tipo (candidato natural a Botín, ver `NOTES_SESSION.md` sesión 5/11). Un "santuario/enfermería" ya está cubierto por REST.
+`is_vault` sigue siendo un flag de datos sin tipo (candidato natural a Botín, ver `docs/archive/NOTES_SESSION.md` sesión 5/11). Un "santuario/enfermería" ya está cubierto por REST.
 
 ## Añadir un tipo nuevo
 1. Agregar (o ya tener) su `RoomType` al final del enum (no reordenar: `.tres` guardan el entero).
