@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://c5kqs53i6omaj"]
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_y41uk"]
-[ext_resource type="SpriteFrames" uid="uid://bpbltbgb46hsn" path="res://assets/characters/tc_demon.tres" id="2_o04qr"]
+[ext_resource type="SpriteFrames" uid="uid://bpbltbgb46hsn" path="res://resources/sprite_frames/tc_demon.tres" id="2_o04qr"]
 
 [resource]
 script = ExtResource("1_y41uk")

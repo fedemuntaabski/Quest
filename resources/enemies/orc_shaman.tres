@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://0ew31nus5qb1"]
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_btpux"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/enemy_orc_shaman.tres" id="2_lhfsj"]
+[ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_orc_shaman.tres" id="2_lhfsj"]
 
 [resource]
 script = ExtResource("1_btpux")

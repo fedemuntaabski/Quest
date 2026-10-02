@@ -29,7 +29,7 @@ Todo el arte es 16×16 px por tile, licencia CC0 (ver `CREDITS.md`). Originales 
 - Contenido: monstruos fantásticos (goblins, esqueletos, slimes, dragones, demonios, no-muertos) y animales; fuente extra de enemigos/jefes. **Todos miran a la derecha** (usar `flip_h` para izquierda). Sin animación (1 frame por criatura).
 
 ## Qué asset para qué (session/assets-3)
-Recursos: `assets/characters/*.tres` (SpriteFrames), `resources/enemies/*.tres` (`EnemyType`), `resources/floors/enemy_pool_f1..f5.tres` (`EnemyPool`, enlazados en `default_floor_config.tres`). Se regeneran con `tools/build_characters.gd`; después se pueden ajustar a mano. Los sprites miran a la derecha (`CharacterVisual` hace `flip_h`).
+Recursos: `resources/sprite_frames/*.tres` (SpriteFrames), `resources/enemies/*.tres` (`EnemyType`), `resources/floors/enemy_pool_f1..f5.tres` (`EnemyPool`, enlazados en `default_floor_config.tres`). Se regeneran con `tools/build_characters.gd`; después se pueden ajustar a mano. Los sprites miran a la derecha (`CharacterVisual` hace `flip_h`).
 
 | Uso | Asset |
 |---|---|

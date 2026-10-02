@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
 [ext_resource type="Texture2D" path="res://assets/portraits/picaro.png" id="2_portrait"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/hero_elf_m.tres" id="3_1l3ae"]
+[ext_resource type="SpriteFrames" path="res://resources/sprite_frames/hero_elf_m.tres" id="3_1l3ae"]
 
 [ext_resource type="Resource" path="res://resources/abilities/rogue_passive.tres" id="4_passive"]
 [ext_resource type="Resource" path="res://resources/abilities/rogue_active.tres" id="5_active"]

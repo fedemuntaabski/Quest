@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Bakes the sprite/enemy data resources from the tables below:
-##   assets/characters/{hero,enemy,tc}_*.tres   SpriteFrames
+##   resources/sprite_frames/{hero,enemy,tc}_*.tres   SpriteFrames
 ##   resources/enemies/*.tres                   EnemyType
 ##   resources/floors/enemy_pool_f1..f5.tres    EnemyPool
 ## and links hero sprite_frames + FloorConfig.enemy_pools. Run once, then tune
@@ -107,7 +107,7 @@ func _bake_hero(character_id: String, prefix: String) -> void:
 		"run": ["%s_run_anim", RUN_FPS, true],
 		"hit": ["%s_hit_anim", 1.0, false],
 	})
-	var path := "res://assets/characters/hero_%s.tres" % prefix
+	var path := "res://resources/sprite_frames/hero_%s.tres" % prefix
 	_save(frames, path)
 	var data := load("res://resources/characters/%s.tres" % _character_file(character_id)) as CharacterData
 	data.sprite_frames = load(path)
@@ -121,7 +121,7 @@ func _character_file(character_id: String) -> String:
 func _bake_type(row: Array) -> EnemyType:
 	var art: String = row[2]
 	var frames: SpriteFrames
-	var path := "res://assets/characters/%s_%s.tres" % ["tc" if art.begins_with("tc:") else "enemy", row[0].trim_prefix("tc_")]
+	var path := "res://resources/sprite_frames/%s_%s.tres" % ["tc" if art.begins_with("tc:") else "enemy", row[0].trim_prefix("tc_")]
 	if art.begins_with("tc:"):
 		frames = _tc_frames(art.trim_prefix("tc:"))
 	else:
