@@ -11,4 +11,5 @@ display_name = "Calavera ígnea"
 behavior = 1
 sprite_frames = ExtResource("2_fk60e")
 damage_mult = 1.16
+module_damage = 5
 target_profile = ExtResource("tp_profile")

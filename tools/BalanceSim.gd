@@ -84,6 +84,7 @@ static func enemy_stats(type: EnemyType, floor_index: int) -> Dictionary:
 		"hp": maxi(1, roundi(Enemy.resolved_hp(type) * hp_mult)),
 		"contact": maxi(1, roundi(Enemy.resolved_contact_damage(type) * dmg_mult)),
 		"nexo": maxi(1, roundi(type.damage_vs_nexo * dmg_mult)) if type.damage_vs_nexo > 0 else 0,
+		"module": maxi(1, roundi(Enemy.resolved_module_damage(type) * dmg_mult)),
 		"speed": Enemy.resolved_speed(type) * type.speed_mult,
 	}
 
@@ -225,6 +226,28 @@ static func nexo_rows() -> Array[Dictionary]:
 				"arrival_mean_s": snappedf(mean / arrivals.size(), 0.1) if not arrivals.is_empty() else -1.0,
 				"destroy_1_s": destroy_sec(cfg.nexo_max_hp, int(e["nexo"]), 1),
 				"destroy_3_s": destroy_sec(cfg.nexo_max_hp, int(e["nexo"]), 3),
+			})
+	return rows
+
+
+## Tower breakers (TargetProfile "tower_breaker") vs one turret, 1v1: the turret
+## shoots every fire_rate from the moment the enemy is in range, the breaker hits
+## every NEXO_TICK_SEC (Enemy.attack_speed). `turret_hp_lost_pct` = share of the
+## turret's HP gone by the time the turret has killed it (100 = the turret dies first).
+static func tower_rows() -> Array[Dictionary]:
+	var turret: Dictionary = Module.CATALOG[Module.ModuleType.TURRET]
+	var rows: Array[Dictionary] = []
+	for f in range(1, FLOORS + 1):
+		for type in pool_types(f):
+			if type.get_target_profile().id != &"tower_breaker":
+				continue
+			var e := enemy_stats(type, f)
+			var turret_ttk := ceili(float(e["hp"]) / float(turret["damage"])) * float(turret["fire_rate"])
+			var destroy := ceili(float(turret["hp"]) / float(e["module"])) * NEXO_TICK_SEC
+			rows.append({
+				"floor": f, "enemy": type.id, "enemy_hp": e["hp"], "module_dmg_per_s": e["module"],
+				"turret_kills_enemy_s": turret_ttk, "enemy_destroys_turret_s": destroy,
+				"turret_hp_lost_pct": snappedf(minf(100.0, 100.0 * turret_ttk / destroy), 0.1),
 			})
 	return rows
 

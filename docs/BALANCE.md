@@ -152,3 +152,16 @@ Antes → después; "—" = el tipo no estaba en el pool de ese piso.
 - Muro Viviente solo actúa cerca del Nexo: comprobar que se siente (no entra en la simulación).
 - Tres saqueadores del piso 5 destruyen el Nexo en 7 s: comprobar que no es injusto sin torres cerca.
 - La sala Elite (×1,5 vida, ×1,25 daño) no está en el simulador.
+
+## Perfiles de objetivo (session impl-6)
+`TargetProfile` reparte los 20 enemigos en 5 perfiles (ver `docs/ENEMY_TARGETING.md`). Línea base `docs/balance/impl6_before_*.csv`; tras 3A (refactor puro) los 4 CSV son **idénticos** (`Get-FileHash`); tras 3B (`impl6_after_3b_*.csv`) los 4 siguen idénticos y se añade `towers`.
+
+Nuevo modelo `BalanceSim.tower_rows()`: rompe-torres contra **una** ballesta 1v1 (15 PV, 15 de daño por s). La ballesta mata al enemigo en `⌈vida/15⌉ s`; el enemigo la destruye en `⌈15/daño_módulo⌉ s`. `turret_hp_lost_pct` = parte de la ballesta que pierde antes de morir. Objetivo (`tests/test_balance.gd`): **30 – 99,9 %** (hace daño real, pero la torre gana el 1v1).
+
+| Piso | Enemigo | `module_damage` | Antes | Después |
+|---|---|---|---|---|
+| 3 | tc_fire_skull | −1 (3 del behavior Sapper) → **5** | 25 % | **33,3 %** |
+| 5 | big_demon | −1 (2 del behavior Hunter) → **3** | 50 % | **66,7 %** |
+
+Intento descartado: `big_demon` con `module_damage` 4 daba 100 % (la torre moría a la vez que el enemigo).
+Asesinos: sin cambios de números; la tabla de encuentros (un héroe recibe toda la oleada) ya cubre el caso "todos contra el más débil". Pendiente de playtest: presión sobre el portador durante la extracción (la oleada de 5 s con asesinos rápidos persiguiendo al portador a 75 % de velocidad).

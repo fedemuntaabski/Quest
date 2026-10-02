@@ -13,6 +13,8 @@ const MAX_STEP_PCT := 20.0
 const MAX_FLOOR5_LOSS_PCT := 70.0
 const NEXO_ONE_RAIDER_SEC := Vector2(15.0, 45.0)
 const NEXO_THREE_RAIDERS_MIN_SEC := 6.0
+## Tower breakers (session impl-6): they must hurt a turret yet lose to it 1v1.
+const TOWER_HP_LOST_PCT := Vector2(30.0, 99.9)
 
 var failures: Array[String] = []
 
@@ -21,6 +23,7 @@ func _initialize() -> void:
 	_check_floor1_hits()
 	_check_encounters()
 	_check_nexo()
+	_check_towers()
 	_check_no_dominance(0)
 	_check_no_dominance(5)
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
@@ -77,6 +80,14 @@ func _check_nexo() -> void:
 		_expect(one >= NEXO_ONE_RAIDER_SEC.x and one <= NEXO_ONE_RAIDER_SEC.y, "%s: 1 raider destroys the Nexo in %.0fs (want %.0f-%.0f)" % [label, one, NEXO_ONE_RAIDER_SEC.x, NEXO_ONE_RAIDER_SEC.y])
 		_expect(float(row["destroy_3_s"]) >= NEXO_THREE_RAIDERS_MIN_SEC, "%s: 3 raiders destroy the Nexo in %.0fs (min %.0f)" % [label, row["destroy_3_s"], NEXO_THREE_RAIDERS_MIN_SEC])
 		_expect(float(row["arrival_min_s"]) >= min_arrival, "%s: arrives in %.1fs (< gate %.1fs)" % [label, row["arrival_min_s"], min_arrival])
+
+
+func _check_towers() -> void:
+	var rows := BalanceSim.tower_rows()
+	_expect(not rows.is_empty(), "no tower breaker in any pool")
+	for row in rows:
+		var lost: float = row["turret_hp_lost_pct"]
+		_expect(lost >= TOWER_HP_LOST_PCT.x and lost <= TOWER_HP_LOST_PCT.y, "floor %s %s: takes %.1f%% of a turret before dying (want %.0f-%.0f)" % [row["floor"], row["enemy"], lost, TOWER_HP_LOST_PCT.x, TOWER_HP_LOST_PCT.y])
 
 
 ## A dominates B when it is >= on every axis and > on at least one.

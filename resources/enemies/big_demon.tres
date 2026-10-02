@@ -13,4 +13,5 @@ sprite_frames = ExtResource("2_ki0ra")
 hp_mult = 2.2
 damage_mult = 1.4
 speed_mult = 0.9
+module_damage = 3
 target_profile = ExtResource("tp_profile")
