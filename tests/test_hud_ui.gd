@@ -431,8 +431,8 @@ func _check_building_menu(hud: HUDController, main2d: Node, resources: ResourceM
 	_expect(menu.visible and menu.tabs.current_tab == 1, "Defensa button should open the defense tab")
 	_press_key(KEY_1)  # Ballesta
 	_expect(menu.is_armed(), "key 1 should arm the turret")
-	# PauseMenu doesn't compile under --script, so a probe sitting between
-	# Main2d and the HUD in input order tells whether Esc got past the HUD.
+	# A probe sitting between Main2d and the HUD in input order tells whether
+	# Esc got past the HUD.
 	var probe := InputProbe.new()
 	root.add_child(probe)
 	root.move_child(probe, hud.get_index())
@@ -441,6 +441,12 @@ func _check_building_menu(hud: HUDController, main2d: Node, resources: ResourceM
 	_expect(not probe.got_esc and not paused, "Esc while armed must be consumed before Main2d's pause toggle")
 	_press_key(KEY_ESCAPE)
 	_expect(probe.got_esc, "Esc with the menu closed must pass through to the pause toggle")
+	# That Esc opened the real pause menu (tree paused): Esc again resumes
+	# (fades off so close() finishes synchronously).
+	main2d.pause_menu.animate_transitions = false
+	_expect(paused and main2d.pause_menu.is_open, "Esc with the menu closed should open the pause menu")
+	_press_key(KEY_ESCAPE)
+	_expect(not paused and not main2d.pause_menu.is_open, "Esc again should close the pause menu")
 	probe.queue_free()
 
 	# Defensa → Torreta → click a free MINOR slot builds there.
