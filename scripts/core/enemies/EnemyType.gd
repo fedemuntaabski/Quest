@@ -40,3 +40,11 @@ enum Role { HUNTER, RAIDER }
 @export var damage_vs_heroes: int = 0
 ## Damage per AttackTimer tick to the Nexo (RAIDER only).
 @export var damage_vs_nexo: int = 0
+
+@export_group("Targeting")
+## What it goes for. null = derived from `role`/`behavior` (TargetProfile.derive).
+@export var target_profile: TargetProfile
+
+
+func get_target_profile() -> TargetProfile:
+	return target_profile if target_profile else TargetProfile.derive(role, behavior)

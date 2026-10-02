@@ -114,5 +114,10 @@ func is_working() -> bool:
 	return is_active and powered
 
 
+## Enemies may attack it: built and alive, even while its room is switched off.
+func is_targetable() -> bool:
+	return is_active and not _is_destroyed
+
+
 func is_trap() -> bool:
 	return module_type == ModuleType.TRAP
