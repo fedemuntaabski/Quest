@@ -4,7 +4,7 @@ Estado **antes** de `session/assets-3` (referencia; abajo, qué cambia).
 
 | Entidad | Nodo visual | Colisiones |
 |---|---|---|
-| Héroe (`scenes/Player.tscn`, `Player.gd`) | `AnimatedSprite2D` con SpriteFrames inline (10 frames 120×80 de `Sprites/Player/_Idle.png`); `CharacterData.sprite_frames` lo sustituye en `_apply_character_visuals` (los 4 héroes apuntan a `resources/sprites/shared_player_idle_frames.tres`). Solo animación `idle`; `sprite_offset` (PartyConfig.sprite_spacing 28) separa héroes en la misma zona. | `Hurtbox` círculo r=20 (layer 4); `Hitbox` r=160 = área de ataque, independiente del sprite. |
+| Héroe (`scenes/Player.tscn`, `Player.gd`) | `AnimatedSprite2D`; `CharacterData.sprite_frames` (un `assets/characters/hero_*.tres` por héroe) lo rellena en `_apply_character_visuals`. Solo animación `idle`; `sprite_offset` (PartyConfig.sprite_spacing 28) separa héroes en la misma zona. | `Hurtbox` círculo r=20 (layer 4); `Hitbox` r=160 = área de ataque, independiente del sprite. |
 | Enemigo (`scenes/entities/Enemy.tscn`, `Enemy.gd`) | `Polygon2D "Icon"` (triángulo) coloreado por `Enemy.TYPE_COLORS`. | Body r=14 (layer 2, detección de torretas), `Hurtbox` r=14 (layer 8), `Hitbox` de contacto r=24. |
 | Nexo (`scenes/world/Nexo.tscn`) | `Polygon2D` rombo violeta. | `Area2D` r=18 (clic). |
 | Retrato HUD (`HeroPortrait._make_icon`) | `CharacterData.portrait` (PNG de menús) o círculo con inicial. | — |

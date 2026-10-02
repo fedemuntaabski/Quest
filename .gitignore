@@ -105,3 +105,6 @@ assets/art/_source/super_pixel_effects/spritesheet/
 assets/art/_source/raven_fantasy_icons/
 # FX rechazados (copia local del pack FX, mismo motivo de licencia)
 assets/art/_rejected/vfx/
+
+# Logs del editor/juego
+godot_debug_output.txt
