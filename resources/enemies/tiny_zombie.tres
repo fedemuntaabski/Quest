@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_45nxu"]
 [ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_tiny_zombie.tres" id="2_b5hyo"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/saboteur.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_45nxu")
@@ -11,3 +12,4 @@ behavior = 1
 sprite_frames = ExtResource("2_b5hyo")
 hp_mult = 0.8
 speed_mult = 0.9
+target_profile = ExtResource("tp_profile")

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="TargetProfile" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/enemies/TargetProfile.gd" id="1_profile"]
+[ext_resource type="Script" path="res://scripts/core/enemies/TargetRule.gd" id="1_rule"]
+
+[sub_resource type="Resource" id="rule_0"]
+script = ExtResource("1_rule")
+type = 0
+aggro_range = -1.0
+
+[sub_resource type="Resource" id="rule_1"]
+script = ExtResource("1_rule")
+type = 0
+
+[resource]
+script = ExtResource("1_profile")
+id = &"hunter"
+display_name = "Cazador"
+description = "Persigue al héroe más cercano; si ninguno está a la vista, va hacia el más próximo del mapa."
+rules = Array[ExtResource("1_rule")]([SubResource("rule_0"), SubResource("rule_1")])

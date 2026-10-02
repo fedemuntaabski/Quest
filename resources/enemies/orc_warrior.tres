@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_mf1cr"]
 [ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_orc_warrior.tres" id="2_nsdm4"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/siege.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_mf1cr")
@@ -14,3 +15,4 @@ speed_mult = 0.95
 role = 1
 attack_range = 56.0
 damage_vs_nexo = 4
+target_profile = ExtResource("tp_profile")

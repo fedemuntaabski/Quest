@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_8t8dg"]
 [ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_goblin.tres" id="2_bxi3o"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/siege.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_8t8dg")
@@ -11,3 +12,4 @@ sprite_frames = ExtResource("2_bxi3o")
 role = 1
 attack_range = 56.0
 damage_vs_nexo = 4
+target_profile = ExtResource("tp_profile")

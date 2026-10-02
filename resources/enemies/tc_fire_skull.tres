@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_xnehn"]
 [ext_resource type="SpriteFrames" uid="uid://dt0ijshq18eke" path="res://resources/sprite_frames/tc_fire_skull.tres" id="2_fk60e"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/tower_breaker.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_xnehn")
@@ -10,3 +11,4 @@ display_name = "Calavera ígnea"
 behavior = 1
 sprite_frames = ExtResource("2_fk60e")
 damage_mult = 1.16
+target_profile = ExtResource("tp_profile")

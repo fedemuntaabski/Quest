@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_q53aa"]
 [ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_necromancer.tres" id="2_818re"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/hunter.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_q53aa")
@@ -11,3 +12,4 @@ behavior = 2
 sprite_frames = ExtResource("2_818re")
 hp_mult = 1.48
 damage_mult = 1.4
+target_profile = ExtResource("tp_profile")

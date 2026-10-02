@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_5mrol"]
 [ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_ogre.tres" id="2_l4sh8"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/saboteur.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_5mrol")
@@ -12,3 +13,4 @@ sprite_frames = ExtResource("2_l4sh8")
 hp_mult = 2.5
 damage_mult = 1.32
 speed_mult = 0.75
+target_profile = ExtResource("tp_profile")

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="TargetProfile" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/enemies/TargetProfile.gd" id="1_profile"]
+[ext_resource type="Script" path="res://scripts/core/enemies/TargetRule.gd" id="1_rule"]
+
+[sub_resource type="Resource" id="rule_0"]
+script = ExtResource("1_rule")
+type = 3
+
+[resource]
+script = ExtResource("1_profile")
+id = &"siege"
+display_name = "Asedio"
+description = "Ignora a los héroes y marcha hacia el Nexo para destruirlo. Si un héroe lo golpea, se defiende."
+rules = Array[ExtResource("1_rule")]([SubResource("rule_0")])
+retaliate = true
+fallback = 1

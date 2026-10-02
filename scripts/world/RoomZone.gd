@@ -49,6 +49,7 @@ const MAJOR_SLOT_SPACING := 56.0
 ## Any power state change (player-paid or scripted). RoomLight listens.
 signal power_changed(zone_id: String, powered: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
+signal module_built(zone_id: String, module: Module)
 
 @onready var fill: Polygon2D = $Fill
 @onready var outline: Line2D = $Outline
@@ -305,6 +306,7 @@ func _spawn_building_slots() -> void:
 		slot.position = offsets[i]
 		slot.configure(zone_id, slot_types[i])
 		slot.slot_clicked.connect(func(s: BuildingSlot): slot_clicked.emit(zone_id, s))
+		slot.module_built.connect(func(m: Module): module_built.emit(zone_id, m))
 		_building_slots.append(slot)
 
 

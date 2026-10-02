@@ -128,6 +128,9 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 		module_damage = resolved_module_damage(p_type)
 	hitbox.configure(maxi(1, roundi(contact_damage * damage_multiplier)), CONTACT_HIT_INTERVAL)
 	selector.setup(self, p_type.get_target_profile() if p_type else TargetProfile.derive(role, variant))
+	selector.target_lost.connect(_on_target_lost)
+	if selector.profile.reeval_sec > 0.0:
+		ai_timer.wait_time = selector.profile.reeval_sec
 
 	attack_damage = maxi(1, roundi(module_damage * damage_multiplier))
 	attack_timer.wait_time = attack_speed
@@ -220,14 +223,9 @@ func _mark_as_raider() -> void:
 	add_child(marker)
 
 
-## First active module built in `room`, or null.
+## The module to hit in `room` (its profile's pick), or null.
 func scan_room_for_modules(room: RoomZone) -> Node2D:
-	if room == null:
-		return null
-	for module in room.get_modules():
-		if is_instance_valid(module) and module.is_active:
-			return module
-	return null
+	return selector.pick_module_in_room(room)
 
 
 ## Called by EnemyMoveAction each time the enemy reaches a zone center.
@@ -291,11 +289,22 @@ func _on_ai_tick() -> void:
 	if _try_attack_nexo():
 		return
 
-	var goal := _goal_zone(room_manager)
+	selector.reevaluate(&"tick")
+	var goal := selector.current.zone_id if selector.current else ""
 	_active_goal = goal
 	await _pursue_zone(room_manager, goal, _goal_point(goal))
 	if is_instance_valid(self):
 		_try_attack_nexo()
+
+
+## The thing it was after died or was destroyed: stop hitting it and pick anew now.
+func _on_target_lost(old: Target) -> void:
+	if not is_alive():
+		return
+	if current_state == State.ATTACKING and old != null and old.node != null and old.node == target_module:
+		_resume_moving()
+	elif current_state == State.MOVING:
+		_on_ai_tick()
 
 
 ## True when the zone this enemy wants changed since its current trip began;

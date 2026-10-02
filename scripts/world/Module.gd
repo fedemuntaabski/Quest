@@ -42,6 +42,13 @@ const DESCRIPTIONS := {
 const RESOURCE_LABELS := {"industry": "Industria", "food": "Comida", "science": "Ciencia", "dust": "Polvo"}
 
 signal module_destroyed()
+## Any HP change (damage). The mini bar and the enemy AI listen.
+signal hp_changed(current: int, maximum: int)
+signal damaged(amount: int)
+
+const FLASH_SEC := 0.15
+const BAR_SIZE := Vector2(24.0, 3.0)
+const BAR_OFFSET := Vector2(-12.0, 12.0)
 
 
 ## Human-readable effect of a catalog entry, derived from its numbers.
@@ -71,10 +78,14 @@ var is_active: bool = true
 ## module stays built and targetable but produces/fires/slows nothing.
 var powered: bool = true
 var _is_destroyed: bool = false
+var _bar_back: ColorRect
+var _bar_fill: ColorRect
+var _flash_tween: Tween
 
 
 func _ready() -> void:
 	current_hp = max_hp
+	_build_bar()
 
 
 func configure(p_zone_id: String, p_module_type: ModuleType) -> void:
@@ -88,6 +99,7 @@ func configure(p_zone_id: String, p_module_type: ModuleType) -> void:
 
 	if icon:
 		icon.color = TYPE_COLORS.get(module_type, Color.WHITE)
+	_update_bar()
 
 	QuestLogger.info(QuestLogger.Category.MODULE, "Module '%s' built in zone '%s'." % [ModuleType.keys()[module_type], zone_id])
 
@@ -96,8 +108,13 @@ func take_damage(amount: int) -> void:
 	if _is_destroyed or not is_active:
 		return
 	current_hp = maxi(current_hp - maxi(amount, 0), 0)
+	damaged.emit(amount)
+	hp_changed.emit(current_hp, max_hp)
+	_update_bar()
 	if current_hp <= 0:
 		die()
+	else:
+		_play_hit(amount)
 
 
 func die() -> void:
@@ -114,6 +131,11 @@ func is_working() -> bool:
 	return is_active and powered
 
 
+## Where enemies close in on it (TargetSelector / Enemy).
+func get_target_position() -> Vector2:
+	return global_position
+
+
 ## Enemies may attack it: built and alive, even while its room is switched off.
 func is_targetable() -> bool:
 	return is_active and not _is_destroyed
@@ -121,3 +143,42 @@ func is_targetable() -> bool:
 
 func is_trap() -> bool:
 	return module_type == ModuleType.TRAP
+
+
+## Mini HP bar under the module: only visible once it is damaged.
+func _build_bar() -> void:
+	_bar_back = ColorRect.new()
+	_bar_back.color = Color(0.05, 0.05, 0.05, 0.85)
+	_bar_back.size = BAR_SIZE
+	_bar_back.position = BAR_OFFSET
+	_bar_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bar_back.z_index = 3
+	_bar_fill = ColorRect.new()
+	_bar_fill.size = BAR_SIZE
+	_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bar_back.add_child(_bar_fill)
+	add_child(_bar_back)
+	_update_bar()
+
+
+func _update_bar() -> void:
+	if _bar_back == null:
+		return
+	var ratio := clampf(float(current_hp) / float(maxi(max_hp, 1)), 0.0, 1.0)
+	_bar_back.visible = current_hp < max_hp
+	_bar_fill.size.x = BAR_SIZE.x * ratio
+	_bar_fill.color = QuestPalette.BLOOD_LIGHT.lerp(Color(0.45, 0.8, 0.4), ratio)
+
+
+## White blink + floating damage number (the Nexo's hit feedback, for modules).
+func _play_hit(amount: int) -> void:
+	if icon:
+		if _flash_tween:
+			_flash_tween.kill()
+		var base: Color = TYPE_COLORS.get(module_type, Color.WHITE)
+		icon.color = Color.WHITE
+		_flash_tween = create_tween().set_ignore_time_scale()
+		_flash_tween.tween_property(icon, "color", base, FLASH_SEC)
+	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+	if text_mgr:
+		text_mgr.spawn_text(get_target_position() + Vector2(0.0, -16.0), "-%d" % amount, QuestPalette.BLOOD_LIGHT)

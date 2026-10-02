@@ -18,8 +18,13 @@ enum Fallback { NEAREST_HERO_ZONE, NEXO, HOLD }
 ## for `retaliate_sec` it ignores `rules` and goes for the nearest hero.
 @export var retaliate: bool = false
 @export var retaliate_sec: float = 3.0
-## Seconds between target re-evaluations (the enemy's AiTimer).
-@export var reeval_sec: float = 1.2
+## Seconds between target re-evaluations (the enemy's AiTimer). 0 = the
+## behavior's ai_interval in Enemy.VARIANT_CONFIG.
+@export var reeval_sec: float = 0.0
+## Hits an active module of any kind in a room it walks into (today's behavior of
+## every non-raider), on top of whatever its rules target. false = ignores modules
+## it was not sent for (assassins).
+@export var hits_modules_en_route: bool = true
 ## A hero is dropped only beyond aggro_range * this (anti-flicker).
 @export var drop_range_mult: float = 1.25
 @export var fallback: Fallback = Fallback.NEAREST_HERO_ZONE

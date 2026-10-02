@@ -38,6 +38,8 @@ signal zone_unhovered(zone_id: String)
 ## Any power change (paid, refunded or scripted); bubbled from RoomZone.power_changed.
 signal room_power_changed(zone_id: String, powered: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
+## A module was built in a lit room (enemy AI re-evaluates its target).
+signal module_built(zone_id: String, module: Module)
 
 const ZONE_SCENE := preload("res://scenes/world/RoomZone.tscn")
 const DEFAULT_TILE_SIZE := Vector2(64, 64)
@@ -142,6 +144,7 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.unhovered.connect(func(z: RoomZone): zone_unhovered.emit(z.zone_id))
 	zone.power_changed.connect(func(zid: String, on: bool): room_power_changed.emit(zid, on))
 	zone.slot_clicked.connect(func(zid: String, slot: BuildingSlot): slot_clicked.emit(zid, slot))
+	zone.module_built.connect(func(zid: String, module: Module): module_built.emit(zid, module))
 
 	record["node"] = zone
 	if record["kind"] == "room":

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_73kjm"]
 [ext_resource type="SpriteFrames" uid="uid://6fujdbb53tvy" path="res://resources/sprite_frames/tc_wolf.tres" id="2_qrk2w"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/assassin.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_73kjm")
@@ -11,3 +12,4 @@ sprite_frames = ExtResource("2_qrk2w")
 hp_mult = 1.12
 damage_mult = 1.08
 speed_mult = 1.4
+target_profile = ExtResource("tp_profile")

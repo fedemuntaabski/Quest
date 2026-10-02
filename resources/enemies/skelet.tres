@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_8h4yg"]
 [ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_skelet.tres" id="2_1jrar"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/hunter.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_8h4yg")
@@ -9,3 +10,4 @@ id = "skelet"
 display_name = "Esqueleto"
 sprite_frames = ExtResource("2_1jrar")
 speed_mult = 0.9
+target_profile = ExtResource("tp_profile")

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_dk4qw"]
 [ext_resource type="SpriteFrames" uid="uid://dy2lwpy63o0om" path="res://resources/sprite_frames/tc_eyeball.tres" id="2_8tmro"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/hunter.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_dk4qw")
@@ -9,3 +10,4 @@ id = "tc_eyeball"
 display_name = "Ojo flotante"
 behavior = 2
 sprite_frames = ExtResource("2_8tmro")
+target_profile = ExtResource("tp_profile")

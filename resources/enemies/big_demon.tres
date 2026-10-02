@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_b3ef1"]
 [ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_big_demon.tres" id="2_ki0ra"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/tower_breaker.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_b3ef1")
@@ -12,3 +13,4 @@ sprite_frames = ExtResource("2_ki0ra")
 hp_mult = 2.2
 damage_mult = 1.4
 speed_mult = 0.9
+target_profile = ExtResource("tp_profile")

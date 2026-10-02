@@ -9,6 +9,7 @@ class_name BuildingSlot
 ## armed module. Clicks are ignored unless the owning room `can_build()`.
 
 signal slot_clicked(slot: BuildingSlot)
+signal module_built(module: Module)
 
 enum SlotType { MAJOR, MINOR }
 
@@ -68,6 +69,7 @@ func build(module_type: Module.ModuleType) -> Module:
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"hit_sparks", global_position, vfx.config.build_color)
+	module_built.emit(module)
 	return module
 
 
