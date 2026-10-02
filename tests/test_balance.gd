@@ -11,8 +11,8 @@ extends SceneTree
 const MAX_BASIC_LOSS_PCT := 33.4
 const MAX_STEP_PCT := 20.0
 const MAX_FLOOR5_LOSS_PCT := 70.0
-const NEXUS_ONE_RAIDER_SEC := Vector2(15.0, 45.0)
-const NEXUS_THREE_RAIDERS_MIN_SEC := 6.0
+const NEXO_ONE_RAIDER_SEC := Vector2(15.0, 45.0)
+const NEXO_THREE_RAIDERS_MIN_SEC := 6.0
 
 var failures: Array[String] = []
 
@@ -20,7 +20,7 @@ var failures: Array[String] = []
 func _initialize() -> void:
 	_check_floor1_hits()
 	_check_encounters()
-	_check_nexus()
+	_check_nexo()
 	_check_no_dominance(0)
 	_check_no_dominance(5)
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
@@ -67,15 +67,15 @@ func _check_encounters() -> void:
 		_expect(mean_by_floor[i] >= mean_by_floor[i - 1] - 5.0, "average difficulty drops %.1f points on floor %d" % [mean_by_floor[i - 1] - mean_by_floor[i], i + 1])
 
 
-func _check_nexus() -> void:
+func _check_nexo() -> void:
 	var min_arrival := BalanceSim.floor_config().raider_min_arrival_sec
-	var rows := BalanceSim.nexus_rows()
+	var rows := BalanceSim.nexo_rows()
 	_expect(not rows.is_empty(), "no raider in any pool")
 	for row in rows:
 		var label := "floor %s %s" % [row["floor"], row["enemy"]]
 		var one: float = row["destroy_1_s"]
-		_expect(one >= NEXUS_ONE_RAIDER_SEC.x and one <= NEXUS_ONE_RAIDER_SEC.y, "%s: 1 raider destroys the Nexo in %.0fs (want %.0f-%.0f)" % [label, one, NEXUS_ONE_RAIDER_SEC.x, NEXUS_ONE_RAIDER_SEC.y])
-		_expect(float(row["destroy_3_s"]) >= NEXUS_THREE_RAIDERS_MIN_SEC, "%s: 3 raiders destroy the Nexo in %.0fs (min %.0f)" % [label, row["destroy_3_s"], NEXUS_THREE_RAIDERS_MIN_SEC])
+		_expect(one >= NEXO_ONE_RAIDER_SEC.x and one <= NEXO_ONE_RAIDER_SEC.y, "%s: 1 raider destroys the Nexo in %.0fs (want %.0f-%.0f)" % [label, one, NEXO_ONE_RAIDER_SEC.x, NEXO_ONE_RAIDER_SEC.y])
+		_expect(float(row["destroy_3_s"]) >= NEXO_THREE_RAIDERS_MIN_SEC, "%s: 3 raiders destroy the Nexo in %.0fs (min %.0f)" % [label, row["destroy_3_s"], NEXO_THREE_RAIDERS_MIN_SEC])
 		_expect(float(row["arrival_min_s"]) >= min_arrival, "%s: arrives in %.1fs (< gate %.1fs)" % [label, row["arrival_min_s"], min_arrival])
 
 

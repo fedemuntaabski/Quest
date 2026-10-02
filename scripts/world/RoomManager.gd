@@ -6,6 +6,12 @@ class_name RoomManager
 ## stays owned by DoorTurnSystem (keyed by "group_id", i.e. its room_id); this
 ## class only ever reads that via `is_zone_revealed()`, never duplicates it.
 ##
+## Vocabulary (ids are all plain Strings, easy to mix up):
+##   zone  — one clickable RoomZone: a room OR a corridor (`zones` key, `zone_id`).
+##   room  — a zone of kind "room" (`get_zone_kind(id) == "room"`); RoomData.id.
+##   group — reveal unit = a room + its entry corridor; its id is the room's id.
+##           DoorTurnSystem keys by it (its `room_id` args, `Door.target_room_id`).
+##
 ## Ownership split: RoomManager = geometry/graph/queries, RoomZone = visuals/
 ## input, DoorTurnSystem = per-room state/lifecycle. Outside callers use the
 ## query API below, never `zones[...]` directly.

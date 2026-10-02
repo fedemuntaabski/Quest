@@ -10,4 +10,4 @@ display_name = "Goblin"
 sprite_frames = ExtResource("2_bxi3o")
 role = 1
 attack_range = 56.0
-damage_vs_nexus = 4
+damage_vs_nexo = 4

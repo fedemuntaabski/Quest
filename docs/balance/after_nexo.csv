@@ -1,4 +1,4 @@
-floor,enemy,nexus_hp,dmg_per_tick,arrival_min_s,arrival_mean_s,destroy_1_s,destroy_3_s
+floor,enemy,nexo_hp,dmg_per_tick,arrival_min_s,arrival_mean_s,destroy_1_s,destroy_3_s
 1,goblin,120,4,4.6,5.8,30.0,10.0
 2,goblin,120,4,4.6,6.1,30.0,10.0
 2,masked_orc,120,5,5.1,6.8,24.0,8.0

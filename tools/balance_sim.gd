@@ -15,7 +15,7 @@ func _initialize() -> void:
 		"heroes": BalanceSim.hero_rows(),
 		"duels": BalanceSim.duel_rows(),
 		"encounters": BalanceSim.encounter_rows(),
-		"nexus": BalanceSim.nexus_rows(),
+		"nexo": BalanceSim.nexo_rows(),
 	}
 	for name in tables:
 		var rows: Array[Dictionary] = tables[name]

@@ -20,7 +20,7 @@ const LAYOUT_SEEDS := 30
 const FLOOR_CONFIG_PATH := "res://resources/floors/default_floor_config.tres"
 const UPGRADE_CONFIG_PATH := "res://resources/upgrades/run_upgrade_config.tres"
 ## Sapper/raider hit-the-Nexo timer (Enemy.attack_speed default).
-const NEXUS_TICK_SEC := 1.0
+const NEXO_TICK_SEC := 1.0
 
 
 static func floor_config() -> FloorConfig:
@@ -83,7 +83,7 @@ static func enemy_stats(type: EnemyType, floor_index: int) -> Dictionary:
 		"enemy": type.id, "floor": floor_index, "role": "raider" if type.role == EnemyType.Role.RAIDER else "hunter",
 		"hp": maxi(1, roundi(Enemy.resolved_hp(type) * hp_mult)),
 		"contact": maxi(1, roundi(Enemy.resolved_contact_damage(type) * dmg_mult)),
-		"nexus": maxi(1, roundi(type.damage_vs_nexus * dmg_mult)) if type.damage_vs_nexus > 0 else 0,
+		"nexo": maxi(1, roundi(type.damage_vs_nexo * dmg_mult)) if type.damage_vs_nexo > 0 else 0,
 		"speed": Enemy.resolved_speed(type) * type.speed_mult,
 	}
 
@@ -198,7 +198,7 @@ static func _arrival_lengths(layout: MapLayout) -> Array[float]:
 ## Per raider type in the floor's pool: seconds to reach the Nexo from the nearest
 ## spawnable room (>= raider_min_arrival_sec, the spawn gate) and mean over rooms,
 ## then seconds to destroy it with 1 and 3 raiders.
-static func nexus_rows() -> Array[Dictionary]:
+static func nexo_rows() -> Array[Dictionary]:
 	var cfg := floor_config()
 	var rows: Array[Dictionary] = []
 	for f in range(1, FLOORS + 1):
@@ -220,19 +220,19 @@ static func nexus_rows() -> Array[Dictionary]:
 			for a in arrivals:
 				mean += a
 			rows.append({
-				"floor": f, "enemy": type.id, "nexus_hp": cfg.nexo_max_hp, "dmg_per_tick": e["nexus"],
+				"floor": f, "enemy": type.id, "nexo_hp": cfg.nexo_max_hp, "dmg_per_tick": e["nexo"],
 				"arrival_min_s": snappedf(arrivals[0], 0.1) if not arrivals.is_empty() else -1.0,
 				"arrival_mean_s": snappedf(mean / arrivals.size(), 0.1) if not arrivals.is_empty() else -1.0,
-				"destroy_1_s": destroy_sec(cfg.nexo_max_hp, int(e["nexus"]), 1),
-				"destroy_3_s": destroy_sec(cfg.nexo_max_hp, int(e["nexus"]), 3),
+				"destroy_1_s": destroy_sec(cfg.nexo_max_hp, int(e["nexo"]), 1),
+				"destroy_3_s": destroy_sec(cfg.nexo_max_hp, int(e["nexo"]), 3),
 			})
 	return rows
 
 
-static func destroy_sec(nexus_hp: int, dmg_per_tick: int, raiders: int) -> float:
+static func destroy_sec(nexo_hp: int, dmg_per_tick: int, raiders: int) -> float:
 	if dmg_per_tick <= 0:
 		return INF
-	return ceili(float(nexus_hp) / float(dmg_per_tick * raiders)) * NEXUS_TICK_SEC
+	return ceili(float(nexo_hp) / float(dmg_per_tick * raiders)) * NEXO_TICK_SEC
 
 
 static func to_csv(rows: Array[Dictionary]) -> String:

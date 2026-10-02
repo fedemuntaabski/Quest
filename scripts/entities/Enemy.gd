@@ -71,7 +71,7 @@ var type: EnemyType
 var role: EnemyType.Role = EnemyType.Role.HUNTER
 var aggro_range: float = 320.0
 var attack_range: float = 40.0
-var nexus_damage: int = 0
+var nexo_damage: int = 0
 var current_zone_id: String = ""
 var max_hp: int = 0
 var current_hp: int = 0
@@ -123,7 +123,7 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 		role = p_type.role
 		aggro_range = p_type.aggro_range
 		attack_range = p_type.attack_range
-		nexus_damage = maxi(1, roundi(p_type.damage_vs_nexus * damage_multiplier)) if p_type.damage_vs_nexus > 0 else 0
+		nexo_damage = maxi(1, roundi(p_type.damage_vs_nexo * damage_multiplier)) if p_type.damage_vs_nexo > 0 else 0
 		contact_damage = resolved_contact_damage(p_type)
 		module_damage = resolved_module_damage(p_type)
 	hitbox.configure(maxi(1, roundi(contact_damage * damage_multiplier)), CONTACT_HIT_INTERVAL)
@@ -240,10 +240,10 @@ func on_zone_entered(zone_id: String) -> void:
 
 func _perform_attack() -> void:
 	if target_nexo != null:
-		if not (_is_raiding() and _nexus_in_range()):
+		if not (_is_raiding() and _nexo_in_range()):
 			_resume_moving()
 			return
-		target_nexo.take_damage(nexus_damage)
+		target_nexo.take_damage(nexo_damage)
 		return
 	if not _target_is_valid():
 		_resume_moving()
@@ -281,14 +281,14 @@ func _on_ai_tick() -> void:
 	if current_state == State.ATTACKING:
 		return
 	_note_blocking_hero()
-	if _try_attack_nexus():
+	if _try_attack_nexo():
 		return
 
 	var goal := _goal_zone(room_manager)
 	_active_goal = goal
 	await _pursue_zone(room_manager, goal, _goal_point(goal))
 	if is_instance_valid(self):
-		_try_attack_nexus()
+		_try_attack_nexo()
 
 
 ## True when the zone this enemy wants changed since its current trip began;
@@ -338,13 +338,13 @@ func _note_blocking_hero() -> void:
 			return
 
 
-func _nexus_in_range() -> bool:
+func _nexo_in_range() -> bool:
 	var nexo := ManagerLocator.get_nexo()
 	return nexo != null and nexo.is_alive() and global_position.distance_to(nexo.get_target_position()) <= attack_range
 
 
-func _try_attack_nexus() -> bool:
-	if not (_is_raiding() and nexus_damage > 0 and _nexus_in_range()):
+func _try_attack_nexo() -> bool:
+	if not (_is_raiding() and nexo_damage > 0 and _nexo_in_range()):
 		return false
 	target_nexo = ManagerLocator.get_nexo()
 	current_state = State.ATTACKING

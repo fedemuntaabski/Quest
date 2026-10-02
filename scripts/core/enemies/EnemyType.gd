@@ -39,4 +39,4 @@ enum Role { HUNTER, RAIDER }
 ## 0 = the variant's contact_damage (current stats untouched); >0 overrides it.
 @export var damage_vs_heroes: int = 0
 ## Damage per AttackTimer tick to the Nexo (RAIDER only).
-@export var damage_vs_nexus: int = 0
+@export var damage_vs_nexo: int = 0

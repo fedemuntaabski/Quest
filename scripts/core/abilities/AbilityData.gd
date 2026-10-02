@@ -7,7 +7,7 @@ class_name AbilityData
 enum Effect {
 	## Passives
 	DAMAGE_REDUCTION_PCT,   ## value = fraction of incoming damage ignored (0.2 = -20 %)
-	NEXUS_PROXIMITY_REDUCTION,  ## value = max reduction at the Nexo, fading to 0 at `radius` px
+	NEXO_PROXIMITY_REDUCTION,  ## value = max reduction at the Nexo, fading to 0 at `radius` px
 	SCIENCE_ON_DISCOVERY,   ## value = Ciencia gained when a new room is discovered
 	DUST_ON_DISCOVERY,      ## value = Polvo gained when a new room is discovered
 	## Actives (cooldown + duration)

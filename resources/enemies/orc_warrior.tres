@@ -13,4 +13,4 @@ damage_mult = 1.12
 speed_mult = 0.95
 role = 1
 attack_range = 56.0
-damage_vs_nexus = 4
+damage_vs_nexo = 4

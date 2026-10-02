@@ -137,7 +137,7 @@ func _test_raider_route_and_damage() -> void:
 	var spawn: String = rooms[rooms.size() - 1]
 	var expected := rm.find_zone_path(spawn, rm.get_start_zone_id())
 	var raider := _make_enemy(main2d, GOBLIN, spawn, 0, true)
-	_expect(raider.role == EnemyType.Role.RAIDER and raider.nexus_damage > 0, "raider: goblin should be a RAIDER with damage_vs_nexus")
+	_expect(raider.role == EnemyType.Role.RAIDER and raider.nexo_damage > 0, "raider: goblin should be a RAIDER with damage_vs_nexo")
 	_expect(raider._goal_zone(rm) == rm.get_start_zone_id(), "raider: goal must be the Nexo's zone")
 
 	var visited: Array[String] = [spawn]

@@ -6,7 +6,7 @@ extends SceneTree
 ##   resources/floors/enemy_pool_f1..f5.tres    EnemyPool
 ## and links hero sprite_frames + FloorConfig.enemy_pools. Run once, then tune
 ## the .tres by hand (re-running overwrites them: hp/damage mult + pools here were
-## synced with the balance-4 values, but the role/base-stat/Nexus fields are NOT baked):
+## synced with the balance-4 values, but the role/base-stat/Nexo fields are NOT baked):
 ##   godot --headless --path . --script res://tools/build_characters.gd
 
 const HEROES := {  # character_id -> 0x72 hero prefix (assets/art/characters)

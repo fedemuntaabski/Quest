@@ -58,7 +58,7 @@ func passive_reduction() -> float:
 	match passive.effect:
 		AbilityData.Effect.DAMAGE_REDUCTION_PCT:
 			return passive.value
-		AbilityData.Effect.NEXUS_PROXIMITY_REDUCTION:
+		AbilityData.Effect.NEXO_PROXIMITY_REDUCTION:
 			var nexo := ManagerLocator.get_nexo()
 			if nexo == null or passive.radius <= 0.0:
 				return 0.0
