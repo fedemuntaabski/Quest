@@ -5,6 +5,7 @@
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
 [ext_resource type="PackedScene" uid="uid://baeb8xmga0bum" path="res://scenes/menus/OptionsMenu.tscn" id="4_options_menu"]
 [ext_resource type="PackedScene" path="res://scenes/menus/ExitConfirmDialog.tscn" id="6_exit_confirm_dialog"]
+[ext_resource type="PackedScene" path="res://scenes/menus/BestiaryPanel.tscn" id="7_bestiary_panel"]
 
 [sub_resource type="Shader" id="Shader_pause_blur"]
 code = "shader_type canvas_item;
@@ -146,7 +147,7 @@ grow_vertical = 2
 
 [node name="PausePanel" type="Panel" parent="CenterContainer" unique_id=1211186564]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(560, 330)
+custom_minimum_size = Vector2(560, 420)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -157,9 +158,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -210.0
-offset_top = -126.0
+offset_top = -171.0
 offset_right = 210.0
-offset_bottom = 126.0
+offset_bottom = 171.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 20
@@ -191,6 +192,22 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "OPCIONES"
 
+[node name="BestiaryButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
+theme_override_colors/font_hover_color = Color(1, 0.9, 0.58, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 34
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
+text = "BESTIARIO"
+
 [node name="ExitButton" type="Button" parent="CenterContainer/PausePanel/PauseVBox" unique_id=462390056]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 70)
@@ -211,6 +228,9 @@ text = "SALIR"
 unique_name_in_owner = true
 click_player_path = NodePath("../UIAudio/ClickSound")
 hover_player_path = NodePath("../UIAudio/HoverSound")
+
+[node name="BestiaryPanel" parent="." instance=ExtResource("7_bestiary_panel")]
+unique_name_in_owner = true
 
 [node name="UIAudio" type="Node" parent="." unique_id=20375023]
 

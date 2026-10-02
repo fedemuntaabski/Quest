@@ -121,6 +121,9 @@ func _ready() -> void:
 	_add_pause_label()
 	_add_nexo_alert()
 	_add_hint_panel()
+	var bestiary := ManagerLocator.get_bestiary()
+	if bestiary and not bestiary.entry_unlocked.is_connected(_on_bestiary_unlocked):
+		bestiary.entry_unlocked.connect(_on_bestiary_unlocked)
 
 	# Death/victory: nothing modal may stay open over the overlays.
 	if ps and not ps.player_died.is_connected(close_popups):
@@ -237,6 +240,21 @@ func show_hint(title: String, text: String, color: Color) -> void:
 	_hint_tween.tween_interval(HINT_HOLD)
 	_hint_tween.tween_property(_hint_panel, "modulate:a", 0.0, HINT_FADE)
 	_hint_tween.tween_callback(_hint_panel.hide)
+
+
+const BESTIARY_TIER_TEXT := {
+	BestiaryEntry.Tier.SEEN: "Descubierto",
+	BestiaryEntry.Tier.KILLED: "Estadísticas desbloqueadas",
+	BestiaryEntry.Tier.MASTERED: "Registro completo",
+}
+
+
+## "Nuevo registro" toast when a bestiary entry reaches a new tier.
+func _on_bestiary_unlocked(enemy_id: String, tier: BestiaryEntry.Tier) -> void:
+	var bestiary := ManagerLocator.get_bestiary()
+	var type := bestiary.get_type(enemy_id) if bestiary else null
+	if type:
+		show_hint("Nuevo registro", "%s: %s" % [type.display_name, BESTIARY_TIER_TEXT.get(tier, "")], QuestPalette.GOLD)
 
 
 func set_pause_label(v: bool) -> void:

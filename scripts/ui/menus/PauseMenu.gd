@@ -10,12 +10,14 @@ signal exit_requested
 @onready var blur_rect: ColorRect = %BlurRect
 @onready var dim_rect: ColorRect = %DimRect
 @onready var options_menu: OptionsMenu = %OptionsMenu
+@onready var bestiary_panel: BestiaryPanel = %BestiaryPanel
 @onready var exit_confirm_dialog: ExitConfirmDialog = %ExitConfirmDialog
 
 @onready var options_button: Button = %OptionsButton
+@onready var bestiary_button: Button = %BestiaryButton
 @onready var exit_button: Button = %ExitButton
 
-@onready var panels: Array[Control] = [pause_panel, options_menu]
+@onready var panels: Array[Control] = [pause_panel, options_menu, bestiary_panel]
 
 # ---------------- INIT ----------------
 
@@ -34,6 +36,8 @@ func _on_base_ready() -> void:
 
 	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
 		options_menu.closed.connect(_on_options_menu_closed)
+	if bestiary_panel and not bestiary_panel.closed.is_connected(_on_options_menu_closed):
+		bestiary_panel.closed.connect(_on_options_menu_closed)
 	if exit_confirm_dialog and not exit_confirm_dialog.confirmed.is_connected(_on_exit_confirmed):
 		exit_confirm_dialog.confirmed.connect(_on_exit_confirmed)
 	if exit_confirm_dialog and not exit_confirm_dialog.canceled.is_connected(_on_exit_canceled):
@@ -60,6 +64,8 @@ func _on_before_open() -> void:
 func _on_before_close() -> void:
 	if options_menu:
 		options_menu.close()
+	if bestiary_panel:
+		bestiary_panel.close()
 	if exit_confirm_dialog and exit_confirm_dialog.is_open:
 		exit_confirm_dialog.close()
 
@@ -73,9 +79,15 @@ func _set_panel(i: int) -> void:
 		if options_menu:
 			options_menu.open()
 		return
+	if i == 2:
+		if bestiary_panel:
+			bestiary_panel.open()
+		return
 
 	if options_menu:
 		options_menu.close()
+	if bestiary_panel and bestiary_panel.is_open:
+		bestiary_panel.is_open = false
 	panels[i].visible = true
 
 
@@ -87,6 +99,7 @@ func _on_options_menu_closed() -> void:
 
 func _connect() -> void:
 	connect_button(options_button, func(): _set_panel(1))
+	connect_button(bestiary_button, func(): _set_panel(2))
 	connect_button(exit_button, _request_exit)
 
 
@@ -120,6 +133,8 @@ func _apply_theme() -> void:
 		pause_panel.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 20))
 	if options_button:
 		_style_button(options_button)
+	if bestiary_button:
+		_style_button(bestiary_button)
 	if exit_button:
 		_style_button(exit_button, true)
 
