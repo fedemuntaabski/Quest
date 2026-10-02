@@ -31,6 +31,7 @@ var target_ratio: float = 1.0
 var is_selected: bool = false
 
 var _group_label: Label
+var _perk_dot: Label
 var _group_nums: Array = []
 var _bar: ProgressBar
 var _ability_bar: ProgressBar
@@ -77,6 +78,18 @@ func _ready() -> void:
 	_group_label.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
 	name_row.add_child(_group_label)
 	set_groups(_group_nums)
+	# Gold dot: a class perk is waiting to be chosen (open the sheet).
+	_perk_dot = Label.new()
+	_perk_dot.text = " ●"
+	_perk_dot.tooltip_text = "Hay una mejora de clase para elegir (clic derecho: ver ficha)"
+	_perk_dot.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
+	_perk_dot.mouse_filter = Control.MOUSE_FILTER_PASS
+	_perk_dot.visible = false
+	name_row.add_child(_perk_dot)
+	var player_stats := ManagerLocator.get_player_stats()
+	if player_stats:
+		player_stats.run_upgrades_changed.connect(func(_k: String, _l: int, _id: String) -> void: _update_perk_dot())
+		player_stats.perk_chosen.connect(func(_id: String, _perk: StringName) -> void: _update_perk_dot())
 
 	_bar = ProgressBar.new()
 	_bar.custom_minimum_size = BAR_SIZE
@@ -109,8 +122,18 @@ func _ready() -> void:
 
 	gui_input.connect(_on_gui_input)
 	bind_stats(stats)
+	_update_perk_dot()
 	if _abilities:
 		bind_abilities(_abilities)
+
+
+func has_pending_perk() -> bool:
+	return _perk_dot != null and _perk_dot.visible
+
+
+func _update_perk_dot() -> void:
+	var player_stats := ManagerLocator.get_player_stats()
+	_perk_dot.visible = player_stats != null and stats != null and stats.hero_id != "" and player_stats.has_pending_perk(stats.hero_id)
 
 
 ## Shows the hero's active-ability cooldown (Q) under the HP bar.
@@ -122,7 +145,7 @@ func bind_abilities(p_abilities: HeroAbilities) -> void:
 	_ability_bar.tooltip_text = "%s (Q)" % p_abilities.ability_name
 	if not p_abilities.cooldown_changed.is_connected(_on_cooldown_changed):
 		p_abilities.cooldown_changed.connect(_on_cooldown_changed)
-	_on_cooldown_changed(p_abilities.cooldown_left, p_abilities.active.cooldown)
+	_on_cooldown_changed(p_abilities.cooldown_left, p_abilities.active_cooldown())
 
 
 func _on_cooldown_changed(left: float, total: float) -> void:

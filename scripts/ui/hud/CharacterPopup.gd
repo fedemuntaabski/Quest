@@ -23,6 +23,8 @@ var _info: Label
 var _level_title: Label
 var _upgrade_rows: GridContainer
 var _level_button: Button
+var _perk_title: Label
+var _perk_rows: VBoxContainer
 var _found_title: Label
 var _found_rows: VBoxContainer
 
@@ -37,6 +39,7 @@ func _ready() -> void:
 	if ps:
 		ps.stats_changed.connect(func(_s: CharacterStats) -> void: _refresh())
 		ps.run_upgrades_changed.connect(func(_k: String, _l: int, _id: String) -> void: _refresh())
+		ps.perk_chosen.connect(func(_id: String, _perk: StringName) -> void: _refresh())
 		ps.found_items_changed.connect(_refresh)
 	var rm := ManagerLocator.get_resource_manager()
 	if rm:
@@ -143,6 +146,14 @@ func _build() -> void:
 	content.add_child(_level_button)
 
 	content.add_child(HSeparator.new())
+	_perk_title = Label.new()
+	_perk_title.add_theme_color_override("font_color", QuestPalette.GOLD)
+	content.add_child(_perk_title)
+	_perk_rows = VBoxContainer.new()
+	_perk_rows.add_theme_constant_override("separation", 6)
+	content.add_child(_perk_rows)
+
+	content.add_child(HSeparator.new())
 	_found_title = Label.new()
 	_found_title.add_theme_color_override("font_color", QuestPalette.GOLD)
 	content.add_child(_found_title)
@@ -195,6 +206,7 @@ func _refresh() -> void:
 
 	if ps:
 		_rebuild_level_up(ps)
+		_rebuild_perks(ps)
 		_rebuild_found_items(ps)
 
 
@@ -218,6 +230,80 @@ func _rebuild_level_up(ps: PlayerStats) -> void:
 	_level_button.text = "Nivel máximo" if maxed else "Subir de nivel (%d %s)" % [p["cost"], resource_label]
 	_level_button.tooltip_text = "" if maxed or affordable else "%s insuficiente" % resource_label
 	_level_button.add_theme_color_override("font_color", StatIcon.BASE_COLORS.get(p["cost_resource"], QuestPalette.PARCHMENT) if affordable else QuestPalette.UI_TEXT_BLOCKED)
+
+
+## "Mejoras de clase": perks already picked (tooltip = description) and, when a
+## level just unlocked one, the two cards to choose from. PlayerStats decides what is on offer.
+func _rebuild_perks(ps: PlayerStats) -> void:
+	for child in _perk_rows.get_children():
+		_perk_rows.remove_child(child)
+		child.queue_free()
+	var picked := ps.get_perks_of(stats.hero_id)
+	var pending := ps.get_pending_perk_choices(stats.hero_id)
+	var has_perks: bool = character_data != null and not character_data.perks.is_empty()
+	if not has_perks:
+		_perk_title.text = ""
+		return
+	_perk_title.text = "Mejoras de clase (%d / %d)" % [picked.size(), character_data.perks.size() / 2]
+	for perk in picked:
+		var label := Label.new()
+		label.text = "✔ %s — %s" % [perk.display_name, perk.describe_mods()]
+		label.tooltip_text = perk.description
+		label.mouse_filter = Control.MOUSE_FILTER_PASS
+		label.add_theme_color_override("font_color", QuestPalette.PARCHMENT_LIGHT)
+		_perk_rows.add_child(label)
+	if not pending.is_empty():
+		var offer := Label.new()
+		offer.text = "¡Elige una mejora!"
+		offer.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
+		_perk_rows.add_child(offer)
+		for perk in pending:
+			_perk_rows.add_child(_make_perk_card(perk))
+	elif picked.is_empty():
+		var hint := Label.new()
+		hint.text = "Se desbloquea al llegar a nivel %d." % _next_perk_level()
+		hint.add_theme_color_override("font_color", QuestPalette.UI_TEXT_MUTED)
+		hint.add_theme_font_size_override("font_size", 13)
+		_perk_rows.add_child(hint)
+
+
+func _next_perk_level() -> int:
+	var lowest := 99
+	for perk in character_data.perks:
+		lowest = mini(lowest, perk.unlock_level)
+	return lowest
+
+
+func _make_perk_card(perk: HeroPerk) -> Control:
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.GOLD_DARK, 2, 6, 6))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	card.add_child(row)
+	var text := VBoxContainer.new()
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(text)
+	var name_label := Label.new()
+	name_label.text = "%s  (%s)" % [perk.display_name, perk.describe_mods()]
+	name_label.add_theme_color_override("font_color", QuestPalette.GOLD)
+	text.add_child(name_label)
+	var description := Label.new()
+	description.text = perk.description
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
+	description.add_theme_font_size_override("font_size", 13)
+	text.add_child(description)
+	var button := Button.new()
+	button.text = "Elegir"
+	button.pressed.connect(_on_perk_pressed.bind(perk.id))
+	row.add_child(button)
+	return card
+
+
+func _on_perk_pressed(perk_id: StringName) -> void:
+	var ps := ManagerLocator.get_player_stats()
+	if ps and stats:
+		ps.choose_perk(stats.hero_id, perk_id)
 
 
 ## Objetos hallados en cofres: solo lectura (aún no hay sistema de equipo).
