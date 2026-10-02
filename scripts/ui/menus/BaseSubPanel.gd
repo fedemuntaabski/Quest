@@ -1,8 +1,6 @@
 extends Control
 class_name BaseSubPanel
 
-signal menu_opened
-signal menu_closed
 
 @export var pause_game_on_open: bool = false
 @export var animate_transitions: bool = false
@@ -84,7 +82,6 @@ func open() -> void:
 			gsm.request_pause()
 	if animate_transitions:
 		_play_fade_in()
-	menu_opened.emit()
 
 
 func close() -> void:
@@ -99,7 +96,6 @@ func close() -> void:
 		if gsm:
 			gsm.request_resume()
 	is_open = false
-	menu_closed.emit()
 
 
 func toggle() -> void:

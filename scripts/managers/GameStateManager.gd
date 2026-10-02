@@ -16,9 +16,6 @@ enum State {
 }
 
 signal state_changed(new_state: State, old_state: State)
-signal pause_requested
-signal resume_requested
-signal death_entered
 signal victory_entered
 
 var current_state: State = State.ACTIVE
@@ -59,19 +56,16 @@ func pop_state(expected_state: int = -1) -> void:
 func request_pause() -> void:
 	if current_state == State.ACTIVE:
 		push_state(State.PAUSED)
-		pause_requested.emit()
 
 func request_resume() -> void:
 	if current_state == State.PAUSED:
 		pop_state(State.PAUSED)
-		resume_requested.emit()
 
 func request_death() -> void:
 	if current_state != State.DEAD:
 		_state_stack.clear()
 		_state_stack.append(State.DEAD)
 		_apply_state_change(State.DEAD, current_state)
-		death_entered.emit()
 
 func request_victory() -> void:
 	if current_state != State.VICTORY:

@@ -10,7 +10,6 @@ class_name DoorTurnSystem
 ## "group_id". RoomManager (geometry/graph) and RoomZone (visuals) only read it.
 
 signal turn_advanced(turn_number: int)
-signal door_opened(target_room_id: String)
 ## Discovery event: emitted exactly once per group, when it becomes visited.
 ## Presentation (tiles/zones) reacts via Main2d -> RoomManager.on_group_revealed.
 signal room_revealed(room_id: String, cells: Array[Vector2i])
@@ -38,7 +37,6 @@ func advance_turn(target_room_id: String) -> void:
 		economy.process_turn_production()
 		QuestLogger.info(QuestLogger.Category.DOOR, "Turn %d: production tick executed." % current_turn)
 
-	door_opened.emit(target_room_id)
 
 
 func open_room(room_id: String) -> bool:
