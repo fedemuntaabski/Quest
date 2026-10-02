@@ -12,4 +12,7 @@ behavior = 2
 sprite_frames = ExtResource("2_818re")
 hp_mult = 1.48
 damage_mult = 1.4
+description = "Levanta lo que otros dejaron enterrado. Frágil, pero implacable."
+lore = "Busca un nombre entre los muertos. Aún no lo encuentra."
+bestiary_order = 6
 target_profile = ExtResource("tp_profile")

@@ -13,4 +13,7 @@ hp_mult = 1.6
 damage_mult = 1.32
 speed_mult = 1.1
 visual_scale = 1.2
+description = "Un demonio de las profundidades. Va tras el portador sin dudar."
+lore = "Cuando el Nexo se mueve, él ya está en camino."
+bestiary_order = 19
 target_profile = ExtResource("tp_profile")

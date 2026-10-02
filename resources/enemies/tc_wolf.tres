@@ -12,4 +12,7 @@ sprite_frames = ExtResource("2_qrk2w")
 hp_mult = 1.12
 damage_mult = 1.08
 speed_mult = 1.4
+description = "Un lobo de la cripta. Nadie corre más que él, y lo sabe."
+lore = "Sigue el rastro del Nexo por el olor del miedo."
+bestiary_order = 17
 target_profile = ExtResource("tp_profile")

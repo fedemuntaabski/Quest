@@ -16,6 +16,8 @@ const MAX_CHANCE := 0.85
 const TURNS_PER_WAVE_STEP := 5.0
 
 signal invasion_triggered(spawn_rooms: Array[RoomZone], enemy_count: int)
+## Every spawned Enemy (the bestiary counts the first one as "seen").
+signal enemy_spawned(enemy: Enemy)
 
 var room_manager: RoomManager
 var door_turn_system: DoorTurnSystem
@@ -32,6 +34,7 @@ func _ready() -> void:
 	_enemies_root.name = "Enemies"
 	add_child(_enemies_root)
 	invasion_triggered.connect(_on_invasion_triggered)
+	enemy_spawned.connect(_on_enemy_spawned)
 
 
 func setup(p_room_manager: RoomManager, p_door_turn_system: DoorTurnSystem = null, p_floor_manager: FloorManager = null) -> void:
@@ -116,6 +119,7 @@ func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
 	enemy.configure(Enemy.Variant.SWARM, zone_id, hp_mult, dmg_mult, type)
 	enemy.died.connect(_on_enemy_died)
 	_enemies.append(enemy)
+	enemy_spawned.emit(enemy)
 	return enemy
 
 
@@ -160,5 +164,19 @@ func spawn_enemies_in_room(group_id: String, count: int) -> void:
 	QuestLogger.info(QuestLogger.Category.ENEMY, "Spawned %d enemies in room '%s'." % [count, room_zone_id])
 
 
+func _floor_index() -> int:
+	return floor_manager.floor_index if floor_manager else 1
+
+
+func _on_enemy_spawned(enemy: Enemy) -> void:
+	var bestiary := ManagerLocator.get_bestiary()
+	if bestiary and enemy.type:
+		bestiary.register_seen(enemy.type, _floor_index())
+
+
+## `died` is only emitted for deaths by damage (hero or turret): those are kills.
 func _on_enemy_died(enemy: Enemy) -> void:
 	_enemies.erase(enemy)
+	var bestiary := ManagerLocator.get_bestiary()
+	if bestiary and enemy.killed_by_damage and enemy.type:
+		bestiary.register_kill(enemy.type, _floor_index())

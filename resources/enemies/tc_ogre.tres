@@ -14,4 +14,7 @@ hp_mult = 1.72
 damage_mult = 1.24
 speed_mult = 0.8
 visual_scale = 1.2
+description = "Un ogro de las cuevas antiguas. Destroza lo que construyes."
+lore = "Más viejo que la cripta. Más viejo que el Nexo."
+bestiary_order = 12
 target_profile = ExtResource("tp_profile")

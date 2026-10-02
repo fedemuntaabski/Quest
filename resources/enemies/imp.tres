@@ -12,4 +12,7 @@ sprite_frames = ExtResource("2_lyhjy")
 hp_mult = 0.88
 damage_mult = 1.04
 speed_mult = 1.3
+description = "Un diablillo veloz. Persigue al héroe más débil o a quien cargue el Nexo."
+lore = "Ríe mientras corre. Siempre sabe quién flaquea."
+bestiary_order = 15
 target_profile = ExtResource("tp_profile")

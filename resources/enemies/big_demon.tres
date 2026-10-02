@@ -14,4 +14,7 @@ hp_mult = 2.2
 damage_mult = 1.4
 speed_mult = 0.9
 module_damage = 3
+description = "Un demonio corpulento que odia las defensas. Rompe torretas y trampas antes que cráneos."
+lore = "Lo invocaron para derribar murallas. Aprendió el oficio."
+bestiary_order = 14
 target_profile = ExtResource("tp_profile")

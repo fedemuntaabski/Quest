@@ -10,4 +10,7 @@ id = "tc_eyeball"
 display_name = "Ojo flotante"
 behavior = 2
 sprite_frames = ExtResource("2_8tmro")
+description = "Un ojo flotante que no parpadea. Te sigue con la mirada y con el cuerpo."
+lore = "Los ojos de la cripta vigilan. Cuando te ven, avisan."
+bestiary_order = 7
 target_profile = ExtResource("tp_profile")

@@ -11,4 +11,7 @@ display_name = "Orco chamán"
 behavior = 2
 sprite_frames = ExtResource("2_lhfsj")
 damage_mult = 1.2
+description = "Murmura maldiciones desde lejos. Persigue a los héroes sin prisa."
+lore = "Su bastón tiene un cráneo de cuervo. Dicen que le responde."
+bestiary_order = 4
 target_profile = ExtResource("tp_profile")

@@ -12,4 +12,7 @@ sprite_frames = ExtResource("2_bxi3o")
 role = 1
 attack_range = 56.0
 damage_vs_nexo = 4
+description = "Rápido y codicioso: ignora a quien se le cruza y va directo a lo que brilla."
+lore = "Los goblins llegaron con la primera expedición y nunca se fueron. Huelen el Nexo desde lejos."
+bestiary_order = 0
 target_profile = ExtResource("tp_profile")

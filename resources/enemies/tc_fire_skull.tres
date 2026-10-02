@@ -12,4 +12,7 @@ behavior = 1
 sprite_frames = ExtResource("2_fk60e")
 damage_mult = 1.16
 module_damage = 5
+description = "Una calavera en llamas que se lanza contra las ballestas."
+lore = "Las llamas no son suyas: las lleva prestadas de quien lo mató."
+bestiary_order = 13
 target_profile = ExtResource("tp_profile")

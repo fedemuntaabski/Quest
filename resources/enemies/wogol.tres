@@ -12,4 +12,7 @@ behavior = 2
 sprite_frames = ExtResource("2_fxt7o")
 hp_mult = 1.3
 damage_mult = 1.2
+description = "Una criatura de las profundidades. Caza sin descanso a quien ve."
+lore = "El nombre es un gruñido. Nadie ha oído otro."
+bestiary_order = 5
 target_profile = ExtResource("tp_profile")

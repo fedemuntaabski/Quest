@@ -12,4 +12,7 @@ sprite_frames = ExtResource("2_qb47u")
 hp_mult = 1.48
 damage_mult = 1.16
 speed_mult = 1.1
+description = "Un demonio menor, ágil y resistente. Acecha a los que van solos."
+lore = "Nadie lo ha visto parar. Nadie lo ha visto fallar."
+bestiary_order = 18
 target_profile = ExtResource("tp_profile")

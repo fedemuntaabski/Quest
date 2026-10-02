@@ -13,4 +13,7 @@ sprite_frames = ExtResource("2_l4sh8")
 hp_mult = 2.5
 damage_mult = 1.32
 speed_mult = 0.75
+description = "Lento, enorme y casi imposible de detener. Va a por los generadores."
+lore = "Cada golpe suyo vale por tres de un zombi. Lo sabe."
+bestiary_order = 11
 target_profile = ExtResource("tp_profile")

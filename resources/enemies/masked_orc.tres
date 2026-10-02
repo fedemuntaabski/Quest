@@ -15,4 +15,7 @@ speed_mult = 0.9
 role = 1
 attack_range = 56.0
 damage_vs_nexo = 4
+description = "Un orco con máscara de hueso. Más duro que un goblin, igual de obsesionado."
+lore = "La máscara es un voto: quien la lleva no vuelve sin su presa."
+bestiary_order = 1
 target_profile = ExtResource("tp_profile")

@@ -10,4 +10,7 @@ id = "skelet"
 display_name = "Esqueleto"
 sprite_frames = ExtResource("2_1jrar")
 speed_mult = 0.9
+description = "Un guerrero caído que aún monta guardia. Sus huesos suenan antes de que se le vea."
+lore = "Nadie recuerda a quién servía. Las armas de la cripta le obedecen todavía."
+bestiary_order = 3
 target_profile = ExtResource("tp_profile")

@@ -12,4 +12,7 @@ behavior = 1
 sprite_frames = ExtResource("2_b5hyo")
 hp_mult = 0.8
 speed_mult = 0.9
+description = "Pequeño, lento y terco. Prefiere destruir tus máquinas antes que a ti."
+lore = "Sale de las grietas cuando las luces se apagan."
+bestiary_order = 9
 target_profile = ExtResource("tp_profile")

@@ -14,4 +14,7 @@ hp_mult = 1.9
 damage_mult = 1.4
 speed_mult = 1.1
 visual_scale = 1.3
+description = "Un dragón menor, hambriento y orgulloso. Quema todo lo que se mueva."
+lore = "Cría de algo mucho más grande que duerme más abajo."
+bestiary_order = 8
 target_profile = ExtResource("tp_profile")

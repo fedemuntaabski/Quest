@@ -13,4 +13,7 @@ sprite_frames = ExtResource("2_rcga5")
 hp_mult = 2.2
 damage_mult = 1.2
 speed_mult = 0.7
+description = "Un coloso hinchado que aplasta generadores y torretas a puñetazos."
+lore = "Se alimenta del zumbido de las máquinas, no de la carne."
+bestiary_order = 10
 target_profile = ExtResource("tp_profile")

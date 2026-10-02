@@ -15,4 +15,7 @@ speed_mult = 0.95
 role = 1
 attack_range = 56.0
 damage_vs_nexo = 4
+description = "Veterano de mil asedios. Golpea fuerte y no se distrae."
+lore = "Los orcos guerreros abren camino a hachazos para los que vienen detrás."
+bestiary_order = 2
 target_profile = ExtResource("tp_profile")

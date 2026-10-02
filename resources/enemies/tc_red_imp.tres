@@ -12,4 +12,7 @@ sprite_frames = ExtResource("2_h6dru")
 hp_mult = 1.12
 damage_mult = 1.2
 speed_mult = 1.3
+description = "Hermano rojo del diablillo: más rápido, más cruel."
+lore = "El color es de la sangre de sus víctimas, o eso presume."
+bestiary_order = 16
 target_profile = ExtResource("tp_profile")

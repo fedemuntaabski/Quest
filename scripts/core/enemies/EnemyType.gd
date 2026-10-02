@@ -17,6 +17,13 @@ class_name EnemyType
 ## On top of ArtConfig.ART_SCALE (e.g. 1.5 for a boss-sized Tiny Creature).
 @export var visual_scale: float = 1.0
 
+@export_group("Bestiary")
+## Short flavor text (<= 2 lines), shown once the enemy was killed.
+@export_multiline var description: String = ""
+## Shown at mastery (3 kills).
+@export_multiline var lore: String = ""
+@export var bestiary_order: int = 0
+
 @export_group("Base stats")
 ## -1 = the behavior's default in Enemy.VARIANT_CONFIG (resolved by Enemy.resolved_*()).
 ## Floor / room-type / *_mult multipliers still stack on top.
