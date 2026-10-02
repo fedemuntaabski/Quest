@@ -217,7 +217,11 @@ func _get_slot_summary(slot_id: int) -> String:
 		QuestLogger.error(QuestLogger.Category.SAVE, "Failed to read slot %d summary (Error code: %d)." % [slot_id, err])
 		return "No se pudo leer la ranura %d. El archivo de guardado podria estar danado." % slot_id
 
-	var contracts = cfg.get_value("save_data", "run_cycle", cfg.get_value("save_data", "contracts_completed", 0))
+	var discovered := 0
+	for enemy_id in cfg.get_section_keys("bestiary") if cfg.has_section("bestiary") else PackedStringArray():
+		var entry: Variant = cfg.get_value("bestiary", enemy_id)
+		if entry is Dictionary and int(entry.get("seen", 0)) > 0:
+			discovered += 1
 	var s_hp = cfg.get_value("save_data", "base_hp", StatBalance.PLAYER_BASE_HP)
 	var saved_at_unix = cfg.get_value("save_data", "saved_at_unix", 0)
 	var playtime_seconds = cfg.get_value("save_data", "playtime_seconds", 0.0)
@@ -236,14 +240,14 @@ func _get_slot_summary(slot_id: int) -> String:
 		"DATOS DE LA RANURA %d:\n\n" +
 		"• Guardado: %s\n" +
 		"• Tiempo jugado: %s\n" +
-		"• Ciclo de contratos: %d\n" +
+		"• Bestiario: %d enemigos descubiertos\n" +
 		"• Vida base: %d/%d\n\n" +
 		"Haz clic para continuar la aventura."
 	) % [
 		slot_id,
 		date_str,
 		playtime_str,
-		contracts,
+		discovered,
 		s_hp,
 		StatBalance.PLAYER_MAX_HP
 	]
