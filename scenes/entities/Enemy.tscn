@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/core/combat/HurtboxComponent.gd" id="2_hurtbox"]
 [ext_resource type="Script" path="res://scripts/core/combat/HitboxComponent.gd" id="3_hitbox"]
 [ext_resource type="Script" path="res://scripts/entities/CharacterVisual.gd" id="4_visual"]
+[ext_resource type="Script" path="res://scripts/entities/TargetSelector.gd" id="5_selector"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
 radius = 14.0
@@ -24,6 +25,9 @@ shape = SubResource("CircleShape2D_enemy")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
 script = ExtResource("4_visual")
+
+[node name="TargetSelector" type="Node" parent="."]
+script = ExtResource("5_selector")
 
 [node name="AiTimer" type="Timer" parent="."]
 

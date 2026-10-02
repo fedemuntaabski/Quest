@@ -24,10 +24,7 @@ const CONTACT_HIT_INTERVAL := 1.0
 const CONTACT_REACH := 10.0
 ## Slot ring (px) around the point an enemy closes in on.
 const RING_RADIUS := 14.0
-## A raider turns on a hero closer than this (px) or one that hit it in the last REACT_SEC.
-const BLOCK_RANGE := 48.0
 const RAIDER_TINT := Color(1.0, 0.72, 0.66)
-const REACT_SEC := 3.0
 
 signal died(enemy: Enemy)
 
@@ -59,6 +56,7 @@ static func resolved_module_damage(p_type: EnemyType) -> int:
 @onready var attack_timer: Timer = $AttackTimer
 @onready var hurtbox: HurtboxComponent = $Hurtbox
 @onready var hitbox: HitboxComponent = $Hitbox
+@onready var selector: TargetSelector = $TargetSelector
 
 @export var attack_speed: float = 1.0
 var attack_damage: int = DEFAULT_ATTACK_DAMAGE
@@ -79,7 +77,9 @@ var _slowed_until_msec: int = 0
 var _moving: bool = false
 ## Zone the current trip was planned for (see goal_changed()).
 var _active_goal: String = ""
-var _provoked_until_msec: int = 0
+## True only when HP reached 0 through take_damage (hero or turret). Freeing the
+## node (floor change) never sets it nor emits `died`: the bestiary counts kills by this.
+var killed_by_damage: bool = false
 var target_nexo: Nexo = null
 ## Ring slot (set by EnemyManager, consecutive) so enemies converging on a point spread out.
 var slot: int = 0
@@ -127,6 +127,7 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 		contact_damage = resolved_contact_damage(p_type)
 		module_damage = resolved_module_damage(p_type)
 	hitbox.configure(maxi(1, roundi(contact_damage * damage_multiplier)), CONTACT_HIT_INTERVAL)
+	selector.setup(self, p_type.get_target_profile() if p_type else TargetProfile.derive(role, variant))
 
 	attack_damage = maxi(1, roundi(module_damage * damage_multiplier))
 	attack_timer.wait_time = attack_speed
@@ -143,7 +144,7 @@ func _on_contact_landed(target: HurtboxComponent, _amount: int) -> void:
 
 ## Hurtbox hits only come from heroes (turrets call take_damage directly).
 func _on_hurt(amount: int) -> void:
-	_provoked_until_msec = Time.get_ticks_msec() + int(REACT_SEC * 1000)
+	selector.note_hit_by_hero()
 	take_damage(amount)
 
 
@@ -154,12 +155,18 @@ func take_damage(amount: int) -> void:
 	if current_hp > 0:
 		visual.play_hit()
 	if current_hp <= 0:
-		QuestLogger.info(QuestLogger.Category.ENEMY, "Enemy '%s' died in zone '%s'." % [Variant.keys()[variant], current_zone_id])
-		var vfx := ManagerLocator.get_vfx_manager()
-		if vfx:
-			vfx.play(&"death_dust", global_position, vfx.config.dust_color)
-		died.emit(self)
-		queue_free()
+		_die_from_damage()
+
+
+## The only path that emits `died` (hero hit, turret shot). Kill counters rely on it.
+func _die_from_damage() -> void:
+	killed_by_damage = true
+	QuestLogger.info(QuestLogger.Category.ENEMY, "Enemy '%s' died in zone '%s'." % [Variant.keys()[variant], current_zone_id])
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx:
+		vfx.play(&"death_dust", global_position, vfx.config.dust_color)
+	died.emit(self)
+	queue_free()
 
 
 func is_alive() -> bool:
@@ -298,44 +305,30 @@ func goal_changed() -> bool:
 	return room_manager != null and _goal_zone(room_manager) != _active_goal
 
 
-## Zone this enemy heads for right now ("" = nowhere). HUNTER role: a hero
-## inside aggro_range, else the closest hero's zone; a Sapper first hunts modules.
+## Zone this enemy heads for right now ("" = nowhere); see TargetSelector.
 func _goal_zone(room_manager: RoomManager) -> String:
-	if _is_raiding():
-		return ManagerLocator.get_nexo().get_target_zone(room_manager)
-	if variant == Variant.SAPPER:
-		var module_zone := _find_zone_with_modules(room_manager)
-		if module_zone != "":
-			return module_zone
-	var hero := _aggro_hero(room_manager)
-	return hero.current_zone_id if hero else _player_zone(room_manager)
+	return selector.goal_zone(room_manager)
 
 
 ## Exact spot to close in on inside the goal zone (Vector2.INF = zone center).
 func _goal_point(goal_zone: String) -> Vector2:
-	if _is_raiding():
-		return ManagerLocator.get_nexo().get_target_position()
-	var room_manager := ManagerLocator.get_room_manager()
-	var hero := _aggro_hero(room_manager) if room_manager else null
-	if hero and hero.current_zone_id == goal_zone:
-		return hero.global_position
-	return Vector2.INF
+	return selector.goal_point(goal_zone)
 
 
-## RAIDER role, a Nexo to hit and no hero provoking it: head for the Nexo and
-## ignore heroes and modules. Otherwise it acts like a hunter.
 func _is_raiding() -> bool:
-	return role == EnemyType.Role.RAIDER and Time.get_ticks_msec() >= _provoked_until_msec and ManagerLocator.get_nexo() != null
+	return selector.is_raiding()
 
 
-## A hero within BLOCK_RANGE of a raider counts as provoking it.
 func _note_blocking_hero() -> void:
-	if role != EnemyType.Role.RAIDER:
-		return
-	for hero in ManagerLocator.get_heroes():
-		if hero.stats.is_alive() and global_position.distance_to(hero.global_position) <= BLOCK_RANGE:
-			_provoked_until_msec = Time.get_ticks_msec() + int(REACT_SEC * 1000)
-			return
+	selector.note_blocking_hero()
+
+
+func _aggro_hero(room_manager: RoomManager) -> Player:
+	return selector.aggro_hero(room_manager)
+
+
+func _player_zone(room_manager: RoomManager) -> String:
+	return selector.zone_of_closest_hero(room_manager)
 
 
 func _nexo_in_range() -> bool:
@@ -350,50 +343,6 @@ func _try_attack_nexo() -> bool:
 	current_state = State.ATTACKING
 	attack_timer.start()
 	return true
-
-
-## Closest living hero within aggro_range (px) that is reachable over the revealed graph.
-func _aggro_hero(room_manager: RoomManager) -> Player:
-	var best: Player = null
-	var best_dist := aggro_range
-	for hero in ManagerLocator.get_heroes():
-		if not hero.stats.is_alive():
-			continue
-		var dist := global_position.distance_to(hero.global_position)
-		if dist > best_dist:
-			continue
-		if hero.current_zone_id != current_zone_id and room_manager.find_zone_path(current_zone_id, hero.current_zone_id).size() < 2:
-			continue
-		best = hero
-		best_dist = dist
-	return best
-
-
-## Zone of the closest hero (fewest zones over the revealed graph), so the
-## hero selection never redirects enemies. "" if none is reachable.
-func _player_zone(room_manager: RoomManager) -> String:
-	var best := ""
-	var best_len := 0
-	for hero in ManagerLocator.get_heroes():
-		if hero.current_zone_id == current_zone_id:
-			return current_zone_id
-		var path_len := room_manager.find_zone_path(current_zone_id, hero.current_zone_id).size()
-		if path_len > 0 and (best == "" or path_len < best_len):
-			best = hero.current_zone_id
-			best_len = path_len
-	return best
-
-
-func _find_zone_with_modules(room_manager: RoomManager) -> String:
-	for zone_id in room_manager.get_zone_ids():
-		if room_manager.get_zone_kind(zone_id) != "room":
-			continue
-		if not room_manager.is_zone_revealed(zone_id):
-			continue
-		var group_id := room_manager.get_group_id(zone_id)
-		if not room_manager.get_modules_in_group(group_id).is_empty():
-			return zone_id
-	return ""
 
 
 ## Glides to `target_zone_id`, then (if `point` is given and farther than
