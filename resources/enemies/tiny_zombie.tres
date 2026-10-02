@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://cuymq0gto7maj"]
 
-[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/floors/EnemyType.gd" id="1_45nxu"]
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_45nxu"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/enemy_tiny_zombie.tres" id="2_b5hyo"]
 
 [resource]

@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyPool" format=3]
 
-[ext_resource type="Script" path="res://scripts/core/floors/EnemyPool.gd" id="1_m5u2t"]
-[ext_resource type="Script" path="res://scripts/core/floors/EnemyType.gd" id="2_d2jyk"]
+[ext_resource type="Script" path="res://scripts/core/enemies/EnemyPool.gd" id="1_m5u2t"]
+[ext_resource type="Script" path="res://scripts/core/enemies/EnemyType.gd" id="2_d2jyk"]
 [ext_resource type="Resource" path="res://resources/enemies/goblin.tres" id="3_yopgj"]
 [ext_resource type="Resource" path="res://resources/enemies/skelet.tres" id="4_6v872"]
 [ext_resource type="Resource" path="res://resources/enemies/tiny_zombie.tres" id="5_ocdii"]

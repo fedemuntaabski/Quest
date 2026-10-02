@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyPool" format=3 uid="uid://i467ddqa5dpx"]
 
-[ext_resource type="Script" uid="uid://corvewst7sxsf" path="res://scripts/core/floors/EnemyPool.gd" id="1_81o8m"]
-[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/floors/EnemyType.gd" id="2_cyy4q"]
+[ext_resource type="Script" uid="uid://corvewst7sxsf" path="res://scripts/core/enemies/EnemyPool.gd" id="1_81o8m"]
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="2_cyy4q"]
 [ext_resource type="Resource" uid="uid://14ybd2qw7pun" path="res://resources/enemies/masked_orc.tres" id="3_6he7a"]
 [ext_resource type="Resource" uid="uid://bu4b248sn0hs7" path="res://resources/enemies/orc_warrior.tres" id="4_3hqp2"]
 [ext_resource type="Resource" uid="uid://d0c8dyxx5y48x" path="res://resources/enemies/chort.tres" id="5_awd11"]

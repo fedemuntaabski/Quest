@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://bycyt4hwplrrk"]
 
-[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/floors/EnemyType.gd" id="1_7wfre"]
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_7wfre"]
 [ext_resource type="SpriteFrames" uid="uid://beefocv7rm3g4" path="res://assets/characters/tc_red_imp.tres" id="2_h6dru"]
 
 [resource]

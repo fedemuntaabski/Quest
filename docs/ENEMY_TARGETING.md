@@ -3,7 +3,7 @@
 Estado **antes** de `session/enemies-2` (referencia; los roles nuevos están al final).
 
 ## Datos
-- `EnemyType` (`scripts/core/floors/EnemyType.gd`, 20 `.tres` en `resources/enemies/`): arte + multiplicadores sobre un `behavior` (`Enemy.Variant` SWARM/SAPPER/HUNTER). No existe una clase `EnemyData`.
+- `EnemyType` (`scripts/core/enemies/EnemyType.gd`, 20 `.tres` en `resources/enemies/`): arte + multiplicadores sobre un `behavior` (`Enemy.Variant` SWARM/SAPPER/HUNTER). No existe una clase `EnemyData`.
 - `EnemyPool` (`resources/floors/enemy_pool_f1..f5.tres`): tipos + pesos por piso; `FloorConfig.enemy_pool(floor)` (clamp al último).
 - `Enemy.VARIANT_CONFIG` (`Enemy.gd`): stats base por behavior (hp, speed, ai_interval, contact_damage, damage_per_tick).
 - Multiplicadores: piso (`FloorConfig.enemy_hp/damage_multiplier`) × sala (`RoomTypeRule.enemy_*_mult`, Elite) × tipo (`hp_mult`/`damage_mult`).

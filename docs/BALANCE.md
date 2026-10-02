@@ -1,7 +1,7 @@
 # BALANCE.md — session/balance-4
 
 Balance de héroes, enemigos, pisos y Nexo con **evidencia reproducible**. Todos los números salen del
-simulador (`scripts/core/balance/BalanceSim.gd`, CLI `tools/balance_sim.gd`) sobre los `.tres` reales y
+simulador (`tools/BalanceSim.gd`, CLI `tools/balance_sim.gd`) sobre los `.tres` reales y
 las fórmulas reales (`Enemy.resolved_*`, multiplicadores de `FloorConfig`, curvas de `UpgradeConfig`).
 Los CSV viven en `docs/balance/{before,after}_*.csv` (`docs/balance/.gdignore`: Godot no los importa).
 "Antes" = los `.tres` de `session/enemies-2` pasados por el mismo modelo.
