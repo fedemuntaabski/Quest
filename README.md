@@ -20,7 +20,7 @@
 - Actions: `scripts/core/actions/BaseAction.gd`, `scripts/core/actions/MoveAction.gd`, `scripts/core/actions/WaitAction.gd`, `scripts/core/combat/AttackAction.gd`, `scripts/core/combat/CardAction.gd`
 - Combat: `scripts/core/combat/CombatResolver.gd`, `scripts/core/combat/CombatCardSystem.gd`, `scripts/core/cards/CardManager.gd`
 - Occupancy/map: `scripts/world/rooms/OccupancyManager.gd`, `scripts/world/rooms/MapManager.gd`
-- Managers (autoload + locator): `scripts/managers/ManagerLocator.gd`, `scripts/managers/SaveManager.gd`, `scripts/managers/CurrencyManager.gd`, `scripts/managers/SettingsManager.gd`, `scripts/managers/GameStateManager.gd`
+- Managers (autoload + locator): `scripts/autoload/ManagerLocator.gd`, `scripts/autoload/SaveManager.gd`, `scripts/managers/CurrencyManager.gd`, `scripts/autoload/SettingsManager.gd`, `scripts/run/GameStateManager.gd`
 - Networking (Steam): `scripts/network/SteamManager.gd`, `scripts/network/SteamLobbyManager.gd`
 
 See `CLAUDE.md` for full architecture notes.

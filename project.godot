@@ -21,13 +21,13 @@ boot_splash/minimum_display_time=2000
 [autoload]
 
 PlayerStats="*res://scripts/core/stats/PlayerStats.gd"
-SaveManager="*res://scripts/managers/SaveManager.gd"
-SettingsManager="*res://scripts/managers/SettingsManager.gd"
+SaveManager="*res://scripts/autoload/SaveManager.gd"
+SettingsManager="*res://scripts/autoload/SettingsManager.gd"
 FPSOverlay="*res://scripts/ui/overlays/FPSOverlay.gd"
 SteamManager="*res://scripts/network/SteamManager.gd"
-ResourceManager="*res://scripts/managers/ResourceManager.gd"
-GameSession="*res://scripts/managers/GameSession.gd"
-SelectionManager="*res://scripts/managers/SelectionManager.gd"
+ResourceManager="*res://scripts/autoload/ResourceManager.gd"
+GameSession="*res://scripts/autoload/GameSession.gd"
+SelectionManager="*res://scripts/autoload/SelectionManager.gd"
 
 [debug]
 

@@ -10,7 +10,7 @@ extends SceneTree
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
 const HUD_PATH := "res://scenes/HUD.tscn"
-const MAIN_SCRIPT_PATH := "res://scripts/managers/Main.gd"
+const MAIN_SCRIPT_PATH := "res://scripts/run/Main.gd"
 ## Longest glide the tests wait for (seconds of real time).
 const MOVE_TIMEOUT := 8.0
 

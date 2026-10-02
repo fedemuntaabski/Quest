@@ -10,7 +10,7 @@ class_name HeroSelectMenu
 signal heroes_confirmed(hero_ids: Array[String])
 signal back_pressed
 
-const PARTY_SIZE := preload("res://scripts/managers/GameSession.gd").PARTY_SIZE
+const PARTY_SIZE := preload("res://scripts/autoload/GameSession.gd").PARTY_SIZE
 ## Pixel art (16 px tiles) shown big; integer scale keeps it crisp.
 const PREVIEW_SCALE := 6.0
 const BACKGROUND := preload("res://assets/ui/Selección de Héroes.png")
