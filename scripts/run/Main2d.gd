@@ -65,7 +65,6 @@ var tile_renderer: MapTileRenderer
 # ─────────────────────────────────────────────
 # STATE
 # ─────────────────────────────────────────────
-var active_character_id: String = ""
 var _is_dead: bool = false
 ## Space: Engine.time_scale 0 (Tweens/Timers/physics delta stop, HUD/building
 ## still work). Kept across the Esc pause, which forces 1 while open.
@@ -78,9 +77,6 @@ var _last_group_msec: int = -10000
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-
-	var save_mgr := ManagerLocator.get_save_manager()
-	active_character_id = save_mgr.get_selected_character_id() if save_mgr else CharacterDatabase.get_default_id()
 
 	_ensure_game_state_manager()
 	_setup_door_turn_system()
@@ -109,7 +105,12 @@ func _spawn_heroes() -> void:
 	if ps:
 		ps.clear_party()
 	var session := ManagerLocator.get_game_session()
-	var ids: Array[String] = session.get_party_ids() if session and session.has_selection() else party_config.get_party_ids(active_character_id)
+	var ids: Array[String]
+	if session and session.has_selection():
+		ids = session.get_party_ids()
+	else:  # no HeroSelectMenu pick (standalone floor, tests): saved hero + PartyConfig companions
+		var save_mgr := ManagerLocator.get_save_manager()
+		ids = party_config.get_party_ids(save_mgr.get_selected_character_id() if save_mgr else CharacterDatabase.get_default_id())
 	ids.resize(mini(ids.size(), party_config.party_size))
 	var spawn_zone_id := room_manager.get_start_zone_id()
 	for i in ids.size():
