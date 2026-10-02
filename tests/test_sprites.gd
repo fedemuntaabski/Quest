@@ -125,7 +125,7 @@ func _check_player() -> void:
 	var radius := ((a.hurtbox.get_node("CollisionShape2D") as CollisionShape2D).shape as CircleShape2D).radius
 	_expect(is_equal_approx(radius, a.animated_sprite.fit_radius()), "hero hurtbox not fitted to the sprite")
 	_expect((a.hurtbox.get_node("CollisionShape2D") as CollisionShape2D).shape != (b.hurtbox.get_node("CollisionShape2D") as CollisionShape2D).shape, "hurtbox shape shared between heroes")
-	_expect(is_equal_approx(((a.hitbox.get_node("CollisionShape2D") as CollisionShape2D).shape as CircleShape2D).radius, 160.0), "hero attack hitbox radius changed")
+	_expect(is_equal_approx(((a.hitbox.get_node("CollisionShape2D") as CollisionShape2D).shape as CircleShape2D).radius, CharacterDatabase.get_by_id("warrior").attack_range), "hero attack hitbox radius is not CharacterData.attack_range")
 	a.stats.take_damage(2)
 	_expect(a.animated_sprite.flash_amount() > 0.0, "hero does not flash on damage")
 	_expect(b.animated_sprite.flash_amount() == 0.0, "flash leaked to another hero")

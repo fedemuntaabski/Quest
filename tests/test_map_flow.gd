@@ -124,6 +124,16 @@ func _run(use_fallback: bool) -> void:
 
 ## Discovery dust for a group: 0 for a loop corridor (no room), else the
 ## per-room amount plus the room type's reward when it pays in dust.
+## What the living heroes' discovery passives add to `key` (FloorManager._apply_hero_passives).
+func _hero_passive_bonus(main2d: Node, key: String) -> int:
+	var total := 0
+	for hero in main2d.heroes:
+		if hero.abilities == null or not hero.stats.is_alive():
+			continue
+		total += int(hero.abilities.passive_discovery_bonus().get(key, 0))
+	return total
+
+
 func _expected_dust(main2d: Node, group_id: String, per_room: int) -> int:
 	var room_manager: RoomManager = main2d.room_manager
 	if room_manager.get_zone_kind(group_id) == "corridor":
@@ -199,6 +209,7 @@ func _run_types_and_loops() -> void:
 			var reward_key := rule.reward_resource if rule else ""
 			var reward_before := resources.get_resource(reward_key) if reward_key != "" else 0
 			var reward_yield := resources.get_turn_yield(reward_key) if reward_key != "" else 0
+			var reward_passive := _hero_passive_bonus(main2d, reward_key)
 			var dust_before := resources.get_resource("dust")
 			var visual := room_manager.visual_config.room_type_visual(room_manager.get_room_type(group)) if room_manager.get_zone_kind(group) == "room" else null
 			var banners_before := _count_banners(visual.banner_text) if visual else 0
@@ -219,8 +230,8 @@ func _run_types_and_loops() -> void:
 			if resources.get_resource("dust") - dust_before != expected_dust:
 				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, group, resources.get_resource("dust") - dust_before, expected_dust])
 			if rule and reward_key != "" and reward_key != "dust":
-				# The turn tick also pays the resource's yield.
-				var got := resources.get_resource(reward_key) - reward_before - reward_yield
+				# The turn tick also pays the resource's yield and the heroes' discovery passives.
+				var got := resources.get_resource(reward_key) - reward_before - reward_yield - reward_passive
 				if got != rule.reward_at(floor_index):
 					failures.append("%s: '%s' reward %d %s, expected %d" % [label, group, got, reward_key, rule.reward_at(floor_index)])
 				var after := resources.get_resource(reward_key)

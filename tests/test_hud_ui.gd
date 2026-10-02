@@ -56,7 +56,7 @@ func _check_upgrade_config() -> void:
 	_expect(costs == [8, 11, 16, 22, 31], "cost curve %s" % [costs])
 	_expect(not cfg.is_maxed(cfg.max_level - 1) and cfg.is_maxed(cfg.max_level), "is_maxed boundary")
 	_expect(cfg.damage_at(3, 2) == 5, "damage_at(3, 2)")
-	_expect(is_equal_approx(cfg.interval_at(1.0, 3), 0.7), "interval_at(1.0, 3)")
+	_expect(is_equal_approx(cfg.interval_at(1.0, 3), maxf(cfg.min_attack_interval, 1.0 - cfg.attack_speed_per_level * 3)), "interval_at(1.0, 3) follows attack_speed_per_level")
 	_expect(is_equal_approx(cfg.interval_at(1.0, 50), cfg.min_attack_interval), "interval floor")
 
 
