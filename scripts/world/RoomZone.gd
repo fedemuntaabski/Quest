@@ -46,7 +46,6 @@ const BUILDING_SLOT_SCENE := preload("res://scenes/world/BuildingSlot.tscn")
 const BUILDING_SLOT_OFFSETS := [Vector2(0, 0), Vector2(-28, 22), Vector2(28, 22)]
 const MAJOR_SLOT_SPACING := 56.0
 
-signal powered_up(zone_id: String)
 ## Any power state change (player-paid or scripted). RoomLight listens.
 signal power_changed(zone_id: String, powered: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
@@ -252,7 +251,7 @@ func try_power_up() -> void:
 		return
 	_power_paid = cost
 	set_powered(true)
-	powered_up.emit(zone_id)
+	QuestLogger.info(QuestLogger.Category.ROOM, "Zone '%s' energized for %d dust." % [zone_id, cost])
 
 
 ## Switches a lit room off and refunds the dust paid for it (DotE-style).

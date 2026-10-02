@@ -60,8 +60,6 @@ var heroes: Array[Player] = []
 var player: Player
 var camera: GameCamera
 var door_turn_system: DoorTurnSystem
-var room_power_system: RoomPowerSystem
-var module_build_system: ModuleBuildSystem
 var enemy_manager: EnemyManager
 var extraction_manager: ExtractionManager
 var floor_manager: FloorManager
@@ -103,8 +101,6 @@ func _ready() -> void:
 	_setup_door_turn_system()
 	_setup_floor_manager()
 	_setup_room_manager()
-	_setup_room_power_system()
-	_setup_module_build_system()
 	_setup_enemy_manager()
 	_setup_extraction_manager()
 	_register_groups_and_doors()
@@ -198,18 +194,6 @@ func _build_map_layout() -> MapLayout:
 		QuestLogger.error(QuestLogger.Category.MAP, "Main2d: generated map (seed %d) invalid, using fallback: %s" % [layout.map_seed, problems])
 		return FALLBACK_LAYOUT
 	return layout
-
-func _setup_room_power_system() -> void:
-	room_power_system = RoomPowerSystem.new()
-	room_power_system.name = "RoomPowerSystem"
-	add_child(room_power_system)
-	room_power_system.setup(room_manager)
-
-func _setup_module_build_system() -> void:
-	module_build_system = ModuleBuildSystem.new()
-	module_build_system.name = "ModuleBuildSystem"
-	add_child(module_build_system)
-	module_build_system.setup(room_manager)
 
 func _setup_enemy_manager() -> void:
 	enemy_manager = EnemyManager.new()

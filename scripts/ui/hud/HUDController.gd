@@ -112,6 +112,9 @@ func _ready() -> void:
 		research_button.pressed.connect(_on_research_pressed)
 
 	_add_minimap()
+	var room_manager := ManagerLocator.get_room_manager()
+	if room_manager:
+		room_manager.slot_clicked.connect(_on_slot_clicked)
 	character_popup = CharacterPopup.new()
 	character_popup.name = "CharacterPopup"
 	$Control.add_child(character_popup)
@@ -356,7 +359,12 @@ func _refresh_gains() -> void:
 
 # ---------------- BUILDING MENU ----------------
 
-## Armed-mode slot pick (ModuleBuildSystem); a no-op unless a module is armed.
+## Armed-mode slot pick (RoomManager.slot_clicked); a no-op unless a module is armed.
+func _on_slot_clicked(_zone_id: String, slot: BuildingSlot) -> void:
+	if slot.is_empty():
+		open_building_menu(slot)
+
+
 func open_building_menu(slot: BuildingSlot) -> void:
 	if building_menu == null:
 		QuestLogger.warn(QuestLogger.Category.UI, "HUD: BuildingMenu node missing.")

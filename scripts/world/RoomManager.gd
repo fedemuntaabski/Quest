@@ -35,7 +35,6 @@ class_name RoomManager
 signal zone_clicked(zone_id: String)
 signal zone_hovered(zone_id: String)
 signal zone_unhovered(zone_id: String)
-signal room_powered(zone_id: String)
 ## Any power change (paid, refunded or scripted); bubbled from RoomZone.power_changed.
 signal room_power_changed(zone_id: String, powered: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
@@ -141,7 +140,6 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.clicked.connect(func(z: RoomZone): zone_clicked.emit(z.zone_id))
 	zone.hovered.connect(func(z: RoomZone): zone_hovered.emit(z.zone_id))
 	zone.unhovered.connect(func(z: RoomZone): zone_unhovered.emit(z.zone_id))
-	zone.powered_up.connect(func(zid: String): room_powered.emit(zid))
 	zone.power_changed.connect(func(zid: String, on: bool): room_power_changed.emit(zid, on))
 	zone.slot_clicked.connect(func(zid: String, slot: BuildingSlot): slot_clicked.emit(zid, slot))
 

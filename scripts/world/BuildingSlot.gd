@@ -5,7 +5,7 @@ class_name BuildingSlot
 ## mirrors Door.gd/EnergyButton.gd. Not pickable by default (session 8): only
 ## BuildingMenu's armed mode turns slots pickable, so an unarmed click falls
 ## through to the RoomZone (moves the hero) instead of opening anything.
-## `slot_clicked` → ModuleBuildSystem → BuildingMenu.open_menu() builds the
+## `slot_clicked` → RoomManager → HUDController → BuildingMenu.open_menu() builds the
 ## armed module. Clicks are ignored unless the owning room `can_build()`.
 
 signal slot_clicked(slot: BuildingSlot)

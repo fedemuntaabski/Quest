@@ -7,7 +7,7 @@ class_name BuildingMenu
 ## module is *armed*: free matching slots in powered rooms are outlined, every
 ## empty slot becomes pickable and shows a ghost of the module under the cursor
 ## (green = buildable, red = floating text with the reason) → clicking a slot
-## (BuildingSlot → ModuleBuildSystem → open_menu) builds it. Tabs by category
+## (BuildingSlot → RoomManager.slot_clicked → HUDController → open_menu) builds it. Tabs by category
 ## (Producción = MAJOR-slot generators, Defensa = MINOR-slot turret/trap), one
 ## card per Module.CATALOG entry. Owns the purchase: spends Industria and asks
 ## the slot to build. Right-click or Esc cancels (Esc is consumed, so it never
@@ -58,7 +58,7 @@ func _ready() -> void:
 				_arm(_armed_type as Module.ModuleType))
 
 
-## Slot click routed by ModuleBuildSystem. Builds the armed module; without
+## Slot click routed by HUDController. Builds the armed module; without
 ## one armed it does nothing (slots aren't even pickable then).
 func open_menu(slot_node: BuildingSlot) -> void:
 	if slot_node == null or not slot_node.is_empty() or not is_armed() or not visible:
