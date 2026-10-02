@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Bakes assets/tilesets/{dungeon,props}_tileset.tres from DungeonTiles' atlas
+## Bakes resources/tilesets/{dungeon,props}_tileset.tres from DungeonTiles' atlas
 ## coordinates. Re-run after changing them:
 ##   godot --headless --path . --script res://tools/build_tilesets.gd
 ## Physics layer 0 (collision layer 16 = "wall", mask 0) only on wall tiles.
@@ -69,7 +69,7 @@ func _build_dungeon() -> void:
 	var fill := _source(ts, DungeonTiles.SRC_FILL, FILL)
 	_solid(_add(fill, DungeonTiles.WALL_FILL))
 
-	print("dungeon_tileset save: ", error_string(ResourceSaver.save(ts, "res://assets/tilesets/dungeon_tileset.tres")))
+	print("dungeon_tileset save: ", error_string(ResourceSaver.save(ts, "res://resources/tilesets/dungeon_tileset.tres")))
 
 
 func _build_props() -> void:
@@ -80,4 +80,4 @@ func _build_props() -> void:
 	for y in 11:
 		for x in 12:
 			_add(src, Vector2i(x, y))
-	print("props_tileset save: ", error_string(ResourceSaver.save(ts, "res://assets/tilesets/props_tileset.tres")))
+	print("props_tileset save: ", error_string(ResourceSaver.save(ts, "res://resources/tilesets/props_tileset.tres")))

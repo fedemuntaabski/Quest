@@ -1,8 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/world/map/MapTileRenderer.gd" id="1_renderer"]
-[ext_resource type="TileSet" path="res://assets/tilesets/dungeon_tileset.tres" id="2_dungeon"]
-[ext_resource type="TileSet" path="res://assets/tilesets/props_tileset.tres" id="3_props"]
+[ext_resource type="TileSet" path="res://resources/tilesets/dungeon_tileset.tres" id="2_dungeon"]
+[ext_resource type="TileSet" path="res://resources/tilesets/props_tileset.tres" id="3_props"]
 
 [node name="MapTileRenderer" type="Node2D"]
 script = ExtResource("1_renderer")
