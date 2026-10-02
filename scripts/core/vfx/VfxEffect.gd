@@ -1,7 +1,7 @@
 extends Node2D
 class_name VfxEffect
 
-## VfxEffect: root script of every scene in assets/vfx. An optional `Sprite`
+## VfxEffect: root script of every scene in scenes/vfx. An optional `Sprite`
 ## (AnimatedSprite2D, frames built from assets/art/vfx/index.json) and an optional
 ## `Particles` (CPUParticles2D, square 1-2 art px) play together for `duration`
 ## seconds, then `finished` fires so VfxManager can pool the node again.

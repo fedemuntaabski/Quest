@@ -3,7 +3,7 @@ class_name VfxConfig
 
 ## VfxConfig: tunables of the VfxManager (resources/vfx/vfx_config.tres).
 ## `effects` maps an effect id to {scene, sheet, tint, duration, scale}:
-##  - scene: one of the 7 scenes in assets/vfx (slash_arc, projectile_trail, impact_sparks,
+##  - scene: one of the 7 scenes in scenes/vfx (slash_arc, projectile_trail, impact_sparks,
 ##    heal_glow, buff_aura, death_dust, damage_flash);
 ##  - sheet: sprite sheet name in assets/art/vfx/index.json ("" = particles only);
 ##  - tint: multiply the sheet by the palette color (only for white sheets);

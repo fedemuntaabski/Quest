@@ -1,12 +1,12 @@
 extends Node
 class_name VfxManager
 
-## VfxManager: pooled, capped combat/ability effects (scenes in assets/vfx,
+## VfxManager: pooled, capped combat/ability effects (scenes in scenes/vfx,
 ## tunables in resources/vfx/vfx_config.tres). Lazy singleton under the scene
 ## root (ManagerLocator.get_vfx_manager()), same pattern as FloatingTextManager.
 ## Purely cosmetic: callers null-guard it and never depend on the result.
 
-const SCENE_PATH := "res://assets/vfx/%s.tscn"
+const SCENE_PATH := "res://scenes/vfx/%s.tscn"
 const MAX_POOLED_PER_SCENE := 8
 const Z_INDEX := 90  # under FloatingText (100)
 
