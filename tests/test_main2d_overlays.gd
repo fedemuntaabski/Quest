@@ -1,7 +1,6 @@
 extends SceneTree
 
-## Main2d must boot COMPLETE under --script: pause menu, death/victory overlays,
-## retry button and their handlers resolved (they used to be null when an autoload
+## Main2d must boot COMPLETE under --script: pause menu and death/victory overlays resolved (they used to be null when an autoload
 ## identifier broke the PauseMenu compile). Then pause/death/victory presentation.
 ##   godot --headless --path . --script res://tests/test_main2d_overlays.gd
 
@@ -19,12 +18,11 @@ func _initialize() -> void:
 	_expect(main2d.pause_menu != null, "pause_menu not resolved")
 	_expect(main2d.death_overlay != null, "death_overlay not resolved")
 	_expect(main2d.victory_overlay != null, "victory_overlay not resolved")
-	_expect(main2d.retry_button != null, "retry_button not resolved")
-	_expect(main2d.death_handler != null and main2d.death_handler.death_overlay == main2d.death_overlay, "death handler has no overlay")
-	_expect(main2d.victory_handler != null, "victory handler missing")
+	_expect(main2d.death_overlay is DeathOverlay and main2d.victory_overlay is VictoryOverlay, "overlays lack their scripts")
 	if failures.is_empty():
 		_expect(not main2d.death_overlay.visible and not main2d.victory_overlay.visible, "overlays visible at start")
-		_expect(main2d.retry_button.pressed.get_connections().size() > 0, "retry button not connected")
+		_expect(main2d.death_overlay.retry_requested.get_connections().size() > 0, "retry not connected")
+		_expect(main2d.victory_overlay.next_floor_requested.get_connections().size() > 0, "next floor not connected")
 		_expect(main2d.pause_menu.exit_requested.get_connections().size() > 0, "pause menu exit not connected")
 
 		var gsm: GameStateManager = main2d.game_state_manager

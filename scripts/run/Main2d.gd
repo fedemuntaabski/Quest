@@ -43,15 +43,8 @@ const GROUP_DOUBLE_TAP_MS := 300
 @onready var player_action_controller: PlayerActionController = $PlayerActionController
 @onready var doors_root: Node2D = $Doors
 @onready var pause_menu: PauseMenu = $PauseMenu
-@onready var death_overlay: CanvasLayer = $DeathOverlay
-@onready var victory_overlay: CanvasLayer = $VictoryOverlay
-
-@onready var retry_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/RetryButton
-@onready var exit_button: Button = $DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox/ExitButton
-
-@onready var return_button: Button = $VictoryOverlay/CenterContainer/VBoxContainer/ReturnButton
-@onready var victory_label: Label = $VictoryOverlay/CenterContainer/VBoxContainer/VictoryLabel
-@onready var next_floor_button: Button = $VictoryOverlay/CenterContainer/VBoxContainer/NextFloorButton
+@onready var death_overlay: DeathOverlay = $DeathOverlay
+@onready var victory_overlay: VictoryOverlay = $VictoryOverlay
 
 var game_state_manager: GameStateManager
 ## Party in spawn order; `player` = heroes[0] (the hero picked in
@@ -72,8 +65,6 @@ var tile_renderer: MapTileRenderer
 # ─────────────────────────────────────────────
 # STATE
 # ─────────────────────────────────────────────
-var death_handler: Main2dDeathHandler
-var victory_handler: Main2dVictoryHandler
 var active_character_id: String = ""
 var _is_dead: bool = false
 ## Space: Engine.time_scale 0 (Tweens/Timers/physics delta stop, HUD/building
@@ -87,12 +78,6 @@ var _last_group_msec: int = -10000
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-
-	death_handler = Main2dDeathHandler.new()
-	death_handler.setup(self, death_overlay)
-
-	victory_handler = Main2dVictoryHandler.new()
-	victory_handler.setup(self, victory_overlay)
 
 	var save_mgr := ManagerLocator.get_save_manager()
 	active_character_id = save_mgr.get_selected_character_id() if save_mgr else CharacterDatabase.get_default_id()
@@ -311,22 +296,15 @@ func _connect_signals() -> void:
 	if selection and not selection.selection_changed.is_connected(_on_selection_changed):
 		selection.selection_changed.connect(_on_selection_changed)
 
-	if retry_button and not retry_button.pressed.is_connected(_reload_current_scene):
-		retry_button.pressed.connect(_reload_current_scene)
-
-	if exit_button and not exit_button.pressed.is_connected(_go_to_main_menu):
-		exit_button.pressed.connect(_go_to_main_menu)
+	death_overlay.retry_requested.connect(_reload_current_scene)
+	death_overlay.exit_requested.connect(_go_to_main_menu)
+	victory_overlay.next_floor_requested.connect(_go_to_next_floor)
+	victory_overlay.return_requested.connect(_go_to_main_menu)
 
 	if pause_menu:
 		pause_menu.close()
 		if not pause_menu.exit_requested.is_connected(_go_to_main_menu):
 			pause_menu.exit_requested.connect(_go_to_main_menu)
-
-	if next_floor_button and not next_floor_button.pressed.is_connected(_go_to_next_floor):
-		next_floor_button.pressed.connect(_go_to_next_floor)
-
-	if return_button and not return_button.pressed.is_connected(_go_to_main_menu):
-		return_button.pressed.connect(_go_to_main_menu)
 
 	if game_state_manager and not game_state_manager.victory_entered.is_connected(_on_victory):
 		game_state_manager.victory_entered.connect(_on_victory)
@@ -476,25 +454,18 @@ func _on_player_died() -> void:
 			pause_menu.close()
 		get_tree().paused = true
 
-	if death_handler:
-		death_handler.show_death_screen()
+	death_overlay.show_screen()
 
 func _on_victory() -> void:
 	if pause_menu:
 		pause_menu.close()
 
-	if victory_handler:
-		victory_handler.show_victory_screen()
+	victory_overlay.show_screen()
 
 ## Fires before victory_entered (ExtractionManager emits victory_declared
 ## before requesting the VICTORY state), so the overlay is ready when shown.
 func _on_floor_completed(completed_floor: int) -> void:
-	var has_next := not floor_manager.is_final_floor()
-	if next_floor_button:
-		next_floor_button.visible = has_next
-		next_floor_button.text = "Descender al piso %d" % (completed_floor + 1)
-	if victory_label and has_next:
-		victory_label.text = "¡Piso %d superado!" % completed_floor
+	victory_overlay.set_floor_result(completed_floor, not floor_manager.is_final_floor())
 
 # ─────────────────────────────────────────────
 # PAUSE / SCENE FLOW
