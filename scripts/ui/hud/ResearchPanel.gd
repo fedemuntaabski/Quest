@@ -9,7 +9,6 @@ class_name ResearchPanel
 ## Esc and right click close it and are consumed (Esc never reaches Main2d's
 ## pause toggle). Plain Controls, so it works at Engine.time_scale 0.
 
-const ThemeStyles = preload("res://scripts/core/theme/ThemeManager.gd")
 const COST_RESOURCE := "science"
 const COLUMNS := 2
 
@@ -19,7 +18,7 @@ var _list: GridContainer
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(Color(0.08, 0.08, 0.1, 0.95), QuestPalette.GOLD_DARK, 2, 8))
+	add_theme_stylebox_override("panel", UiStyles.build_panel_style(Color(0.08, 0.08, 0.1, 0.95), QuestPalette.GOLD_DARK, 2, 8))
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for side in ["left", "right", "bottom"]:
@@ -91,7 +90,7 @@ func _make_card(entry: ResearchEntry) -> Control:
 	card.name = entry.id
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.tooltip_text = "%s\n%s\n%s" % [entry.display_name, entry.description, entry.describe_effect()]
-	card.add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.GOLD_DARK if done else QuestPalette.UI_PANEL_BORDER, 1, 6, 6))
+	card.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.GOLD_DARK if done else QuestPalette.UI_PANEL_BORDER, 1, 6, 6))
 	if not available and not done:
 		card.modulate = Color(1, 1, 1, 0.6)
 

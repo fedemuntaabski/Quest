@@ -8,10 +8,6 @@ class_name HeroPortrait
 ## The selected hero gets a bright gold border (set_selected, session 12).
 ## Built in code; `setup()` before add_child().
 
-## Static style helper via preload (the ThemeManager autoload identifier is
-## missing in --script test runs).
-const ThemeStyles = preload("res://scripts/core/theme/ThemeManager.gd")
-
 signal portrait_clicked(portrait: HeroPortrait)
 ## Ctrl + left click: add/remove this hero from the selection.
 signal portrait_ctrl_clicked(portrait: HeroPortrait)
@@ -190,7 +186,7 @@ func set_selected(value: bool) -> void:
 func _apply_panel_style() -> void:
 	var border := QuestPalette.GOLD_LIGHT if is_selected else QuestPalette.GOLD_DARK
 	var width := SELECTED_BORDER_WIDTH if is_selected else BORDER_WIDTH
-	add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(PANEL_BG, border, width, 6, 6))
+	add_theme_stylebox_override("panel", UiStyles.build_panel_style(PANEL_BG, border, width, 6, 6))
 
 
 func _on_gui_input(event: InputEvent) -> void:

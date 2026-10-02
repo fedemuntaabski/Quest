@@ -10,7 +10,6 @@ class_name HeroSelectMenu
 signal heroes_confirmed(hero_ids: Array[String])
 signal back_pressed
 
-const ThemeStyles = preload("res://scripts/core/theme/ThemeManager.gd")
 const PARTY_SIZE := preload("res://scripts/managers/GameSession.gd").PARTY_SIZE
 ## Pixel art (16 px tiles) shown big; integer scale keeps it crisp.
 const PREVIEW_SCALE := 6.0
@@ -204,7 +203,7 @@ func _build_preview_panel() -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_stretch_ratio = 2.0
-	panel.add_theme_stylebox_override("panel", ThemeStyles.build_slot_icon_style())
+	panel.add_theme_stylebox_override("panel", UiStyles.build_slot_icon_style())
 
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
@@ -251,8 +250,8 @@ func _make_action_button(text: String, font_size: int) -> Button:
 
 func _style_button(btn: Button) -> void:
 	for state: String in BTN_COLORS:
-		btn.add_theme_stylebox_override(state, ThemeStyles.build_panel_style(BTN_COLORS[state][0], BTN_COLORS[state][1], 3, 16, 12))
-	btn.add_theme_stylebox_override("focus", ThemeStyles.build_panel_style(Color(0, 0, 0, 0), BTN_COLORS["hover"][1], 4, 16, 12))
+		btn.add_theme_stylebox_override(state, UiStyles.build_panel_style(BTN_COLORS[state][0], BTN_COLORS[state][1], 3, 16, 12))
+	btn.add_theme_stylebox_override("focus", UiStyles.build_panel_style(Color(0, 0, 0, 0), BTN_COLORS["hover"][1], 4, 16, 12))
 
 
 ## Idle sprite frame (same art as the HUD portrait) > portrait PNG.
@@ -271,9 +270,9 @@ func _refresh() -> void:
 		var card: Button = _cards[id]
 		var normal: Color = QuestPalette.UI_PANEL_BORDER_SELECTED if picked else QuestPalette.UI_PANEL_BORDER
 		var hot: Color = QuestPalette.UI_PANEL_BORDER_SELECTED if picked else QuestPalette.UI_PANEL_BORDER_HOVER
-		card.add_theme_stylebox_override("normal", ThemeStyles.build_reward_card_style(normal))
+		card.add_theme_stylebox_override("normal", UiStyles.build_reward_card_style(normal))
 		for state in ["hover", "pressed", "focus"]:
-			card.add_theme_stylebox_override(state, ThemeStyles.build_reward_card_style(hot))
+			card.add_theme_stylebox_override(state, UiStyles.build_reward_card_style(hot))
 		var data := CharacterDatabase.get_by_id(id)
 		(_card_names[id] as Label).text = "%s  [%d]" % [data.display_name, selected.find(id) + 1] if picked else data.display_name
 	for i in _slots.size():

@@ -100,10 +100,10 @@ func _on_mouse_exited() -> void:
 
 func _apply_visual_state() -> void:
 	if _is_taken:
-		add_theme_stylebox_override("panel", ThemeManager.build_reward_card_style(TAKEN_COLOR))
+		add_theme_stylebox_override("panel", UiStyles.build_reward_card_style(TAKEN_COLOR))
 	elif _is_selected:
-		add_theme_stylebox_override("panel", ThemeManager.build_reward_card_style(SELECTED_COLOR))
+		add_theme_stylebox_override("panel", UiStyles.build_reward_card_style(SELECTED_COLOR))
 	elif _is_hovered:
-		add_theme_stylebox_override("panel", ThemeManager.build_reward_card_style(HOVER_COLOR))
+		add_theme_stylebox_override("panel", UiStyles.build_reward_card_style(HOVER_COLOR))
 	else:
-		add_theme_stylebox_override("panel", ThemeManager.build_reward_card_style(NORMAL_COLOR))
+		add_theme_stylebox_override("panel", UiStyles.build_reward_card_style(NORMAL_COLOR))

@@ -18,10 +18,6 @@ class_name BuildingMenu
 ## show a padlock + "Requiere: <research>", can't be armed (button disabled,
 ## so 1-9 skip them too) and get_block_reason() reports the lock first.
 
-## Static style helper via preload (the ThemeManager autoload identifier is
-## missing in --script test runs).
-const ThemeStyles = preload("res://scripts/core/theme/ThemeManager.gd")
-
 const SHAKE_DISTANCE := 8.0
 const SHAKE_STEP := 0.04
 ## Every catalog cost is Industria today.
@@ -46,7 +42,7 @@ var _hover_slots: Dictionary = {}
 
 func _ready() -> void:
 	visible = false
-	add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(Color(0.08, 0.08, 0.1, 0.95), QuestPalette.GOLD_DARK, 2, 8))
+	add_theme_stylebox_override("panel", UiStyles.build_panel_style(Color(0.08, 0.08, 0.1, 0.95), QuestPalette.GOLD_DARK, 2, 8))
 	tabs.tab_changed.connect(func(_tab: int) -> void:
 		_disarm()
 		_populate())
@@ -135,7 +131,7 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 	var cost := int(cfg["cost"])
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	card.add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 1, 6, 6))
+	card.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 1, 6, 6))
 	var reason := "\n" + lock if lock != "" else ("" if affordable else "\nIndustria insuficiente.")
 	card.tooltip_text = "%s\n%s\n%s\nVida: %d%s" % [cfg["label"], Module.DESCRIPTIONS.get(module_type, ""), Module.describe_effect(module_type), int(cfg["hp"]), reason]
 	if not affordable or lock != "":

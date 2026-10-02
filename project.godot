@@ -22,7 +22,6 @@ boot_splash/minimum_display_time=2000
 
 PlayerStats="*res://scripts/core/stats/PlayerStats.gd"
 SaveManager="*res://scripts/managers/SaveManager.gd"
-ThemeManager="*res://scripts/core/theme/ThemeManager.gd"
 SettingsManager="*res://scripts/managers/SettingsManager.gd"
 FPSOverlay="*res://scripts/ui/overlays/FPSOverlay.gd"
 SteamManager="*res://scripts/network/SteamManager.gd"

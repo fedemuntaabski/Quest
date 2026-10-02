@@ -1,7 +1,7 @@
-extends Node
+class_name UiStyles
+extends RefCounted
 
-## Lightweight theme facade for reusable palette-driven style boxes.
-## Consumed by card UI, menus, and future shader/material helpers.
+## Static StyleBoxFlat builders shared by menus, HUD and card UI (not an autoload).
 
 static func build_panel_style(bg_color: Color, border_color: Color, border_width: int = 2, radius: int = 10, content_margin: int = 0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

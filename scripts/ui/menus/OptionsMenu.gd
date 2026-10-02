@@ -94,7 +94,7 @@ func _ready() -> void:
 
 func _apply_theme() -> void:
 	if options_card:
-		options_card.add_theme_stylebox_override("panel", ThemeManager.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 20))
+		options_card.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 20))
 	_style_button(save_button)
 	_style_button(back_button)
 
@@ -116,10 +116,10 @@ func _style_button(button: Button, danger: bool = false) -> void:
 	button.add_theme_color_override("font_outline_color", QuestPalette.INK)
 	button.add_theme_constant_override("outline_size", 3)
 
-	button.add_theme_stylebox_override("normal", ThemeManager.build_panel_style(QuestPalette.DUNGEON_MUD, border_base, 3, 16, 16))
-	button.add_theme_stylebox_override("pressed", ThemeManager.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, border_base, 3, 16, 16))
-	button.add_theme_stylebox_override("hover", ThemeManager.build_panel_style(QuestPalette.DUNGEON_MUD, border_hover, 3, 16, 16))
-	button.add_theme_stylebox_override("focus", ThemeManager.build_panel_style(QuestPalette.DUNGEON_MUD, QuestPalette.PARCHMENT_LIGHT, 4, 16, 16))
+	button.add_theme_stylebox_override("normal", UiStyles.build_panel_style(QuestPalette.DUNGEON_MUD, border_base, 3, 16, 16))
+	button.add_theme_stylebox_override("pressed", UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, border_base, 3, 16, 16))
+	button.add_theme_stylebox_override("hover", UiStyles.build_panel_style(QuestPalette.DUNGEON_MUD, border_hover, 3, 16, 16))
+	button.add_theme_stylebox_override("focus", UiStyles.build_panel_style(QuestPalette.DUNGEON_MUD, QuestPalette.PARCHMENT_LIGHT, 4, 16, 16))
 
 
 func _on_tab_changed(tab_idx: int) -> void:

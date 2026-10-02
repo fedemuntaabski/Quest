@@ -11,10 +11,6 @@ class_name CharacterPopup
 ## toggles the pause menu (HUD's _input runs before Main2d's).
 ## Built in code by HUDController; refreshes on signals only.
 
-## Static style helper via preload (the ThemeManager autoload identifier is
-## missing in --script test runs).
-const ThemeStyles = preload("res://scripts/core/theme/ThemeManager.gd")
-
 const PREVIEW_SIZE := Vector2(128, 128)
 const PANEL_WIDTH := 460.0
 
@@ -91,7 +87,7 @@ func _build() -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(PANEL_WIDTH, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	panel.add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(QuestPalette.UI_PANEL_BG, QuestPalette.GOLD_DARK, 2, 8, 14))
+	panel.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.UI_PANEL_BG, QuestPalette.GOLD_DARK, 2, 8, 14))
 	center.add_child(panel)
 
 	var content := VBoxContainer.new()
@@ -115,7 +111,7 @@ func _build() -> void:
 	body.add_theme_constant_override("separation", 14)
 	content.add_child(body)
 	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", ThemeStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 2, 6, 4))
+	frame.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 2, 6, 4))
 	body.add_child(frame)
 	_preview = TextureRect.new()
 	_preview.custom_minimum_size = PREVIEW_SIZE
