@@ -28,6 +28,7 @@ SteamManager="*res://scripts/network/SteamManager.gd"
 ResourceManager="*res://scripts/autoload/ResourceManager.gd"
 GameSession="*res://scripts/autoload/GameSession.gd"
 SelectionManager="*res://scripts/autoload/SelectionManager.gd"
+BestiaryService="*res://scripts/autoload/BestiaryService.gd"
 
 [debug]
 
