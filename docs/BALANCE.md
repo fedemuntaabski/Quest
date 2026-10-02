@@ -165,3 +165,6 @@ Nuevo modelo `BalanceSim.tower_rows()`: rompe-torres contra **una** ballesta 1v1
 
 Intento descartado: `big_demon` con `module_damage` 4 daba 100 % (la torre moría a la vez que el enemigo).
 Asesinos: sin cambios de números; la tabla de encuentros (un héroe recibe toda la oleada) ya cubre el caso "todos contra el más débil". Pendiente de playtest: presión sobre el portador durante la extracción (la oleada de 5 s con asesinos rápidos persiguiendo al portador a 75 % de velocidad).
+
+## Tope de vida 60 → 120 (session impl-6, fase 2A)
+`StatBalance.PLAYER_MAX_HP` pasa de 60 a 120 para que las armaduras (+20…+30) y los perks de vida no queden anulados por el recorte. BalanceSim (`impl6_after_cap_*`, regenerado y comparado con `impl6_before_*` con `Get-FileHash`): los 4 CSV son **idénticos**, porque el simulador calcula `base_hp + hp_por_nivel × nivel` sin recorte y ningún héroe supera 60 por niveles (Tanque: 40 + 5 × 4 = 60, justo en el tope viejo). El cambio solo se nota en partida cuando se suman perks/equipo: Tanque + Coraza (+6) pasaba de 66 → recortado a 60; ahora llega a 66. Sin impacto en `test_balance`.

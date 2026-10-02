@@ -5,8 +5,9 @@ class_name StatBalance
 # Keep gameplay formulas here so combat, upgrades, and UI stay aligned.
 
 const PLAYER_BASE_HP: int = 20
-# 60 (was 40): leaves room for in-run hero levels on top of the base HP.
-const PLAYER_MAX_HP: int = 60
+# 120 (was 60, 40 before that): room for in-run levels, class perks and armor on
+# top of the base HP (Tank 40 + 5 levels x 4 = 60 already hit the old cap).
+const PLAYER_MAX_HP: int = 120
 
 static func clamp_player_hp(max_hp: int, current_hp: int) -> Dictionary:
 	var clamped_max := clampi(max_hp, PLAYER_BASE_HP, PLAYER_MAX_HP)
