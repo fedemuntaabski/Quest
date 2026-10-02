@@ -7,6 +7,11 @@
 [ext_resource type="Resource" path="res://resources/abilities/tank_passive.tres" id="4_passive"]
 [ext_resource type="Resource" path="res://resources/abilities/tank_active.tres" id="5_active"]
 
+[ext_resource type="Resource" path="res://resources/perks/bastion.tres" id="perk_0"]
+[ext_resource type="Resource" path="res://resources/perks/coraza.tres" id="perk_1"]
+[ext_resource type="Resource" path="res://resources/perks/interposicion_larga.tres" id="perk_2"]
+[ext_resource type="Resource" path="res://resources/perks/retorno_de_escudo.tres" id="perk_3"]
+
 [resource]
 script = ExtResource("1_character_data")
 character_id = "tank"
@@ -25,3 +30,4 @@ sprite_frames = ExtResource("3_2o3rv")
 passive = ExtResource("4_passive")
 active = ExtResource("5_active")
 vfx_color = Color(0.62, 0.78, 1, 1)
+perks = Array[Resource]([ExtResource("perk_0"), ExtResource("perk_1"), ExtResource("perk_2"), ExtResource("perk_3")])

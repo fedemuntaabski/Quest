@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"agil"
+display_name = "Ágil"
+description = "El Golpe Fulminante se recarga 3 s antes."
+unlock_level = 5
+exclusive_group = &"rogue_l5"
+mods = {
+"active_cooldown": -3.0
+}

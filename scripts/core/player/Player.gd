@@ -42,6 +42,7 @@ func _ready() -> void:
 	# Hitbox follows CharacterStats (base from CharacterData + in-run upgrades),
 	# so wire it before register() re-applies upgrades.
 	stats.attack_changed.connect(_on_attack_changed)
+	stats.attack_range_changed.connect(_apply_attack_range)
 	animated_sprite.position += sprite_offset
 	if character_data:
 		stats.hero_id = character_data.character_id
@@ -49,6 +50,7 @@ func _ready() -> void:
 		stats.base_hp = character_data.base_hp
 		stats.set_base_attack(character_data.attack_damage, character_data.attack_interval)
 		_apply_attack_range(character_data.attack_range)
+		stats.set_base_attack_range(character_data.attack_range)
 		_apply_character_visuals(character_data)
 		abilities = HeroAbilities.new()
 		abilities.name = "Abilities"

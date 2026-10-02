@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"sobrecarga_mayor"
+display_name = "Sobrecarga Mayor"
+description = "La Sobrecarga de Módulo potencia las torretas ×2,5 en vez de ×2."
+unlock_level = 5
+exclusive_group = &"mage_l5"
+mods = {
+"active_value": 0.5
+}

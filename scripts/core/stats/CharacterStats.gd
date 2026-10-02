@@ -15,6 +15,7 @@ signal hp_changed(current, max)
 signal died
 signal stats_changed
 signal attack_changed(damage: int, interval: float)
+signal attack_range_changed(radius: float)
 
 # -------------------------
 # HEALTH
@@ -31,6 +32,9 @@ var current_hp: int = StatBalance.PLAYER_BASE_HP
 ## Base = CharacterData values; current = base + in-run upgrades (PlayerStats).
 var base_attack_damage: int = 3
 var base_attack_interval: float = 1.0
+## Radius (px) of the auto-attack AoE: CharacterData value + perks/equipment (PlayerStats).
+var base_attack_range: float = 160.0
+var attack_range: float = 160.0
 var attack_damage: int = 3
 var attack_interval: float = 1.0
 ## Temporary multipliers set by HeroAbilities (buffs/shields); 1.0 = none.
@@ -76,6 +80,19 @@ func effective_attack_damage() -> int:
 func set_attack_mult(mult: float) -> void:
 	attack_mult = mult
 	attack_changed.emit(attack_damage, attack_interval)
+
+
+func set_base_attack_range(radius: float) -> void:
+	base_attack_range = radius
+	set_attack_range(radius)
+
+
+func set_attack_range(radius: float) -> void:
+	if is_equal_approx(attack_range, radius):
+		return
+	attack_range = radius
+	attack_range_changed.emit(radius)
+	stats_changed.emit()
 
 
 func set_attack(damage: int, interval: float) -> void:

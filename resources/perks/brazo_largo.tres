@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"brazo_largo"
+display_name = "Brazo Largo"
+description = "Tus golpes llegan 20 px más lejos."
+unlock_level = 5
+exclusive_group = &"warrior_l5"
+mods = {
+"attack_range": 20
+}

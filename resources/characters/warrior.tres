@@ -7,6 +7,11 @@
 [ext_resource type="Resource" path="res://resources/abilities/warrior_passive.tres" id="4_passive"]
 [ext_resource type="Resource" path="res://resources/abilities/warrior_active.tres" id="5_active"]
 
+[ext_resource type="Resource" path="res://resources/perks/piel_curtida.tres" id="perk_0"]
+[ext_resource type="Resource" path="res://resources/perks/voz_de_mando.tres" id="perk_1"]
+[ext_resource type="Resource" path="res://resources/perks/brazo_largo.tres" id="perk_2"]
+[ext_resource type="Resource" path="res://resources/perks/furia_sostenida.tres" id="perk_3"]
+
 [resource]
 script = ExtResource("1_character_data")
 character_id = "warrior"
@@ -25,3 +30,4 @@ sprite_frames = ExtResource("3_e7muu")
 passive = ExtResource("4_passive")
 active = ExtResource("5_active")
 vfx_color = Color(0.92, 0.36, 0.26, 1)
+perks = Array[Resource]([ExtResource("perk_0"), ExtResource("perk_1"), ExtResource("perk_2"), ExtResource("perk_3")])

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"filo_envenenado"
+display_name = "Filo Envenenado"
+description = "Golpe Fulminante pega ×3,5 en vez de ×3."
+unlock_level = 3
+exclusive_group = &"rogue_l3"
+mods = {
+"active_value": 0.5
+}

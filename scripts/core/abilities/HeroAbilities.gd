@@ -26,6 +26,7 @@ func setup(p_hero: Player, data: CharacterData) -> void:
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.run_upgrades_changed.connect(_on_upgrade)
+		player_stats.perk_chosen.connect(_on_perk_chosen)
 	active = data.active
 	ability_name = data.active_ability_name
 
@@ -34,7 +35,7 @@ func _process(delta: float) -> void:
 	if cooldown_left <= 0.0:
 		return
 	cooldown_left = maxf(cooldown_left - delta, 0.0)
-	cooldown_changed.emit(cooldown_left, active.cooldown)
+	cooldown_changed.emit(cooldown_left, active_cooldown())
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -49,6 +50,34 @@ func _input_allowed() -> bool:
 		and selection != null and selection.is_selected(hero.stats.hero_id)
 
 
+# ---------------- numbers (AbilityData + class perks) ----------------
+
+## Sum of this hero's chosen perks for `key` (HeroPerk.MOD_KEYS).
+func perk_mod(key: String) -> float:
+	var player_stats := ManagerLocator.get_player_stats()
+	return player_stats.perk_mod(hero.stats.hero_id, key) if player_stats else 0.0
+
+
+func active_cooldown() -> float:
+	return maxf(active.cooldown + perk_mod("active_cooldown"), 1.0) if active else 0.0
+
+
+func active_value() -> float:
+	return (active.value + perk_mod("active_value")) if active else 0.0
+
+
+func active_duration() -> float:
+	return (active.duration + perk_mod("active_duration")) if active else 0.0
+
+
+func passive_value() -> float:
+	return (passive.value + perk_mod("passive_value")) if passive else 0.0
+
+
+func passive_radius() -> float:
+	return (passive.radius + perk_mod("passive_radius")) if passive else 0.0
+
+
 # ---------------- passives ----------------
 
 ## Fraction of incoming damage ignored by this hero's passive right now.
@@ -57,12 +86,13 @@ func passive_reduction() -> float:
 		return 0.0
 	match passive.effect:
 		AbilityData.Effect.DAMAGE_REDUCTION_PCT:
-			return passive.value
+			return passive_value()
 		AbilityData.Effect.NEXO_PROXIMITY_REDUCTION:
 			var nexo := ManagerLocator.get_nexo()
-			if nexo == null or passive.radius <= 0.0:
+			var radius := passive_radius()
+			if nexo == null or radius <= 0.0:
 				return 0.0
-			return passive.value * clampf(1.0 - hero.global_position.distance_to(nexo.get_target_position()) / passive.radius, 0.0, 1.0)
+			return passive_value() * clampf(1.0 - hero.global_position.distance_to(nexo.get_target_position()) / radius, 0.0, 1.0)
 	return 0.0
 
 
@@ -78,9 +108,9 @@ func passive_discovery_bonus() -> Dictionary:
 		return {}
 	match passive.effect:
 		AbilityData.Effect.SCIENCE_ON_DISCOVERY:
-			return {"science": roundi(passive.value)}
+			return {"science": roundi(passive_value())}
 		AbilityData.Effect.DUST_ON_DISCOVERY:
-			return {"dust": roundi(passive.value)}
+			return {"dust": roundi(passive_value())}
 	return {}
 
 
@@ -100,19 +130,19 @@ func try_activate() -> bool:
 	match active.effect:
 		AbilityData.Effect.TEAM_ATTACK_BUFF:
 			for ally in _allies_in_room():
-				_buff(ally.stats, "attack_buff", func() -> void: ally.stats.set_attack_mult(1.0 + active.value), func() -> void: ally.stats.set_attack_mult(1.0))
+				_buff(ally.stats, "attack_buff", func() -> void: ally.stats.set_attack_mult(1.0 + active_value()), func() -> void: ally.stats.set_attack_mult(1.0))
 		AbilityData.Effect.TEAM_SHIELD:
 			for ally in ManagerLocator.get_heroes():
 				if ally.stats.is_alive():
-					_buff(ally.stats, "shield", func() -> void: ally.stats.damage_taken_mult = 1.0 - active.value, func() -> void: ally.stats.damage_taken_mult = 1.0)
+					_buff(ally.stats, "shield", func() -> void: ally.stats.damage_taken_mult = 1.0 - active_value(), func() -> void: ally.stats.damage_taken_mult = 1.0)
 		AbilityData.Effect.MODULE_OVERCHARGE:
 			_overcharge_room()
 		AbilityData.Effect.BURST_STRIKE:
 			_burst_strike()
 		_:
 			return false
-	cooldown_left = active.cooldown
-	cooldown_changed.emit(cooldown_left, active.cooldown)
+	cooldown_left = active_cooldown()
+	cooldown_changed.emit(cooldown_left, active_cooldown())
 	_say(ability_name, hero.vfx_color())
 	_play_cast_vfx()
 	ability_used.emit(hero.stats.hero_id, active)
@@ -147,6 +177,15 @@ func _on_upgrade(stat_key: String, _level: int, hero_id: String) -> void:
 		vfx.play(&"level_up", hero.global_position, hero.vfx_color())
 
 
+## Class perk picked: same aura as a level-up; a running cooldown is capped to the new total.
+func _on_perk_chosen(hero_id: String, _perk_id: StringName) -> void:
+	if hero_id != hero.stats.hero_id:
+		return
+	_on_upgrade("level", 0, hero_id)
+	if active:
+		cooldown_left = minf(cooldown_left, active_cooldown())
+
+
 func _allies_in_room() -> Array[Player]:
 	var allies: Array[Player] = []
 	for ally in ManagerLocator.get_heroes():
@@ -161,7 +200,7 @@ func _buff(target: Object, key: String, apply: Callable, revert: Callable) -> vo
 	apply.call()
 	var token := Time.get_ticks_usec()
 	target.set_meta(key, token)
-	await get_tree().create_timer(active.duration).timeout
+	await get_tree().create_timer(active_duration()).timeout
 	if is_instance_valid(target) and target.get_meta(key, 0) == token:
 		revert.call()
 
@@ -173,13 +212,13 @@ func _overcharge_room() -> void:
 		return
 	for module in room_manager.get_modules_in_group(room_manager.get_group_id(hero.current_zone_id)):
 		if module is TurretModule:
-			_buff(module, "overcharge", func() -> void: module.damage_mult = 1.0 + active.value, func() -> void: module.damage_mult = 1.0)
+			_buff(module, "overcharge", func() -> void: module.damage_mult = 1.0 + active_value(), func() -> void: module.damage_mult = 1.0)
 		elif module is GeneratorModule and resources:
 			resources.add_resource(module.resource_type, module.yield_amount)
 
 
 func _burst_strike() -> void:
-	var damage := roundi(hero.stats.effective_attack_damage() * active.value)
+	var damage := roundi(hero.stats.effective_attack_damage() * active_value())
 	for area in hero.hitbox.get_overlapping_areas():
 		var hurtbox := area as HurtboxComponent
 		if hurtbox == null:

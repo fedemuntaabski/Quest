@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"alcance_arcano"
+display_name = "Alcance Arcano"
+description = "Tus golpes llegan 30 px más lejos."
+unlock_level = 5
+exclusive_group = &"mage_l5"
+mods = {
+"attack_range": 30
+}

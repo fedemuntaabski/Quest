@@ -36,3 +36,10 @@ class_name CharacterData
 @export var active_ability_name: String = ""
 
 @export var sprite_frames: SpriteFrames = null
+
+@export_group("Progression")
+## Class upgrades, offered 1-of-2 at hero level 3 and 5 (two per level, one exclusive_group each).
+@export var perks: Array[HeroPerk] = []
+## Own level curve (e.g. a hero that scales interval instead of HP). null = the global one.
+@export var upgrade_override: UpgradeConfig
+@export_group("")

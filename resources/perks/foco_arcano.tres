@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"foco_arcano"
+display_name = "Foco Arcano"
+description = "La Sobrecarga de Módulo se recarga 6 s antes."
+unlock_level = 3
+exclusive_group = &"mage_l3"
+mods = {
+"active_cooldown": -6.0
+}

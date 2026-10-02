@@ -12,6 +12,8 @@ signal found_items_changed
 ## raises all UpgradeConfig.STAT_KEYS together: stat_key is always "level" and
 ## `level` is the number of levels that hero bought this run (hero level - 1).
 signal run_upgrades_changed(stat_key: String, level: int, hero_id: String)
+## A hero picked a class perk (HeroPerk, 1-of-2 at hero level 3 and 5).
+signal perk_chosen(hero_id: String, perk_id: StringName)
 
 const RUN_UPGRADE_CONFIG: UpgradeConfig = preload("res://resources/upgrades/run_upgrade_config.tres")
 
@@ -41,6 +43,11 @@ var found_items: Array[ItemData] = []
 var run_upgrade_config: UpgradeConfig = RUN_UPGRADE_CONFIG
 ## hero_id → levels bought this run (hero level = 1 + levels).
 var run_levels: Dictionary = {}
+## hero_id -> ids of the class perks picked this run (reset with the levels).
+var run_perks: Dictionary = {}
+## hero_id -> HP the third layer (perks, later equipment) currently adds to that
+## hero, so a change only applies the difference.
+var _applied_hp_bonus: Dictionary = {}
 
 ## Compat (single-hero API): the active hero's CharacterStats.
 var stats: CharacterStats:
@@ -85,10 +92,33 @@ func _refresh_hero(s: CharacterStats) -> void:
 	_apply_base_stats(s)
 	var levels := _levels_of(s.hero_id)
 	for i in levels:
-		s.apply_modifier("hp", run_upgrade_config.hp_per_level)
+		s.apply_modifier("hp", _config_for(s.hero_id).hp_per_level)
+	var bonus := _bonus(s.hero_id)
+	if int(bonus["hp"]) != 0:
+		s.apply_modifier("hp", int(bonus["hp"]))
+	_applied_hp_bonus[s.hero_id] = int(bonus["hp"])
 	_apply_run_attack(s, levels)
 
 	stats_changed.emit(s)
+
+## The third layer changed (perk picked): applies only the HP difference, then
+## re-derives attack damage/interval/range from base -> level -> bonus.
+## Never kills: shrinking max HP leaves at least 1 HP.
+func _rebonus(hero_id: String) -> void:
+	var s := get_hero_stats(hero_id)
+	if s == null:
+		return
+	var delta := int(_bonus(hero_id)["hp"]) - int(_applied_hp_bonus.get(hero_id, 0))
+	if delta != 0:
+		var was_alive := s.is_alive()
+		s.apply_modifier("hp", delta)
+		if was_alive and s.current_hp < 1:
+			s.current_hp = 1
+			s.hp_changed.emit(s.current_hp, s.max_hp)
+		_applied_hp_bonus[hero_id] += delta
+	_apply_run_attack(s, _levels_of(hero_id))
+	stats_changed.emit(s)
+
 
 func _apply_base_stats(s: CharacterStats) -> void:
 	s.max_hp = s.base_hp
@@ -163,7 +193,7 @@ func get_hero_level(hero_id: String = "") -> int:
 ## affordable, and one row per stat with its current → next value.
 func get_level_up_preview(hero_id: String = "") -> Dictionary:
 	var id := _resolve(hero_id)
-	var cfg := run_upgrade_config
+	var cfg := _config_for(id)
 	var levels := _levels_of(id)
 	var cost := cfg.get_cost(levels)
 	var rm := ManagerLocator.get_resource_manager()
@@ -188,7 +218,7 @@ func get_run_upgrade_preview(stat_key: String, hero_id: String = "") -> Dictiona
 	var id := _resolve(hero_id)
 	var s := get_hero_stats(id)
 	var levels := _levels_of(id)
-	var cfg := run_upgrade_config
+	var cfg := _config_for(id)
 	var current: Variant = 0
 	var next: Variant = 0
 	if s:
@@ -222,15 +252,16 @@ func level_up_hero(hero_id: String = "") -> bool:
 	var id := _resolve(hero_id)
 	var s := get_hero_stats(id)
 	var levels := _levels_of(id)
-	if s == null or run_upgrade_config.is_maxed(levels):
+	var cfg := _config_for(id)
+	if s == null or cfg.is_maxed(levels):
 		return false
 	var rm := ManagerLocator.get_resource_manager()
-	if rm == null or not rm.spend_resource(run_upgrade_config.cost_resource, run_upgrade_config.get_cost(levels)):
+	if rm == null or not rm.spend_resource(cfg.cost_resource, cfg.get_cost(levels)):
 		return false
 
 	levels += 1
 	run_levels[id] = levels
-	s.apply_modifier("hp", run_upgrade_config.hp_per_level)
+	s.apply_modifier("hp", cfg.hp_per_level)
 	_apply_run_attack(s, levels)
 	QuestLogger.info(QuestLogger.Category.UI, "Hero '%s' level up -> %d." % [id, 1 + levels])
 	run_upgrades_changed.emit("level", levels, id)
@@ -246,14 +277,114 @@ func buy_run_upgrade(stat_key: String, hero_id: String = "") -> bool:
 ## New run: every hero back to level 1.
 func reset_run_upgrades() -> void:
 	run_levels.clear()
+	run_perks.clear()
+	_applied_hp_bonus.clear()
 
 
+## base -> level -> bonus (perks, later equipment): the bonus is added after the
+## level curve so buying a level never overwrites it.
 func _apply_run_attack(s: CharacterStats, levels: int) -> void:
-	var cfg := run_upgrade_config
+	var cfg := _config_for(s.hero_id)
+	var bonus := _bonus(s.hero_id)
 	s.set_attack(
-		cfg.damage_at(s.base_attack_damage, levels),
-		cfg.interval_at(s.base_attack_interval, levels)
+		cfg.damage_at(s.base_attack_damage, levels) + int(bonus["attack_damage"]),
+		maxf(cfg.min_attack_interval, cfg.interval_at(s.base_attack_interval, levels) + float(bonus["attack_interval"]))
 	)
+	s.set_attack_range(s.base_attack_range + float(bonus["attack_range"]))
+
+
+## The hero's own level curve (CharacterData.upgrade_override) or the global one.
+func _config_for(hero_id: String) -> UpgradeConfig:
+	var data := _data_of(hero_id)
+	return data.upgrade_override if data and data.upgrade_override else run_upgrade_config
+
+
+## CharacterData of a registered hero id; null for bare test stats (hero_id "").
+func _data_of(hero_id: String) -> CharacterData:
+	for data in CharacterDatabase.get_all():
+		if data.character_id == hero_id and hero_id != "":
+			return data
+	return null
+
+
+# ---------------- CLASS PERKS (session impl-6) ----------------
+
+## Sum of a mod key over the perks this hero picked (HeroPerk.MOD_KEYS).
+func perk_mod(hero_id: String, key: String) -> float:
+	var total := 0.0
+	for perk in get_perks_of(_resolve(hero_id)):
+		total += float(perk.mods.get(key, 0.0))
+	return total
+
+
+## Perks the hero picked this run, in the order they were picked.
+func get_perks_of(hero_id: String) -> Array[HeroPerk]:
+	var out: Array[HeroPerk] = []
+	var data := _data_of(_resolve(hero_id))
+	if data == null:
+		return out
+	for perk_id: StringName in run_perks.get(_resolve(hero_id), []):
+		for perk in data.perks:
+			if perk.id == perk_id:
+				out.append(perk)
+	return out
+
+
+## The two perks to choose from right now (lowest unlocked level whose group has no pick), [] if none.
+func get_pending_perk_choices(hero_id: String = "") -> Array[HeroPerk]:
+	var id := _resolve(hero_id)
+	var out: Array[HeroPerk] = []
+	var data := _data_of(id)
+	if data == null:
+		return out
+	var level := get_hero_level(id)
+	var picked_groups := {}
+	for perk in get_perks_of(id):
+		picked_groups[perk.exclusive_group] = true
+	var best_level := 0
+	for perk in data.perks:
+		if perk.unlock_level <= level and not picked_groups.has(perk.exclusive_group) and (best_level == 0 or perk.unlock_level < best_level):
+			best_level = perk.unlock_level
+	if best_level == 0:
+		return out
+	for perk in data.perks:
+		if perk.unlock_level == best_level and not picked_groups.has(perk.exclusive_group):
+			out.append(perk)
+	return out
+
+
+func has_pending_perk(hero_id: String = "") -> bool:
+	return not get_pending_perk_choices(hero_id).is_empty()
+
+
+## Picks one of get_pending_perk_choices(); false (nothing changes) if it is not on offer.
+func choose_perk(hero_id: String, perk_id: StringName) -> bool:
+	var id := _resolve(hero_id)
+	var chosen: HeroPerk = null
+	for perk in get_pending_perk_choices(id):
+		if perk.id == perk_id:
+			chosen = perk
+	if chosen == null:
+		return false
+	var picked: Array = run_perks.get(id, [])
+	picked.append(perk_id)
+	run_perks[id] = picked
+	_rebonus(id)
+	QuestLogger.info(QuestLogger.Category.UI, "Hero '%s' chose perk '%s'." % [id, perk_id])
+	perk_chosen.emit(id, perk_id)
+	return true
+
+
+## Third stat layer for a hero: perks (and, once the inventory exists, equipment).
+## Keys: hp (int), attack_damage (int), attack_interval (s, negative = faster), attack_range (px).
+func _bonus(hero_id: String) -> Dictionary:
+	var bonus := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0}
+	for perk in get_perks_of(hero_id):
+		bonus["hp"] += int(perk.mods.get("hp", 0))
+		bonus["attack_damage"] += int(perk.mods.get("attack_damage", 0))
+		bonus["attack_interval"] += float(perk.mods.get("attack_interval", 0.0))
+		bonus["attack_range"] += float(perk.mods.get("attack_range", 0.0))
+	return bonus
 
 
 func _on_stats_updated(s: CharacterStats) -> void:

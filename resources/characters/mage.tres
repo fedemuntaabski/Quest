@@ -7,6 +7,11 @@
 [ext_resource type="Resource" path="res://resources/abilities/mage_passive.tres" id="4_passive"]
 [ext_resource type="Resource" path="res://resources/abilities/mage_active.tres" id="5_active"]
 
+[ext_resource type="Resource" path="res://resources/perks/estudio_profundo.tres" id="perk_0"]
+[ext_resource type="Resource" path="res://resources/perks/foco_arcano.tres" id="perk_1"]
+[ext_resource type="Resource" path="res://resources/perks/alcance_arcano.tres" id="perk_2"]
+[ext_resource type="Resource" path="res://resources/perks/sobrecarga_mayor.tres" id="perk_3"]
+
 [resource]
 script = ExtResource("1_character_data")
 character_id = "mage"
@@ -25,3 +30,4 @@ sprite_frames = ExtResource("3_gosk6")
 passive = ExtResource("4_passive")
 active = ExtResource("5_active")
 vfx_color = Color(0.62, 0.52, 1, 1)
+perks = Array[Resource]([ExtResource("perk_0"), ExtResource("perk_1"), ExtResource("perk_2"), ExtResource("perk_3")])

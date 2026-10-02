@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"retorno_de_escudo"
+display_name = "Retorno de Escudo"
+description = "El escudo se recarga 5 s antes."
+unlock_level = 5
+exclusive_group = &"tank_l5"
+mods = {
+"active_cooldown": -5.0
+}

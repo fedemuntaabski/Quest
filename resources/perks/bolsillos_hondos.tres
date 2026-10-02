@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"bolsillos_hondos"
+display_name = "Bolsillos Hondos"
+description = "Paso Ligero da 1 Polvo más por sala descubierta."
+unlock_level = 3
+exclusive_group = &"rogue_l3"
+mods = {
+"passive_value": 1.0
+}

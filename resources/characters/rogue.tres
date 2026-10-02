@@ -7,6 +7,11 @@
 [ext_resource type="Resource" path="res://resources/abilities/rogue_passive.tres" id="4_passive"]
 [ext_resource type="Resource" path="res://resources/abilities/rogue_active.tres" id="5_active"]
 
+[ext_resource type="Resource" path="res://resources/perks/bolsillos_hondos.tres" id="perk_0"]
+[ext_resource type="Resource" path="res://resources/perks/filo_envenenado.tres" id="perk_1"]
+[ext_resource type="Resource" path="res://resources/perks/manos_rapidas.tres" id="perk_2"]
+[ext_resource type="Resource" path="res://resources/perks/agil.tres" id="perk_3"]
+
 [resource]
 script = ExtResource("1_character_data")
 character_id = "rogue"
@@ -25,3 +30,4 @@ sprite_frames = ExtResource("3_1l3ae")
 passive = ExtResource("4_passive")
 active = ExtResource("5_active")
 vfx_color = Color(0.45, 0.92, 0.5, 1)
+perks = Array[Resource]([ExtResource("perk_0"), ExtResource("perk_1"), ExtResource("perk_2"), ExtResource("perk_3")])

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"coraza"
+display_name = "Coraza"
+description = "+6 de vida máxima."
+unlock_level = 3
+exclusive_group = &"tank_l3"
+mods = {
+"hp": 6
+}

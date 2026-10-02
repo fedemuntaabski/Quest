@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"piel_curtida"
+display_name = "Piel Curtida"
+description = "Tu piel de hierro aguanta más: la pasiva reduce 5 % más el daño."
+unlock_level = 3
+exclusive_group = &"warrior_l3"
+mods = {
+"passive_value": 0.05
+}

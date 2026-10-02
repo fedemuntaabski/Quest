@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"bastion"
+display_name = "Bastión"
+description = "Muro Viviente protege en 160 px más de radio alrededor del Nexo."
+unlock_level = 3
+exclusive_group = &"tank_l3"
+mods = {
+"passive_radius": 160
+}
