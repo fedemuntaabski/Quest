@@ -27,6 +27,10 @@ static func get_player_stats() -> PlayerStats:
 	return get_autoload("PlayerStats") as PlayerStats
 
 
+static func get_party_inventory() -> PartyInventory:
+	return get_autoload("PartyInventory") as PartyInventory
+
+
 static func get_bestiary() -> BestiaryService:
 	return get_autoload("BestiaryService") as BestiaryService
 

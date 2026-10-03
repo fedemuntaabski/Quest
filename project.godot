@@ -20,6 +20,7 @@ boot_splash/minimum_display_time=2000
 
 [autoload]
 
+PartyInventory="*res://scripts/autoload/PartyInventory.gd"
 PlayerStats="*res://scripts/core/stats/PlayerStats.gd"
 SaveManager="*res://scripts/autoload/SaveManager.gd"
 SettingsManager="*res://scripts/autoload/SettingsManager.gd"
