@@ -189,3 +189,19 @@ Lectura: la probabilidad crece con cada puerta y el piso 1 es tranquilo (2,4 ame
 Cambios de valores respecto del bucle anterior: la base plana por puerta (Industria 2, Comida 2, Ciencia 1) pasa a 0 y se reemplaza por Polvo (4 + 0,5/piso) + un recurso al azar ponderado por piso (2 + 0,5/piso). `FloorConfig.dust_per_discovery*` se movió a `DoorRollConfig` (mismo valor). La amenaza por puerta ya no depende de las salas oscuras ni del turno global: `0,10 + 0,06 × puertas + 0,05 × (piso − 1)`, tope 0,85 (antes `0,05 + 0,08 × oscuras + 0,015 × turno + 0,05 × (piso − 1)`). Cantidad: `1 + puertas / 5 + ⌊0,34 × (piso − 1)⌋` (antes `1 + turno / 5 + ⌊0,34 × (piso − 1)⌋`; con `0,34` por el override del `.tres`).
 
 Pendiente de playtest: que la curva de amenaza no resulte demasiado suave al principio ni demasiado dura desde el piso 4; que 3-5 salas encendibles alcancen para proteger el camino al Nexo; que el tope por piso no deje las oleadas de extracción tan cortas que se vuelvan triviales (etapa 3 pide 4 enemigos cada 2-3,5 s contra un tope de 6-14).
+
+## Economía, módulos e Investigación (session economia-8)
+Datos nuevos: `resources/modules/*.tres` (`ModuleDef`: Forja/Granja/Scriptorium 6, Ballesta 4, Brasero 3, Catapulta 8, Pinchos 3), `module_cost_curve.tres` (`step` 0,25, reembolso 50 %, reparación 0,5 × base), `UpgradeConfig.heal_cost_per_hp` 0,15 Comida, investigación de módulos (Ballesta 8, Brasero 6, Catapulta 18). Corrida: `godot --headless --path . --script res://tools/balance_sim.gd -- economia8` (tabla `economy`, `docs/balance/economia8_economy.csv`; las otras 7 tablas se regeneran con el mismo tag). Los stats de la Ballesta no cambiaron, así que `towers` sigue en rango (`test_balance`).
+
+Modelo `BalanceSim.economy_rows()` (jugador de referencia): cada sala encendida (+ la inicial) pone su mayor repartido entre Forja/Granja/Scriptorium y 2 menores entre Ballesta/Pinchos, comprados con el costo creciente; los mayores trabajan la mitad de las puertas del piso; investigación completa y niveles repartidos parejo en los 5 pisos; Comida cura a 2 héroes 30 HP por piso; Polvo energiza las salas encendibles. `run_ratio` = ingreso acumulado / gasto acumulado (> 1 sobra, < 1 falta).
+
+| Recurso | Ingreso piso 1 → 5 | Gasto planificable piso 1 → 5 | run_ratio al final | Lectura |
+|---|---|---|---|---|
+| Industria | 36 → 46 | 86 → 120 | 0,33 | Falta: no se construye todo, se elige (intencional) |
+| Comida | 34 → 46 | 45 | 0,77 | Niveles + curas absorben casi todo |
+| Ciencia | 26 → 52 | 23 | 1,57 | Sobra algo al final, ver abajo |
+| Polvo | 48 → 66 | 36 → 70 | 0,86 | Equilibrado |
+
+`test_balance._check_economy`: todo recurso con ingreso > 0 y gasto > 0 en cada piso, y `run_ratio` final dentro de [0,2; 3,0] (ninguno inútil ni acumulándose sin límite). Industria tiene sumidero tardío real (el costo crece con lo ya construido y las reparaciones no están en el modelo); Comida ganó la cura. Ciencia sigue siendo un árbol finito (97 − 14 + 32 = 115 con la nueva Catapulta y sin `science_generator`): el excedente del piso 4-5 (~1,4-1,6) es la deuda ya anotada en `docs/INVESTIGACION_AUDITORIA.md` I-09; se acepta mientras no haya un tier 3 de investigación (el campo `tier` ya admite 1-3).
+
+Pendiente de playtest: que el costo creciente (+25 % de la base por módulo) no frene tanto la Industria que el jugador nunca llegue al segundo Brasero/Ballesta; que 8 de Ciencia por Ballesta + exigir un Scriptorium (6 Industria) no trabe el inicio con 15 Industria; valor real de `heal_cost_per_hp`.

@@ -113,3 +113,7 @@ Severidades: ROTO = bug claro con fix pequeño; CONFUSO = UX; BALANCE = números
 - Las cifras esperadas por piso (Elite, bucles, sala GENERATOR) dependen de la generación aleatoria; son estimaciones, no medidas. Las tablas B-D suponen 1 Gen. Ciencia siempre vivo desde el turno 0 en la sala de inicio y que el Mago esté en el equipo.
 - Sonido genérico de botones/UI, VFX o toasts globales que pudieran dispararse al pulsar "Investigar" sin código propio.
 - Sincronización en red de la investigación.
+
+## Actualización session economia-8
+- `science_generator` y `turret_plans` pasan a `ModuleResearch` (`ballesta`; nuevos `brasero`, `catapulta`, con `tier`). Investigar exige un Scriptorium construido y activo (cierra parte de I-02: ahora la Ciencia tiene un primer paso claro, "Construí un Scriptorium").
+- I-08 / I-09: sin `science_generator` (6 de Ciencia) y con 3 módulos en lugar de 2 el total sube a 115; la Ciencia sigue sobrando al final (ver `docs/BALANCE.md` "Economía"). Sin cambios en I-03..I-07 y I-10..I-13.
