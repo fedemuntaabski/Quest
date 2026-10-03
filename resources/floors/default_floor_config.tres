@@ -54,4 +54,3 @@ enemy_damage_growth = 0.1
 enemy_pools = Array[ExtResource("1_7csa3")]([ExtResource("2_j5m1i"), ExtResource("3_kvag3"), ExtResource("4_533ib"), ExtResource("5_erun4"), ExtResource("6_41g3f")])
 nexo_max_hp = 120
 raider_ratio_by_floor = null
-extra_invasion_enemies_per_floor = 0.34

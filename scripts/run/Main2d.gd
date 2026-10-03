@@ -210,7 +210,7 @@ func _setup_extraction_manager() -> void:
 	extraction_manager = ExtractionManager.new()
 	extraction_manager.name = "ExtractionManager"
 	add_child(extraction_manager)
-	extraction_manager.setup(room_manager, enemy_manager, floor_manager.extraction_interval())
+	extraction_manager.setup(room_manager, enemy_manager, floor_manager)
 	extraction_manager.victory_declared.connect(floor_manager.complete_floor)
 
 func _setup_exit_indicator() -> void:

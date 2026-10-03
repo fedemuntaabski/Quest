@@ -43,15 +43,15 @@ class_name FloorConfig
 ## Chance of an item as the floor's completion reward (straight to the stash).
 @export_range(0.0, 1.0) var floor_end_loot_chance: float = 1.0
 
-@export_group("Discovery")
-## Dust granted every time a new room is discovered (door opened), whether or
-## not an invasion happens. Tuned so a floor lights some rooms, not all
-## (energizing costs RoomZone.get_power_cost(), base 10; run starts with 20 dust).
-## Session 7: 2 → 4 (the start room is now lit for free, rooms can be switched
-## off for a refund, and floors are bigger).
-@export var dust_per_discovery: int = 4
-## +X dust per discovery per floor (fractional, floored).
-@export var dust_per_discovery_growth: float = 0.5
+@export_group("Doors")
+## Threat roll and reward of every opened door (session bucle-7). Discovery dust
+## lives here now (door_roll.dust_reward), tuned so a floor lights some rooms,
+## not all (energizing costs RoomZone.get_power_cost(), base 10 and rising).
+@export var door_roll: DoorRollConfig = preload("res://resources/floors/door_roll_config.tres")
+
+@export_group("Energy")
+## Extra dust per room already energized (the free start room does not count).
+@export var power_cost_step: int = 2
 
 @export_group("Enemy scaling")
 ## +X enemy max HP per floor (0.25 = +25% each floor).
@@ -66,6 +66,13 @@ class_name FloorConfig
 @export_group("Nexo")
 ## Nexo hit points: raiders wear them down, 0 = the usual defeat.
 @export var nexo_max_hp: int = 100
+## Speed of the hero carrying the Nexo (0.85 = 15 % slower).
+@export_range(0.1, 1.0) var carrier_speed_mult: float = 0.85
+
+@export_group("Enemy cap")
+## Max enemies alive at once, per floor (index = floor - 1, past the end reuses the last).
+## Door invasions and extraction waves stop spawning at the cap.
+@export var max_enemies_by_floor: PackedInt32Array = PackedInt32Array([6, 8, 10, 12, 14])
 
 @export_group("Enemy roles")
 ## Share of spawns that are RAIDERS (go for the Nexo); the rest are HUNTERS.
@@ -76,14 +83,20 @@ class_name FloorConfig
 @export var raider_min_arrival_sec: float = 4.0
 
 @export_group("Wave scaling")
-## Flat bonus added to the per-door invasion chance per floor.
-@export var invasion_chance_bonus_per_floor: float = 0.05
-## Extra enemies per invasion per floor (fractional, floored).
-@export var extra_invasion_enemies_per_floor: float = 0.5
+## Extraction waves (after the Nexo is taken): stage 0 starts at pickup and the
+## stage rises every extraction_stage_sec up to extraction_stage_count - 1, so the
+## waves keep growing until the exit. Each wave = wave_base + floor(wave_growth * stage)
+## enemies spread over dark rooms; the gap between waves is extraction_interval(floor)
+## minus extraction_stage_interval_step per stage (never below min_extraction_spawn_interval).
 @export var extraction_spawn_interval: float = 5.0
 ## Seconds shaved off the extraction wave timer per floor.
 @export var extraction_interval_reduction_per_floor: float = 0.5
 @export var min_extraction_spawn_interval: float = 2.0
+@export var extraction_stage_sec: float = 20.0
+@export var extraction_stage_count: int = 4
+@export var extraction_stage_interval_step: float = 0.5
+@export var extraction_wave_base: int = 1
+@export var extraction_wave_growth: float = 1.0
 
 
 func enemy_hp_multiplier(floor_index: int) -> float:
@@ -107,16 +120,26 @@ func raider_ratio(floor_index: int) -> float:
 	return clampf(raider_ratio_by_floor[clampi(floor_index - 1, 0, raider_ratio_by_floor.size() - 1)], 0.0, 1.0)
 
 
-func invasion_chance_bonus(floor_index: int) -> float:
-	return invasion_chance_bonus_per_floor * _steps(floor_index)
+## Max enemies alive at once on `floor_index` (0 entries = no cap).
+func max_enemies(floor_index: int) -> int:
+	if max_enemies_by_floor.is_empty():
+		return 1 << 30
+	return max_enemies_by_floor[clampi(floor_index - 1, 0, max_enemies_by_floor.size() - 1)]
 
 
-func extra_invasion_enemies(floor_index: int) -> int:
-	return int(floor(extra_invasion_enemies_per_floor * _steps(floor_index)))
-
-
+## Seconds between extraction waves on `floor_index` at the start (stage 0).
 func extraction_interval(floor_index: int) -> float:
 	return maxf(min_extraction_spawn_interval, extraction_spawn_interval - extraction_interval_reduction_per_floor * _steps(floor_index))
+
+
+## Seconds between waves at extraction `stage` (shrinks per stage, floored).
+func extraction_stage_interval(floor_index: int, stage: int) -> float:
+	return maxf(min_extraction_spawn_interval, extraction_interval(floor_index) - extraction_stage_interval_step * stage)
+
+
+## Enemies per extraction wave at `stage`.
+func extraction_wave_size(stage: int) -> int:
+	return maxi(1, extraction_wave_base + int(floor(extraction_wave_growth * stage)))
 
 
 func room_count(floor_index: int) -> int:
@@ -152,8 +175,9 @@ func loot_chance(type: RoomData.RoomType) -> float:
 	return rule.loot_chance if rule else default_loot_chance
 
 
+## Dust a door that reveals a room pays (DoorRollConfig "Reward").
 func discovery_dust(floor_index: int) -> int:
-	return dust_per_discovery + int(floor(dust_per_discovery_growth * _steps(floor_index)))
+	return door_roll.dust_reward(floor_index)
 
 
 func _steps(floor_index: int) -> int:

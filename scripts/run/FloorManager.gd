@@ -14,6 +14,7 @@ const DEFAULT_CONFIG: FloorConfig = preload("res://resources/floors/default_floo
 const BANNER_OFFSET := Vector2(0, -56)
 const BANNER_INTENSITY := 1.5
 const DESCRIPTION_OFFSET := Vector2(0, -32)
+const DOOR_REWARD_OFFSET := Vector2(0, 28)
 
 @export var config: FloorConfig = DEFAULT_CONFIG
 
@@ -82,6 +83,7 @@ func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager == null:
 		return
+	_grant_door_bonus(room_id, resource_manager)
 	if room_manager and room_manager.get_zone_kind(room_id) == "corridor":
 		return
 	var amount := config.discovery_dust(floor_index) + roundi(resource_manager.get_bonus(ResearchEntry.Effect.DISCOVERY_DUST))
@@ -92,6 +94,28 @@ func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
 	if room_manager:
 		_show_room_banner(room_id)
 		_apply_room_type_discovery(room_id, resource_manager)
+
+
+## {"key": resource, "amount": n}: the extra reward of opening group `group_id`.
+func door_bonus(group_id: String) -> Dictionary:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([map_seed, "door_reward", group_id])
+	return {"key": config.door_roll.roll_bonus_resource(floor_index, rng), "amount": config.door_roll.bonus_amount(floor_index)}
+
+
+## Every door pays one random resource besides the dust (DoorRollConfig "Reward"),
+## loop corridors included. Seeded per door so a floor replays the same.
+func _grant_door_bonus(group_id: String, resource_manager: ResourceManager) -> void:
+	var bonus := door_bonus(group_id)
+	var key: String = bonus["key"]
+	var amount: int = bonus["amount"]
+	if key == "" or amount <= 0:
+		return
+	resource_manager.add_resource(key, amount)
+	QuestLogger.info(QuestLogger.Category.MAP, "Door '%s': +%d %s." % [group_id, amount, key])
+	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+	if text_mgr and room_manager:
+		text_mgr.spawn_text(room_manager.get_center(group_id) + DOOR_REWARD_OFFSET, "+%d %s" % [amount, Module.RESOURCE_LABELS.get(key, key)], Color.WHITE)
 
 
 ## Living heroes' discovery passives (Mente Analítica: Ciencia, Paso Ligero: Polvo).
@@ -202,12 +226,21 @@ func enemy_damage_multiplier() -> float:
 	return config.enemy_damage_multiplier(floor_index)
 
 
-func invasion_chance_bonus() -> float:
-	return config.invasion_chance_bonus(floor_index)
+## Threat chance / enemy count of a door opened as the `doors_opened`-th of this floor.
+func threat_chance(doors_opened: int) -> float:
+	return config.door_roll.threat_chance(doors_opened, floor_index)
 
 
-func extra_invasion_enemies() -> int:
-	return config.extra_invasion_enemies(floor_index)
+func threat_enemy_count(doors_opened: int) -> int:
+	return config.door_roll.enemy_count(doors_opened, floor_index)
+
+
+func max_enemies() -> int:
+	return config.max_enemies(floor_index)
+
+
+func carrier_speed_mult() -> float:
+	return config.carrier_speed_mult
 
 
 func extraction_interval() -> float:

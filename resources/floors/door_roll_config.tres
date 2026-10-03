@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="DoorRollConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/DoorRollConfig.gd" id="1_door_roll"]
+
+[resource]
+script = ExtResource("1_door_roll")
+base_chance = 0.1
+chance_per_door = 0.06
+chance_per_floor = 0.05
+max_chance = 0.85
+base_enemy_count = 1
+doors_per_extra_enemy = 5.0
+extra_enemies_per_floor = 0.34
+dust_base = 4
+dust_per_floor = 0.5
+bonus_base = 2
+bonus_per_floor = 0.5
+bonus_resources = PackedStringArray("industry", "food", "science")
+bonus_weights_by_floor = Array[Vector3]([Vector3(3, 2, 1), Vector3(2, 2, 2), Vector3(2, 2, 3)])

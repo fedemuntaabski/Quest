@@ -95,7 +95,7 @@ static func pool_types(floor_index: int) -> Array[EnemyType]:
 
 
 static func wave_size(floor_index: int) -> int:
-	return 1 + int(WAVE_TURN / 5.0) + floor_config().extra_invasion_enemies(floor_index)
+	return floor_config().door_roll.enemy_count(WAVE_TURN, floor_index)
 
 
 ## Hero (level) vs one enemy of `floor_index`: hits/time to kill it, time to be killed by it.

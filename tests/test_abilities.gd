@@ -129,7 +129,9 @@ func _check_mage_rogue() -> void:
 	var science := resources.get_resource("science")
 	var dust := resources.get_resource("dust")
 	main2d.floor_manager.on_room_discovered(start_id, [] as Array[Vector2i])
-	_expect(resources.get_resource("science") - science == roundi(mage.abilities.passive.value), "Mente Analítica: Ciencia %+d" % (resources.get_resource("science") - science))
+	var door_bonus: Dictionary = main2d.floor_manager.door_bonus(start_id)  # every door also pays one random resource
+	var bonus_science: int = door_bonus["amount"] if door_bonus["key"] == "science" else 0
+	_expect(resources.get_resource("science") - science - bonus_science == roundi(mage.abilities.passive.value), "Mente Analítica: Ciencia %+d" % (resources.get_resource("science") - science))
 	var expected_dust: int = main2d.floor_manager.config.discovery_dust(1) + roundi(rogue.abilities.passive.value)
 	_expect(resources.get_resource("dust") - dust == expected_dust, "Paso Ligero: Polvo %+d (want %+d)" % [resources.get_resource("dust") - dust, expected_dust])
 

@@ -186,6 +186,8 @@ func _run_types_and_loops() -> void:
 	var enemies: EnemyManager = main2d.enemy_manager
 	var hero_stats: CharacterStats = main2d.player.stats
 	var per_room := config.discovery_dust(floor_index)
+	fm.config = fm.config.duplicate()  # the door invasions above must not hit the enemy cap
+	fm.config.max_enemies_by_floor = PackedInt32Array([999])
 	var typed: Array[String] = []
 	for room in layout.rooms:
 		if room_manager.visual_config.room_type_color(room.get_room_type()).a > 0.0:
@@ -231,7 +233,9 @@ func _run_types_and_loops() -> void:
 				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, group, resources.get_resource("dust") - dust_before, expected_dust])
 			if rule and reward_key != "" and reward_key != "dust":
 				# The turn tick also pays the resource's yield and the heroes' discovery passives.
-				var got := resources.get_resource(reward_key) - reward_before - reward_yield - reward_passive
+				var door_bonus: Dictionary = fm.door_bonus(group)
+				var reward_door: int = door_bonus["amount"] if door_bonus["key"] == reward_key else 0
+				var got := resources.get_resource(reward_key) - reward_before - reward_yield - reward_passive - reward_door
 				if got != rule.reward_at(floor_index):
 					failures.append("%s: '%s' reward %d %s, expected %d" % [label, group, got, reward_key, rule.reward_at(floor_index)])
 				var after := resources.get_resource(reward_key)

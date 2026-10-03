@@ -12,10 +12,12 @@ signal research_changed
 
 const KEYS: Array[String] = ["industry", "food", "science", "dust"]
 
-## Base production per opened door. Dust is never generated passively.
-const BASE_YIELD_INDUSTRY: int = 2
-const BASE_YIELD_FOOD: int = 2
-const BASE_YIELD_SCIENCE: int = 1
+## Base production per opened door. 0 since session bucle-7: what a door pays
+## (dust + one random resource per floor) is DoorRollConfig, paid by
+## FloorManager; only generator modules add to the per-turn tick.
+const BASE_YIELD_INDUSTRY: int = 0
+const BASE_YIELD_FOOD: int = 0
+const BASE_YIELD_SCIENCE: int = 0
 const BASE_YIELD_DUST: int = 0
 
 const RESEARCH_CONFIG_PATH := "res://resources/research/research_config.tres"

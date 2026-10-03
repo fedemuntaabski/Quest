@@ -8,14 +8,10 @@ const ENEMY_SCENE := preload("res://scenes/entities/Enemy.tscn")
 ## Used when there is no FloorManager / no pool (standalone scenes, tests).
 const FALLBACK_TYPE: EnemyType = preload("res://resources/enemies/goblin.tres")
 
-## Risk engine: P(spawn) = clamp(BASE + dark_rooms*PER_DARK + turn*PER_TURN).
-const BASE_CHANCE := 0.05
-const CHANCE_PER_DARK_ROOM := 0.08
-const CHANCE_PER_TURN := 0.015
-const MAX_CHANCE := 0.85
-const TURNS_PER_WAVE_STEP := 5.0
-
 signal invasion_triggered(spawn_rooms: Array[RoomZone], enemy_count: int)
+## Telegraph: enemies just spawned in these zones (source = "door" | "wave"). HUD
+## text/sound and the minimap alert listen to this, not to invasion_triggered.
+signal enemies_appeared(zone_ids: Array[String], count: int, source: String)
 ## Every spawned Enemy (the bestiary counts the first one as "seen").
 signal enemy_spawned(enemy: Enemy)
 
@@ -65,6 +61,8 @@ func _spawns_blocked(zone_id: String) -> bool:
 	return rule != null and rule.blocks_spawns
 
 
+## Door threat (DoorRollConfig): `current_turn` is the count of doors opened on this
+## floor (the turn only moves when a door opens), so the chance grows door by door.
 func _on_turn_advanced(current_turn: int) -> void:
 	if room_manager == null:
 		return
@@ -72,11 +70,9 @@ func _on_turn_advanced(current_turn: int) -> void:
 	if dark_rooms.is_empty():
 		return
 
-	var floor_chance_bonus: float = floor_manager.invasion_chance_bonus() if floor_manager else 0.0
-	var spawn_chance: float = minf(MAX_CHANCE, BASE_CHANCE + (dark_rooms.size() * CHANCE_PER_DARK_ROOM) + (current_turn * CHANCE_PER_TURN) + floor_chance_bonus)
-	var enemy_count: int = 1 + int(floor(current_turn / TURNS_PER_WAVE_STEP))
-	if floor_manager:
-		enemy_count += floor_manager.extra_invasion_enemies()
+	var door_roll := _door_roll()
+	var spawn_chance: float = door_roll.threat_chance(current_turn, _floor_index())
+	var enemy_count: int = door_roll.enemy_count(current_turn, _floor_index())
 	var roll: float = randf()
 	if roll > spawn_chance:
 		QuestLogger.info(QuestLogger.Category.ENEMY, "Turn %d: no invasion (chance %.1f%%, roll %.3f)." % [current_turn, spawn_chance * 100.0, roll])
@@ -97,13 +93,57 @@ func _on_turn_advanced(current_turn: int) -> void:
 func _on_invasion_triggered(spawn_rooms: Array[RoomZone], enemy_count: int) -> void:
 	if spawn_rooms.is_empty():
 		return
+	var zones: Array[String] = []
 	for i in range(enemy_count):
 		var room := spawn_rooms.pick_random() as RoomZone
 		QuestLogger.info(QuestLogger.Category.ENEMY, "INVASIÓN: Spawneando enemigo en la sala %s" % room.room_id)
-		_spawn_enemy(room.zone_id, room.center_position)
+		if _spawn_enemy(room.zone_id, room.center_position) and not zones.has(room.zone_id):
+			zones.append(room.zone_id)
+	if not zones.is_empty():
+		enemies_appeared.emit(zones, enemy_count, "door")
 
 
+## Extraction wave: `count` enemies, each in a random dark room (rooms may repeat);
+## stops at the floor's cap. Returns how many spawned.
+func spawn_wave(count: int) -> int:
+	if room_manager == null:
+		return 0
+	var rooms := get_spawn_rooms()
+	if rooms.is_empty():
+		return 0
+	var zones: Array[String] = []
+	var spawned := 0
+	for i in range(count):
+		var room := rooms.pick_random() as RoomZone
+		if _spawn_enemy(room.zone_id, room.center_position) == null:
+			break
+		spawned += 1
+		if not zones.has(room.zone_id):
+			zones.append(room.zone_id)
+	if spawned > 0:
+		enemies_appeared.emit(zones, spawned, "wave")
+	return spawned
+
+
+## Enemies alive now (freed ones are pruned).
+func alive_count() -> int:
+	var alive: Array[Enemy] = []
+	for enemy in _enemies:
+		if is_instance_valid(enemy):
+			alive.append(enemy)
+	_enemies = alive
+	return alive.size()
+
+
+func _door_roll() -> DoorRollConfig:
+	return floor_manager.config.door_roll if floor_manager else FloorManager.DEFAULT_CONFIG.door_roll
+
+
+## Null when the floor's simultaneous cap is reached.
 func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
+	if floor_manager and alive_count() >= floor_manager.max_enemies():
+		QuestLogger.info(QuestLogger.Category.ENEMY, "Spawn refused: cap of %d enemies reached." % floor_manager.max_enemies())
+		return null
 	var enemy := ENEMY_SCENE.instantiate() as Enemy
 	_enemies_root.add_child(enemy)
 	enemy.setup(world_position)
