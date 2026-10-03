@@ -60,15 +60,30 @@ func color() -> Color:
 
 ## "+10 Vida · +2 Daño · -0.10 s Intervalo · +20 px Alcance"
 func describe_modifiers() -> String:
+	return format_modifiers(modifiers)
+
+
+## What equipping this one instead of `old` (may be null) changes, same format.
+func describe_change_from(old: ItemData) -> String:
+	var delta := {}
+	for key: String in MODIFIER_KEYS:
+		var change := float(modifiers.get(key, 0)) - (float(old.modifiers.get(key, 0)) if old else 0.0)
+		if not is_zero_approx(change):
+			delta[key] = change
+	return format_modifiers(delta)
+
+
+## Modifier dictionary (keys of MODIFIER_KEYS) as text; also used for a hero's equipment total.
+static func format_modifiers(mods: Dictionary) -> String:
 	var parts: Array[String] = []
-	if modifiers.has("hp"):
-		parts.append("%+d Vida" % int(modifiers["hp"]))
-	if modifiers.has("attack_damage"):
-		parts.append("%+d Daño" % int(modifiers["attack_damage"]))
-	if modifiers.has("attack_interval"):
-		parts.append("%+.2f s Intervalo" % float(modifiers["attack_interval"]))
-	if modifiers.has("attack_range"):
-		parts.append("%+d px Alcance" % int(modifiers["attack_range"]))
+	if mods.has("hp"):
+		parts.append("%+d Vida" % int(mods["hp"]))
+	if mods.has("attack_damage"):
+		parts.append("%+d Daño" % int(mods["attack_damage"]))
+	if mods.has("attack_interval"):
+		parts.append("%+.2f s Intervalo" % float(mods["attack_interval"]))
+	if mods.has("attack_range"):
+		parts.append("%+d px Alcance" % int(mods["attack_range"]))
 	return " · ".join(parts)
 
 
