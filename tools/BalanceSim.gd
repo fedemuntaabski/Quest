@@ -21,6 +21,8 @@ const FLOOR_CONFIG_PATH := "res://resources/floors/default_floor_config.tres"
 const UPGRADE_CONFIG_PATH := "res://resources/upgrades/run_upgrade_config.tres"
 ## Sapper/raider hit-the-Nexo timer (Enemy.attack_speed default).
 const NEXO_TICK_SEC := 1.0
+## ResourceManager.reset_resources() default dust at the start of a run.
+const RESET_DUST := 20
 
 
 static func floor_config() -> FloorConfig:
@@ -256,6 +258,57 @@ static func destroy_sec(nexo_hp: int, dmg_per_tick: int, raiders: int) -> float:
 	if dmg_per_tick <= 0:
 		return INF
 	return ceili(float(nexo_hp) / float(dmg_per_tick * raiders)) * NEXO_TICK_SEC
+
+
+## Door loop (session bucle-7): per floor, opening every room once (rooms - 1 doors).
+## chance_* = DoorRollConfig.threat_chance at the 1st / 5th / last door; threats and enemies
+## are expectations (enemies capped by FloorConfig.max_enemies per wave, not over time);
+## dust/bonus = what the doors pay; lit_rooms = rooms the starting dust + the doors' dust
+## can energize with the growing cost (RoomZone.POWER_COST + power_cost_step per lit room).
+static func door_rows() -> Array[Dictionary]:
+	var config := floor_config()
+	var roll := config.door_roll
+	var rows: Array[Dictionary] = []
+	for f in range(1, FLOORS + 1):
+		var doors := config.room_count(f) - 1
+		var threats := 0.0
+		var enemies := 0.0
+		for n in range(1, doors + 1):
+			var chance := roll.threat_chance(n, f)
+			threats += chance
+			enemies += chance * minf(roll.enemy_count(n, f), config.max_enemies(f))
+		var dust := roll.dust_reward(f) * doors
+		var budget := RESET_DUST + dust
+		var lit := 0
+		var spent := 0
+		while spent + RoomZone.POWER_COST + config.power_cost_step * lit <= budget:
+			spent += RoomZone.POWER_COST + config.power_cost_step * lit
+			lit += 1
+		rows.append({
+			"floor": f, "rooms": doors + 1,
+			"chance_door1": snappedf(roll.threat_chance(1, f), 0.01),
+			"chance_door5": snappedf(roll.threat_chance(5, f), 0.01),
+			"chance_last": snappedf(roll.threat_chance(doors, f), 0.01),
+			"threats": snappedf(threats, 0.1), "enemies": snappedf(enemies, 0.1),
+			"cap": config.max_enemies(f), "dust": dust, "bonus_each": roll.bonus_amount(f),
+			"bonus_total": roll.bonus_amount(f) * doors, "lit_rooms": lit,
+		})
+	return rows
+
+
+## Extraction waves per floor and stage: wave size, gap between waves and the spawn rate it implies.
+static func extraction_rows() -> Array[Dictionary]:
+	var config := floor_config()
+	var rows: Array[Dictionary] = []
+	for f in range(1, FLOORS + 1):
+		for stage in config.extraction_stage_count:
+			var size := config.extraction_wave_size(stage)
+			var gap := config.extraction_stage_interval(f, stage)
+			rows.append({
+				"floor": f, "stage": stage, "wave": size, "gap_sec": snappedf(gap, 0.1),
+				"enemies_per_min": snappedf(size * 60.0 / gap, 0.1), "cap": config.max_enemies(f),
+			})
+	return rows
 
 
 static func to_csv(rows: Array[Dictionary]) -> String:

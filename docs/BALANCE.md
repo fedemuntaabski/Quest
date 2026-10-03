@@ -168,3 +168,24 @@ Asesinos: sin cambios de números; la tabla de encuentros (un héroe recibe toda
 
 ## Tope de vida 60 → 120 (session impl-6, fase 2A)
 `StatBalance.PLAYER_MAX_HP` pasa de 60 a 120 para que las armaduras (+20…+30) y los perks de vida no queden anulados por el recorte. BalanceSim (`impl6_after_cap_*`, regenerado y comparado con `impl6_before_*` con `Get-FileHash`): los 4 CSV son **idénticos**, porque el simulador calcula `base_hp + hp_por_nivel × nivel` sin recorte y ningún héroe supera 60 por niveles (Tanque: 40 + 5 × 4 = 60, justo en el tope viejo). El cambio solo se nota en partida cuando se suman perks/equipo: Tanque + Coraza (+6) pasaba de 66 → recortado a 60; ahora llega a 66. Sin impacto en `test_balance`.
+
+## Bucle de puertas, energía y extracción (session bucle-7)
+Nuevos datos: `DoorRollConfig` (`resources/floors/door_roll_config.tres`), `FloorConfig` "Enemy cap" (6/8/10/12/14), `power_cost_step` 2, `carrier_speed_mult` 0,85 y las etapas de extracción (4 etapas de 20 s). Corrida: `godot --headless --path . --script res://tools/balance_sim.gd -- bucle7` (una pasada da los 5 pisos). Las 5 tablas de combate (`heroes`, `duels`, `encounters`, `nexo`, `towers`) salen **idénticas** a `impl6_after_3b_*` (`Get-FileHash`: el balance de combate no cambió), así que solo se guardan `bucle7_doors.csv` y `bucle7_extraction.csv`.
+
+Modelo `BalanceSim.door_rows()`: se abren las `salas − 1` puertas de cada piso. `threats` = suma de `threat_chance(n, piso)` (puertas con amenaza esperadas); `enemies` = suma de `chance × min(enemy_count, tope)`; `lit_rooms` = salas que se pueden energizar con 20 de Polvo iniciales + el Polvo de las puertas y el costo creciente (10 + 2 por sala ya encendida).
+
+| Piso | Salas | Chance puerta 1 / 5 / última | Amenazas | Enemigos | Tope | Polvo | Extra por puerta | Salas encendibles |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 8 | 0,16 / 0,40 / 0,52 | 2,4 | 3,8 | 6 | 28 | 2 | 3 |
+| 2 | 9 | 0,21 / 0,45 / 0,63 | 3,4 | 5,5 | 8 | 32 | 2 | 4 |
+| 3 | 10 | 0,26 / 0,50 / 0,74 | 4,5 | 7,6 | 10 | 45 | 3 | 4 |
+| 4 | 11 | 0,31 / 0,55 / 0,85 | 5,8 | 16,6 | 12 | 50 | 3 | 5 |
+| 5 | 12 | 0,36 / 0,60 / 0,85 | 7,1 | 21,2 | 14 | 66 | 4 | 5 |
+
+Lectura: la probabilidad crece con cada puerta y el piso 1 es tranquilo (2,4 amenazas en 7 puertas); a partir del piso 4 las últimas puertas llegan al máximo (0,85). Un piso enciende 3-5 salas de 8-12 (la intención de session 7: iluminar algunas, no todas). El tamaño de oleada por puerta no cambió respecto de la fórmula anterior en el punto de referencia del simulador (turno 5: 2 enemigos en el piso 1), por eso `encounters` no se movió.
+
+`extraction_rows()` (extracción, por piso y etapa; `enemies_per_min` = `oleada × 60 / pausa`): en el piso 1 pasa de 12 a 68,6 enemigos/min entre la etapa 0 y la 3; en el piso 5 de 20 a 120 (la pausa baja hasta el mínimo de 2 s). El tope de enemigos vivos (6-14) es lo que evita acumulación: la presión real depende de cuánto tardan los héroes en matarlos.
+
+Cambios de valores respecto del bucle anterior: la base plana por puerta (Industria 2, Comida 2, Ciencia 1) pasa a 0 y se reemplaza por Polvo (4 + 0,5/piso) + un recurso al azar ponderado por piso (2 + 0,5/piso). `FloorConfig.dust_per_discovery*` se movió a `DoorRollConfig` (mismo valor). La amenaza por puerta ya no depende de las salas oscuras ni del turno global: `0,10 + 0,06 × puertas + 0,05 × (piso − 1)`, tope 0,85 (antes `0,05 + 0,08 × oscuras + 0,015 × turno + 0,05 × (piso − 1)`). Cantidad: `1 + puertas / 5 + ⌊0,34 × (piso − 1)⌋` (antes `1 + turno / 5 + ⌊0,34 × (piso − 1)⌋`; con `0,34` por el override del `.tres`).
+
+Pendiente de playtest: que la curva de amenaza no resulte demasiado suave al principio ni demasiado dura desde el piso 4; que 3-5 salas encendibles alcancen para proteger el camino al Nexo; que el tope por piso no deje las oleadas de extracción tan cortas que se vuelvan triviales (etapa 3 pide 4 enemigos cada 2-3,5 s contra un tope de 6-14).
