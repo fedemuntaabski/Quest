@@ -3,7 +3,8 @@ class_name CharacterPopup
 
 ## CharacterPopup: modal hero sheet opened by clicking a HeroPortrait. Full-rect
 ## veil (click = close) + centered panel: preview, name, level, exact HP, combat
-## stats from CharacterStats/CharacterData, and a "Subir de nivel" section:
+## stats from CharacterStats/CharacterData, an "Equipo" section (EquipmentSection)
+## and a "Subir de nivel" section:
 ## next level, Comida cost and what each stat gains (PlayerStats.get_level_up_
 ## preview → level_up_hero, for this popup's hero — not necessarily the
 ## active one; the UI computes nothing). Closes with the
@@ -25,8 +26,8 @@ var _upgrade_rows: GridContainer
 var _level_button: Button
 var _perk_title: Label
 var _perk_rows: VBoxContainer
-var _found_title: Label
-var _found_rows: VBoxContainer
+var _equipment_title: Label
+var _equipment: EquipmentSection
 
 
 func _ready() -> void:
@@ -40,7 +41,6 @@ func _ready() -> void:
 		ps.stats_changed.connect(func(_s: CharacterStats) -> void: _refresh())
 		ps.run_upgrades_changed.connect(func(_k: String, _l: int, _id: String) -> void: _refresh())
 		ps.perk_chosen.connect(func(_id: String, _perk: StringName) -> void: _refresh())
-		ps.found_items_changed.connect(_refresh)
 	var rm := ManagerLocator.get_resource_manager()
 	if rm:
 		rm.resource_changed.connect(func(_k: String, _a: int, _d: int) -> void: _refresh())
@@ -154,11 +154,12 @@ func _build() -> void:
 	content.add_child(_perk_rows)
 
 	content.add_child(HSeparator.new())
-	_found_title = Label.new()
-	_found_title.add_theme_color_override("font_color", QuestPalette.GOLD)
-	content.add_child(_found_title)
-	_found_rows = VBoxContainer.new()
-	content.add_child(_found_rows)
+	_equipment_title = Label.new()
+	_equipment_title.text = "Equipo"
+	_equipment_title.add_theme_color_override("font_color", QuestPalette.GOLD)
+	content.add_child(_equipment_title)
+	_equipment = EquipmentSection.new()
+	content.add_child(_equipment)
 
 
 func _on_level_up_pressed() -> void:
@@ -207,7 +208,7 @@ func _refresh() -> void:
 	if ps:
 		_rebuild_level_up(ps)
 		_rebuild_perks(ps)
-		_rebuild_found_items(ps)
+	_equipment.bind(stats.hero_id)
 
 
 func _rebuild_level_up(ps: PlayerStats) -> void:
@@ -304,31 +305,6 @@ func _on_perk_pressed(perk_id: StringName) -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps and stats:
 		ps.choose_perk(stats.hero_id, perk_id)
-
-
-## Objetos hallados en cofres: solo lectura (aún no hay sistema de equipo).
-func _rebuild_found_items(ps: PlayerStats) -> void:
-	for child in _found_rows.get_children():
-		_found_rows.remove_child(child)
-		child.queue_free()
-	_found_title.text = "Hallazgos (%d)" % ps.found_items.size() if not ps.found_items.is_empty() else "Hallazgos: ninguno todavía"
-	for item in ps.found_items:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
-		var icon := TextureRect.new()
-		icon.texture = item.icon
-		icon.custom_minimum_size = Vector2(32, 32)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		row.add_child(icon)
-		var label := Label.new()
-		label.text = "%s (%s) %s" % [item.display_name, ItemData.RARITY_LABELS[item.rarity], item.describe_modifiers()]
-		label.add_theme_color_override("font_color", ItemData.RARITY_COLORS[item.rarity])
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(label)
-		_found_rows.add_child(row)
 
 
 func _add_cell(text: String, color: Color) -> void:

@@ -2,7 +2,7 @@ extends SceneTree
 
 ## ItemData/ItemCatalog (resources/items): ids únicos, íconos dentro de su hoja y
 ## no vacíos, modificadores solo con stats existentes, sorteo determinista,
-## Pickup con ítem y sección "Hallazgos" del CharacterPopup.
+## Pickup con ítem y mochila de la sección "Equipo" del CharacterPopup.
 
 var _failures := 0
 
@@ -71,13 +71,14 @@ func _check_popup(catalog: ItemCatalog) -> void:
 	root.add_child(popup)
 	await process_frame
 	var stats := CharacterStats.new()
+	stats.hero_id = "warrior"
 	root.add_child(stats)
 	popup.open_for(stats, null)
-	_expect(popup._found_rows.get_child_count() == 0, "popup sin hallazgos al inicio")
+	_expect(popup._equipment._stash_grid.get_child_count() == 0, "popup sin hallazgos al inicio")
 	ps.add_found_item(catalog.items[3])
-	_expect(popup._found_rows.get_child_count() == 1, "popup lista el ítem hallado")
+	_expect(popup._equipment._stash_grid.get_child_count() == 1, "la mochila del popup lista el ítem hallado")
 	ps.clear_found_items()
-	_expect(popup._found_rows.get_child_count() == 0, "clear_found_items vacía la lista")
+	_expect(popup._equipment._stash_grid.get_child_count() == 0, "clear_found_items vacía la mochila")
 	popup.queue_free()
 	stats.queue_free()
 
