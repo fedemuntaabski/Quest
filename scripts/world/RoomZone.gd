@@ -40,6 +40,11 @@ const UNSHADED: CanvasItemMaterial = preload("res://resources/maps/unshaded_mate
 ## Room-type badge: small diamond + name, inset from the room's top-left corner.
 const TYPE_BADGE_INSET := Vector2(18, 18)
 const TYPE_BADGE_RADIUS := 7.0
+## Power status icon (top-right corner, mirrors the type badge).
+const POWER_ICON_INSET := Vector2(34, 26)
+const POWER_ON_COLOR := Color(1.0, 0.85, 0.3)
+const POWER_OFF_COLOR := Color(0.6, 0.6, 0.65)
+const POWER_OFF_SLASH_COLOR := Color(0.9, 0.25, 0.25)
 
 const ENERGY_BUTTON_SCENE := preload("res://scenes/world/EnergyButton.tscn")
 const BUILDING_SLOT_SCENE := preload("res://scenes/world/BuildingSlot.tscn")
@@ -73,6 +78,10 @@ var _shown: bool = false
 var _energy_button: EnergyButton = null
 var _light: RoomLight = null
 var _type_badge: Node2D = null
+var _power_icon: Node2D = null
+var _power_bolt: Polygon2D = null
+var _power_slash: Line2D = null
+var _power_label: Label = null
 var _building_slots: Array[BuildingSlot] = []
 ## Extra MAJOR slots on top of the usual one (RoomTypeRule.extra_major_slots,
 ## set by Main2d before the room is lit).
@@ -115,6 +124,7 @@ func configure(p_zone_id: String, size_px: Vector2, p_kind: String) -> void:
 		add_child(_energy_button)
 		_energy_button.energy_button_clicked.connect(func(_zid: String): try_power_up())
 		_update_energy_button_visibility()
+		_build_power_icon(half)
 
 	_set_render_visible(false)
 
@@ -137,6 +147,8 @@ func _set_render_visible(p_visible: bool) -> void:
 		_light.visible = p_visible
 	if _type_badge != null:
 		_type_badge.visible = p_visible
+	if _power_icon != null:
+		_power_icon.visible = p_visible
 	for slot in _building_slots:
 		slot.visible = p_visible
 		slot.input_pickable = p_visible
@@ -171,6 +183,7 @@ func set_powered(v: bool) -> void:
 			resources.notify_production_changed()
 	power_changed.emit(zone_id, v)
 	_apply_visual()
+	_update_power_icon()
 	_update_energy_button_visibility()
 	if is_powered and _building_slots.is_empty() and kind == "room":
 		_spawn_building_slots()
@@ -231,20 +244,42 @@ func set_room_type(type: RoomData.RoomType, size_px: Vector2, config: MapVisualC
 	_type_badge.visible = _shown
 
 
-## POWER_COST minus the research discount (min 1).
-static func get_power_cost() -> int:
+## POWER_COST + FloorConfig.power_cost_step per room already energized with dust
+## (`energized_count`, the free start room excluded), minus the research discount (min 1).
+static func get_power_cost(energized_count: int = 0) -> int:
 	var rm := ManagerLocator.get_resource_manager()
-	return maxi(1, POWER_COST - (roundi(rm.get_bonus(ResearchEntry.Effect.POWER_COST)) if rm else 0))
+	var fm := ManagerLocator.get_floor_manager()
+	var step: int = (fm.config if fm else FloorManager.DEFAULT_CONFIG).power_cost_step
+	return maxi(1, POWER_COST + step * energized_count - (roundi(rm.get_bonus(ResearchEntry.Effect.POWER_COST)) if rm else 0))
 
 
-## Pays get_power_cost() dust to light this room. No-op if already powered.
+## What lighting THIS room costs right now (grows per energized room).
+func next_power_cost() -> int:
+	var room_manager := ManagerLocator.get_room_manager()
+	return get_power_cost(room_manager.get_energized_count() if room_manager else 0)
+
+
+## Lit with dust (the free start room is not): each one raises the next cost.
+func is_paid_power() -> bool:
+	return is_powered and _power_paid > 0
+
+
+## Cost text / affordability follow the energized count (RoomManager calls this on every power change).
+func refresh_power_hints() -> void:
+	if _energy_button != null:
+		_energy_button.refresh_label(next_power_cost())
+	if _light != null:
+		_light.refresh_affordable()
+
+
+## Pays next_power_cost() dust to light this room. No-op if already powered.
 func try_power_up() -> void:
 	if is_powered:
 		return
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager == null:
 		return
-	var cost := get_power_cost()
+	var cost := next_power_cost()
 	if not resource_manager.spend_resource("dust", cost):
 		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 		if text_mgr:
@@ -308,6 +343,47 @@ func _spawn_building_slots() -> void:
 		slot.slot_clicked.connect(func(s: BuildingSlot): slot_clicked.emit(zone_id, s))
 		slot.module_built.connect(func(m: Module): module_built.emit(zone_id, m))
 		_building_slots.append(slot)
+
+
+## Top-right status icon of a room: gold bolt + "Encendida" when lit, grey crossed
+## bolt + "Apagada" when dark. Unshaded (reads in the dark), hidden with the fog.
+func _build_power_icon(half: Vector2) -> void:
+	_power_icon = Node2D.new()
+	_power_icon.name = "PowerIcon"
+	_power_icon.position = Vector2(half.x - POWER_ICON_INSET.x, -half.y + POWER_ICON_INSET.y)
+	_power_icon.visible = _shown
+	add_child(_power_icon)
+
+	_power_bolt = Polygon2D.new()
+	_power_bolt.material = UNSHADED
+	_power_bolt.polygon = PackedVector2Array([Vector2(3, -11), Vector2(-7, 2), Vector2(-1, 2), Vector2(-3, 11), Vector2(7, -3), Vector2(1, -3)])
+	_power_icon.add_child(_power_bolt)
+
+	_power_slash = Line2D.new()
+	_power_slash.material = UNSHADED
+	_power_slash.points = PackedVector2Array([Vector2(-9, -9), Vector2(9, 9)])
+	_power_slash.width = 3.0
+	_power_slash.default_color = POWER_OFF_SLASH_COLOR
+	_power_icon.add_child(_power_slash)
+
+	_power_label = Label.new()
+	_power_label.material = UNSHADED
+	_power_label.add_theme_font_size_override("font_size", 12)
+	_power_label.position = Vector2(-28, 12)
+	_power_label.size = Vector2(56, 16)
+	_power_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_power_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_power_icon.add_child(_power_label)
+	_update_power_icon()
+
+
+func _update_power_icon() -> void:
+	if _power_icon == null:
+		return
+	_power_bolt.color = POWER_ON_COLOR if is_powered else POWER_OFF_COLOR
+	_power_slash.visible = not is_powered
+	_power_label.text = "Encendida" if is_powered else "Apagada"
+	_power_label.add_theme_color_override("font_color", POWER_ON_COLOR if is_powered else POWER_OFF_COLOR)
 
 
 func _update_energy_button_visibility() -> void:

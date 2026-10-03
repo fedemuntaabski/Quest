@@ -142,7 +142,9 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.clicked.connect(func(z: RoomZone): zone_clicked.emit(z.zone_id))
 	zone.hovered.connect(func(z: RoomZone): zone_hovered.emit(z.zone_id))
 	zone.unhovered.connect(func(z: RoomZone): zone_unhovered.emit(z.zone_id))
-	zone.power_changed.connect(func(zid: String, on: bool): room_power_changed.emit(zid, on))
+	zone.power_changed.connect(func(zid: String, on: bool):
+		room_power_changed.emit(zid, on)
+		_refresh_power_hints())
 	zone.slot_clicked.connect(func(zid: String, slot: BuildingSlot): slot_clicked.emit(zid, slot))
 	zone.module_built.connect(func(zid: String, module: Module): module_built.emit(zid, module))
 
@@ -298,6 +300,21 @@ func is_group_revealed(group_id: String) -> bool:
 ## Currently == discovered; the one place to add sight/re-hiding later.
 func is_zone_visible(zone_id: String) -> bool:
 	return is_zone_revealed(zone_id)
+
+
+## Rooms lit with dust (the free start room doesn't count): each raises the next energize cost.
+func get_energized_count() -> int:
+	var count := 0
+	for room: RoomZone in rooms_dict.values():
+		if room.is_paid_power():
+			count += 1
+	return count
+
+
+## The next cost changed: refresh every room's "Clic central" text and affordable outline.
+func _refresh_power_hints() -> void:
+	for room: RoomZone in rooms_dict.values():
+		room.refresh_power_hints()
 
 
 func is_zone_powered(zone_id: String) -> bool:

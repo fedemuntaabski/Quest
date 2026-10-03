@@ -15,9 +15,11 @@ var _afford_outline: Line2D
 var _light: PointLight2D
 var _pulse: Tween
 var _powered: bool = false
+var _zone: RoomZone
 
 
 func setup(zone: RoomZone, size_px: Vector2, p_config: MapVisualConfig) -> void:
+	_zone = zone
 	config = p_config
 	var half := size_px / 2.0
 	var points := PackedVector2Array([Vector2(-half.x, -half.y), Vector2(half.x, -half.y), Vector2(half.x, half.y), Vector2(-half.x, half.y)])
@@ -65,8 +67,7 @@ func is_affordable_highlighted() -> bool:
 
 func _on_power_changed(_zone_id: String, powered: bool) -> void:
 	_powered = powered
-	var resources := ManagerLocator.get_resource_manager()
-	_on_resource_changed("dust", resources.get_resource("dust") if resources else 0, 0)
+	refresh_affordable()
 	if _pulse:
 		_pulse.kill()
 	# Real time: lighting a room during the tactical pause (time_scale 0) shows at once.
@@ -88,13 +89,18 @@ func _on_darkened() -> void:
 
 
 func _on_research_changed() -> void:
+	refresh_affordable()
+
+
+## Gold outline: dark and the dust covers THIS room's next energize cost.
+func refresh_affordable() -> void:
 	var resources := ManagerLocator.get_resource_manager()
 	_on_resource_changed("dust", resources.get_resource("dust") if resources else 0, 0)
 
 
 func _on_resource_changed(key: String, amount: int, _delta: int) -> void:
 	if key == "dust":
-		_afford_outline.visible = not _powered and amount >= RoomZone.get_power_cost()
+		_afford_outline.visible = not _powered and amount >= (_zone.next_power_cost() if _zone else RoomZone.get_power_cost())
 
 
 func _start_danger_pulse() -> void:

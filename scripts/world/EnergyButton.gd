@@ -17,9 +17,14 @@ func _ready() -> void:
 		rm.research_changed.connect(_refresh_label)
 
 
-## Cost text follows research (RoomZone.get_power_cost).
+## Cost text follows research and the energized count (RoomZone.next_power_cost).
 func _refresh_label() -> void:
-	$Label.text = "Clic central: encender (%d Polvo)" % RoomZone.get_power_cost()
+	var zone := get_parent() as RoomZone
+	refresh_label(zone.next_power_cost() if zone else RoomZone.get_power_cost())
+
+
+func refresh_label(cost: int) -> void:
+	$Label.text = "Clic central: encender (%d Polvo)" % cost
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
