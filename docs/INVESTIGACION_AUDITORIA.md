@@ -1,6 +1,6 @@
 # Auditoría de Investigación y Ciencia
 
-Rama `session/impl-6`. Solo análisis estático (Read/Grep): no se ejecutó Godot ni los tests, no se tocó código. Todo lo marcado **[NV]** no se pudo verificar sin correr el juego (ver sección 6).
+Rama `session/impl-6`. Análisis estático (Read/Grep) contrastado después con Godot headless: `tools/run_tests.sh` completo en verde (incluye los `_check_research*` de `test_hud_ui.gd`), `roundi(4.5) == 5` y costo total del árbol = 97 comprobados con un script. Lo marcado **[NV]** sigue sin verificar (requiere jugar, ver sección 6). Se corrigieron solo I-01 e I-07 (ver sección 5); el resto queda abierto a propósito (no rediseñar todavía).
 
 ## Resumen
 
@@ -76,7 +76,7 @@ Qué hay:
 - Tooltip del chip de Ciencia explica el uso (`HUDController.gd:6`); el candado + "Requiere: <investigación>" aparece en tarjetas, tooltip y texto flotante del ghost (`BuildingMenu.gd:107-111,151-155,167`).
 
 Qué falta o confunde:
-- **Sin feedback al investigar**: `research()` / `_on_research_pressed` no emiten texto flotante, toast, sonido ni VFX; lo único que cambia es la tarjeta y el número de Ciencia (`ResearchPanel.gd:144-147`, `ResourceManager.gd:125-131`). Un sonido genérico de clic de botón podría existir en el tema **[NV]**.
+- **Sin feedback al investigar** (corregido, ver I-01): `research()` / `_on_research_pressed` no emiten texto flotante, toast, sonido ni VFX; lo único que cambia es la tarjeta y el número de Ciencia (`ResearchPanel.gd:144-147`, `ResourceManager.gd:125-131`). Un sonido genérico de clic de botón podría existir en el tema **[NV]**.
 - **Sin atajo de teclado** para abrir el panel (no hay acción en `project.godot`; solo existen `hero_cycle`, `tactical_pause`...). Sin insignia/aviso cuando hay algo comprable.
 - **No dice qué investigar primero**. El orden del `.tres` pone los dos desbloqueos primero, pero en la grilla de 2 columnas los T2 no quedan junto a su prerrequisito (`COLUMNS=2`, `ResearchPanel.gd:13`: fila 3 = cartography + overclock, fila 4 = rifling). "Falta Ciencia" no indica cuánta falta. Nada avisa que `generator_tuning` no sirve sin generadores.
 - **Descubribilidad de la fuente de Ciencia**: Gen. Ciencia bloqueado dice "Requiere: Instrumental arcano" pero no su costo ni que se compra en "Investigar"; el tooltip del chip no dice cómo ganar más Ciencia (generador, Mago, salas Elite).
@@ -88,17 +88,17 @@ Qué falta o confunde:
 
 ## 5. Hallazgos
 
-Severidades: ROTO = bug claro con fix pequeño; CONFUSO = UX; BALANCE = números; DUDA = requiere ejecutar. **ROTO: ninguno.**
+Severidades: ROTO = bug claro con fix pequeño; CONFUSO = UX; BALANCE = números; DUDA = requiere ejecutar. **ROTO: ninguno.** Aplicados: I-01, I-07. Abiertos (sin rediseñar): I-02..I-06, I-08..I-13.
 
 | id | Sev. | Evidencia | Fix mínimo (no aplicado) |
 |---|---|---|---|
-| I-01 | CONFUSO | `ResourceManager.gd:125-131`, `ResearchPanel.gd:144-147`: investigar no da feedback | En `research()` o `_on_research_pressed`: `FloatingTextManager.spawn_text` "Investigado: X" + sonido/VFX existente |
+| I-01 | CONFUSO · **corregido** | `ResourceManager.gd:125-131`, `ResearchPanel.gd:144-147`: investigar no da feedback | Aplicado: `ResearchPanel._on_research_pressed` muestra `HUDController.show_hint("Investigado: X", efecto)` (cubierto en `test_hud_ui.gd`). Falta sonido/VFX |
 | I-02 | CONFUSO | `ResearchPanel.gd:84-132`, `HUDController.gd:6`: nada orienta el primer gasto ni explica dónde ganar Ciencia | Resaltar/ordenar `science_generator` primero con texto "Recomendado" y ampliar tooltip de Ciencia con las fuentes |
 | I-03 | CONFUSO | `BuildingMenu.gd:136,167`, `Module.gd:55-65`: tarjetas sin bonus de investigación | `describe_effect` opcional con bonus (usar `get_bonus` para generadores y turret) |
 | I-04 | CONFUSO | `HUDController.gd:370-375`: "+N" no incluye Mago/Elite | Documentarlo en el tooltip del chip o sumar `passive_discovery_bonus` esperado |
 | I-05 | CONFUSO | `ResearchPanel.gd:13,73-81`: T2 lejos de su prerrequisito; sin atajo ni aviso de "comprable" | Acción de input (p. ej. R) + punto en el botón cuando `can_research` de alguna entrada |
 | I-06 | CONFUSO | `ResearchPanel.gd:154-157`: rebuild total por cada cambio de Ciencia | Actualizar tarjetas en lugar de recrearlas, o ignorar si el mouse está sobre una tarjeta |
-| I-07 | CONFUSO | `ResearchEntry.gd:12`: comentario "(floor 1)" ambiguo | Cambiar a "(mínimo 1)" |
+| I-07 | CONFUSO · **corregido** | `ResearchEntry.gd:12`: comentario "(floor 1)" ambiguo | Aplicado: "(never below 1)" en `ResearchEntry.gd` |
 | I-08 | BALANCE | `ResourceManager.gd:18`, sección 1: sin Mago ni Gen. Ciencia la run da ~90 Ciencia (< 97) y T2 llegan al piso 4-5 | Subir base a 2, o abaratar T2 (30/25), o inicial 15 |
 | I-09 | BALANCE | Costo total 97 vs. A/B/C/D: Gen. Ciencia (6+6) o Mago vuelven el árbol trivial hacia el piso 2-3; la Ciencia sobrante no tiene otro uso | Segundo sumidero (p. ej. más nodos T3) o reducir el rendimiento del generador |
 | I-10 | BALANCE | `default_floor_config.tres:35`, `RoomTypeRule.gd`: el piso 5 tiene 2 cupos Elite al 70 % = 12-24 Ciencia (casi la mitad del ingreso de la run) | Revisar `max_count_per_floor` o `reward_per_floor` de Elite |
@@ -108,8 +108,8 @@ Severidades: ROTO = bug claro con fix pequeño; CONFUSO = UX; BALANCE = números
 
 ## 6. No verificado sin ejecutar
 
-- Que los tests de `tests/test_hud_ui.gd` (`_check_research`, `_check_research_lifetime`), `test_abilities.gd`, `test_perks.gd` y `test_party.gd` pasen hoy: solo se leyeron. Ya cubren: bloqueos, prerrequisitos, panel a `time_scale` 0, Esc/clic derecho, costo 7 de encendido y su devolución, bonus de generadores (4 y 5), turret 15 -> 25, cartografía, vida entre pisos y reset en Retry, Mente Analítica +2 y +3 con perk. **No cubren**: feedback de investigación (no existe), reflejo del bonus en las tarjetas de construcción, la recompensa Elite en Ciencia, ni que el panel quepa en pantalla.
-- Redondeo de `roundi` en .5 (4.5 -> 5) y comportamiento exacto del panel (rebuild con mouse encima, tamaño/solapamiento a distintas resoluciones, tooltips).
+- (Verificado) Los tests de `tests/test_hud_ui.gd` (`_check_research`, `_check_research_lifetime`), `test_abilities.gd`, `test_perks.gd` y `test_party.gd` pasan hoy (runner completo, 0 fallos). Cubren: bloqueos, prerrequisitos, panel a `time_scale` 0, Esc/clic derecho, costo 7 de encendido y su devolución, bonus de generadores (4 y 5), turret 15 -> 25, cartografía, vida entre pisos y reset en Retry, Mente Analítica +2 y +3 con perk. **No cubren**: sonido al investigar, reflejo del bonus en las tarjetas de construcción, la recompensa Elite en Ciencia, ni que el panel quepa en pantalla.
+- (Verificado: `roundi(4.5) == 5`, `roundi(3.75) == 4`, costo total 97.) Comportamiento exacto del panel (rebuild con mouse encima, tamaño/solapamiento a distintas resoluciones, tooltips).
 - Las cifras esperadas por piso (Elite, bucles, sala GENERATOR) dependen de la generación aleatoria; son estimaciones, no medidas. Las tablas B-D suponen 1 Gen. Ciencia siempre vivo desde el turno 0 en la sala de inicio y que el Mago esté en el equipo.
 - Sonido genérico de botones/UI, VFX o toasts globales que pudieran dispararse al pulsar "Investigar" sin código propio.
 - Sincronización en red de la investigación.
