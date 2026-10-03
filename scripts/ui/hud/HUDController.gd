@@ -48,6 +48,7 @@ var _invasion_tween: Tween
 var _portraits: Dictionary = {}
 var character_popup: CharacterPopup
 var pause_label: Label
+var _stash_label: Label
 var _hint_panel: PanelContainer
 var _hint_title: Label
 var _hint_body: Label
@@ -111,6 +112,7 @@ func _ready() -> void:
 	if research_button:
 		research_button.pressed.connect(_on_research_pressed)
 
+	_add_stash_counter()
 	_add_minimap()
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager:
@@ -154,6 +156,28 @@ func _on_research_pressed() -> void:
 	if building_menu:
 		building_menu.close_menu()
 	research_panel.toggle()
+
+
+## "Mochila 3/20" at the end of the bottom row: how full the party stash is (red when full).
+func _add_stash_counter() -> void:
+	var inventory := ManagerLocator.get_party_inventory()
+	if inventory == null:
+		return
+	_stash_label = Label.new()
+	_stash_label.name = "StashCounter"
+	_stash_label.size_flags_vertical = Control.SIZE_SHRINK_END
+	_stash_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	_stash_label.tooltip_text = "Mochila del grupo: objetos de los cofres. Equípalos desde la ficha del héroe (clic derecho en su retrato)."
+	$Control/BottomBar/BottomRow.add_child(_stash_label)
+	inventory.stash_changed.connect(_refresh_stash_counter)
+	_refresh_stash_counter()
+
+
+func _refresh_stash_counter() -> void:
+	var inventory := ManagerLocator.get_party_inventory()
+	var full: bool = inventory.stash_size() >= inventory.STASH_CAPACITY
+	_stash_label.text = "Mochila %d/%d" % [inventory.stash_size(), inventory.STASH_CAPACITY]
+	_stash_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_BLOCKED if full else QuestPalette.PARCHMENT)
 
 
 ## Tactical pause banner (PauseController → ManagerLocator.get_hud().set_pause_label).
@@ -316,6 +340,8 @@ func add_hero_portrait(stats: CharacterStats, data: CharacterData) -> HeroPortra
 	var owner_player := stats.get_parent() as Player
 	if owner_player and owner_player.abilities:
 		portrait.bind_abilities(owner_player.abilities)
+	if owner_player and owner_player.inventory:
+		portrait.bind_inventory(owner_player.inventory)
 	portrait.portrait_clicked.connect(_on_portrait_clicked)
 	portrait.portrait_ctrl_clicked.connect(_on_portrait_ctrl_clicked)
 	portrait.portrait_right_clicked.connect(open_hero_sheet)

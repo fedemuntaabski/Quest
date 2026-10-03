@@ -6,6 +6,8 @@ class_name HeroPortrait
 ## name, and an HP bar driven by CharacterStats.hp_changed — no numbers (the
 ## exact value lives in CharacterPopup). Bar color/timings: HealthBarStyle.
 ## The selected hero gets a bright gold border (set_selected, session 12).
+## Under the bars: one small button per equipped consumable (click = use it,
+## dimmed while it cools down; InventoryComponent decides if it can be used).
 ## Built in code; `setup()` before add_child().
 
 signal portrait_clicked(portrait: HeroPortrait)
@@ -36,6 +38,8 @@ var _group_nums: Array = []
 var _bar: ProgressBar
 var _ability_bar: ProgressBar
 var _abilities: HeroAbilities
+var _inventory: InventoryComponent
+var _consumable_buttons: Array[Button] = []
 var _fill: StyleBoxFlat
 var _last_hp: int = -1
 var _bar_tween: Tween
@@ -120,11 +124,27 @@ func _ready() -> void:
 	_ability_bar.visible = false
 	column.add_child(_ability_bar)
 
+	var consumables := HBoxContainer.new()
+	consumables.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(consumables)
+	var party := ManagerLocator.get_party_inventory()
+	for index in int(party.SLOT_CAPACITY[ItemData.Slot.CONSUMABLE]) if party else 2:
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(28, 28)
+		button.expand_icon = true
+		button.focus_mode = Control.FOCUS_NONE
+		button.visible = false
+		button.pressed.connect(_on_consumable_pressed.bind(index))
+		consumables.add_child(button)
+		_consumable_buttons.append(button)
+
 	gui_input.connect(_on_gui_input)
 	bind_stats(stats)
 	_update_perk_dot()
 	if _abilities:
 		bind_abilities(_abilities)
+	if _inventory:
+		bind_inventory(_inventory)
 
 
 func has_pending_perk() -> bool:
@@ -146,6 +166,50 @@ func bind_abilities(p_abilities: HeroAbilities) -> void:
 	if not p_abilities.cooldown_changed.is_connected(_on_cooldown_changed):
 		p_abilities.cooldown_changed.connect(_on_cooldown_changed)
 	_on_cooldown_changed(p_abilities.cooldown_left, p_abilities.active_cooldown())
+
+
+## Shortcut buttons for the hero's equipped consumables.
+func bind_inventory(p_inventory: InventoryComponent) -> void:
+	_inventory = p_inventory
+	if _consumable_buttons.is_empty() or p_inventory == null:
+		return
+	if not p_inventory.consumable_cooldown_changed.is_connected(_on_consumable_cooldown):
+		p_inventory.consumable_cooldown_changed.connect(_on_consumable_cooldown)
+	var party := ManagerLocator.get_party_inventory()
+	if party and not party.equipment_changed.is_connected(_on_equipment_changed):
+		party.equipment_changed.connect(_on_equipment_changed)
+	_refresh_consumables()
+
+
+func _on_equipment_changed(_hero_id: String, _slot: ItemData.Slot, _item: ItemData) -> void:
+	_refresh_consumables()
+
+
+func _on_consumable_cooldown(_item_id: String, _left: float) -> void:
+	_refresh_consumables()
+
+
+func _refresh_consumables() -> void:
+	var party := ManagerLocator.get_party_inventory()
+	if party == null or stats == null or _inventory == null:
+		return
+	var list := party.get_equipped(stats.hero_id, ItemData.Slot.CONSUMABLE)
+	for index in _consumable_buttons.size():
+		var button := _consumable_buttons[index]
+		button.visible = index < list.size()
+		if not button.visible:
+			continue
+		var item := list[index]
+		button.icon = item.icon
+		button.text = "" if item.icon else item.display_name.left(1)
+		button.tooltip_text = "%s: %s
+Clic: usar" % [item.display_name, item.describe_effect()]
+		button.modulate = Color(1, 1, 1, 0.45) if _inventory.cooldown_left(item) > 0.0 else Color.WHITE
+
+
+func _on_consumable_pressed(index: int) -> void:
+	if _inventory:
+		_inventory.use(index)
 
 
 func _on_cooldown_changed(left: float, total: float) -> void:
