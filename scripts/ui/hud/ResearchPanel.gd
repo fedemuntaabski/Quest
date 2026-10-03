@@ -143,8 +143,11 @@ func _label(text: String, color: Color, font_size: int) -> Label:
 
 func _on_research_pressed(id: String) -> void:
 	var rm := ManagerLocator.get_resource_manager()
-	if rm:
-		rm.research(id)  # research_changed → _populate
+	if rm and rm.research(id):  # research_changed → _populate
+		var entry := rm.research_config.get_entry(id)
+		var hud := ManagerLocator.get_hud()
+		if hud:
+			hud.show_hint("Investigado: %s" % entry.display_name, entry.describe_effect(), QuestPalette.GOLD)
 
 
 func _on_research_changed() -> void:

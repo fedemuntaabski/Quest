@@ -9,7 +9,7 @@ enum Effect {
 	UNLOCK_MODULE,       ## `module` can be built (locked until researched)
 	GENERATOR_YIELD_PCT, ## +value (0.25 = +25%) to the summed generator yield
 	TURRET_DAMAGE,       ## +value damage per turret shot
-	POWER_COST,          ## -value dust to light a room (floor 1)
+	POWER_COST,          ## -value dust to light a room (never below 1)
 	DISCOVERY_DUST,      ## +value dust per discovered room
 }
 

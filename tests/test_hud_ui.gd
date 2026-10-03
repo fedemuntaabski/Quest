@@ -265,6 +265,7 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	for key in ResourceManager.KEYS:
 		var expected: int = before[key] - (6 if key == "science" else 0)
 		_expect(resources.get_resource(key) == expected, "research changed %s: %d != %d" % [key, resources.get_resource(key), expected])
+	_expect(hud._hint_panel.visible and hud._hint_title.text.begins_with("Investigado"), "researching should show an \"Investigado\" hint (got '%s')" % hud._hint_title.text)
 	var sci_research := panel._list.get_node("science_generator")
 	_expect((sci_research.find_child("State", true, false) as Label).text == "Investigada", "state after research")
 	_expect((sci_research.find_child("Research", true, false) as Button).disabled, "done research can't be bought twice")
