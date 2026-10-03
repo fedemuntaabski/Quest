@@ -15,6 +15,7 @@ type = 3
 chance = 0.6
 heal_on_discovery = 15
 blocks_spawns = true
+loot_chance = 0.1
 
 [sub_resource type="Resource" id="RoomTypeRule_loot"]
 script = ExtResource("2_room_type_rule")
@@ -24,6 +25,7 @@ max_count_per_floor = 0.5
 reward_resource = "industry"
 reward_amount = 6
 reward_per_floor = 1.0
+loot_chance = 1.0
 
 [sub_resource type="Resource" id="RoomTypeRule_elite"]
 script = ExtResource("2_room_type_rule")
@@ -36,11 +38,13 @@ reward_amount = 8
 reward_per_floor = 1.0
 enemy_hp_mult = 1.5
 enemy_damage_mult = 1.25
+loot_chance = 0.7
 
 [sub_resource type="Resource" id="RoomTypeRule_generator"]
 script = ExtResource("2_room_type_rule")
 type = 6
 extra_major_slots = 1
+loot_chance = 0.15
 
 [resource]
 script = ExtResource("1_floor_config")

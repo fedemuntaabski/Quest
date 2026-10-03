@@ -31,6 +31,11 @@ class_name RoomTypeRule
 ## Extra MAJOR build slots once the room is lit (Generator room: 2 majors).
 @export var extra_major_slots: int = 0
 
+@export_group("Loot")
+## Chance that a room of this type holds a chest with an item (LootSpawner).
+## Loot rooms 1.0; Elite high; the rest low. Rooms without a rule: FloorConfig.default_loot_chance.
+@export_range(0.0, 1.0) var loot_chance: float = 0.0
+
 
 func chance_at(floor_index: int) -> float:
 	return clampf(chance + chance_per_floor * _steps(floor_index), 0.0, 1.0)

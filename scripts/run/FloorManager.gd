@@ -48,7 +48,30 @@ func complete_floor() -> void:
 		return
 	_completed = true
 	QuestLogger.info(QuestLogger.Category.MAP, "Floor %d completed." % floor_index)
+	_grant_floor_end_loot()
 	floor_completed.emit(floor_index)
+
+
+## Completion reward: an item straight into the party stash (the run keeps it on the next floor).
+## Seeded like chests. A full stash says so instead of losing it silently.
+func _grant_floor_end_loot() -> void:
+	var inventory := ManagerLocator.get_party_inventory()
+	if inventory == null:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([map_seed, "floor_end"])
+	if rng.randf() >= config.floor_end_loot_chance:
+		return
+	var item := LootSpawner.roll_item(rng)
+	if item == null:
+		return
+	var hud := ManagerLocator.get_hud()
+	if inventory.add_item(item):
+		QuestLogger.info(QuestLogger.Category.MAP, "Floor reward: %s." % item.id)
+		if hud:
+			hud.show_hint("Botín del piso", "%s (%s)" % [item.display_name, ItemData.RARITY_LABELS[item.rarity]], item.color())
+	elif hud:
+		hud.show_hint("Botín del piso perdido", "La mochila está llena: no cabe %s." % item.display_name, QuestPalette.UI_TEXT_BLOCKED)
 
 
 ## DoorTurnSystem.room_revealed listener: every discovered room pays dust,
@@ -143,6 +166,10 @@ func roll_enemy_type(role: int = -1, rng: RandomNumberGenerator = null) -> Enemy
 		return null
 	var type := pool.roll(rng, role) if role >= 0 else null
 	return type if type else pool.roll(rng)
+
+
+func loot_chance(type: RoomData.RoomType) -> float:
+	return config.loot_chance(type)
 
 
 func raider_ratio() -> float:

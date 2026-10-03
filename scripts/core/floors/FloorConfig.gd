@@ -37,6 +37,12 @@ class_name FloorConfig
 ## every other room is Combat.
 @export var room_types: Array[RoomTypeRule] = []
 
+@export_group("Loot")
+## Chance that a room WITHOUT a RoomTypeRule (plain Combat rooms) holds a chest.
+@export_range(0.0, 1.0) var default_loot_chance: float = 0.08
+## Chance of an item as the floor's completion reward (straight to the stash).
+@export_range(0.0, 1.0) var floor_end_loot_chance: float = 1.0
+
 @export_group("Discovery")
 ## Dust granted every time a new room is discovered (door opened), whether or
 ## not an invasion happens. Tuned so a floor lights some rooms, not all
@@ -135,6 +141,15 @@ func get_room_type_rule(type: RoomData.RoomType) -> RoomTypeRule:
 		if rule and rule.type == type:
 			return rule
 	return null
+
+
+## Chest chance of a room type: its rule's loot_chance, else default_loot_chance.
+## Start and Exit rooms never hold one.
+func loot_chance(type: RoomData.RoomType) -> float:
+	if type == RoomData.RoomType.START or type == RoomData.RoomType.EXIT:
+		return 0.0
+	var rule := get_room_type_rule(type)
+	return rule.loot_chance if rule else default_loot_chance
 
 
 func discovery_dust(floor_index: int) -> int:
