@@ -202,8 +202,7 @@ func _refresh_consumables() -> void:
 		var item := list[index]
 		button.icon = item.icon
 		button.text = "" if item.icon else item.display_name.left(1)
-		button.tooltip_text = "%s: %s
-Clic: usar" % [item.display_name, item.describe_effect()]
+		button.tooltip_text = "%s: %s\nClic: usar" % [item.display_name, item.describe_effect()]
 		button.modulate = Color(1, 1, 1, 0.45) if _inventory.cooldown_left(item) > 0.0 else Color.WHITE
 
 
