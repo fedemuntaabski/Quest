@@ -1,21 +1,20 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dng8lh4pqpqxa"]
 
-[ext_resource type="Script" path="res://scripts/run/Main.gd" id="1_main_script"]
+[ext_resource type="Script" uid="uid://bqmfyv0jhduk7" path="res://scripts/run/Main.gd" id="1_main_script"]
 
-[node name="Main" type="Node"]
+[node name="Main" type="Node" unique_id=705855235]
 script = ExtResource("1_main_script")
 
-[node name="WorldContainer" type="Node2D" parent="."]
+[node name="WorldContainer" type="Node2D" parent="." unique_id=1263727282]
 
-[node name="UIContainer" type="CanvasLayer" parent="."]
-layer = 1
+[node name="UIContainer" type="CanvasLayer" parent="." unique_id=1824060731]
 
-[node name="HUDContainer" type="Node" parent="."]
+[node name="HUDContainer" type="Node" parent="." unique_id=2098149987]
 
-[node name="TransitionOverlay" type="CanvasLayer" parent="."]
+[node name="TransitionOverlay" type="CanvasLayer" parent="." unique_id=834475175]
 layer = 200
 
-[node name="ColorRect" type="ColorRect" parent="TransitionOverlay"]
+[node name="ColorRect" type="ColorRect" parent="TransitionOverlay" unique_id=1472468109]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

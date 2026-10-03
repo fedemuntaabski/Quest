@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="TargetProfile" format=3]
+[gd_resource type="Resource" script_class="TargetProfile" format=3 uid="uid://dkbt1wrrs0qyg"]
 
-[ext_resource type="Script" path="res://scripts/core/enemies/TargetProfile.gd" id="1_profile"]
-[ext_resource type="Script" path="res://scripts/core/enemies/TargetRule.gd" id="1_rule"]
+[ext_resource type="Script" uid="uid://ex7jfepgvuwg" path="res://scripts/core/enemies/TargetProfile.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://dclrd2itc1fyn" path="res://scripts/core/enemies/TargetRule.gd" id="1_rule"]
 
 [sub_resource type="Resource" id="rule_0"]
 script = ExtResource("1_rule")
