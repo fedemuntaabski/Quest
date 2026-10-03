@@ -29,6 +29,10 @@ const _BUILD_BUTTONS_PATH := "Control/BottomBar/BottomRow/BuildPanel/MarginConta
 @onready var research_button: Button = get_node_or_null(_BUILD_BUTTONS_PATH + "/ResearchButton")
 
 const INVASION_FLASH_ALPHA := 0.3
+const ALERT_COLOR := Color(0.95, 0.3, 0.25)
+const ALERT_BEEP_HZ := 660.0
+const ALERT_BEEP_SEC := 0.18
+const ALERT_BEEP_RATE := 22050
 const INVASION_FLASH_HALF_TIME := 0.25
 
 const HINT_WIDTH := 440.0
@@ -44,6 +48,7 @@ var _bound_player_stats: PlayerStats
 var _tooltip_anchor: Vector2 = Vector2.ZERO
 var _tooltip_grow_up: bool = false
 var _invasion_tween: Tween
+var _alert_player: AudioStreamPlayer
 ## One per hero, in party order. hero_id → HeroPortrait.
 var _portraits: Dictionary = {}
 var character_popup: CharacterPopup
@@ -91,6 +96,8 @@ func _ready() -> void:
 	if em:
 		if not em.invasion_triggered.is_connected(_on_invasion_triggered):
 			em.invasion_triggered.connect(_on_invasion_triggered)
+		if not em.enemies_appeared.is_connected(_on_enemies_appeared):
+			em.enemies_appeared.connect(_on_enemies_appeared)
 	else:
 		QuestLogger.warn(QuestLogger.Category.UI, "HUD: EnemyManager not found; invasion alert disabled.")
 
@@ -420,6 +427,64 @@ func open_building_menu(slot: BuildingSlot) -> void:
 
 func _on_invasion_triggered(_spawn_rooms: Array[RoomZone], _enemy_count: int) -> void:
 	trigger_invasion_alert()
+
+
+## Telegraph of any spawn (door invasion or extraction wave): where they appeared
+## (top hint + a floating mark on each room), the red flash for waves (door
+## invasions already flash through invasion_triggered) and a placeholder beep.
+func _on_enemies_appeared(zone_ids: Array[String], count: int, source: String) -> void:
+	var room_manager := ManagerLocator.get_room_manager()
+	var names: Array[String] = []
+	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+	for zone_id in zone_ids:
+		names.append(_room_label(room_manager, zone_id))
+		if text_mgr and room_manager:
+			text_mgr.spawn_text(room_manager.get_center(zone_id), "¡Enemigos!", ALERT_COLOR, true)
+	if source == "wave":
+		show_hint("Oleada", "%d enemigos entran por: %s" % [count, ", ".join(names)], ALERT_COLOR)
+		trigger_invasion_alert()
+	else:
+		show_hint("Invasión", "%d enemigos aparecieron en: %s" % [count, ", ".join(names)], ALERT_COLOR)
+	_play_alert()
+
+
+## "Sala 3" for plain rooms, the type name ("Élite", "Botín"...) for special ones.
+func _room_label(room_manager: RoomManager, zone_id: String) -> String:
+	if room_manager:
+		var type := room_manager.get_room_type(zone_id)
+		var visual := room_manager.visual_config.room_type_visual(type) if room_manager.visual_config else null
+		if type != RoomData.RoomType.COMBAT and visual and visual.display_name != "":
+			return visual.display_name
+	return "Sala %s" % zone_id.get_slice("_", 1) if zone_id.begins_with("room_") else zone_id
+
+
+## Placeholder alert sound: assets/audio/alert.{ogg,wav,mp3} when it exists, else a short generated beep.
+func _play_alert() -> void:
+	if _alert_player == null:
+		_alert_player = AudioStreamPlayer.new()
+		_alert_player.name = "AlertPlayer"
+		_alert_player.bus = &"SFX"
+		_alert_player.stream = _load_alert_stream()
+		add_child(_alert_player)
+	_alert_player.play()
+
+
+func _load_alert_stream() -> AudioStream:
+	for ext in ["ogg", "wav", "mp3"]:
+		var path := "res://assets/audio/alert.%s" % ext
+		if ResourceLoader.exists(path):
+			return load(path) as AudioStream
+	var samples := int(ALERT_BEEP_RATE * ALERT_BEEP_SEC)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	for i in samples:
+		var envelope := 1.0 - float(i) / samples
+		data.encode_s16(i * 2, int(sin(TAU * ALERT_BEEP_HZ * i / ALERT_BEEP_RATE) * 0.35 * envelope * 32767.0))
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = ALERT_BEEP_RATE
+	wav.data = data
+	return wav
 
 
 ## Emergency-light pulse: red overlay alpha 0 -> 0.3 -> 0.

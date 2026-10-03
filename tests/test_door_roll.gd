@@ -8,6 +8,7 @@ extends SceneTree
 ##   - every opened door (loops too) pays the extra resource
 ##   - energizing costs more per room already energized; the refund is what was paid
 ##   - a switched-off turret works again when the room is lit
+##   - spawns are telegraphed: HUD text naming the rooms + minimap alert
 ##   godot --headless --path . --script res://tests/test_door_roll.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
@@ -23,6 +24,7 @@ func _initialize() -> void:
 		for s in range(1, SEEDS + 1):
 			await _run(s, floor_index)
 	await _test_turret_relight()
+	await _test_telegraph()
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_door_roll: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
@@ -209,3 +211,28 @@ func _test_turret_relight() -> void:
 	turret._on_fire_timer_timeout()
 	_expect(not turret.fire_timer.is_stopped(), "a switched-off turret stopped its timer for good")
 	turret.free()
+
+
+func _test_telegraph() -> void:
+	root.get_node("ResourceManager").reset_resources()
+	var main2d := await _boot(1, 1)
+	var hud := (load("res://scenes/hud/HUD.tscn") as PackedScene).instantiate() as HUDController
+	root.add_child(hud)
+	await process_frame
+	for group_id in main2d.door_turn_system.rooms.keys():
+		main2d.door_turn_system.rooms[group_id]["visited"] = true
+	main2d.room_manager.refresh_visibility()
+	var enemies: EnemyManager = main2d.enemy_manager
+	var minimap := hud.find_child("Minimap", true, false) as Minimap
+	_expect(minimap != null, "HUD has no Minimap")
+	_expect(enemies.spawn_wave(3) > 0, "telegraph: no wave spawned")
+	_expect(hud._hint_panel.visible and "Oleada" in hud._hint_title.text, "telegraph: wave text missing ('%s')" % hud._hint_title.text)
+	_expect("Sala" in hud._hint_body.text or "Botín" in hud._hint_body.text or "Élite" in hud._hint_body.text or hud._hint_body.text.length() > 10, "telegraph: text does not name rooms ('%s')" % hud._hint_body.text)
+	_expect(hud._alert_player != null and hud._alert_player.stream != null, "telegraph: no alert sound")
+	if minimap:
+		_expect(not minimap._spawn_alerts.is_empty(), "telegraph: minimap alert missing")
+		for zone_id in minimap._spawn_alerts:
+			_expect(main2d.room_manager.get_zone_kind(zone_id) == "room" and main2d.room_manager.is_room_dark(zone_id), "telegraph: minimap alert in '%s' (not a dark room)" % zone_id)
+	hud.free()
+	main2d.queue_free()
+	await process_frame

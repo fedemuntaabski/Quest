@@ -22,12 +22,17 @@ const TYPE_MARKER_FRACTION := 0.45
 const TYPE_MARKER_MIN := 8.0
 
 const NEXO_ALERT_COLOR := Color(0.95, 0.2, 0.2)
+## Enemies just appeared in a room: blinking orange ring for this long (real time).
+const SPAWN_ALERT_COLOR := Color(1.0, 0.55, 0.1)
+const SPAWN_ALERT_MSEC := 6000
 
 var _room_manager: RoomManager
 var _heroes: Array[Player] = []
 var _exit_indicator: ExitIndicator
 var _nexo: Nexo
 var _bounds := Rect2i()
+## zone_id -> Time.get_ticks_msec() when its spawn alert expires.
+var _spawn_alerts: Dictionary = {}
 
 
 func _ready() -> void:
@@ -54,7 +59,10 @@ func _ready() -> void:
 		hero.zone_changed.connect(func(_id: String): queue_redraw())
 	_nexo = ManagerLocator.get_nexo()
 	if _nexo:
-		_nexo.under_attack_changed.connect(func(active: bool): set_process(active); queue_redraw())
+		_nexo.under_attack_changed.connect(func(_active: bool): _update_process(); queue_redraw())
+	var enemy_manager := ManagerLocator.get_enemy_manager()
+	if enemy_manager:
+		enemy_manager.enemies_appeared.connect(_on_enemies_appeared)
 	set_process(false)
 	_exit_indicator = ManagerLocator.get_exit_indicator()
 	if _exit_indicator:
@@ -153,9 +161,33 @@ func _draw() -> void:
 			var nexo_rect := _to_map(_room_manager.get_zone(nexo_zone)["rect"], scale_px, offset)
 			draw_arc(nexo_rect.get_center(), radius * 2.2, 0.0, TAU, 24, NEXO_ALERT_COLOR, 2.0)
 
+	# Enemies just spawned here: blinking orange ring on each room.
+	if (Time.get_ticks_msec() / 250) % 2 == 0:
+		for zone_id in _spawn_alerts:
+			if _room_manager.is_zone_revealed(zone_id):
+				var alert_rect := _to_map(_room_manager.get_zone(zone_id)["rect"], scale_px, offset)
+				draw_arc(alert_rect.get_center(), radius * 2.8, 0.0, TAU, 24, SPAWN_ALERT_COLOR, 2.5)
+
+
+func _on_enemies_appeared(zone_ids: Array[String], _count: int, _source: String) -> void:
+	for zone_id in zone_ids:
+		_spawn_alerts[zone_id] = Time.get_ticks_msec() + SPAWN_ALERT_MSEC
+	_update_process()
+	queue_redraw()
+
+
+## Runs only while something blinks: the Nexo under attack or a live spawn alert.
+func _update_process() -> void:
+	set_process((_nexo != null and _nexo.under_attack) or not _spawn_alerts.is_empty())
+
 
 func _process(_delta: float) -> void:
-	queue_redraw()  # only runs while the Nexo is under attack (blinking marker)
+	var now := Time.get_ticks_msec()
+	for zone_id in _spawn_alerts.keys():
+		if _spawn_alerts[zone_id] <= now:
+			_spawn_alerts.erase(zone_id)
+	_update_process()
+	queue_redraw()
 
 
 func _to_map(rect: Rect2i, scale_px: float, offset: Vector2) -> Rect2:
