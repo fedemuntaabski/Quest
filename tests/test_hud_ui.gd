@@ -577,7 +577,8 @@ func _check_close_on_end(hud: HUDController, main2d: Node, ps: Node) -> void:
 	hud.production_button.pressed.emit()
 	_press_key(KEY_SPACE)
 	_expect(Engine.time_scale == 0.0, "tactical pause before death")
-	ps.player_died.emit()
+	for hero: Player in main2d.heroes:  # the run is lost when every hero is down
+		hero.stats.take_damage(hero.stats.max_hp)
 	_expect(not hud.character_popup.visible and not menu.visible, "death should close popup and build menu")
 	_expect(Engine.time_scale == 1.0 and not hud.pause_label.visible, "death should drop the tactical pause (%f)" % Engine.time_scale)
 

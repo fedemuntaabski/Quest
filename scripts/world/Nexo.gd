@@ -30,6 +30,8 @@ const CRACK_LINES := [
 var current_hp: int = 100
 var under_attack: bool = false
 var cracks: Array[Line2D] = []
+## Zone where the carrier fell; "" = at its start-room spot or carried.
+var drop_zone_id: String = ""
 var _picked_up: bool = false
 var _flash_material: ShaderMaterial
 var _flash_tween: Tween
@@ -90,7 +92,8 @@ func get_carrier() -> Player:
 	return null
 
 
-## Where raiders must go: the carrier once picked up, else the start-room spot.
+## Where raiders must go: the carrier once picked up, else where the Nexo lies
+## (its start-room spot, or where the carrier fell).
 func get_target_position() -> Vector2:
 	var carrier := get_carrier()
 	return carrier.global_position if carrier else global_position
@@ -98,13 +101,36 @@ func get_target_position() -> Vector2:
 
 func get_target_zone(room_manager: RoomManager) -> String:
 	var carrier := get_carrier()
-	return carrier.current_zone_id if carrier else room_manager.get_start_zone_id()
+	if carrier:
+		return carrier.current_zone_id
+	return drop_zone_id if drop_zone_id != "" else room_manager.get_start_zone_id()
+
+
+## True while a hero carries it (hidden, `_picked_up`).
+func is_carried() -> bool:
+	return _picked_up
+
+
+## True while it lies where its carrier fell (another hero can take it from there).
+func is_dropped() -> bool:
+	return not _picked_up and drop_zone_id != ""
 
 
 func pick_up() -> void:
 	_picked_up = true
+	drop_zone_id = ""
 	visible = false
 	input_pickable = false
+
+
+## The carrier fell: the Nexo stays on the floor of `zone_id` at `world_position`, clickable again.
+func drop_at(zone_id: String, world_position: Vector2) -> void:
+	_picked_up = false
+	drop_zone_id = zone_id
+	global_position = world_position
+	visible = true
+	input_pickable = true
+	QuestLogger.info(QuestLogger.Category.NEXO, "Nexo dropped in '%s'." % zone_id)
 
 
 func _build_feedback() -> void:

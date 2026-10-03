@@ -277,8 +277,8 @@ func _setup_player_action_controller() -> void:
 # ─────────────────────────────────────────────
 func _connect_signals() -> void:
 	var player_stats := ManagerLocator.get_player_stats()
-	if player_stats and not player_stats.player_died.is_connected(_on_player_died):
-		player_stats.player_died.connect(_on_player_died)
+	if player_stats and not player_stats.player_died.is_connected(_on_hero_died):
+		player_stats.player_died.connect(_on_hero_died)
 	var selection := ManagerLocator.get_selection_manager()
 	if selection and not selection.selection_changed.is_connected(_on_selection_changed):
 		selection.selection_changed.connect(_on_selection_changed)
@@ -326,6 +326,20 @@ func _is_gameplay_active() -> bool:
 # ─────────────────────────────────────────────
 # GAME EVENTS
 # ─────────────────────────────────────────────
+## A hero fell (PlayerStats.player_died). Only when every hero is down is the run lost;
+## a fallen Nexo carrier leaves the Nexo on the floor for another hero to pick up.
+func _on_hero_died() -> void:
+	var survivors := false
+	for hero in ManagerLocator.get_heroes():
+		if hero.stats.is_alive():
+			survivors = true
+		elif hero.is_carrying_nexo:
+			hero.is_carrying_nexo = false
+			nexo.drop_at(hero.current_zone_id, hero.global_position)
+	if not survivors:
+		_on_player_died()
+
+## Defeat: every hero dead, or the Nexo destroyed.
 func _on_player_died() -> void:
 	if _is_dead:
 		return

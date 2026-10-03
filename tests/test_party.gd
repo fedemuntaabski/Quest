@@ -3,8 +3,8 @@ extends SceneTree
 ## Session 12: 2-hero party over a live Main2d + HUD (fallback map). Spawn,
 ## per-hero levels/HP, Tab selection (control + camera + portrait highlight),
 ## portrait clicks / popup of the clicked hero, a Tab mid-walk, lights/build/
-## research still working with 2 heroes, the death rule (one hero down = run
-## over), floor carry-over and the Retry reset for both heroes.
+## research still working with 2 heroes, the death rule (the run is lost only when
+## every hero is down), floor carry-over and the Retry reset for both heroes.
 ##   godot --headless --path . --script res://tests/test_party.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
@@ -318,7 +318,7 @@ func _check_regression(main2d: Node, hud: HUDController) -> void:
 
 # ---------------- DEATH ----------------
 
-## Decision: any hero dying ends the run (same death flow as one hero).
+## Decision (bucle-7): one hero down does not end the run; every hero down does.
 func _check_death(main2d: Node) -> void:
 	var a: Player = main2d.heroes[0]
 	var b: Player = main2d.heroes[1]
@@ -326,7 +326,9 @@ func _check_death(main2d: Node) -> void:
 	b.stats.take_damage(b.stats.max_hp)  # the unselected one
 	var gsm: GameStateManager = main2d.game_state_manager
 	_expect(not b.stats.is_alive() and a.stats.is_alive(), "death should be per hero")
-	_expect(main2d._is_dead and gsm.is_dead(), "one hero down should end the run (state %s)" % GameStateManager.State.keys()[gsm.current_state])
+	_expect(not main2d._is_dead and not gsm.is_dead(), "one hero down should not end the run (state %s)" % GameStateManager.State.keys()[gsm.current_state])
+	a.stats.take_damage(a.stats.max_hp)
+	_expect(main2d._is_dead and gsm.is_dead(), "every hero down should end the run (state %s)" % GameStateManager.State.keys()[gsm.current_state])
 	paused = false
 
 
