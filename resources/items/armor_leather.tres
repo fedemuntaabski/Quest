@@ -11,6 +11,7 @@ region = Rect2(0, 0, 16, 16)
 script = ExtResource("2_srxoj")
 id = "armor_leather"
 display_name = "Coraza de cuero"
+description = "Cuero curtido: poco, pero algo."
 icon = SubResource("AtlasTexture_q42w4")
 slot = 1
 modifiers = {

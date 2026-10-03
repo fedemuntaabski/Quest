@@ -11,6 +11,7 @@ region = Rect2(32, 32, 16, 16)
 script = ExtResource("2_4jety")
 id = "sword_iron"
 display_name = "Espada de hierro"
+description = "Forjada para las patrullas de la cripta."
 icon = SubResource("AtlasTexture_j8tcy")
 rarity = 1
 modifiers = {

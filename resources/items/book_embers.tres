@@ -11,9 +11,11 @@ region = Rect2(48, 0, 16, 16)
 script = ExtResource("2_kxp8a")
 id = "book_embers"
 display_name = "Grimorio de brasas"
+description = "Las páginas arden sin consumirse."
 icon = SubResource("AtlasTexture_b1lku")
 slot = 3
 rarity = 1
 modifiers = {
 "attack_damage": 2
 }
+allowed_heroes = Array[String](["mage"])

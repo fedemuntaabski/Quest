@@ -11,8 +11,11 @@ region = Rect2(48, 64, 16, 16)
 script = ExtResource("2_eucp7")
 id = "potion_health"
 display_name = "Poción de vida"
+description = "Un trago y las heridas se cierran."
 icon = SubResource("AtlasTexture_lcncv")
 slot = 2
-modifiers = {
-"hp": 10
-}
+stackable = true
+max_stack = 5
+consumable_effect = 1
+effect_value = 10.0
+use_cooldown = 8.0

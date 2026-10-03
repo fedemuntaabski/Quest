@@ -18,10 +18,16 @@ func _initialize() -> void:
 		slots[item.slot] = true
 		_expect(item.display_name != "", "%s con nombre" % item.id)
 		_check_icon(item)
-		_expect(not item.modifiers.is_empty(), "%s con modificadores" % item.id)
+		_expect(item.description != "", "%s con descripción" % item.id)
 		for key: String in item.modifiers:
 			_expect(key in ItemData.MODIFIER_KEYS, "%s: stat válida '%s'" % [item.id, key])
-		_expect(item.describe_modifiers() != "", "%s describe sus modificadores" % item.id)
+		if item.is_consumable():
+			_expect(item.modifiers.is_empty() and item.consumable_effect != ItemData.ConsumableEffect.NONE and item.effect_value > 0.0, "%s: consumible con efecto" % item.id)
+			_expect(item.describe_effect() != "" and item.stackable and item.max_stack > 1, "%s: describe su efecto y apila" % item.id)
+		else:
+			_expect(not item.modifiers.is_empty() and item.describe_modifiers() != "", "%s con modificadores" % item.id)
+			_expect(item.consumable_effect == ItemData.ConsumableEffect.NONE, "%s: un equipo no tiene efecto de consumible" % item.id)
+		_expect(item.describe_stats() != "", "%s describe lo que hace" % item.id)
 	_expect(slots.size() == ItemData.Slot.size(), "hay ítems de cada ranura")
 
 	var a := RandomNumberGenerator.new()

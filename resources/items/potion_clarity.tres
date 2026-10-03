@@ -11,9 +11,13 @@ region = Rect2(176, 64, 16, 16)
 script = ExtResource("2_aqs4b")
 id = "potion_clarity"
 display_name = "Poción de claridad"
+description = "La mente se aclara y las manos obedecen."
 icon = SubResource("AtlasTexture_jaf7m")
 slot = 2
 rarity = 1
-modifiers = {
-"attack_interval": -0.05
-}
+stackable = true
+max_stack = 5
+consumable_effect = 3
+effect_value = 0.3
+effect_duration = 15.0
+use_cooldown = 20.0

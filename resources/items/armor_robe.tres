@@ -11,6 +11,7 @@ region = Rect2(32, 64, 16, 16)
 script = ExtResource("2_fky36")
 id = "armor_robe"
 display_name = "Túnica del erudito"
+description = "Tela bordada con runas de estudio."
 icon = SubResource("AtlasTexture_qs6ko")
 slot = 1
 rarity = 1
@@ -18,3 +19,4 @@ modifiers = {
 "attack_damage": 1,
 "hp": 6
 }
+allowed_heroes = Array[String](["mage", "rogue"])

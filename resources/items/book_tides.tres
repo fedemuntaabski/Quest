@@ -11,9 +11,11 @@ region = Rect2(176, 0, 16, 16)
 script = ExtResource("2_ewp1p")
 id = "book_tides"
 display_name = "Grimorio de mareas"
+description = "Cada hechizo llega como una ola."
 icon = SubResource("AtlasTexture_v5mbu")
 slot = 3
 rarity = 2
 modifiers = {
 "attack_interval": -0.15
 }
+allowed_heroes = Array[String](["mage"])

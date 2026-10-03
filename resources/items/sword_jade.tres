@@ -11,6 +11,7 @@ region = Rect2(96, 96, 16, 16)
 script = ExtResource("2_kqay8")
 id = "sword_jade"
 display_name = "Hoja de jade"
+description = "Fría al tacto y afilada como una promesa."
 icon = SubResource("AtlasTexture_ujbfm")
 rarity = 2
 modifiers = {

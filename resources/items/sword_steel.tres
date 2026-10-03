@@ -11,6 +11,7 @@ region = Rect2(48, 64, 16, 16)
 script = ExtResource("2_jko0h")
 id = "sword_steel"
 display_name = "Espada de acero"
+description = "Acero templado: corta hueso y armadura."
 icon = SubResource("AtlasTexture_qjpad")
 rarity = 1
 modifiers = {

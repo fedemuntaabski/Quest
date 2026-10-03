@@ -11,9 +11,11 @@ region = Rect2(48, 240, 16, 16)
 script = ExtResource("2_1cr1e")
 id = "armor_gold"
 display_name = "Coraza dorada"
+description = "Demasiado vistosa para pasar desapercibida."
 icon = SubResource("AtlasTexture_76o8i")
 slot = 1
 rarity = 3
 modifiers = {
 "hp": 25
 }
+allowed_heroes = Array[String](["warrior", "tank"])

@@ -11,9 +11,13 @@ region = Rect2(208, 64, 16, 16)
 script = ExtResource("2_pqejd")
 id = "potion_fury"
 display_name = "Poción de furia"
+description = "Sabe a sangre y a hierro."
 icon = SubResource("AtlasTexture_n14qi")
 slot = 2
 rarity = 2
-modifiers = {
-"attack_damage": 2
-}
+stackable = true
+max_stack = 5
+consumable_effect = 2
+effect_value = 0.5
+effect_duration = 20.0
+use_cooldown = 25.0

@@ -11,6 +11,7 @@ region = Rect2(32, 128, 16, 16)
 script = ExtResource("2_8jmfj")
 id = "armor_iron"
 display_name = "Coraza de hierro"
+description = "Pesada y honesta."
 icon = SubResource("AtlasTexture_vxt8h")
 slot = 1
 rarity = 1

@@ -11,6 +11,7 @@ region = Rect2(0, 0, 16, 16)
 script = ExtResource("2_sxq13")
 id = "sword_bronze"
 display_name = "Espada de bronce"
+description = "Un arma sencilla y fiable."
 icon = SubResource("AtlasTexture_3abph")
 modifiers = {
 "attack_damage": 1

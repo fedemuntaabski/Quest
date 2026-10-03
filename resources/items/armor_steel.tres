@@ -11,9 +11,11 @@ region = Rect2(112, 208, 16, 16)
 script = ExtResource("2_d8hya")
 id = "armor_steel"
 display_name = "Coraza de acero"
+description = "Placas ajustadas para quien aguanta en primera línea."
 icon = SubResource("AtlasTexture_lslgg")
 slot = 1
 rarity = 3
 modifiers = {
 "hp": 20
 }
+allowed_heroes = Array[String](["warrior", "tank"])

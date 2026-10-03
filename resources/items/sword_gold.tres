@@ -11,6 +11,7 @@ region = Rect2(80, 128, 16, 16)
 script = ExtResource("2_dm2we")
 id = "sword_gold"
 display_name = "Espada dorada"
+description = "Perteneció a un rey que no sobrevivió a la cripta."
 icon = SubResource("AtlasTexture_itlek")
 rarity = 3
 modifiers = {

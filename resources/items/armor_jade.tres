@@ -11,6 +11,7 @@ region = Rect2(128, 272, 16, 16)
 script = ExtResource("2_88aqj")
 id = "armor_jade"
 display_name = "Coraza de jade"
+description = "Dicen que no se ha roto jamás."
 icon = SubResource("AtlasTexture_bn3m1")
 slot = 1
 rarity = 4
