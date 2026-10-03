@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ModuleDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/modules/ModuleDef.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+type = 5
+display_name = "Catapulta"
+description = "Lenta, pero castiga a todo un grupo."
+slot = 1
+tier = 2
+hp = 20
+base_cost = 8
+requires_power = true
+scene_path = "res://scenes/world/TurretModule.tscn"
+icon_path = "res://assets/art/ui/placeholder_catapult.png"
+damage = 25
+fire_rate = 3.0
+splash_radius = 70.0

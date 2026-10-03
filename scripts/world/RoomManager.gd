@@ -40,6 +40,7 @@ signal room_power_changed(zone_id: String, powered: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
 ## A module was built in a lit room (enemy AI re-evaluates its target).
 signal module_built(zone_id: String, module: Module)
+signal module_clicked(zone_id: String, slot: BuildingSlot)
 
 const ZONE_SCENE := preload("res://scenes/world/RoomZone.tscn")
 const DEFAULT_TILE_SIZE := Vector2(64, 64)
@@ -146,6 +147,7 @@ func _spawn_zone_node(zone_id: String) -> void:
 		room_power_changed.emit(zid, on)
 		_refresh_power_hints())
 	zone.slot_clicked.connect(func(zid: String, slot: BuildingSlot): slot_clicked.emit(zid, slot))
+	zone.module_clicked.connect(func(zid: String, slot: BuildingSlot): module_clicked.emit(zid, slot))
 	zone.module_built.connect(func(zid: String, module: Module): module_built.emit(zid, module))
 
 	record["node"] = zone
@@ -367,6 +369,18 @@ func get_modules_in_group(group_id: String) -> Array[Module]:
 		if node:
 			modules.append_array(node.get_modules())
 	return modules
+
+
+## Built (alive) modules of one type across the whole floor: drives the rising build cost.
+func count_modules(type: int) -> int:
+	var n := 0
+	for zone_id in zones:
+		var node: RoomZone = zones[zone_id].get("node")
+		if node:
+			for module in node.get_modules():
+				if module.module_type == type and module.is_targetable():
+					n += 1
+	return n
 
 
 ## Group ids whose room-kind zone is revealed but not yet powered — the

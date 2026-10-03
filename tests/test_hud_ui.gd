@@ -61,10 +61,10 @@ func _check_upgrade_config() -> void:
 
 
 func _check_module_text() -> void:
-	_expect(Module.describe_effect(Module.ModuleType.GENERATOR_SCIENCE) == "+3 Ciencia por turno", "generator effect text: %s" % Module.describe_effect(Module.ModuleType.GENERATOR_SCIENCE))
-	_expect(Module.describe_effect(Module.ModuleType.TRAP) == "Ralentiza 50% durante 3 s", "trap effect text: %s" % Module.describe_effect(Module.ModuleType.TRAP))
+	_expect(Module.describe_effect(Module.ModuleType.SCRIPTORIUM) == "+3 Ciencia por turno", "generator effect text: %s" % Module.describe_effect(Module.ModuleType.SCRIPTORIUM))
+	_expect(Module.describe_effect(Module.ModuleType.BRASERO) == "Ralentiza 50% durante 3 s", "trap effect text: %s" % Module.describe_effect(Module.ModuleType.BRASERO))
 	for type in Module.CATALOG:
-		_expect(Module.DESCRIPTIONS.has(type), "missing description for %s" % Module.ModuleType.keys()[type])
+		_expect(str(Module.CATALOG[type]["description"]) != "", "missing description for %s" % Module.ModuleType.keys()[type])
 
 
 ## Boots Main2d (hero registers with PlayerStats) + HUD like Main.gd does.
@@ -180,23 +180,23 @@ func _check_research_lifetime(resources: ResourceManager) -> void:
 	var hud := (load(HUD_PATH) as PackedScene).instantiate() as HUDController
 	root.add_child(hud)
 	await process_frame
-	_expect(resources.is_researched("science_generator") and resources.is_unlocked(Module.ModuleType.TURRET), "research must survive the next floor")
+	_expect(resources.is_researched("ballesta") and resources.is_unlocked(Module.ModuleType.BALLESTA), "research must survive the next floor")
 	hud.research_button.pressed.emit()
-	var state := hud.research_panel._list.get_node("science_generator").find_child("State", true, false) as Label
+	var state := hud.research_panel._list.get_node("ballesta").find_child("State", true, false) as Label
 	_expect(state.text == "Investigada", "next floor's panel should show the research as done")
 	var main := Main.new()
 	main._begin_new_run()
 	main.free()
-	_expect(not resources.is_researched("science_generator") and not resources.is_unlocked(Module.ModuleType.TURRET), "_begin_new_run (Retry) must reset research")
-	state = hud.research_panel._list.get_node("science_generator").find_child("State", true, false) as Label
+	_expect(not resources.is_researched("ballesta") and not resources.is_unlocked(Module.ModuleType.BALLESTA), "_begin_new_run (Retry) must reset research")
+	state = hud.research_panel._list.get_node("ballesta").find_child("State", true, false) as Label
 	_expect(state.text != "Investigada", "open panel must refresh on reset: '%s'" % state.text)
 	hud.queue_free()
 	main2d.queue_free()
 	await process_frame
 
 
-## Session 10: research as the Ciencia sink. Leaves science_generator +
-## turret_plans researched (and no global bonus) for _check_building_menu.
+## Session 10: research as the Ciencia sink. Leaves ballesta
+## researched (and no global bonus) for _check_building_menu.
 func _check_research(hud: HUDController, main2d: Node, resources: ResourceManager) -> void:
 	var cfg := resources.research_config
 	_expect(cfg.entries.size() >= 6 and cfg.entries.size() <= 8, "research entries: %d" % cfg.entries.size())
@@ -206,14 +206,14 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 		return pre != null and pre.cost < e.cost), "T2 entries need an existing, cheaper prerequisite")
 	var locked := Module.CATALOG.keys().filter(func(t: int) -> bool: return not resources.is_unlocked(t))
 	_expect(locked.size() >= 2, "at least 2 modules locked at run start: %s" % [locked])
-	for basic in [Module.ModuleType.GENERATOR_INDUSTRY, Module.ModuleType.GENERATOR_FOOD, Module.ModuleType.TRAP]:
+	for basic in [Module.ModuleType.FORJA, Module.ModuleType.GRANJA, Module.ModuleType.SCRIPTORIUM, Module.ModuleType.PINCHOS]:
 		_expect(resources.is_unlocked(basic), "basic module %s must stay free" % Module.ModuleType.keys()[basic])
 
 	var room_manager: RoomManager = main2d.room_manager
 	var start := room_manager.get_zone_node(room_manager.get_start_zone_id())
-	var major: BuildingSlot = null
+	var major: BuildingSlot = null  # a MINOR slot here: the locked module is the Ballesta
 	for slot in start.find_children("*", "BuildingSlot", true, false):
-		if slot.slot_type == BuildingSlot.SlotType.MAJOR:
+		if slot.slot_type == BuildingSlot.SlotType.MINOR:
 			major = slot
 	var other: RoomZone = null
 	for zone_id in room_manager.get_zone_ids():
@@ -228,25 +228,31 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	# Locked module: padlock + "Requiere", hotkey/_arm refuse, the build gate holds.
 	var menu: BuildingMenu = hud.building_menu
 	resources.add_resource("industry", 100)
-	hud.production_button.pressed.emit()
-	var sci_card: Control = menu.options.get_child(2)
+	hud.defense_button.pressed.emit()
+	var sci_card: Control = menu.options.get_child(0)  # Ballesta (locked)
 	_expect(sci_card.find_children("*", "StatIcon", true, false).any(func(i: StatIcon) -> bool: return i.icon_type == "lock"), "locked card needs a padlock")
-	_expect(sci_card.tooltip_text.contains("Requiere: Instrumental arcano"), "locked card tooltip: %s" % sci_card.tooltip_text)
-	_press_key(KEY_3)
+	_expect(sci_card.tooltip_text.contains("Requiere: Planos de ballesta"), "locked card tooltip: %s" % sci_card.tooltip_text)
+	_press_key(KEY_1)
 	_expect(not menu.is_armed(), "hotkey must not arm a locked module")
-	menu._arm(Module.ModuleType.GENERATOR_SCIENCE)
+	menu._arm(Module.ModuleType.BALLESTA)
 	_expect(not menu.is_armed(), "_arm must refuse a locked module")
-	menu._armed_type = Module.ModuleType.GENERATOR_SCIENCE  # force it: the build path must still refuse
+	menu._armed_type = Module.ModuleType.BALLESTA  # force it: the build path must still refuse
 	var industry := resources.get_resource("industry")
-	_expect(menu.get_block_reason(major) == "Requiere: Instrumental arcano", "locked reason: '%s'" % menu.get_block_reason(major))
+	_expect(menu.get_block_reason(major) == "Requiere: Planos de ballesta", "locked reason: '%s'" % menu.get_block_reason(major))
 	hud.open_building_menu(major)
 	_expect(major.is_empty() and resources.get_resource("industry") == industry, "a locked module must not be built nor paid")
 	menu.close_menu()
 
-	# No research without Ciencia or without the prerequisite.
+	# No research without a built Scriptorium, Ciencia or the prerequisite.
+	resources.add_resource("science", 1000)
+	_expect(resources.get_research_block_reason("ballesta") == "Construí un Scriptorium" and not resources.research("ballesta"), "research needs a Scriptorium")
+	var scriptorium := (load(Module.CATALOG[Module.ModuleType.SCRIPTORIUM]["scene"]) as PackedScene).instantiate() as GeneratorModule
+	scriptorium.resource_type = "science"
+	scriptorium.yield_amount = 0  # only the research gate counts it
+	main2d.add_child(scriptorium)
 	resources.spend_resource("science", resources.get_resource("science"))
-	_expect(not resources.can_research("science_generator") and not resources.research("science_generator"), "research with 0 science must fail")
-	_expect(resources.get_research_block_reason("science_generator") == "Falta Ciencia", "no-science reason")
+	_expect(not resources.can_research("ballesta") and not resources.research("ballesta"), "research with 0 science must fail")
+	_expect(resources.get_research_block_reason("ballesta") == "Falta Ciencia", "no-science reason")
 	resources.add_resource("science", 1000)
 	_expect(resources.get_research_block_reason("generator_overclock") == "Requiere: Engranajes afinados", "prerequisite reason: '%s'" % resources.get_research_block_reason("generator_overclock"))
 	_expect(not resources.research("generator_overclock") and resources.get_resource("science") == 1000, "T2 without its prerequisite must fail and spend nothing")
@@ -255,22 +261,22 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	Engine.time_scale = 0.0
 	hud.research_button.pressed.emit()
 	var panel := hud.research_panel
-	_expect(panel.visible and not menu.visible and panel.get_parent().name == "BottomBar", "Investigar should open the docked panel")
+	_expect(panel.visible and menu.visible and menu.tabs.current_tab == BuildingMenu.RESEARCH_TAB and panel.get_parent().name == "BottomBar", "Investigar should open the docked panel")
 	_expect(panel._list.get_child_count() == cfg.entries.size(), "one card per research")
 	var before := {}
 	for key in ResourceManager.KEYS:
 		before[key] = resources.get_resource(key)
-	(panel._list.get_node("science_generator").find_child("Research", true, false) as Button).pressed.emit()
-	_expect(resources.is_researched("science_generator") and resources.is_unlocked(Module.ModuleType.GENERATOR_SCIENCE), "panel button should research at time_scale 0")
+	(panel._list.get_node("ballesta").find_child("Research", true, false) as Button).pressed.emit()
+	_expect(resources.is_researched("ballesta") and resources.is_unlocked(Module.ModuleType.BALLESTA), "panel button should research at time_scale 0")
 	for key in ResourceManager.KEYS:
-		var expected: int = before[key] - (6 if key == "science" else 0)
+		var expected: int = before[key] - (8 if key == "science" else 0)
 		_expect(resources.get_resource(key) == expected, "research changed %s: %d != %d" % [key, resources.get_resource(key), expected])
 	_expect(hud._hint_panel.visible and hud._hint_title.text.begins_with("Investigado"), "researching should show an \"Investigado\" hint (got '%s')" % hud._hint_title.text)
-	var sci_research := panel._list.get_node("science_generator")
+	var sci_research := panel._list.get_node("ballesta")
 	_expect((sci_research.find_child("State", true, false) as Label).text == "Investigada", "state after research")
 	_expect((sci_research.find_child("Research", true, false) as Button).disabled, "done research can't be bought twice")
 	_expect((panel._list.get_node("generator_overclock").find_child("State", true, false) as Label).text.begins_with("Requiere"), "T2 card shows its prerequisite")
-	_expect(not resources.research("science_generator"), "research twice must fail")
+	_expect(not resources.research("ballesta"), "research twice must fail")
 
 	# Esc closes the panel and never reaches Main2d's pause toggle; right click closes too.
 	var probe := InputProbe.new()
@@ -286,9 +292,9 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	Engine.time_scale = 1.0
 
 	# Unlocked now: the card arms.
-	hud.production_button.pressed.emit()
-	_press_key(KEY_3)
-	_expect(menu.is_armed(), "Gen. Ciencia should arm once researched")
+	hud.defense_button.pressed.emit()
+	_press_key(KEY_1)
+	_expect(menu.is_armed(), "Ballesta should arm once researched")
 	menu.close_menu()
 
 	# Light cost: 10 → 7 (paid and refunded at the discounted price).
@@ -308,7 +314,7 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	var slots := other.find_children("*", "BuildingSlot", true, false)
 	var other_major: BuildingSlot = slots.filter(func(b: BuildingSlot) -> bool: return b.slot_type == BuildingSlot.SlotType.MAJOR)[0]
 	var other_minor: BuildingSlot = slots.filter(func(b: BuildingSlot) -> bool: return b.slot_type == BuildingSlot.SlotType.MINOR)[0]
-	other_major.build(Module.ModuleType.GENERATOR_INDUSTRY)
+	other_major.build(Module.ModuleType.FORJA)
 	var base_industry := ResourceManager.BASE_YIELD_INDUSTRY
 	_expect(resources.get_turn_yield("industry") == base_industry + 3, "generator yield without research")
 	_expect(resources.research("generator_tuning") and resources.get_turn_yield("industry") == base_industry + 4, "+25%%: %d" % resources.get_turn_yield("industry"))
@@ -318,8 +324,7 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	_expect(resources.get_resource("industry") == industry_before + base_industry + 5, "boosted yield must be what the turn pays")
 
 	# Turret damage: 15 → 25 per real shot.
-	_expect(resources.research("turret_plans"), "research turret_plans")
-	var turret := other_minor.build(Module.ModuleType.TURRET) as TurretModule
+	var turret := other_minor.build(Module.ModuleType.BALLESTA) as TurretModule
 	var dummy := DamageDummy.new()
 	root.add_child(dummy)
 	turret.current_targets = [dummy]
@@ -343,8 +348,9 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	# Back to "only the two unlocks" so the build-menu checks see plain numbers.
 	other.set_powered(false)
 	resources.reset_research()
-	_expect(RoomZone.get_power_cost() == RoomZone.POWER_COST and not resources.is_unlocked(Module.ModuleType.TURRET), "reset_research wipes bonuses and unlocks")
-	_expect(resources.research("science_generator") and resources.research("turret_plans"), "re-research the two unlocks")
+	_expect(RoomZone.get_power_cost() == RoomZone.POWER_COST and not resources.is_unlocked(Module.ModuleType.BALLESTA), "reset_research wipes bonuses and unlocks")
+	_expect(resources.research("ballesta"), "re-research the unlock")
+	scriptorium.queue_free()
 	await process_frame
 
 
@@ -493,7 +499,7 @@ func _check_tactical_pause(hud: HUDController, main2d: Node, resources: Resource
 	if free_minor:
 		var menu: BuildingMenu = hud.building_menu
 		hud.defense_button.pressed.emit()
-		_press_key(KEY_2)  # Trampa
+		_press_key(KEY_4)  # Trampa de pinchos (Brasero/Catapulta are locked)
 		_expect(menu.is_armed(), "arming must work in tactical pause")
 		var industry_before := resources.get_resource("industry")
 		hud.open_building_menu(free_minor)

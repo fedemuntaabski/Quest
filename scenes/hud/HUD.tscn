@@ -212,17 +212,17 @@ text = "Construir"
 [node name="ProductionButton" type="Button" parent="Control/BottomBar/BottomRow/BuildPanel/MarginContainer/BuildButtons"]
 layout_mode = 2
 tooltip_text = "Módulos de producción (slot mayor)"
-text = "Producción"
+text = "Mayores (B)"
 
 [node name="DefenseButton" type="Button" parent="Control/BottomBar/BottomRow/BuildPanel/MarginContainer/BuildButtons"]
 layout_mode = 2
 tooltip_text = "Módulos de defensa (slot menor)"
-text = "Defensa"
+text = "Menores (V)"
 
 [node name="ResearchButton" type="Button" parent="Control/BottomBar/BottomRow/BuildPanel/MarginContainer/BuildButtons"]
 layout_mode = 2
 tooltip_text = "Investigaciones pagadas con Ciencia"
-text = "Investigar"
+text = "Investigar (R)"
 
 [node name="FloorLabel" type="Label" parent="Control/TopLeft"]
 layout_mode = 2

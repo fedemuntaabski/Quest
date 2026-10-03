@@ -8,35 +8,27 @@ class_name Module
 ## clamp/signal shape — not a shared base class, per codebase convention.
 
 enum SlotType { MAJOR, MINOR }
-enum ModuleType { GENERATOR_INDUSTRY, GENERATOR_FOOD, GENERATOR_SCIENCE, TURRET, TRAP }
+## Values 0-4 are serialized (ResearchEntry.module in .tres): append, never reorder.
+enum ModuleType { FORJA, GRANJA, SCRIPTORIUM, BALLESTA, BRASERO, CATAPULTA, PINCHOS }
 
-const MODULE_SCENE_PATH := "res://scenes/world/Module.tscn"
-const GENERATOR_SCENE_PATH := "res://scenes/world/GeneratorModule.tscn"
-const TURRET_SCENE_PATH := "res://scenes/world/TurretModule.tscn"
+const DEF_PATHS := [
+	"res://resources/modules/forja.tres", "res://resources/modules/granja.tres",
+	"res://resources/modules/scriptorium.tres", "res://resources/modules/ballesta.tres",
+	"res://resources/modules/brasero.tres", "res://resources/modules/catapulta.tres",
+	"res://resources/modules/pinchos.tres",
+]
 
-const CATALOG := {
-	ModuleType.GENERATOR_INDUSTRY: {"hp": 15, "label": "Gen. Industria", "slot": SlotType.MAJOR, "cost": 6, "industry": 3, "food": 0, "science": 0, "scene": GENERATOR_SCENE_PATH},
-	ModuleType.GENERATOR_FOOD: {"hp": 15, "label": "Gen. Comida", "slot": SlotType.MAJOR, "cost": 6, "industry": 0, "food": 3, "science": 0, "scene": GENERATOR_SCENE_PATH},
-	ModuleType.GENERATOR_SCIENCE: {"hp": 15, "label": "Gen. Ciencia", "slot": SlotType.MAJOR, "cost": 6, "industry": 0, "food": 0, "science": 3, "scene": GENERATOR_SCENE_PATH},
-	ModuleType.TURRET: {"hp": 15, "label": "Ballesta", "slot": SlotType.MINOR, "cost": 4, "damage": 15, "fire_rate": 1.0, "scene": TURRET_SCENE_PATH},
-	ModuleType.TRAP: {"hp": 15, "label": "Trampa", "slot": SlotType.MINOR, "cost": 3, "slow_factor": 0.5, "slow_duration": 3.0, "scene": MODULE_SCENE_PATH},
-}
+## type -> dict built from resources/modules/*.tres (ModuleDef.to_dict()).
+static var CATALOG: Dictionary = _build_catalog()
 
 const TYPE_COLORS := {
-	ModuleType.GENERATOR_INDUSTRY: Color(0.72, 0.74, 0.8, 1.0),
-	ModuleType.GENERATOR_FOOD: Color(0.85, 0.4, 0.4, 1.0),
-	ModuleType.GENERATOR_SCIENCE: Color(0.6, 0.45, 0.85, 1.0),
-	ModuleType.TURRET: Color(0.55, 0.65, 0.85, 1.0),
-	ModuleType.TRAP: Color(0.8, 0.3, 0.3, 1.0),
-}
-
-## Flavor line for the build-menu tooltip (effect numbers come from describe_effect()).
-const DESCRIPTIONS := {
-	ModuleType.GENERATOR_INDUSTRY: "Engranajes oxidados que todavía giran.",
-	ModuleType.GENERATOR_FOOD: "Huerto de hongos bajo luz tenue.",
-	ModuleType.GENERATOR_SCIENCE: "Instrumentos antiguos que zumban solos.",
-	ModuleType.TURRET: "Dispara a los enemigos que entran en la sala.",
-	ModuleType.TRAP: "Frena a los enemigos que llegan a la sala.",
+	ModuleType.FORJA: Color(0.72, 0.74, 0.8, 1.0),
+	ModuleType.GRANJA: Color(0.85, 0.4, 0.4, 1.0),
+	ModuleType.SCRIPTORIUM: Color(0.6, 0.45, 0.85, 1.0),
+	ModuleType.BALLESTA: Color(0.55, 0.65, 0.85, 1.0),
+	ModuleType.BRASERO: Color(0.9, 0.55, 0.2, 1.0),
+	ModuleType.CATAPULTA: Color(0.65, 0.55, 0.4, 1.0),
+	ModuleType.PINCHOS: Color(0.8, 0.3, 0.3, 1.0),
 }
 
 const RESOURCE_LABELS := {"industry": "Industria", "food": "Comida", "science": "Ciencia", "dust": "Polvo"}
@@ -51,18 +43,40 @@ const BAR_SIZE := Vector2(24.0, 3.0)
 const BAR_OFFSET := Vector2(-12.0, 12.0)
 
 
+static func _build_catalog() -> Dictionary:
+	var out := {}
+	for path: String in DEF_PATHS:
+		var def := load(path) as ModuleDef
+		out[def.type] = def.to_dict()
+	return out
+
+
+## Flavor line for the build-menu tooltip (effect numbers come from describe_effect()).
+static func description_of(type: ModuleType) -> String:
+	return str(CATALOG[type]["description"])
+
+
 ## Human-readable effect of a catalog entry, derived from its numbers.
 static func describe_effect(type: ModuleType) -> String:
 	var cfg: Dictionary = CATALOG[type]
-	match type:
-		ModuleType.TURRET:
-			return "%d de daño cada %.1f s" % [int(cfg["damage"]), float(cfg["fire_rate"])]
-		ModuleType.TRAP:
-			return "Ralentiza %d%% durante %.0f s" % [roundi((1.0 - float(cfg["slow_factor"])) * 100.0), float(cfg["slow_duration"])]
+	if cfg.has("damage"):
+		var area := " (área)" if float(cfg["splash_radius"]) > 0.0 else ""
+		return "%d de daño cada %.1f s%s" % [int(cfg["damage"]), float(cfg["fire_rate"]), area]
+	if cfg.has("slow_duration"):
+		return "Ralentiza %d%% durante %.0f s" % [roundi((1.0 - float(cfg["slow_factor"])) * 100.0), float(cfg["slow_duration"])]
+	if cfg.has("spike_damage"):
+		return "%d de daño a cada enemigo que entra" % int(cfg["spike_damage"])
 	for key: String in ["industry", "food", "science"]:
 		if int(cfg.get(key, 0)) > 0:
 			return "+%d %s por turno" % [int(cfg[key]), RESOURCE_LABELS[key]]
 	return ""
+
+
+## Price of the next module of `type`: base cost grows with the ones already built.
+static func get_cost(type: ModuleType) -> int:
+	var rm := ManagerLocator.get_room_manager()
+	var built := rm.count_modules(type) if rm else 0
+	return ModuleCostCurve.get_default().cost(int(CATALOG[type]["cost"]), built)
 
 @onready var icon: Polygon2D = $Icon
 
@@ -71,6 +85,8 @@ static func describe_effect(type: ModuleType) -> String:
 @export var max_hp: int = 100
 
 var module_type: ModuleType
+## Industria paid when built (set by BuildingMenu): demolishing refunds a share of it.
+var paid_cost: int = 0
 var zone_id: String = ""
 var current_hp: int
 var is_active: bool = true
@@ -128,7 +144,7 @@ func die() -> void:
 
 
 func is_working() -> bool:
-	return is_active and powered
+	return is_active and (powered or not bool(CATALOG[module_type].get("requires_power", true)))
 
 
 ## Where enemies close in on it (TargetSelector / Enemy).
@@ -142,7 +158,36 @@ func is_targetable() -> bool:
 
 
 func is_trap() -> bool:
-	return module_type == ModuleType.TRAP
+	return module_type == ModuleType.BRASERO or module_type == ModuleType.PINCHOS
+
+
+## Industria to restore all missing HP (0 when undamaged).
+func repair_cost() -> int:
+	return ModuleCostCurve.get_default().repair_cost(int(CATALOG[module_type]["cost"]), max_hp - current_hp, max_hp)
+
+
+## Pays repair_cost() in Industria and restores full HP. False if undamaged or short.
+func repair() -> bool:
+	var cost := repair_cost()
+	var rm := ManagerLocator.get_resource_manager()
+	if cost <= 0 or rm == null or not rm.spend_resource("industry", cost):
+		return false
+	current_hp = max_hp
+	hp_changed.emit(current_hp, max_hp)
+	_update_bar()
+	return true
+
+
+func refund_value() -> int:
+	return ModuleCostCurve.get_default().refund(paid_cost)
+
+
+## Tears it down for a share of what it cost (the slot frees itself via module_destroyed).
+func demolish() -> void:
+	var rm := ManagerLocator.get_resource_manager()
+	if rm and not _is_destroyed:
+		rm.add_resource("industry", refund_value())
+	die()
 
 
 ## Mini HP bar under the module: only visible once it is damaged.

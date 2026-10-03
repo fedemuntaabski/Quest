@@ -10,6 +10,8 @@ class_name BuildingSlot
 
 signal slot_clicked(slot: BuildingSlot)
 signal module_built(module: Module)
+## Left click on a built slot (the HUD opens the repair/demolish popup).
+signal module_clicked(slot: BuildingSlot)
 
 enum SlotType { MAJOR, MINOR }
 
@@ -59,6 +61,7 @@ func build(module_type: Module.ModuleType) -> Module:
 	clear_ghost()
 	var scene_path: String = Module.CATALOG[module_type]["scene"]
 	var module := (load(scene_path) as PackedScene).instantiate() as Module
+	module.paid_cost = Module.get_cost(module_type)  # before add_child: it must not count itself
 	add_child(module)
 	module.position = Vector2.ZERO
 	module.configure(zone_id, module_type)
@@ -144,7 +147,11 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 		return
 	if get_viewport().is_input_handled():
 		return
-	if is_occupied or not room_can_build():
+	if is_occupied:
+		module_clicked.emit(self)
+		get_viewport().set_input_as_handled()
+		return
+	if not room_can_build():
 		return
 	slot_clicked.emit(self)
 	get_viewport().set_input_as_handled()

@@ -28,9 +28,10 @@ text = "Construir"
 
 [node name="Tabs" type="TabBar" parent="Margin/Content"]
 layout_mode = 2
-tab_count = 2
-tab_0/title = "Producción"
-tab_1/title = "Defensa"
+tab_count = 3
+tab_0/title = "Mayores"
+tab_1/title = "Menores"
+tab_2/title = "Investigación"
 
 [node name="Options" type="VBoxContainer" parent="Margin/Content"]
 layout_mode = 2

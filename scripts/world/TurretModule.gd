@@ -15,6 +15,8 @@ const TRAIL_COLOR := Color(0.7, 0.8, 1.0, 1.0)
 
 ## Set by a hero ability (Sobrecarga de Módulo); 1.0 = none.
 var damage_mult: float = 1.0
+## > 0 (Catapulta): the shot also hits enemies this close to the target.
+var splash_radius: float = 0.0
 var current_targets: Array[Node2D] = []
 
 
@@ -36,6 +38,7 @@ func configure(p_zone_id: String, p_module_type: ModuleType) -> void:
 	var cfg: Dictionary = CATALOG[p_module_type]
 	damage = int(cfg["damage"])
 	fire_rate = float(cfg["fire_rate"])
+	splash_radius = float(cfg.get("splash_radius", 0.0))
 	fire_timer.wait_time = fire_rate
 
 
@@ -57,7 +60,12 @@ func _on_fire_timer_timeout() -> void:
 	var target := current_targets[0]
 	var from := global_position
 	var to := target.global_position
-	target.take_damage(get_damage())
+	var hit := get_damage()
+	target.take_damage(hit)
+	if splash_radius > 0.0:
+		for other in get_tree().get_nodes_in_group("enemies"):
+			if other != target and is_instance_valid(other) and other.global_position.distance_to(to) <= splash_radius:
+				other.take_damage(hit)
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"projectile_trail", from, TRAIL_COLOR, 0.0, to)

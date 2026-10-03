@@ -24,6 +24,7 @@ var _info: Label
 var _level_title: Label
 var _upgrade_rows: GridContainer
 var _level_button: Button
+var _heal_button: Button
 var _perk_title: Label
 var _perk_rows: VBoxContainer
 var _equipment_title: Label
@@ -144,6 +145,9 @@ func _build() -> void:
 	_level_button = Button.new()
 	_level_button.pressed.connect(_on_level_up_pressed)
 	content.add_child(_level_button)
+	_heal_button = Button.new()
+	_heal_button.pressed.connect(_on_heal_pressed)
+	content.add_child(_heal_button)
 
 	content.add_child(HSeparator.new())
 	_perk_title = Label.new()
@@ -166,6 +170,12 @@ func _on_level_up_pressed() -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps and stats:
 		ps.level_up_hero(stats.hero_id)
+
+
+func _on_heal_pressed() -> void:
+	var ps := ManagerLocator.get_player_stats()
+	if ps and stats:
+		ps.heal_hero(stats.hero_id)
 
 
 func _on_veil_input(event: InputEvent) -> void:
@@ -230,6 +240,11 @@ func _rebuild_level_up(ps: PlayerStats) -> void:
 	_level_button.disabled = maxed or not affordable
 	_level_button.text = "Nivel máximo" if maxed else "Subir de nivel (%d %s)" % [p["cost"], resource_label]
 	_level_button.tooltip_text = "" if maxed or affordable else "%s insuficiente" % resource_label
+	var heal_cost: int = ps.get_heal_cost(stats.hero_id) if ps else 0
+	var heal_affordable: bool = ManagerLocator.get_resource_manager().get_resource("food") >= heal_cost
+	_heal_button.disabled = heal_cost <= 0 or not heal_affordable
+	_heal_button.text = "Vida completa" if heal_cost <= 0 else "Curar (%d %s)" % [heal_cost, resource_label]
+	_heal_button.tooltip_text = "" if heal_cost <= 0 or heal_affordable else "%s insuficiente" % resource_label
 	_level_button.add_theme_color_override("font_color", StatIcon.BASE_COLORS.get(p["cost_resource"], QuestPalette.PARCHMENT) if affordable else QuestPalette.UI_TEXT_BLOCKED)
 
 

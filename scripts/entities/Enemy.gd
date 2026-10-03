@@ -192,7 +192,7 @@ static func game_msec() -> int:
 
 ## Speed factor while slowed: the Trap's catalog slow_factor.
 static func slow_factor() -> float:
-	return float(Module.CATALOG[Module.ModuleType.TRAP]["slow_factor"])
+	return float(Module.CATALOG[Module.ModuleType.BRASERO]["slow_factor"])
 
 
 func current_speed() -> float:
@@ -401,11 +401,20 @@ func _ring_offset() -> Vector2:
 
 func _check_trap_in_current_room(room_manager: RoomManager) -> void:
 	var group_id := room_manager.get_group_id(current_zone_id)
+	var slowed := false
+	var spiked := false
 	for module in room_manager.get_modules_in_group(group_id):
-		if module.is_trap() and module.is_working():
-			var cfg: Dictionary = Module.CATALOG[Module.ModuleType.TRAP]
+		if not module.is_trap() or not module.is_working():
+			continue
+		var cfg: Dictionary = Module.CATALOG[module.module_type]
+		if module.module_type == Module.ModuleType.BRASERO and not slowed:
+			slowed = true
 			apply_slow(float(cfg["slow_duration"]))
-			var vfx := ManagerLocator.get_vfx_manager()
-			if vfx:
-				vfx.play(&"hit_sparks", global_position, vfx.config.dust_color)
-			break
+		elif module.module_type == Module.ModuleType.PINCHOS and not spiked:
+			spiked = true  # one spiked trap hurts once per arrival, extra ones don't stack
+			take_damage(int(cfg["spike_damage"]))
+		else:
+			continue
+		var vfx := ManagerLocator.get_vfx_manager()
+		if vfx and is_alive():
+			vfx.play(&"hit_sparks", global_position, vfx.config.dust_color)

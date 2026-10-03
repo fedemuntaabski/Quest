@@ -53,6 +53,7 @@ var _alert_player: AudioStreamPlayer
 ## One per hero, in party order. hero_id → HeroPortrait.
 var _portraits: Dictionary = {}
 var character_popup: CharacterPopup
+var module_popup: ModulePopup
 var pause_label: Label
 var _stash_label: Label
 var _hint_panel: PanelContainer
@@ -112,11 +113,18 @@ func _ready() -> void:
 	_add_research_panel()
 	if building_menu:
 		if production_button:
-			production_button.pressed.connect(research_panel.close)
 			production_button.pressed.connect(building_menu.open_category.bind(int(Module.SlotType.MAJOR)))
 		if defense_button:
-			defense_button.pressed.connect(research_panel.close)
 			defense_button.pressed.connect(building_menu.open_category.bind(int(Module.SlotType.MINOR)))
+		# The Investigación tab docks the ResearchPanel; closing the panel (Esc, right click) closes the menu.
+		building_menu.research_tab_changed.connect(func(shown: bool) -> void:
+			if shown:
+				research_panel.open()
+			else:
+				research_panel.close())
+		research_panel.visibility_changed.connect(func() -> void:
+			if not research_panel.visible and building_menu.visible and building_menu.tabs.current_tab == BuildingMenu.RESEARCH_TAB:
+				building_menu.close_menu())
 	if research_button:
 		research_button.pressed.connect(_on_research_pressed)
 
@@ -125,9 +133,13 @@ func _ready() -> void:
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager:
 		room_manager.slot_clicked.connect(_on_slot_clicked)
+		room_manager.module_clicked.connect(_on_module_clicked)
 	character_popup = CharacterPopup.new()
 	character_popup.name = "CharacterPopup"
 	$Control.add_child(character_popup)
+	module_popup = ModulePopup.new()
+	module_popup.name = "ModulePopup"
+	$Control.add_child(module_popup)
 	_add_pause_label()
 	_add_nexo_alert()
 	_add_hint_panel()
@@ -145,6 +157,7 @@ func _ready() -> void:
 
 func close_popups() -> void:
 	character_popup.close()
+	module_popup.close()
 	research_panel.close()
 	if building_menu:
 		building_menu.close_menu()
@@ -161,9 +174,22 @@ func _add_research_panel() -> void:
 
 
 func _on_research_pressed() -> void:
-	if building_menu:
+	if building_menu == null:
+		research_panel.toggle()
+	elif building_menu.visible and building_menu.tabs.current_tab == BuildingMenu.RESEARCH_TAB:
 		building_menu.close_menu()
-	research_panel.toggle()
+	else:
+		building_menu.open_category(BuildingMenu.RESEARCH_TAB)
+
+
+## B / V / R open Mayores / Menores / Investigación (1-9 pick a card once open).
+func _unhandled_key_input(event: InputEvent) -> void:
+	if building_menu == null or not (event is InputEventKey and event.pressed and not event.echo) or event.ctrl_pressed:
+		return
+	var tab := {KEY_B: 0, KEY_V: 1, KEY_R: BuildingMenu.RESEARCH_TAB}.get(event.keycode, -1) as int
+	if tab >= 0:
+		building_menu.open_category(tab)
+		get_viewport().set_input_as_handled()
 
 
 ## "Mochila 3/20" at the end of the bottom row: how full the party stash is (red when full).
@@ -417,6 +443,14 @@ func _refresh_gains() -> void:
 func _on_slot_clicked(_zone_id: String, slot: BuildingSlot) -> void:
 	if slot.is_empty():
 		open_building_menu(slot)
+
+
+## A built module was clicked: repair/demolish popup (never while a module is armed).
+func _on_module_clicked(_zone_id: String, slot: BuildingSlot) -> void:
+	if building_menu and building_menu.is_armed():
+		return
+	if slot.built_module is Module:
+		module_popup.open_for(slot.built_module)
 
 
 func open_building_menu(slot: BuildingSlot) -> void:

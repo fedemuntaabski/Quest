@@ -30,6 +30,16 @@ const LABELS := {
 @export var min_attack_interval: float = 0.2
 
 
+@export_group("Healing")
+## Comida per missing HP when healing from the character popup.
+@export var heal_cost_per_hp: float = 0.15
+
+
+## Comida to restore `missing_hp` (0 when nothing is missing).
+func heal_cost(missing_hp: int) -> int:
+	return 0 if missing_hp <= 0 else maxi(1, ceili(missing_hp * heal_cost_per_hp))
+
+
 func get_cost(level: int) -> int:
 	return roundi(base_cost * pow(cost_growth, maxi(level, 0)))
 

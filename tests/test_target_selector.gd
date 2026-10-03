@@ -128,9 +128,9 @@ func _test_rules() -> void:
 	var gen_room: String = rooms[2]
 	var hero: Player = main2d.heroes[0]
 	var other: Player = main2d.heroes[1]
-	var turret := _build(rm, turret_room, Module.ModuleType.TURRET)
-	var generator := _build(rm, gen_room, Module.ModuleType.GENERATOR_INDUSTRY)
-	var trap := _build(rm, gen_room, Module.ModuleType.TRAP)
+	var turret := _build(rm, turret_room, Module.ModuleType.BALLESTA)
+	var generator := _build(rm, gen_room, Module.ModuleType.FORJA)
+	var trap := _build(rm, gen_room, Module.ModuleType.BRASERO)
 	_expect(turret != null and generator != null and trap != null, "could not build the test modules")
 	_place(hero, home, rm.get_center(home) + Vector2(60, 0))
 
@@ -149,7 +149,7 @@ func _test_rules() -> void:
 	_expect(target.type == TargetRule.Type.HERO_NEAREST and target.node == hero, "breaker: no defenses -> nearest hero")
 
 	# Saboteur: generator even though the trap (any module) is in the same room as it.
-	var turret2 := _build(rm, turret_room, Module.ModuleType.TURRET)
+	var turret2 := _build(rm, turret_room, Module.ModuleType.BALLESTA)
 	var saboteur := _enemy(main2d, "tiny_zombie", home)
 	target = saboteur.selector.select(rm)
 	_expect(target.type == TargetRule.Type.MODULE_GENERATOR and target.node == generator, "saboteur: generators before any module")
@@ -219,7 +219,7 @@ func _test_events() -> void:
 	_expect(breaker.selector.current != null and breaker.selector.current.type == TargetRule.Type.HERO_NEAREST, "events: starts on the hero")
 
 	# Module built -> re-evaluated immediately.
-	var turret := _build(rm, trap_room, Module.ModuleType.TURRET)
+	var turret := _build(rm, trap_room, Module.ModuleType.BALLESTA)
 	_expect(breaker.selector.current.node == turret, "events: building a turret should redirect the breaker at once")
 
 	# Target destroyed -> re-selected in the same frame, target_lost emitted.
@@ -244,7 +244,7 @@ func _test_events() -> void:
 func _test_module_feedback() -> void:
 	var main2d := await _boot()
 	var rm: RoomManager = main2d.room_manager
-	var turret := _build(rm, _rooms(rm)[0], Module.ModuleType.TURRET) as TurretModule
+	var turret := _build(rm, _rooms(rm)[0], Module.ModuleType.BALLESTA) as TurretModule
 	var seen: Array[int] = []
 	turret.damaged.connect(func(amount: int) -> void: seen.append(amount))
 	var hp_signals: Array[int] = []

@@ -145,8 +145,8 @@ func _check_mage_rogue() -> void:
 		elif minor == null:
 			minor = slot
 	if major != null and minor != null:
-		major.build(Module.ModuleType.GENERATOR_INDUSTRY)
-		var turret := minor.build(Module.ModuleType.TURRET) as TurretModule
+		major.build(Module.ModuleType.FORJA)
+		var turret := minor.build(Module.ModuleType.BALLESTA) as TurretModule
 		var industry := resources.get_resource("industry")
 		var base_damage := turret.get_damage()
 		_expect(mage.abilities.try_activate(), "Sobrecarga de Módulo did not fire")

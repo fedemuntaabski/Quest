@@ -237,7 +237,7 @@ static func nexo_rows() -> Array[Dictionary]:
 ## every NEXO_TICK_SEC (Enemy.attack_speed). `turret_hp_lost_pct` = share of the
 ## turret's HP gone by the time the turret has killed it (100 = the turret dies first).
 static func tower_rows() -> Array[Dictionary]:
-	var turret: Dictionary = Module.CATALOG[Module.ModuleType.TURRET]
+	var turret: Dictionary = Module.CATALOG[Module.ModuleType.BALLESTA]
 	var rows: Array[Dictionary] = []
 	for f in range(1, FLOORS + 1):
 		for type in pool_types(f):
@@ -307,6 +307,83 @@ static func extraction_rows() -> Array[Dictionary]:
 			rows.append({
 				"floor": f, "stage": stage, "wave": size, "gap_sec": snappedf(gap, 0.1),
 				"enemies_per_min": snappedf(size * 60.0 / gap, 0.1), "cap": config.max_enemies(f),
+			})
+	return rows
+
+
+const MODULE_YIELD := 3
+## ResourceManager.reset_resources() defaults: what a run starts with.
+const START_RESOURCES := {"industry": 15, "food": 15, "science": 10, "dust": 20}
+## Heroes in a run and HP a hero loses (and heals back with Comida) per floor in the model.
+const PARTY_SIZE := 2
+const HEAL_HP_PER_HERO := 30
+
+
+## Economy (session economia-8): per floor and resource, what a reference player earns and
+## what there is to spend it on. Reference player: every lit room (+ the free start room)
+## gets its major, split evenly over Forja/Granja/Scriptorium, and 2 minors split over
+## Ballesta/Pinchos, bought with the rising cost curve; majors work half the floor's doors on
+## average; research (all entries) and hero levels are spread evenly over the floors; Comida
+## also heals PARTY_SIZE heroes HEAL_HP_PER_HERO HP per floor; Polvo energizes the lit rooms.
+## income = doors (DoorRollConfig) + generators; run_ratio = cumulative income / cumulative
+## sink (> 1 = surplus, < 1 = shortfall); a resource with no sink or no income is "useless".
+static func economy_rows() -> Array[Dictionary]:
+	var config := floor_config()
+	var roll := config.door_roll
+	var up := upgrade_config()
+	var curve := ModuleCostCurve.get_default()
+	var research_total := 0
+	for entry in (load("res://resources/research/research_config.tres") as ResearchConfig).entries:
+		research_total += entry.cost
+	var level_total := 0
+	for lvl in up.max_level:
+		level_total += up.get_cost(lvl)
+	var rows: Array[Dictionary] = []
+	var income_run := {"industry": 0.0, "food": 0.0, "science": 0.0, "dust": 0.0}
+	var sink_run := {"industry": 0.0, "food": 0.0, "science": 0.0, "dust": 0.0}
+	for f in range(1, FLOORS + 1):
+		var doors := config.room_count(f) - 1
+		var lit := 0
+		var spent := 0
+		var budget := RESET_DUST + roll.dust_reward(f) * doors
+		var dust_sink := 0
+		while spent + RoomZone.POWER_COST + config.power_cost_step * lit <= budget:
+			var cost := RoomZone.POWER_COST + config.power_cost_step * lit
+			spent += cost
+			dust_sink += cost
+			lit += 1
+		var majors := lit + 1
+		var minors := 2 * (lit + 1)
+		var weights: Vector3 = roll.bonus_weights_by_floor[clampi(f - 1, 0, roll.bonus_weights_by_floor.size() - 1)]
+		var share := {"industry": weights.x / (weights.x + weights.y + weights.z), "food": weights.y / (weights.x + weights.y + weights.z), "science": weights.z / (weights.x + weights.y + weights.z)}
+		var build_sink := 0
+		for k in ceili(majors / 3.0):
+			build_sink += 3 * curve.cost(Module.CATALOG[Module.ModuleType.FORJA]["cost"], k)
+		for k in ceili(minors / 2.0):
+			build_sink += 2 * curve.cost(Module.CATALOG[Module.ModuleType.BALLESTA]["cost"], k)
+		for key in ["industry", "food", "science", "dust"]:
+			var income := 0.0
+			if key == "dust":
+				income = roll.dust_reward(f) * doors
+			else:
+				income = roll.bonus_amount(f) * doors * share[key] + (majors / 3.0) * MODULE_YIELD * doors / 2.0
+			if f == 1:
+				income += START_RESOURCES[key]
+			var sink := 0.0
+			match key:
+				"industry":
+					sink = build_sink
+				"food":
+					sink = PARTY_SIZE * level_total / float(FLOORS) + PARTY_SIZE * up.heal_cost(HEAL_HP_PER_HERO)
+				"science":
+					sink = research_total / float(FLOORS)
+				"dust":
+					sink = dust_sink
+			income_run[key] += income
+			sink_run[key] += sink
+			rows.append({
+				"floor": f, "resource": key, "income": snappedf(income, 0.1), "sink": snappedf(sink, 0.1),
+				"run_ratio": snappedf(income_run[key] / maxf(sink_run[key], 0.001), 0.01),
 			})
 	return rows
 

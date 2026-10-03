@@ -283,6 +283,24 @@ func level_up_hero(hero_id: String = "") -> bool:
 	return true
 
 
+## Comida to fully heal that hero (0 = nothing to heal / unknown hero).
+func get_heal_cost(hero_id: String = "") -> int:
+	var s := get_hero_stats(_resolve(hero_id))
+	return 0 if s == null or not s.is_alive() else _config_for(_resolve(hero_id)).heal_cost(s.max_hp - s.current_hp)
+
+
+## Spends Comida to restore that hero's missing HP. false = nothing to heal or short.
+func heal_hero(hero_id: String = "") -> bool:
+	var id := _resolve(hero_id)
+	var cost := get_heal_cost(id)
+	var rm := ManagerLocator.get_resource_manager()
+	if cost <= 0 or rm == null or not rm.spend_resource(_config_for(id).cost_resource, cost):
+		return false
+	var s := get_hero_stats(id)
+	s.heal(s.max_hp - s.current_hp)
+	return true
+
+
 ## Compat (session 6): any stat key now levels the whole hero up.
 func buy_run_upgrade(stat_key: String, hero_id: String = "") -> bool:
 	return UpgradeConfig.STAT_KEYS.has(stat_key) and level_up_hero(hero_id)

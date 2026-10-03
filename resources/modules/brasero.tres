@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ModuleDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/modules/ModuleDef.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+type = 4
+display_name = "Brasero"
+description = "Frena a los enemigos que llegan a la sala."
+slot = 1
+tier = 1
+hp = 15
+base_cost = 3
+requires_power = true
+scene_path = "res://scenes/world/Module.tscn"
+icon_path = "res://assets/art/ui/placeholder_trap.png"
+slow_factor = 0.5
+slow_duration = 3.0

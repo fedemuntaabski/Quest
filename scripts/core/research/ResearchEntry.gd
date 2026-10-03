@@ -22,7 +22,7 @@ enum Effect {
 @export var effect: Effect = Effect.UNLOCK_MODULE
 @export var value: float = 0.0
 ## Only for UNLOCK_MODULE.
-@export var module: Module.ModuleType = Module.ModuleType.TURRET
+@export var module: Module.ModuleType = Module.ModuleType.BALLESTA
 
 
 func describe_effect() -> String:

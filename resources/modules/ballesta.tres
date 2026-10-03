@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ModuleDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/modules/ModuleDef.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+type = 3
+display_name = "Ballesta"
+description = "Dispara a los enemigos que entran en la sala."
+slot = 1
+tier = 1
+hp = 15
+base_cost = 4
+requires_power = true
+scene_path = "res://scenes/world/TurretModule.tscn"
+icon_path = "res://assets/art/ui/placeholder_turret.png"
+damage = 15
+fire_rate = 1.0

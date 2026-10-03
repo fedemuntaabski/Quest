@@ -299,7 +299,12 @@ func _check_regression(main2d: Node, hud: HUDController) -> void:
 		_expect(resources.get_turn_yield("industry") > yield_before, "generator yield with 2 heroes")
 
 	resources.add_resource("science", 20)
-	_expect(resources.research("science_generator") and resources.is_researched("science_generator"), "research with 2 heroes failed")
+	var scriptorium := (load(Module.CATALOG[Module.ModuleType.SCRIPTORIUM]["scene"]) as PackedScene).instantiate() as GeneratorModule
+	scriptorium.resource_type = "science"
+	scriptorium.yield_amount = 0  # research needs a built Scriptorium
+	root.add_child(scriptorium)
+	_expect(resources.research("ballesta") and resources.is_researched("ballesta"), "research with 2 heroes failed")
+	scriptorium.queue_free()
 
 	var side_room := ""
 	for zone_id in room_manager.get_zone_ids():

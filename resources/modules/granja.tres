@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ModuleDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/modules/ModuleDef.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+type = 1
+display_name = "Granja"
+description = "Huerto de hongos bajo luz tenue."
+slot = 0
+tier = 1
+hp = 15
+base_cost = 6
+requires_power = true
+scene_path = "res://scenes/world/GeneratorModule.tscn"
+icon_path = "res://assets/art/ui/placeholder_gen_food.png"
+resource = "food"
+yield_amount = 3

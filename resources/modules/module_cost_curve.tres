@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ModuleCostCurve" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/modules/ModuleCostCurve.gd" id="1_curve"]
+
+[resource]
+script = ExtResource("1_curve")
+step = 0.25
+refund_pct = 0.5
+repair_pct = 0.5

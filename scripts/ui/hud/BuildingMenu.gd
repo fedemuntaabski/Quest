@@ -23,13 +23,17 @@ const SHAKE_STEP := 0.04
 ## Every catalog cost is Industria today.
 const COST_RESOURCE := "industry"
 const ICON_SIZE := Vector2(28, 28)
-## Tab index == Module.SlotType (MAJOR = production, MINOR = defense).
-const TAB_TITLES := ["Producción", "Defensa"]
+## Tab index == Module.SlotType (MAJOR, MINOR); the 3rd tab hosts the ResearchPanel.
+const TAB_TITLES := ["Mayores", "Menores", "Investigación"]
+const RESEARCH_TAB := 2
 const SLOT_NAMES := ["mayor", "menor"]
 
 @onready var options: VBoxContainer = $Margin/Content/Options
 @onready var tabs: TabBar = $Margin/Content/Tabs
 @onready var title: Label = $Margin/Content/Title
+
+## The Investigación tab was shown / left (HUDController docks the ResearchPanel).
+signal research_tab_changed(shown: bool)
 
 var _shake_tween: Tween
 ## Module picked from the bottom bar; -1 = none.
@@ -43,9 +47,11 @@ var _hover_slots: Dictionary = {}
 func _ready() -> void:
 	visible = false
 	add_theme_stylebox_override("panel", UiStyles.build_panel_style(Color(0.08, 0.08, 0.1, 0.95), QuestPalette.GOLD_DARK, 2, 8))
-	tabs.tab_changed.connect(func(_tab: int) -> void:
-		_disarm()
-		_populate())
+	if tabs.tab_count < TAB_TITLES.size():
+		tabs.add_tab("")
+	for i in TAB_TITLES.size():
+		tabs.set_tab_title(i, TAB_TITLES[i])
+	tabs.tab_changed.connect(_show_tab)
 	var rm := ManagerLocator.get_resource_manager()
 	if rm:
 		rm.resource_changed.connect(_on_resource_changed)
@@ -69,11 +75,20 @@ func open_menu(slot_node: BuildingSlot) -> void:
 ## Bottom-bar entry: cards for `tab` (== Module.SlotType).
 func open_category(tab: int) -> void:
 	close_menu()
-	title.text = "Construir — elegí un módulo (1-9)"
 	tabs.current_tab = tab
-	_disarm()
-	_populate()
 	visible = true
+	_show_tab(tab)
+
+
+func _show_tab(tab: int) -> void:
+	_disarm()
+	var research := tab == RESEARCH_TAB
+	options.visible = not research
+	title.visible = not research  # the ResearchPanel carries its own header
+	title.text = "Construir — elegí un módulo (1-9)"
+	if not research:
+		_populate()
+	research_tab_changed.emit(research)
 
 
 func is_armed() -> bool:
@@ -81,8 +96,11 @@ func is_armed() -> bool:
 
 
 func close_menu() -> void:
+	var was_visible := visible
 	visible = false
 	_disarm()
+	if was_visible and tabs.current_tab == RESEARCH_TAB:
+		research_tab_changed.emit(false)
 
 
 ## "" if the armed module can be built in `slot`, else why not.
@@ -98,7 +116,7 @@ func get_block_reason(slot: BuildingSlot) -> String:
 	if not slot.room_can_build():
 		return "Sala apagada"
 	var rm := ManagerLocator.get_resource_manager()
-	if rm == null or rm.get_resource(COST_RESOURCE) < int(cfg["cost"]):
+	if rm == null or rm.get_resource(COST_RESOURCE) < Module.get_cost(_armed_type as Module.ModuleType):
 		return "Falta Industria"
 	return ""
 
@@ -109,6 +127,13 @@ static func get_lock_reason(module_type: Module.ModuleType) -> String:
 	if rm == null or rm.is_unlocked(module_type):
 		return ""
 	return "Requiere: %s" % rm.research_config.get_unlock_entry(module_type).display_name
+
+
+## Ciencia the research that unlocks `module_type` costs (0 if none).
+static func _research_cost(module_type: Module.ModuleType) -> int:
+	var rm := ManagerLocator.get_resource_manager()
+	var entry := rm.research_config.get_unlock_entry(module_type) if rm else null
+	return entry.cost if entry else 0
 
 
 ## Cards for the current tab. Resource changes and tab switches rebuild them.
@@ -124,16 +149,17 @@ func _populate() -> void:
 		if int(cfg["slot"]) != tabs.current_tab:
 			continue
 		index += 1
-		options.add_child(_make_card(module_type, cfg, index, available >= int(cfg["cost"]), get_lock_reason(module_type)))
+		options.add_child(_make_card(module_type, cfg, index, available >= Module.get_cost(module_type), get_lock_reason(module_type)))
 
 
 func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, affordable: bool, lock := "") -> Control:
-	var cost := int(cfg["cost"])
+	var cost := Module.get_cost(module_type)
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 1, 6, 6))
-	var reason := "\n" + lock if lock != "" else ("" if affordable else "\nIndustria insuficiente.")
-	card.tooltip_text = "%s\n%s\n%s\nVida: %d%s" % [cfg["label"], Module.DESCRIPTIONS.get(module_type, ""), Module.describe_effect(module_type), int(cfg["hp"]), reason]
+	var research_cost := _research_cost(module_type)
+	var reason := "\n%s (Investigar: %d Ciencia)" % [lock, research_cost] if lock != "" else ("" if affordable else "\nIndustria insuficiente.")
+	card.tooltip_text = "%s\n%s\n%s\nCosto: %d Industria · Vida: %d%s" % [cfg["label"], cfg["description"], Module.describe_effect(module_type), cost, int(cfg["hp"]), reason]
 	if not affordable or lock != "":
 		card.modulate = Color(1, 1, 1, 0.55)
 
@@ -148,6 +174,16 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(icon)
+	# Placeholder art (docs/ASSETS_AUDITORIA.md) over the colored square when it exists.
+	if ResourceLoader.exists(str(cfg["icon"])):
+		var art := TextureRect.new()
+		art.texture = load(str(cfg["icon"])) as Texture2D
+		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.add_child(art)
+		art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if lock != "":
 		var padlock := StatIcon.new()
 		padlock.icon_type = "lock"
@@ -164,7 +200,7 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 	name_label.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
 	column.add_child(name_label)
 	var effect_label := Label.new()
-	effect_label.text = lock if lock != "" else Module.describe_effect(module_type)
+	effect_label.text = "%s · %d Ciencia" % [lock, research_cost] if lock != "" else Module.describe_effect(module_type)
 	effect_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_BLOCKED if lock != "" else QuestPalette.UI_TEXT_SECONDARY)
 	effect_label.add_theme_font_size_override("font_size", 13)
 	column.add_child(effect_label)
@@ -245,7 +281,7 @@ func _build_armed_into(slot_node: BuildingSlot) -> void:
 	var module_type := _armed_type as Module.ModuleType
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if reason != "" or resource_manager == null \
-			or not resource_manager.spend_resource(COST_RESOURCE, int(Module.CATALOG[module_type]["cost"])):
+			or not resource_manager.spend_resource(COST_RESOURCE, Module.get_cost(module_type)):
 		_reject(slot_node, reason if reason != "" else "Falta Industria")
 		return  # stay armed
 	slot_node.build(module_type)

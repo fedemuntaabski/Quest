@@ -1,25 +1,39 @@
-[gd_resource type="Resource" script_class="ResearchConfig" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="ResearchConfig" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/research/ResearchConfig.gd" id="1_config"]
 [ext_resource type="Script" path="res://scripts/core/research/ResearchEntry.gd" id="2_entry"]
+[ext_resource type="Script" path="res://scripts/core/research/ModuleResearch.gd" id="3_mod"]
 
-[sub_resource type="Resource" id="R_sci_gen"]
-script = ExtResource("2_entry")
-id = "science_generator"
-display_name = "Instrumental arcano"
-description = "Planos para aprovechar los instrumentos que zumban solos."
-cost = 6
-effect = 0
-module = 2
-
-[sub_resource type="Resource" id="R_turret"]
-script = ExtResource("2_entry")
-id = "turret_plans"
+[sub_resource type="Resource" id="R_ballesta"]
+script = ExtResource("3_mod")
+id = "ballesta"
 display_name = "Planos de ballesta"
 description = "Mecanismos de disparo recuperados de las ruinas."
 cost = 8
 effect = 0
 module = 3
+tier = 1
+
+[sub_resource type="Resource" id="R_brasero"]
+script = ExtResource("3_mod")
+id = "brasero"
+display_name = "Forja de brasas"
+description = "Carbón encantado que frena a quien lo pisa."
+cost = 6
+effect = 0
+module = 4
+tier = 1
+
+[sub_resource type="Resource" id="R_catapulta"]
+script = ExtResource("3_mod")
+id = "catapulta"
+display_name = "Ingeniería de asedio"
+description = "Contrapesos y vigas: golpes lentos que alcanzan a todo un grupo."
+cost = 18
+prerequisite = "ballesta"
+effect = 0
+module = 5
+tier = 2
 
 [sub_resource type="Resource" id="R_gen_tuning"]
 script = ExtResource("2_entry")
@@ -64,10 +78,10 @@ id = "turret_rifling"
 display_name = "Virotes estriados"
 description = "Las ballestas pegan más fuerte."
 cost = 25
-prerequisite = "turret_plans"
+prerequisite = "ballesta"
 effect = 2
 value = 10.0
 
 [resource]
 script = ExtResource("1_config")
-entries = Array[ExtResource("2_entry")]([SubResource("R_sci_gen"), SubResource("R_turret"), SubResource("R_gen_tuning"), SubResource("R_dust_lenses"), SubResource("R_cartography"), SubResource("R_overclock"), SubResource("R_rifling")])
+entries = Array[ExtResource("2_entry")]([SubResource("R_ballesta"), SubResource("R_brasero"), SubResource("R_catapulta"), SubResource("R_gen_tuning"), SubResource("R_dust_lenses"), SubResource("R_cartography"), SubResource("R_overclock"), SubResource("R_rifling")])

@@ -16,6 +16,10 @@ const NEXO_THREE_RAIDERS_MIN_SEC := 6.0
 ## Tower breakers (session impl-6): they must hurt a turret yet lose to it 1v1.
 const TOWER_HP_LOST_PCT := Vector2(30.0, 99.9)
 
+## Economy (session economia-8): every resource earns and has something to buy, and over
+## the run neither runs dry (< MIN) nor piles up unspent (> MAX).
+const ECONOMY_RUN_RATIO := Vector2(0.2, 3.0)
+
 var failures: Array[String] = []
 
 
@@ -24,6 +28,7 @@ func _initialize() -> void:
 	_check_encounters()
 	_check_nexo()
 	_check_towers()
+	_check_economy()
 	_check_no_dominance(0)
 	_check_no_dominance(5)
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
@@ -31,6 +36,16 @@ func _initialize() -> void:
 		printerr("FAIL: ", failure)
 	print("test_balance: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
 	quit(0 if failures.is_empty() else 1)
+
+
+func _check_economy() -> void:
+	var last := {}
+	for row in BalanceSim.economy_rows():
+		_expect(float(row["income"]) > 0.0, "floor %d: %s has no income" % [row["floor"], row["resource"]])
+		_expect(float(row["sink"]) > 0.0, "floor %d: %s has nothing to spend on" % [row["floor"], row["resource"]])
+		last[row["resource"]] = float(row["run_ratio"])
+	for key in last:
+		_expect(last[key] >= ECONOMY_RUN_RATIO.x and last[key] <= ECONOMY_RUN_RATIO.y, "%s run income/sink %.2f outside %s" % [key, last[key], ECONOMY_RUN_RATIO])
 
 
 func _expect(cond: bool, msg: String) -> void:

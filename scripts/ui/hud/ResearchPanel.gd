@@ -103,7 +103,8 @@ func _make_card(entry: ResearchEntry) -> Control:
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(column)
-	column.add_child(_label(("T2 · " if entry.prerequisite != "" else "T1 · ") + entry.display_name, QuestPalette.PARCHMENT, 15))
+	var tier: int = (entry as ModuleResearch).tier if entry is ModuleResearch else (2 if entry.prerequisite != "" else 1)
+	column.add_child(_label("T%d · %s" % [tier, entry.display_name], QuestPalette.PARCHMENT, 15))
 	column.add_child(_label(entry.describe_effect(), QuestPalette.UI_TEXT_SECONDARY, 13))
 	var state_label := _label(state, QuestPalette.GOLD if done else (StatIcon.BASE_COLORS[COST_RESOURCE] if available else QuestPalette.UI_TEXT_BLOCKED), 12)
 	state_label.name = "State"

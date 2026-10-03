@@ -29,7 +29,7 @@ var _resources: Dictionary = {"industry": 0, "food": 0, "science": 0, "dust": 0}
 ## a Ciencia sink. Tests may swap the config.
 var research_config: ResearchConfig = load(RESEARCH_CONFIG_PATH)
 ## Ids researched this run.
-var _researched: Dictionary = {}
+var research_state := ResearchState.new()
 
 
 func get_resource(key: String) -> int:
@@ -101,7 +101,7 @@ func reset_resources(initial_industry: int = 15, initial_food: int = 15, initial
 # ---------------- RESEARCH ----------------
 
 func is_researched(id: String) -> bool:
-	return _researched.has(id)
+	return research_state.has(id)
 
 
 ## "" if `id` can be researched now, else why not.
@@ -111,12 +111,22 @@ func get_research_block_reason(id: String) -> String:
 		return "Investigación desconocida"
 	if is_researched(id):
 		return "Investigada"
+	if not _has_working_scriptorium():
+		return "Construí un Scriptorium"
 	if entry.prerequisite != "" and not is_researched(entry.prerequisite):
 		var pre := research_config.get_entry(entry.prerequisite)
 		return "Requiere: %s" % (pre.display_name if pre else entry.prerequisite)
 	if get_resource(RESEARCH_RESOURCE) < entry.cost:
 		return "Falta Ciencia"
 	return ""
+
+
+## Researching needs a built, active Scriptorium (a Ciencia generator).
+func _has_working_scriptorium() -> bool:
+	for g in (Engine.get_main_loop() as SceneTree).get_nodes_in_group("generators"):
+		if g is GeneratorModule and g.resource_type == RESEARCH_RESOURCE and g.is_active:
+			return true
+	return false
 
 
 func can_research(id: String) -> bool:
@@ -127,7 +137,7 @@ func can_research(id: String) -> bool:
 func research(id: String) -> bool:
 	if not can_research(id) or not spend_resource(RESEARCH_RESOURCE, research_config.get_entry(id).cost):
 		return false
-	_researched[id] = true
+	research_state.add(id)
 	research_changed.emit()
 	production_changed.emit()
 	return true
@@ -150,6 +160,6 @@ func get_bonus(kind: ResearchEntry.Effect) -> float:
 
 ## New run (Main._begin_new_run, next to PlayerStats.reset_run_upgrades).
 func reset_research() -> void:
-	_researched.clear()
+	research_state.reset()
 	research_changed.emit()
 	production_changed.emit()
