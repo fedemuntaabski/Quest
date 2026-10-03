@@ -306,6 +306,9 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("tactical_pause") and _is_gameplay_active():
 		pause_controller.toggle()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("game_speed") and _is_gameplay_active():
+		pause_controller.toggle_speed()
+		get_viewport().set_input_as_handled()
 	elif _is_gameplay_active() and hero_input.handle_key(event):
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("hero_cycle") and _is_gameplay_active():

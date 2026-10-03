@@ -157,6 +157,13 @@ func _open_group(door: Door) -> void:
 	if extraction and not extraction.can_open_doors():
 		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: extraction phase active." % door.door_id)
 		return
+	# Tactical pause: heroes may be ordered to walk, but opening a door ticks the turn
+	# and rolls the threat while everything else is frozen.
+	if Engine.time_scale <= 0.0:
+		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+		if text_mgr:
+			text_mgr.spawn_text(door.global_position, "En pausa: no se abren puertas", QuestPalette.GOLD_DARK)
+		return
 	# A loop door sits at room_a's wall: hidden (and not openable) while room_a
 	# is undiscovered, even if the hero stands in room_b.
 	if not room_manager.is_zone_revealed(door.from_zone_id):

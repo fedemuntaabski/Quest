@@ -30,6 +30,7 @@ const _BUILD_BUTTONS_PATH := "Control/BottomBar/BottomRow/BuildPanel/MarginConta
 
 const INVASION_FLASH_ALPHA := 0.3
 const ALERT_COLOR := Color(0.95, 0.3, 0.25)
+const PAUSE_TEXT := "PAUSA  (X: velocidad)"
 const ALERT_BEEP_HZ := 660.0
 const ALERT_BEEP_SEC := 0.18
 const ALERT_BEEP_RATE := 22050
@@ -191,7 +192,7 @@ func _refresh_stash_counter() -> void:
 func _add_pause_label() -> void:
 	pause_label = Label.new()
 	pause_label.name = "PauseLabel"
-	pause_label.text = "PAUSA"
+	pause_label.text = PAUSE_TEXT
 	pause_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pause_label.add_theme_font_size_override("font_size", 32)
 	pause_label.visible = false
@@ -288,9 +289,11 @@ func _on_bestiary_unlocked(enemy_id: String, tier: BestiaryEntry.Tier) -> void:
 		show_hint("Nuevo registro", "%s: %s" % [type.display_name, BESTIARY_TIER_TEXT.get(tier, "")], QuestPalette.GOLD)
 
 
-func set_pause_label(v: bool) -> void:
+## Banner: "PAUSA" while frozen, "2x" while running fast, hidden at plain 1x.
+func set_pause_label(v: bool, speed: int = 1) -> void:
 	if pause_label:
-		pause_label.visible = v
+		pause_label.text = PAUSE_TEXT if v else "%dx" % speed
+		pause_label.visible = v or speed > 1
 
 
 ## Built in code (not in HUD.tscn): bottom-right corner, self-wiring.

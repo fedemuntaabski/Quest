@@ -33,6 +33,10 @@ func _ready() -> void:
 	enemy_spawned.connect(_on_enemy_spawned)
 
 
+func _process(delta: float) -> void:
+	Enemy.game_time_msec += delta * 1000.0
+
+
 func setup(p_room_manager: RoomManager, p_door_turn_system: DoorTurnSystem = null, p_floor_manager: FloorManager = null) -> void:
 	room_manager = p_room_manager
 	door_turn_system = p_door_turn_system

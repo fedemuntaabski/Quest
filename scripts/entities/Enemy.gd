@@ -177,7 +177,17 @@ func is_alive() -> bool:
 
 
 func apply_slow(duration: float) -> void:
-	_slowed_until_msec = Time.get_ticks_msec() + int(duration * 1000)
+	_slowed_until_msec = game_msec() + int(duration * 1000)
+
+
+## Game-time clock (ms): EnemyManager adds its (time_scale-scaled) frame delta, so it is
+## frozen in the tactical pause and doubled at 2x, unlike Time.get_ticks_msec().
+## Slow and retaliation windows use it.
+static var game_time_msec: float = 0.0
+
+
+static func game_msec() -> int:
+	return int(game_time_msec)
 
 
 ## Speed factor while slowed: the Trap's catalog slow_factor.
@@ -189,7 +199,7 @@ func current_speed() -> float:
 	var base_speed := float(VARIANT_CONFIG[variant]["speed"])
 	if type:
 		base_speed = resolved_speed(type) * type.speed_mult
-	return base_speed * slow_factor() if Time.get_ticks_msec() < _slowed_until_msec else base_speed
+	return base_speed * slow_factor() if game_msec() < _slowed_until_msec else base_speed
 
 
 ## Sprite from the EnemyType; body, hurtbox and contact hitbox follow its drawn

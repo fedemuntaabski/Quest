@@ -40,7 +40,7 @@ func setup(p_enemy: Enemy, p_profile: TargetProfile) -> void:
 
 ## A hero hit the enemy (Enemy._on_hurt).
 func note_hit_by_hero() -> void:
-	_provoked_until_msec = Time.get_ticks_msec() + int(profile.retaliate_sec * 1000.0)
+	_provoked_until_msec = Enemy.game_msec() + int(profile.retaliate_sec * 1000.0)
 
 
 ## A hero standing next to a retaliating enemy counts as provoking it.
@@ -54,7 +54,7 @@ func note_blocking_hero() -> void:
 
 
 func is_provoked() -> bool:
-	return profile.retaliate and Time.get_ticks_msec() < _provoked_until_msec
+	return profile.retaliate and Enemy.game_msec() < _provoked_until_msec
 
 
 ## Siege-type (Nexo first), not provoked, and a Nexo to hit: ignores heroes and modules.
