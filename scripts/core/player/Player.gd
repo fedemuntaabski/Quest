@@ -29,6 +29,7 @@ var grid_pos: Vector2i = Vector2i.ZERO
 
 var _last_hp: int = -1
 var abilities: HeroAbilities
+var inventory: InventoryComponent
 
 
 func configure(data: CharacterData) -> void:
@@ -56,6 +57,10 @@ func _ready() -> void:
 		abilities.name = "Abilities"
 		add_child(abilities)
 		abilities.setup(self, character_data)
+		inventory = InventoryComponent.new()
+		inventory.name = "Inventory"
+		add_child(inventory)
+		inventory.setup(self)
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.register(stats)
@@ -108,8 +113,8 @@ func _on_attack_landed(target: HurtboxComponent, amount: int) -> void:
 	vfx.hit(global_position, target.global_position, vfx_color(), amount, enemy.max_hp if enemy else 1)
 
 
-func _on_attack_changed(_damage: int, interval: float) -> void:
-	hitbox.configure(stats.effective_attack_damage(), interval)
+func _on_attack_changed(_damage: int, _interval: float) -> void:
+	hitbox.configure(stats.effective_attack_damage(), stats.effective_attack_interval())
 
 
 func _on_hurt(amount: int) -> void:

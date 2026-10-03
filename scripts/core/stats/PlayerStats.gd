@@ -6,7 +6,8 @@ const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd
 signal stats_changed(stats: CharacterStats)
 ## Any hero died. Session 12: one hero down ends the run (see NOTES_SESSION.md).
 signal player_died
-## Objetos hallados en cofres esta partida (solo registro: no hay sistema de equipo).
+## The party stash changed (chest found, equipped/unequipped): CharacterPopup "Hallazgos"
+## (alias of PartyInventory.stash, retired by the equipment UI).
 signal found_items_changed
 ## A hero leveled up (in-run, paid in Comida). Since session 7 every level
 ## raises all UpgradeConfig.STAT_KEYS together: stat_key is always "level" and
@@ -39,7 +40,11 @@ var active_hero_id: String:
 
 # IN-RUN HERO LEVELS (Comida, reset per run by Main._begin_new_run; survive
 # floors because this autoload outlives Main2d and register() re-applies them).
-var found_items: Array[ItemData] = []
+## Read-only view of the party stash (PartyInventory owns the items).
+var found_items: Array[ItemData]:
+	get:
+		var inventory := ManagerLocator.get_party_inventory()
+		return inventory.stash_items() if inventory else ([] as Array[ItemData])
 var run_upgrade_config: UpgradeConfig = RUN_UPGRADE_CONFIG
 ## hero_id → levels bought this run (hero level = 1 + levels).
 var run_levels: Dictionary = {}
@@ -64,6 +69,15 @@ var run_upgrade_levels: Dictionary:
 		for key in UpgradeConfig.STAT_KEYS:
 			levels[key] = run_level
 		return levels
+
+func _ready() -> void:
+	# PartyInventory is listed before this autoload in project.godot. Not through
+	# ManagerLocator: the main loop is not set yet while autoloads get their _ready.
+	var inventory := get_node_or_null("/root/PartyInventory") as PartyInventory
+	if inventory:
+		inventory.stash_changed.connect(func() -> void: found_items_changed.emit())
+		inventory.equipment_changed.connect(func(hero_id: String, _slot: ItemData.Slot, _item: ItemData) -> void: _rebonus(hero_id))
+
 
 func register(player_stats: CharacterStats) -> void:
 	if player_stats == null:
@@ -375,7 +389,7 @@ func choose_perk(hero_id: String, perk_id: StringName) -> bool:
 	return true
 
 
-## Third stat layer for a hero: perks (and, once the inventory exists, equipment).
+## Third stat layer for a hero: class perks + equipped items (PartyInventory).
 ## Keys: hp (int), attack_damage (int), attack_interval (s, negative = faster), attack_range (px).
 func _bonus(hero_id: String) -> Dictionary:
 	var bonus := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0}
@@ -384,7 +398,17 @@ func _bonus(hero_id: String) -> Dictionary:
 		bonus["attack_damage"] += int(perk.mods.get("attack_damage", 0))
 		bonus["attack_interval"] += float(perk.mods.get("attack_interval", 0.0))
 		bonus["attack_range"] += float(perk.mods.get("attack_range", 0.0))
+	var inventory := ManagerLocator.get_party_inventory()
+	if inventory and hero_id != "":
+		var equipment := inventory.get_equipment_bonus(hero_id)
+		for key: String in bonus:
+			bonus[key] += equipment[key]
 	return bonus
+
+
+## What perks + equipment add to this hero right now (CharacterPopup shows "base + nivel + extras").
+func get_bonus(hero_id: String = "") -> Dictionary:
+	return _bonus(_resolve(hero_id))
 
 
 func _on_stats_updated(s: CharacterStats) -> void:
@@ -400,13 +424,15 @@ func _on_stats_died() -> void:
 	player_died.emit()
 
 
+## Compat: puts the item in the party stash.
 func add_found_item(item: ItemData) -> void:
-	if item == null:
-		return
-	found_items.append(item)
-	found_items_changed.emit()
+	var inventory := ManagerLocator.get_party_inventory()
+	if inventory:
+		inventory.add_item(item)
 
 
+## Compat: empties the stash and the loadouts (new run).
 func clear_found_items() -> void:
-	found_items.clear()
-	found_items_changed.emit()
+	var inventory := ManagerLocator.get_party_inventory()
+	if inventory:
+		inventory.reset()

@@ -37,8 +37,17 @@ var base_attack_range: float = 160.0
 var attack_range: float = 160.0
 var attack_damage: int = 3
 var attack_interval: float = 1.0
-## Temporary multipliers set by HeroAbilities (buffs/shields); 1.0 = none.
-var attack_mult: float = 1.0
+## Temporary multipliers (hero abilities, potions): one entry per named source so
+## ending one buff never undoes another. 1.0 = none.
+var _attack_mults: Dictionary = {}
+var _interval_mults: Dictionary = {}
+var attack_mult: float:
+	get:
+		return _product(_attack_mults)
+## Multiplier on the attack interval (< 1.0 = faster).
+var attack_interval_mult: float:
+	get:
+		return _product(_interval_mults)
 var damage_taken_mult: float = 1.0
 
 # -------------------------
@@ -77,9 +86,38 @@ func effective_attack_damage() -> int:
 	return maxi(1, roundi(attack_damage * attack_mult))
 
 
+## Hero-ability buffs (kept API: source "ability").
 func set_attack_mult(mult: float) -> void:
-	attack_mult = mult
+	set_attack_mult_source(&"ability", mult)
+
+
+func set_attack_mult_source(source: StringName, mult: float) -> void:
+	_set_source(_attack_mults, source, mult)
 	attack_changed.emit(attack_damage, attack_interval)
+
+
+func set_interval_mult_source(source: StringName, mult: float) -> void:
+	_set_source(_interval_mults, source, mult)
+	attack_changed.emit(attack_damage, attack_interval)
+
+
+## Interval the hitbox actually uses: attack_interval x any active speed buff.
+func effective_attack_interval() -> float:
+	return maxf(attack_interval * attack_interval_mult, 0.1)
+
+
+static func _set_source(sources: Dictionary, source: StringName, mult: float) -> void:
+	if is_equal_approx(mult, 1.0):
+		sources.erase(source)
+	else:
+		sources[source] = mult
+
+
+static func _product(sources: Dictionary) -> float:
+	var total := 1.0
+	for mult: float in sources.values():
+		total *= mult
+	return total
 
 
 func set_base_attack_range(radius: float) -> void:
