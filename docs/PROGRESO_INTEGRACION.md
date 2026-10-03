@@ -66,3 +66,4 @@ Resto de la integración
 - Retirar el alias `found_items` de `PlayerStats` (ver sección 2).
 - Armadura plana como stat nuevo (6.4) y arte de armadura sobre el sprite del héroe: fuera de alcance.
 - Drag & drop del inventario (6.12) y bestiario también en el menú principal (6.11): fuera de alcance.
+- Session bucle-7 (puertas, energía, extracción, pausa 1x/2x): cambios, tablas y lista de lo no verificado en `docs/BUCLE_JUEGO.md`; números en `docs/BALANCE.md` "Bucle".

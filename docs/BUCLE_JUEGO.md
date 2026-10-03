@@ -65,7 +65,32 @@ Espacio fija `Engine.time_scale = 0`. Consumibles (`InventoryComponent.get_block
 | Pausa | Pausa + velocidad | Solo pausa |
 
 ## 3. Qué cambió en esta sesión
-Se completa a medida que se implementa (ver commits de `session/bucle-7`).
+
+| # | Cambio | Dónde |
+|---|---|---|
+| 1 | `DoorRollConfig`: cada apertura (salas y corredores-loop) tira amenaza `0,10 + 0,06 × puertas + 0,05 × (piso − 1)` (tope 0,85) y **siempre** paga Polvo (salas) + 1 recurso al azar ponderado por piso. Reemplaza la base plana de `ResourceManager` (ahora 0) y las constantes de `EnemyManager`. El recurso extra es determinista por puerta (`FloorManager.door_bonus`). | `scripts/core/floors/DoorRollConfig.gd`, `resources/floors/door_roll_config.tres`, `EnemyManager`, `FloorManager` |
+| 2 | Energía: el costo de encender crece `power_cost_step` (2) por cada sala ya energizada con Polvo (la inicial gratis no cuenta; el reembolso es lo pagado, sin ganancia por ciclos). `PowerIcon` por sala (rayo dorado "Encendida" / gris tachado "Apagada") además de la luz. Arreglo: una torreta apagada y vuelta a encender ya funciona. | `RoomZone`, `RoomManager`, `RoomLight`, `EnergyButton`, `TurretModule` |
+| 3 | Tope de enemigos vivos por piso (6/8/10/12/14), un solo punto de control en `EnemyManager._spawn_enemy` (cubre invasiones por puerta, `spawn_enemies_in_room` y oleadas). Tipo y comportamiento siguen saliendo de `EnemyPool` → `EnemyType` → `TargetProfile` → `TargetSelector` (sin cambios). | `FloorConfig`, `EnemyManager` |
+| 4 | Extracción: `phase_changed` arranca las oleadas; la etapa sube cada 20 s hasta la 3 (oleada 1 → 4 enemigos, pausa −0,5 s por etapa, mínimo 2 s). Portador a 0,85 (`carrier_speed_mult`). Si el portador cae, el Nexo queda en su sala y otro héroe vivo lo recoge (clic, sin diálogo ni reiniciar la extracción); la run solo se pierde si caen todos los héroes o se destruye el Nexo. Asesinos: `HERO_CARRIER` ya era su primera regla (se verifica en `test_target_selector` y `test_extraction_phases`). | `ExtractionManager`, `Nexo`, `NexoController`, `Main2d`, `PlayerActionController` |
+| 5 | Telegrafía: señal `enemies_appeared(zonas, cantidad, origen)` → texto "Invasión/Oleada: N enemigos en: Sala 3, …", marca flotante "¡Enemigos!" en cada sala, destello rojo en oleadas, anillo naranja parpadeante en el minimapa (6 s) y beep placeholder generado en código (`assets/audio/alert.*` si existe). | `EnemyManager`, `HUDController`, `Minimap` |
+| 6 | Pausa táctica: Espacio pausa, **X** alterna 1x/2x (banner "PAUSA" / "2x"). En pausa las órdenes de caminar se aceptan (corren al reanudar) pero no se abren puertas; consumibles y habilidades siguen rechazados. La trampa-lenta y la ventana de represalia pasan a reloj de juego (`Enemy.game_msec`) para no correr en pausa ni desfasarse a 2x. | `PauseController`, `Main2d`, `PlayerActionController`, `Enemy`, `TargetSelector`, `project.godot` |
+
+Tests: `test_door_roll` (probabilidad creciente, spawns solo en salas oscuras, tope, recompensa, costo, torreta, telegrafía), `test_extraction_phases`, `test_tactical_pause`. `test_party`/`test_hud_ui` se ajustaron a la regla de derrota; `test_map_flow`/`test_abilities` a la recompensa por puerta. `BalanceSim.door_rows()/extraction_rows()` y la sección "Bucle" de `docs/BALANCE.md` (las 5 tablas de combate no cambian).
+
+Límites conocidos:
+- Una orden de caminar en curso no se puede reemplazar mientras dura (ya era así sin pausa): en pausa solo se aceptan órdenes cuando no hay un lote en marcha.
+- Los raiders de los spawns por puerta siguen yendo al Nexo en su base: "seguro salvo los spawns por puertas" se cumple porque no hay oleadas con timer antes de recoger el Nexo.
+- El Nexo caído no se mueve ni se defiende solo; los raiders lo atacan en la sala donde cayó.
 
 ## 4. No verificado sin ejecutar el juego
-Se completa al final.
+Todo lo siguiente está cubierto por tests headless pero **no se vio en una ventana** (Godot corrió solo en modo headless en esta sesión):
+
+1. Aspecto y legibilidad del `PowerIcon` (posición arriba a la derecha, tamaño, texto "Encendida/Apagada" sobre la luz y la niebla), y que no se superponga con el `TypeBadge` de salas chicas.
+2. El anillo naranja del minimapa y su convivencia con el anillo rojo del Nexo; el texto de `show_hint` con varias salas; las marcas flotantes "¡Enemigos!".
+3. El beep placeholder (tono, volumen en el bus `SFX`, que no moleste con oleadas seguidas).
+4. Sensación de la curva de amenaza por puerta (2,4 amenazas en el piso 1; chance 0,85 en las últimas puertas del piso 4-5) y de las etapas de extracción con el tope de enemigos.
+5. Flujo completo en ventana: tomar el Nexo, caer el portador (muerte real en combate), el Nexo visible en el suelo, recogerlo con el otro héroe a mano, victoria en la salida.
+6. Pausa/2x con el ratón: órdenes de caminar en pausa, el aviso "En pausa: no se abren puertas", el banner "2x" y la tecla X (el test usa los métodos de `PauseController`, no pulsa teclas); 2x con animaciones, cámara y tweens de feedback a tiempo real.
+7. Un frame de retraso al pausar (el `time_scale` llega al motor un frame tarde: un paso mínimo del héroe puede verse al pulsar Espacio).
+8. Que el `Main.tscn` por F5 siga arrancando con el HUD completo (solo se arrancó `Main2d.tscn` y los tests con HUD).
+9. Re-guardado del editor: Godot reescribe `resources/floors/default_floor_config.tres` (añade `max_enemies_by_floor = null`, que ignora al cargar, igual que el existente `raider_ratio_by_floor = null`); conviene abrir el editor y confirmar que no aparecen advertencias nuevas.
