@@ -14,8 +14,9 @@
 script = ExtResource("2_room_type_rule")
 type = 3
 chance = 0.6
-heal_on_discovery = 15
 blocks_spawns = true
+heal_per_tick = 2
+heal_food_per_tick = 1
 loot_chance = 0.1
 
 [sub_resource type="Resource" id="RoomTypeRule_loot"]
@@ -47,9 +48,20 @@ type = 6
 extra_major_slots = 1
 loot_chance = 0.15
 
+[sub_resource type="Resource" id="RoomTypeRule_prisoner"]
+script = ExtResource("2_room_type_rule")
+type = 7
+chance = 0.5
+blocks_spawns = true
+recruit_costs = {
+"food": 15,
+"industry": 20
+}
+recruit_cost_per_floor = 5
+
 [resource]
 script = ExtResource("1_floor_config")
-room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite"), SubResource("RoomTypeRule_generator")])
+room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite"), SubResource("RoomTypeRule_generator"), SubResource("RoomTypeRule_prisoner")])
 enemy_hp_growth = 0.15
 enemy_damage_growth = 0.1
 enemy_pools = Array[ExtResource("1_7csa3")]([ExtResource("2_j5m1i"), ExtResource("3_kvag3"), ExtResource("4_533ib"), ExtResource("5_erun4"), ExtResource("6_41g3f")])

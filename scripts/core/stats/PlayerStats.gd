@@ -4,8 +4,12 @@ const StatBalance = preload("res://scripts/core/stats/StatBalance.gd")
 const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd")
 
 signal stats_changed(stats: CharacterStats)
-## Any hero died. Session 12: one hero down ends the run (see NOTES_SESSION.md).
+## Any hero fell. The run is lost only when every hero is down (Main2d._on_hero_died).
 signal player_died
+## heroes-9: a hero fell (unconscious in its room until revived or the floor ends).
+signal hero_downed(hero_id: String)
+## heroes-9: a downed hero was revived (Comida, an ally in its room).
+signal hero_revived(hero_id: String)
 ## The party stash changed (chest found, equipped/unequipped): CharacterPopup "Hallazgos"
 ## (alias of PartyInventory.stash, retired by the equipment UI).
 signal found_items_changed
@@ -301,6 +305,73 @@ func heal_hero(hero_id: String = "") -> bool:
 	return true
 
 
+# ---------------- DOWNED / REVIVE (heroes-9) ----------------
+
+## Comida to revive a downed hero on the current floor.
+func get_revive_cost(hero_id: String = "") -> int:
+	var floor_manager := ManagerLocator.get_floor_manager()
+	return _config_for(_resolve(hero_id)).revive_cost(floor_manager.floor_index if floor_manager else 1)
+
+
+## Why that hero can't be revived now ("" = it can): not downed, nobody alive
+## in its room, not enough Comida, run not active.
+func get_revive_block_reason(hero_id: String = "") -> String:
+	var id := _resolve(hero_id)
+	var s := get_hero_stats(id)
+	if s == null or s.is_alive():
+		return "No está caído"
+	var downed := _player_of(id)
+	var helper := false
+	for hero in ManagerLocator.get_heroes():
+		if hero.stats.is_alive() and downed and hero.current_zone_id == downed.current_zone_id:
+			helper = true
+	if not helper:
+		return "Un aliado tiene que estar en su sala"
+	var rm := ManagerLocator.get_resource_manager()
+	var cost := get_revive_cost(id)
+	if rm == null or rm.get_resource(_config_for(id).cost_resource) < cost:
+		return "Falta Comida (%d)" % cost
+	return ""
+
+
+## Spends Comida and brings the hero back with UpgradeConfig.revive_hp_pct of
+## its max HP. false (nothing changes) when get_revive_block_reason() says so.
+func revive_hero(hero_id: String = "") -> bool:
+	var id := _resolve(hero_id)
+	var reason := get_revive_block_reason(id)
+	if reason != "":
+		var downed := _player_of(id)
+		var text_mgr := ManagerLocator.get_floating_text_manager()
+		if downed and text_mgr and reason != "No está caído":
+			text_mgr.spawn_text(downed.global_position + Vector2(0, -48), reason, QuestPalette.PARCHMENT)
+		return false
+	var cfg := _config_for(id)
+	var rm := ManagerLocator.get_resource_manager()
+	if not rm.spend_resource(cfg.cost_resource, get_revive_cost(id)):
+		return false
+	var s := get_hero_stats(id)
+	s.heal(maxi(1, roundi(s.max_hp * cfg.revive_hp_pct)))
+	QuestLogger.info(QuestLogger.Category.COMBAT, "Hero '%s' revived (%d/%d HP)." % [id, s.current_hp, s.max_hp])
+	hero_revived.emit(id)
+	return true
+
+
+## Ids of the heroes currently down.
+func get_downed_ids() -> Array[String]:
+	var out: Array[String] = []
+	for s in get_all_stats():
+		if not s.is_alive():
+			out.append(s.hero_id)
+	return out
+
+
+func _player_of(hero_id: String) -> Player:
+	for hero in ManagerLocator.get_heroes():
+		if hero.stats.hero_id == hero_id:
+			return hero
+	return null
+
+
 ## Compat (session 6): any stat key now levels the whole hero up.
 func buy_run_upgrade(stat_key: String, hero_id: String = "") -> bool:
 	return UpgradeConfig.STAT_KEYS.has(stat_key) and level_up_hero(hero_id)
@@ -429,6 +500,36 @@ func get_bonus(hero_id: String = "") -> Dictionary:
 	return _bonus(_resolve(hero_id))
 
 
+## heroes-9 hero sheet table: one row per stat with each layer split out.
+## Rows: {key, label, base, level, perks, equipment, total}; hp/damage are ints,
+## interval (s, negative = faster) and range (px) floats. `total` is the live value.
+func get_stat_breakdown(hero_id: String = "") -> Array[Dictionary]:
+	var id := _resolve(hero_id)
+	var s := get_hero_stats(id)
+	var rows: Array[Dictionary] = []
+	if s == null:
+		return rows
+	var cfg := _config_for(id)
+	var levels := _levels_of(id)
+	var perks := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0}
+	for perk in get_perks_of(id):
+		for key: String in perks:
+			perks[key] += perk.mods.get(key, 0)
+	var inventory := ManagerLocator.get_party_inventory()
+	var equipment: Dictionary = inventory.get_equipment_bonus(id) if inventory and id != "" else {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0}
+	rows.append({"key": "hp", "label": "Vida máx.", "base": s.base_hp, "level": cfg.hp_per_level * levels,
+		"perks": int(perks["hp"]), "equipment": int(equipment["hp"]), "total": s.max_hp})
+	rows.append({"key": "attack_damage", "label": "Daño", "base": s.base_attack_damage,
+		"level": cfg.damage_at(s.base_attack_damage, levels) - s.base_attack_damage,
+		"perks": int(perks["attack_damage"]), "equipment": int(equipment["attack_damage"]), "total": s.attack_damage})
+	rows.append({"key": "attack_interval", "label": "Intervalo (s)", "base": s.base_attack_interval,
+		"level": cfg.interval_at(s.base_attack_interval, levels) - s.base_attack_interval,
+		"perks": float(perks["attack_interval"]), "equipment": float(equipment["attack_interval"]), "total": s.attack_interval})
+	rows.append({"key": "attack_range", "label": "Alcance (px)", "base": s.base_attack_range, "level": 0.0,
+		"perks": float(perks["attack_range"]), "equipment": float(equipment["attack_range"]), "total": s.attack_range})
+	return rows
+
+
 func _on_stats_updated(s: CharacterStats) -> void:
 	stats_changed.emit(s)
 
@@ -436,6 +537,7 @@ func _on_hero_died(hero_id: String) -> void:
 	var selection := ManagerLocator.get_selection_manager()
 	if selection:
 		selection.remove_hero(hero_id)
+	hero_downed.emit(hero_id)
 
 
 func _on_stats_died() -> void:

@@ -34,10 +34,21 @@ const LABELS := {
 ## Comida per missing HP when healing from the character popup.
 @export var heal_cost_per_hp: float = 0.15
 
+@export_group("Revive")
+## Comida to revive a downed hero (heroes-9): base + per floor after the first.
+@export var revive_cost_base: int = 15
+@export var revive_cost_per_floor: int = 5
+## Fraction of max HP a revived hero gets back.
+@export_range(0.05, 1.0, 0.05) var revive_hp_pct: float = 0.3
+
 
 ## Comida to restore `missing_hp` (0 when nothing is missing).
 func heal_cost(missing_hp: int) -> int:
 	return 0 if missing_hp <= 0 else maxi(1, ceili(missing_hp * heal_cost_per_hp))
+
+
+func revive_cost(floor_index: int) -> int:
+	return revive_cost_base + revive_cost_per_floor * maxi(floor_index - 1, 0)
 
 
 func get_cost(level: int) -> int:

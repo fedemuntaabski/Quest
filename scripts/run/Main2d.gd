@@ -13,6 +13,8 @@ const PLAYER_SCENE := preload("res://scenes/entities/Player.tscn")
 const NEXO_SCENE := preload("res://scenes/world/Nexo.tscn")
 const TILE_RENDERER_SCENE := preload("res://scenes/world/MapTileRenderer.tscn")
 const DOOR_SCENE := preload("res://scenes/world/Door.tscn")
+## Party cap with recruits (GameSession; preloaded: autoload names aren't identifiers in --script tests).
+const MAX_PARTY: int = preload("res://scripts/autoload/GameSession.gd").MAX_PARTY
 ## Nexo sits above the start room's center: the lit start room's MAJOR build
 ## slot occupies the center itself (RoomZone.BUILDING_SLOT_OFFSETS[0]).
 const NEXO_OFFSET := Vector2(0, -56)
@@ -61,6 +63,7 @@ var _is_dead: bool = false
 var pause_controller: PauseController
 var hero_input: HeroInputController
 var loot_spawner: LootSpawner
+var prisoner_spawner: PrisonerSpawner
 
 # ─────────────────────────────────────────────
 # INIT
@@ -98,6 +101,11 @@ func _setup_controllers() -> void:
 	add_child(loot_spawner)
 	loot_spawner.setup(room_manager, door_turn_system, floor_manager)
 
+	prisoner_spawner = PrisonerSpawner.new()
+	prisoner_spawner.name = "PrisonerSpawner"
+	add_child(prisoner_spawner)
+	prisoner_spawner.setup(room_manager, door_turn_system, floor_manager, recruit_hero)
+
 func _ensure_game_state_manager() -> void:
 	game_state_manager = get_node_or_null("GameStateManager") as GameStateManager
 	if game_state_manager == null:
@@ -119,19 +127,11 @@ func _spawn_heroes() -> void:
 		var save_mgr := ManagerLocator.get_save_manager()
 		ids = party_config.get_party_ids(save_mgr.get_selected_character_id() if save_mgr else CharacterDatabase.get_default_id())
 	ids.resize(mini(ids.size(), party_config.party_size))
+	if session:  # + recruits, - heroes lost on earlier floors (heroes-9)
+		ids = session.resolve_party(ids)
 	var spawn_zone_id := room_manager.get_start_zone_id()
 	for i in ids.size():
-		var hero := PLAYER_SCENE.instantiate() as Player
-		hero.name = "Player" if i == 0 else "Player%d" % (i + 1)
-		hero.configure(CharacterDatabase.get_by_id(ids[i]))
-		hero.sprite_offset = party_config.sprite_offset(i, ids.size())
-		if i > 0:
-			# ponytail: one camera, on heroes[0], following the selection. Move it
-			# to Main2d if a hero can ever be freed mid-floor (permadeath).
-			hero.get_node("Camera2D").free()
-		add_child(hero)
-		hero.set_zone(spawn_zone_id, room_manager.get_center(spawn_zone_id), floor_layer)
-		heroes.append(hero)
+		spawn_hero(ids[i], spawn_zone_id)
 	player = heroes[0]
 	camera = player.get_node("Camera2D") as GameCamera
 	var selection := ManagerLocator.get_selection_manager()
@@ -139,6 +139,45 @@ func _spawn_heroes() -> void:
 		selection.on_party_spawned(ids)
 	camera.follow(_primary_hero())
 	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: spawned party %s at zone '%s'" % [ids, spawn_zone_id])
+
+
+## Spawns one hero of the party at `zone_id`'s center (floor start, or a recruit
+## freed from a Prisoner room). Registers it with PlayerStats, which adds its
+## HUD portrait. Only heroes[0] keeps the Camera2D (it follows the selection).
+func spawn_hero(hero_id: String, zone_id: String) -> Player:
+	var data := CharacterDatabase.get_by_id(hero_id)
+	if data == null:
+		return null
+	var index := heroes.size()
+	var hero := PLAYER_SCENE.instantiate() as Player
+	hero.name = "Player" if index == 0 else "Player%d" % (index + 1)
+	hero.configure(data)
+	hero.sprite_offset = party_config.sprite_offset(index, maxi(index + 1, 2))
+	if index > 0:
+		# ponytail: one camera, on heroes[0], following the selection. Downed heroes
+		# stay in the tree, so heroes[0] is never freed mid-floor.
+		hero.get_node("Camera2D").free()
+	add_child(hero)
+	hero.set_zone(zone_id, room_manager.get_center(zone_id), floor_layer)
+	heroes.append(hero)
+	return hero
+
+
+## Prisoner room: the freed hero joins at once (portrait, F-key) and on every
+## next floor (GameSession.recruited_ids).
+func recruit_hero(hero_id: String, zone_id: String) -> Player:
+	var session := ManagerLocator.get_game_session()
+	if heroes.size() >= MAX_PARTY:
+		return null
+	var hero := spawn_hero(hero_id, zone_id)
+	if hero and session:
+		session.add_recruit(hero_id)
+	if hero and loot_spawner:
+		loot_spawner.watch_hero(hero)
+	if hero and player_action_controller:
+		player_action_controller.refresh_zones()
+	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: recruited '%s' in '%s'." % [hero_id, zone_id])
+	return hero
 
 
 ## The primary selected hero (SelectionManager); heroes[0] as a fallback.

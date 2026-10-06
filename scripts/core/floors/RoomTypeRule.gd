@@ -23,6 +23,16 @@ class_name RoomTypeRule
 @export var reward_per_floor: float = 0.0
 ## Hero HP restored once, on discovery.
 @export var heal_on_discovery: int = 0
+## Rest over time (heroes-9): every `heal_tick_sec` of game time, each living
+## wounded hero inside heals `heal_per_tick` HP for `heal_food_per_tick` Comida
+## (FloorManager._process). 0 = off.
+@export var heal_per_tick: int = 0
+@export var heal_tick_sec: float = 1.0
+@export var heal_food_per_tick: int = 0
+## Prisoner room (heroes-9): a caged hero (not in the party) freed by paying ONE
+## of these resource -> amount options (+recruit_cost_per_floor each per floor).
+@export var recruit_costs: Dictionary = {}
+@export var recruit_cost_per_floor: int = 0
 ## Enemies never spawn here (door-open invasions and extraction waves).
 @export var blocks_spawns: bool = false
 ## Multipliers for enemies spawned in this room (on top of floor scaling).
@@ -43,6 +53,14 @@ func chance_at(floor_index: int) -> float:
 
 func max_count_at(floor_index: int) -> int:
 	return maxi(0, max_count + int(floor(max_count_per_floor * _steps(floor_index))))
+
+
+## Prisoner: resource -> cost on this floor.
+func recruit_costs_at(floor_index: int) -> Dictionary:
+	var out := {}
+	for key: String in recruit_costs:
+		out[key] = int(recruit_costs[key]) + recruit_cost_per_floor * _steps(floor_index)
+	return out
 
 
 func reward_at(floor_index: int) -> int:

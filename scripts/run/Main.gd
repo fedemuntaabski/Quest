@@ -143,6 +143,9 @@ func _begin_new_run() -> void:
 	var selection := ManagerLocator.get_selection_manager()
 	if selection:
 		selection.reset()
+	var session := ManagerLocator.get_game_session()
+	if session:
+		session.reset_run()  # recruits and lost heroes (heroes-9); the pick stays
 
 
 # ─────────────────────────────────────────────

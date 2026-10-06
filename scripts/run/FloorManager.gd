@@ -27,6 +27,10 @@ var room_manager: RoomManager
 var _completed: bool = false
 ## Types whose long hint was already shown this run (survives floors).
 static var _seen_types: Dictionary = {}
+## Rest rooms (heroes-9): game seconds accumulated towards the next heal tick,
+## and whether "no Comida" was already said on this floor.
+var _rest_clock: float = 0.0
+var _rest_food_warned: bool = false
 
 
 func _ready() -> void:
@@ -49,8 +53,75 @@ func complete_floor() -> void:
 		return
 	_completed = true
 	QuestLogger.info(QuestLogger.Category.MAP, "Floor %d completed." % floor_index)
+	_lose_downed_heroes()
 	_grant_floor_end_loot()
 	floor_completed.emit(floor_index)
+
+
+## heroes-9: a hero still downed when the floor ends is lost for the rest of
+## the run (GameSession.lost_ids: Main2d won't spawn it on the next floors).
+func _lose_downed_heroes() -> void:
+	var player_stats := ManagerLocator.get_player_stats()
+	var session := ManagerLocator.get_game_session()
+	if player_stats == null or session == null:
+		return
+	var hud := ManagerLocator.get_hud()
+	for hero_id in player_stats.get_downed_ids():
+		session.mark_lost(hero_id)
+		var hero_stats := player_stats.get_hero_stats(hero_id)
+		QuestLogger.info(QuestLogger.Category.GENERAL, "Hero '%s' lost (downed at floor end)." % hero_id)
+		if hud:
+			hud.show_hint("Héroe perdido", "%s quedó atrás: no estará en los próximos pisos." % hero_stats.character_name, QuestPalette.BLOOD_LIGHT)
+
+
+## Rest rooms heal over time (RoomTypeRule.heal_per_tick), paying Comida per tick.
+## Game time: frozen in the tactical pause; skipped while the run isn't ACTIVE
+## (Main2d is PROCESS_MODE_ALWAYS, so the Esc pause doesn't stop this node).
+func _process(delta: float) -> void:
+	var state := ManagerLocator.get_game_state_manager()
+	if room_manager == null or (state and not state.is_active()):
+		return
+	_rest_clock += delta
+	var tick := INF
+	for rule in config.room_types:
+		if rule.heal_per_tick > 0:
+			tick = minf(tick, maxf(rule.heal_tick_sec, 0.05))
+	if tick == INF or _rest_clock < tick:
+		return
+	_rest_clock -= tick
+	rest_tick()
+
+
+## One heal tick for every living wounded hero standing in a resting room.
+## Returns the HP healed in total (tests).
+func rest_tick() -> int:
+	var resources := ManagerLocator.get_resource_manager()
+	var healed := 0
+	for hero in ManagerLocator.get_heroes():
+		if not hero.stats.is_alive() or hero.stats.current_hp >= hero.stats.max_hp:
+			continue
+		var rule := config.get_room_type_rule(room_manager.get_room_type(hero.current_zone_id))
+		if rule == null or rule.heal_per_tick <= 0:
+			continue
+		if rule.heal_food_per_tick > 0 and (resources == null or not resources.spend_resource("food", rule.heal_food_per_tick)):
+			_warn_rest_food()
+			continue
+		var before := hero.stats.current_hp
+		hero.stats.heal(rule.heal_per_tick)
+		healed += hero.stats.current_hp - before
+		var vfx := ManagerLocator.get_vfx_manager()
+		if vfx:
+			vfx.play(&"heal_glow", hero.global_position, Color(0.5, 1.0, 0.6))
+	return healed
+
+
+func _warn_rest_food() -> void:
+	if _rest_food_warned:
+		return
+	_rest_food_warned = true
+	var hud := ManagerLocator.get_hud()
+	if hud:
+		hud.show_hint("Descanso", "Sin Comida para descansar: la sala no cura.", QuestPalette.UI_TEXT_BLOCKED)
 
 
 ## Completion reward: an item straight into the party stash (the run keeps it on the next floor).

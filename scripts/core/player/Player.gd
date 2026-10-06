@@ -65,6 +65,10 @@ func _ready() -> void:
 	if player_stats:
 		player_stats.register(stats)
 	hurtbox.hurt.connect(_on_hurt)
+	# heroes-9: one target per tick (nearest in range); ranged heroes shoot it.
+	hitbox.single_target = true
+	if is_ranged():
+		hitbox.deliver = _fire_projectile
 	hitbox.hit_landed.connect(_on_attack_landed)
 	_last_hp = stats.current_hp
 	stats.hp_changed.connect(_on_hp_changed)
@@ -81,6 +85,11 @@ func _on_selection_changed(_selected_ids: Array[String]) -> void:
 ## Ring under the feet while this hero is selected (drawn before the child
 ## sprite, so it sits behind it).
 func _draw() -> void:
+	if is_downed():  # red ring: downed, waiting for a revive
+		draw_set_transform(animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
+		draw_arc(Vector2.ZERO, animated_sprite.fit_radius() * 1.2, 0.0, TAU, 32, QuestPalette.BLOOD_LIGHT, 2.0)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		return
 	var selection := ManagerLocator.get_selection_manager()
 	if selection == null or not selection.is_selected(stats.hero_id) or not stats.is_alive():
 		return
@@ -90,13 +99,46 @@ func _draw() -> void:
 
 
 ## HP dropping = a hit: blink white (heals and level-ups only raise HP).
+## 0 HP = downed (heroes-9), back above 0 = revived.
 func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 	if _last_hp >= 0 and current_hp < _last_hp:
 		animated_sprite.play_hit()
 		var vfx := ManagerLocator.get_vfx_manager()
 		if vfx:
 			vfx.hurt(global_position, _last_hp - current_hp, max_hp)
+	if current_hp <= 0 and _last_hp != 0:
+		_set_downed(true)
+	elif current_hp > 0 and _last_hp == 0:
+		_set_downed(false)
 	_last_hp = current_hp
+
+
+## Downed: lies grey on the floor where it fell, no attacks, no hurtbox. A living
+## ally in the same room can revive it (left click on it, PlayerStats.revive_hero).
+func _set_downed(downed: bool) -> void:
+	hitbox.set_active(not downed)
+	hurtbox.set_deferred("monitorable", not downed)
+	animated_sprite.rotation = PI * 0.5 if downed else 0.0
+	animated_sprite.self_modulate = Color(0.45, 0.45, 0.5, 0.85) if downed else Color.WHITE
+	queue_redraw()
+
+
+func is_downed() -> bool:
+	return stats != null and not stats.is_alive()
+
+
+func is_ranged() -> bool:
+	return character_data != null and character_data.attack_style == CharacterData.AttackStyle.RANGED
+
+
+## CharacterData.move_speed_mult (Rogue fast, Tank slow).
+func move_speed_mult() -> float:
+	return character_data.move_speed_mult if character_data else 1.0
+
+
+func _fire_projectile(target: HurtboxComponent, amount: int) -> void:
+	var parent := get_parent() if get_parent() else self
+	Projectile.fire(parent, to_global(animated_sprite.body_center()), target, hitbox, amount, character_data.projectile_speed, vfx_color())
 
 
 ## Palette of this hero's effects (CharacterData.vfx_color).
@@ -110,6 +152,10 @@ func _on_attack_landed(target: HurtboxComponent, amount: int) -> void:
 	if vfx == null or not is_instance_valid(target):
 		return
 	var enemy := target.get_parent() as Enemy
+	if is_ranged():  # the projectile already flew there: sparks on impact, no slash arc
+		vfx.play(&"hit_sparks", target.global_position, vfx_color())
+		vfx.shake_if_strong(amount, enemy.max_hp if enemy else 1)
+		return
 	vfx.hit(global_position, target.global_position, vfx_color(), amount, enemy.max_hp if enemy else 1)
 
 
@@ -123,7 +169,23 @@ func _on_hurt(amount: int) -> void:
 	if abilities:
 		amount = abilities.incoming_damage(amount)
 	stats.take_damage(amount)
+	animated_sprite.knockback(_away_from_nearest_enemy())
 	QuestLogger.info(QuestLogger.Category.COMBAT, "Hero took %d damage (%d/%d HP)." % [amount, stats.current_hp, stats.max_hp])
+
+
+## Unit vector from the closest enemy to this hero (knockback direction).
+func _away_from_nearest_enemy() -> Vector2:
+	var best := INF
+	var dir := Vector2.ZERO
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var enemy := node as Node2D
+		if enemy == null:
+			continue
+		var d := global_position.distance_squared_to(enemy.global_position)
+		if d < best:
+			best = d
+			dir = enemy.global_position.direction_to(global_position)
+	return dir
 
 
 ## The Hitbox circle is a shared sub-resource: duplicate before resizing.

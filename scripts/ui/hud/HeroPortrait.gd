@@ -6,8 +6,11 @@ class_name HeroPortrait
 ## name, and an HP bar driven by CharacterStats.hp_changed — no numbers (the
 ## exact value lives in CharacterPopup). Bar color/timings: HealthBarStyle.
 ## The selected hero gets a bright gold border (set_selected, session 12).
-## Under the bars: one small button per equipped consumable (click = use it,
-## dimmed while it cools down; InventoryComponent decides if it can be used).
+## Under the bars: the active ability (AbilityButton: icon, radial cooldown,
+## "ready" pulse; click = Q) and one small button per equipped consumable
+## (click = use it, dimmed while it cools down; InventoryComponent decides).
+## heroes-9: the bar blinks below HealthBarStyle.low_threshold; a downed hero
+## turns grey with a "Reanimar (N Comida)" button (PlayerStats.revive_hero).
 ## Built in code; `setup()` before add_child().
 
 signal portrait_clicked(portrait: HeroPortrait)
@@ -36,7 +39,10 @@ var _group_label: Label
 var _perk_dot: Label
 var _group_nums: Array = []
 var _bar: ProgressBar
-var _ability_bar: ProgressBar
+var ability_button: AbilityButton
+var revive_button: Button
+var _low_tween: Tween
+var _downed_label: Label
 var _abilities: HeroAbilities
 var _inventory: InventoryComponent
 var _consumable_buttons: Array[Button] = []
@@ -109,24 +115,24 @@ func _ready() -> void:
 	_bar.add_theme_stylebox_override("background", background)
 	column.add_child(_bar)
 
-	# Thin Q-ability bar: gold = ready, dim = recharging.
-	_ability_bar = ProgressBar.new()
-	_ability_bar.custom_minimum_size = Vector2(BAR_SIZE.x, 4)
-	_ability_bar.show_percentage = false
-	_ability_bar.max_value = 1.0
-	_ability_bar.step = 0.0
-	_ability_bar.value = 1.0
-	_ability_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var ability_fill := StyleBoxFlat.new()
-	ability_fill.bg_color = QuestPalette.GOLD_LIGHT
-	_ability_bar.add_theme_stylebox_override("fill", ability_fill)
-	_ability_bar.add_theme_stylebox_override("background", StyleBoxFlat.new())
-	_ability_bar.visible = false
-	column.add_child(_ability_bar)
+	_downed_label = Label.new()
+	_downed_label.text = "Caído"
+	_downed_label.add_theme_color_override("font_color", QuestPalette.BLOOD_LIGHT)
+	_downed_label.visible = false
+	name_row.add_child(_downed_label)
 
 	var consumables := HBoxContainer.new()
 	consumables.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(consumables)
+	ability_button = AbilityButton.new()
+	ability_button.name = "AbilityButton"
+	consumables.add_child(ability_button)
+	revive_button = Button.new()
+	revive_button.name = "ReviveButton"
+	revive_button.focus_mode = Control.FOCUS_NONE
+	revive_button.visible = false
+	revive_button.pressed.connect(_on_revive_pressed)
+	column.add_child(revive_button)
 	var party := ManagerLocator.get_party_inventory()
 	for index in int(party.SLOT_CAPACITY[ItemData.Slot.CONSUMABLE]) if party else 2:
 		var button := Button.new()
@@ -156,16 +162,11 @@ func _update_perk_dot() -> void:
 	_perk_dot.visible = player_stats != null and stats != null and stats.hero_id != "" and player_stats.has_pending_perk(stats.hero_id)
 
 
-## Shows the hero's active-ability cooldown (Q) under the HP bar.
+## Shows the hero's active ability (button with radial cooldown, Q).
 func bind_abilities(p_abilities: HeroAbilities) -> void:
 	_abilities = p_abilities
-	if _ability_bar == null or p_abilities == null or p_abilities.active == null:
-		return
-	_ability_bar.visible = true
-	_ability_bar.tooltip_text = "%s (Q)" % p_abilities.ability_name
-	if not p_abilities.cooldown_changed.is_connected(_on_cooldown_changed):
-		p_abilities.cooldown_changed.connect(_on_cooldown_changed)
-	_on_cooldown_changed(p_abilities.cooldown_left, p_abilities.active_cooldown())
+	if ability_button and p_abilities:
+		ability_button.bind(p_abilities)
 
 
 ## Shortcut buttons for the hero's equipped consumables.
@@ -211,11 +212,6 @@ func _on_consumable_pressed(index: int) -> void:
 		_inventory.use(index)
 
 
-func _on_cooldown_changed(left: float, total: float) -> void:
-	_ability_bar.value = 1.0 - left / maxf(total, 0.001)
-	_ability_bar.modulate = Color.WHITE if left <= 0.0 else Color(1, 1, 1, 0.45)
-
-
 func bind_stats(p_stats: CharacterStats) -> void:
 	if stats and stats != p_stats and stats.hp_changed.is_connected(_on_hp_changed):
 		stats.hp_changed.disconnect(_on_hp_changed)
@@ -245,12 +241,71 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 		_bar_tween.tween_property(_bar, "value", target_ratio, style.tween_time)
 		_bar_tween.tween_property(_fill, "bg_color", color, style.tween_time)
 
+	_set_low_blink(current_hp > 0 and target_ratio < style.low_threshold)
+	_refresh_downed()
+
 	if took_damage and is_inside_tree():
 		if _flash_tween and _flash_tween.is_valid():
 			_flash_tween.kill()
 		modulate = style.flash_color
 		_flash_tween = create_tween()
 		_flash_tween.tween_property(self, "modulate", Color.WHITE, style.flash_time)
+
+
+## Low HP: the bar blinks (real time, so it keeps blinking in the tactical pause).
+func _set_low_blink(on: bool) -> void:
+	if on == is_low_blinking():
+		return
+	if _low_tween and _low_tween.is_valid():
+		_low_tween.kill()
+	_low_tween = null
+	_bar.modulate = Color.WHITE
+	if on and is_inside_tree():
+		_low_tween = create_tween().set_loops().set_ignore_time_scale()
+		_low_tween.tween_property(_bar, "modulate", Color(1, 1, 1, 0.3), 0.3)
+		_low_tween.tween_property(_bar, "modulate", Color.WHITE, 0.3)
+
+
+func is_low_blinking() -> bool:
+	return _low_tween != null and _low_tween.is_valid()
+
+
+## While downed, revive availability (Comida, an ally in the room) is re-read
+## every frame (cheap) instead of wiring every hero's zone_changed.
+func _process(_delta: float) -> void:
+	if is_downed():
+		_refresh_downed()
+
+
+func is_downed() -> bool:
+	return stats != null and not stats.is_alive()
+
+
+## Downed: grey portrait, "Caído", and the revive button (cost + why it's blocked).
+func _refresh_downed() -> void:
+	if revive_button == null:
+		return
+	var downed := is_downed()
+	_downed_label.visible = downed
+	self_modulate = Color(0.55, 0.55, 0.55) if downed else Color.WHITE
+	revive_button.visible = downed
+	if ability_button:
+		ability_button.disabled = downed
+	if not downed:
+		return
+	var ps := ManagerLocator.get_player_stats()
+	if ps == null:
+		return
+	revive_button.text = "Reanimar (%d Comida)" % ps.get_revive_cost(stats.hero_id)
+	var reason: String = ps.get_revive_block_reason(stats.hero_id)
+	revive_button.disabled = reason != ""
+	revive_button.tooltip_text = reason if reason != "" else "Un aliado en su sala lo reanima"
+
+
+func _on_revive_pressed() -> void:
+	var ps := ManagerLocator.get_player_stats()
+	if ps and stats:
+		ps.revive_hero(stats.hero_id)
 
 
 ## Control groups this hero belongs to, shown next to the name ("[1] [3]").

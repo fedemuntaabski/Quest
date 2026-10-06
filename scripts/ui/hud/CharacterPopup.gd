@@ -10,10 +10,17 @@ class_name CharacterPopup
 ## active one; the UI computes nothing). Closes with the
 ## X button, a click outside, or Esc — Esc is consumed here, so it never also
 ## toggles the pause menu (HUD's _input runs before Main2d's).
+## heroes-9: a stats table split by layer (base | nivel | perks | equipo | total,
+## PlayerStats.get_stat_breakdown), the passive/active with icon and their real
+## description (AbilityData via HeroAbilities.describe), green "-> next" values
+## in the level-up rows, and Reanimar instead of Curar for a downed hero.
 ## Built in code by HUDController; refreshes on signals only.
 
 const PREVIEW_SIZE := Vector2(128, 128)
-const PANEL_WIDTH := 460.0
+const PANEL_WIDTH := 520.0
+const STAT_COLUMNS := ["Stat", "Base", "Nivel", "Perks", "Equipo", "Total"]
+const ABILITY_ICON := Vector2(32, 32)
+const NEXT_COLOR := Color(0.5, 0.95, 0.55)
 
 var stats: CharacterStats
 var character_data: CharacterData
@@ -21,6 +28,8 @@ var character_data: CharacterData
 var _title: Label
 var _preview: TextureRect
 var _info: Label
+var _stat_table: GridContainer
+var _ability_rows: VBoxContainer
 var _level_title: Label
 var _upgrade_rows: GridContainer
 var _level_button: Button
@@ -129,12 +138,22 @@ func _build() -> void:
 	_info.add_theme_color_override("font_color", QuestPalette.PARCHMENT_LIGHT)
 	body.add_child(_info)
 
+	_stat_table = GridContainer.new()
+	_stat_table.name = "StatTable"
+	_stat_table.columns = STAT_COLUMNS.size()
+	_stat_table.add_theme_constant_override("h_separation", 14)
+	content.add_child(_stat_table)
+	_ability_rows = VBoxContainer.new()
+	_ability_rows.name = "Abilities"
+	_ability_rows.add_theme_constant_override("separation", 6)
+	content.add_child(_ability_rows)
+
 	content.add_child(HSeparator.new())
 	_level_title = Label.new()
 	_level_title.add_theme_color_override("font_color", QuestPalette.GOLD)
 	content.add_child(_level_title)
 	_upgrade_rows = GridContainer.new()
-	_upgrade_rows.columns = 2
+	_upgrade_rows.columns = 4
 	_upgrade_rows.add_theme_constant_override("h_separation", 16)
 	content.add_child(_upgrade_rows)
 	var hint := Label.new()
@@ -175,7 +194,10 @@ func _on_level_up_pressed() -> void:
 func _on_heal_pressed() -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps and stats:
-		ps.heal_hero(stats.hero_id)
+		if stats.is_alive():
+			ps.heal_hero(stats.hero_id)
+		else:
+			ps.revive_hero(stats.hero_id)
 
 
 func _on_veil_input(event: InputEvent) -> void:
@@ -202,20 +224,21 @@ func _refresh() -> void:
 	var level: int = ps.get_hero_level(stats.hero_id) if ps else 1
 	_title.text = character_data.display_name if character_data else stats.character_name
 
+	var ranged := character_data != null and character_data.attack_style == CharacterData.AttackStyle.RANGED
 	var lines: Array[String] = [
 		"Nivel %d" % level,
-		"Vida: %d / %d" % [stats.current_hp, stats.max_hp],
-		"Ataque: %d de daño" % stats.attack_damage,
-		"Intervalo: %.2f s (%.2f golpes/s)" % [stats.attack_interval, 1.0 / maxf(stats.attack_interval, 0.01)],
+		"Vida: %d / %d%s" % [stats.current_hp, stats.max_hp, "  (caído)" if not stats.is_alive() else ""],
+		"%.2f golpes/s · %s" % [1.0 / maxf(stats.attack_interval, 0.01), "a distancia" if ranged else "cuerpo a cuerpo"],
 	]
-	if character_data:
-		if character_data.passive_ability_name != "":
-			lines.append("Pasiva: %s" % character_data.passive_ability_name)
-		if character_data.active_ability_name != "":
-			lines.append("Activa: %s" % character_data.active_ability_name)
+	if character_data and not is_equal_approx(character_data.move_speed_mult, 1.0):
+		lines.append("Velocidad: x%.2f" % character_data.move_speed_mult)
+	if character_data and character_data.role != "":
+		lines.append(character_data.role)
 	_info.text = "\n".join(lines)
 
 	if ps:
+		_rebuild_stat_table(ps)
+		_rebuild_abilities()
 		_rebuild_level_up(ps)
 		_rebuild_perks(ps)
 	_equipment.bind(stats.hero_id)
@@ -234,17 +257,25 @@ func _rebuild_level_up(ps: PlayerStats) -> void:
 	for row: Dictionary in p["rows"]:
 		var key := str(row["key"])
 		_add_cell(str(row["label"]), QuestPalette.PARCHMENT)
-		var values := _format_value(key, row["current"]) if maxed else "%s → %s" % [_format_value(key, row["current"]), _format_value(key, row["next"])]
-		_add_cell(values, QuestPalette.UI_TEXT_PRIMARY)
+		_add_cell(_format_value(key, row["current"]), QuestPalette.UI_TEXT_PRIMARY)
+		_add_cell("" if maxed else "→", QuestPalette.UI_TEXT_MUTED)
+		var changed: bool = not maxed and _format_value(key, row["next"]) != _format_value(key, row["current"])
+		_add_cell("" if maxed else _format_value(key, row["next"]), NEXT_COLOR if changed else QuestPalette.UI_TEXT_PRIMARY)
 
 	_level_button.disabled = maxed or not affordable
 	_level_button.text = "Nivel máximo" if maxed else "Subir de nivel (%d %s)" % [p["cost"], resource_label]
 	_level_button.tooltip_text = "" if maxed or affordable else "%s insuficiente" % resource_label
-	var heal_cost: int = ps.get_heal_cost(stats.hero_id) if ps else 0
-	var heal_affordable: bool = ManagerLocator.get_resource_manager().get_resource("food") >= heal_cost
-	_heal_button.disabled = heal_cost <= 0 or not heal_affordable
-	_heal_button.text = "Vida completa" if heal_cost <= 0 else "Curar (%d %s)" % [heal_cost, resource_label]
-	_heal_button.tooltip_text = "" if heal_cost <= 0 or heal_affordable else "%s insuficiente" % resource_label
+	if not stats.is_alive():  # downed: the same button revives (an ally in its room + Comida)
+		var reason: String = ps.get_revive_block_reason(stats.hero_id)
+		_heal_button.disabled = reason != ""
+		_heal_button.text = "Reanimar (%d %s)" % [ps.get_revive_cost(stats.hero_id), resource_label]
+		_heal_button.tooltip_text = reason
+	else:
+		var heal_cost: int = ps.get_heal_cost(stats.hero_id) if ps else 0
+		var heal_affordable: bool = ManagerLocator.get_resource_manager().get_resource("food") >= heal_cost
+		_heal_button.disabled = heal_cost <= 0 or not heal_affordable
+		_heal_button.text = "Vida completa" if heal_cost <= 0 else "Curar (%d %s)" % [heal_cost, resource_label]
+		_heal_button.tooltip_text = "" if heal_cost <= 0 or heal_affordable else "%s insuficiente" % resource_label
 	_level_button.add_theme_color_override("font_color", StatIcon.BASE_COLORS.get(p["cost_resource"], QuestPalette.PARCHMENT) if affordable else QuestPalette.UI_TEXT_BLOCKED)
 
 
@@ -320,6 +351,81 @@ func _on_perk_pressed(perk_id: StringName) -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps and stats:
 		ps.choose_perk(stats.hero_id, perk_id)
+
+
+## base | nivel | perks | equipo | total per stat (PlayerStats.get_stat_breakdown).
+## A zero layer shows "-"; bonuses are signed ("+2", "-0.10").
+func _rebuild_stat_table(ps: PlayerStats) -> void:
+	for child in _stat_table.get_children():
+		_stat_table.remove_child(child)
+		child.queue_free()
+	for title: String in STAT_COLUMNS:
+		_table_cell(title, QuestPalette.GOLD)
+	for row: Dictionary in ps.get_stat_breakdown(stats.hero_id):
+		var key := str(row["key"])
+		_table_cell(str(row["label"]), QuestPalette.PARCHMENT)
+		_table_cell(_format_stat(key, row["base"], false), QuestPalette.UI_TEXT_PRIMARY)
+		for layer in ["level", "perks", "equipment"]:
+			_table_cell(_format_stat(key, row[layer], true), NEXT_COLOR if float(row[layer]) != 0.0 else QuestPalette.UI_TEXT_MUTED)
+		_table_cell(_format_stat(key, row["total"], false), QuestPalette.GOLD_LIGHT)
+
+
+func _table_cell(text: String, color: Color) -> void:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_color_override("font_color", color)
+	_stat_table.add_child(label)
+
+
+static func _format_stat(key: String, value: Variant, signed: bool) -> String:
+	var v := float(value)
+	if signed and is_zero_approx(v):
+		return "-"
+	var text := "%.2f" % v if key == "attack_interval" else str(roundi(v))
+	return ("+" + text) if signed and v > 0.0 else text
+
+
+## Passive + active: icon, name, kind and the real description (numbers with perks).
+func _rebuild_abilities() -> void:
+	for child in _ability_rows.get_children():
+		_ability_rows.remove_child(child)
+		child.queue_free()
+	var player := stats.get_parent() as Player
+	var abilities: HeroAbilities = player.abilities if player else null
+	var passive: AbilityData = character_data.passive if character_data else null
+	var active: AbilityData = character_data.active if character_data else null
+	for entry in [[passive, "Pasiva"], [active, "Activa (Q)"]]:
+		var ability: AbilityData = entry[0]
+		if ability == null:
+			continue
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var icon := TextureRect.new()
+		icon.texture = ability.icon
+		icon.custom_minimum_size = ABILITY_ICON
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		row.add_child(icon)
+		var text := Label.new()
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text.custom_minimum_size = Vector2(PANEL_WIDTH - 80.0, 0)
+		var description: String = abilities.describe(ability) if abilities else ability.format_description()
+		text.text = "%s — %s\n%s" % [entry[1], ability.display_name, description]
+		text.add_theme_color_override("font_color", QuestPalette.PARCHMENT_LIGHT)
+		row.add_child(text)
+		_ability_rows.add_child(row)
+
+
+## Plain text of the abilities block (tests).
+func get_abilities_text() -> String:
+	var parts: Array[String] = []
+	for row in _ability_rows.get_children():
+		for child in row.get_children():
+			if child is Label:
+				parts.append(child.text)
+	return "\n".join(parts)
 
 
 func _add_cell(text: String, color: Color) -> void:

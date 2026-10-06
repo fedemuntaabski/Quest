@@ -9,7 +9,7 @@ extends Node2D
 ## stash (Chest).
 
 const CHEST_OFFSET := Vector2(0, -56)
-const NO_CHEST_TYPES: Array[RoomData.RoomType] = [RoomData.RoomType.START, RoomData.RoomType.EXIT]
+const NO_CHEST_TYPES: Array[RoomData.RoomType] = [RoomData.RoomType.START, RoomData.RoomType.EXIT, RoomData.RoomType.PRISONER]
 
 var chests: Dictionary = {}
 
@@ -23,6 +23,12 @@ func setup(room_manager: RoomManager, door_turn_system: DoorTurnSystem, floor_ma
 	_floor_manager = floor_manager
 	door_turn_system.room_revealed.connect(_on_room_revealed)
 	for hero in ManagerLocator.get_heroes():
+		watch_hero(hero)
+
+
+## Chests open when this hero enters their room (also recruits, heroes-9).
+func watch_hero(hero: Player) -> void:
+	if not hero.zone_changed.is_connected(_on_hero_zone_changed):
 		hero.zone_changed.connect(_on_hero_zone_changed)
 
 
