@@ -1,0 +1,11 @@
+difficulty,floor,theme,hp_mult,dmg_mult,threat_pct,max_enemies,nexo_hp,loss_pct,boss,boss_hp,boss_charge,boss_ttk_s
+normal,1,Criptas,1.0,1.0,40.0,6,120,11.8,,0,0,0.0
+normal,2,Catacumbas,1.15,1.1,45.0,8,120,10.4,,0,0,0.0
+normal,3,Fortaleza orca,1.3,1.2,50.0,10,120,10.5,boss_ogre_chief,156,7,13.3
+normal,4,Abismo,1.45,1.3,55.0,12,120,23.8,,0,0,0.0
+normal,5,Trono del demonio,1.6,1.4,60.0,14,120,32.5,boss_demon_lord,352,11,19.5
+hard,1,Criptas,1.35,1.25,50.0,8,96,23.4,,0,0,0.0
+hard,2,Catacumbas,1.55,1.38,56.3,10,96,17.3,,0,0,0.0
+hard,3,Fortaleza orca,1.76,1.5,62.5,12,96,17.3,boss_ogre_chief,211,9,18.0
+hard,4,Abismo,1.96,1.63,68.8,14,96,42.7,,0,0,0.0
+hard,5,Trono del demonio,2.16,1.75,75.0,16,96,53.9,boss_demon_lord,475,14,26.3

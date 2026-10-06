@@ -30,6 +30,11 @@ const NEXO_TICK_SEC := 1.0
 const RESET_DUST := 20
 ## Distance (px) at which an enemy's contact hitbox reaches a hero (radius ~24 + reach).
 const CONTACT_PX := 40.0
+## progresion-10: difficulty applied over the run curve by enemy_stats (null = Normal).
+## Set by difficulty_rows() while it runs; every other table stays on Normal.
+static var difficulty: DifficultyLevel
+## Party used for the boss time-to-kill (the two heroes picked by default).
+const BOSS_PARTY: Array[String] = ["warrior", "mage"]
 
 
 static func floor_config() -> FloorConfig:
@@ -88,8 +93,8 @@ static func damage_reduction_pct(data: CharacterData) -> float:
 ## Enemy numbers after floor + type multipliers, exactly as Enemy.configure() applies them.
 static func enemy_stats(type: EnemyType, floor_index: int) -> Dictionary:
 	var cfg := floor_config()
-	var hp_mult := cfg.enemy_hp_multiplier(floor_index) * type.hp_mult
-	var dmg_mult := cfg.enemy_damage_multiplier(floor_index) * type.damage_mult
+	var hp_mult := cfg.enemy_hp_multiplier(floor_index) * type.hp_mult * (difficulty.hp_mult if difficulty else 1.0)
+	var dmg_mult := cfg.enemy_damage_multiplier(floor_index) * type.damage_mult * (difficulty.damage_mult if difficulty else 1.0)
 	return {
 		"enemy": type.id, "floor": floor_index, "role": "raider" if type.role == EnemyType.Role.RAIDER else "hunter",
 		"hp": maxi(1, roundi(Enemy.resolved_hp(type) * hp_mult)),
@@ -447,6 +452,44 @@ static func economy_rows() -> Array[Dictionary]:
 				"floor": f, "resource": key, "income": snappedf(income, 0.1), "sink": snappedf(sink, 0.1),
 				"run_ratio": snappedf(income_run[key] / maxf(sink_run[key], 0.001), 0.01),
 			})
+	return rows
+
+
+## progresion-10: the run curve per floor in both difficulties: multipliers, door
+## threat at WAVE_TURN, cap, Nexo HP, mean party loss per encounter (heroes at level
+## f - 1) and, on boss floors, the boss's HP, its charge and the seconds BOSS_PARTY
+## needs to kill it (sum of DPS, no misses).
+static func difficulty_rows() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	var cfg := floor_config()
+	for level in DifficultyConfig.get_default().levels:
+		difficulty = level
+		for f in range(1, FLOORS + 1):
+			var theme := cfg.theme(f)
+			var loss := 0.0
+			for hero_id in HERO_IDS:
+				loss += pool_encounter_loss(hero_id, f - 1, f)
+			var row := {
+				"difficulty": level.id, "floor": f, "theme": theme.display_name if theme else "",
+				"hp_mult": snappedf(cfg.enemy_hp_multiplier(f) * level.hp_mult, 0.01),
+				"dmg_mult": snappedf(cfg.enemy_damage_multiplier(f) * level.damage_mult, 0.01),
+				"threat_pct": snappedf(clampf(cfg.door_roll.threat_chance(WAVE_TURN, f) * cfg.threat_multiplier(f) * level.threat_mult, 0.0, cfg.door_roll.max_chance) * 100.0, 0.1),
+				"max_enemies": cfg.max_enemies(f) + level.extra_max_enemies,
+				"nexo_hp": roundi(cfg.nexo_max_hp * level.nexo_hp_mult),
+				"loss_pct": snappedf(loss / HERO_IDS.size() * 100.0, 0.1),
+				"boss": "", "boss_hp": 0, "boss_charge": 0, "boss_ttk_s": 0.0,
+			}
+			if theme and theme.boss:
+				var boss := enemy_stats(theme.boss, f)
+				var dps := 0.0
+				for hero_id in BOSS_PARTY:
+					dps += float(hero_stats(hero_id, f - 1)["dps"])
+				row["boss"] = theme.boss.id
+				row["boss_hp"] = boss["hp"]
+				row["boss_charge"] = maxi(1, roundi(theme.boss.charge_damage * cfg.enemy_damage_multiplier(f) * theme.boss.damage_mult * level.damage_mult))
+				row["boss_ttk_s"] = snappedf(float(boss["hp"]) / maxf(dps, 0.01), 0.1)
+			rows.append(row)
+	difficulty = null
 	return rows
 
 

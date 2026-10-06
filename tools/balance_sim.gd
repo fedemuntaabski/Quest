@@ -21,6 +21,7 @@ func _initialize() -> void:
 		"doors": BalanceSim.door_rows(),
 		"extraction": BalanceSim.extraction_rows(),
 		"economy": BalanceSim.economy_rows(),
+		"difficulty": BalanceSim.difficulty_rows(),
 	}
 	for name in tables:
 		var rows: Array[Dictionary] = tables[name]
