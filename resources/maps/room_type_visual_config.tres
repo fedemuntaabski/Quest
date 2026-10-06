@@ -2,11 +2,13 @@
 
 [ext_resource type="Script" uid="uid://56eq7lb023g1" path="res://scripts/world/map/RoomTypeVisualConfig.gd" id="1_cfg"]
 [ext_resource type="Script" uid="uid://cwpk6fhgdv6k1" path="res://scripts/world/map/RoomTypeVisual.gd" id="2_vis"]
+[ext_resource type="Texture2D" uid="uid://xtt6tqoy2mwe" path="res://assets/art/items/weapon_knife.png" id="icon_altar"]
 [ext_resource type="Texture2D" uid="uid://cjoql0hf6nby6" path="res://assets/art/items/weapon_double_axe.png" id="icon_elite"]
 [ext_resource type="Texture2D" uid="uid://wtnwoh5hpoyd" path="res://assets/art/ui/button_blue_up.png" id="icon_generator"]
 [ext_resource type="Texture2D" uid="uid://b5kodgkdoloto" path="res://assets/art/items/chest_full_open_anim_f0.png" id="icon_loot"]
+[ext_resource type="Texture2D" uid="uid://cdsd5iq567bud" path="res://assets/art/items/skull.png" id="icon_prisoner"]
 [ext_resource type="Texture2D" uid="uid://clrxpiehnhwt3" path="res://assets/art/items/flask_big_red.png" id="icon_rest"]
-[ext_resource type="Texture2D" path="res://assets/art/items/skull.png" id="icon_prisoner"]
+[ext_resource type="Texture2D" uid="uid://dfmbaxqa8686" path="res://assets/art/items/coin_anim_f0.png" id="icon_secret"]
 
 [sub_resource type="Resource" id="Resource_start"]
 script = ExtResource("2_vis")
@@ -30,8 +32,8 @@ script = ExtResource("2_vis")
 type = 3
 display_name = "Descanso"
 banner_text = "Sala de descanso"
-description = "Cura al grupo y ningún enemigo aparece aquí."
-hint = "Al descubrirla, todos los héroes recuperan vida, y los enemigos no aparecen en ella, esté encendida o no. Un buen sitio para respirar entre combates."
+description = "Cura con el tiempo (cuesta Comida); sin enemigos."
+hint = "Los héroes heridos que se quedan aquí recuperan vida poco a poco, gastando 1 de Comida por cada curación. Los enemigos no aparecen en ella, esté encendida o no. Un buen sitio para respirar entre combates."
 icon = ExtResource("icon_rest")
 color = Color(0.45, 0.95, 0.85, 1)
 decor_props = Array[Vector2i]([Vector2i(6, 9), Vector2i(7, 9), Vector2i(8, 9), Vector2i(1, 6)])
@@ -42,8 +44,8 @@ script = ExtResource("2_vis")
 type = 4
 display_name = "Botín"
 banner_text = "Sala de botín"
-description = "Te da Industria al descubrirla."
-hint = "Un cofre con Industria que se cobra al abrir la sala, una sola vez. Gástala en construir módulos de producción y defensa."
+description = "Un cofre y algo de Industria."
+hint = "Al descubrirla te da Industria, y guarda un cofre que se abre cuando un héroe entra. El cofre es de madera en los primeros pisos, de hierro en los del medio y de oro en el último: cuanto mejor el cofre, más rara la pieza."
 icon = ExtResource("icon_loot")
 color = Color(1, 0.6, 0.15, 1)
 decor_props = Array[Vector2i]([Vector2i(5, 7), Vector2i(6, 7), Vector2i(7, 7)])
@@ -83,6 +85,26 @@ hint = "En la celda espera un héroe que no elegiste al empezar. Con un héroe v
 icon = ExtResource("icon_prisoner")
 color = Color(0.85, 0.55, 1, 1)
 
+[sub_resource type="Resource" id="Resource_altar"]
+script = ExtResource("2_vis")
+type = 8
+display_name = "Altar"
+banner_text = "Altar de sangre"
+description = "Vida a cambio de un objeto raro."
+hint = "Con un héroe vivo en la sala, hacé clic izquierdo en el altar: ese héroe pierde el 30 % de su vida máxima y el grupo recibe un objeto raro o mejor. Solo acepta una ofrenda, y no si el héroe quedaría caído."
+icon = ExtResource("icon_altar")
+color = Color(0.95, 0.3, 0.35, 1)
+
+[sub_resource type="Resource" id="Resource_secret"]
+script = ExtResource("2_vis")
+type = 9
+display_name = "Secreta"
+banner_text = "¡Sala secreta!"
+description = "Polvo y un cofre poco común o mejor."
+hint = "Una sala sin puerta. Se revela sola cuando descubrís las dos salas que la rodean. Da Polvo y guarda un cofre que nunca es común, y ningún enemigo aparece en ella."
+icon = ExtResource("icon_secret")
+color = Color(1, 0.85, 0.35, 1)
+
 [resource]
 script = ExtResource("1_cfg")
-entries = Array[ExtResource("2_vis")]([SubResource("Resource_start"), SubResource("Resource_exit"), SubResource("Resource_rest"), SubResource("Resource_loot"), SubResource("Resource_elite"), SubResource("Resource_generator"), SubResource("Resource_prisoner")])
+entries = Array[ExtResource("2_vis")]([SubResource("Resource_start"), SubResource("Resource_exit"), SubResource("Resource_rest"), SubResource("Resource_loot"), SubResource("Resource_elite"), SubResource("Resource_generator"), SubResource("Resource_prisoner"), SubResource("Resource_altar"), SubResource("Resource_secret")])

@@ -17,3 +17,12 @@ func show_screen() -> void:
 	var tween := create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.tween_property(color_rect, "modulate:a", 1.0, FADE_IN_SEC)
+
+
+## A RunSummary inside `box`, just before `before` (the buttons).
+func add_summary(box: Node, before: Node) -> RunSummary:
+	var run_summary := RunSummary.new()
+	run_summary.name = "RunSummary"
+	box.add_child(run_summary)
+	box.move_child(run_summary, before.get_index())
+	return run_summary

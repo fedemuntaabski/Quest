@@ -71,7 +71,62 @@ static func generate_floor(p_seed: int, config: FloorConfig, floor_index: int) -
 	var layout := generate(p_seed, config.room_count(floor_index), config.branch_chance(floor_index))
 	add_loops(layout, config.loop_chance(floor_index), config.max_loops(floor_index))
 	assign_room_types(layout, config.room_types, floor_index)
+	add_secret_room(layout, config.secret_room_chance)
 	return layout
+
+
+## progresion-10: with `chance`, one SECRET room in an empty slot next to two
+## rooms A and B (neither the exit). A -> S is its entry corridor, B -> S a loop;
+## both corridors are is_secret (no clickable door): the room opens by itself once
+## A and B are both discovered. Runs last (own salted RNG), so it moves nothing else.
+static func add_secret_room(layout: MapLayout, chance: float) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([layout.map_seed, "secret"])
+	if rng.randf() >= chance:
+		return
+	var room_at: Dictionary = {}   # Vector2i slot -> RoomData
+	for room in layout.rooms:
+		room_at[_slot_of(room)] = room
+	var candidates: Array = []     # [slot: Vector2i, a: RoomData, b: RoomData]
+	var seen: Dictionary = {}
+	for room in layout.rooms:
+		for dir in DIRS:
+			var slot: Vector2i = _slot_of(room) + dir
+			if room_at.has(slot) or seen.has(slot):
+				continue
+			seen[slot] = true
+			var around: Array[RoomData] = []
+			for d in DIRS:
+				var other: RoomData = room_at.get(slot + d)
+				if other and not other.is_exit:
+					around.append(other)
+			for i in around.size():
+				for j in range(i + 1, around.size()):
+					candidates.append([slot, around[i], around[j]])
+	_shuffle(candidates, rng)
+	for candidate in candidates:
+		var slot: Vector2i = candidate[0]
+		var a: RoomData = candidate[1]
+		var b: RoomData = candidate[2]
+		var secret := _make_room("room_secret", slot, Vector2i(3, 3))
+		secret.room_type = RoomData.RoomType.SECRET
+		var entry := _make_corridor(a, secret, slot - _slot_of(a), _slot_of(a))
+		entry.is_secret = true
+		var side := _make_corridor(b, secret, slot - _slot_of(b), _slot_of(b))
+		side.id = "secret_%s_%s" % [b.id, secret.id]
+		side.is_loop = true
+		side.is_secret = true
+		layout.rooms.append(secret)
+		layout.corridors.append(entry)
+		layout.corridors.append(side)
+		if layout.validate().is_empty():
+			secret.neighbors = PackedStringArray([a.id, b.id])
+			a.neighbors.append(secret.id)
+			b.neighbors.append(secret.id)
+			return
+		layout.rooms.pop_back()
+		layout.corridors.pop_back()
+		layout.corridors.pop_back()
 
 
 ## Up to `max_loops` extra corridors, each slot rolling `loop_chance`.
@@ -133,8 +188,8 @@ static func assign_room_types(layout: MapLayout, rules: Array[RoomTypeRule], flo
 
 	var next := 0
 	for rule in rules:
-		# Start/Exit are fixed by the tree (is_start/is_exit), never rolled.
-		if rule == null or rule.type == RoomData.RoomType.START or rule.type == RoomData.RoomType.EXIT:
+		# Start/Exit are fixed by the tree (is_start/is_exit), Secret by add_secret_room: never rolled.
+		if rule == null or rule.type in [RoomData.RoomType.START, RoomData.RoomType.EXIT, RoomData.RoomType.SECRET]:
 			continue
 		for i in rule.max_count_at(floor_index):
 			if next >= candidates.size():

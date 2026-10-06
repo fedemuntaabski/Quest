@@ -83,6 +83,11 @@ var killed_by_damage: bool = false
 var target_nexo: Nexo = null
 ## Ring slot (set by EnemyManager, consecutive) so enemies converging on a point spread out.
 var slot: int = 0
+## Floor x room x type damage multiplier (bosses scale their charge with it).
+var dmg_multiplier: float = 1.0
+## progresion-10: a BossBrain dash is running (the AI stays put meanwhile).
+var charging: bool = false
+var boss_brain: BossBrain
 
 
 func _ready() -> void:
@@ -104,6 +109,7 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 	if p_type:
 		hp_multiplier *= p_type.hp_mult
 		damage_multiplier *= p_type.damage_mult
+	dmg_multiplier = damage_multiplier
 
 	var cfg: Dictionary = VARIANT_CONFIG[variant]
 	var base_hp := resolved_hp(p_type) if p_type else int(cfg["hp"])
@@ -136,6 +142,11 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 	attack_timer.wait_time = attack_speed
 	attack_timer.one_shot = false
 	attack_timer.timeout.connect(_perform_attack)
+	if p_type and p_type.is_boss:
+		boss_brain = BossBrain.new()
+		boss_brain.name = "BossBrain"
+		boss_brain.setup(self)
+		add_child(boss_brain)
 
 
 ## Contact hit on a hero: sparks in the enemy palette (the hero's own flash is Player's).
@@ -319,8 +330,12 @@ func _resume_moving() -> void:
 	_on_ai_tick()
 
 
+func is_moving() -> bool:
+	return _moving
+
+
 func _on_ai_tick() -> void:
-	if _moving or current_state == State.ATTACKING or not is_alive():
+	if _moving or charging or current_state == State.ATTACKING or not is_alive():
 		return
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager == null:

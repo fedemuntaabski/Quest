@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_type"]
+[ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_ogre.tres" id="2_frames"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/hunter.tres" id="3_profile"]
+
+[resource]
+script = ExtResource("1_type")
+id = "boss_ogre_chief"
+display_name = "Jefe Ogro Rompemuros"
+behavior = 2
+sprite_frames = ExtResource("2_frames")
+speed_mult = 0.8
+visual_scale = 1.8
+description = "Custodia la salida de la Fortaleza orca. Embiste contra el héroe más cercano."
+lore = "Lo coronaron porque nadie más pudo levantar su maza. Nadie se atrevió a discutirlo."
+bestiary_order = 100
+base_hp = 120
+contact_damage = 4
+target_profile = ExtResource("3_profile")
+is_boss = true
+charge_cooldown = 6.0
+charge_damage = 6
+boss_pattern = "Embestida: se agacha (aviso rojo) y carga contra el héroe más cercano. Moverse a tiempo la esquiva."

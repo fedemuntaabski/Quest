@@ -17,6 +17,26 @@ var selected_hero_ids: Array[String] = []
 ## heroes lost for good (downed and not revived before the floor ended).
 var recruited_ids: Array[String] = []
 var lost_ids: Array[String] = []
+## progresion-10: DifficultyLevel.id picked in HeroSelectMenu (kept between runs).
+var difficulty: String = "normal"
+## progresion-10: this run's summary numbers (RunSummary, SaveManager.record_run).
+## Reset by reset_run(); filled by EnemyManager (kills), PartyInventory
+## (item_acquired), BestiaryService (entry_unlocked), FloorManager (floors) and
+## Main2d (time, only while the run is ACTIVE).
+var run_stats: Dictionary = new_run_stats()
+
+
+func _ready() -> void:
+	_connect_run_sources.call_deferred()  # BestiaryService loads after this autoload
+
+
+func _connect_run_sources() -> void:
+	var inventory := get_node_or_null("/root/PartyInventory")
+	if inventory:
+		inventory.item_acquired.connect(func(_item: ItemData) -> void: add_stat("items"))
+	var bestiary := get_node_or_null("/root/BestiaryService")
+	if bestiary:
+		bestiary.entry_unlocked.connect(_on_bestiary_unlocked)
 
 
 ## Stores the pick if it is exactly PARTY_SIZE distinct, known heroes.
@@ -41,6 +61,22 @@ func clear() -> void:
 func reset_run() -> void:
 	recruited_ids.clear()
 	lost_ids.clear()
+	run_stats = new_run_stats()
+
+
+func new_run_stats() -> Dictionary:
+	return {"elapsed_sec": 0.0, "floor_reached": 1, "floors_cleared": 0, "kills": 0, "items": 0,
+		"bestiary_new": 0, "difficulty": difficulty, "victory": false}
+
+
+func add_stat(key: String, amount: Variant = 1) -> void:
+	run_stats[key] = run_stats.get(key, 0) + amount
+
+
+## A new bestiary entry (first sighting) counts as a new record of this run.
+func _on_bestiary_unlocked(_enemy_id: String, tier: int) -> void:
+	if tier == 1:  # BestiaryEntry.Tier.SEEN
+		add_stat("bestiary_new")
 
 
 ## The floor's party: `base_ids` (the pick, or Main2d's fallback) + recruits,

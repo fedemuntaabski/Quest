@@ -148,6 +148,9 @@ func vfx_color() -> Color:
 
 ## Auto-attack / burst landed on an enemy: slash + sparks (shake only if it is a strong hit).
 func _on_attack_landed(target: HurtboxComponent, amount: int) -> void:
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.play_sfx(&"hit")
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx == null or not is_instance_valid(target):
 		return

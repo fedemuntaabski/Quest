@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_type"]
+[ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_big_demon.tres" id="2_frames"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/hunter.tres" id="3_profile"]
+[ext_resource type="Resource" path="res://resources/enemies/imp.tres" id="4_minion"]
+
+[resource]
+script = ExtResource("1_type")
+id = "boss_demon_lord"
+display_name = "Señor Demonio"
+behavior = 2
+sprite_frames = ExtResource("2_frames")
+speed_mult = 0.85
+visual_scale = 2.1
+description = "El amo del Trono. Embiste y, herido, llama a sus diablillos."
+lore = "El Nexo fue suyo antes que de nadie. Quiere recuperarlo."
+bestiary_order = 101
+base_hp = 220
+contact_damage = 5
+target_profile = ExtResource("3_profile")
+is_boss = true
+boss_tier = 1
+boss_phases = 2
+charge_cooldown = 5.0
+charge_damage = 8
+summon_type = ExtResource("4_minion")
+summon_count = 2
+summon_cooldown = 9.0
+boss_pattern = "Fase 1: embestida contra el héroe más cercano.\nFase 2 (bajo 50 % de vida): embiste más seguido e invoca diablillos cada pocos segundos."

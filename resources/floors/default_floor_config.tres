@@ -9,14 +9,15 @@
 [ext_resource type="Resource" path="res://resources/floors/enemy_pool_f3.tres" id="4_533ib"]
 [ext_resource type="Resource" uid="uid://i467ddqa5dpx" path="res://resources/floors/enemy_pool_f4.tres" id="5_erun4"]
 [ext_resource type="Resource" uid="uid://d1ebvjqkr7pu6" path="res://resources/floors/enemy_pool_f5.tres" id="6_41g3f"]
+[ext_resource type="Resource" path="res://resources/floors/run_curve.tres" id="9_kvag3"]
 
 [sub_resource type="Resource" id="RoomTypeRule_rest"]
 script = ExtResource("2_room_type_rule")
 type = 3
 chance = 0.6
-blocks_spawns = true
 heal_per_tick = 2
 heal_food_per_tick = 1
+blocks_spawns = true
 loot_chance = 0.1
 
 [sub_resource type="Resource" id="RoomTypeRule_loot"]
@@ -51,17 +52,33 @@ loot_chance = 0.15
 [sub_resource type="Resource" id="RoomTypeRule_prisoner"]
 script = ExtResource("2_room_type_rule")
 type = 7
-chance = 0.5
-blocks_spawns = true
 recruit_costs = {
 "food": 15,
 "industry": 20
 }
 recruit_cost_per_floor = 5
+blocks_spawns = true
+
+[sub_resource type="Resource" id="RoomTypeRule_altar"]
+script = ExtResource("2_room_type_rule")
+type = 8
+chance = 0.35
+chance_per_floor = 0.05
+altar_hp_pct = 0.3
+
+[sub_resource type="Resource" id="RoomTypeRule_secret"]
+script = ExtResource("2_room_type_rule")
+type = 9
+chance = 0.0
+reward_resource = "dust"
+reward_amount = 6
+reward_per_floor = 1.0
+blocks_spawns = true
+loot_chance = 1.0
 
 [resource]
 script = ExtResource("1_floor_config")
-room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite"), SubResource("RoomTypeRule_generator"), SubResource("RoomTypeRule_prisoner")])
+room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite"), SubResource("RoomTypeRule_generator"), SubResource("RoomTypeRule_prisoner"), SubResource("RoomTypeRule_altar"), SubResource("RoomTypeRule_secret")])
 enemy_hp_growth = 0.15
 enemy_damage_growth = 0.1
 enemy_pools = Array[ExtResource("1_7csa3")]([ExtResource("2_j5m1i"), ExtResource("3_kvag3"), ExtResource("4_533ib"), ExtResource("5_erun4"), ExtResource("6_41g3f")])

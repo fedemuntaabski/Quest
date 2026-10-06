@@ -22,6 +22,8 @@ const WARN_COOLDOWN_MSEC := 1500
 
 var item: ItemData
 var zone_id: String = ""
+## progresion-10: Madera/Hierro/Oro by floor (LootTable); null = plain chest.
+var tier: ChestTier
 var state: State = State.CLOSED
 
 var _sprite: Sprite2D
@@ -30,9 +32,10 @@ var _item_frame: Node2D
 var _last_warn_msec: int = -WARN_COOLDOWN_MSEC
 
 
-func setup(p_item: ItemData, p_zone_id: String) -> void:
+func setup(p_item: ItemData, p_zone_id: String, p_tier: ChestTier = null) -> void:
 	item = p_item
 	zone_id = p_zone_id
+	tier = p_tier
 
 
 func _ready() -> void:
@@ -41,6 +44,8 @@ func _ready() -> void:
 	_sprite.scale = Vector2.ONE * ArtConfig.ART_SCALE
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_sprite.texture = _tile(CLOSED_REGION)
+	if tier:
+		_sprite.modulate = tier.tint
 	add_child(_sprite)
 	queue_redraw()
 
@@ -69,6 +74,9 @@ func try_open() -> bool:
 	if vfx:
 		vfx.play(&"hit_sparks", global_position, item.color())
 	QuestLogger.info(QuestLogger.Category.MAP, "Chest in '%s' opened: %s." % [zone_id, item.id])
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.play_sfx(&"chest")
 	opened.emit(item)
 	return true
 
@@ -109,6 +117,8 @@ func _announce() -> void:
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr:
 		text_mgr.spawn_text(global_position + Vector2(0, -64), "%s (%s)" % [item.display_name, ItemData.RARITY_LABELS[item.rarity]], item.color(), item.rarity >= ItemData.Rarity.EPIC)
+		if tier:
+			text_mgr.spawn_text(global_position + Vector2(0, -86), "Cofre de %s" % tier.display_name.to_lower(), tier.tint)
 
 
 func _warn_full() -> void:

@@ -6,6 +6,12 @@ class_name FloorConfig
 ## (floor_index - 1). Consumed by FloorManager — gameplay systems ask
 ## FloorManager, never this Resource directly.
 
+@export_group("Run curve")
+## progresion-10: per-floor identity + difficulty (theme, pool, multipliers, cap,
+## raider ratio, boss, trap). When set it wins over the linear growth/arrays below,
+## which stay as the fallback for configs without a curve.
+@export var run_curve: RunCurve = preload("res://resources/floors/run_curve.tres")
+
 @export_group("Progression")
 ## Floors in a run. Clearing this floor ends the run with the normal victory.
 @export var max_floors: int = 5
@@ -30,6 +36,8 @@ class_name FloorConfig
 @export var base_max_loops: int = 1
 ## +X loop slots per floor (fractional, floored).
 @export var max_loops_per_floor: float = 0.5
+## progresion-10: chance of a secret room (MapGenerator.add_secret_room) per floor.
+@export_range(0.0, 1.0) var secret_room_chance: float = 0.6
 
 @export_group("Room types")
 ## One RoomTypeRule per special type (Rest/Loot/Elite), applied in order by
@@ -99,22 +107,41 @@ class_name FloorConfig
 @export var extraction_wave_growth: float = 1.0
 
 
+## The floor's FloorTheme (null without a run_curve).
+func theme(floor_index: int) -> FloorTheme:
+	return run_curve.theme(floor_index) if run_curve else null
+
+
 func enemy_hp_multiplier(floor_index: int) -> float:
-	return 1.0 + enemy_hp_growth * _steps(floor_index)
+	var t := theme(floor_index)
+	return t.hp_mult if t else 1.0 + enemy_hp_growth * _steps(floor_index)
 
 
 func enemy_damage_multiplier(floor_index: int) -> float:
-	return 1.0 + enemy_damage_growth * _steps(floor_index)
+	var t := theme(floor_index)
+	return t.damage_mult if t else 1.0 + enemy_damage_growth * _steps(floor_index)
+
+
+## Multiplier of the door threat chance on `floor_index` (1 without a curve).
+func threat_multiplier(floor_index: int) -> float:
+	var t := theme(floor_index)
+	return t.threat_mult if t else 1.0
 
 
 ## The roster of `floor_index` (clamped to the configured pools); null if none.
 func enemy_pool(floor_index: int) -> EnemyPool:
+	var t := theme(floor_index)
+	if t and t.enemy_pool:
+		return t.enemy_pool
 	if enemy_pools.is_empty():
 		return null
 	return enemy_pools[clampi(floor_index - 1, 0, enemy_pools.size() - 1)]
 
 
 func raider_ratio(floor_index: int) -> float:
+	var t := theme(floor_index)
+	if t:
+		return clampf(t.raider_ratio, 0.0, 1.0)
 	if raider_ratio_by_floor.is_empty():
 		return 0.0
 	return clampf(raider_ratio_by_floor[clampi(floor_index - 1, 0, raider_ratio_by_floor.size() - 1)], 0.0, 1.0)
@@ -122,6 +149,9 @@ func raider_ratio(floor_index: int) -> float:
 
 ## Max enemies alive at once on `floor_index` (0 entries = no cap).
 func max_enemies(floor_index: int) -> int:
+	var t := theme(floor_index)
+	if t:
+		return t.max_enemies
 	if max_enemies_by_floor.is_empty():
 		return 1 << 30
 	return max_enemies_by_floor[clampi(floor_index - 1, 0, max_enemies_by_floor.size() - 1)]

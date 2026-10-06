@@ -173,7 +173,8 @@ func _select(type: EnemyType) -> void:
 	_frames = _idle_frames(type) if known else _idle_frames(null)
 	_sprite.texture = BestiaryListItem.first_frame(type)
 	_sprite.modulate = Color.WHITE if known else Color.BLACK
-	_name_label.text = type.display_name if known else "???"
+	_name_label.text = (boss_label(type) + ": " if type.is_boss else "") + (type.display_name if known else "???")
+	_name_label.add_theme_color_override("font_color", QuestPalette.BLOOD_LIGHT if type.is_boss else QuestPalette.GOLD)
 	_info.text = detail_text(type, entry)
 
 
@@ -181,9 +182,11 @@ func _select(type: EnemyType) -> void:
 static func detail_text(type: EnemyType, entry: BestiaryEntry) -> String:
 	var tier := entry.tier()
 	if tier == BestiaryEntry.Tier.UNKNOWN:
-		return "Todavía no has visto a este enemigo."
+		return "Un guardián aguarda en las profundidades." if type.is_boss else "Todavía no has visto a este enemigo."
 	var profile := type.get_target_profile()
 	var lines: Array[String] = ["Comportamiento: %s" % profile.display_name, profile.description]
+	if type.is_boss:  # progresion-10: special card, the pattern is shown from the first sighting
+		lines = ["%s — %d fase%s" % [boss_label(type).to_upper(), type.boss_phases, "s" if type.boss_phases > 1 else ""], "Patrón: %s" % type.boss_pattern]
 	lines.append("Visto por primera vez en el piso %d (más profundo: %d)." % [entry.first_seen_floor, entry.max_floor_seen])
 	lines.append("Muertes: %d" % entry.kill_count)
 	if tier == BestiaryEntry.Tier.SEEN:
@@ -212,7 +215,15 @@ static func detail_text(type: EnemyType, entry: BestiaryEntry) -> String:
 	return "\n".join(lines)
 
 
+static func boss_label(type: EnemyType) -> String:
+	return "Jefe" if type.boss_tier == 1 else "Minijefe"
+
+
 static func _floor_range_text(type: EnemyType, config: FloorConfig) -> String:
+	for f in range(1, config.max_floors + 1):
+		var theme := config.theme(f)
+		if theme and theme.boss == type:
+			return "Guarda la salida del piso %d (%s)" % [f, theme.display_name]
 	var floors: Array[int] = []
 	for f in range(1, config.max_floors + 1):
 		var pool := config.enemy_pool(f)

@@ -120,6 +120,54 @@ func load_game(slot: int = current_slot) -> void:
 			player_stats_autoload.refresh_stats()
 
 
+## progresion-10: per-slot records, one Dictionary per difficulty id in [records]:
+## runs, victories, best_floor, fastest_victory_sec (0 = none), most_kills.
+const RECORDS_SECTION := "records"
+
+
+func get_records(difficulty: String, slot: int = current_slot) -> Dictionary:
+	var cfg := ConfigFile.new()
+	cfg.load(get_save_path(slot))
+	return cfg.get_value(RECORDS_SECTION, difficulty, {})
+
+
+## Folds a finished run (GameSession.run_stats) into the slot's records and saves
+## them (other sections untouched). Returns the record keys this run beat; the
+## first run of a difficulty sets the marks but beats nothing. Needs a loaded slot.
+func record_run(stats: Dictionary, slot: int = current_slot) -> Array[String]:
+	var beaten: Array[String] = []
+	if not slot_loaded:
+		QuestLogger.warn(QuestLogger.Category.SAVE, "record_run: no slot loaded, run not recorded.")
+		return beaten
+	var difficulty := str(stats.get("difficulty", "normal"))
+	var cfg := ConfigFile.new()
+	cfg.load(get_save_path(slot))
+	var rec: Dictionary = cfg.get_value(RECORDS_SECTION, difficulty, {})
+	var first := int(rec.get("runs", 0)) == 0
+	var victory := bool(stats.get("victory", false))
+	var floor_reached := int(stats.get("floor_reached", 1))
+	var kills := int(stats.get("kills", 0))
+	var time := float(stats.get("elapsed_sec", 0.0))
+	if floor_reached > int(rec.get("best_floor", 0)):
+		rec["best_floor"] = floor_reached
+		beaten.append("best_floor")
+	if kills > int(rec.get("most_kills", 0)):
+		rec["most_kills"] = kills
+		beaten.append("most_kills")
+	var fastest := float(rec.get("fastest_victory_sec", 0.0))
+	if victory and (fastest <= 0.0 or time < fastest):
+		rec["fastest_victory_sec"] = time
+		beaten.append("fastest_victory_sec")
+	rec["runs"] = int(rec.get("runs", 0)) + 1
+	rec["victories"] = int(rec.get("victories", 0)) + int(victory)
+	cfg.set_value(RECORDS_SECTION, difficulty, rec)
+	cfg.save(get_save_path(slot))
+	QuestLogger.info(QuestLogger.Category.SAVE, "Run recorded in slot %d (%s): %s." % [slot, difficulty, rec])
+	if first:
+		beaten.clear()
+	return beaten
+
+
 func has_save(slot: int) -> bool:
 	return FileAccess.file_exists(get_save_path(slot))
 

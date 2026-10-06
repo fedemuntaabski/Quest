@@ -151,7 +151,7 @@ func _order_via_path(hero: Player, zone_id: String) -> Dictionary:
 
 
 func _open_group(door: Door) -> void:
-	if door.is_opened():
+	if door.is_opened() or door.is_secret:
 		return
 	var extraction := ManagerLocator.get_extraction_manager()
 	if extraction and not extraction.can_open_doors():
@@ -185,6 +185,9 @@ func _open_group(door: Door) -> void:
 	if not opened:
 		return
 	door.disable_door()
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.play_sfx(&"door")
 
 	var group_zone_ids := room_manager.get_group_zone_ids(door.target_room_id)
 	var final_zone_id := group_zone_ids[-1] if not group_zone_ids.is_empty() else opener.current_zone_id

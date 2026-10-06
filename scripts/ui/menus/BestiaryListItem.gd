@@ -32,7 +32,7 @@ func set_tier(p_tier: BestiaryEntry.Tier) -> void:
 	var tint := Color.WHITE if known else Color.BLACK
 	for state in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_focus_color"]:
 		add_theme_color_override(state, tint)
-	tooltip_text = type.display_name if known else "???"
+	tooltip_text = type.display_name if known else ("??? (jefe)" if type.is_boss else "???")
 	_apply_style()
 
 
@@ -41,8 +41,10 @@ func set_selected(on: bool) -> void:
 	_apply_style()
 
 
+## Bosses (progresion-10): blood-red frame, even as a silhouette.
 func _apply_style() -> void:
-	var border := QuestPalette.GOLD if _selected else QuestPalette.UI_PANEL_BORDER
+	var idle_border := QuestPalette.BLOOD_LIGHT if type and type.is_boss else QuestPalette.UI_PANEL_BORDER
+	var border := QuestPalette.GOLD if _selected else idle_border
 	var bg := QuestPalette.DUNGEON_MUD if tier != BestiaryEntry.Tier.UNKNOWN else QuestPalette.DUNGEON_STONE
 	add_theme_stylebox_override("normal", UiStyles.build_panel_style(bg, border, 3 if _selected else 2, 6, 6))
 	add_theme_stylebox_override("hover", UiStyles.build_panel_style(bg, QuestPalette.GOLD_LIGHT, 2, 6, 6))

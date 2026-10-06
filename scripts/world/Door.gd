@@ -23,6 +23,9 @@ var room_b_id: String = ""
 var east_west: bool = false
 
 var is_open: bool = false
+## progresion-10: secret-room door (CorridorData.is_secret): hidden until its group
+## is revealed, never opened by a click.
+var is_secret: bool = false
 
 const SHEET := preload("res://assets/art/_source/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png")
 const LEAF_PX := Vector2(32, 32)

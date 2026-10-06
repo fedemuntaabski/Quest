@@ -16,6 +16,10 @@ class_name CorridorData
 ## Extra corridor between two rooms already joined by the tree (a cycle).
 ## Never an entry corridor: opening it reveals only itself, no room.
 @export var is_loop: bool = false
+## progresion-10: leads into the secret room (MapGenerator.add_secret_room). Its
+## Door is hidden and never clicked: the group opens by itself once both rooms
+## next to the secret room are discovered (Main2d._check_secret_rooms).
+@export var is_secret: bool = false
 
 
 func get_rect() -> Rect2i:

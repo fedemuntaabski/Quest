@@ -14,6 +14,8 @@ signal invasion_triggered(spawn_rooms: Array[RoomZone], enemy_count: int)
 signal enemies_appeared(zone_ids: Array[String], count: int, source: String)
 ## Every spawned Enemy (the bestiary counts the first one as "seen").
 signal enemy_spawned(enemy: Enemy)
+## progresion-10: the floor's boss appeared in the exit room (HUD boss bar).
+signal boss_spawned(boss: Enemy)
 
 var room_manager: RoomManager
 var door_turn_system: DoorTurnSystem
@@ -22,6 +24,8 @@ var floor_manager: FloorManager
 var _enemies: Array[Enemy] = []
 var _enemies_root: Node2D
 var _spawn_count: int = 0
+## The floor's boss (null until the exit room is discovered, or no boss / dead).
+var boss: Enemy
 
 
 func _ready() -> void:
@@ -43,6 +47,44 @@ func setup(p_room_manager: RoomManager, p_door_turn_system: DoorTurnSystem = nul
 	floor_manager = p_floor_manager
 	if door_turn_system and not door_turn_system.turn_advanced.is_connected(_on_turn_advanced):
 		door_turn_system.turn_advanced.connect(_on_turn_advanced)
+	if door_turn_system and not door_turn_system.room_revealed.is_connected(_on_room_revealed):
+		door_turn_system.room_revealed.connect(_on_room_revealed)
+
+
+## progresion-10: the exit room's discovery wakes the floor's boss (FloorTheme.boss).
+func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
+	var theme := floor_manager.theme() if floor_manager else null
+	if theme == null or theme.boss == null or boss != null:
+		return
+	for zone_id in room_manager.get_group_zone_ids(group_id):
+		if room_manager.is_exit_room(zone_id):
+			spawn_boss(zone_id, theme.boss)
+
+
+## The boss ignores the enemy cap and never gets a room-type multiplier.
+func spawn_boss(zone_id: String, type: EnemyType) -> Enemy:
+	boss = _spawn_enemy(zone_id, room_manager.get_center(zone_id), type, true)
+	if boss:
+		boss_spawned.emit(boss)
+		enemies_appeared.emit([zone_id] as Array[String], 1, "boss")
+		QuestLogger.info(QuestLogger.Category.ENEMY, "Boss '%s' spawned in '%s'." % [type.id, zone_id])
+	return boss
+
+
+func is_boss_alive() -> bool:
+	return is_instance_valid(boss) and boss.is_alive()
+
+
+## Boss phase 2 (BossBrain): `count` enemies of `type` around `zone_id` (cap applies).
+func spawn_minions(zone_id: String, type: EnemyType, count: int) -> int:
+	var spawned := 0
+	for i in count:
+		if _spawn_enemy(zone_id, room_manager.get_center(zone_id), type) == null:
+			break
+		spawned += 1
+	if spawned > 0:
+		enemies_appeared.emit([zone_id] as Array[String], spawned, "summon")
+	return spawned
 
 
 ## Dark rooms enemies may spawn in: RoomManager.get_dark_rooms() minus room
@@ -75,7 +117,7 @@ func _on_turn_advanced(current_turn: int) -> void:
 		return
 
 	var door_roll := _door_roll()
-	var spawn_chance: float = door_roll.threat_chance(current_turn, _floor_index())
+	var spawn_chance: float = floor_manager.threat_chance(current_turn) if floor_manager else door_roll.threat_chance(current_turn, 1)
 	var enemy_count: int = door_roll.enemy_count(current_turn, _floor_index())
 	var roll: float = randf()
 	if roll > spawn_chance:
@@ -143,9 +185,10 @@ func _door_roll() -> DoorRollConfig:
 	return floor_manager.config.door_roll if floor_manager else FloorManager.DEFAULT_CONFIG.door_roll
 
 
-## Null when the floor's simultaneous cap is reached.
-func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
-	if floor_manager and alive_count() >= floor_manager.max_enemies():
+## Null when the floor's simultaneous cap is reached (`ignore_cap`: bosses).
+## `forced_type` skips the role/pool roll (bosses, summons).
+func _spawn_enemy(zone_id: String, world_position: Vector2, forced_type: EnemyType = null, ignore_cap: bool = false) -> Enemy:
+	if floor_manager and not ignore_cap and alive_count() >= floor_manager.max_enemies():
 		QuestLogger.info(QuestLogger.Category.ENEMY, "Spawn refused: cap of %d enemies reached." % floor_manager.max_enemies())
 		return null
 	var enemy := ENEMY_SCENE.instantiate() as Enemy
@@ -155,11 +198,11 @@ func _spawn_enemy(zone_id: String, world_position: Vector2) -> Enemy:
 	_spawn_count += 1
 	var hp_mult: float = floor_manager.enemy_hp_multiplier() if floor_manager else 1.0
 	var dmg_mult: float = floor_manager.enemy_damage_multiplier() if floor_manager else 1.0
-	var rule := _room_rule(zone_id)  # Elite rooms: tougher enemies
+	var rule := _room_rule(zone_id) if forced_type == null else null  # Elite rooms: tougher enemies
 	if rule:
 		hp_mult *= rule.enemy_hp_mult
 		dmg_mult *= rule.enemy_damage_mult
-	var type := _roll_type(zone_id)
+	var type := forced_type if forced_type else _roll_type(zone_id)
 	enemy.configure(Enemy.Variant.SWARM, zone_id, hp_mult, dmg_mult, type)
 	enemy.died.connect(_on_enemy_died)
 	_enemies.append(enemy)
@@ -224,3 +267,20 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	var bestiary := ManagerLocator.get_bestiary()
 	if bestiary and enemy.killed_by_damage and enemy.type:
 		bestiary.register_kill(enemy.type, _floor_index())
+	var session := ManagerLocator.get_game_session()
+	if session and enemy.killed_by_damage:
+		session.add_stat("kills")
+	if enemy == boss:
+		_on_boss_defeated()
+
+
+## The exit is free: a Nexo carrier already waiting there wins at once.
+func _on_boss_defeated() -> void:
+	var hud := ManagerLocator.get_hud()
+	if hud:
+		hud.show_hint("¡Jefe derrotado!", "%s cayó. La salida está libre." % boss.type.display_name, QuestPalette.GOLD_LIGHT)
+	var extraction := ManagerLocator.get_extraction_manager()
+	for hero in ManagerLocator.get_heroes():
+		if extraction and hero.is_carrying_nexo and hero.stats.is_alive() and room_manager.is_exit_room(hero.current_zone_id):
+			extraction.declare_victory()
+			return

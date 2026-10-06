@@ -13,6 +13,8 @@ const MAIN2D_SCENE := preload("res://scenes/Main2d.tscn")
 const HUD_SCENE := preload("res://scenes/hud/HUD.tscn")
 
 const FADE_DURATION := 0.25
+## progresion-10: "Piso N — Name" card held on the black screen between floors.
+const FLOOR_CARD_SEC := 0.9
 
 @onready var world_container: Node2D = $WorldContainer
 @onready var ui_container: CanvasLayer = $UIContainer
@@ -74,6 +76,7 @@ func start_gameplay() -> void:
 	await _fade_to_black()
 	await _clear_containers(true, true, true)
 	_begin_new_run()
+	await _show_floor_card()
 	_current_world_add(MAIN2D_SCENE.instantiate())
 	_current_hud_add(HUD_SCENE.instantiate())
 	await _fade_from_black()
@@ -119,6 +122,7 @@ func _reload_world(new_run: bool) -> void:
 	await _clear_containers(true, false, true)
 	if new_run:
 		_begin_new_run()
+	await _show_floor_card()
 	_current_world_add(MAIN2D_SCENE.instantiate())
 	_current_hud_add(HUD_SCENE.instantiate())
 	await _fade_from_black()
@@ -134,7 +138,8 @@ func _begin_new_run() -> void:
 	FloorManager.reset_seen_types()
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager:
-		resource_manager.reset_resources()
+		var mult := FloorManager.resolve_difficulty().start_resource_mult  # progresion-10
+		resource_manager.reset_resources(roundi(15 * mult), roundi(15 * mult), roundi(10 * mult), roundi(20 * mult))
 		resource_manager.reset_research()
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
@@ -161,6 +166,28 @@ func _current_ui_add(node: Node) -> void:
 
 func _current_hud_add(node: Node) -> void:
 	hud_container.add_child(node)
+
+
+## Floor title over the black transition screen (FloorTheme.display_name); the
+## label is a child of the fading ColorRect, so it fades out with it.
+func _show_floor_card() -> void:
+	var label := transition_rect.get_node_or_null("FloorCard") as Label
+	if label == null:
+		label = Label.new()
+		label.name = "FloorCard"
+		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 44)
+		label.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
+		transition_rect.add_child(label)
+	var theme := FloorManager.DEFAULT_CONFIG.theme(current_floor)
+	label.text = "Piso %d — %s" % [current_floor, theme.display_name] if theme else "Piso %d" % current_floor
+	label.modulate.a = 0.0
+	var tween := create_tween().set_ignore_time_scale()
+	tween.tween_property(label, "modulate:a", 1.0, FLOOR_CARD_SEC * 0.3)
+	tween.tween_interval(FLOOR_CARD_SEC * 0.7)
+	await tween.finished
 
 
 func _fade_to_black(duration: float = FADE_DURATION) -> void:

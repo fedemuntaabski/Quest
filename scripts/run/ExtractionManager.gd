@@ -69,7 +69,19 @@ func can_open_doors() -> bool:
 	return current_phase != Phase.EXTRACTION
 
 
+## progresion-10: false while the floor's boss guards the exit (says so on screen).
+func can_declare_victory() -> bool:
+	if enemy_manager == null or not enemy_manager.is_boss_alive():
+		return true
+	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
+	if text_mgr and room_manager:
+		text_mgr.spawn_text(room_manager.get_center(room_manager.get_exit_zone_id()), "El jefe custodia la salida", QuestPalette.BLOOD_LIGHT, true)
+	return false
+
+
 func declare_victory() -> void:
+	if not can_declare_victory():
+		return
 	_spawn_timer.stop()
 	_stage_timer.stop()
 	victory_declared.emit()

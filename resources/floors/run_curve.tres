@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="RunCurve" format=3 uid="uid://ch3yfwklv62m0"]
+
+[ext_resource type="Script" uid="uid://c6r8ejl7uvtyp" path="res://scripts/core/floors/RunCurve.gd" id="1_curve"]
+[ext_resource type="Script" uid="uid://dpyivh2bwtkcq" path="res://scripts/core/floors/FloorTheme.gd" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/enemies/boss_ogre_chief.tres" id="boss_3"]
+[ext_resource type="Resource" path="res://resources/enemies/boss_demon_lord.tres" id="boss_5"]
+[ext_resource type="Resource" path="res://resources/floors/enemy_pool_f1.tres" id="pool_1"]
+[ext_resource type="Resource" path="res://resources/floors/enemy_pool_f2.tres" id="pool_2"]
+[ext_resource type="Resource" path="res://resources/floors/enemy_pool_f3.tres" id="pool_3"]
+[ext_resource type="Resource" uid="uid://i467ddqa5dpx" path="res://resources/floors/enemy_pool_f4.tres" id="pool_4"]
+[ext_resource type="Resource" uid="uid://d1ebvjqkr7pu6" path="res://resources/floors/enemy_pool_f5.tres" id="pool_5"]
+
+[sub_resource type="Resource" id="floor_1"]
+script = ExtResource("2_theme")
+display_name = "Criptas"
+music_path = "res://assets/audio/music/floor_1.ogg"
+enemy_pool = ExtResource("pool_1")
+max_enemies = 6
+raider_ratio = 0.05
+
+[sub_resource type="Resource" id="floor_2"]
+script = ExtResource("2_theme")
+display_name = "Catacumbas"
+tint = Color(0.82, 0.9, 1, 1)
+music_path = "res://assets/audio/music/floor_2.ogg"
+enemy_pool = ExtResource("pool_2")
+hp_mult = 1.15
+damage_mult = 1.1
+trap_name = "Púas"
+trap_damage = 2
+trap_chance = 0.35
+trap_color = Color(0.75, 0.75, 0.8, 1)
+
+[sub_resource type="Resource" id="floor_3"]
+script = ExtResource("2_theme")
+display_name = "Fortaleza orca"
+tint = Color(0.86, 1, 0.8, 1)
+music_path = "res://assets/audio/music/floor_3.ogg"
+enemy_pool = ExtResource("pool_3")
+hp_mult = 1.3
+damage_mult = 1.2
+max_enemies = 10
+raider_ratio = 0.35
+boss = ExtResource("boss_3")
+trap_name = "Ácido"
+trap_damage = 3
+trap_chance = 0.4
+trap_color = Color(0.5, 0.95, 0.35, 1)
+
+[sub_resource type="Resource" id="floor_4"]
+script = ExtResource("2_theme")
+display_name = "Abismo"
+tint = Color(0.88, 0.78, 1, 1)
+music_path = "res://assets/audio/music/floor_4.ogg"
+enemy_pool = ExtResource("pool_4")
+hp_mult = 1.45
+damage_mult = 1.3
+max_enemies = 12
+raider_ratio = 0.5
+trap_name = "Fuego"
+trap_damage = 4
+trap_chance = 0.45
+trap_color = Color(1, 0.55, 0.2, 1)
+
+[sub_resource type="Resource" id="floor_5"]
+script = ExtResource("2_theme")
+display_name = "Trono del demonio"
+tint = Color(1, 0.76, 0.7, 1)
+music_path = "res://assets/audio/music/floor_5.ogg"
+enemy_pool = ExtResource("pool_5")
+hp_mult = 1.6
+damage_mult = 1.4
+max_enemies = 14
+raider_ratio = 0.6
+boss = ExtResource("boss_5")
+trap_name = "Runas malditas"
+trap_damage = 5
+trap_chance = 0.5
+trap_color = Color(0.85, 0.3, 1, 1)
+
+[resource]
+script = ExtResource("1_curve")
+floors = Array[ExtResource("2_theme")]([SubResource("floor_1"), SubResource("floor_2"), SubResource("floor_3"), SubResource("floor_4"), SubResource("floor_5")])

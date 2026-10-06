@@ -25,6 +25,8 @@ var map_seed: int = 0
 ## Null = no map info: every discovery pays plain dust (as before session 11).
 var room_manager: RoomManager
 var _completed: bool = false
+## progresion-10: the run's difficulty (GameSession.difficulty), multiplied over the curve.
+var difficulty: DifficultyLevel
 ## Types whose long hint was already shown this run (survives floors).
 static var _seen_types: Dictionary = {}
 ## Rest rooms (heroes-9): game seconds accumulated towards the next heal tick,
@@ -40,6 +42,10 @@ func _ready() -> void:
 func setup(p_floor_index: int, run_seed: int = 0) -> void:
 	floor_index = maxi(p_floor_index, 1)
 	map_seed = hash([run_seed, floor_index])
+	difficulty = resolve_difficulty()
+	var session := ManagerLocator.get_game_session()
+	if session:
+		session.run_stats["floor_reached"] = maxi(int(session.run_stats.get("floor_reached", 1)), floor_index)
 	if floor_index > 1 and config.dust_bonus_on_descend > 0:
 		var resource_manager := ManagerLocator.get_resource_manager()
 		if resource_manager:
@@ -55,6 +61,9 @@ func complete_floor() -> void:
 	QuestLogger.info(QuestLogger.Category.MAP, "Floor %d completed." % floor_index)
 	_lose_downed_heroes()
 	_grant_floor_end_loot()
+	var session := ManagerLocator.get_game_session()
+	if session:
+		session.add_stat("floors_cleared")
 	floor_completed.emit(floor_index)
 
 
@@ -134,7 +143,7 @@ func _grant_floor_end_loot() -> void:
 	rng.seed = hash([map_seed, "floor_end"])
 	if rng.randf() >= config.floor_end_loot_chance:
 		return
-	var item := LootSpawner.roll_item(rng)
+	var item := LootSpawner.roll_item(rng, floor_index)
 	if item == null:
 		return
 	var hud := ManagerLocator.get_hud()
@@ -289,17 +298,31 @@ func is_final_floor() -> bool:
 	return floor_index >= config.max_floors
 
 
+## The difficulty picked for this run (GameSession.difficulty), Normal by default.
+static func resolve_difficulty() -> DifficultyLevel:
+	var session := ManagerLocator.get_game_session()
+	var cfg := DifficultyConfig.get_default()
+	return cfg.get_level(session.difficulty if session else "normal") if cfg else DifficultyLevel.new()
+
+
+## This floor's FloorTheme (name, tint, music, boss, trap); null without a RunCurve.
+func theme() -> FloorTheme:
+	return config.theme(floor_index)
+
+
 func enemy_hp_multiplier() -> float:
-	return config.enemy_hp_multiplier(floor_index)
+	return config.enemy_hp_multiplier(floor_index) * difficulty.hp_mult
 
 
 func enemy_damage_multiplier() -> float:
-	return config.enemy_damage_multiplier(floor_index)
+	return config.enemy_damage_multiplier(floor_index) * difficulty.damage_mult
 
 
-## Threat chance / enemy count of a door opened as the `doors_opened`-th of this floor.
+## Threat chance / enemy count of a door opened as the `doors_opened`-th of this floor
+## (DoorRollConfig x the floor's threat_mult x the difficulty's, capped at max_chance).
 func threat_chance(doors_opened: int) -> float:
-	return config.door_roll.threat_chance(doors_opened, floor_index)
+	var chance := config.door_roll.threat_chance(doors_opened, floor_index) * config.threat_multiplier(floor_index) * difficulty.threat_mult
+	return clampf(chance, 0.0, config.door_roll.max_chance)
 
 
 func threat_enemy_count(doors_opened: int) -> int:
@@ -307,7 +330,11 @@ func threat_enemy_count(doors_opened: int) -> int:
 
 
 func max_enemies() -> int:
-	return config.max_enemies(floor_index)
+	return config.max_enemies(floor_index) + difficulty.extra_max_enemies
+
+
+func nexo_max_hp() -> int:
+	return maxi(1, roundi(config.nexo_max_hp * difficulty.nexo_hp_mult))
 
 
 func carrier_speed_mult() -> float:

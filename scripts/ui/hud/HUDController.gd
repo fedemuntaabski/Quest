@@ -60,6 +60,7 @@ var _hint_panel: PanelContainer
 var _hint_title: Label
 var _hint_body: Label
 var _hint_tween: Tween
+var boss_bar: BossBar
 ## Red blinking screen border while raiders hit the Nexo (Nexo.under_attack_changed).
 var nexo_alert: Panel
 var _alert_tween: Tween
@@ -100,6 +101,8 @@ func _ready() -> void:
 			em.invasion_triggered.connect(_on_invasion_triggered)
 		if not em.enemies_appeared.is_connected(_on_enemies_appeared):
 			em.enemies_appeared.connect(_on_enemies_appeared)
+		if not em.boss_spawned.is_connected(_on_boss_spawned):
+			em.boss_spawned.connect(_on_boss_spawned)
 	else:
 		QuestLogger.warn(QuestLogger.Category.UI, "HUD: EnemyManager not found; invasion alert disabled.")
 
@@ -484,12 +487,27 @@ func _on_enemies_appeared(zone_ids: Array[String], count: int, source: String) -
 		names.append(_room_label(room_manager, zone_id))
 		if text_mgr and room_manager:
 			text_mgr.spawn_text(room_manager.get_center(zone_id), "¡Enemigos!", ALERT_COLOR, true)
-	if source == "wave":
+	if source == "boss":
+		pass  # _on_boss_spawned says it
+	elif source == "summon":
+		show_hint("Invocación", "El jefe llama refuerzos en: %s" % ", ".join(names), ALERT_COLOR)
+	elif source == "wave":
 		show_hint("Oleada", "%d enemigos entran por: %s" % [count, ", ".join(names)], ALERT_COLOR)
 		trigger_invasion_alert()
 	else:
 		show_hint("Invasión", "%d enemigos aparecieron en: %s" % [count, ", ".join(names)], ALERT_COLOR)
 	_play_alert()
+
+
+## progresion-10: the floor's boss woke up in the exit room.
+func _on_boss_spawned(boss: Enemy) -> void:
+	if boss_bar == null:
+		boss_bar = BossBar.new()
+		boss_bar.name = "BossBar"
+		$Control.add_child(boss_bar)
+	boss_bar.track(boss)
+	show_hint(boss.type.display_name, "Custodia la salida: derrótalo para poder extraer el Nexo.", QuestPalette.BLOOD_LIGHT)
+	trigger_invasion_alert()
 
 
 ## "Sala 3" for plain rooms, the type name ("Élite", "Botín"...) for special ones.

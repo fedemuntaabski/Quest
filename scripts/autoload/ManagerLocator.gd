@@ -35,6 +35,11 @@ static func get_bestiary() -> BestiaryService:
 	return get_autoload("BestiaryService") as BestiaryService
 
 
+## progresion-10: music + SFX (autoload; no class_name, so plain Node).
+static func get_audio() -> Node:
+	return get_autoload("AudioDirector")
+
+
 static func get_game_session() -> GameSession:
 	return get_autoload("GameSession") as GameSession
 

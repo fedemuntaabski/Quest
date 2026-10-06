@@ -40,6 +40,10 @@ class_name RoomTypeRule
 @export var enemy_damage_mult: float = 1.0
 ## Extra MAJOR build slots once the room is lit (Generator room: 2 majors).
 @export var extra_major_slots: int = 0
+## Altar (progresion-10): an AltarShrine that trades this share of a hero's max HP
+## for an item of at least altar_min_rarity (ItemData.Rarity). 0 = no altar.
+@export_range(0.0, 0.9) var altar_hp_pct: float = 0.0
+@export var altar_min_rarity: int = 2
 
 @export_group("Loot")
 ## Chance that a room of this type holds a chest with an item (LootSpawner).

@@ -595,7 +595,7 @@ func refresh_door_visibility() -> void:
 	for group_id in _doors_by_group.keys():
 		var door: Door = _doors_by_group[group_id]
 		var from_visible := is_zone_visible(door.from_zone_id) if door.from_zone_id != "" else true
-		door.visible = from_visible
+		door.visible = from_visible and (not door.is_secret or is_group_revealed(group_id))
 		door.set_leaf(door.is_opened())
 
 

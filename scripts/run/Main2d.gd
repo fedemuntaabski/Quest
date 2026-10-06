@@ -64,6 +64,9 @@ var pause_controller: PauseController
 var hero_input: HeroInputController
 var loot_spawner: LootSpawner
 var prisoner_spawner: PrisonerSpawner
+var hazard_spawner: HazardSpawner
+## zone_id -> AltarShrine (progresion-10).
+var altars: Dictionary = {}
 
 # ─────────────────────────────────────────────
 # INIT
@@ -84,6 +87,10 @@ func _ready() -> void:
 	_setup_player_action_controller()
 	_setup_controllers()
 	_connect_signals()
+	var audio := ManagerLocator.get_audio()
+	var theme := floor_manager.theme()
+	if audio and theme:
+		audio.play_music(theme.music_path)
 
 func _setup_controllers() -> void:
 	pause_controller = PauseController.new()
@@ -105,6 +112,11 @@ func _setup_controllers() -> void:
 	prisoner_spawner.name = "PrisonerSpawner"
 	add_child(prisoner_spawner)
 	prisoner_spawner.setup(room_manager, door_turn_system, floor_manager, recruit_hero)
+
+	hazard_spawner = HazardSpawner.new()
+	hazard_spawner.name = "HazardSpawner"
+	add_child(hazard_spawner)
+	hazard_spawner.setup(room_manager, door_turn_system, floor_manager)
 
 func _ensure_game_state_manager() -> void:
 	game_state_manager = get_node_or_null("GameStateManager") as GameStateManager
@@ -174,6 +186,8 @@ func recruit_hero(hero_id: String, zone_id: String) -> Player:
 		session.add_recruit(hero_id)
 	if hero and loot_spawner:
 		loot_spawner.watch_hero(hero)
+	if hero and hazard_spawner:
+		hazard_spawner.watch_hero(hero)
 	if hero and player_action_controller:
 		player_action_controller.refresh_zones()
 	QuestLogger.info(QuestLogger.Category.GENERAL, "Main2d: recruited '%s' in '%s'." % [hero_id, zone_id])
@@ -215,6 +229,18 @@ func _setup_room_manager() -> void:
 	tile_renderer.build(map_layout, room_manager.visual_config)
 	room_manager.tile_renderer = tile_renderer
 	floor_layer.visible = false
+	_apply_floor_theme()
+
+
+## progresion-10: the floor's tint on the drawn map and the dark canvas.
+func _apply_floor_theme() -> void:
+	var theme := floor_manager.theme()
+	if theme == null:
+		return
+	tile_renderer.modulate = theme.tint
+	var dark := room_manager.get_node_or_null("DarkCanvas") as CanvasModulate
+	if dark:
+		dark.color = room_manager.visual_config.dark_canvas_color * theme.tint
 
 
 func _build_map_layout() -> MapLayout:
@@ -263,7 +289,7 @@ func _spawn_nexo() -> void:
 	nexo = NEXO_SCENE.instantiate() as Nexo
 	nexo.name = "Nexo"
 	nexo.global_position = room_manager.get_center(room_manager.get_start_zone_id()) + NEXO_OFFSET
-	nexo.max_hp = floor_manager.config.nexo_max_hp if floor_manager and floor_manager.config else nexo.max_hp
+	nexo.max_hp = floor_manager.nexo_max_hp() if floor_manager and floor_manager.config else nexo.max_hp
 	add_child(nexo)
 	nexo.destroyed.connect(_on_player_died)  # same defeat as a dead hero
 
@@ -287,6 +313,7 @@ func _register_groups_and_doors() -> void:
 		door.from_zone_id = corridor.room_a
 		door.cell = corridor.door_cell
 		door.east_west = corridor.is_east_west(map_layout.get_room(corridor.room_a))
+		door.is_secret = corridor.is_secret
 		doors_root.add_child(door)
 		room_manager.register_door(door)
 
@@ -306,6 +333,46 @@ func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 
 	if player_action_controller:
 		player_action_controller.refresh_zones()
+	for zone_id in room_manager.get_group_zone_ids(group_id):
+		if room_manager.get_room_type(zone_id) == RoomData.RoomType.ALTAR and not altars.has(zone_id):
+			_spawn_altar(zone_id)
+	_check_secret_rooms.call_deferred()  # after this discovery's own rewards/listeners
+
+
+## progresion-10: Altar rooms get an AltarShrine on discovery.
+func _spawn_altar(zone_id: String) -> AltarShrine:
+	var rule := floor_manager.room_type_rule(RoomData.RoomType.ALTAR)
+	var altar := AltarShrine.new()
+	altar.name = "Altar_%s" % zone_id
+	altar.setup(zone_id, rule.altar_hp_pct if rule else 0.3, rule.altar_min_rarity if rule else ItemData.Rarity.RARE, floor_manager.floor_index, floor_manager.map_seed)
+	altar.position = room_manager.get_center(zone_id) + Vector2(0, -40)
+	add_child(altar)
+	altars[zone_id] = altar
+	return altar
+
+
+## progresion-10: a secret room opens by itself (no turn, no threat) once both
+## rooms next to it are discovered — "two adjacent doors opened".
+func _check_secret_rooms() -> void:
+	for room in map_layout.rooms:
+		if room.get_room_type() != RoomData.RoomType.SECRET or room_manager.is_zone_revealed(room.id):
+			continue
+		var ready := room.neighbors.size() >= 2
+		for neighbor in room.neighbors:
+			ready = ready and room_manager.is_zone_revealed(neighbor)
+		if not ready:
+			continue
+		for corridor in map_layout.corridors:
+			if corridor.is_secret and corridor.room_b == room.id:
+				var group := room_manager.get_group_id(corridor.id)
+				var door := room_manager.get_door_for_group(group)
+				if door:
+					door.disable_door()
+				door_turn_system.reveal_room(group)
+		room_manager.refresh_door_visibility()
+		var hud := ManagerLocator.get_hud()
+		if hud:
+			hud.show_hint("¡Sala secreta!", "Al abrir las dos salas vecinas se reveló un pasaje oculto.", QuestPalette.GOLD_LIGHT)
 
 func _setup_player_action_controller() -> void:
 	if player_action_controller:
@@ -326,6 +393,7 @@ func _connect_signals() -> void:
 	death_overlay.exit_requested.connect(_go_to_main_menu)
 	victory_overlay.next_floor_requested.connect(_go_to_next_floor)
 	victory_overlay.return_requested.connect(_go_to_main_menu)
+	victory_overlay.new_run_requested.connect(_reload_current_scene)
 
 	if pause_menu:
 		pause_menu.close()
@@ -356,6 +424,46 @@ func _input(event: InputEvent) -> void:
 		if player_stats:
 			player_stats.cycle_active_hero()
 		get_viewport().set_input_as_handled()
+
+## progresion-10: run time = real time while the run is ACTIVE (the tactical pause
+## counts, the Esc menu and the end screens don't).
+var _last_tick_usec: int = 0
+
+
+func _process(_delta: float) -> void:
+	var now := Time.get_ticks_usec()
+	var session := ManagerLocator.get_game_session()
+	if session and _last_tick_usec > 0 and _is_gameplay_active():
+		session.run_stats["elapsed_sec"] = float(session.run_stats.get("elapsed_sec", 0.0)) + (now - _last_tick_usec) / 1000000.0
+	_last_tick_usec = now
+
+
+## Closes the run: stats + fallen heroes, records into the save slot. Returns
+## {stats, new_records, records} for the end screen's RunSummary.
+func finish_run(victory: bool) -> Dictionary:
+	var session := ManagerLocator.get_game_session()
+	var stats: Dictionary = session.run_stats.duplicate() if session else {}
+	stats["victory"] = victory
+	var fallen: Array[String] = []
+	var player_stats := ManagerLocator.get_player_stats()
+	var ids: Array[String] = session.lost_ids.duplicate() if session else []
+	if player_stats:
+		for id in player_stats.get_downed_ids():
+			if not ids.has(id):
+				ids.append(id)
+	for id in ids:
+		var data := CharacterDatabase.get_by_id(id)
+		fallen.append(data.display_name if data else id)
+	stats["heroes_fallen"] = fallen
+	var save_mgr := ManagerLocator.get_save_manager()
+	var new_records: Array[String] = save_mgr.record_run(stats) if save_mgr else []
+	var records: Dictionary = save_mgr.get_records(str(stats.get("difficulty", "normal"))) if save_mgr and save_mgr.slot_loaded else {}
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.stop_music()
+		audio.play_sfx(&"victory" if victory else &"defeat")
+	return {"stats": stats, "new_records": new_records, "records": records}
+
 
 func _exit_tree() -> void:
 	var vfx := get_tree().get_first_node_in_group("vfx_manager") if is_inside_tree() else null
@@ -395,11 +503,21 @@ func _on_player_died() -> void:
 			pause_menu.close()
 		get_tree().paused = true
 
+	var result := finish_run(false)
+	death_overlay.summary.fill(result["stats"], result["new_records"], result["records"])
 	death_overlay.show_screen()
 
 func _on_victory() -> void:
 	if pause_menu:
 		pause_menu.close()
+	if floor_manager.is_final_floor():
+		var result := finish_run(true)
+		victory_overlay.summary.fill(result["stats"], result["new_records"], result["records"])
+		victory_overlay.summary.visible = true
+	else:
+		var audio := ManagerLocator.get_audio()
+		if audio:
+			audio.play_sfx(&"victory")
 
 	victory_overlay.show_screen()
 

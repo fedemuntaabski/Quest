@@ -155,9 +155,53 @@ func _build_ui() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	buttons.add_child(spacer)
+	buttons.add_child(_build_difficulty_row())
+	var spacer_2 := Control.new()
+	spacer_2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	buttons.add_child(spacer_2)
 	start_button = _make_action_button("COMENZAR", 26)
 	start_button.pressed.connect(_on_start_pressed)
 	buttons.add_child(start_button)
+
+
+## progresion-10: Normal / Difícil toggles (DifficultyConfig), stored in
+## GameSession.difficulty when picked; the run reads it from there.
+var difficulty_buttons: Dictionary = {}
+
+
+func _build_difficulty_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	var label := Label.new()
+	label.text = "Dificultad:"
+	label.add_theme_font_override("font", UI_FONT)
+	label.add_theme_color_override("font_color", Color(0.85, 0.72, 0.45))
+	row.add_child(label)
+	var session := ManagerLocator.get_game_session()
+	var current: String = session.difficulty if session else "normal"
+	var group := ButtonGroup.new()
+	var config := DifficultyConfig.get_default()
+	for level in (config.levels if config else []):
+		var btn := _make_action_button(level.display_name.to_upper(), 20)
+		btn.custom_minimum_size = Vector2(140, 48)
+		btn.toggle_mode = true
+		btn.button_group = group
+		btn.button_pressed = level.id == current
+		btn.tooltip_text = level.description
+		btn.pressed.connect(set_difficulty.bind(level.id))
+		row.add_child(btn)
+		difficulty_buttons[level.id] = btn
+	return row
+
+
+func set_difficulty(id: String) -> void:
+	var session := ManagerLocator.get_game_session()
+	if session:
+		session.difficulty = id
+	if difficulty_buttons.has(id):
+		(difficulty_buttons[id] as Button).set_pressed_no_signal(true)
+	_play_click()
 
 
 func _build_card(data: CharacterData) -> Button:

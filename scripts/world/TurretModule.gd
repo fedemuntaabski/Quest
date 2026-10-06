@@ -62,6 +62,9 @@ func _on_fire_timer_timeout() -> void:
 	var to := target.global_position
 	var hit := get_damage()
 	target.take_damage(hit)
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.play_sfx(&"tower")
 	if splash_radius > 0.0:
 		for other in get_tree().get_nodes_in_group("enemies"):
 			if other != target and is_instance_valid(other) and other.global_position.distance_to(to) <= splash_radius:

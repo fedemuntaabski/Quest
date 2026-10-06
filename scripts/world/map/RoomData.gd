@@ -8,7 +8,8 @@ class_name RoomData
 ## is_exit. The rest come from MapGenerator.assign_room_types (FloorConfig
 ## RoomTypeRules); COMBAT is the plain default. Names, icons, colors and banners live in
 ## resources/maps/room_type_visual_config.tres, not here.
-enum RoomType { COMBAT, START, EXIT, REST, LOOT, ELITE, GENERATOR, PRISONER }
+## progresion-10: ALTAR (8) and SECRET (9, MapGenerator.add_secret_room, never rolled).
+enum RoomType { COMBAT, START, EXIT, REST, LOOT, ELITE, GENERATOR, PRISONER, ALTAR, SECRET }
 
 @export var id: String = ""
 @export var room_type: RoomType = RoomType.COMBAT

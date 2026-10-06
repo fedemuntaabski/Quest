@@ -18,11 +18,14 @@ extends Control
 
 var flow: MainMenuFlow
 var _button_tweens: Dictionary = {}
+## progresion-10: code-built copy of OptionsButton (style), opens CreditsPanel.
+var credits_button: Button
 
 
 func _ready() -> void:
 	$AnimationPlayer.play("menu_intro")
 	_apply_audio_settings()
+	_add_credits_button()
 	_connect_signals()
 	_setup_profile()
 
@@ -97,6 +100,7 @@ func _connect_signals() -> void:
 	var buttons: Array[Button] = [
 		start_button,
 		options_button,
+		credits_button,
 		exit_button
 	]
 
@@ -111,6 +115,25 @@ func _connect_signals() -> void:
 				btn.focus_entered.connect(_on_button_hover_entered.bind(btn))
 			if not btn.focus_exited.is_connected(_on_button_hover_exited.bind(btn)):
 				btn.focus_exited.connect(_on_button_hover_exited.bind(btn))
+
+
+func _add_credits_button() -> void:
+	credits_button = options_button.duplicate(0) as Button
+	credits_button.name = "CreditsButton"
+	credits_button.text = "CRÉDITOS"
+	main_vbox.add_child(credits_button)
+	main_vbox.move_child(credits_button, options_button.get_index() + 1)
+	credits_button.pressed.connect(open_credits)
+	create_tween().tween_property(credits_button, "modulate:a", 1.0, 0.4).set_delay(0.6)
+
+
+func open_credits() -> CreditsPanel:
+	_play_click()
+	var panel := CreditsPanel.new()
+	panel.name = "CreditsPanel"
+	add_child(panel)
+	panel.closed.connect(func() -> void: credits_button.grab_focus())
+	return panel
 
 
 func _on_button_hover_entered(btn: Button) -> void:

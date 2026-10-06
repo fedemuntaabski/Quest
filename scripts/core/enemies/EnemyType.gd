@@ -53,5 +53,28 @@ enum Role { HUNTER, RAIDER }
 @export var target_profile: TargetProfile
 
 
+@export_group("Boss")
+## progresion-10: guards the exit room (FloorTheme.boss); BossBrain runs its pattern
+## and the victory waits for its death. Ignores the enemy cap; special bestiary card.
+@export var is_boss: bool = false
+## 0 = minijefe, 1 = jefe final (labels only).
+@export_enum("Minijefe", "Jefe") var boss_tier: int = 0
+## 2 = a second phase below boss_phase2_pct HP (summons start there).
+@export var boss_phases: int = 1
+@export var boss_phase2_pct: float = 0.5
+## Embestida: telegraphed lunge at the nearest hero within charge_range; hurts
+## every hero within charge_radius of the aimed point (dodgeable by moving).
+@export var charge_cooldown: float = 6.0
+@export var charge_range: float = 300.0
+@export var charge_radius: float = 72.0
+@export var charge_damage: int = 6
+## Invocación (phase 2): summon_count of summon_type every summon_cooldown.
+@export var summon_type: EnemyType
+@export var summon_count: int = 0
+@export var summon_cooldown: float = 10.0
+## Pattern text for the bestiary card.
+@export_multiline var boss_pattern: String = ""
+
+
 func get_target_profile() -> TargetProfile:
 	return target_profile if target_profile else TargetProfile.derive(role, behavior)

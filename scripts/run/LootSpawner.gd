@@ -9,7 +9,9 @@ extends Node2D
 ## stash (Chest).
 
 const CHEST_OFFSET := Vector2(0, -56)
-const NO_CHEST_TYPES: Array[RoomData.RoomType] = [RoomData.RoomType.START, RoomData.RoomType.EXIT, RoomData.RoomType.PRISONER]
+const NO_CHEST_TYPES: Array[RoomData.RoomType] = [RoomData.RoomType.START, RoomData.RoomType.EXIT, RoomData.RoomType.PRISONER, RoomData.RoomType.ALTAR]
+## progresion-10: a secret room's chest is never below this rarity.
+const SECRET_MIN_RARITY := ItemData.Rarity.UNCOMMON
 
 var chests: Dictionary = {}
 
@@ -43,18 +45,19 @@ func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 		rng.seed = hash([_floor_manager.map_seed if _floor_manager else 0, zone_id, "chest"])
 		if rng.randf() >= _chance_for(type):
 			continue
-		var item := roll_item(rng)
+		var floor_index := _floor_manager.floor_index if _floor_manager else 1
+		var item := roll_item(rng, floor_index, SECRET_MIN_RARITY if type == RoomData.RoomType.SECRET else 0)
 		if item == null:
 			continue
-		var chest := spawn_chest(zone_id, item)
+		var chest := spawn_chest(zone_id, item, LootTable.get_default().tier_for_floor(floor_index))
 		for hero in ManagerLocator.get_heroes():
 			if hero.current_zone_id == zone_id:
 				chest.try_open()
 
 
-func spawn_chest(zone_id: String, item: ItemData) -> Chest:
+func spawn_chest(zone_id: String, item: ItemData, tier: ChestTier = null) -> Chest:
 	var chest := Chest.new()
-	chest.setup(item, zone_id)
+	chest.setup(item, zone_id, tier)
 	chest.position = _room_manager.get_center(zone_id) + CHEST_OFFSET
 	add_child(chest)
 	chests[zone_id] = chest
@@ -73,6 +76,7 @@ func _chance_for(type: RoomData.RoomType) -> float:
 	return 1.0 if type == RoomData.RoomType.LOOT else 0.0
 
 
-static func roll_item(rng: RandomNumberGenerator) -> ItemData:
-	var catalog := ItemCatalog.get_default()
-	return catalog.pick(rng) if catalog else null
+## Item from `floor_index`'s chest tier (LootTable), never below `min_rarity`.
+static func roll_item(rng: RandomNumberGenerator, floor_index: int = 1, min_rarity: int = 0) -> ItemData:
+	var table := LootTable.get_default()
+	return table.roll_item(rng, floor_index, min_rarity) if table else null

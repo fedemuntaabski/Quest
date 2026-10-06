@@ -39,6 +39,18 @@ func advance_turn(target_room_id: String) -> void:
 
 
 
+## progresion-10: reveals a group without a door (secret room): no turn, no threat roll.
+func reveal_room(room_id: String) -> bool:
+	if not rooms.has(room_id) or rooms[room_id].get("visited", false):
+		return false
+	rooms[room_id]["visited"] = true
+	var cells: Array[Vector2i] = []
+	cells.assign(rooms[room_id]["cells"])
+	room_revealed.emit(room_id, cells)
+	QuestLogger.info(QuestLogger.Category.DOOR, "Room '%s' revealed without a door." % room_id)
+	return true
+
+
 func open_room(room_id: String) -> bool:
 	if not rooms.has(room_id):
 		QuestLogger.warn(QuestLogger.Category.DOOR, "DoorTurnSystem: unknown room_id '%s'" % room_id)

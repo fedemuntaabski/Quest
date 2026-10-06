@@ -67,13 +67,13 @@ alignment = 1
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Reintentar"
+text = "Nueva run"
 
 [node name="ExitButton" type="Button" parent="DeathOverlay/CenterContainer/VBoxContainer/ButtonsHBox"]
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Salir"
+text = "Volver al menú"
 
 [node name="VictoryOverlay" type="CanvasLayer" parent="."]
 layer = 100
@@ -103,7 +103,7 @@ theme_override_constants/separation = 30
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_font_sizes/font_size = 48
-text = "¡Reliquia extraída con éxito!"
+text = "¡El Nexo está a salvo! Run completada"
 horizontal_alignment = 1
 
 [node name="NextFloorButton" type="Button" parent="VictoryOverlay/CenterContainer/VBoxContainer"]
@@ -112,6 +112,13 @@ custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Descender"
+
+[node name="NewRunButton" type="Button" parent="VictoryOverlay/CenterContainer/VBoxContainer"]
+visible = false
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Nueva run"
 
 [node name="ReturnButton" type="Button" parent="VictoryOverlay/CenterContainer/VBoxContainer"]
 custom_minimum_size = Vector2(200, 60)
