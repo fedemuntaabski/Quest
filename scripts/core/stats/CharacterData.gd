@@ -15,12 +15,19 @@ class_name CharacterData
 @export var base_hp: int = 20
 
 @export_group("Combat")
-## Damage dealt to every enemy inside the hero's HitboxComponent per tick.
+enum AttackStyle { MELEE, RANGED }
+## Damage dealt per tick to the nearest enemy inside the hero's HitboxComponent
+## (single target since heroes-9).
 @export var attack_damage: int = 3
 ## Seconds between auto-attack ticks.
 @export var attack_interval: float = 1.0
-## Radius (px) of the auto-attack AoE (Player/Hitbox circle). Default = the scene's 160.
+## Radius (px) of the auto-attack reach (Player/Hitbox circle). Default = the scene's 160.
 @export var attack_range: float = 160.0
+## RANGED = the hit travels as a visible Projectile (lands on arrival).
+@export var attack_style: AttackStyle = AttackStyle.MELEE
+@export var projectile_speed: float = 900.0
+## Multiplier on MoveAction.DEFAULT_SPEED_PX (stacks with the Nexo carrier's).
+@export var move_speed_mult: float = 1.0
 @export_group("")
 
 @export_group("Abilities")
@@ -31,6 +38,7 @@ class_name CharacterData
 @export var vfx_color: Color = Color.WHITE
 @export_group("")
 
+## Legacy UI strings (hero select). The in-run popup reads AbilityData.display_name/description.
 @export var passive_ability_name: String = ""
 @export var passive_ability_desc: String = ""
 @export var active_ability_name: String = ""

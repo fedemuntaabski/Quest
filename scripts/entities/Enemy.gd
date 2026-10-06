@@ -157,8 +157,43 @@ func take_damage(amount: int) -> void:
 	current_hp = maxi(current_hp - maxi(amount, 0), 0)
 	if current_hp > 0:
 		visual.play_hit()
+		visual.knockback(_away_from_nearest_hero())
+		queue_redraw()
 	if current_hp <= 0:
 		_die_from_damage()
+
+
+## Unit vector from the closest living hero to this enemy (knockback direction).
+func _away_from_nearest_hero() -> Vector2:
+	var best := INF
+	var dir := Vector2.ZERO
+	for hero in ManagerLocator.get_heroes():
+		if not hero.stats.is_alive():
+			continue
+		var d := global_position.distance_squared_to(hero.global_position)
+		if d < best:
+			best = d
+			dir = hero.global_position.direction_to(global_position)
+	return dir
+
+
+## HP bar over the head (heroes-9), only once damaged; HUD HealthBarStyle colors.
+const HP_BAR_SIZE := Vector2(28, 4)
+const HP_BAR_STYLE: HealthBarStyle = preload("res://resources/ui/health_bar_style.tres")
+
+
+func is_hp_bar_visible() -> bool:
+	return is_alive() and current_hp < max_hp
+
+
+func _draw() -> void:
+	if not is_hp_bar_visible():
+		return
+	var ratio := HealthBarStyle.ratio_of(current_hp, max_hp)
+	var top := visual.position.y - visual.body_size().y - 16.0 if visual.visible else -40.0  # above the raider diamond
+	var rect := Rect2(Vector2(-HP_BAR_SIZE.x * 0.5, top - HP_BAR_SIZE.y), HP_BAR_SIZE)
+	draw_rect(rect.grow(1.0), HP_BAR_STYLE.background_color)
+	draw_rect(Rect2(rect.position, Vector2(rect.size.x * ratio, rect.size.y)), HP_BAR_STYLE.color_for(ratio))
 
 
 ## The only path that emits `died` (hero hit, turret shot). Kill counters rely on it.

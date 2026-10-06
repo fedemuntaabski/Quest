@@ -1,16 +1,24 @@
 extends Area2D
 class_name HitboxComponent
 
-## HitboxComponent: damages every HurtboxComponent overlapping it once per
+## HitboxComponent: damages the HurtboxComponents overlapping it once per
 ## `hit_interval` seconds (DotE-style auto-combat — no aiming, no input).
-## Targets are selected by collision_mask only; the hitbox never inspects
-## what it hits beyond "is it a HurtboxComponent".
+## Targets are selected by collision_mask; with `single_target` (heroes since
+## heroes-9) only the overlapping hurtbox nearest to the hitbox is hit, else all
+## of them (enemy contact hits). `deliver` (optional) replaces the instant hit:
+## ranged heroes use it to fire a Projectile that lands the hit on arrival.
 
 signal hit_landed(target: HurtboxComponent, amount: int)
 
 @export_group("Combat")
 @export var damage: int = 1
 @export var hit_interval: float = 1.0
+## Hit only the nearest overlapping hurtbox per tick.
+@export var single_target: bool = false
+
+## func(hurtbox: HurtboxComponent, damage: int). When valid, called instead of
+## receive_hit + hit_landed (the caller emits hit_landed itself on impact).
+var deliver: Callable
 
 @export_group("Feedback")
 ## Spawns a FloatingText over the target on every hit (via hit_landed).
@@ -42,13 +50,43 @@ func configure(p_damage: int, p_hit_interval: float) -> void:
 		_tick_timer.wait_time = hit_interval
 
 
+## Stops/resumes the attack ticks (a downed hero doesn't fight, heroes-9).
+func set_active(active: bool) -> void:
+	if active and _tick_timer.is_stopped():
+		_tick_timer.start()
+	elif not active:
+		_tick_timer.stop()
+
+
+func is_active() -> bool:
+	return not _tick_timer.is_stopped()
+
+
 func _on_tick() -> void:
+	for hurtbox in pick_targets():
+		if deliver.is_valid():
+			deliver.call(hurtbox, damage)
+			continue
+		hurtbox.receive_hit(damage)
+		hit_landed.emit(hurtbox, damage)
+
+
+## Hurtboxes this tick will hit: every overlapping one, or only the nearest.
+func pick_targets() -> Array[HurtboxComponent]:
+	var targets: Array[HurtboxComponent] = []
+	var best_dist := INF
 	for area in get_overlapping_areas():
 		var hurtbox := area as HurtboxComponent
 		if hurtbox == null:
 			continue
-		hurtbox.receive_hit(damage)
-		hit_landed.emit(hurtbox, damage)
+		if not single_target:
+			targets.append(hurtbox)
+			continue
+		var dist := global_position.distance_squared_to(hurtbox.global_position)
+		if dist < best_dist:
+			best_dist = dist
+			targets = [hurtbox]
+	return targets
 
 
 func _on_hit_landed(target: HurtboxComponent, amount: int) -> void:

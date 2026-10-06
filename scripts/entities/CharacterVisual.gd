@@ -18,6 +18,9 @@ const RUN_HOLD := 0.12
 const HIT_TIME := 0.2
 const FLASH_TIME := 0.15
 const BOUNCE_PX := 2.0
+## Knockback (heroes-9): visual-only push away from the hit, then back.
+const KNOCKBACK_PX := 6.0
+const KNOCKBACK_TIME := 0.12
 const BOUNCE_IDLE_TIME := 0.7
 const BOUNCE_RUN_TIME := 0.3
 ## Collision circle = this fraction of the drawn body's longer side.
@@ -35,6 +38,10 @@ var _base_offset: Vector2 = Vector2.ZERO
 var _bounce_time: float = 0.0
 var _bounce: Tween
 var _flash: Tween
+var _knock: Tween
+## Rest position while a knockback tween runs (the owner's actions never touch
+## the visual's position, only the owner's).
+var _rest_position := Vector2.INF
 var _material: ShaderMaterial
 
 
@@ -70,7 +77,8 @@ func body_size() -> Vector2:
 
 ## Local centre of the drawn body (where collision shapes belong).
 func body_center() -> Vector2:
-	return position + Vector2(0.0, -body_size().y * 0.5)
+	var base := _rest_position if _rest_position != Vector2.INF else position
+	return base + Vector2(0.0, -body_size().y * 0.5)
 
 
 func fit_radius() -> float:
@@ -87,6 +95,26 @@ func play_hit() -> void:
 	_flash = create_tween()
 	_flash.tween_property(_material, "shader_parameter/flash", 0.0, FLASH_TIME)
 	_refresh(false)
+
+
+## Short push of the sprite along `dir` (unit, away from the attacker) and back.
+## Only the visual moves: the owner's position/zone and its move tweens are untouched.
+func knockback(dir: Vector2) -> void:
+	if dir == Vector2.ZERO:
+		return
+	if _knock and _knock.is_valid():
+		_knock.kill()
+	if _rest_position == Vector2.INF:
+		_rest_position = position
+	position = _rest_position
+	_knock = create_tween()
+	_knock.tween_property(self, "position", _rest_position + dir.normalized() * KNOCKBACK_PX, KNOCKBACK_TIME * 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_knock.tween_property(self, "position", _rest_position, KNOCKBACK_TIME * 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_knock.finished.connect(func() -> void: _rest_position = Vector2.INF)
+
+
+func is_knocked_back() -> bool:
+	return _knock != null and _knock.is_valid() and _knock.is_running()
 
 
 func flash_amount() -> float:

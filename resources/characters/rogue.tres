@@ -23,6 +23,7 @@ base_hp = 18
 attack_damage = 2
 attack_interval = 0.5
 attack_range = 130.0
+move_speed_mult = 1.2
 passive_ability_name = "Paso Ligero"
 passive_ability_desc = "Obtiene Polvo extra al revelar una sala por primera vez."
 active_ability_name = "Golpe Furtivo"

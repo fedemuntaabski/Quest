@@ -226,7 +226,7 @@ func _carrier_speed_mult() -> float:
 
 
 func _walk(hero: Player, waypoints: Array[Vector2], final_zone_id: String) -> void:
-	var speed := MoveAction.DEFAULT_SPEED_PX * (_carrier_speed_mult() if hero.is_carrying_nexo else 1.0)
+	var speed := MoveAction.DEFAULT_SPEED_PX * hero.move_speed_mult() * (_carrier_speed_mult() if hero.is_carrying_nexo else 1.0)
 	var action := MoveAction.new(hero, waypoints, speed)
 	if action.can_execute():
 		await action.execute()
