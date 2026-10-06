@@ -43,6 +43,7 @@ var ability_button: AbilityButton
 var revive_button: Button
 var _low_tween: Tween
 var _downed_label: Label
+var _icon: Control
 var _abilities: HeroAbilities
 var _inventory: InventoryComponent
 var _consumable_buttons: Array[Button] = []
@@ -70,7 +71,8 @@ func _ready() -> void:
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", 8)
 	add_child(row)
-	row.add_child(_make_icon())
+	_icon = _make_icon()
+	row.add_child(_icon)
 
 	var column := VBoxContainer.new()
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -108,6 +110,7 @@ func _ready() -> void:
 	_bar.max_value = 1.0
 	_bar.step = 0.0
 	_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN  # the Reanimar button must not stretch it
 	_fill = StyleBoxFlat.new()
 	var background := StyleBoxFlat.new()
 	background.bg_color = style.background_color
@@ -287,7 +290,7 @@ func _refresh_downed() -> void:
 		return
 	var downed := is_downed()
 	_downed_label.visible = downed
-	self_modulate = Color(0.55, 0.55, 0.55) if downed else Color.WHITE
+	_icon.modulate = Color(0.4, 0.4, 0.45) if downed else Color.WHITE
 	revive_button.visible = downed
 	if ability_button:
 		ability_button.disabled = downed

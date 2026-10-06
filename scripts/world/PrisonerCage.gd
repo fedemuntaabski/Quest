@@ -11,7 +11,7 @@ extends Node2D
 signal freed(hero_id: String)
 
 const SIZE := Vector2(44, 52)
-const BAR_COLOR := Color(0.32, 0.3, 0.3, 1.0)
+const BAR_COLOR := Color(0.72, 0.7, 0.66, 1.0)
 ## GameSession.MAX_PARTY (preloaded: autoload names aren't identifiers in --script tests).
 const MAX_PARTY: int = preload("res://scripts/autoload/GameSession.gd").MAX_PARTY
 const RESOURCE_NAMES := {"industry": "Industria", "food": "Comida", "science": "Ciencia", "dust": "Polvo"}
@@ -26,6 +26,7 @@ var is_freed: bool = false
 var dialog: ConfirmationDialog
 
 var _sprite: Sprite2D
+var _bars: Node2D
 
 
 func setup(p_hero_id: String, p_zone_id: String, p_costs: Dictionary, p_recruit: Callable) -> void:
@@ -46,6 +47,12 @@ func _ready() -> void:
 		_sprite.texture = data.sprite_frames.get_frame_texture("idle", 0)
 		_sprite.offset = Vector2(0, -_sprite.texture.get_size().y * 0.5)
 	add_child(_sprite)
+	# Bars in front of the prisoner (a parent's _draw would sit behind the sprite).
+	var bars := Node2D.new()
+	bars.name = "Bars"
+	bars.draw.connect(_draw_bars.bind(bars))
+	add_child(bars)
+	_bars = bars
 
 	var area := Area2D.new()
 	area.name = "ClickArea"
@@ -62,17 +69,16 @@ func _ready() -> void:
 	area.input_event.connect(_on_input_event)
 	add_child(area)
 	_build_dialog(data)
-	queue_redraw()
 
 
-func _draw() -> void:
+func _draw_bars(canvas: Node2D) -> void:
 	if is_freed:
 		return
 	var rect := Rect2(Vector2(-SIZE.x * 0.5, -SIZE.y), SIZE)
 	for i in 5:
 		var x := rect.position.x + rect.size.x * float(i) / 4.0
-		draw_line(Vector2(x, rect.position.y), Vector2(x, rect.end.y), BAR_COLOR, 3.0)
-	draw_rect(rect, BAR_COLOR, false, 3.0)
+		canvas.draw_line(Vector2(x, rect.position.y), Vector2(x, rect.end.y), BAR_COLOR, 3.0)
+	canvas.draw_rect(rect, BAR_COLOR, false, 3.0)
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
@@ -120,7 +126,7 @@ func free_with(resource_key: String) -> bool:
 		return false
 	is_freed = true
 	_sprite.visible = false
-	queue_redraw()
+	_bars.queue_redraw()
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"level_up", hero.global_position, hero.vfx_color())

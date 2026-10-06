@@ -21,6 +21,8 @@ const PANEL_WIDTH := 520.0
 const STAT_COLUMNS := ["Stat", "Base", "Nivel", "Perks", "Equipo", "Total"]
 const ABILITY_ICON := Vector2(32, 32)
 const NEXT_COLOR := Color(0.5, 0.95, 0.55)
+## Tallest the sheet gets (base viewport 1080) before it scrolls.
+const MAX_CONTENT_HEIGHT := 960.0
 
 var stats: CharacterStats
 var character_data: CharacterData
@@ -29,6 +31,8 @@ var _title: Label
 var _preview: TextureRect
 var _info: Label
 var _stat_table: GridContainer
+var _scroll: ScrollContainer
+var _content: VBoxContainer
 var _ability_rows: VBoxContainer
 var _level_title: Label
 var _upgrade_rows: GridContainer
@@ -103,9 +107,15 @@ func _build() -> void:
 	panel.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.UI_PANEL_BG, QuestPalette.GOLD_DARK, 2, 8, 14))
 	center.add_child(panel)
 
+	# Scrolls when the sheet outgrows the screen (perk cards + full equipment).
+	_scroll = ScrollContainer.new()
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel.add_child(_scroll)
 	var content := VBoxContainer.new()
 	content.add_theme_constant_override("separation", 10)
-	panel.add_child(content)
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(content)
+	_content = content
 
 	var header := HBoxContainer.new()
 	content.add_child(header)
@@ -242,6 +252,14 @@ func _refresh() -> void:
 		_rebuild_level_up(ps)
 		_rebuild_perks(ps)
 	_equipment.bind(stats.hero_id)
+	_fit_height.call_deferred()
+
+
+## As tall as the content, up to MAX_CONTENT_HEIGHT (then it scrolls).
+func _fit_height() -> void:
+	if _content == null:
+		return
+	_scroll.custom_minimum_size = Vector2(PANEL_WIDTH, minf(_content.get_combined_minimum_size().y, MAX_CONTENT_HEIGHT))
 
 
 func _rebuild_level_up(ps: PlayerStats) -> void:

@@ -24,10 +24,11 @@ func get_party_ids(selected_id: String) -> Array[String]:
 	return ids
 
 
-## Sprite shift of hero `index` of `count`, centered on the zone. Up to 2 heroes
-## stand side by side; heroes 3-4 (recruits, heroes-9) form a second row behind,
-## so a recruit never moves the heroes already there.
+## Sprite shift of hero `index` of `count`, centered on the zone. Heroes 1-2
+## stand side by side; heroes 3-4 (recruits, heroes-9) stand on the outer sides
+## (left, then right), so a recruit never moves the heroes already there.
 func sprite_offset(index: int, count: int) -> Vector2:
 	if count <= 1:
 		return Vector2.ZERO
-	return Vector2((index % 2 - 0.5) * sprite_spacing, (index / 2) * sprite_spacing * 0.6)
+	var side := -1.0 if index % 2 == 0 else 1.0
+	return Vector2(side * (0.5 + index / 2) * sprite_spacing, 0.0)
