@@ -24,10 +24,16 @@ var _last_usec := 0
 var _shake_left := 0.0
 var _shake_total := 0.0
 var _shake_strength := 0.0
+## Middle-button drag (session heroes-9): press position (screen) and whether it
+## moved past CameraConfig.drag_threshold_px (then the release is not a click).
+var _drag_active := false
+var _drag_moved := false
+var _drag_start := Vector2.ZERO
 
 
 func _ready() -> void:
 	top_level = true
+	add_to_group("game_camera")
 	# Main2d is PROCESS_MODE_ALWAYS; the camera must freeze with pause/death/victory.
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	_hero = get_parent() as Node2D
@@ -86,11 +92,30 @@ func _unhandled_input(event: InputEvent) -> void:
 	# the HUD, and mouse clicks must still reach Area2D picking.
 	if event.is_action_pressed("camera_recenter"):
 		recenter()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_MIDDLE:
+		if event.pressed:
+			_drag_active = true
+			_drag_moved = false
+			_drag_start = event.position
+		else:
+			_drag_active = false
+	elif event is InputEventMouseMotion and _drag_active:
+		if not _drag_moved and event.position.distance_to(_drag_start) > config.drag_threshold_px:
+			_drag_moved = true
+		if _drag_moved:
+			_following = false
+			global_position = clamp_to_bounds(global_position - event.relative / zoom.x)
 	elif event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			set_target_zoom(_target_zoom * config.zoom_step)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			set_target_zoom(_target_zoom / config.zoom_step)
+
+
+## true while/after a middle-button drag that panned: RoomZone skips the
+## light toggle on that release.
+func was_dragged() -> bool:
+	return _drag_moved
 
 
 func set_target_zoom(value: float) -> void:

@@ -2,7 +2,7 @@ class_name HeroInputController
 extends Node
 
 ## Hero selection input for the floor: left click on a hero (Ctrl adds/removes),
-## F1/F2 select hero 1/2, Ctrl+1..3 assign a control group, 1..3 recall it (a
+## F1..F4 select hero 1..4 (heroes-9: party up to 4), Ctrl+1..3 assign a control group, 1..3 recall it (a
 ## second tap within GROUP_DOUBLE_TAP_MS also centers the camera). The selection
 ## itself lives in SelectionManager; Main2d's `_input` forwards keys to
 ## `handle_key()` so the Esc/Space/Tab order of handlers is unchanged.
@@ -11,6 +11,8 @@ extends Node
 const HERO_PICK_MARGIN := 10.0
 ## Real-time window (ms) for the second tap of a group key.
 const GROUP_DOUBLE_TAP_MS := 300
+## select_hero_1..4 actions in project.godot.
+const MAX_F_KEYS := 4
 
 var _heroes: Array[Player]
 var _camera: GameCamera
@@ -37,19 +39,30 @@ func _unhandled_input(event: InputEvent) -> void:
 	var hud := ManagerLocator.get_hud()
 	if hud and hud.building_menu and hud.building_menu.is_armed():
 		return
-	var hero := pick_hero_at(get_viewport().get_canvas_transform().affine_inverse() * event.position)
+	var world_pos: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * event.position
+	var hero := pick_hero_at(world_pos)
 	if hero == null:
+		# heroes-9: a downed hero is not selectable; clicking it is a revive
+		# (an ally in its room + Comida, PlayerStats.revive_hero says why not).
+		var downed := pick_hero_at(world_pos, true)
+		if downed == null:
+			return
+		var ps := ManagerLocator.get_player_stats()
+		if ps:
+			ps.revive_hero(downed.stats.hero_id)
+		get_viewport().set_input_as_handled()
 		return
 	click_hero(hero, event.ctrl_pressed)
 	get_viewport().set_input_as_handled()
 
 
 ## Living hero whose drawn body contains `world_pos` (the closest one), or null.
-func pick_hero_at(world_pos: Vector2) -> Player:
+## `downed` = look for a downed hero instead.
+func pick_hero_at(world_pos: Vector2, downed: bool = false) -> Player:
 	var best: Player = null
 	var best_dist := INF
 	for hero in _heroes:
-		if not hero.can_accept_input():
+		if hero.can_accept_input() == downed:
 			continue
 		var dist := world_pos.distance_to(hero.to_global(hero.animated_sprite.body_center()))
 		if dist <= hero.animated_sprite.fit_radius() + HERO_PICK_MARGIN and dist < best_dist:
@@ -75,7 +88,7 @@ func handle_key(event: InputEvent) -> bool:
 	var selection := ManagerLocator.get_selection_manager()
 	if selection == null:
 		return false
-	for i in mini(_heroes.size(), 2):
+	for i in mini(_heroes.size(), MAX_F_KEYS):
 		if event.is_action_pressed("select_hero_%d" % (i + 1)):
 			click_hero(_heroes[i], event.ctrl_pressed)
 			return true

@@ -408,17 +408,24 @@ func _apply_visual() -> void:
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
-	if not (event is InputEventMouseButton and event.pressed):
+	if not (event is InputEventMouseButton):
 		return
 	if not _shown or get_viewport().is_input_handled():
 		return
 	match event.button_index:
-		# Right = move too (DotE). While a module is armed, BuildingMenu._input
-		# consumes the right click first, so it cancels instead of moving.
-		MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT:
+		# heroes-9 (DotE): right = move; left selects (HeroInputController) and
+		# does nothing on an empty room. While a module is armed,
+		# BuildingMenu._input consumes the right click first (cancel).
+		MOUSE_BUTTON_RIGHT:
+			if not event.pressed:
+				return
 			clicked.emit(self)
+		# Middle = light/unlight on release, unless it was a camera drag.
 		MOUSE_BUTTON_MIDDLE:
-			if kind != "room":
+			if event.pressed or kind != "room":
+				return
+			var camera := ManagerLocator.get_camera()
+			if camera and camera.was_dragged():
 				return
 			toggle_power()
 		_:

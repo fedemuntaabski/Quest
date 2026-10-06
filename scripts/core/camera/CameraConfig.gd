@@ -11,6 +11,9 @@ class_name CameraConfig
 @export var edge_scroll_enabled: bool = true
 ## Screen px from the window edge that start edge scrolling.
 @export var edge_scroll_margin: float = 16.0
+## Middle-button drag pans the camera once the mouse moved this many screen px
+## (a shorter press stays a middle click: light/unlight the room).
+@export var drag_threshold_px: float = 6.0
 
 @export_group("Zoom")
 ## Zoom applied on the first frame (clamped to min/max).

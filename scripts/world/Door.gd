@@ -51,7 +51,8 @@ func set_leaf(open: bool) -> void:
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
 	if is_open:
 		return
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+	# Left = interact, right = move order (heroes-9): both open the door.
+	if not (event is InputEventMouseButton and event.pressed 			and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]):
 		return
 	if get_viewport().is_input_handled():
 		return

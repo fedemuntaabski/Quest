@@ -132,6 +132,13 @@ static func get_exit_indicator() -> ExitIndicator:
 	return null
 
 
+static func get_camera() -> GameCamera:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("game_camera") as GameCamera
+	return null
+
+
 static func get_floor_manager() -> FloorManager:
 	var ml = Engine.get_main_loop()
 	if ml and ml is SceneTree:

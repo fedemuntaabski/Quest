@@ -147,12 +147,19 @@ func _ready() -> void:
 	if bestiary and not bestiary.entry_unlocked.is_connected(_on_bestiary_unlocked):
 		bestiary.entry_unlocked.connect(_on_bestiary_unlocked)
 
-	# Death/victory: nothing modal may stay open over the overlays.
-	if ps and not ps.player_died.is_connected(close_popups):
-		ps.player_died.connect(close_popups)
+	# Death/victory: nothing modal may stay open over the overlays. A single
+	# hero falling no longer ends the run (heroes-9), so this keys off the
+	# DEAD state, not PlayerStats.player_died.
 	var gsm := ManagerLocator.get_game_state_manager()
 	if gsm and not gsm.victory_entered.is_connected(close_popups):
 		gsm.victory_entered.connect(close_popups)
+	if gsm and not gsm.state_changed.is_connected(_on_game_state_changed):
+		gsm.state_changed.connect(_on_game_state_changed)
+
+
+func _on_game_state_changed(new_state: GameStateManager.State, _old: GameStateManager.State) -> void:
+	if new_state == GameStateManager.State.DEAD:
+		close_popups()
 
 
 func close_popups() -> void:

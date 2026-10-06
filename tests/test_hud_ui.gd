@@ -509,7 +509,7 @@ func _check_tactical_pause(hud: HUDController, main2d: Node, resources: Resource
 	resources.add_resource("dust", 20)
 	var middle := InputEventMouseButton.new()
 	middle.button_index = MOUSE_BUTTON_MIDDLE
-	middle.pressed = true
+	middle.pressed = false  # heroes-9: the toggle fires on release (press may start a camera drag)
 	_clear_handled()
 	room._on_input_event(root, middle, 0)
 	_expect(not room.is_powered, "middle click should switch the room off in tactical pause")
@@ -534,7 +534,7 @@ func _check_tactical_pause(hud: HUDController, main2d: Node, resources: Resource
 	_expect(Engine.time_scale == 1.0 and not main2d.pause_controller.is_paused() and not hud.pause_label.visible, "Space again should resume")
 
 
-## Session 9: unarmed right click on a room moves (same path as left click)
+## Session 9: unarmed right click on a room moves (heroes-9: the only button that does)
 ## and keeps the menu open; armed right click cancels and is consumed.
 func _check_right_click(hud: HUDController, main2d: Node) -> void:
 	var menu: BuildingMenu = hud.building_menu
