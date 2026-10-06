@@ -56,6 +56,54 @@ QUEST: 2D tactical/roguelite game built in Godot 4.6, GDScript only (no C#/.NET)
 
 **Session economia-8** (`session/economia-8`, on top of bucle-7): economy, medieval modules, module research. Doc: `docs/ECONOMIA.md` (who produces/spends each resource), numbers in `docs/BALANCE.md` "Economía" (`BalanceSim.economy_rows()`, `test_balance._check_economy`), missing icons `docs/ASSETS_AUDITORIA.md`. (1) Modules are data: `ModuleDef` (`scripts/core/modules/`, 7 `.tres` in `resources/modules/`); `Module.CATALOG` is now a `static var` built from them (same dict shape, plus `description/tier/requires_power/icon/splash_radius/spike_damage`); `Module.ModuleType` renamed `FORJA/GRANJA/SCRIPTORIUM/BALLESTA/BRASERO(=old TRAP)/CATAPULTA/PINCHOS` (values 0-4 unchanged: serialized in `research_config.tres`; `Module.DESCRIPTIONS`, `TURRET`/`TRAP`/`GENERATOR_*` are gone; `Module.generator_yield()` and `RoomManager.get_all_modules()` never existed). Catapulta = `TurretModule` with `splash_radius`; Pinchos = `Enemy._check_trap_in_current_room` damage on arrival, `requires_power` false; `Module.is_working()` honors `requires_power`. (2) Costs: `ModuleCostCurve` (`module_cost_curve.tres`: step 0.25, refund 50 %, repair 0.5) -> `Module.get_cost(type)` (uses `RoomManager.count_modules(type)`), `Module.paid_cost`, `demolish()`/`repair()`/`repair_cost()`; clicking a built slot emits `BuildingSlot.module_clicked` -> `RoomManager.module_clicked` -> `HUDController` -> `ModulePopup` (not while a module is armed). (3) Research: `ModuleResearch` (a `ResearchEntry` with `tier` 1-3 and `UNLOCK_MODULE`) lives in `research_config.tres` (ids `ballesta`/`brasero`/`catapulta`; `science_generator`/`turret_plans` are gone, Scriptorium/Forja/Granja/Pinchos start unlocked); `ResearchState` (RefCounted) holds the run's ids inside `ResourceManager` (API unchanged); `research()` now requires a working Scriptorium (group `generators`, science, `is_active`; reason "Construí un Scriptorium"). (4) UI: `BuildingMenu` tabs Mayores/Menores/Investigación (`RESEARCH_TAB`, signal `research_tab_changed` docks `ResearchPanel`; `ResearchButton` = tab 2), cards show the rising cost, placeholder art and "Investigar: N Ciencia" on locked ones; keys B/V/R (`HUDController._unhandled_key_input`) open the tabs, 1-9 pick cards. Comida heals: `PlayerStats.get_heal_cost()/heal_hero()`, `UpgradeConfig.heal_cost_per_hp` 0.15, "Curar" button in `CharacterPopup`. Tests: `test_research`, `test_build_costs` (+ `test_hud_ui`/`test_party` adapted). Not verified in a window: tab/popup layout, module click vs room click, B/V/R keys, Pinchos on a live `Enemy`, card icons, tooltips.
 
+**Session heroes-9** (`session/heroes-9`, on top of economia-8): DotE-style hero control/feel. Docs: `docs/PERSONAJES.md` (§1 updated), numbers `docs/BALANCE.md` "Héroes vs enemigos".
+- **(1) Input.**
+  - `RoomZone` moves on **right click only** (left on an empty room does nothing; left = select via `HeroInputController` or interact: doors, Nexo, cages). Supersedes session 9's "right click moves like left".
+  - `Door` opens on left or right.
+  - Middle click toggles the light on **release**, and only if `GameCamera.was_dragged()` is false: a middle-button drag past `CameraConfig.drag_threshold_px` pans the camera (`GameCamera` is in group `game_camera`, `ManagerLocator.get_camera()`).
+  - F1–F4 (`select_hero_3/4` added, `HeroInputController.MAX_F_KEYS`).
+  - `HUDController.close_popups` fires on `GameStateManager.state_changed` → DEAD (and victory), no longer on every `PlayerStats.player_died`.
+- **(2) Combat.**
+  - `HitboxComponent.single_target` (heroes: nearest overlapping hurtbox only; enemy contact hitboxes still hit all), `pick_targets()`, `set_active()`.
+  - `deliver: Callable`: ranged heroes (`CharacterData.attack_style` RANGED = Mage) fire a code-built `Projectile` (`scripts/core/combat/`, game time, hit + `hit_landed` on arrival, fizzles if the target is freed).
+  - `CharacterData.move_speed_mult` (Rogue 1.2, Tank 0.9) is applied in `PlayerActionController._walk`.
+  - `CharacterVisual.knockback(dir)`: visual-only push; `body_center()` uses the rest position.
+  - `Enemy._draw` HP bar once damaged (`is_hp_bar_visible()`).
+- **(3) Abilities.**
+  - `AbilityData.display_name`/`description` (placeholders `{value}` `{value_pct}` `{duration}` `{cooldown}` `{radius}`)/`icon` (8 `.tres`, `placeholder_ability_*`).
+  - `HeroAbilities.describe()`, `get_block_reason()` (pause → `PAUSE_REASON` floating text), `display_name()`. Q now reaches selected heroes in the tactical pause so the refusal is explained.
+  - `AbilityButton` (`scripts/ui/hud/`) on `HeroPortrait` (replaces the 4 px bar): radial pie, ready pulse + "Q", click = `try_activate()`.
+- **(4) Recruitment.**
+  - `RoomType.PRISONER` (= 7). Its `RoomTypeRule` has `recruit_costs` {industry 20, food 15} + `recruit_cost_per_floor` 5 and `blocks_spawns`; it has a visual entry, and `LootSpawner` never puts a chest there.
+  - `PrisonerSpawner` (`scripts/run/`, built by `Main2d`) puts a `PrisonerCage` (`scripts/world/`, code-built, Area2D left click → `ConfirmationDialog` with one button per price, `free_with(resource)`) in the room on reveal. Candidate: `GameSession.get_recruit_candidates`, seeded by `hash([map_seed, zone, "prisoner"])`.
+  - `Main2d.spawn_hero(id, zone)` (also used at floor start) and `recruit_hero()`; `LootSpawner.watch_hero()`.
+  - `GameSession`: `MAX_PARTY` 4, `recruited_ids`/`lost_ids`, `resolve_party(base)`, `reset_run()` (in `Main._begin_new_run`; `clear()` also resets them).
+  - `PartyConfig.sprite_offset`: heroes 3-4 stand on the outer sides.
+  - Autoload consts are preloaded (`preload("res://scripts/autoload/GameSession.gd").MAX_PARTY`) because autoload names aren't identifiers in `--script` tests.
+- **(5) Downed / rest.**
+  - 0 HP = downed: `Player._set_downed` (lying, grey, red ring, `hitbox.set_active(false)`, hurtbox off), `PlayerStats.hero_downed`/`hero_revived`, `get_downed_ids()`.
+  - `revive_hero`/`get_revive_block_reason`/`get_revive_cost` (needs a living hero in the same zone + `UpgradeConfig.revive_cost_base` 15 + 5/floor Comida, back at `revive_hp_pct` 0.3). Entry points: left click on the body (`HeroInputController.pick_hero_at(pos, true)`), the portrait's `revive_button`, or the popup button.
+  - `FloorManager.complete_floor` → `_lose_downed_heroes` (`GameSession.mark_lost`).
+  - Defeat is unchanged: every hero down or the Nexo destroyed.
+  - Rest: `heal_on_discovery` 0. `RoomTypeRule.heal_per_tick` 2 / `heal_tick_sec` 1 / `heal_food_per_tick` 1, run by `FloorManager._process` (game time, ACTIVE only) → `rest_tick()`.
+- **(6) UI.**
+  - `HeroPortrait`: low-HP bar blink (`is_low_blinking()`, real time) and downed state ("Caído", grey icon, Reanimar).
+  - `CharacterPopup`: `StatTable` from `PlayerStats.get_stat_breakdown()` (Base | Nivel | Perks | Equipo | Total), passive/active rows with icon + `describe()` (`get_abilities_text()`), level-up "→ next" in green, Reanimar for a downed hero, content in a `ScrollContainer` capped at 960 px.
+- **(7) Balance.**
+  - `BalanceSim` is single target: the wave is split over `PARTY_SIZE` 2, the ranged hero gets the approach time. New `hero_matchup_rows()` (`matchups` table) and `test_balance._check_hero_roles` (the Tank has the highest TTD and the slowest TTK; the Rogue has the least HP, the highest DPS and is the fastest).
+  - Rogue HP 18 → 16. Tank `upgrade_override` = `resources/upgrades/tank_upgrade_config.tres` (+8 HP/level).
+- **Tests and tools:** `test_recruitment`, `test_downed`, `test_ability_cooldown`, `test_combat_feel`; `test_hud_ui` (middle release), `test_abilities` and `test_perks` adapted. Visual tool `tests/tools/shot_heroes.gd` (real window: 4 portraits, radial, downed, cage, enemy bar, projectile, popup).
+- **Not verified in a playable window** (only via scripted screenshots):
+  - middle-drag panning vs middle-click light with a real mouse;
+  - right-click moves on every zone/corridor;
+  - left click on a cage or a downed body in normal play;
+  - the cage dialog layout;
+  - the knockback/projectile feel at speed;
+  - Q-in-pause floating text;
+  - the scroll of the popup with perk cards open;
+  - a full floor with 4 heroes (performance, spacing);
+  - real generation of Prisoner rooms across floors (`test_rooms` covers quotas).
+
 ## Commands
 
 No build system, linter, CI, or export presets exist in this repo. Only real dev commands:

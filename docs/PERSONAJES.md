@@ -2,6 +2,17 @@
 
 Archivo de referencia para otras sesiones. **Todo sale del código y los `.tres` de `session/refactor-2` (`41a44ab`)**; lo que no existe se dice "no existe". Valores base = piso 1, sala normal, nivel 1. Las rutas son relativas a la raíz del repo; las referencias `archivo:línea` son de este commit. Los números derivados (DPS, HP a nivel máx., stats de enemigos tras multiplicadores) se calcularon con las fórmulas del código (`Enemy.resolved_*`, `UpgradeConfig`, `FloorConfig`) y se contrastaron con `docs/BALANCE.md`.
 
+> **Actualizado en `session/heroes-9`** (§1 y §5; §2-§4 sin cambios salvo lo marcado). Resumen:
+> - Combate: un solo objetivo y el Mago a distancia con proyectil.
+> - Velocidad por héroe.
+> - Habilidades con nombre, descripción e ícono en datos (`AbilityData`), con botón en el retrato.
+> - Héroe caído y reanimación.
+> - Reclutamiento en la sala Prisionero, con un grupo de hasta 4.
+> - Descanso que cura por tiempo.
+> - Ajustes: Pícaro con vida 16 y Tanque con +8 de vida por nivel.
+>
+> Detalle de números en `docs/BALANCE.md`, sección "Héroes vs enemigos".
+
 Índice: [1 Héroes](#1-héroes-jugables) · [2 Enemigos](#2-enemigos) · [3 El Nexo](#3-el-nexo) · [4 Tablas comparativas](#4-tablas-resumen) · [5 Inconsistencias y faltantes](#5-inconsistencias-o-datos-faltantes)
 
 ---
@@ -11,12 +22,31 @@ Archivo de referencia para otras sesiones. **Todo sale del código y los `.tres`
 ### Cómo funciona un héroe (común a los 4)
 - **Datos**: `CharacterData` (`scripts/core/stats/CharacterData.gd`), un `.tres` por héroe en `resources/characters/` (`warrior`, `mage`, `rogue`, `tank`), registrados en orden fijo en `CharacterDatabase.CHARACTER_PATHS` (`scripts/core/stats/CharacterDatabase.gd:9`). Hay `party_config.tres` (`PartyConfig`) solo como grupo por defecto si no hubo selección en `HeroSelectMenu`.
 - **Escena**: una sola, `scenes/entities/Player.tscn` (`Player.gd`), con `AnimatedSprite2D` (`CharacterVisual`), `Stats` (`CharacterStats`), `Hurtbox` (capa 3 `player_hurtbox`), `Hitbox` (máscara capa 4 `enemy_hurtbox`, AoE circular), `Camera2D` (`GameCamera`, solo la usa el primer héroe). `Player.configure(data)` aplica `base_hp`, ataque, rango, sprite y habilidades en `_ready()` (`Player.gd:40-57`).
-- **Combate**: automático, sin input. El `Hitbox` es un círculo de radio `attack_range` que cada `attack_interval` s daña a **todos** los enemigos que lo solapan (`HitboxComponent`). No hay proyectiles ni selección de objetivo.
+- **Combate**: automático, sin input. El `Hitbox` es un círculo de radio `attack_range`. Cada `attack_interval` s golpea **solo al enemigo más cercano** dentro del círculo (`HitboxComponent.single_target`, desde heroes-9).
+  - `CharacterData.attack_style`: con **RANGED** (el Mago), el golpe sale como un `Projectile` (`scripts/core/combat/Projectile.gd`, `projectile_speed` 900 px/s de tiempo de juego) y el daño entra al impactar.
+  - El Golpe Furtivo y la Catapulta siguen siendo de área.
+  - Feedback al recibir daño (héroe y enemigo): destello blanco + retroceso breve del sprite (`CharacterVisual.knockback`, 6 px, solo visual). Los enemigos dañados muestran una barra de vida sobre la cabeza (`Enemy._draw`, colores de `HealthBarStyle`).
 - **Daño recibido**: los enemigos pegan por contacto (1 golpe/s); `HeroAbilities.incoming_damage()` aplica pasiva y escudo, mínimo 1 (`HeroAbilities.gd:70`). **No existe stat de defensa/armadura**: solo `damage_taken_mult` (escudo temporal) y las pasivas.
-- **Velocidad de movimiento**: **no existe stat por héroe**. Todos planean a `MoveAction.DEFAULT_SPEED_PX = 420` px/s (`MoveAction.gd:8`); el portador del Nexo va a ×0.75 = 315 px/s (`PlayerActionController.gd:216`).
-- **Muerte**: si cualquier héroe muere, termina la partida (`PlayerStats.player_died` → `Main2d._on_player_died`).
-- **Habilidad activa**: tecla **Q** (`hero_ability`) para todos los héroes seleccionados; se aplica solo con tiempo de juego (la pausa táctica congela los cooldowns). Una sola pasiva y una sola activa por héroe (`AbilityData`).
-- **Selección**: se eligen 2 de 4 en `HeroSelectMenu` (guardado en `GameSession`); `SelectionManager` maneja selección múltiple y grupos 1–3.
+- **Velocidad de movimiento**: `MoveAction.DEFAULT_SPEED_PX = 420` px/s × `CharacterData.move_speed_mult`. Valores: Pícaro ×1,2 = 504, Tanque ×0,9 = 378, el resto ×1. El portador del Nexo además va a ×`FloorConfig.carrier_speed_mult` (`PlayerActionController._walk`).
+- **Caído** (heroes-9): a 0 de vida el héroe **no muere**.
+  - Queda tumbado y gris en su sala, con un aro rojo, sin atacar y sin hurtbox (`Player._set_downed`).
+  - Sale de la selección y su retrato muestra "Caído" y un botón "Reanimar (N Comida)".
+  - **Reanimar**: clic izquierdo sobre el caído, el botón del retrato o el del popup. Exige un héroe vivo en su misma sala y `UpgradeConfig.revive_cost` de Comida (15 + 5 por piso). Vuelve con el 30 % de su vida (`revive_hp_pct`). API: `PlayerStats.revive_hero`, `get_revive_block_reason`, señales `hero_downed`/`hero_revived`.
+  - Si el piso termina con el héroe todavía caído, **se pierde** para el resto de la partida (`FloorManager._lose_downed_heroes` → `GameSession.lost_ids`).
+  - **Derrota**: todos los héroes caídos a la vez, o el Nexo destruido.
+- **Habilidad activa**: tecla **Q** (`hero_ability`) para todos los héroes seleccionados, o el botón del retrato (`AbilityButton`). El botón muestra el ícono, el cooldown radial y el estado "lista" (borde dorado que late + "Q").
+  - Corre con tiempo de juego: la pausa táctica congela los cooldowns.
+  - Intentarla en pausa dice "No se puede en pausa táctica" (`HeroAbilities.get_block_reason`).
+  - Una pasiva y una activa por héroe. `AbilityData` trae `display_name`, `description` (con `{value}`/`{value_pct}`/`{duration}`/`{cooldown}`/`{radius}`, que `HeroAbilities.describe()` rellena con los números reales, perks incluidos) e `icon`.
+- **Selección**: se eligen 2 de 4 en `HeroSelectMenu` (guardado en `GameSession`). `SelectionManager` maneja la selección múltiple y los grupos 1–3.
+  - **Clic izquierdo** = seleccionar o interactuar; **clic derecho** en una sala o puerta = mover.
+  - F1–F4 seleccionan a los héroes 1–4 (con Ctrl, suman o quitan). Ctrl+1..3 asigna un grupo, 1..3 lo recupera, y la doble pulsación centra la cámara.
+  - Botón medio arrastrado = mover la cámara; sin arrastre, enciende o apaga la sala.
+- **Reclutamiento** (heroes-9): una sala **Prisionero** (`RoomType.PRISONER`, chance 0,5, máx. 1 por piso, sin enemigos) tiene una celda con un héroe que no está en el grupo.
+  - El candidato sale de `GameSession.get_recruit_candidates`: ni elegido, ni reclutado, ni perdido.
+  - Con un héroe vivo en la sala, clic izquierdo en la celda y pagar **20 Industria o 15 Comida** (+5 por piso): se une al instante con su retrato.
+  - En los pisos siguientes vuelve gracias a `GameSession.recruited_ids`.
+  - Grupo máximo: **4** (`GameSession.MAX_PARTY`). Con el grupo lleno o sin candidatos, la celda está vacía.
 
 ### Fichas
 Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.ART_SCALE`). Todos tienen: ataque ✘, muerte ✘ (ver `docs/ASSETS_AUDITORIA.md` §5). Retratos 1024×1024 en `assets/portraits/`.
@@ -27,6 +57,7 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 | Rol | "Tanque y Provocador" | `warrior.tres` |
 | Sprite | `resources/sprite_frames/hero_knight_m.tres` · retrato `assets/portraits/guerrero.png` | |
 | Vida | **26** | `base_hp` |
+| Estilo / velocidad | cuerpo a cuerpo · 420 px/s | `attack_style`, `move_speed_mult` |
 | Ataque | **4** de daño cada **1.2 s** (DPS 3.33 por objetivo), radio **150** px | `attack_damage/interval/range` |
 | Defensa / velocidad | no existe (420 px/s común) | |
 | Pasiva "Piel de Hierro" | `DAMAGE_REDUCTION_PCT` 0.2: ignora **20 %** del daño recibido, siempre | `warrior_passive.tres` |
@@ -39,7 +70,7 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 | Rol | "Ciencia y Módulos" |
 | Sprite | `hero_wizzard_m.tres` · `assets/portraits/mago.png` |
 | Vida | **18** |
-| Ataque | **3** cada **0.9 s** (DPS 3.33), radio **220** px (el mayor) |
+| Ataque | **3** cada **0.9 s** (DPS 3.33), radio **220** px (el mayor), **a distancia** (proyectil, heroes-9) |
 | Pasiva "Mente Analítica" | `SCIENCE_ON_DISCOVERY` 2: **+2 Ciencia** cada vez que se descubre una sala (`FloorManager.on_room_discovered`) |
 | Activa "Sobrecarga de Módulo" | `MODULE_OVERCHARGE` 1.0: torres de su sala ×2 de daño durante **8 s**; **cada generador de su sala paga un tick extra al instante**; cooldown **30 s**; VFX `buff_module` |
 | Color VFX | (0.62, 0.52, 1.0) |
@@ -49,8 +80,8 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 |---|---|
 | Rol | "Explorador Rápido" |
 | Sprite | `hero_elf_m.tres` · `assets/portraits/picaro.png` |
-| Vida | **18** |
-| Ataque | **2** cada **0.5 s** (DPS 4.0, el mayor), radio **130** px (el menor) |
+| Vida | **16** (heroes-9: antes 18; el más frágil) |
+| Ataque | **2** cada **0.5 s** (DPS 4.0, el mayor), radio **130** px (el menor) · velocidad **504 px/s** (×1,2) |
 | Pasiva "Paso Ligero" | `DUST_ON_DISCOVERY` 2: **+2 Polvo** al descubrir una sala (se suma a los 4 base de `FloorConfig.dust_per_discovery`) |
 | Activa "Golpe Furtivo" | `BURST_STRIKE` 3.0: daña **una vez** a todo enemigo dentro de su radio con **3×** su daño de ataque; sin duración; cooldown **12 s**; VFX `hit_slash` + temblor de cámara |
 | Color VFX | (0.45, 0.92, 0.50) |
@@ -61,7 +92,7 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 | Rol | "Defensor de Cristal" |
 | Sprite | `hero_dwarf_m.tres` · `assets/portraits/tanque.png` |
 | Vida | **40** (la mayor) |
-| Ataque | **3** cada **1.3 s** (DPS 2.31, el menor), radio **170** px |
+| Ataque | **3** cada **1.3 s** (DPS 2.31, el menor), radio **170** px · velocidad **378 px/s** (×0,9) · curva propia **+8 vida/nivel** (`tank_upgrade_config.tres`) |
 | Pasiva "Muro Viviente" | `NEXO_PROXIMITY_REDUCTION` 0.5, radio 640: reduce hasta **50 %** el daño recibido junto al Nexo, decreciendo linealmente a 0 a **640 px** (mide contra la posición del Nexo; si lo lleva alguien, contra el portador) |
 | Activa "Interposición" | `TEAM_SHIELD` 0.5: **todos** los héroes vivos reciben **50 %** del daño durante **6 s**; cooldown **30 s**; VFX `buff_shield` |
 | Color VFX | (0.62, 0.78, 1.0) |
@@ -81,7 +112,14 @@ No hay XP ni persistencia entre partidas: solo **niveles de héroe** comprados c
 | Tanque | 40 · 3 · 1.3 s | **60** (justo el tope) · 8 · 0.975 s |
 
 Efectos temporales sobre `CharacterStats`: `attack_mult` (Grito de Guerra) y `damage_taken_mult` (Interposición), ambos revertidos por temporizador (`HeroAbilities._buff`).
-Otros efectos que tocan al héroe: salas **Rest** curan 15 a todo el grupo al descubrirse (`RoomTypeRule.heal_on_discovery`).
+Otros efectos que tocan al héroe:
+- Las salas **Descanso** curan **por tiempo** (heroes-9): cada segundo de juego, cada héroe vivo y herido que está dentro recupera 2 de vida y se paga 1 de Comida (`RoomTypeRule.heal_per_tick`/`heal_food_per_tick`, `FloorManager.rest_tick`). Sin Comida no curan, y la HUD lo avisa una vez. Ya no hay cura al descubrirla.
+- El popup del héroe muestra una tabla **Base | Nivel | Perks | Equipo | Total** (`PlayerStats.get_stat_breakdown`), las habilidades con su descripción real y "Subir de nivel" con el valor nuevo en verde.
+
+> Nota (heroes-9): la tabla de niveles de abajo es de `refactor-2`. Desde entonces cambiaron:
+> - el tope de vida: 120 (`impl-6`);
+> - el Pícaro: 16 de vida base;
+> - el Tanque: +8 de vida por nivel (nivel 6: 80 de vida).
 
 ### Equipamiento
 **Ningún héroe admite equipamiento hoy.** `ItemData` (`scripts/core/items/ItemData.gd`) define `slot` {WEAPON, ARMOR, CONSUMABLE, RELIC}, `rarity` y `modifiers` (solo `hp`, `attack_damage`, `attack_interval`), y hay 18 ítems en `resources/items/`, pero **no se aplican a los héroes**: solo se muestran (`Pickup`, cofres de salas Botín, sección "Hallazgos" del popup; `PlayerStats.found_items`). Los héroes no tienen slots de equipo ni restricciones por clase.
@@ -185,9 +223,9 @@ Los porcentajes son el peso dentro del pool entero; en la práctica primero se s
 |---|---|---|---|---|---|---|---|---|---|
 | Guerrero | Tanque y Provocador | 26 | 4 | 1.2 s | 3.33 | 150 | −20 % daño recibido | Grito de Guerra: aliados de la sala ×1.5 daño, 8 s (25 s) | 46 / 9 / 0.90 |
 | Mago | Ciencia y Módulos | 18 | 3 | 0.9 s | 3.33 | 220 | +2 Ciencia al descubrir sala | Sobrecarga: torres ×2 8 s + tick extra de generadores (30 s) | 38 / 8 / 0.675 |
-| Pícaro | Explorador Rápido | 18 | 2 | 0.5 s | 4.00 | 130 | +2 Polvo al descubrir sala | Golpe Furtivo: ×3 daño a todo en rango (12 s) | 38 / 7 / 0.375 |
-| Tanque | Defensor de Cristal | 40 | 3 | 1.3 s | 2.31 | 170 | hasta −50 % daño cerca del Nexo (640 px) | Interposición: todos −50 % daño 6 s (30 s) | 60 / 8 / 0.975 |
-Común: velocidad 420 px/s (315 con el Nexo), sin defensa/armadura, sin equipamiento aplicado, cap de vida 60, 5 niveles (8/11/16/22/31 Comida).
+| Pícaro | Explorador Rápido | 16 | 2 | 0.5 s | 4.00 | 130 | +2 Polvo al descubrir sala | Golpe Furtivo: ×3 daño a todo en rango (12 s) | 36 / 7 / 0.375 |
+| Tanque | Defensor de Cristal | 40 | 3 | 1.3 s | 2.31 | 170 | hasta −50 % daño cerca del Nexo (640 px) | Interposición: todos −50 % daño 6 s (30 s) | 80 / 8 / 0.975 |
+Común (refactor-2; ver heroes-9 en §1): sin defensa/armadura, 5 niveles (8/11/16/22/31 Comida). Velocidad 420 px/s × `move_speed_mult` (Pícaro 504, Tanque 378). Un solo objetivo; el Mago dispara.
 
 ### Enemigos (agrupados por familia)
 | Familia | Tipos | Rol | HP (piso 1) | Contacto | Veloc. | Pisos |
@@ -209,6 +247,12 @@ Común: velocidad 420 px/s (315 con el Nexo), sin defensa/armadura, sin equipami
 ## 5. Inconsistencias o datos faltantes
 
 **Héroes**
+**Resueltas en heroes-9:**
+- 4 (el Pícaro ahora es más rápido, `move_speed_mult`).
+- 7 (descripción real de la activa en `AbilityData.description`; `passive_ability_desc` queda solo para la selección de héroe).
+- 8 (botón de habilidad con ícono y cooldown radial en el retrato; los íconos siguen siendo `placeholder_ability_*`).
+- "Si cualquier héroe muere, termina la partida": ahora hay caído y reanimación.
+
 1. **Dos "vida base" distintas**: `StatBalance.PLAYER_BASE_HP = 20` (`StatBalance.gd:7`) vs `base_hp` por héroe (26/18/18/40). `CharacterStats.reset_modifiers()` fija `max_hp = PLAYER_BASE_HP` (`CharacterStats.gd:43-48`) y enseguida `PlayerStats._apply_base_stats()` lo pisa con el valor del héroe (`PlayerStats.gd:93`); el Mago y el Pícaro (18) quedan por debajo de ese "base" y de `clamp_player_hp` (mínimo 20). Además `PlayerStats.base_hp` (cuenta, = héroe por defecto) se "clampa" a sí mismo (`PlayerStats.gd:20, 81-82`) y no se usa para nada más.
 2. **Tope de 60 de vida**: `apply_hp_delta` limita a `PLAYER_MAX_HP` (`StatBalance.gd:20`); el Tanque llega justo a 60 con 5 niveles. Cualquier bono extra de vida (los ítems `hp` si algún día se aplican) quedaría recortado sin aviso.
 3. **"Provocador" sin provocación**: el Guerrero se describe como "Tanque y Provocador / Atrae el peligro" pero no existe mecánica de provocar (los enemigos eligen por distancia: `Enemy._aggro_hero`, `Enemy.gd:356`; solo hay `_provoked_until_msec` de los raiders hacia quien los golpea).

@@ -205,3 +205,34 @@ Modelo `BalanceSim.economy_rows()` (jugador de referencia): cada sala encendida 
 `test_balance._check_economy`: todo recurso con ingreso > 0 y gasto > 0 en cada piso, y `run_ratio` final dentro de [0,2; 3,0] (ninguno inútil ni acumulándose sin límite). Industria tiene sumidero tardío real (el costo crece con lo ya construido y las reparaciones no están en el modelo); Comida ganó la cura. Ciencia sigue siendo un árbol finito (97 − 14 + 32 = 115 con la nueva Catapulta y sin `science_generator`): el excedente del piso 4-5 (~1,4-1,6) es la deuda ya anotada en `docs/INVESTIGACION_AUDITORIA.md` I-09; se acepta mientras no haya un tier 3 de investigación (el campo `tier` ya admite 1-3).
 
 Pendiente de playtest: que el costo creciente (+25 % de la base por módulo) no frene tanto la Industria que el jugador nunca llegue al segundo Brasero/Ballesta; que 8 de Ciencia por Ballesta + exigir un Scriptorium (6 Industria) no trabe el inicio con 15 Industria; valor real de `heal_cost_per_hp`.
+
+## Héroes vs enemigos: objetivo único (session heroes-9)
+Corrida: `godot --headless --path . --script res://tools/balance_sim.gd -- heroes9_after` (tablas `matchups`, `encounters`, `heroes`... en `docs/balance/heroes9_after_*.csv`).
+
+**Cambio de modelo.** El héroe ya no golpea a todo lo que está en su radio: golpea solo al enemigo **más cercano** (`HitboxComponent.single_target`), y el Mago dispara un `Projectile` (el daño entra al impactar). `BalanceSim.encounter_loss` pasó de "la oleada entera muere junta por AoE" a "la oleada se reparte entre los 2 héroes del grupo inicial (`PARTY_SIZE`) y cada uno mata a los suyos de a uno". El enemigo `i` queda vivo `(golpes − 0,5 + i × golpes) × intervalo`. Un héroe a distancia descuenta el tiempo de aproximación `(alcance − 40) / velocidad del enemigo`. Medido con el modelo viejo de "un héroe solo contra toda la oleada", el objetivo único daba 42 % de vida perdida en el piso 1 y más de 100 % en el piso 5. Con el reparto queda dentro de los objetivos de siempre (≤ 33,4 % en el piso 1, ≤ 70 % en el piso 5, saltos ≤ 20 puntos).
+
+**Roles (nuevo, `test_balance._check_hero_roles`, en cada piso 1-5, nivel = piso − 1).** El Tanque tiene el mayor TTD (tiempo hasta caer contra 1 enemigo medio del pool) y el TTK más lento. El Pícaro tiene la menor vida, el mayor DPS y la mayor velocidad.
+
+| Piso | Guerrero TTK / TTD | Mago TTK / TTD | Pícaro TTK / TTD · vida | Tanque TTK / TTD · vida |
+|---|---|---|---|---|
+| 1 | 2,40 s / 14,3 s | 1,96 / 9,9 | 1,59 / 8,8 · 16 | 2,84 / 22,0 · 40 |
+| 2 | 2,28 / 16,2 | 2,08 / 11,4 | 1,32 / 10,4 · 20 | 3,00 / 24,9 · 48 |
+| 3 | 2,29 / 17,0 | 1,86 / 9,8 | 1,30 / 9,1 · 24 | 2,68 / 21,2 · 56 |
+| 4 | 2,38 / 18,0 | 2,00 / 10,0 | 1,28 / 9,3 · 28 | 2,89 / 21,3 · 64 |
+| 5 | 2,82 / 15,0 | 2,40 / 9,6 | 1,63 / 9,1 · 32 | 3,47 / 20,4 · 72 |
+
+Velocidad de movimiento (`CharacterData.move_speed_mult` × 420 px/s): Pícaro 504, Guerrero y Mago 420, Tanque 378.
+
+**Ajustes.**
+- **Tanque**: curva propia `resources/upgrades/tank_upgrade_config.tres` (`CharacterData.upgrade_override`, que ya existía): **+8 de vida por nivel** (la global da +4). Sin esto, el Guerrero lo superaba en TTD desde el piso 3: su −20 % siempre activo crece con la vida de cada nivel, mientras que el −50 % del Tanque solo cuenta junto al Nexo y el modelo no lo incluye. El daño y el intervalo por nivel son los globales, así que sigue siendo el que más tarda en matar.
+- **Pícaro**: vida base **18 → 16**, para que sea el más frágil sin empatar con el Mago.
+- **Mago**: `attack_style` RANGED (dispara; la aproximación le ahorra golpes).
+- **Pícaro / Tanque**: velocidad ×1,2 / ×0,9 (antes no había velocidad por héroe).
+
+Lo que no se tocó: el daño, el intervalo y el alcance de los cuatro; los enemigos; los umbrales de `test_balance`.
+
+**Pendiente de playtest.**
+- El reparto 50/50 de la oleada es optimista: en el juego, los HUNTER persiguen al héroe más cercano y pueden cargarle todo a uno.
+- La Catapulta y el Golpe Furtivo siguen siendo de área: con objetivo único, sus picos se notan más.
+- El grupo de 3-4 (reclutas) reparte todavía más y puede hacer los pisos 1-3 demasiado fáciles.
+- La cura en Descanso (2 de vida/s por 1 de Comida) y el costo de reanimar (15 + 5 por piso).
