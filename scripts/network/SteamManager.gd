@@ -22,19 +22,24 @@ var _local_auth_ticket_peer: int = -1
 
 
 func _ready() -> void:
-	var init_result: Dictionary = Steam.steamInitEx(false, APP_ID)
+	if not SteamApi.has_extension():
+		QuestLogger.warn(QuestLogger.Category.NETWORK, "GodotSteam extension not loaded: offline mode only.")
+		return
+	# GodotSteam 4.22: steamInitEx(app_id, embed_callbacks). Callbacks are pumped in
+	# _process (embed off); project setting steam/initialization is off so this is the only init.
+	var init_result: Dictionary = SteamApi.steam().steamInitEx(APP_ID, false)
 	_steam_initialized = init_result.get("status", 1) == 0
 
 	if not _steam_initialized:
 		QuestLogger.warn(QuestLogger.Category.NETWORK, "Steam not available: %s" % str(init_result))
 		return
 
-	QuestLogger.info(QuestLogger.Category.NETWORK, "Steam initialized. SteamID=%d" % Steam.getSteamID())
+	QuestLogger.info(QuestLogger.Category.NETWORK, "Steam initialized. SteamID=%d" % SteamApi.steam().getSteamID())
 
-	Steam.get_auth_session_ticket_response.connect(_on_get_auth_session_ticket_response)
-	Steam.validate_auth_ticket_response.connect(_on_validate_auth_ticket_response)
-	Steam.avatar_loaded.connect(_on_loaded_avatar)
-	Steam.persona_state_change.connect(_on_persona_state_change)
+	SteamApi.steam().connect("get_auth_session_ticket_response", _on_get_auth_session_ticket_response)
+	SteamApi.steam().connect("validate_auth_ticket_response", _on_validate_auth_ticket_response)
+	SteamApi.steam().connect("avatar_loaded", _on_loaded_avatar)
+	SteamApi.steam().connect("persona_state_change", _on_persona_state_change)
 
 	lobby_manager = SteamLobbyManager.new()
 	lobby_manager.name = "SteamLobbyManager"
@@ -46,7 +51,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if _steam_initialized:
-		Steam.run_callbacks()
+		SteamApi.steam().run_callbacks()
 
 
 func is_steam_available() -> bool:
@@ -56,42 +61,47 @@ func is_steam_available() -> bool:
 func get_steam_id_for_peer_id(peer_id: int) -> int:
 	if lobby_manager == null or lobby_manager.peer == null:
 		return 0
-	return lobby_manager.peer.get_steam_id_for_peer_id(peer_id)
+	return lobby_manager.peer.call("get_steam_id_for_peer_id", peer_id)
 
 
-func get_user_avatar(steam_id: int = 0, size: int = Steam.AVATAR_MEDIUM) -> void:
-	var target_id: int = steam_id if steam_id != 0 else Steam.getSteamID()
+func get_user_avatar(steam_id: int = 0, size: int = SteamApi.AVATAR_MEDIUM) -> void:
+	if not _steam_initialized:
+		return
+	var target_id: int = steam_id if steam_id != 0 else SteamApi.steam().getSteamID()
 	if avatar_cache.has(target_id):
 		avatar_loaded_ready.emit(target_id, avatar_cache[target_id])
 		return
 	if _pending_avatar_requests.has(target_id):
 		return
 	_pending_avatar_requests[target_id] = true
-	if target_id != Steam.getSteamID():
-		Steam.requestUserInformation(target_id, false)
-	Steam.getPlayerAvatar(size, target_id)
+	if target_id != SteamApi.steam().getSteamID():
+		SteamApi.steam().requestUserInformation(target_id, false)
+	SteamApi.steam().getPlayerAvatar(size, target_id)
 
 
 func _on_persona_state_change(steam_id: int, flags: int) -> void:
 	if not _pending_avatar_requests.has(steam_id):
 		return
-	if flags & Steam.PERSONA_CHANGE_AVATAR:
-		Steam.getPlayerAvatar(Steam.AVATAR_MEDIUM, steam_id)
+	if flags & SteamApi.PERSONA_CHANGE_AVATAR:
+		SteamApi.steam().getPlayerAvatar(SteamApi.AVATAR_MEDIUM, steam_id)
 
 
 func get_auth_ticket_for_peer(peer_id: int) -> void:
 	if _local_auth_ticket != -1:
-		Steam.cancelAuthTicket(_local_auth_ticket)
-	var ticket_info: Dictionary = Steam.getAuthSessionTicket()
+		SteamApi.steam().cancelAuthTicket(_local_auth_ticket)
+	var ticket_info: Dictionary = SteamApi.steam().getAuthSessionTicket()
 	_local_auth_ticket = ticket_info.get("id", -1)
 	_local_auth_ticket_peer = peer_id
 	pending_clients[peer_id] = {"ticket_buffer": ticket_info.get("buffer", PackedByteArray()), "requested_at": Time.get_ticks_msec()}
 
 
-func validate_auth_session(ticket_data: PackedByteArray, steam_id: int) -> void:
-	var result: int = Steam.beginAuthSession(ticket_data, ticket_data.size(), steam_id)
-	if result != Steam.AUTH_SESSION_RESPONSE_OK:
+## Returns false (and the caller rejects the peer) when Steam refuses the ticket outright.
+func validate_auth_session(ticket_data: PackedByteArray, steam_id: int) -> bool:
+	var result: int = SteamApi.steam().beginAuthSession(ticket_data, ticket_data.size(), steam_id)
+	if result != SteamApi.BEGIN_AUTH_SESSION_RESULT_OK:
 		QuestLogger.warn(QuestLogger.Category.NETWORK, "beginAuthSession failed for steam_id=%d, result=%d" % [steam_id, result])
+		return false
+	return true
 
 
 @rpc("any_peer", "reliable")
@@ -104,19 +114,26 @@ func submit_auth_ticket(ticket_bytes: PackedByteArray) -> void:
 			multiplayer.multiplayer_peer.disconnect_peer(peer_id, true)
 		return
 	pending_clients[peer_id] = {"steam_id": steam_id, "ticket": ticket_bytes, "requested_at": Time.get_ticks_msec()}
-	validate_auth_session(ticket_bytes, steam_id)
-	_start_auth_timeout(peer_id)
+	if not validate_auth_session(ticket_bytes, steam_id):
+		_reject_client(peer_id, steam_id, "begin_auth_session_failed")
 
 
+## Started on connection (host only): a peer that is not authenticated in time is
+## dropped, also when it never sends a ticket at all.
 func _start_auth_timeout(peer_id: int) -> void:
 	await get_tree().create_timer(AUTH_TIMEOUT_SECONDS).timeout
-	if pending_clients.has(peer_id):
+	if multiplayer.multiplayer_peer == null or connected_clients.has(peer_id):
+		return
+	if peer_id in multiplayer.get_peers():
 		QuestLogger.warn(QuestLogger.Category.NETWORK, "Auth timeout for peer_id=%d" % peer_id)
-		_reject_client(peer_id, pending_clients[peer_id].get("steam_id", 0), "timeout")
+		_reject_client(peer_id, pending_clients.get(peer_id, {}).get("steam_id", 0), "timeout")
 
 
-func _on_get_auth_session_ticket_response(_auth_ticket: int, result: int) -> void:
-	if result != Steam.AUTH_SESSION_RESPONSE_OK:
+func _on_get_auth_session_ticket_response(auth_ticket: int, result: int) -> void:
+	if auth_ticket != _local_auth_ticket:
+		return  # a stale ticket (cancelled and re-requested)
+	# `result` is an EResult: success is RESULT_OK (1), not AUTH_SESSION_RESPONSE_OK (0).
+	if result != SteamApi.RESULT_OK:
 		QuestLogger.error(QuestLogger.Category.NETWORK, "Local auth ticket failed, result=%d" % result)
 		return
 	var entry: Dictionary = pending_clients.get(_local_auth_ticket_peer, {})
@@ -134,7 +151,7 @@ func _on_validate_auth_ticket_response(steam_id: int, auth_session_response: int
 	if peer_id == -1:
 		return
 
-	if auth_session_response == Steam.AUTH_SESSION_RESPONSE_OK:
+	if auth_session_response == SteamApi.AUTH_SESSION_RESPONSE_OK:
 		connected_clients[peer_id] = {"steam_id": steam_id, "authenticated_at": Time.get_ticks_msec()}
 		pending_clients.erase(peer_id)
 		QuestLogger.info(QuestLogger.Category.NETWORK, "Client authenticated peer_id=%d steam_id=%d" % [peer_id, steam_id])
@@ -146,7 +163,7 @@ func _on_validate_auth_ticket_response(steam_id: int, auth_session_response: int
 func _reject_client(peer_id: int, steam_id: int, reason: String) -> void:
 	QuestLogger.warn(QuestLogger.Category.NETWORK, "Rejecting client peer_id=%d steam_id=%d reason=%s" % [peer_id, steam_id, reason])
 	if steam_id != 0:
-		Steam.endAuthSession(steam_id)
+		SteamApi.steam().endAuthSession(steam_id)
 	pending_clients.erase(peer_id)
 	client_rejected.emit(peer_id, steam_id, reason)
 	if multiplayer.multiplayer_peer != null and peer_id in multiplayer.get_peers():
@@ -168,36 +185,40 @@ func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByte
 
 func _on_peer_connected(peer_id: int) -> void:
 	QuestLogger.info(QuestLogger.Category.NETWORK, "Peer connected: %d" % peer_id)
+	if multiplayer.is_server():
+		_start_auth_timeout(peer_id)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
 	QuestLogger.info(QuestLogger.Category.NETWORK, "Peer disconnected: %d" % peer_id)
 	if peer_id == _local_auth_ticket_peer and _local_auth_ticket != -1:
-		Steam.cancelAuthTicket(_local_auth_ticket)
+		SteamApi.steam().cancelAuthTicket(_local_auth_ticket)
 		_local_auth_ticket = -1
 		_local_auth_ticket_peer = -1
 	if connected_clients.has(peer_id):
-		Steam.endAuthSession(connected_clients[peer_id].get("steam_id", 0))
+		SteamApi.steam().endAuthSession(connected_clients[peer_id].get("steam_id", 0))
 		connected_clients.erase(peer_id)
 	if pending_clients.has(peer_id):
 		var pending_steam_id: int = pending_clients[peer_id].get("steam_id", 0)
 		if pending_steam_id != 0:
-			Steam.endAuthSession(pending_steam_id)
+			SteamApi.steam().endAuthSession(pending_steam_id)
 		pending_clients.erase(peer_id)
 
 
 func clear_all_sessions() -> void:
+	if not _steam_initialized:
+		return
 	for peer_id: int in connected_clients.keys():
-		Steam.endAuthSession(connected_clients[peer_id].get("steam_id", 0))
+		SteamApi.steam().endAuthSession(connected_clients[peer_id].get("steam_id", 0))
 	connected_clients.clear()
 
 	for peer_id: int in pending_clients.keys():
 		var pending_steam_id: int = pending_clients[peer_id].get("steam_id", 0)
 		if pending_steam_id != 0:
-			Steam.endAuthSession(pending_steam_id)
+			SteamApi.steam().endAuthSession(pending_steam_id)
 	pending_clients.clear()
 
 	if _local_auth_ticket != -1:
-		Steam.cancelAuthTicket(_local_auth_ticket)
+		SteamApi.steam().cancelAuthTicket(_local_auth_ticket)
 		_local_auth_ticket = -1
 		_local_auth_ticket_peer = -1

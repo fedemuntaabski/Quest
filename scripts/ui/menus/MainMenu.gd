@@ -83,16 +83,16 @@ func _setup_profile() -> void:
 	if steam_mgr == null or not steam_mgr.is_steam_available():
 		profile_container.visible = false
 		return
-	profile_name_label.text = Steam.getPersonaName()
+	profile_name_label.text = SteamApi.steam().getPersonaName()
 	steam_mgr.avatar_loaded_ready.connect(_on_avatar_loaded)
-	if steam_mgr.avatar_cache.has(Steam.getSteamID()):
-		profile_avatar.texture = steam_mgr.avatar_cache[Steam.getSteamID()]
+	if steam_mgr.avatar_cache.has(SteamApi.steam().getSteamID()):
+		profile_avatar.texture = steam_mgr.avatar_cache[SteamApi.steam().getSteamID()]
 	else:
 		steam_mgr.get_user_avatar()
 
 
 func _on_avatar_loaded(steam_id: int, texture: ImageTexture) -> void:
-	if steam_id == Steam.getSteamID():
+	if steam_id == SteamApi.steam().getSteamID():
 		profile_avatar.texture = texture
 
 

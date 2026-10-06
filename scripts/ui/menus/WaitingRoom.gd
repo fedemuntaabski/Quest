@@ -61,20 +61,21 @@ func _ready() -> void:
 func _refresh(_arg = null) -> void:
 	var lobby_mgr: SteamLobbyManager = null
 	var steam_mgr := ManagerLocator.get_steam_manager()
-	if steam_mgr:
-		lobby_mgr = steam_mgr.lobby_manager
+	if steam_mgr == null or not steam_mgr.is_steam_available():
+		return  # the waiting room is only reachable with Steam; never crash without it
+	lobby_mgr = steam_mgr.lobby_manager
 
 	lobby_id_label.text = "Lobby: %d" % (lobby_mgr.current_lobby_id if lobby_mgr else 0)
 	
 	for child: Node in players_list.get_children():
 		child.queue_free()
 
-	_make_player_row(Steam.getSteamID(), "%s (vos)" % Steam.getPersonaName(), steam_mgr)
+	_make_player_row(SteamApi.steam().getSteamID(), "%s (vos)" % SteamApi.steam().getPersonaName(), steam_mgr)
 
 	if steam_mgr:
 		for peer_id: int in steam_mgr.connected_clients.keys():
 			var steam_id: int = steam_mgr.connected_clients[peer_id].get("steam_id", 0)
-			_make_player_row(steam_id, Steam.getFriendPersonaName(steam_id), steam_mgr)
+			_make_player_row(steam_id, SteamApi.steam().getFriendPersonaName(steam_id), steam_mgr)
 
 	_refresh_character_roster()
 
@@ -102,7 +103,7 @@ func _publish_local_character_selection() -> void:
 	var steam_mgr := ManagerLocator.get_steam_manager()
 	var lobby_mgr: SteamLobbyManager = steam_mgr.lobby_manager if steam_mgr else null
 	if lobby_mgr and lobby_mgr.current_lobby_id != 0:
-		Steam.setLobbyMemberData(lobby_mgr.current_lobby_id, "character_id", _local_character_id)
+		SteamApi.steam().setLobbyMemberData(lobby_mgr.current_lobby_id, "character_id", _local_character_id)
 
 
 func _refresh_character_roster() -> void:
@@ -111,20 +112,20 @@ func _refresh_character_roster() -> void:
 	if lobby_mgr == null or lobby_mgr.current_lobby_id == 0:
 		return
 
-	var local_steam_id := Steam.getSteamID()
+	var local_steam_id: int = SteamApi.steam().getSteamID()
 	var taken: Dictionary = {_local_character_id: local_steam_id}
 
 	if steam_mgr:
 		for peer_id: int in steam_mgr.connected_clients.keys():
 			var steam_id: int = steam_mgr.connected_clients[peer_id].get("steam_id", 0)
-			var picked: String = Steam.getLobbyMemberData(lobby_mgr.current_lobby_id, steam_id, "character_id")
+			var picked: String = SteamApi.steam().getLobbyMemberData(lobby_mgr.current_lobby_id, steam_id, "character_id")
 			if picked != "":
 				taken[picked] = steam_id
 
 	for character_id in _character_cards.keys():
 		var owner_steam_id: int = taken.get(character_id, 0)
 		var is_taken_by_other := owner_steam_id != 0 and owner_steam_id != local_steam_id
-		var owner_name := Steam.getFriendPersonaName(owner_steam_id) if is_taken_by_other else ""
+		var owner_name: String = SteamApi.steam().getFriendPersonaName(owner_steam_id) if is_taken_by_other else ""
 		_character_cards[character_id].set_taken(is_taken_by_other, owner_name)
 
 
@@ -171,7 +172,7 @@ func _on_invite_pressed() -> void:
 	if steam_mgr == null or steam_mgr.lobby_manager == null:
 		return
 	var lobby_id: int = steam_mgr.lobby_manager.current_lobby_id
-	Steam.activateGameOverlayInviteDialog(lobby_id)
+	SteamApi.steam().activateGameOverlayInviteDialog(lobby_id)
 
 
 func _on_start_pressed() -> void:

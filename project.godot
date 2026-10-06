@@ -179,4 +179,4 @@ environment/defaults/default_clear_color=Color(0.02, 0.02, 0.03, 1)
 
 [steam]
 
-initialization/processes/initialize_on_startup=true
+initialization/processes/initialize_on_startup=false

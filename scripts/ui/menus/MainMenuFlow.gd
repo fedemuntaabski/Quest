@@ -280,7 +280,7 @@ func _on_host_selected() -> void:
 		return
 
 	QuestLogger.info(QuestLogger.Category.NETWORK, "_on_host_selected: is_steam_available=%s, calling create_lobby" % steam_mgr.is_steam_available())
-	steam_mgr.lobby_manager.create_lobby(Steam.LOBBY_TYPE_FRIENDS_ONLY)
+	steam_mgr.lobby_manager.create_lobby(SteamApi.LOBBY_TYPE_FRIENDS_ONLY)
 
 
 func _on_join_selected() -> void:
@@ -288,7 +288,14 @@ func _on_join_selected() -> void:
 		network_mode_select.close(false)
 
 	_is_hosting = false
-	Steam.activateGameOverlay("Friends")
+	var steam_mgr := ManagerLocator.get_steam_manager()
+	if steam_mgr == null or not steam_mgr.is_steam_available():
+		# Without Steam there is nothing to join: back to the mode select (it shows the offline notice).
+		QuestLogger.warn(QuestLogger.Category.NETWORK, "Join selected but Steam is not available.")
+		if network_mode_select:
+			network_mode_select.call_deferred("open")
+		return
+	SteamApi.steam().activateGameOverlay("Friends")
 
 
 func _on_offline_selected() -> void:
