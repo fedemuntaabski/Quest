@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="AbilityData" format=3]
+[gd_resource type="Resource" script_class="AbilityData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/abilities/AbilityData.gd" id="1_ability"]
+[ext_resource type="Texture2D" path="res://assets/art/ui/placeholder_ability_rogue_active.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_ability")
@@ -9,3 +10,6 @@ effect = 6
 value = 3.0
 cooldown = 12.0
 vfx = &"hit_slash"
+display_name = "Golpe Furtivo"
+description = "Golpea una vez a todos los enemigos en su alcance con {value}× su daño de ataque. Enfriamiento {cooldown} s."
+icon = ExtResource("2_icon")

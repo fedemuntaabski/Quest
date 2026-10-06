@@ -26,6 +26,31 @@ enum Effect {
 ## VfxManager effect id played on use (actives).
 @export var vfx: StringName = &""
 
+@export_group("UI")
+## Shown in the hero sheet, the portrait button tooltip and hero select (heroes-9).
+@export var display_name: String = ""
+## Template with the real numbers filled by HeroAbilities.describe(): {value},
+## {value_pct} (value x100, %), {duration}, {cooldown}, {radius} (perks included).
+@export_multiline var description: String = ""
+@export var icon: Texture2D
+@export_group("")
+
 
 func is_active() -> bool:
 	return effect >= Effect.TEAM_ATTACK_BUFF
+
+
+## `description` with the placeholders replaced (raw numbers, no perks).
+## HeroAbilities.describe() passes the hero's effective numbers instead.
+func format_description(p_value: float = value, p_duration: float = duration, p_cooldown: float = cooldown, p_radius: float = radius) -> String:
+	return description.format({
+		"value": _num(p_value),
+		"value_pct": _num(p_value * 100.0),
+		"duration": _num(p_duration),
+		"cooldown": _num(p_cooldown),
+		"radius": _num(p_radius),
+	})
+
+
+static func _num(v: float) -> String:
+	return str(roundi(v)) if is_equal_approx(v, roundf(v)) else "%.1f" % v

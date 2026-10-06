@@ -86,7 +86,8 @@ func _check_warrior_tank() -> void:
 	selection.select_only("tank")
 	_expect(not warrior.abilities._input_allowed() and tank.abilities._input_allowed(), "hero_ability must act only on selected heroes")
 	Engine.time_scale = 0.0
-	_expect(not tank.abilities._input_allowed(), "hero_ability must not fire during the tactical pause")
+	# heroes-9: Q still reaches the hero in the pause, but the active refuses with a message.
+	_expect(tank.abilities.get_block_reason() == HeroAbilities.PAUSE_REASON and not tank.abilities.try_activate(), "the active must not fire during the tactical pause")
 	Engine.time_scale = 1.0
 
 	# Active: Grito de Guerra buffs allies in the room, then wears off; cooldown holds.

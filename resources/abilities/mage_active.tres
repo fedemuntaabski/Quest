@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="AbilityData" format=3]
+[gd_resource type="Resource" script_class="AbilityData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/abilities/AbilityData.gd" id="1_ability"]
+[ext_resource type="Texture2D" path="res://assets/art/ui/placeholder_ability_mage_active.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_ability")
@@ -10,3 +11,6 @@ value = 1.0
 duration = 8.0
 cooldown = 30.0
 vfx = &"buff_module"
+display_name = "Sobrecarga de Módulo"
+description = "Las torres de su sala hacen +{value_pct} % de daño durante {duration} s y cada generador de la sala paga un tick extra al instante. Enfriamiento {cooldown} s."
+icon = ExtResource("2_icon")

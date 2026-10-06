@@ -4,14 +4,16 @@ class_name HeroAbilities
 ## HeroAbilities: runtime of one hero's passive + active (AbilityData). Child of
 ## Player. Passives are read where they act: incoming_damage() (Player._on_hurt)
 ## and FloorManager.on_room_discovered (passive_discovery_bonus). The active
-## fires on the `hero_ability` action (Q) for every selected hero, then waits
-## `cooldown` seconds. Cooldowns and buff timers run on game time, so the
-## tactical pause (time_scale 0) freezes them.
+## fires on the `hero_ability` action (Q) for every selected hero, or the
+## HeroPortrait ability button, then waits `cooldown` seconds. Cooldowns and
+## buff timers run on game time, so the tactical pause (time_scale 0) freezes
+## them; trying it in the pause says why (get_block_reason, heroes-9).
 
 signal ability_used(hero_id: String, ability: AbilityData)
 signal cooldown_changed(left: float, total: float)
 
 const MAX_REDUCTION := 0.9
+const PAUSE_REASON := "No se puede en pausa táctica"
 
 var hero: Player
 var passive: AbilityData
@@ -43,11 +45,43 @@ func _unhandled_input(event: InputEvent) -> void:
 		try_activate()
 
 
+## Q reaches every selected hero while the run is ACTIVE (the tactical pause
+## included: try_activate() then explains the refusal).
 func _input_allowed() -> bool:
 	var selection := ManagerLocator.get_selection_manager()
 	var state := ManagerLocator.get_game_state_manager()
-	return Engine.time_scale > 0.0 and (state == null or state.is_active()) \
+	return (state == null or state.is_active()) \
 		and selection != null and selection.is_selected(hero.stats.hero_id)
+
+
+## Why the active can't fire now ("" = it can). Q and the portrait button share it.
+func get_block_reason() -> String:
+	if active == null:
+		return "Sin habilidad activa"
+	if not hero.stats.is_alive():
+		return "El héroe ha caído"
+	if Engine.time_scale <= 0.0:
+		return PAUSE_REASON
+	if cooldown_left > 0.0:
+		return "%s (%d s)" % [display_name(), ceili(cooldown_left)]
+	return ""
+
+
+func display_name() -> String:
+	if active and active.display_name != "":
+		return active.display_name
+	return ability_name
+
+
+## `ability`'s description with this hero's effective numbers (perks included).
+func describe(ability: AbilityData) -> String:
+	if ability == null:
+		return ""
+	if ability == active:
+		return ability.format_description(active_value(), active_duration(), active_cooldown(), ability.radius)
+	if ability == passive:
+		return ability.format_description(passive_value(), ability.duration, ability.cooldown, passive_radius())
+	return ability.format_description()
 
 
 # ---------------- numbers (AbilityData + class perks) ----------------
@@ -122,10 +156,10 @@ func is_ready() -> bool:
 
 ## Fires the active if it is off cooldown. Returns whether it fired.
 func try_activate() -> bool:
-	if active == null or not hero.stats.is_alive():
-		return false
-	if cooldown_left > 0.0:
-		_say("%s (%d s)" % [ability_name, ceili(cooldown_left)], QuestPalette.PARCHMENT)
+	var reason := get_block_reason()
+	if reason != "":
+		if active != null and hero.stats.is_alive():
+			_say(reason, QuestPalette.PARCHMENT)
 		return false
 	match active.effect:
 		AbilityData.Effect.TEAM_ATTACK_BUFF:
@@ -143,7 +177,7 @@ func try_activate() -> bool:
 			return false
 	cooldown_left = active_cooldown()
 	cooldown_changed.emit(cooldown_left, active_cooldown())
-	_say(ability_name, hero.vfx_color())
+	_say(display_name(), hero.vfx_color())
 	_play_cast_vfx()
 	ability_used.emit(hero.stats.hero_id, active)
 	QuestLogger.info(QuestLogger.Category.COMBAT, "%s used '%s'." % [hero.stats.hero_id, active.id])

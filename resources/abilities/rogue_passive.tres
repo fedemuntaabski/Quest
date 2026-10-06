@@ -1,9 +1,13 @@
-[gd_resource type="Resource" script_class="AbilityData" format=3]
+[gd_resource type="Resource" script_class="AbilityData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/abilities/AbilityData.gd" id="1_ability"]
+[ext_resource type="Texture2D" path="res://assets/art/ui/placeholder_ability_rogue_passive.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_ability")
 id = "rogue_passive"
 effect = 3
 value = 2.0
+display_name = "Paso Ligero"
+description = "+{value} Polvo cada vez que se descubre una sala."
+icon = ExtResource("2_icon")
