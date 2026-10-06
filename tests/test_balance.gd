@@ -5,7 +5,9 @@ extends SceneTree
 ##  - the basic (floor-1) encounter costs a hero at most 1/3 of its HP;
 ##  - difficulty grows floor by floor without sudden jumps;
 ##  - the Nexo survives long enough to react to the alert, but falls if ignored;
-##  - no hero is strictly better than another (HP, DPS, range), at level 0 and 5.
+##  - no hero is strictly better than another (HP, DPS, range), at level 0 and 5;
+##  - heroes-9 roles on every floor: the Tank outlasts everyone but kills slowest,
+##    the Rogue is the most fragile, the fastest and has the highest DPS.
 ##   godot --headless --path . --script res://tests/test_balance.gd
 
 const MAX_BASIC_LOSS_PCT := 33.4
@@ -31,6 +33,7 @@ func _initialize() -> void:
 	_check_economy()
 	_check_no_dominance(0)
 	_check_no_dominance(5)
+	_check_hero_roles()
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
 	for failure in failures:
 		printerr("FAIL: ", failure)
@@ -103,6 +106,32 @@ func _check_towers() -> void:
 	for row in rows:
 		var lost: float = row["turret_hp_lost_pct"]
 		_expect(lost >= TOWER_HP_LOST_PCT.x and lost <= TOWER_HP_LOST_PCT.y, "floor %s %s: takes %.1f%% of a turret before dying (want %.0f-%.0f)" % [row["floor"], row["enemy"], lost, TOWER_HP_LOST_PCT.x, TOWER_HP_LOST_PCT.y])
+
+
+## heroes-9: hero_matchup_rows (single target, level = floor - 1).
+func _check_hero_roles() -> void:
+	var by_floor: Dictionary = {}
+	for row in BalanceSim.hero_matchup_rows():
+		if not by_floor.has(row["floor"]):
+			by_floor[row["floor"]] = {}
+		by_floor[row["floor"]][row["hero"]] = row
+	for f: int in by_floor:
+		var rows: Dictionary = by_floor[f]
+		var tank: Dictionary = rows["tank"]
+		var rogue: Dictionary = rows["rogue"]
+		for hero_id: String in rows:
+			if hero_id == "tank":
+				continue
+			var other: Dictionary = rows[hero_id]
+			_expect(float(tank["ttd_1_s"]) > float(other["ttd_1_s"]), "floor %d: tank must outlast %s (%.1fs vs %.1fs)" % [f, hero_id, tank["ttd_1_s"], other["ttd_1_s"]])
+			_expect(float(tank["ttk_s"]) >= float(other["ttk_s"]), "floor %d: tank must kill slowest (%.2fs vs %s %.2fs)" % [f, tank["ttk_s"], hero_id, other["ttk_s"]])
+		for hero_id: String in rows:
+			if hero_id == "rogue":
+				continue
+			var other: Dictionary = rows[hero_id]
+			_expect(int(rogue["hp"]) < int(other["hp"]), "floor %d: rogue must be the most fragile (%d HP vs %s %d)" % [f, rogue["hp"], hero_id, other["hp"]])
+			_expect(float(rogue["dps"]) > float(other["dps"]), "floor %d: rogue must have the highest DPS (%.2f vs %s %.2f)" % [f, rogue["dps"], hero_id, other["dps"]])
+			_expect(float(rogue["speed"]) > float(other["speed"]), "floor %d: rogue must be the fastest" % f)
 
 
 ## A dominates B when it is >= on every axis and > on at least one.

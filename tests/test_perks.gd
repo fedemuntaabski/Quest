@@ -185,7 +185,7 @@ func _test_persistence_and_reset() -> void:
 	# New floor: the party is rebuilt and registers again; levels and perks come back.
 	ps.clear_party()
 	var fresh := _bare("tank")
-	_expect(fresh.max_hp == max_hp and fresh.max_hp == mini(fresh.base_hp + 2 * ps.run_upgrade_config.hp_per_level + 6, StatBalance.PLAYER_MAX_HP), "perk lost on a new floor: %d vs %d" % [fresh.max_hp, max_hp])
+	_expect(fresh.max_hp == max_hp and fresh.max_hp == mini(fresh.base_hp + 2 * ps._config_for("tank").hp_per_level + 6, StatBalance.PLAYER_MAX_HP), "perk lost on a new floor: %d vs %d" % [fresh.max_hp, max_hp])
 	_expect(ps.get_perks_of("tank").size() == 1, "run_perks survive clear_party")
 	# New run.
 	ps.reset_run_upgrades()

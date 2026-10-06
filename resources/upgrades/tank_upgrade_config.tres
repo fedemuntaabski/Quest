@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="UpgradeConfig" format=3]
+
+[ext_resource type="Script" uid="uid://dgpmwhnbm7343" path="res://scripts/core/stats/UpgradeConfig.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+hp_per_level = 8
+attack_speed_per_level = 0.05
+min_attack_interval = 0.3

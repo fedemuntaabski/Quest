@@ -6,11 +6,16 @@ class_name BalanceSim
 ## (Enemy.resolved_*, FloorConfig multipliers, UpgradeConfig curves). No scene,
 ## no randomness: tools/balance_sim.gd exports it as CSV, tests/test_balance.gd
 ## asserts the targets on it. Model (documented in docs/BALANCE.md):
-##  - hero AoE hits every enemy in range each `interval` (free-running Timer: the
-##    first tick lands uniformly within one interval, so the enemy is exposed for
-##    (hits - 0.5) * interval on average); enemies hit on contact every
-##    CONTACT_HIT_INTERVAL. Damage taken is the expectation (no rounding to whole ticks);
-##  - an encounter = the floor's invasion wave at turn WAVE_TURN, all in range at once;
+##  - heroes-9: the hero hits ONE enemy (the nearest) each `interval` (free-running
+##    Timer: the first tick lands uniformly within one interval, so the first enemy
+##    is exposed for (hits - 0.5) * interval on average, each next one `hits *
+##    interval` longer); enemies hit on contact every CONTACT_HIT_INTERVAL. A RANGED
+##    hero (Mage) shoots while the wave walks in: every enemy's exposure shrinks by
+##    the approach time (range - CONTACT_PX) / speed. Damage taken is the
+##    expectation (no rounding to whole ticks);
+##  - an encounter = the floor's invasion wave at turn WAVE_TURN, all arriving at
+##    once, split over the starting party (PARTY_SIZE heroes in the room: each
+##    hero faces wave / PARTY_SIZE enemies on average, a fraction weighting the last);
 ##  - hero level on floor f = f - 1 (one level-up bought per floor).
 
 const HERO_IDS: Array[String] = ["warrior", "mage", "rogue", "tank"]
@@ -23,6 +28,8 @@ const UPGRADE_CONFIG_PATH := "res://resources/upgrades/run_upgrade_config.tres"
 const NEXO_TICK_SEC := 1.0
 ## ResourceManager.reset_resources() default dust at the start of a run.
 const RESET_DUST := 20
+## Distance (px) at which an enemy's contact hitbox reaches a hero (radius ~24 + reach).
+const CONTACT_PX := 40.0
 
 
 static func floor_config() -> FloorConfig:
@@ -40,7 +47,7 @@ static func hero_data(hero_id: String) -> CharacterData:
 ## What PlayerStats applies: base + per-level bonuses (+ passives, see passive_*).
 static func hero_stats(hero_id: String, level: int) -> Dictionary:
 	var data := hero_data(hero_id)
-	var up := upgrade_config()
+	var up := data.upgrade_override if data.upgrade_override else upgrade_config()  # PlayerStats._config_for
 	var damage := up.damage_at(data.attack_damage, level)
 	var interval := up.interval_at(data.attack_interval, level)
 	var hp := data.base_hp + up.hp_per_level * level
@@ -62,6 +69,8 @@ static func hero_stats(hero_id: String, level: int) -> Dictionary:
 	return {
 		"hero": hero_id, "level": level, "hp": hp, "damage": damage, "interval": interval,
 		"dps": dps, "range": data.attack_range,
+		"ranged": data.attack_style == CharacterData.AttackStyle.RANGED,
+		"speed": MoveAction.DEFAULT_SPEED_PX * data.move_speed_mult,
 		"reduction_pct": reduction,
 		"ehp": ehp,
 		"active_dps": active_dps, "active_ehp": active_ehp,
@@ -120,11 +129,28 @@ static func duel(hero_id: String, level: int, type: EnemyType, floor_index: int)
 	}
 
 
-## Fraction of the hero's max HP lost to a whole wave (all in range, killed together by AoE).
+## Fraction of the hero's max HP lost to its share of the wave, killed one by one
+## (single target): enemy i stays (hits - 0.5 + (i - 1) * hits) * interval, minus the
+## approach a ranged hero shoots through.
 static func encounter_loss(hero_id: String, level: int, type: EnemyType, floor_index: int) -> float:
 	var d := duel(hero_id, level, type, floor_index)
 	var hero := hero_stats(hero_id, level)
-	return wave_size(floor_index) * float(d["hp_lost"]) / float(hero["hp"])
+	var enemy := enemy_stats(type, floor_index)
+	var approach := approach_sec(hero, float(enemy["speed"]))
+	var per_kill := int(d["hits_to_kill"]) * float(hero["interval"])
+	var share := float(wave_size(floor_index)) / PARTY_SIZE
+	var exposure := 0.0
+	for i in ceili(share):
+		var weight := minf(share - i, 1.0)
+		exposure += weight * maxf(float(d["exposure_s"]) + i * per_kill - approach, 0.0)
+	return int(d["hit_taken"]) * exposure / Enemy.CONTACT_HIT_INTERVAL / float(hero["hp"])
+
+
+## Seconds a ranged hero shoots before the enemy reaches contact (0 for melee).
+static func approach_sec(hero: Dictionary, enemy_speed: float) -> float:
+	if not hero.get("ranged", false):
+		return 0.0
+	return maxf(float(hero["range"]) - CONTACT_PX, 0.0) / maxf(enemy_speed, 1.0)
 
 
 ## Weighted mean of encounter_loss over the floor's pool.
@@ -149,6 +175,41 @@ static func encounter_rows() -> Array[Dictionary]:
 				"hero": hero_id, "floor": f, "level": f - 1, "wave": wave_size(f),
 				"hp": hero_stats(hero_id, f - 1)["hp"],
 				"loss_pct": snappedf(pool_encounter_loss(hero_id, f - 1, f) * 100.0, 0.1),
+			})
+	return rows
+
+
+## heroes-9 roles per floor (level = floor - 1), weighted over the floor's pool:
+## ttk_s = mean seconds to kill one enemy (single target); ttd_1_s / ttd_3_s =
+## seconds to fall to 1 / 3 enemies hitting at once (their hits already reduced by
+## the always-on passive, duel()["enemy_dps"]);
+## dps, hp, speed (px/s). The Tank must outlast everyone and kill slowest; the
+## Rogue must be the most fragile, the fastest and hit hardest per second.
+static func hero_matchup_rows() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for f in range(1, FLOORS + 1):
+		var pool := floor_config().enemy_pool(f)
+		for hero_id in HERO_IDS:
+			var hero := hero_stats(hero_id, f - 1)
+			var ttk := 0.0
+			var enemy_dps := 0.0
+			var total := 0.0
+			for i in pool.types.size():
+				var w := pool.weight_of(i)
+				var d := duel(hero_id, f - 1, pool.types[i], f)
+				ttk += w * float(d["ttk_enemy_s"])
+				enemy_dps += w * float(d["enemy_dps"])
+				total += w
+			ttk /= maxf(total, 0.001)
+			enemy_dps /= maxf(total, 0.001)
+			rows.append({
+				"hero": hero_id, "floor": f, "level": f - 1, "hp": hero["hp"],
+				"dps": snappedf(float(hero["dps"]), 0.01),
+				"ttk_s": snappedf(ttk, 0.01),
+				"ttd_1_s": snappedf(float(hero["hp"]) / maxf(enemy_dps, 0.001), 0.1),
+				"ttd_3_s": snappedf(float(hero["hp"]) / maxf(enemy_dps * 3.0, 0.001), 0.1),
+				"speed": hero["speed"],
+				"ranged": hero["ranged"],
 			})
 	return rows
 
@@ -314,7 +375,8 @@ static func extraction_rows() -> Array[Dictionary]:
 const MODULE_YIELD := 3
 ## ResourceManager.reset_resources() defaults: what a run starts with.
 const START_RESOURCES := {"industry": 15, "food": 15, "science": 10, "dust": 20}
-## Heroes in a run and HP a hero loses (and heals back with Comida) per floor in the model.
+## Heroes in a run (GameSession.PARTY_SIZE, the picked pair before recruits; they also
+## share each invasion wave) and HP a hero loses (and heals back with Comida) per floor.
 const PARTY_SIZE := 2
 const HEAL_HP_PER_HERO := 30
 

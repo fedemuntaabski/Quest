@@ -13,6 +13,7 @@ func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
 	var tables := {
 		"heroes": BalanceSim.hero_rows(),
+		"matchups": BalanceSim.hero_matchup_rows(),
 		"duels": BalanceSim.duel_rows(),
 		"encounters": BalanceSim.encounter_rows(),
 		"nexo": BalanceSim.nexo_rows(),
