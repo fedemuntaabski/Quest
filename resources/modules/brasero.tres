@@ -13,6 +13,6 @@ hp = 15
 base_cost = 3
 requires_power = true
 scene_path = "res://scenes/world/Module.tscn"
-icon_path = "res://assets/art/ui/placeholder_trap.png"
+icon_path = "res://assets/art/tiles/wall_fountain_basin_red_anim_f0.png"
 slow_factor = 0.5
 slow_duration = 3.0

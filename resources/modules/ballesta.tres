@@ -13,6 +13,6 @@ hp = 15
 base_cost = 4
 requires_power = true
 scene_path = "res://scenes/world/TurretModule.tscn"
-icon_path = "res://assets/art/ui/placeholder_turret.png"
+icon_path = "res://assets/art/items/weapon_bow_2.png"
 damage = 15
 fire_rate = 1.0

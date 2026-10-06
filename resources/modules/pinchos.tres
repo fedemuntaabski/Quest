@@ -13,5 +13,5 @@ hp = 15
 base_cost = 3
 requires_power = false
 scene_path = "res://scenes/world/Module.tscn"
-icon_path = "res://assets/art/ui/placeholder_spikes.png"
+icon_path = "res://assets/art/tiles/floor_spikes_anim_f3.png"
 spike_damage = 10
