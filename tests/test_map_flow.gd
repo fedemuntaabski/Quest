@@ -77,8 +77,8 @@ func _run(use_fallback: bool) -> void:
 	while progress:
 		progress = false
 		for door in room_manager.get_all_doors():
-			if door.is_open or not room_manager.is_zone_revealed(door.from_zone_id):
-				continue
+			if door.is_open or door.is_secret or not room_manager.is_zone_revealed(door.from_zone_id):
+				continue  # secret doors open by themselves (Main2d._check_secret_rooms)
 			var dust_before := resources.get_resource("dust")
 			if not doors.open_room(door.target_room_id):
 				failures.append("%s: open_room('%s') refused" % [label, door.target_room_id])
@@ -93,8 +93,9 @@ func _run(use_fallback: bool) -> void:
 	if camera and not (camera.get_bounds().encloses(start_bounds) and camera.get_bounds().get_area() > start_bounds.get_area()):
 		failures.append("%s: camera bounds %s did not grow past %s after exploring" % [label, camera.get_bounds(), start_bounds])
 
-	if opened != main2d.map_layout.corridors.size():
-		failures.append("%s: opened %d of %d doors" % [label, opened, main2d.map_layout.corridors.size()])
+	var clickable: int = main2d.map_layout.corridors.filter(func(c: CorridorData) -> bool: return not c.is_secret).size()
+	if opened != clickable:
+		failures.append("%s: opened %d of %d doors" % [label, opened, clickable])
 	if not room_manager.validate_visibility():
 		failures.append("%s: visibility mismatch" % label)
 	var exit_found := false
@@ -187,6 +188,7 @@ func _run_types_and_loops() -> void:
 	var hero_stats: CharacterStats = main2d.player.stats
 	var per_room := config.discovery_dust(floor_index)
 	fm.config = fm.config.duplicate()  # the door invasions above must not hit the enemy cap
+	fm.config.run_curve = null  # progresion-10: the curve wins over the array
 	fm.config.max_enemies_by_floor = PackedInt32Array([999])
 	var typed: Array[String] = []
 	for room in layout.rooms:
@@ -204,8 +206,8 @@ func _run_types_and_loops() -> void:
 	while progress:
 		progress = false
 		for door in room_manager.get_all_doors():
-			if door.is_open or not room_manager.is_zone_revealed(door.from_zone_id):
-				continue
+			if door.is_open or door.is_secret or not room_manager.is_zone_revealed(door.from_zone_id):
+				continue  # secret doors open by themselves (Main2d._check_secret_rooms)
 			var group := door.target_room_id
 			var rule: RoomTypeRule = fm.room_type_rule(room_manager.get_room_type(group)) if room_manager.get_zone_kind(group) == "room" else null
 			var reward_key := rule.reward_resource if rule else ""

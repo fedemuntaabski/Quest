@@ -58,6 +58,7 @@ func _live_main2d() -> Node:
 	main2d.nexo.max_hp = 100000
 	main2d.nexo.current_hp = 100000
 	main2d.floor_manager.config = main2d.floor_manager.config.duplicate()
+	main2d.floor_manager.config.run_curve = null  # progresion-10: the curve wins over the array
 	main2d.floor_manager.config.max_enemies_by_floor = PackedInt32Array([999])
 	return main2d
 

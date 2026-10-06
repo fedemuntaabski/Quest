@@ -94,6 +94,7 @@ func _run(s: int, floor_index: int) -> void:
 
 	# --- reward: every door pays dust (rooms) + the extra resource (rooms and loops) ---
 	var roll := fm.config.door_roll
+	fm.config.run_curve = null  # progresion-10: the curve wins over the array
 	fm.config.max_enemies_by_floor = PackedInt32Array([999])
 	var opened_room := false
 	var opened_loop := false
@@ -149,6 +150,7 @@ func _run(s: int, floor_index: int) -> void:
 
 	# --- cap ---
 	var cap := 3
+	fm.config.run_curve = null  # progresion-10: the curve wins over the array
 	fm.config.max_enemies_by_floor = PackedInt32Array([cap])
 	_clear_enemies(enemies)
 	_expect(enemies.spawn_wave(20) == cap and enemies.alive_count() == cap, "%s: spawn_wave(20) with cap %d gave %d" % [label, cap, enemies.alive_count()])

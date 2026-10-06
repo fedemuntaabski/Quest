@@ -4,7 +4,7 @@ extends SceneTree
 ##   - tiers (seen -> killed -> mastered) and the unlock signal, once per tier
 ##   - kills count only for deaths by damage, never for a node freed (floor change)
 ##   - ConfigFile round trip, unknown ids ignored, two slots independent, legacy keys dropped
-##   - detail text unlocks by tier; 20 types in bestiary_order
+##   - detail text unlocks by tier; 22 types in bestiary_order (20 enemies + 2 bosses, progresion-10)
 ##   - PauseMenu opens/closes the panel (Main2d complete), Esc closes only the panel
 ##   godot --headless --path . --script res://tests/test_bestiary.gd
 
@@ -45,7 +45,7 @@ func _type(id: String) -> EnemyType:
 
 func _test_entry_and_tiers() -> void:
 	var ordered := _svc.get_all_ordered()
-	_expect(ordered.size() == 20, "get_all_ordered: %d types, expected 20" % ordered.size())
+	_expect(ordered.size() == 22, "get_all_ordered: %d types, expected 22" % ordered.size())
 	for i in range(1, ordered.size()):
 		_expect(ordered[i - 1].bestiary_order <= ordered[i].bestiary_order, "types not ordered by bestiary_order")
 	for type in ordered:
@@ -204,7 +204,7 @@ func _test_pause_menu() -> void:
 	_expect(menu.is_open and paused and menu.pause_panel.visible and not menu.bestiary_panel.visible, "pause menu opens on the main panel")
 	menu.bestiary_button.pressed.emit()
 	_expect(menu.bestiary_panel.visible and not menu.pause_panel.visible, "BESTIARIO opens the panel")
-	_expect(menu.bestiary_panel._items.size() == 20, "panel lists the 20 enemies")
+	_expect(menu.bestiary_panel._items.size() == 22, "panel lists the 22 enemies (bosses included)")
 
 	var esc := InputEventAction.new()
 	esc.action = "ui_cancel"

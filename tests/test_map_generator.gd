@@ -10,6 +10,7 @@ const SEEDS_PER_FLOOR := 200
 const SPECIAL_TYPES := [RoomData.RoomType.REST, RoomData.RoomType.LOOT, RoomData.RoomType.ELITE]
 
 var failures: Array[String] = []
+var secrets_seen := 0
 
 
 func _init() -> void:
@@ -39,6 +40,8 @@ func _init() -> void:
 
 	if maps_with_loops == 0:
 		failures.append("no generated map got a loop")
+	if secrets_seen == 0:
+		failures.append("no generated map got a secret room")
 	for type in SPECIAL_TYPES:
 		if not seen_types.has(type):
 			failures.append("room type %s never assigned" % RoomData.RoomType.keys()[type])
@@ -84,8 +87,10 @@ func _check_layout(layout: MapLayout, tree: MapLayout, config: FloorConfig, floo
 	var problems := layout.validate()
 	if not problems.is_empty():
 		failures.append("%s: %s" % [where, problems])
-	if layout.rooms.size() != config.room_count(floor_index):
+	var secret_rooms := layout.rooms.filter(func(r: RoomData) -> bool: return r.room_type == RoomData.RoomType.SECRET)
+	if layout.rooms.size() - secret_rooms.size() != config.room_count(floor_index):
 		failures.append("%s: %d rooms, wanted %d" % [where, layout.rooms.size(), config.room_count(floor_index)])
+	_check_secret(layout, secret_rooms, where)
 	# Loops/types never move the tree: rooms + non-loop corridors == plain generate().
 	if _signature(layout, false) != _signature(tree, false):
 		failures.append("%s: loops/types altered the tree layout" % where)
@@ -112,7 +117,7 @@ func _check_layout(layout: MapLayout, tree: MapLayout, config: FloorConfig, floo
 
 	var loops := 0
 	for corridor in layout.corridors:
-		if not corridor.is_loop:
+		if not corridor.is_loop or corridor.is_secret:
 			continue
 		loops += 1
 		var room_a := tree.get_room(corridor.room_a)
@@ -128,6 +133,26 @@ func _check_layout(layout: MapLayout, tree: MapLayout, config: FloorConfig, floo
 	if not _all_reachable(layout):
 		failures.append("%s: not every room reachable over all corridors" % where)
 	return loops
+
+
+## progresion-10: at most one secret room, next to two non-exit rooms in adjacent
+## slots, entered only through its two is_secret corridors.
+func _check_secret(layout: MapLayout, secret_rooms: Array, where: String) -> void:
+	if secret_rooms.size() > 1:
+		failures.append("%s: %d secret rooms" % [where, secret_rooms.size()])
+	for secret: RoomData in secret_rooms:
+		secrets_seen += 1
+		if secret.neighbors.size() != 2:
+			failures.append("%s: secret room has %d neighbors" % [where, secret.neighbors.size()])
+		for neighbor in secret.neighbors:
+			var other := layout.get_room(neighbor)
+			if other == null or other.is_exit:
+				failures.append("%s: secret room next to '%s' (missing or exit)" % [where, neighbor])
+			elif (MapGenerator._slot_of(other) - MapGenerator._slot_of(secret)).abs() not in [Vector2i(1, 0), Vector2i(0, 1)]:
+				failures.append("%s: secret room not in a slot next to '%s'" % [where, neighbor])
+		var into := layout.corridors.filter(func(c: CorridorData) -> bool: return c.room_b == secret.id)
+		if into.size() != 2 or into.any(func(c: CorridorData) -> bool: return not c.is_secret):
+			failures.append("%s: secret room must have 2 secret corridors, has %d" % [where, into.size()])
 
 
 ## Every candidate pair becomes a loop: geometry must still validate.
@@ -220,10 +245,12 @@ func _all_reachable(layout: MapLayout) -> bool:
 func _signature(layout: MapLayout, with_loops: bool = true) -> String:
 	var parts: Array[String] = []
 	for room in layout.rooms:
+		if not with_loops and room.room_type == RoomData.RoomType.SECRET:
+			continue  # progresion-10: the secret room is a post-pass, not the tree
 		parts.append("%s%s%s" % [room.id, room.pos, room.size])
 		if with_loops:
 			parts.append(str(room.room_type))
 	for corridor in layout.corridors:
-		if with_loops or not corridor.is_loop:
+		if with_loops or not (corridor.is_loop or corridor.is_secret):
 			parts.append("%s%s%s" % [corridor.id, corridor.pos, corridor.door_cell])
 	return ",".join(parts)
