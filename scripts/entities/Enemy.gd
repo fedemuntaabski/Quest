@@ -125,7 +125,8 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 
 	ai_timer.wait_time = float(cfg.get("ai_interval", 1.5))
 	ai_timer.one_shot = false
-	ai_timer.timeout.connect(_on_ai_tick)
+	if not ai_timer.timeout.is_connected(_on_ai_tick):  # configure() can run twice (re-roll)
+		ai_timer.timeout.connect(_on_ai_tick)
 	ai_timer.start()
 
 	var contact_damage := int(cfg.get("contact_damage", 1))
@@ -139,15 +140,17 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 		module_damage = resolved_module_damage(p_type)
 	hitbox.configure(maxi(1, roundi(contact_damage * damage_multiplier)), CONTACT_HIT_INTERVAL)
 	selector.setup(self, p_type.get_target_profile() if p_type else TargetProfile.derive(role, variant))
-	selector.target_lost.connect(_on_target_lost)
+	if not selector.target_lost.is_connected(_on_target_lost):
+		selector.target_lost.connect(_on_target_lost)
 	if selector.profile.reeval_sec > 0.0:
 		ai_timer.wait_time = selector.profile.reeval_sec
 
 	attack_damage = maxi(1, roundi(module_damage * damage_multiplier))
 	attack_timer.wait_time = attack_speed
 	attack_timer.one_shot = false
-	attack_timer.timeout.connect(_perform_attack)
-	if p_type and p_type.is_boss:
+	if not attack_timer.timeout.is_connected(_perform_attack):
+		attack_timer.timeout.connect(_perform_attack)
+	if p_type and p_type.is_boss and boss_brain == null:
 		boss_brain = BossBrain.new()
 		boss_brain.name = "BossBrain"
 		boss_brain.setup(self)

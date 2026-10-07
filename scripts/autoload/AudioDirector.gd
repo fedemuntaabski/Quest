@@ -97,6 +97,7 @@ func load_stream(path: String) -> AudioStream:
 			break
 	if stream == null and not _warned.has(path):
 		_warned[path] = true
-		QuestLogger.warn(QuestLogger.Category.GENERAL, "AudioDirector: missing audio '%s' (silence; see docs/CREDITOS.md)." % path)
+		# calidad-13: info, not warn: the audio packs are optional placeholders (docs/CREDITOS.md)
+		QuestLogger.info(QuestLogger.Category.GENERAL, "AudioDirector: missing audio '%s' (silence; see docs/CREDITOS.md)." % path)
 	_cache[path] = stream
 	return stream

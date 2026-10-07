@@ -84,7 +84,8 @@ static func _level_name(level: int) -> String:
 static func log_msg(cat: Category, level: int, msg: String) -> void:
 	if not is_enabled(cat, level):
 		return
-	var formatted := "[QUEST][%s][%s] %s" % [_category_name(cat), _level_name(level), msg]
+	# calidad-13: timestamp so user://logs/quest*.log (Godot file logging, rotated) is readable in reports
+	var formatted := "%s [QUEST][%s][%s] %s" % [Time.get_time_string_from_system(), _category_name(cat), _level_name(level), msg]
 	match level:
 		Level.ERROR:
 			push_error(formatted)
