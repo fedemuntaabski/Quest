@@ -9,7 +9,7 @@
 [ext_resource type="Resource" path="res://resources/floors/enemy_pool_f3.tres" id="4_533ib"]
 [ext_resource type="Resource" uid="uid://i467ddqa5dpx" path="res://resources/floors/enemy_pool_f4.tres" id="5_erun4"]
 [ext_resource type="Resource" uid="uid://d1ebvjqkr7pu6" path="res://resources/floors/enemy_pool_f5.tres" id="6_41g3f"]
-[ext_resource type="Resource" path="res://resources/floors/run_curve.tres" id="9_kvag3"]
+[ext_resource type="Resource" uid="uid://ch3yfwklv62m0" path="res://resources/floors/run_curve.tres" id="9_kvag3"]
 
 [sub_resource type="Resource" id="RoomTypeRule_rest"]
 script = ExtResource("2_room_type_rule")
