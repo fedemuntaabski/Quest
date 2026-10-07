@@ -53,6 +53,17 @@ func set_selection(ids: Array[String]) -> bool:
 	return true
 
 
+## coop-12: the co-op party (1..MAX_PARTY distinct known heroes, one block per player).
+func set_party(ids: Array[String]) -> bool:
+	if ids.is_empty() or ids.size() > MAX_PARTY:
+		return false
+	for i in ids.size():
+		if not CharacterDatabase.has_id(ids[i]) or ids.find(ids[i]) != i:
+			return false
+	selected_hero_ids = ids.duplicate()
+	return true
+
+
 func clear() -> void:
 	selected_hero_ids.clear()
 	reset_run()

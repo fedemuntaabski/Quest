@@ -65,10 +65,14 @@ func return_to_main_menu() -> void:
 	ManagerLocator.flush_saves()
 	get_tree().paused = false
 	Engine.time_scale = 1.0  # tactical pause must not leak into the fade/next floor
+	var net := Net.session()
+	if net:
+		net.leave("menu")  # coop-12: never keep a lobby/peer open behind the menu
 	await show_main_menu()
 
 
-func start_gameplay() -> void:
+## `floor_index` > 1 only when a co-op client (re)joins a run in progress.
+func start_gameplay(floor_index: int = 1) -> void:
 	if _is_transitioning:
 		return
 	_is_transitioning = true
@@ -76,6 +80,7 @@ func start_gameplay() -> void:
 	await _fade_to_black()
 	await _clear_containers(true, true, true)
 	_begin_new_run()
+	current_floor = floor_index
 	await _show_floor_card()
 	_current_world_add(MAIN2D_SCENE.instantiate())
 	_current_hud_add(HUD_SCENE.instantiate())
@@ -134,7 +139,8 @@ func _reload_world(new_run: bool) -> void:
 ## previous run's resources (and the very first run starts at 0 dust).
 func _begin_new_run() -> void:
 	current_floor = 1
-	run_seed = randi()
+	# coop-12: every peer plays the host's seed (same maps: generation is deterministic).
+	run_seed = Net.session().run_seed if Net.is_online() else randi()
 	FloorManager.reset_seen_types()
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager:

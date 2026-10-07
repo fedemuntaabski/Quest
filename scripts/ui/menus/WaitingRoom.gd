@@ -1,83 +1,49 @@
 extends Control
 class_name WaitingRoom
 
-const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd")
+## WaitingRoom (coop-12): the co-op lobby. Everything shown comes from the
+## NetSession roster (host-authoritative, same on every peer): players with their
+## color, picks and ready flag; hero cards (taken by others = locked); Ready;
+## Start (host, once everyone is ready); join code + Steam invite; Leave.
+
 const CharacterCardOptionScene := preload("res://scenes/menus/CharacterCardOption.tscn")
 
 @onready var lobby_id_label: Label = $CenterContainer/RoomCard/VBoxContainer/LobbyIdLabel
 @onready var players_list: VBoxContainer = $CenterContainer/RoomCard/VBoxContainer/PlayersPanel/PlayersList
+@onready var hint_label: Label = $CenterContainer/RoomCard/VBoxContainer/CharacterPanel/CharacterVBox/CharacterHintLabel
 @onready var character_cards_container: HBoxContainer = $CenterContainer/RoomCard/VBoxContainer/CharacterPanel/CharacterVBox/CharacterCardsContainer
 @onready var invite_button: Button = $CenterContainer/RoomCard/VBoxContainer/InviteButton
 @onready var start_button: Button = $CenterContainer/RoomCard/VBoxContainer/StartButton
 @onready var leave_button: Button = $CenterContainer/RoomCard/VBoxContainer/LeaveButton
 
-var _refresh_timer: Timer = null
+var ready_button: Button
 var _character_cards: Dictionary = {}
-var _local_character_id: String = ""
+var _net: CoopSession
+var _leaving := false
 
 
 func _ready() -> void:
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	var is_host: bool = multiplayer.multiplayer_peer != null and multiplayer.is_server()
-
-	start_button.visible = is_host
-	invite_button.disabled = steam_mgr == null or not steam_mgr.is_steam_available()
+	_net = Net.session()
+	ready_button = Button.new()
+	ready_button.name = "ReadyButton"
+	ready_button.toggle_mode = true
+	ready_button.text = "Listo"
+	start_button.get_parent().add_child(ready_button)
+	start_button.get_parent().move_child(ready_button, start_button.get_index())
 
 	invite_button.pressed.connect(_on_invite_pressed)
 	start_button.pressed.connect(_on_start_pressed)
 	leave_button.pressed.connect(_on_leave_pressed)
-
-	if steam_mgr:
-		steam_mgr.client_authenticated.connect(_on_roster_changed)
-		steam_mgr.avatar_loaded_ready.connect(_on_avatar_loaded)
-	multiplayer.peer_disconnected.connect(_on_roster_changed)
-	if multiplayer.multiplayer_peer != null:
-		multiplayer.server_disconnected.connect(_on_host_lost)
-
-	_local_character_id = ManagerLocator.get_save_manager().get_selected_character_id()
+	ready_button.toggled.connect(func(on: bool) -> void: _net.request_set_ready(on))
+	_net.lobby_changed.connect(_refresh)
+	_net.session_ended.connect(_on_session_ended)
 	_build_character_cards()
-	_publish_local_character_selection()
-
-	_refresh_timer = Timer.new()
-	_refresh_timer.wait_time = 1.0
-	_refresh_timer.autostart = true
-	_refresh_timer.timeout.connect(_refresh)
-	add_child(_refresh_timer)
-
 	_refresh()
 
-	_set_transition_buttons_disabled(true)
-	var tween := MenuTransitionFX.play_entrance(
-		self,
-		[{"node": self, "max_alpha": 1.0}],
-		[],
-		0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2.ONE
-	)
+	var tween := MenuTransitionFX.play_entrance(self, [{"node": self, "max_alpha": 1.0}], [],
+		0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2.ONE)
 	if tween != null:
 		await tween.finished
-	_set_transition_buttons_disabled(false)
-
-
-func _refresh(_arg = null) -> void:
-	var lobby_mgr: SteamLobbyManager = null
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	if steam_mgr == null or not steam_mgr.is_steam_available():
-		return  # the waiting room is only reachable with Steam; never crash without it
-	lobby_mgr = steam_mgr.lobby_manager
-
-	lobby_id_label.text = "Lobby: %d" % (lobby_mgr.current_lobby_id if lobby_mgr else 0)
-	
-	for child: Node in players_list.get_children():
-		child.queue_free()
-
-	_make_player_row(SteamApi.steam().getSteamID(), "%s (vos)" % SteamApi.steam().getPersonaName(), steam_mgr)
-
-	if steam_mgr:
-		for peer_id: int in steam_mgr.connected_clients.keys():
-			var steam_id: int = steam_mgr.connected_clients[peer_id].get("steam_id", 0)
-			_make_player_row(steam_id, SteamApi.steam().getFriendPersonaName(steam_id), steam_mgr)
-
-	_refresh_character_roster()
 
 
 func _build_character_cards() -> void:
@@ -85,138 +51,84 @@ func _build_character_cards() -> void:
 		var card := CharacterCardOptionScene.instantiate()
 		character_cards_container.add_child(card)
 		card.setup(data)
-		card.selected.connect(_on_character_card_selected)
+		card.selected.connect(func(id: String) -> void: _net.request_pick(id))
 		_character_cards[data.character_id] = card
-		if data.character_id == _local_character_id:
-			card.set_selected(true)
 
 
-func _on_character_card_selected(character_id: String) -> void:
-	_local_character_id = character_id
-	ManagerLocator.get_save_manager().apply_character_selection(character_id)
-	for id in _character_cards.keys():
-		_character_cards[id].set_selected(id == character_id)
-	_publish_local_character_selection()
-
-
-func _publish_local_character_selection() -> void:
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	var lobby_mgr: SteamLobbyManager = steam_mgr.lobby_manager if steam_mgr else null
-	if lobby_mgr and lobby_mgr.current_lobby_id != 0:
-		SteamApi.steam().setLobbyMemberData(lobby_mgr.current_lobby_id, "character_id", _local_character_id)
-
-
-func _refresh_character_roster() -> void:
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	var lobby_mgr: SteamLobbyManager = steam_mgr.lobby_manager if steam_mgr else null
-	if lobby_mgr == null or lobby_mgr.current_lobby_id == 0:
+func _refresh() -> void:
+	if not is_instance_valid(_net) or not _net.is_online():
 		return
+	var me := _net.local_peer()
+	lobby_id_label.text = "Código: %s  (%s)" % [_net.get_join_code(), "Steam" if _net.get_kind() == "steam" else "red local"]
+	for child in players_list.get_children():
+		child.queue_free()
+	for peer in _net.players:
+		players_list.add_child(_player_row(peer, me))
 
-	var local_steam_id: int = SteamApi.steam().getSteamID()
-	var taken: Dictionary = {_local_character_id: local_steam_id}
+	var mine: Array = _net.players.get(me, {}).get("heroes", [])
+	for id in _character_cards:
+		var card: CharacterCardOption = _character_cards[id]
+		var owner_peer := _net.hero_taken_by(id)
+		card.set_taken(owner_peer != 0 and owner_peer != me, _net.player_name(owner_peer))
+		card.set_selected(mine.has(id))
 
-	if steam_mgr:
-		for peer_id: int in steam_mgr.connected_clients.keys():
-			var steam_id: int = steam_mgr.connected_clients[peer_id].get("steam_id", 0)
-			var picked: String = SteamApi.steam().getLobbyMemberData(lobby_mgr.current_lobby_id, steam_id, "character_id")
-			if picked != "":
-				taken[picked] = steam_id
-
-	for character_id in _character_cards.keys():
-		var owner_steam_id: int = taken.get(character_id, 0)
-		var is_taken_by_other := owner_steam_id != 0 and owner_steam_id != local_steam_id
-		var owner_name: String = SteamApi.steam().getFriendPersonaName(owner_steam_id) if is_taken_by_other else ""
-		_character_cards[character_id].set_taken(is_taken_by_other, owner_name)
+	var quota := _net.heroes_per_player()
+	hint_label.text = "Elegí %d héroe(s) (%d/%d)" % [quota, mine.size(), quota]
+	ready_button.set_pressed_no_signal(_net.players.get(me, {}).get("ready", false))
+	ready_button.disabled = mine.size() != quota
+	start_button.visible = _net.is_host()
+	var reason := _net.start_block_reason()
+	start_button.disabled = reason != ""
+	start_button.tooltip_text = reason
+	invite_button.disabled = _net.transport == null or not _net.transport.can_invite()
 
 
-func _make_player_row(steam_id: int, display_name: String, steam_mgr) -> HBoxContainer:
+func _player_row(peer: int, me: int) -> HBoxContainer:
+	var p: Dictionary = _net.players[peer]
 	var row := HBoxContainer.new()
-	row.set_meta("steam_id", steam_id)
-
-	var avatar := TextureRect.new()
-	avatar.name = "Avatar"
-	avatar.custom_minimum_size = Vector2(32, 32)
-	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	avatar.stretch_mode = TextureRect.STRETCH_SCALE
-	row.add_child(avatar)
-
+	var swatch := ColorRect.new()
+	swatch.custom_minimum_size = Vector2(16, 16)
+	swatch.color = _net.player_color(peer)
+	row.add_child(swatch)
+	var heroes := []
+	for id in p.heroes:
+		var data := CharacterDatabase.get_by_id(id)
+		heroes.append(data.display_name if data else id)
 	var label := Label.new()
-	label.text = "• %s" % display_name
+	label.text = "%s%s%s — %s %s" % [p.name, " (vos)" if peer == me else "", " [anfitrión]" if peer == 1 else "",
+		", ".join(heroes) if not heroes.is_empty() else "sin héroe", "✓ listo" if p.ready else "…"]
 	row.add_child(label)
-
-	players_list.add_child(row)
-
-	if steam_mgr:
-		if steam_mgr.avatar_cache.has(steam_id):
-			avatar.texture = steam_mgr.avatar_cache[steam_id]
-		else:
-			steam_mgr.get_user_avatar(steam_id)
-
 	return row
 
 
-func _on_avatar_loaded(steam_id: int, texture: ImageTexture) -> void:
-	for row: Node in players_list.get_children():
-		if row.get_meta("steam_id", 0) == steam_id:
-			var avatar := row.get_node_or_null("Avatar") as TextureRect
-			if avatar:
-				avatar.texture = texture
-
-
-func _on_roster_changed(_a = null, _b = null) -> void:
-	_refresh()
-
-
 func _on_invite_pressed() -> void:
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	if steam_mgr == null or steam_mgr.lobby_manager == null:
-		return
-	var lobby_id: int = steam_mgr.lobby_manager.current_lobby_id
-	SteamApi.steam().activateGameOverlayInviteDialog(lobby_id)
+	if _net.transport:
+		_net.transport.invite()
 
 
 func _on_start_pressed() -> void:
-	if not multiplayer.is_server():
-		return
-	_set_transition_buttons_disabled(true)
+	start_button.disabled = true
 	ManagerLocator.flush_saves()
-	var orchestrator := _get_orchestrator()
-	if orchestrator:
-		await orchestrator.start_gameplay()
+	if not _net.start_run():
+		_refresh()
 
 
 func _on_leave_pressed() -> void:
-	_set_transition_buttons_disabled(true)
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	if steam_mgr and steam_mgr.lobby_manager:
-		steam_mgr.lobby_manager.leave_lobby()
-	var orchestrator := _get_orchestrator()
-	if orchestrator:
-		await orchestrator.return_to_main_menu()
+	_go_to_menu()
 
 
-func _on_host_lost() -> void:
-	QuestLogger.warn(QuestLogger.Category.NETWORK, "Host disconnected, returning to main menu")
-	_set_transition_buttons_disabled(true)
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	if steam_mgr and steam_mgr.lobby_manager:
-		steam_mgr.lobby_manager.leave_lobby()
-	var orchestrator := _get_orchestrator()
-	if orchestrator:
-		await orchestrator.return_to_main_menu()
+func _on_session_ended(reason: String) -> void:
+	QuestLogger.warn(QuestLogger.Category.NETWORK, "Lobby closed (%s), back to the main menu" % reason)
+	_go_to_menu()
 
 
-func _get_orchestrator() -> Main:
+func _go_to_menu() -> void:
+	if _leaving:
+		return
+	_leaving = true
+	leave_button.disabled = true
 	var orchestrator := ManagerLocator.get_main_orchestrator()
-	if orchestrator == null:
-		QuestLogger.error(QuestLogger.Category.UI, "WaitingRoom: no Main orchestrator in group 'main_orchestrator' — run the project via scenes/Main.tscn (F5), not this scene standalone (F6).")
-	return orchestrator
-
-
-func _set_transition_buttons_disabled(is_disabled: bool) -> void:
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	var is_host: bool = multiplayer.multiplayer_peer != null and multiplayer.is_server()
-	start_button.disabled = is_disabled
-	start_button.visible = is_host
-	invite_button.disabled = is_disabled if is_disabled else (steam_mgr == null or not steam_mgr.is_steam_available())
-	leave_button.disabled = is_disabled
+	if orchestrator:
+		await orchestrator.return_to_main_menu()  # also closes the session
+	elif _net:
+		_net.leave("menu")
