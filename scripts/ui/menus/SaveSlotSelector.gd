@@ -41,6 +41,23 @@ func setup(click_sound: AudioStreamPlayer = null, hover_sound: AudioStreamPlayer
 
 func _ready() -> void:
 	_connect_events()
+	var save_mgr := ManagerLocator.get_save_manager()
+	if save_mgr:
+		save_mgr.save_corrupted.connect(_on_save_corrupted)
+	refresh()
+
+
+## calidad-13: a damaged slot file never fails silently.
+func _on_save_corrupted(slot_id: int, restored: bool) -> void:
+	var dialog := AcceptDialog.new()
+	dialog.title = "Guardado dañado"
+	dialog.dialog_text = (
+		"El guardado de la ranura %d estaba dañado.\nSe restauró la copia de respaldo." % slot_id if restored
+		else "El guardado de la ranura %d estaba dañado y no se pudo recuperar.\nLa ranura empieza de cero; el archivo dañado quedó como slot_%d.cfg.corrupt." % [slot_id, slot_id])
+	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)
+	add_child(dialog)
+	dialog.popup_centered()
 	refresh()
 
 
@@ -211,11 +228,9 @@ func _get_slot_summary(slot_id: int) -> String:
 	if not save_mgr or not save_mgr.has_save(slot_id):
 		return EMPTY_SLOT_TEXT
 
-	var cfg := ConfigFile.new()
-	var err := cfg.load(save_mgr.get_save_path(slot_id))
-	if err != OK:
-		QuestLogger.error(QuestLogger.Category.SAVE, "Failed to read slot %d summary (Error code: %d)." % [slot_id, err])
-		return "No se pudo leer la ranura %d. El archivo de guardado podria estar danado." % slot_id
+	var cfg: ConfigFile = save_mgr.read_slot(slot_id)  # damaged: backup restored or reported (save_corrupted)
+	if save_mgr.last_load_status == SafeConfig.Status.CORRUPT:
+		return "No se pudo leer la ranura %d. El archivo de guardado estaba dañado." % slot_id
 
 	var discovered := 0
 	for enemy_id in cfg.get_section_keys("bestiary") if cfg.has_section("bestiary") else PackedStringArray():

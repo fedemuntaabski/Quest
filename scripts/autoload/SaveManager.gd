@@ -14,10 +14,19 @@ const CharacterDatabase = preload("res://scripts/core/stats/CharacterDatabase.gd
 
 const SAVE_PATH_TEMPLATE := "user://slot_%d.cfg"
 const SAVE_SECTION := "save_data"
-## Keys of older formats, dropped the next time the slot is saved.
-const LEGACY_KEYS := ["run_cycle", "contracts_completed", "post_victory_popup_pending"]
+## calidad-13: format version in [save_data] version; files without it are v1.
+## Bump it and add a step to _migrate() whenever the format changes.
+const SAVE_VERSION := 2
+## Keys of older formats, dropped by the v1 -> v2 migration.
+const LEGACY_KEYS := ["run_cycle", "contracts_completed", "post_victory_popup_pending", "active_upgrades", "gold"]
+
+## A slot file could not be read: restored = its backup was used, else it started
+## fresh (the damaged file is kept as slot_N.cfg.corrupt). SlotSelection shows it.
+signal save_corrupted(slot: int, restored: bool)
 
 var current_slot: int = 1
+## SafeConfig.Status of the last read_slot() (tests and the slot menu read it).
+var last_load_status: int = SafeConfig.Status.OK
 ## True once load_game() ran: autosaves (bestiary) only write after a slot was picked.
 var slot_loaded: bool = false
 var first_time_player: bool = true
@@ -52,12 +61,43 @@ func apply_character_selection(character_id: String) -> void:
 	save_game(current_slot)
 
 
-func save_game(slot: int = current_slot) -> void:
+## The slot's file, migrated to SAVE_VERSION (missing: empty; corrupt: backup or
+## empty + save_corrupted). Every reader goes through here.
+func read_slot(slot: int) -> ConfigFile:
 	var cfg := ConfigFile.new()
-	cfg.load(get_save_path(slot))  # keep whatever this call does not own (missing file: empty)
-	for key in LEGACY_KEYS:
-		if cfg.has_section_key(SAVE_SECTION, key):
-			cfg.erase_section_key(SAVE_SECTION, key)
+	last_load_status = SafeConfig.load_into(cfg, get_save_path(slot))
+	if last_load_status == SafeConfig.Status.RESTORED or last_load_status == SafeConfig.Status.CORRUPT:
+		var restored := last_load_status == SafeConfig.Status.RESTORED
+		QuestLogger.warn(QuestLogger.Category.SAVE, "Slot %d was damaged: %s." % [slot, "backup restored" if restored else "started fresh, kept as .corrupt"])
+		save_corrupted.emit(slot, restored)
+	if last_load_status != SafeConfig.Status.MISSING:
+		migrate(cfg)
+	return cfg
+
+
+## Upgrades `cfg` in place to SAVE_VERSION, one step per version; returns the
+## version it had. Static so tests can feed fixtures.
+static func migrate(cfg: ConfigFile) -> int:
+	var from := int(cfg.get_value(SAVE_SECTION, "version", 1))
+	if from < 2:  # v1 (pre calidad-13): drop dead keys
+		for key in LEGACY_KEYS:
+			if cfg.has_section_key(SAVE_SECTION, key):
+				cfg.erase_section_key(SAVE_SECTION, key)
+	# next step: if from < 3: ...
+	cfg.set_value(SAVE_SECTION, "version", SAVE_VERSION)
+	return from
+
+
+func _write(cfg: ConfigFile, slot: int) -> Error:
+	cfg.set_value(SAVE_SECTION, "version", SAVE_VERSION)
+	var err := SafeConfig.save(cfg, get_save_path(slot))
+	if err != OK:
+		QuestLogger.error(QuestLogger.Category.SAVE, "Failed to save to slot %d (Error code: %d)." % [slot, err])
+	return err
+
+
+func save_game(slot: int = current_slot) -> void:
+	var cfg := read_slot(slot)  # keep whatever this call does not own (missing file: empty)
 
 	var now_msec := Time.get_ticks_msec()
 	playtime_seconds += (now_msec - _session_start_msec) / 1000.0
@@ -75,18 +115,15 @@ func save_game(slot: int = current_slot) -> void:
 	if bestiary and bestiary.slot == slot:
 		bestiary.write_to(cfg)
 
-	var err := cfg.save(get_save_path(slot))
-	if err == OK:
+	if _write(cfg, slot) == OK:
 		QuestLogger.info(QuestLogger.Category.SAVE, "Saved successfully to slot %d." % slot)
-	else:
-		QuestLogger.error(QuestLogger.Category.SAVE, "Failed to save to slot %d (Error code: %d)." % [slot, err])
 
 
 func load_game(slot: int = current_slot) -> void:
 	current_slot = slot
 	slot_loaded = true
-	var cfg := ConfigFile.new()
-	var err := cfg.load(get_save_path(slot))
+	var cfg := read_slot(slot)
+	var err := OK if last_load_status in [SafeConfig.Status.OK, SafeConfig.Status.RESTORED] else ERR_FILE_NOT_FOUND
 
 	var player_stats_autoload = ManagerLocator.get_player_stats()
 	var bestiary := ManagerLocator.get_bestiary()
@@ -126,8 +163,7 @@ const RECORDS_SECTION := "records"
 
 
 func get_records(difficulty: String, slot: int = current_slot) -> Dictionary:
-	var cfg := ConfigFile.new()
-	cfg.load(get_save_path(slot))
+	var cfg := read_slot(slot)
 	return cfg.get_value(RECORDS_SECTION, difficulty, {})
 
 
@@ -140,8 +176,7 @@ func record_run(stats: Dictionary, slot: int = current_slot) -> Array[String]:
 		QuestLogger.warn(QuestLogger.Category.SAVE, "record_run: no slot loaded, run not recorded.")
 		return beaten
 	var difficulty := str(stats.get("difficulty", "normal"))
-	var cfg := ConfigFile.new()
-	cfg.load(get_save_path(slot))
+	var cfg := read_slot(slot)
 	var rec: Dictionary = cfg.get_value(RECORDS_SECTION, difficulty, {})
 	var first := int(rec.get("runs", 0)) == 0
 	var victory := bool(stats.get("victory", false))
@@ -161,7 +196,7 @@ func record_run(stats: Dictionary, slot: int = current_slot) -> Array[String]:
 	rec["runs"] = int(rec.get("runs", 0)) + 1
 	rec["victories"] = int(rec.get("victories", 0)) + int(victory)
 	cfg.set_value(RECORDS_SECTION, difficulty, rec)
-	cfg.save(get_save_path(slot))
+	_write(cfg, slot)
 	QuestLogger.info(QuestLogger.Category.SAVE, "Run recorded in slot %d (%s): %s." % [slot, difficulty, rec])
 	if first:
 		beaten.clear()
@@ -169,19 +204,19 @@ func record_run(stats: Dictionary, slot: int = current_slot) -> Array[String]:
 
 
 func has_save(slot: int) -> bool:
-	return FileAccess.file_exists(get_save_path(slot))
+	var path := get_save_path(slot)
+	return FileAccess.file_exists(path) or FileAccess.file_exists(path + ".bak")
 
 
 func delete_save(slot: int) -> void:
 	var path := get_save_path(slot)
+	if not SafeConfig.remove(path):
+		QuestLogger.info(QuestLogger.Category.SAVE, "No save found to delete in slot %d." % slot)
+		return
 	if FileAccess.file_exists(path):
-		var err := DirAccess.remove_absolute(path)
-		if err == OK:
-			QuestLogger.info(QuestLogger.Category.SAVE, "Deleted save in slot %d." % slot)
-			var bestiary := ManagerLocator.get_bestiary()
-			if bestiary and bestiary.slot == slot:
-				bestiary.reset()
-		else:
-			QuestLogger.error(QuestLogger.Category.SAVE, "Failed to delete save in slot %d (Error code: %d)." % [slot, err])
-	else:
-		QuestLogger.warn(QuestLogger.Category.SAVE, "No save found to delete in slot %d." % slot)
+		QuestLogger.error(QuestLogger.Category.SAVE, "Failed to delete save in slot %d." % slot)
+		return
+	QuestLogger.info(QuestLogger.Category.SAVE, "Deleted save in slot %d." % slot)
+	var bestiary := ManagerLocator.get_bestiary()
+	if bestiary and bestiary.slot == slot:
+		bestiary.reset()
