@@ -63,6 +63,8 @@ func is_active() -> bool:
 
 
 func _on_tick() -> void:
+	if not Net.is_authority():  # coop-12: damage is the host's
+		return
 	for hurtbox in pick_targets():
 		if deliver.is_valid():
 			deliver.call(hurtbox, damage)

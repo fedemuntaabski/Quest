@@ -56,6 +56,19 @@ static func get_steam_manager() -> SteamManager:
 	return get_autoload("SteamManager") as SteamManager
 
 
+## coop-12: the command road (offline: runs locally; client: RPC to the host).
+static func get_net_commands() -> CoopCommands:
+	return get_autoload("NetCommands") as CoopCommands
+
+
+## coop-12: the gameplay scene root (group "main2d"; no class_name).
+static func get_main2d() -> Node:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group("main2d")
+	return null
+
+
 static func get_resource_manager() -> ResourceManager:
 	return get_autoload("ResourceManager") as ResourceManager
 

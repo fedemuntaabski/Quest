@@ -76,11 +76,10 @@ func _run() -> void:
 
 	var door: Door = rm.get_all_doors()[0]
 	door.is_open = false
-	var in_flight := controller._action_in_flight
-	controller._action_in_flight = false
-	controller._open_group(door)
+	var idle: Array[Player] = [main2d.heroes[1]]
+	_expect(controller.door_block_reason(door, idle) == "En pausa: no se abren puertas", "pause should block doors")
+	controller.open_door(door, idle)
 	_expect(doors.current_turn == turn_before, "a door opened during the pause (turn %d -> %d)" % [turn_before, doors.current_turn])
-	controller._action_in_flight = in_flight
 
 	# --- resume: the order runs ---
 	pause.toggle()

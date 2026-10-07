@@ -292,7 +292,18 @@ func _add_hint_panel() -> void:
 	_hint_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, HINT_TOP)
 
 
+var _last_hint := ""
+var _last_hint_msec := 0
+
+
 func show_hint(title: String, text: String, color: Color) -> void:
+	NetSync.broadcast("hint", {"title": title, "text": text, "color": color})  # coop-12: shared notices
+	# coop-12: a client may get the same notice locally and from the host: show it once.
+	var key := title + "|" + text
+	if not Net.is_authority() and key == _last_hint and Time.get_ticks_msec() - _last_hint_msec < 3000:
+		return
+	_last_hint = key
+	_last_hint_msec = Time.get_ticks_msec()
 	if _hint_panel == null:
 		return
 	_hint_title.text = title

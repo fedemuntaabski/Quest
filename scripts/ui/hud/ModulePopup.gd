@@ -82,16 +82,25 @@ func _build() -> void:
 	_repair = Button.new()
 	_repair.name = "Repair"
 	_repair.pressed.connect(func() -> void:
-		if module and module.repair():
+		if module:
+			_module_command("repair")
 			_refresh())
 	content.add_child(_repair)
 	_demolish = Button.new()
 	_demolish.name = "Demolish"
 	_demolish.pressed.connect(func() -> void:
 		if module:
-			module.demolish()
+			_module_command("demolish")
 		close())
 	content.add_child(_demolish)
+
+
+## coop-12: repair/demolish as commands (the host pays/refunds), keyed by (zone, slot index).
+func _module_command(cmd: String) -> void:
+	var slot := module.get_parent() as BuildingSlot
+	var zone := ManagerLocator.get_room_manager().get_zone_node(module.zone_id)
+	if slot and zone:
+		ManagerLocator.get_net_commands().request(cmd, {"zone": module.zone_id, "slot": zone.get_slot_index(slot)})
 
 
 func _refresh() -> void:

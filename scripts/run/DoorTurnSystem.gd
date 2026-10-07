@@ -52,6 +52,8 @@ func reveal_room(room_id: String) -> bool:
 
 
 func open_room(room_id: String) -> bool:
+	if not Net.is_authority():  # coop-12: clients reveal through reveal_room() (RunState)
+		return false
 	if not rooms.has(room_id):
 		QuestLogger.warn(QuestLogger.Category.DOOR, "DoorTurnSystem: unknown room_id '%s'" % room_id)
 		return false

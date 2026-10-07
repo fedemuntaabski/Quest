@@ -27,6 +27,7 @@ func get_active_count() -> int:
 
 ## Plays effect `id` at world `pos`; null when unknown or the cap is reached.
 func play(id: StringName, pos: Vector2, color: Color = Color.WHITE, angle: float = 0.0, to: Vector2 = Vector2.INF) -> VfxEffect:
+	NetSync.broadcast("fx", {"id": String(id), "pos": pos, "color": color, "angle": angle, "to": to})  # coop-12
 	var def := config.get_effect(id)
 	if def.is_empty() or _active >= config.max_active:
 		return null

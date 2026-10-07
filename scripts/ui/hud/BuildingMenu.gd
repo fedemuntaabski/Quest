@@ -107,16 +107,21 @@ func close_menu() -> void:
 func get_block_reason(slot: BuildingSlot) -> String:
 	if not is_armed():
 		return "Ningún módulo elegido"
-	var lock := get_lock_reason(_armed_type as Module.ModuleType)
+	return build_block_reason(slot, _armed_type as Module.ModuleType)
+
+
+## coop-12: the same rules for any module type (the host validates build commands with it).
+static func build_block_reason(slot: BuildingSlot, module_type: Module.ModuleType) -> String:
+	var lock := get_lock_reason(module_type)
 	if lock != "":
 		return lock
-	var cfg: Dictionary = Module.CATALOG[_armed_type]
+	var cfg: Dictionary = Module.CATALOG[module_type]
 	if int(cfg["slot"]) != int(slot.slot_type):
 		return "Tamaño incorrecto: requiere un slot %s" % SLOT_NAMES[int(cfg["slot"])]
 	if not slot.room_can_build():
 		return "Sala apagada"
 	var rm := ManagerLocator.get_resource_manager()
-	if rm == null or rm.get_resource(COST_RESOURCE) < Module.get_cost(_armed_type as Module.ModuleType):
+	if rm == null or rm.get_resource(COST_RESOURCE) < Module.get_cost(module_type):
 		return "Falta Industria"
 	return ""
 
@@ -276,16 +281,18 @@ func _on_slot_hovered(slot: BuildingSlot) -> void:
 		_float_text(slot, reason)
 
 
+## coop-12: the build goes through NetCommands (the host charges and builds).
 func _build_armed_into(slot_node: BuildingSlot) -> void:
 	var reason := get_block_reason(slot_node)
-	var module_type := _armed_type as Module.ModuleType
-	var resource_manager := ManagerLocator.get_resource_manager()
-	if reason != "" or resource_manager == null \
-			or not resource_manager.spend_resource(COST_RESOURCE, Module.get_cost(module_type)):
-		_reject(slot_node, reason if reason != "" else "Falta Industria")
+	if reason != "":
+		_reject(slot_node, reason)
 		return  # stay armed
-	slot_node.build(module_type)
-	QuestLogger.info(QuestLogger.Category.MODULE, "Built '%s' in zone '%s'." % [Module.CATALOG[module_type]["label"], slot_node.zone_id])
+	var zone := ManagerLocator.get_room_manager().get_zone_node(slot_node.zone_id)
+	reason = await ManagerLocator.get_net_commands().request("build", {"zone": slot_node.zone_id,
+		"slot": zone.get_slot_index(slot_node) if zone else -1, "type": int(_armed_type)})
+	if reason != "":
+		_reject(slot_node, reason)
+		return
 	close_menu()
 
 

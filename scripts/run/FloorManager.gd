@@ -88,7 +88,7 @@ func _lose_downed_heroes() -> void:
 ## (Main2d is PROCESS_MODE_ALWAYS, so the Esc pause doesn't stop this node).
 func _process(delta: float) -> void:
 	var state := ManagerLocator.get_game_state_manager()
-	if room_manager == null or (state and not state.is_active()):
+	if room_manager == null or (state and not state.is_active()) or not Net.is_authority():
 		return
 	_rest_clock += delta
 	var tick := INF
@@ -162,6 +162,10 @@ func _grant_floor_end_loot() -> void:
 func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager == null:
+		return
+	if not Net.is_authority():  # coop-12: rewards are the host's; a client only sees the banner
+		if room_manager and room_manager.get_zone_kind(room_id) != "corridor":
+			_show_room_banner(room_id)
 		return
 	_grant_door_bonus(room_id, resource_manager)
 	if room_manager and room_manager.get_zone_kind(room_id) == "corridor":

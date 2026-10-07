@@ -317,6 +317,26 @@ func can_build() -> bool:
 	return is_powered
 
 
+## coop-12: build slot by index (majors first, then the 2 minors); null if none.
+func get_slot(index: int) -> BuildingSlot:
+	return _building_slots[index] if index >= 0 and index < _building_slots.size() else null
+
+
+func get_slot_index(slot: BuildingSlot) -> int:
+	return _building_slots.find(slot)
+
+
+func get_power_paid() -> int:
+	return _power_paid
+
+
+## coop-12 (client mirror): the host's power state, no dust moves here.
+func apply_power(powered: bool, paid: int) -> void:
+	_power_paid = paid
+	if powered != is_powered:
+		set_powered(powered)
+
+
 func get_modules() -> Array[Module]:
 	var modules: Array[Module] = []
 	for slot in _building_slots:
@@ -427,7 +447,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 			var camera := ManagerLocator.get_camera()
 			if camera and camera.was_dragged():
 				return
-			toggle_power()
+			ManagerLocator.get_net_commands().request("toggle_power", {"zone": zone_id})
 		_:
 			return
 	get_viewport().set_input_as_handled()

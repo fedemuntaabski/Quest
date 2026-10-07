@@ -211,8 +211,8 @@ func _refresh_consumables() -> void:
 
 
 func _on_consumable_pressed(index: int) -> void:
-	if _inventory:
-		_inventory.use(index)
+	if _inventory and stats:
+		ManagerLocator.get_net_commands().request("consume", {"hero": stats.hero_id, "index": index})
 
 
 func bind_stats(p_stats: CharacterStats) -> void:
@@ -308,7 +308,7 @@ func _refresh_downed() -> void:
 func _on_revive_pressed() -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps and stats:
-		ps.revive_hero(stats.hero_id)
+		ManagerLocator.get_net_commands().request("revive", {"hero": stats.hero_id})
 
 
 ## Control groups this hero belongs to, shown next to the name ("[1] [3]").

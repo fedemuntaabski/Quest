@@ -20,6 +20,14 @@ static func get_default() -> ItemCatalog:
 	return load(DEFAULT_PATH) as ItemCatalog
 
 
+## coop-12: the catalog item with this id (null if unknown). Items travel by id.
+static func find(id: String) -> ItemData:
+	for item in get_default().items:
+		if item.id == id:
+			return item
+	return null
+
+
 ## Sorteo en dos pasos: primero la rareza (pesos `rarity_weights[rareza]`, vacío =
 ## RARITY_WEIGHTS; solo rarezas >= `min_rarity` que tengan ítems), después un ítem
 ## uniforme de esa rareza. `rng` sembrado = mismo cofre en la misma semilla.

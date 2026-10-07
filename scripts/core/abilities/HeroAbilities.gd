@@ -42,7 +42,7 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("hero_ability") and not event.is_echo() and _input_allowed():
-		try_activate()
+		ManagerLocator.get_net_commands().request("ability", {"hero": hero.stats.hero_id})
 
 
 ## Q reaches every selected hero while the run is ACTIVE (the tactical pause

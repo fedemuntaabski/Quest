@@ -101,7 +101,7 @@ func _on_slot_pressed(slot: ItemData.Slot, index: int) -> void:
 	var reason := inventory.can_unequip(hero_id, slot, index)
 	_message.text = reason
 	if reason == "":
-		inventory.unequip(hero_id, slot, index)
+		ManagerLocator.get_net_commands().request("unequip", {"hero": hero_id, "slot": int(slot), "index": index})
 
 
 func _on_use_pressed(index: int) -> void:
@@ -109,7 +109,7 @@ func _on_use_pressed(index: int) -> void:
 	if hero == null or hero.inventory == null:
 		return
 	_message.text = hero.inventory.get_block_reason(index)
-	hero.inventory.use(index)
+	ManagerLocator.get_net_commands().request("consume", {"hero": hero_id, "index": index})
 
 
 func _hero() -> Player:
@@ -142,7 +142,7 @@ func _on_stash_pressed(item: ItemData) -> void:
 	var reason := inventory.can_equip(hero_id, item)
 	_message.text = reason
 	if reason == "":
-		inventory.equip(hero_id, item)
+		ManagerLocator.get_net_commands().request("equip", {"hero": hero_id, "item": item.id})
 
 
 func _equipped_in(slot: ItemData.Slot) -> ItemData:

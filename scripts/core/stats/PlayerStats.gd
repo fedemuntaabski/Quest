@@ -267,6 +267,8 @@ func get_run_upgrade_preview(stat_key: String, hero_id: String = "") -> Dictiona
 ## Spends Comida and raises every stat of that hero one level.
 ## false = no such hero, maxed or unaffordable.
 func level_up_hero(hero_id: String = "") -> bool:
+	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
+		return false
 	var id := _resolve(hero_id)
 	var s := get_hero_stats(id)
 	var levels := _levels_of(id)
@@ -295,6 +297,8 @@ func get_heal_cost(hero_id: String = "") -> int:
 
 ## Spends Comida to restore that hero's missing HP. false = nothing to heal or short.
 func heal_hero(hero_id: String = "") -> bool:
+	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
+		return false
 	var id := _resolve(hero_id)
 	var cost := get_heal_cost(id)
 	var rm := ManagerLocator.get_resource_manager()
@@ -337,6 +341,8 @@ func get_revive_block_reason(hero_id: String = "") -> String:
 ## Spends Comida and brings the hero back with UpgradeConfig.revive_hp_pct of
 ## its max HP. false (nothing changes) when get_revive_block_reason() says so.
 func revive_hero(hero_id: String = "") -> bool:
+	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
+		return false
 	var id := _resolve(hero_id)
 	var reason := get_revive_block_reason(id)
 	if reason != "":
@@ -462,6 +468,8 @@ func has_pending_perk(hero_id: String = "") -> bool:
 
 ## Picks one of get_pending_perk_choices(); false (nothing changes) if it is not on offer.
 func choose_perk(hero_id: String, perk_id: StringName) -> bool:
+	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
+		return false
 	var id := _resolve(hero_id)
 	var chosen: HeroPerk = null
 	for perk in get_pending_perk_choices(id):
@@ -542,6 +550,29 @@ func _on_hero_died(hero_id: String) -> void:
 
 func _on_stats_died() -> void:
 	player_died.emit()
+
+
+## coop-12: per-hero levels and perks (RunState).
+func get_run_state() -> Dictionary:
+	return {"levels": run_levels.duplicate(), "perks": run_perks.duplicate(true)}
+
+
+## coop-12 (client): the host's levels/perks; stats re-derived the usual way.
+func apply_run_state(d: Dictionary) -> void:
+	var levels: Dictionary = d.get("levels", {})
+	var perks: Dictionary = d.get("perks", {})
+	if levels == run_levels and perks == run_perks:
+		return
+	for id: String in levels:
+		if int(levels[id]) != int(run_levels.get(id, 0)):
+			run_upgrades_changed.emit("level", int(levels[id]), id)
+	run_levels = levels.duplicate()
+	run_perks = perks.duplicate(true)
+	_applied_hp_bonus.clear()
+	for s in get_all_stats():
+		var hp := s.current_hp
+		_refresh_hero(s)
+		s.current_hp = mini(hp, s.max_hp)  # HP itself comes from the snapshots
 
 
 ## Compat: puts the item in the party stash.

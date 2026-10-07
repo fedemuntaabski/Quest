@@ -50,6 +50,8 @@ func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 		if item == null:
 			continue
 		var chest := spawn_chest(zone_id, item, LootTable.get_default().tier_for_floor(floor_index))
+		if not Net.is_authority():
+			continue  # coop-12: the host opens it; RunState mirrors it
 		for hero in ManagerLocator.get_heroes():
 			if hero.current_zone_id == zone_id:
 				chest.try_open()
@@ -65,6 +67,8 @@ func spawn_chest(zone_id: String, item: ItemData, tier: ChestTier = null) -> Che
 
 
 func _on_hero_zone_changed(zone_id: String) -> void:
+	if not Net.is_authority():
+		return
 	var chest: Chest = chests.get(zone_id)
 	if chest != null and is_instance_valid(chest) and chest.is_closed():
 		chest.try_open()

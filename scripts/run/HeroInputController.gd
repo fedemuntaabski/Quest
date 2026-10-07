@@ -49,7 +49,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		var ps := ManagerLocator.get_player_stats()
 		if ps:
-			ps.revive_hero(downed.stats.hero_id)
+			ManagerLocator.get_net_commands().request("revive", {"hero": downed.stats.hero_id})
 		get_viewport().set_input_as_handled()
 		return
 	click_hero(hero, event.ctrl_pressed)

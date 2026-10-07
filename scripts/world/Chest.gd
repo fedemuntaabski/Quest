@@ -50,6 +50,13 @@ func _ready() -> void:
 	queue_redraw()
 
 
+## coop-12: the open look without touching the stash (client mirror, and try_open()).
+func show_open() -> void:
+	state = State.OPEN
+	_sprite.texture = _tile(OPEN_REGION)
+	_show_item()
+
+
 func is_closed() -> bool:
 	return state == State.CLOSED
 
@@ -66,9 +73,7 @@ func try_open() -> bool:
 		_warn_full()
 		return false
 	inventory.add_item(item)
-	state = State.OPEN
-	_sprite.texture = _tile(OPEN_REGION)
-	_show_item()
+	show_open()
 	_announce()
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:

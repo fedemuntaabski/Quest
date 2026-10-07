@@ -9,17 +9,25 @@ class_name PlayerActionController
 ## Session 12: `player` is the primary selected hero (Main2d → set_player, used
 ## for zone highlights). Session 14: an order acts on every selected hero, all
 ## walking at once; one order at a time (a hero still walking blocks new orders).
+## coop-12: clicks become NetCommands ("move"/"open_door" with explicit hero ids);
+## the host runs move_heroes()/open_door(). "Busy" is per hero, so two players'
+## orders can run at the same time.
 
 var player: Player
 var tilemap: TileMapLayer
 var room_manager: RoomManager
 var door_turn_system: DoorTurnSystem
 
-signal _batch_done
-
-var _action_in_flight: bool = false
-var _pending_walks: int = 0
 var _hovered_zone_id: String = ""
+## Heroes walking right now (Player -> true): they take no new order until they arrive.
+var _busy: Dictionary = {}
+## Players with an order batch in progress (peer -> true): one order at a time per
+## player, as in single player; different players' orders run side by side.
+var _busy_peers: Dictionary = {}
+## Compat (tests): true while any order batch is walking.
+var _action_in_flight: bool:
+	get:
+		return not _busy_peers.is_empty()
 
 
 func setup(p_player: Player, p_tilemap: TileMapLayer, p_room_manager: RoomManager, p_door_turn_system: DoorTurnSystem) -> void:
@@ -46,7 +54,7 @@ func set_player(p_player: Player) -> void:
 
 
 func _can_act() -> bool:
-	if player == null or tilemap == null or room_manager == null or _action_in_flight:
+	if player == null or tilemap == null or room_manager == null or is_peer_busy(Net.local_peer()):
 		return false
 	if _selected_heroes().is_empty():
 		return false
@@ -65,9 +73,24 @@ func _selected_heroes() -> Array[Player]:
 	var heroes := ManagerLocator.get_heroes()
 	for id: String in selection.selected_ids:
 		for hero in heroes:
-			if hero.stats.hero_id == id and hero.can_accept_input():
+			if hero.stats.hero_id == id and hero.can_accept_input() and not _busy.has(hero):
 				out.append(hero)
 	return out
+
+
+func _selected_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for hero in _selected_heroes():
+		ids.append(hero.stats.hero_id)
+	return ids
+
+
+func is_busy(hero: Player) -> bool:
+	return _busy.has(hero)
+
+
+func is_peer_busy(peer: int) -> bool:
+	return _busy_peers.has(peer)
 
 
 # ─────────────────────────────────────────────
@@ -111,21 +134,23 @@ func _on_zone_clicked(zone_id: String) -> void:
 
 	# Unrevealed zones are hidden and non-pickable (fog of war); only doors open them.
 	if room_manager.is_zone_revealed(zone_id):
-		await _move_to_zone(zone_id)
+		await ManagerLocator.get_net_commands().request("move", {"heroes": _selected_ids(), "zone": zone_id})
 
 
 func _on_door_clicked(door: Door) -> void:
 	if not _can_act():
 		return
-	await _open_group(door)
+	await ManagerLocator.get_net_commands().request("open_door", {"door": door.door_id, "heroes": _selected_ids()})
 
 
-## Every selected hero walks to the zone from where it stands (heroes with no
-## revealed path stay put; heroes already there don't move).
-func _move_to_zone(zone_id: String) -> void:
+## Every given hero walks to the zone from where it stands (heroes with no
+## revealed path stay put; heroes already there don't move). Host/offline only.
+func move_heroes(heroes: Array[Player], zone_id: String, peer: int = 1) -> void:
 	var orders: Array[Dictionary] = []
 	var blocked := false
-	for hero in _selected_heroes():
+	for hero in heroes:
+		if _busy.has(hero):
+			continue
 		if hero.current_zone_id == zone_id:
 			continue
 		var order := _order_via_path(hero, zone_id)
@@ -136,7 +161,7 @@ func _move_to_zone(zone_id: String) -> void:
 			orders.append(order)
 	if orders.is_empty() and blocked:
 		room_manager.set_zone_highlight(zone_id, RoomZone.Highlight.BLOCKED)
-	await _run_moves(orders)
+	await _run_moves(orders, peer)
 
 
 ## {hero, waypoints, final_zone_id} along the revealed-zone path, or {} without one.
@@ -150,36 +175,45 @@ func _order_via_path(hero: Player, zone_id: String) -> Dictionary:
 	return {"hero": hero, "waypoints": waypoints, "final_zone_id": zone_id}
 
 
-func _open_group(door: Door) -> void:
+## Why `heroes` can't open `door` now ("" = they can). Same rules as before coop-12.
+func door_block_reason(door: Door, heroes: Array[Player]) -> String:
 	if door.is_opened() or door.is_secret:
-		return
+		return "La puerta ya está abierta"
 	var extraction := ManagerLocator.get_extraction_manager()
 	if extraction and not extraction.can_open_doors():
-		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: extraction phase active." % door.door_id)
-		return
+		return "Durante la extracción no se abren puertas"
 	# Tactical pause: heroes may be ordered to walk, but opening a door ticks the turn
 	# and rolls the threat while everything else is frozen.
 	if Engine.time_scale <= 0.0:
-		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-		if text_mgr:
-			text_mgr.spawn_text(door.global_position, "En pausa: no se abren puertas", QuestPalette.GOLD_DARK)
-		return
+		return "En pausa: no se abren puertas"
 	# A loop door sits at room_a's wall: hidden (and not openable) while room_a
 	# is undiscovered, even if the hero stands in room_b.
 	if not room_manager.is_zone_revealed(door.from_zone_id):
-		return
-	# The first selected hero standing next to the door opens it (one tick).
-	var opener: Player = null
-	var selected := _selected_heroes()
-	for hero in selected:
-		if door.get_target_room_for(hero.current_zone_id) != "":
-			opener = hero
-			break
-	if opener == null:
-		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: no selected hero is adjacent (%s / %s)." % [door.door_id, door.room_a_id, door.room_b_id])
-		return
+		return "Puerta sin descubrir"
+	if _opener(door, heroes) == null:
+		return "Ningún héroe elegido está junto a la puerta"
 	if room_manager.is_group_revealed(door.target_room_id):
+		return "La puerta ya está abierta"
+	return ""
+
+
+## The first given hero standing next to the door (it opens it: one tick).
+func _opener(door: Door, heroes: Array[Player]) -> Player:
+	for hero in heroes:
+		if not _busy.has(hero) and door.get_target_room_for(hero.current_zone_id) != "":
+			return hero
+	return null
+
+
+## Opens `door` with the first adjacent hero of `heroes`; all of them walk in.
+## Host/offline only (NetCommands "open_door" validates with door_block_reason).
+func open_door(door: Door, heroes: Array[Player], peer: int = 1) -> void:
+	var reason := door_block_reason(door, heroes)
+	if reason != "":
+		QuestLogger.info(QuestLogger.Category.DOOR, "Door '%s' rejected: %s." % [door.door_id, reason])
 		return
+	var opener := _opener(door, heroes)
+	var selected := heroes
 
 	var opened := door_turn_system.open_room(door.target_room_id)
 	if not opened:
@@ -197,29 +231,37 @@ func _open_group(door: Door) -> void:
 	if not opener_waypoints.is_empty():
 		orders.append({"hero": opener, "waypoints": opener_waypoints, "final_zone_id": final_zone_id})
 	for hero in selected:
-		if hero != opener and hero.current_zone_id != final_zone_id:
+		if hero != opener and not _busy.has(hero) and hero.current_zone_id != final_zone_id:
 			var order := _order_via_path(hero, final_zone_id)
 			if not order.is_empty():
 				orders.append(order)
 
-	await _run_moves(orders)
+	await _run_moves(orders, peer)
 	room_manager.refresh_door_visibility()
 
 
-## Walks every order at once and returns when the last hero arrived. One batch
-## at a time (`_action_in_flight`); heroes outside the batch wait where they are.
-func _run_moves(orders: Array[Dictionary]) -> void:
+## Walks every order at once and returns when the last hero arrived. Each hero
+## is busy until it arrives; heroes outside the batch can take other orders.
+func _run_moves(orders: Array[Dictionary], peer: int = 1) -> void:
 	if orders.is_empty():
 		return
-	_action_in_flight = true
+	_busy_peers[peer] = true
 	room_manager.clear_highlights()
-	_pending_walks = orders.size()
+	var batch := {"left": orders.size()}
 	for order in orders:
-		_walk(order["hero"], order["waypoints"], order["final_zone_id"])
-	if _pending_walks > 0:
-		await _batch_done
-	_action_in_flight = false
+		_busy[order["hero"]] = true
+	for order in orders:
+		_walk_and_count(order, batch)
+	while batch.left > 0:
+		await get_tree().process_frame
+	_busy_peers.erase(peer)
 	refresh_zones()
+
+
+func _walk_and_count(order: Dictionary, batch: Dictionary) -> void:
+	await _walk(order["hero"], order["waypoints"], order["final_zone_id"])
+	_busy.erase(order["hero"])
+	batch.left -= 1
 
 
 ## Speed factor of the Nexo carrier (FloorConfig.carrier_speed_mult, 0.85 = 15 % slower).
@@ -238,6 +280,3 @@ func _walk(hero: Player, waypoints: Array[Vector2], final_zone_id: String) -> vo
 			var extraction := ManagerLocator.get_extraction_manager()
 			if extraction:
 				extraction.declare_victory()
-	_pending_walks -= 1
-	if _pending_walks == 0:
-		_batch_done.emit()

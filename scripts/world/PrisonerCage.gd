@@ -135,6 +135,15 @@ func free_with(resource_key: String) -> bool:
 	return true
 
 
+## coop-12 (client): the host freed it.
+func mark_freed() -> void:
+	if is_freed:
+		return
+	is_freed = true
+	_sprite.visible = false
+	_bars.queue_redraw()
+
+
 func _build_dialog(data: CharacterData) -> void:
 	dialog = ConfirmationDialog.new()
 	dialog.name = "PrisonerDialog"
@@ -152,7 +161,7 @@ func _build_dialog(data: CharacterData) -> void:
 
 func _on_custom_action(action: StringName) -> void:
 	dialog.hide()
-	free_with(String(action))
+	ManagerLocator.get_net_commands().request("recruit", {"zone": zone_id, "resource": String(action)})
 
 
 ## Price buttons are disabled when the party can't afford them.

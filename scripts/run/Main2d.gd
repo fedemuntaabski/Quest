@@ -65,6 +65,7 @@ var hero_input: HeroInputController
 var loot_spawner: LootSpawner
 var prisoner_spawner: PrisonerSpawner
 var hazard_spawner: HazardSpawner
+var net_sync: NetSync
 ## zone_id -> AltarShrine (progresion-10).
 var altars: Dictionary = {}
 
@@ -73,6 +74,7 @@ var altars: Dictionary = {}
 # ─────────────────────────────────────────────
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group("main2d")
 
 	_ensure_game_state_manager()
 	_setup_door_turn_system()
@@ -117,6 +119,12 @@ func _setup_controllers() -> void:
 	hazard_spawner.name = "HazardSpawner"
 	add_child(hazard_spawner)
 	hazard_spawner.setup(room_manager, door_turn_system, floor_manager)
+
+	if Net.is_online():  # coop-12: snapshots/state/events host <-> clients
+		net_sync = NetSync.new()
+		net_sync.name = "NetSync"
+		add_child(net_sync)
+		net_sync.setup(self)
 
 func _ensure_game_state_manager() -> void:
 	game_state_manager = get_node_or_null("GameStateManager") as GameStateManager
@@ -479,6 +487,8 @@ func _is_gameplay_active() -> bool:
 ## A hero fell (PlayerStats.player_died). Only when every hero is down is the run lost;
 ## a fallen Nexo carrier leaves the Nexo on the floor for another hero to pick up.
 func _on_hero_died() -> void:
+	if not Net.is_authority():
+		return  # coop-12: the host decides drops and defeats (NetSync relays them)
 	var survivors := false
 	for hero in ManagerLocator.get_heroes():
 		if hero.stats.is_alive():
@@ -489,10 +499,12 @@ func _on_hero_died() -> void:
 	if not survivors:
 		_on_player_died()
 
-## Defeat: every hero dead, or the Nexo destroyed.
-func _on_player_died() -> void:
-	if _is_dead:
+## Defeat: every hero dead, or the Nexo destroyed. coop-12: on a client only the
+## host's "defeat" event (from_host) ends the run.
+func _on_player_died(from_host: bool = false) -> void:
+	if _is_dead or (not Net.is_authority() and not from_host):
 		return
+	NetSync.broadcast("defeat", {})
 
 	_is_dead = true
 
@@ -535,11 +547,19 @@ func _go_to_main_menu() -> void:
 		orchestrator.return_to_main_menu()
 
 func _go_to_next_floor() -> void:
+	if Net.is_online():  # coop-12: the host moves everyone
+		if Net.is_authority():
+			Net.session().advance_floor()
+		return
 	var orchestrator := _get_orchestrator()
 	if orchestrator:
 		orchestrator.advance_floor()
 
 func _reload_current_scene() -> void:
+	if Net.is_online():  # coop-12: a new run with a new seed for everyone
+		if Net.is_authority():
+			Net.session().restart_run()
+		return
 	var orchestrator := _get_orchestrator()
 	if orchestrator:
 		orchestrator.reload_gameplay()

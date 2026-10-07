@@ -32,7 +32,7 @@ var loadouts: Dictionary = {}
 
 ## Adds to the stash (merging stackables). false when there is no room.
 func add_item(item: ItemData) -> bool:
-	if item == null or not can_add(item):
+	if item == null or not can_add(item) or not Net.is_authority():
 		return false
 	var stack := _stack_with_room(item)
 	if stack:
@@ -113,7 +113,7 @@ func can_equip(hero_id: String, item: ItemData) -> String:
 ## Equips a stashed item. A full single-item slot (weapon/armor/relic) swaps: the
 ## old one returns to the stash (always fits, the new one just left it).
 func equip(hero_id: String, item: ItemData) -> bool:
-	if can_equip(hero_id, item) != "":
+	if can_equip(hero_id, item) != "" or not Net.is_authority():
 		return false
 	var by_slot: Dictionary = loadouts.get(hero_id, {})
 	var list: Array = by_slot.get(int(item.slot), [])
@@ -140,7 +140,7 @@ func can_unequip(hero_id: String, slot: ItemData.Slot, index: int = 0) -> String
 
 
 func unequip(hero_id: String, slot: ItemData.Slot, index: int = 0) -> bool:
-	if can_unequip(hero_id, slot, index) != "":
+	if can_unequip(hero_id, slot, index) != "" or not Net.is_authority():
 		return false
 	var list: Array = loadouts[hero_id][int(slot)]
 	var item: ItemData = list.pop_at(index)
@@ -153,6 +153,8 @@ func unequip(hero_id: String, slot: ItemData.Slot, index: int = 0) -> bool:
 ## Removes the consumable at `index` of the hero's consumable slots (it was used).
 ## Returns it, null if there is none. Does not emit equipment_changed: consumables carry no stats.
 func consume(hero_id: String, index: int) -> ItemData:
+	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
+		return null
 	var list := get_equipped(hero_id, ItemData.Slot.CONSUMABLE)
 	if index < 0 or index >= list.size():
 		return null
@@ -174,6 +176,52 @@ func get_equipment_bonus(hero_id: String) -> Dictionary:
 			bonus["attack_interval"] += float(item.modifiers.get("attack_interval", 0.0))
 			bonus["attack_range"] += float(item.modifiers.get("attack_range", 0.0))
 	return bonus
+
+
+## coop-12: stash + loadouts by item id (RunState).
+func get_state() -> Dictionary:
+	var s := []
+	for stack in stash:
+		s.append([stack.item.id, stack.count])
+	var l := {}
+	for hero_id: String in loadouts:
+		var slots := {}
+		for slot: int in loadouts[hero_id]:
+			var ids := []
+			for item in loadouts[hero_id][slot]:
+				ids.append(item.id)
+			slots[slot] = ids
+		l[hero_id] = slots
+	return {"stash": s, "loadouts": l}
+
+
+## coop-12 (client): rebuilds the mirror and emits the usual signals when it changed.
+func apply_state(d: Dictionary) -> void:
+	if d.hash() == _applied_hash:
+		return
+	_applied_hash = d.hash()
+	stash.clear()
+	for entry in d.get("stash", []):
+		var item := ItemCatalog.find(entry[0])
+		if item:
+			stash.append(ItemStack.new(item, int(entry[1])))
+	loadouts.clear()
+	var l: Dictionary = d.get("loadouts", {})
+	for hero_id: String in l:
+		loadouts[hero_id] = {}
+		for slot in l[hero_id]:
+			var items: Array[ItemData] = []
+			for id in l[hero_id][slot]:
+				var item := ItemCatalog.find(id)
+				if item:
+					items.append(item)
+			loadouts[hero_id][int(slot)] = items
+	stash_changed.emit()
+	for hero_id: String in loadouts:
+		equipment_changed.emit(hero_id, ItemData.Slot.WEAPON, null)
+
+
+var _applied_hash := 0
 
 
 ## New run (Main._begin_new_run).

@@ -57,7 +57,7 @@ func is_ready() -> bool:
 
 func _on_pressed() -> void:
 	if abilities:
-		abilities.try_activate()
+		ManagerLocator.get_net_commands().request("ability", {"hero": abilities.hero.stats.hero_id})
 
 
 func _on_cooldown_changed(left: float, total: float) -> void:

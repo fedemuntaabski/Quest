@@ -19,6 +19,8 @@ signal session_ended(reason: String)
 signal lobby_changed
 ## The host started the run (every peer, before Main.start_gameplay()).
 signal run_started(seed: int)
+## Host: a client has loaded the current floor (NetSync starts sending to it).
+signal floor_ready(peer_id: int)
 ## A player joined / left / came back (HUD notices).
 signal player_joined(peer_id: int, player_name: String)
 signal player_left(peer_id: int, player_name: String)
@@ -40,6 +42,8 @@ var hero_owner: Dictionary = {}
 ## Seed of the run being played (Main._begin_new_run reads it while online).
 var run_seed: int = 0
 var in_run := false
+## Host: peer -> floor index it has loaded (NetSync only sends to these).
+var ready_floor: Dictionary = {}
 ## Steam peers that registered before their auth ticket was validated.
 var _pending_register: Dictionary = {}
 
@@ -165,6 +169,7 @@ func _reset(reason: String) -> void:
 	players.clear()
 	hero_owner.clear()
 	_pending_register.clear()
+	ready_floor.clear()
 	in_run = false
 	if was != Mode.OFFLINE:
 		session_ended.emit(reason)
@@ -314,6 +319,28 @@ func _rpc_sync_lobby(p_players: Dictionary, p_owner: Dictionary) -> void:
 	lobby_changed.emit()
 
 
+## Client: this floor is loaded, start sending me snapshots and state.
+func report_floor_ready(floor_index: int) -> void:
+	if is_online() and not is_host():
+		_rpc_floor_ready.rpc_id(1, floor_index)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_floor_ready(floor_index: int) -> void:
+	if not is_host():
+		return
+	var peer := api.get_remote_sender_id()
+	ready_floor[peer] = floor_index
+	QuestLogger.info(QuestLogger.Category.NETWORK, "Peer %d loaded floor %d" % [peer, floor_index])
+	floor_ready.emit(peer)
+
+
+## Host: `hero_id` now belongs to `peer` (recruits, disconnects); everyone learns it.
+func assign_hero(hero_id: String, peer: int) -> void:
+	hero_owner[hero_id] = peer
+	_broadcast_lobby()
+
+
 ## Who already picked `hero_id` (0 = free).
 func hero_taken_by(hero_id: String) -> int:
 	for peer in players:
@@ -399,6 +426,13 @@ func start_block_reason() -> String:
 func start_run() -> bool:
 	if start_block_reason() != "":
 		return false
+	return restart_run()
+
+
+## Host: a new run (lobby start, or Retry/New run from an end screen) with the lobby picks.
+func restart_run() -> bool:
+	if not is_host():
+		return false
 	var owners := {}
 	for peer in players:
 		for id in players[peer].heroes:
@@ -409,12 +443,27 @@ func start_run() -> bool:
 	return true
 
 
+## Host: everyone goes down to the next floor (same run).
+func advance_floor() -> void:
+	if is_host():
+		ready_floor.clear()
+		_rpc_advance_floor.rpc()
+
+
+@rpc("authority", "call_local", "reliable")
+func _rpc_advance_floor() -> void:
+	var main := ManagerLocator.get_main_orchestrator()
+	if main:
+		main.advance_floor()
+
+
 ## Every peer (the host through call_local): same seed, same party, same owners.
 @rpc("authority", "call_local", "reliable")
 func _rpc_start_run(seed: int, owners: Dictionary, difficulty: String, floor_index: int) -> void:
 	run_seed = seed
 	hero_owner = owners
 	in_run = true
+	ready_floor.clear()
 	var ids: Array[String] = []
 	for peer in players:  # party order = join order
 		for id in players[peer].heroes:

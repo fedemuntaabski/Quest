@@ -59,8 +59,9 @@ func start_extraction() -> void:
 	current_phase = Phase.EXTRACTION
 	stage = 0
 	_spawn_timer.wait_time = _config().extraction_stage_interval(_floor_index(), 0)
-	_spawn_timer.start()
-	_stage_timer.start()
+	if Net.is_authority():  # coop-12: waves are the host's
+		_spawn_timer.start()
+		_stage_timer.start()
 	phase_changed.emit(current_phase, old_phase)
 	QuestLogger.info(QuestLogger.Category.NEXO, "Extraction phase started.")
 
@@ -80,7 +81,7 @@ func can_declare_victory() -> bool:
 
 
 func declare_victory() -> void:
-	if not can_declare_victory():
+	if not Net.is_authority() or not can_declare_victory():
 		return
 	_spawn_timer.stop()
 	_stage_timer.stop()
@@ -105,6 +106,13 @@ func _on_stage_timeout() -> void:
 	_spawn_timer.wait_time = _config().extraction_stage_interval(_floor_index(), stage)
 	stage_changed.emit(stage)
 	QuestLogger.info(QuestLogger.Category.NEXO, "Extraction stage %d (wave %d, every %.1fs)." % [stage, _config().extraction_wave_size(stage), _spawn_timer.wait_time])
+
+
+## coop-12 (client): the host's stage (the phase itself goes through start_extraction()).
+func apply_stage(p_stage: int) -> void:
+	if p_stage != stage:
+		stage = p_stage
+		stage_changed.emit(stage)
 
 
 func _config() -> FloorConfig:

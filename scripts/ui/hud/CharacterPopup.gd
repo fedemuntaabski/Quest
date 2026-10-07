@@ -198,16 +198,13 @@ func _build() -> void:
 func _on_level_up_pressed() -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps and stats:
-		ps.level_up_hero(stats.hero_id)
+		ManagerLocator.get_net_commands().request("level_up", {"hero": stats.hero_id})
 
 
 func _on_heal_pressed() -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps and stats:
-		if stats.is_alive():
-			ps.heal_hero(stats.hero_id)
-		else:
-			ps.revive_hero(stats.hero_id)
+		ManagerLocator.get_net_commands().request("heal" if stats.is_alive() else "revive", {"hero": stats.hero_id})
 
 
 func _on_veil_input(event: InputEvent) -> void:
@@ -368,7 +365,7 @@ func _make_perk_card(perk: HeroPerk) -> Control:
 func _on_perk_pressed(perk_id: StringName) -> void:
 	var ps := ManagerLocator.get_player_stats()
 	if ps and stats:
-		ps.choose_perk(stats.hero_id, perk_id)
+		ManagerLocator.get_net_commands().request("choose_perk", {"hero": stats.hero_id, "perk": String(perk_id)})
 
 
 ## base | nivel | perks | equipo | total per stat (PlayerStats.get_stat_breakdown).

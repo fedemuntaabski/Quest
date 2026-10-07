@@ -37,6 +37,8 @@ func get_resource(key: String) -> int:
 
 
 func add_resource(key: String, amount: int) -> void:
+	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
+		return
 	if not _resources.has(key):
 		push_error("ResourceManager: unknown resource key '%s'" % key)
 		return
@@ -46,6 +48,8 @@ func add_resource(key: String, amount: int) -> void:
 
 
 func spend_resource(key: String, amount: int) -> bool:
+	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
+		return false
 	if not _resources.has(key):
 		push_error("ResourceManager: unknown resource key '%s'" % key)
 		return false
@@ -135,6 +139,8 @@ func can_research(id: String) -> bool:
 
 ## Spends the entry's Ciencia and applies it. False (nothing spent) if blocked.
 func research(id: String) -> bool:
+	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
+		return false
 	if not can_research(id) or not spend_resource(RESEARCH_RESOURCE, research_config.get_entry(id).cost):
 		return false
 	research_state.add(id)
@@ -156,6 +162,31 @@ func get_bonus(kind: ResearchEntry.Effect) -> float:
 		if entry.effect == kind and is_researched(entry.id):
 			total += entry.value
 	return total
+
+
+## coop-12: {resources, research} for RunState (host -> clients).
+func get_state() -> Dictionary:
+	var ids: Array = research_state.researched.keys()
+	ids.sort()
+	return {"res": _resources.duplicate(), "research": ids}
+
+
+## coop-12 (client): the host's numbers, through the same signals the HUD reads.
+func apply_state(d: Dictionary) -> void:
+	var res: Dictionary = d.get("res", {})
+	for key: String in KEYS:
+		var amount := int(res.get(key, _resources[key]))
+		if amount != int(_resources[key]):
+			var delta := amount - int(_resources[key])
+			_resources[key] = amount
+			resource_changed.emit(key, amount, delta)
+	var ids: Array = d.get("research", [])
+	if ids.size() != research_state.researched.size():
+		research_state.reset()
+		for id in ids:
+			research_state.add(id)
+		research_changed.emit()
+		production_changed.emit()
 
 
 ## New run (Main._begin_new_run, next to PlayerStats.reset_run_upgrades).

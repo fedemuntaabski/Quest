@@ -51,7 +51,10 @@ func _ready() -> void:
 	dialog.title = "Altar de sangre"
 	dialog.ok_button_text = "Sacrificar"
 	dialog.cancel_button_text = "Cancelar"
-	dialog.confirmed.connect(func() -> void: sacrifice())
+	dialog.confirmed.connect(func() -> void:
+		var hero := offering_hero()
+		if hero:
+			ManagerLocator.get_net_commands().request("altar", {"zone": zone_id, "hero": hero.stats.hero_id}))
 	add_child(dialog)
 
 
@@ -75,9 +78,10 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 
 ## The hero who would pay: the primary selected hero if alive in the room, else
 ## the first living hero inside; null if nobody is here.
-func offering_hero() -> Player:
+## coop-12: `preferred_id` (the commanding hero) wins when it stands here.
+func offering_hero(preferred_id: String = "") -> Player:
 	var selection := ManagerLocator.get_selection_manager()
-	var primary_id: String = selection.get_primary_id() if selection else ""
+	var primary_id: String = preferred_id if preferred_id != "" else (selection.get_primary_id() if selection else "")
 	var fallback: Player = null
 	for hero in ManagerLocator.get_heroes():
 		if not hero.stats.is_alive() or hero.current_zone_id != zone_id:
@@ -94,10 +98,10 @@ func hp_cost(hero: Player) -> int:
 
 
 ## Why it can't be used now ("" = it can).
-func get_block_reason() -> String:
+func get_block_reason(hero_id: String = "") -> String:
 	if is_used:
 		return "El altar ya bebió"
-	var hero := offering_hero()
+	var hero := offering_hero(hero_id)
 	if hero == null:
 		return "Un héroe tiene que estar en la sala"
 	if hero.stats.current_hp <= hp_cost(hero):
@@ -119,10 +123,10 @@ func open_dialog() -> void:
 
 
 ## Pays the HP and grants the item (seeded per floor + room). Null when blocked.
-func sacrifice() -> ItemData:
-	if get_block_reason() != "":
+func sacrifice(hero_id: String = "") -> ItemData:
+	if get_block_reason(hero_id) != "":
 		return null
-	var hero := offering_hero()
+	var hero := offering_hero(hero_id)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([map_seed, zone_id, "altar"])
 	var item := LootSpawner.roll_item(rng, floor_index, min_rarity)

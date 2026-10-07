@@ -117,6 +117,11 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 	current_hp = max_hp
 
 	_apply_visual()
+	if not Net.is_authority():  # coop-12: a client puppet: drawn from snapshots, no AI or hits
+		hitbox.set_active(false)
+		if p_type and p_type.role == EnemyType.Role.RAIDER:
+			role = p_type.role
+		return
 
 	ai_timer.wait_time = float(cfg.get("ai_interval", 1.5))
 	ai_timer.one_shot = false

@@ -38,7 +38,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	Enemy.game_time_msec += delta * 1000.0
+	if Net.is_authority():  # coop-12: clients take the host's clock from the snapshots
+		Enemy.game_time_msec += delta * 1000.0
 
 
 func setup(p_room_manager: RoomManager, p_door_turn_system: DoorTurnSystem = null, p_floor_manager: FloorManager = null) -> void:
@@ -110,7 +111,7 @@ func _spawns_blocked(zone_id: String) -> bool:
 ## Door threat (DoorRollConfig): `current_turn` is the count of doors opened on this
 ## floor (the turn only moves when a door opens), so the chance grows door by door.
 func _on_turn_advanced(current_turn: int) -> void:
-	if room_manager == null:
+	if room_manager == null or not Net.is_authority():
 		return
 	var dark_rooms: Array[RoomZone] = get_spawn_rooms()
 	if dark_rooms.is_empty():
@@ -171,6 +172,28 @@ func spawn_wave(count: int) -> int:
 	return spawned
 
 
+## coop-12 (client): a puppet of a host enemy (no AI, no hitbox), keyed by `slot`.
+func spawn_puppet(slot: int, type_id: String, zone_id: String, pos: Vector2, max_hp: int) -> Enemy:
+	var type: EnemyType = null
+	var bestiary := ManagerLocator.get_bestiary()
+	if bestiary:
+		type = bestiary.get_type(type_id)
+	var enemy := ENEMY_SCENE.instantiate() as Enemy
+	_enemies_root.add_child(enemy)
+	enemy.setup(pos)
+	enemy.slot = slot
+	enemy.configure(Enemy.Variant.SWARM, zone_id, 1.0, 1.0, type if type else FALLBACK_TYPE)
+	enemy.max_hp = max_hp
+	enemy.current_hp = max_hp
+	_enemies.append(enemy)
+	return enemy
+
+
+func get_enemies() -> Array[Enemy]:
+	alive_count()
+	return _enemies
+
+
 ## Enemies alive now (freed ones are pruned).
 func alive_count() -> int:
 	var alive: Array[Enemy] = []
@@ -188,6 +211,8 @@ func _door_roll() -> DoorRollConfig:
 ## Null when the floor's simultaneous cap is reached (`ignore_cap`: bosses).
 ## `forced_type` skips the role/pool roll (bosses, summons).
 func _spawn_enemy(zone_id: String, world_position: Vector2, forced_type: EnemyType = null, ignore_cap: bool = false) -> Enemy:
+	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
+		return null
 	if floor_manager and not ignore_cap and alive_count() >= floor_manager.max_enemies():
 		QuestLogger.info(QuestLogger.Category.ENEMY, "Spawn refused: cap of %d enemies reached." % floor_manager.max_enemies())
 		return null
