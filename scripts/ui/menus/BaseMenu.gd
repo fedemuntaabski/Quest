@@ -86,7 +86,7 @@ func open() -> void:
 	is_open = true
 	_on_before_open()
 	visible = true
-	if pause_game_on_open:
+	if pause_game_on_open and not Net.is_online():  # coop-12: online the world keeps running
 		var gsm := ManagerLocator.get_game_state_manager()
 		if gsm:
 			gsm.request_pause()

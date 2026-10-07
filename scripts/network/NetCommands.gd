@@ -391,3 +391,12 @@ func _cmd_open_chest(_sender: int, args: Dictionary) -> String:
 	if not inside:
 		return "Un héroe tiene que estar en la sala"
 	return "" if chest.try_open() else "Mochila llena"
+
+
+## coop-12 phase 5: a tactical pause vote (PauseController.vote on the host).
+func _cmd_pause_vote(sender: int, _args: Dictionary) -> String:
+	var main2d := ManagerLocator.get_main2d()
+	var pc: PauseController = main2d.pause_controller if main2d else null
+	if pc == null:
+		return INVALID
+	return pc.vote(sender)

@@ -343,6 +343,13 @@ func set_pause_label(v: bool, speed: int = 1) -> void:
 		pause_label.visible = v or speed > 1
 
 
+## coop-12: an open tactical-pause vote ("PAUSA? 1/2" or "SEGUIR? 1/2").
+func set_pause_vote(votes: int, needed: int, paused: bool) -> void:
+	if pause_label:
+		pause_label.text = "%s? %d/%d  (Espacio: votar)" % ["SEGUIR" if paused else "PAUSA", votes, needed]
+		pause_label.visible = true
+
+
 ## Built in code (not in HUD.tscn): bottom-right corner, self-wiring.
 func _add_minimap() -> void:
 	var minimap := Minimap.new()

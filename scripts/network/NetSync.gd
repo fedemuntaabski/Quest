@@ -161,6 +161,8 @@ func apply_snapshot(s: Dictionary) -> void:
 	snapshots_received += 1
 	Enemy.game_time_msec = float(s.get("time", Enemy.game_time_msec))
 	Engine.time_scale = float(s.get("scale", 1.0))
+	if main2d.pause_controller:
+		main2d.pause_controller.mirror_scale(Engine.time_scale)
 	_snap_t0 = Time.get_ticks_msec() / 1000.0
 	var heroes := {}
 	for hero in ManagerLocator.get_heroes():
@@ -269,6 +271,9 @@ func apply_event(kind: String, data: Dictionary) -> void:
 			var vfx := ManagerLocator.get_vfx_manager()
 			if vfx:
 				vfx.play(StringName(data.id), data.pos, data.color, data.angle, data.to)
+		"pause_vote":
+			if main2d.pause_controller:
+				main2d.pause_controller.show_vote(data)
 		"hint":
 			var hud := ManagerLocator.get_hud()
 			if hud:
