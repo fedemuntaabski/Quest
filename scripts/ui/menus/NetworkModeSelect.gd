@@ -17,6 +17,8 @@ var _click_sound: AudioStreamPlayer
 var _hover_sound: AudioStreamPlayer
 var _active_tween: Tween = null
 var _is_animating_open: bool = false
+## coop-12: lobby code (Steam lobby id or ENet "ip:port"), built in code.
+var code_edit: LineEdit
 
 
 func setup(click_sound: AudioStreamPlayer = null, hover_sound: AudioStreamPlayer = null) -> void:
@@ -25,6 +27,11 @@ func setup(click_sound: AudioStreamPlayer = null, hover_sound: AudioStreamPlayer
 
 
 func _ready() -> void:
+	code_edit = LineEdit.new()
+	code_edit.name = "CodeEdit"
+	code_edit.placeholder_text = "Código de partida (vacío = invitación / 127.0.0.1:7777)"
+	join_button.get_parent().add_child(code_edit)
+	join_button.get_parent().move_child(code_edit, join_button.get_index())
 	_connect_events()
 	_refresh_steam_availability()
 
@@ -45,14 +52,24 @@ func _connect_events() -> void:
 
 
 func _refresh_steam_availability() -> void:
+	# coop-12: without Steam, Host/Join use local ENet (development / LAN).
 	var steam_mgr := ManagerLocator.get_steam_manager()
 	var available: bool = steam_mgr != null and steam_mgr.is_steam_available()
-
-	host_button.disabled = not available
-	join_button.disabled = not available
+	host_button.disabled = false
+	join_button.disabled = false
 	status_label.visible = not available
 	if not available:
-		status_label.text = "Steam no está disponible. Solo modo sin conexión."
+		status_label.text = "Steam no está disponible: co-op por red local (ENet)."
+
+
+## What the player typed in the code box (trimmed).
+func get_join_code() -> String:
+	return code_edit.text.strip_edges() if code_edit else ""
+
+
+func show_status(text: String) -> void:
+	status_label.text = text
+	status_label.visible = true
 
 
 func open() -> void:

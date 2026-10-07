@@ -3,6 +3,8 @@ extends Node
 
 signal lobby_ready(lobby_id: int, is_host: bool)
 signal lobby_failed(reason: String)
+## coop-12: an overlay invite was accepted; NetSession joins through its transport.
+signal invite_accepted(lobby_id: int)
 
 var current_lobby_id: int = 0
 var peer: MultiplayerPeer = null  # a SteamMultiplayerPeer (SteamApi.new_peer())
@@ -117,4 +119,4 @@ func _on_join_requested(lobby_id: int, _friend_id: int) -> void:
 	if ManagerLocator.get_room_manager() != null:
 		QuestLogger.warn(QuestLogger.Category.NETWORK, "Join request ignored: a run is in progress.")
 		return
-	join_lobby(lobby_id)
+	invite_accepted.emit(lobby_id)

@@ -185,7 +185,8 @@ func _on_loaded_avatar(user_id: int, avatar_size: int, avatar_buffer: PackedByte
 
 func _on_peer_connected(peer_id: int) -> void:
 	QuestLogger.info(QuestLogger.Category.NETWORK, "Peer connected: %d" % peer_id)
-	if multiplayer.is_server():
+	# coop-12: only Steam peers carry a ticket (an ENet session must not be timed out).
+	if multiplayer.is_server() and lobby_manager.peer != null and multiplayer.multiplayer_peer == lobby_manager.peer:
 		_start_auth_timeout(peer_id)
 
 

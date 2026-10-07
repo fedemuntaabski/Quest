@@ -31,6 +31,14 @@ static func get_by_id(character_id: String) -> CharacterData:
 	return get_default()
 
 
+## coop-12: true for a real hero id (get_by_id falls back to the default instead).
+static func has_id(character_id: String) -> bool:
+	for data in get_all():
+		if data.character_id == character_id:
+			return true
+	return false
+
+
 static func get_default() -> CharacterData:
 	return get_all()[0]
 

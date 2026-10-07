@@ -29,7 +29,12 @@ var slot_selector: SaveSlotSelector = null
 var network_mode_select: NetworkModeSelect = null
 var hero_select: HeroSelectMenu = null
 
+const MAX_PLAYERS := 4
+
 var _is_hosting: bool = false
+## coop-12: Join was picked (the slot is loaded first, then NetSession joins).
+var _is_joining: bool = false
+var _join_code: String = ""
 
 var current_state: MenuState = MenuState.MAIN
 var is_transitioning: bool = false
@@ -93,12 +98,12 @@ func build_network_mode_select() -> void:
 	if not network_mode_select.back_pressed.is_connected(_on_network_mode_back_pressed):
 		network_mode_select.back_pressed.connect(_on_network_mode_back_pressed)
 
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	if steam_mgr and steam_mgr.lobby_manager:
-		if not steam_mgr.lobby_manager.lobby_ready.is_connected(_on_lobby_ready):
-			steam_mgr.lobby_manager.lobby_ready.connect(_on_lobby_ready)
-		if not steam_mgr.lobby_manager.lobby_failed.is_connected(_on_lobby_failed):
-			steam_mgr.lobby_manager.lobby_failed.connect(_on_lobby_failed)
+	var net := Net.session()
+	if net:
+		if not net.session_started.is_connected(_on_session_started):
+			net.session_started.connect(_on_session_started)
+		if not net.session_failed.is_connected(_on_lobby_failed):
+			net.session_failed.connect(_on_lobby_failed)
 
 
 func build_hero_select() -> void:
@@ -135,11 +140,11 @@ func show_main_menu() -> void:
 
 
 func _leave_network_session() -> void:
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	if is_instance_valid(steam_mgr) and is_instance_valid(steam_mgr.lobby_manager) \
-			and steam_mgr.lobby_manager.current_lobby_id != 0:
-		steam_mgr.lobby_manager.leave_lobby()
+	var net := Net.session()
+	if net:
+		net.leave("menu")
 	_is_hosting = false
+	_is_joining = false
 
 
 func show_options_menu() -> void:
@@ -196,7 +201,7 @@ func exit_pressed() -> void:
 
 
 func _on_slot_back_pressed() -> void:
-	if _is_hosting:
+	if _is_hosting or _is_joining:
 		_leave_network_session()
 		if slot_selector:
 			slot_selector.close(true)
@@ -222,9 +227,18 @@ func _on_slot_selected(slot_id: int) -> void:
 
 	save_mgr.load_game(slot_id)
 
-	# Offline picks its 2 heroes every run; the host picks in the WaitingRoom.
-	if _is_hosting:
-		await _proceed_after_character_ready()
+	# Offline picks its 2 heroes every run; co-op picks in the WaitingRoom.
+	var net := Net.session()
+	if net and net.is_online() and not net.is_host():
+		await _change_to_waiting_room()  # joined from an invite before picking a slot
+	elif _is_hosting:
+		is_transitioning = false
+		if net == null or net.host(MAX_PLAYERS) != OK:
+			_on_lobby_failed("host_failed")
+	elif _is_joining:
+		is_transitioning = false
+		if net == null or net.join(_join_code) != OK:
+			_on_lobby_failed("join_failed")
 	else:
 		current_state = MenuState.CHARACTER_SELECT
 		if slot_selector:
@@ -263,44 +277,33 @@ func _on_hero_select_back_pressed() -> void:
 
 
 func _on_host_selected() -> void:
-	QuestLogger.info(QuestLogger.Category.NETWORK, "_on_host_selected: entered")
-
-	if network_mode_select:
-		network_mode_select.close(false)
-		QuestLogger.info(QuestLogger.Category.NETWORK, "_on_host_selected: network_mode_select.close(false) called, visible=%s" % network_mode_select.visible)
-
-	_is_hosting = true
-
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	if steam_mgr == null or steam_mgr.lobby_manager == null:
-		QuestLogger.error(QuestLogger.Category.NETWORK, "SteamManager/lobby_manager not available for host flow.")
-		_is_hosting = false
-		if network_mode_select:
-			network_mode_select.open()
-		return
-
-	QuestLogger.info(QuestLogger.Category.NETWORK, "_on_host_selected: is_steam_available=%s, calling create_lobby" % steam_mgr.is_steam_available())
-	steam_mgr.lobby_manager.create_lobby(SteamApi.LOBBY_TYPE_FRIENDS_ONLY)
+	_open_slots_for_network(true)
 
 
 func _on_join_selected() -> void:
+	_join_code = network_mode_select.get_join_code() if network_mode_select else ""
+	var net := Net.session()
+	if _join_code.is_empty() and net and net.make_transport() is SteamTransport:
+		# Steam without a code: wait for an overlay invite (NetSession joins it).
+		SteamApi.steam().activateGameOverlay("Friends")
+		return
+	_open_slots_for_network(false)
+
+
+func _open_slots_for_network(hosting: bool) -> void:
+	_is_hosting = hosting
+	_is_joining = not hosting
+	current_state = MenuState.SLOT_SELECT
 	if network_mode_select:
 		network_mode_select.close(false)
-
-	_is_hosting = false
-	var steam_mgr := ManagerLocator.get_steam_manager()
-	if steam_mgr == null or not steam_mgr.is_steam_available():
-		# Without Steam there is nothing to join: back to the mode select (it shows the offline notice).
-		QuestLogger.warn(QuestLogger.Category.NETWORK, "Join selected but Steam is not available.")
-		if network_mode_select:
-			network_mode_select.call_deferred("open")
-		return
-	SteamApi.steam().activateGameOverlay("Friends")
+	if slot_selector:
+		slot_selector.open()
 
 
 func _on_offline_selected() -> void:
 	current_state = MenuState.SLOT_SELECT
 	_is_hosting = false
+	_is_joining = false
 
 	if network_mode_select:
 		network_mode_select.close(false)
@@ -314,22 +317,30 @@ func _on_network_mode_back_pressed() -> void:
 	show_main_menu()
 
 
-func _on_lobby_ready(_lobby_id: int, is_host: bool) -> void:
-	QuestLogger.info(QuestLogger.Category.NETWORK, "_on_lobby_ready: lobby_id=%d is_host=%s" % [_lobby_id, is_host])
-	if is_host:
+func _on_session_started(_mode: int) -> void:
+	var save_mgr := ManagerLocator.get_save_manager()
+	if save_mgr and not save_mgr.slot_loaded:
+		# Joined from an overlay invite: pick a slot (local bestiary/records) first.
 		current_state = MenuState.SLOT_SELECT
+		if network_mode_select:
+			network_mode_select.close(false)
 		if slot_selector:
 			slot_selector.open()
-	else:
-		await _change_to_waiting_room()
+		return
+	await _change_to_waiting_room()
 
 
 func _on_lobby_failed(reason: String) -> void:
 	QuestLogger.error(QuestLogger.Category.NETWORK, "Lobby flow failed: %s" % reason)
 	_is_hosting = false
+	_is_joining = false
+	is_transitioning = false
 	current_state = MenuState.NETWORK_MODE_SELECT
+	if slot_selector:
+		slot_selector.close(false)
 	if network_mode_select:
-		network_mode_select.call_deferred("open")
+		network_mode_select.open()
+		network_mode_select.show_status("No se pudo conectar (%s)." % reason)
 
 
 func _change_to_game_scene() -> void:
