@@ -125,6 +125,9 @@ func _setup_controllers() -> void:
 		net_sync.name = "NetSync"
 		add_child(net_sync)
 		net_sync.setup(self)
+		var session := Net.session()
+		if not Net.is_authority() and session:
+			session.session_ended.connect(_on_session_ended)
 
 func _ensure_game_state_manager() -> void:
 	game_state_manager = get_node_or_null("GameStateManager") as GameStateManager
@@ -517,6 +520,20 @@ func _on_player_died(from_host: bool = false) -> void:
 
 	var result := finish_run(false)
 	death_overlay.summary.fill(result["stats"], result["new_records"], result["records"])
+	death_overlay.show_screen()
+
+## coop-12: a client lost its host mid-run. The run ends here with its summary
+## (records/bestiary stay local); only the main menu is offered.
+func _on_session_ended(reason: String) -> void:
+	if reason != "host_lost" or _is_dead or not is_inside_tree():
+		return
+	_is_dead = true
+	QuestLogger.warn(QuestLogger.Category.NETWORK, "Host lost: the run ends")
+	if game_state_manager:
+		game_state_manager.request_death()
+	var result := finish_run(false)
+	death_overlay.summary.fill(result["stats"], result["new_records"], result["records"])
+	death_overlay.show_host_lost()
 	death_overlay.show_screen()
 
 func _on_victory() -> void:

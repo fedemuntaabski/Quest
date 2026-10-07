@@ -108,6 +108,9 @@ func _on_lobby_joined(lobby_id: int, _permissions: int, _locked: bool, response:
 
 
 func _on_connected_to_server() -> void:
+	# coop-12: only a Steam connection carries a ticket (an ENet host would drop us).
+	if peer == null or multiplayer.multiplayer_peer != peer:
+		return
 	var steam_mgr := ManagerLocator.get_steam_manager()
 	if steam_mgr != null:
 		steam_mgr.get_auth_ticket_for_peer(1)

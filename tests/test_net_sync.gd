@@ -28,7 +28,9 @@ func _initialize() -> void:
 	var t := EnetTransport.new(net.api)
 	t.port = PORT
 	_expect(net.host(4, t) == OK, "host starts")
-	var pid := OS.create_process(OS.get_executable_path(), ["--headless", "--path", ProjectSettings.globalize_path("res://"),
+	# The client's own output: user://net_probe_client.log (Godot --log-file).
+	var pid := OS.create_process(OS.get_executable_path(), ["--headless", "--log-file", ProjectSettings.globalize_path("user://net_probe_client.log"),
+		"--path", ProjectSettings.globalize_path("res://"),
 		"--script", "res://tests/tools/net_client_probe.gd", "--", "--port=%d" % PORT, "--net-token=%s" % TOKEN,
 		"--net-name=Sonda", "--leave-after=1.0"])
 	_expect(pid > 0, "client process launched")
@@ -103,7 +105,8 @@ func _check_report(path: String) -> void:
 		_expect((report.get("revealed", []) as Array).size() == host_rooms.size(), "client revealed what the host revealed")
 	_expect(int(report.get("hash_checks", 0)) >= 1, "a desync hash was checked")
 	_expect(int(report.get("desyncs", -1)) == 0, "no desync")
-	_expect(report.get("other_hero_zone", "") != report.get("move_target", "x"), "the host refused moving a hero the client doesn't own")
+	var refusals: Array = report.get("refusals", [])
+	_expect(not refusals.is_empty() and refusals[0][1] == CoopCommands.NOT_YOURS, "the host refused moving a hero the client doesn't own: %s" % [refusals])
 	_expect(report.get("rejoin_owns", false), "after rejoining the client owns its hero again")
 	_expect((report.get("rejoin_revealed", []) as Array).size() == (report.get("revealed", []) as Array).size(), "rejoin gets the discovered rooms")
 

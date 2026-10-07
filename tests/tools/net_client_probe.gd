@@ -14,6 +14,7 @@ var net: CoopSession
 var token := "probe"
 var port := 7801
 var leave_after := -1.0
+var refusals: Array = []
 
 
 func _initialize() -> void:
@@ -28,6 +29,8 @@ func _initialize() -> void:
 	root.add_child((load("res://scenes/Main.tscn") as PackedScene).instantiate())
 	net = root.get_node("NetSession") as CoopSession
 	net.lobby_changed.connect(_on_lobby)
+	(root.get_node("NetCommands") as CoopCommands).refused.connect(func(cmd: String, reason: String) -> void:
+		refusals.append([cmd, reason]))
 	await _join()
 	if not await _wait(func() -> bool: return _sync() != null and _sync().snapshots_received > 5, "snapshots"):
 		return _finish()
@@ -42,7 +45,9 @@ func _initialize() -> void:
 	ManagerLocator.get_net_commands().request("move", {"heroes": [report.own_hero], "zone": target})
 	if not await _wait(func() -> bool: return _hero(report.own_hero).current_zone_id == target, "own hero arrived (snapshots)"):
 		return _finish()
-	ManagerLocator.get_net_commands().request("move", {"heroes": [_other_hero_id()], "zone": target})
+	ManagerLocator.get_net_commands().request("move", {"heroes": [_other_hero_id()], "zone": rm_start(main2d)})
+	await _wait(func() -> bool: return not refusals.is_empty(), "refusal for a foreign hero")
+	report["refusals"] = refusals
 	await _wait(func() -> bool: return _sync().hash_checks >= 1, "a hash check")
 	report["hash_checks"] = _sync().hash_checks
 	report["desyncs"] = _sync().desyncs
@@ -53,9 +58,10 @@ func _initialize() -> void:
 	if leave_after >= 0.0:
 		report["step"] = "leaving"
 		_write()
+		var old_main2d := main2d
 		net.leave("probe_leave")
 		await create_timer(leave_after).timeout
-		await _join()
+		await _join(old_main2d)
 		if not await _wait(func() -> bool: return _sync() != null and _sync().snapshots_received > 3, "snapshots after rejoin"):
 			return _finish()
 		report["rejoin_revealed"] = _revealed_rooms(ManagerLocator.get_main2d())
@@ -66,10 +72,17 @@ func _initialize() -> void:
 	_finish()
 
 
-func _join() -> void:
+## `old`: the previous floor scene (a rejoin waits for the new one).
+func _join(old: Node = null) -> void:
 	var t := EnetTransport.new(net.api)
 	net.join("127.0.0.1:%d" % port, t)
-	await _wait(func() -> bool: return ManagerLocator.get_main2d() != null and _sync() != null, "run started")
+	await _wait(func() -> bool:
+		var m := ManagerLocator.get_main2d()
+		return m != null and m != old and not m.is_queued_for_deletion() and _sync() != null and net.in_run, "run started")
+
+
+func rm_start(main2d: Node) -> String:
+	return (main2d.room_manager as RoomManager).get_start_zone_id()
 
 
 func _on_lobby() -> void:

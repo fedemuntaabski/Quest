@@ -72,9 +72,9 @@ func return_to_main_menu() -> void:
 
 
 ## `floor_index` > 1 only when a co-op client (re)joins a run in progress.
+## coop-12: a network start can arrive mid-transition (menu fade): it waits for it.
 func start_gameplay(floor_index: int = 1) -> void:
-	if _is_transitioning:
-		return
+	await _wait_transition()
 	_is_transitioning = true
 
 	await _fade_to_black()
@@ -87,6 +87,11 @@ func start_gameplay(floor_index: int = 1) -> void:
 	await _fade_from_black()
 
 	_is_transitioning = false
+
+
+func _wait_transition() -> void:
+	while _is_transitioning:
+		await get_tree().process_frame
 
 
 func go_to_waiting_room() -> void:
@@ -109,8 +114,7 @@ func reload_gameplay() -> void:
 
 ## Floor cleared: same run, next floor. Resources carry over.
 func advance_floor() -> void:
-	if _is_transitioning:
-		return
+	await _wait_transition()
 	current_floor += 1
 	await _reload_world(false)
 

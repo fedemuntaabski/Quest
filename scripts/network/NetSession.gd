@@ -42,6 +42,10 @@ var hero_owner: Dictionary = {}
 ## Seed of the run being played (Main._begin_new_run reads it while online).
 var run_seed: int = 0
 var in_run := false
+## Floor every peer is playing (a rejoining client loads this one).
+var current_floor := 1
+## Host: token -> {name, color, heroes} of players that dropped mid-run (phase 6).
+var away: Dictionary = {}
 ## Host: peer -> floor index it has loaded (NetSync only sends to these).
 var ready_floor: Dictionary = {}
 ## Steam peers that registered before their auth ticket was validated.
@@ -170,7 +174,9 @@ func _reset(reason: String) -> void:
 	hero_owner.clear()
 	_pending_register.clear()
 	ready_floor.clear()
+	away.clear()
 	in_run = false
+	current_floor = 1
 	if was != Mode.OFFLINE:
 		session_ended.emit(reason)
 
@@ -273,9 +279,50 @@ func _register(peer: int, p_name: String, token: String) -> void:
 	_broadcast_lobby()
 
 
-## A peer registering while a run is going on (reconnection, phase 6).
-func _rejoin(peer: int, _p_name: String, _token: String) -> void:
-	api.multiplayer_peer.disconnect_peer(peer)
+## A peer registering while a run is going on: only a player that dropped from
+## this run comes back (same token). It gets its heroes back and the run's seed,
+## owners, floor and party; its floor_ready then brings the full RunState.
+func _rejoin(peer: int, p_name: String, token: String) -> void:
+	if not away.has(token) or players.size() >= config.max_players:
+		QuestLogger.info(QuestLogger.Category.NETWORK, "Peer %d refused: run in progress" % peer)
+		api.multiplayer_peer.disconnect_peer(peer)
+		return
+	var back: Dictionary = away[token]
+	away.erase(token)
+	var p := _new_player(p_name, token, back.color)
+	p.heroes = back.heroes.duplicate()
+	p.ready = true
+	players[peer] = p
+	for id in back.heroes:
+		hero_owner[id] = peer
+	QuestLogger.info(QuestLogger.Category.NETWORK, "Player %d rejoined the run: %s heroes=%s" % [peer, p_name, back.heroes])
+	player_joined.emit(peer, p_name)
+	_broadcast_lobby()
+	var gs := ManagerLocator.get_game_session()
+	var difficulty: String = gs.difficulty if gs else "normal"
+	_rpc_join_run.rpc_id(peer, run_seed, hero_owner, difficulty, current_floor, current_party_ids())
+
+
+## Host: ids of the heroes in play right now (the party plus recruits).
+func current_party_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for hero in ManagerLocator.get_heroes():
+		if not ids.has(hero.stats.hero_id):
+			ids.append(hero.stats.hero_id)
+	if ids.is_empty():
+		var gs := ManagerLocator.get_game_session()
+		if gs:
+			ids = gs.get_party_ids()
+	return ids
+
+
+## Client: join a run in progress (reconnection).
+@rpc("authority", "reliable")
+func _rpc_join_run(seed: int, owners: Dictionary, difficulty: String, floor_index: int, party: Array) -> void:
+	var ids: Array[String] = []
+	ids.assign(party)
+	QuestLogger.info(QuestLogger.Category.NETWORK, "Rejoining run seed=%d floor=%d party=%s" % [seed, floor_index, ids])
+	_enter_run(seed, owners, difficulty, floor_index, ids)
 
 
 func _on_peer_disconnected(peer: int) -> void:
@@ -283,17 +330,30 @@ func _on_peer_disconnected(peer: int) -> void:
 	if not is_host() or not players.has(peer):
 		return
 	var p_name := player_name(peer)
+	var gone: Dictionary = players[peer]
 	players.erase(peer)
+	ready_floor.erase(peer)
 	QuestLogger.info(QuestLogger.Category.NETWORK, "Player %d left: %s" % [peer, p_name])
 	player_left.emit(peer, p_name)
 	if in_run:
-		_on_player_left_run(peer)
+		_on_player_left_run(peer, gone)
 	else:
 		_broadcast_lobby()
 
 
-## A player dropped mid-run (phase 6).
-func _on_player_left_run(_peer: int) -> void:
+## A player dropped mid-run: remember it for a rejoin, and hand its heroes to
+## the host (HOST_CONTROL) or leave them ownerless in place (DEFENSIVE_AI: they
+## hold position and keep auto-attacking).
+func _on_player_left_run(peer: int, gone: Dictionary) -> void:
+	var heroes: Array = []
+	for id in hero_owner:
+		if hero_owner[id] == peer:
+			heroes.append(id)
+	away[gone.token] = {"name": gone.name, "color": gone.color, "heroes": heroes}
+	var new_owner := 1 if config.orphan_mode == NetConfig.OrphanMode.HOST_CONTROL else 0
+	for id in heroes:
+		hero_owner[id] = new_owner
+	QuestLogger.info(QuestLogger.Category.NETWORK, "Heroes %s of peer %d -> %s" % [heroes, peer, "host" if new_owner == 1 else "defensive AI"])
 	_broadcast_lobby()
 
 
@@ -439,7 +499,12 @@ func restart_run() -> bool:
 			owners[id] = peer
 	var gs := ManagerLocator.get_game_session()
 	var difficulty: String = gs.difficulty if gs else "normal"
-	_rpc_start_run.rpc(randi(), owners, difficulty, 1)
+	var ids: Array[String] = []
+	for peer in players:  # party order = the host's join order
+		for id in players[peer].heroes:
+			if not ids.has(id):
+				ids.append(id)
+	_rpc_start_run.rpc(randi(), owners, difficulty, 1, ids)
 	return true
 
 
@@ -452,6 +517,7 @@ func advance_floor() -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_advance_floor() -> void:
+	current_floor += 1
 	var main := ManagerLocator.get_main_orchestrator()
 	if main:
 		main.advance_floor()
@@ -459,19 +525,25 @@ func _rpc_advance_floor() -> void:
 
 ## Every peer (the host through call_local): same seed, same party, same owners.
 @rpc("authority", "call_local", "reliable")
-func _rpc_start_run(seed: int, owners: Dictionary, difficulty: String, floor_index: int) -> void:
-	run_seed = seed
-	hero_owner = owners
-	in_run = true
-	ready_floor.clear()
+func _rpc_start_run(seed: int, owners: Dictionary, difficulty: String, floor_index: int, party: Array) -> void:
+	away.clear()
 	var ids: Array[String] = []
-	for peer in players:  # party order = join order
-		for id in players[peer].heroes:
-			if owners.has(id) and not ids.has(id):
-				ids.append(id)
+	for id in party:
+		if id is String and owners.has(id) and not ids.has(id):
+			ids.append(id)
 	for id in owners:
 		if not ids.has(id):
 			ids.append(id)
+	_enter_run(seed, owners, difficulty, floor_index, ids)
+
+
+## Start (or rejoin) the run on this peer: same seed, owners, floor and party.
+func _enter_run(seed: int, owners: Dictionary, difficulty: String, floor_index: int, ids: Array[String]) -> void:
+	run_seed = seed
+	hero_owner = owners
+	in_run = true
+	current_floor = floor_index
+	ready_floor.clear()
 	var gs := ManagerLocator.get_game_session()
 	if gs:
 		gs.difficulty = difficulty

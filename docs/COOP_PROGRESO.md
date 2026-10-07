@@ -9,16 +9,16 @@ Plan completo: 7 fases (pedido de la sesión). Estado al cerrar el 2026-10-06.
 | 3. Comandos validados + snapshots | hecha | `feat(net): comandos validados por el host y snapshots` |
 | 4. Control por jugador y color | hecha | `feat(net): control por jugador y color de dueño` |
 | 5. Pausa por votación / velocidad del host | hecha | `feat(net): pausa táctica por votación y velocidad del host` |
-| 6. Desconexión, reconexión, desync | parcial: hash de desync en NetSync; falta reconexión | — |
+| 6. Desconexión, reconexión, desync | hecha | `feat(net): desconexión, reconexión y host perdido` |
 | 7. HUD (jugadores+ping, avisos, chat, ping de mapa) | pendiente | — |
 
 ## Verificado
 - Suite completa en headless, gdparse y boot de `Main.tscn`/`Main2d.tscn` tras cada fase.
-- `tests/test_net_transport.gd`, `tests/test_net_lobby.gd` y `tests/test_net_commands.gd`.
+- `tests/test_net_transport.gd`, `tests/test_net_lobby.gd`, `tests/test_net_commands.gd`, `test_net_ownership`, `test_net_pause`, `test_net_robustness`.
+- `tests/test_net_sync.gd`: dos procesos headless sobre ENet local (lanza `tests/tools/net_client_probe.gd`, log del cliente en `user://net_probe_client.log`): misma semilla, snapshots, puerta abierta por el host vista en el cliente, movimiento del cliente ejecutado por el host, rechazo de héroe ajeno, hash sin desync, reconexión con el mismo token.
 - Steam real con el cliente abierto: `tests/tools/steam_probe.gd` crea un lobby (id real), lo expone como código y lo cierra.
 
 ## Sin verificar todavía
-- La prueba de dos procesos (`tests/tools/net_sync_host.gd` + `tests/tools/net_client_probe.gd`) quedó escrita pero **no se corrió**. Necesita la reconexión de la fase 6. Cuando pase, renombrarla a `tests/test_net_sync.gd`.
 - Join por Steam con una segunda cuenta, la invitación del overlay y cualquier partida en una ventana real.
 
 ## Próximos pasos (diseño ya decidido)

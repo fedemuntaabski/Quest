@@ -106,6 +106,8 @@ func validate_auth_session(ticket_data: PackedByteArray, steam_id: int) -> bool:
 
 @rpc("any_peer", "reliable")
 func submit_auth_ticket(ticket_bytes: PackedByteArray) -> void:
+	if lobby_manager.peer == null or multiplayer.multiplayer_peer != lobby_manager.peer:
+		return  # coop-12: an ENet session has no Steam auth
 	var peer_id: int = multiplayer.get_remote_sender_id()
 	var steam_id: int = get_steam_id_for_peer_id(peer_id)
 	if steam_id == 0:
