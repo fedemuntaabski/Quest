@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="PlayerScaling" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/floors/PlayerScaling.gd" id="1_scaling"]
+
+[resource]
+script = ExtResource("1_scaling")
+wave_mult = PackedFloat32Array(1, 1, 1.5, 2)
+hp_mult = PackedFloat32Array(1, 1, 1, 1)
+damage_mult = PackedFloat32Array(1, 1, 1, 1)
+threat_mult = PackedFloat32Array(1, 1.05, 1, 1)
+extra_max_enemies = PackedInt32Array(0, 0, 4, 8)
+nexo_hp_mult = PackedFloat32Array(1, 1, 1.15, 1.3)

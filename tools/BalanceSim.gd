@@ -33,6 +33,11 @@ const CONTACT_PX := 40.0
 ## progresion-10: difficulty applied over the run curve by enemy_stats (null = Normal).
 ## Set by difficulty_rows() while it runs; every other table stays on Normal.
 static var difficulty: DifficultyLevel
+## calidad-13: human players (1-4) applied by enemy_stats / encounter_loss through
+## PlayerScaling; 1 = every table except scaling_rows().
+static var players: int = 1
+## Heroes in the party per player count (NetSession.heroes_per_player: 2 alone, 1 each in co-op).
+const PARTY_BY_PLAYERS := [2, 2, 3, 4]
 ## Party used for the boss time-to-kill (the two heroes picked by default).
 const BOSS_PARTY: Array[String] = ["warrior", "mage"]
 
@@ -93,8 +98,9 @@ static func damage_reduction_pct(data: CharacterData) -> float:
 ## Enemy numbers after floor + type multipliers, exactly as Enemy.configure() applies them.
 static func enemy_stats(type: EnemyType, floor_index: int) -> Dictionary:
 	var cfg := floor_config()
-	var hp_mult := cfg.enemy_hp_multiplier(floor_index) * type.hp_mult * (difficulty.hp_mult if difficulty else 1.0)
-	var dmg_mult := cfg.enemy_damage_multiplier(floor_index) * type.damage_mult * (difficulty.damage_mult if difficulty else 1.0)
+	var scaling := PlayerScaling.get_default()
+	var hp_mult := cfg.enemy_hp_multiplier(floor_index) * type.hp_mult * (difficulty.hp_mult if difficulty else 1.0) * scaling.hp(players)
+	var dmg_mult := cfg.enemy_damage_multiplier(floor_index) * type.damage_mult * (difficulty.damage_mult if difficulty else 1.0) * scaling.damage(players)
 	return {
 		"enemy": type.id, "floor": floor_index, "role": "raider" if type.role == EnemyType.Role.RAIDER else "hunter",
 		"hp": maxi(1, roundi(Enemy.resolved_hp(type) * hp_mult)),
@@ -143,7 +149,7 @@ static func encounter_loss(hero_id: String, level: int, type: EnemyType, floor_i
 	var enemy := enemy_stats(type, floor_index)
 	var approach := approach_sec(hero, float(enemy["speed"]))
 	var per_kill := int(d["hits_to_kill"]) * float(hero["interval"])
-	var share := float(wave_size(floor_index)) / PARTY_SIZE
+	var share := float(PlayerScaling.get_default().wave(wave_size(floor_index), players)) / party_size()
 	var exposure := 0.0
 	for i in ceili(share):
 		var weight := minf(share - i, 1.0)
@@ -489,6 +495,70 @@ static func difficulty_rows() -> Array[Dictionary]:
 				row["boss_charge"] = maxi(1, roundi(theme.boss.charge_damage * cfg.enemy_damage_multiplier(f) * theme.boss.damage_mult * level.damage_mult))
 				row["boss_ttk_s"] = snappedf(float(boss["hp"]) / maxf(dps, 0.01), 0.1)
 			rows.append(row)
+	difficulty = null
+	return rows
+
+
+static func party_size() -> int:
+	return PARTY_BY_PLAYERS[clampi(players - 1, 0, PARTY_BY_PLAYERS.size() - 1)]
+
+
+## Expected invasions on floor f (one roll per door, rooms - 1 doors), with the
+## floor's threat_mult, the difficulty's and the player scaling's (capped like FloorManager).
+static func floor_threats(f: int) -> float:
+	var cfg := floor_config()
+	var mult := cfg.threat_multiplier(f) * (difficulty.threat_mult if difficulty else 1.0) * PlayerScaling.get_default().threat(players)
+	var threats := 0.0
+	for n in range(1, cfg.room_count(f)):
+		threats += clampf(cfg.door_roll.threat_chance(n, f) * mult, 0.0, cfg.door_roll.max_chance)
+	return threats
+
+
+## calidad-13: every floor x difficulty x 1-4 players (party 2/2/3/4, heroes at level
+## f - 1). loss_pct = mean HP % a hero loses to its share of one invasion wave;
+## floor_loss_pct = that x the floor's expected invasions (the per-hero pressure of a
+## floor); parity = floor_loss / the solo floor_loss of the same difficulty and floor
+## (1.0 = co-op feels like solo per hero). PlayerScaling is tuned so 2-4 players sit in
+## [PARITY_MIN, PARITY_MAX]. nexo_destroy_s = seconds 3 of the floor's strongest raider
+## need to break the (scaled) Nexo; max_enemies = live cap.
+const PARITY_MIN := 0.85
+const PARITY_MAX := 1.2
+
+
+static func scaling_rows() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	var cfg := floor_config()
+	var scaling := PlayerScaling.get_default()
+	for level in DifficultyConfig.get_default().levels:
+		difficulty = level
+		var solo := {}
+		for p in range(1, 5):
+			players = p
+			for f in range(1, FLOORS + 1):
+				var loss := 0.0
+				for hero_id in HERO_IDS:
+					loss += pool_encounter_loss(hero_id, f - 1, f)
+				loss /= HERO_IDS.size()
+				var floor_loss := loss * floor_threats(f)
+				if p == 1:
+					solo[f] = floor_loss
+				var nexo_hp := roundi(cfg.nexo_max_hp * level.nexo_hp_mult * scaling.nexo_hp(p))
+				var raider_dmg := 0
+				for type in pool_types(f):
+					if type.role == EnemyType.Role.RAIDER:
+						raider_dmg = maxi(raider_dmg, int(enemy_stats(type, f)["nexo"]))
+				rows.append({
+					"difficulty": level.id, "players": p, "party": party_size(), "floor": f,
+					"hp_mult": snappedf(cfg.enemy_hp_multiplier(f) * level.hp_mult * scaling.hp(p), 0.01),
+					"threats": snappedf(floor_threats(f), 0.01),
+					"max_enemies": cfg.max_enemies(f) + level.extra_max_enemies + scaling.extra_enemies(p),
+					"loss_pct": snappedf(loss * 100.0, 0.1),
+					"floor_loss_pct": snappedf(floor_loss * 100.0, 0.1),
+					"parity": snappedf(floor_loss / maxf(float(solo[f]), 0.0001), 0.01),
+					"nexo_hp": nexo_hp,
+					"nexo_destroy_s": destroy_sec(nexo_hp, raider_dmg, 3) if raider_dmg > 0 else -1.0,
+				})
+	players = 1
 	difficulty = null
 	return rows
 

@@ -95,7 +95,13 @@ func declare_victory() -> void:
 func _on_spawn_timeout() -> void:
 	if room_manager == null or enemy_manager == null:
 		return
-	enemy_manager.spawn_wave(_config().extraction_wave_size(stage))
+	enemy_manager.spawn_wave(wave_size())
+
+
+## This stage's wave, grown by the player scaling (FloorManager.scaled_wave).
+func wave_size() -> int:
+	var size := _config().extraction_wave_size(stage)
+	return floor_manager.scaled_wave(size) if floor_manager else size
 
 
 func _on_stage_timeout() -> void:
@@ -105,7 +111,7 @@ func _on_stage_timeout() -> void:
 	stage += 1
 	_spawn_timer.wait_time = _config().extraction_stage_interval(_floor_index(), stage)
 	stage_changed.emit(stage)
-	QuestLogger.info(QuestLogger.Category.NEXO, "Extraction stage %d (wave %d, every %.1fs)." % [stage, _config().extraction_wave_size(stage), _spawn_timer.wait_time])
+	QuestLogger.info(QuestLogger.Category.NEXO, "Extraction stage %d (wave %d, every %.1fs)." % [stage, wave_size(), _spawn_timer.wait_time])
 
 
 ## coop-12 (client): the host's stage (the phase itself goes through start_extraction()).

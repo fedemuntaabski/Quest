@@ -43,6 +43,7 @@ func setup(p_floor_index: int, run_seed: int = 0) -> void:
 	floor_index = maxi(p_floor_index, 1)
 	map_seed = hash([run_seed, floor_index])
 	difficulty = resolve_difficulty()
+	players = PlayerScaling.current_players()
 	var session := ManagerLocator.get_game_session()
 	if session:
 		session.run_stats["floor_reached"] = maxi(int(session.run_stats.get("floor_reached", 1)), floor_index)
@@ -314,31 +315,42 @@ func theme() -> FloorTheme:
 	return config.theme(floor_index)
 
 
+## calidad-13: enemy multipliers by human players (PlayerScaling), over the curve
+## and the difficulty. `players` is fixed at setup (a drop mid-floor keeps it).
+var scaling: PlayerScaling = PlayerScaling.get_default()
+var players: int = 1
+
+
 func enemy_hp_multiplier() -> float:
-	return config.enemy_hp_multiplier(floor_index) * difficulty.hp_mult
+	return config.enemy_hp_multiplier(floor_index) * difficulty.hp_mult * scaling.hp(players)
 
 
 func enemy_damage_multiplier() -> float:
-	return config.enemy_damage_multiplier(floor_index) * difficulty.damage_mult
+	return config.enemy_damage_multiplier(floor_index) * difficulty.damage_mult * scaling.damage(players)
 
 
 ## Threat chance / enemy count of a door opened as the `doors_opened`-th of this floor
 ## (DoorRollConfig x the floor's threat_mult x the difficulty's, capped at max_chance).
 func threat_chance(doors_opened: int) -> float:
-	var chance := config.door_roll.threat_chance(doors_opened, floor_index) * config.threat_multiplier(floor_index) * difficulty.threat_mult
+	var chance := config.door_roll.threat_chance(doors_opened, floor_index) * config.threat_multiplier(floor_index) * difficulty.threat_mult * scaling.threat(players)
 	return clampf(chance, 0.0, config.door_roll.max_chance)
 
 
 func threat_enemy_count(doors_opened: int) -> int:
-	return config.door_roll.enemy_count(doors_opened, floor_index)
+	return scaled_wave(config.door_roll.enemy_count(doors_opened, floor_index))
+
+
+## `count` grown for this run's players (PlayerScaling.wave_mult).
+func scaled_wave(count: int) -> int:
+	return scaling.wave(count, players)
 
 
 func max_enemies() -> int:
-	return config.max_enemies(floor_index) + difficulty.extra_max_enemies
+	return config.max_enemies(floor_index) + difficulty.extra_max_enemies + scaling.extra_enemies(players)
 
 
 func nexo_max_hp() -> int:
-	return maxi(1, roundi(config.nexo_max_hp * difficulty.nexo_hp_mult))
+	return maxi(1, roundi(config.nexo_max_hp * difficulty.nexo_hp_mult * scaling.nexo_hp(players)))
 
 
 func carrier_speed_mult() -> float:

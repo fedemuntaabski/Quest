@@ -34,11 +34,33 @@ func _initialize() -> void:
 	_check_no_dominance(0)
 	_check_no_dominance(5)
 	_check_hero_roles()
+	_check_scaling()
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_balance: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
 	quit(0 if failures.is_empty() else 1)
+
+
+## calidad-13: 5 floors x both difficulties x 1-4 players. Per-hero pressure of a
+## floor stays within [PARITY_MIN, PARITY_MAX] of solo; the cap grows with the party;
+## the static player count is restored; the table is deterministic.
+func _check_scaling() -> void:
+	var rows := BalanceSim.scaling_rows()
+	_expect(rows.size() == BalanceSim.FLOORS * 4 * DifficultyConfig.get_default().levels.size(), "scaling rows: %d" % rows.size())
+	var cap := {}
+	for row in rows:
+		var p: int = row["players"]
+		_expect(float(row["parity"]) >= BalanceSim.PARITY_MIN and float(row["parity"]) <= BalanceSim.PARITY_MAX,
+			"%s floor %d, %d players: parity %.2f outside [%.2f, %.2f]" % [row["difficulty"], row["floor"], p, row["parity"], BalanceSim.PARITY_MIN, BalanceSim.PARITY_MAX])
+		var key: String = "%s_%d" % [row["difficulty"], row["floor"]]
+		if p > 1:
+			_expect(int(row["max_enemies"]) >= int(cap[key]), "%s: cap shrinks with %d players" % [key, p])
+		cap[key] = row["max_enemies"]
+	_expect(BalanceSim.players == 1 and BalanceSim.difficulty == null, "scaling_rows restores players/difficulty")
+	_expect(rows == BalanceSim.scaling_rows(), "scaling_rows is not deterministic")
+	var scaling := PlayerScaling.get_default()
+	_expect(scaling.wave(3, 1) == 3 and scaling.wave(3, 4) >= 6 and scaling.wave(3, 9) == scaling.wave(3, 4), "PlayerScaling.wave: rows by players, clamped")
 
 
 func _check_economy() -> void:

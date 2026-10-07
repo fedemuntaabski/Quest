@@ -22,7 +22,10 @@ func _initialize() -> void:
 		"extraction": BalanceSim.extraction_rows(),
 		"economy": BalanceSim.economy_rows(),
 		"difficulty": BalanceSim.difficulty_rows(),
+		"scaling": BalanceSim.scaling_rows(),
 	}
+	if args.size() > 1:  # optional table filter: -- <tag> <table>
+		tables = {args[1]: tables[args[1]]}
 	for name in tables:
 		var rows: Array[Dictionary] = tables[name]
 		var file := FileAccess.open("%s/%s_%s.csv" % [OUT_DIR, tag, name], FileAccess.WRITE)
