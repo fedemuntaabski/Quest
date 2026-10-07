@@ -195,7 +195,7 @@ func _on_hurt(amount: int) -> void:
 		amount = abilities.incoming_damage(amount)
 	stats.take_damage(amount)
 	animated_sprite.knockback(_away_from_nearest_enemy())
-	QuestLogger.info(QuestLogger.Category.COMBAT, "Hero took %d damage (%d/%d HP)." % [amount, stats.current_hp, stats.max_hp])
+	QuestLogger.debug(QuestLogger.Category.COMBAT, "Hero took %d damage (%d/%d HP)." % [amount, stats.current_hp, stats.max_hp])
 
 
 ## Unit vector from the closest enemy to this hero (knockback direction).

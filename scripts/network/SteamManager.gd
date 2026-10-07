@@ -23,7 +23,7 @@ var _local_auth_ticket_peer: int = -1
 
 func _ready() -> void:
 	if not SteamApi.has_extension():
-		QuestLogger.warn(QuestLogger.Category.NETWORK, "GodotSteam extension not loaded: offline mode only.")
+		QuestLogger.info(QuestLogger.Category.NETWORK, "GodotSteam extension not loaded: offline mode only.")
 		return
 	# GodotSteam 4.22: steamInitEx(app_id, embed_callbacks). Callbacks are pumped in
 	# _process (embed off); project setting steam/initialization is off so this is the only init.
@@ -31,7 +31,7 @@ func _ready() -> void:
 	_steam_initialized = init_result.get("status", 1) == 0
 
 	if not _steam_initialized:
-		QuestLogger.warn(QuestLogger.Category.NETWORK, "Steam not available: %s" % str(init_result))
+		QuestLogger.info(QuestLogger.Category.NETWORK, "Steam not available: %s" % str(init_result))
 		return
 
 	QuestLogger.info(QuestLogger.Category.NETWORK, "Steam initialized. SteamID=%d" % SteamApi.steam().getSteamID())

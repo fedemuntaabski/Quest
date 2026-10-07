@@ -143,7 +143,7 @@ func _on_invasion_triggered(spawn_rooms: Array[RoomZone], enemy_count: int) -> v
 	var zones: Array[String] = []
 	for i in range(enemy_count):
 		var room := spawn_rooms.pick_random() as RoomZone
-		QuestLogger.info(QuestLogger.Category.ENEMY, "INVASIÓN: Spawneando enemigo en la sala %s" % room.room_id)
+		QuestLogger.debug(QuestLogger.Category.ENEMY, "INVASIÓN: Spawneando enemigo en la sala %s" % room.room_id)
 		if _spawn_enemy(room.zone_id, room.center_position) and not zones.has(room.zone_id):
 			zones.append(room.zone_id)
 	if not zones.is_empty():
@@ -214,7 +214,7 @@ func _spawn_enemy(zone_id: String, world_position: Vector2, forced_type: EnemyTy
 	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
 		return null
 	if floor_manager and not ignore_cap and alive_count() >= floor_manager.max_enemies():
-		QuestLogger.info(QuestLogger.Category.ENEMY, "Spawn refused: cap of %d enemies reached." % floor_manager.max_enemies())
+		QuestLogger.debug(QuestLogger.Category.ENEMY, "Spawn refused: cap of %d enemies reached." % floor_manager.max_enemies())
 		return null
 	var enemy := ENEMY_SCENE.instantiate() as Enemy
 	_enemies_root.add_child(enemy)
@@ -273,7 +273,7 @@ func spawn_enemies_in_room(group_id: String, count: int) -> void:
 	for i in range(count):
 		_spawn_enemy(room_zone_id, room_manager.get_center(room_zone_id))
 
-	QuestLogger.info(QuestLogger.Category.ENEMY, "Spawned %d enemies in room '%s'." % [count, room_zone_id])
+	QuestLogger.debug(QuestLogger.Category.ENEMY, "Spawned %d enemies in room '%s'." % [count, room_zone_id])
 
 
 func _floor_index() -> int:

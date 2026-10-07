@@ -218,7 +218,7 @@ func _draw() -> void:
 ## The only path that emits `died` (hero hit, turret shot). Kill counters rely on it.
 func _die_from_damage() -> void:
 	killed_by_damage = true
-	QuestLogger.info(QuestLogger.Category.ENEMY, "Enemy '%s' died in zone '%s'." % [Variant.keys()[variant], current_zone_id])
+	QuestLogger.debug(QuestLogger.Category.ENEMY, "Enemy '%s' died in zone '%s'." % [Variant.keys()[variant], current_zone_id])
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"death_dust", global_position, vfx.config.dust_color)

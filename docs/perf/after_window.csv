@@ -1,0 +1,18 @@
+case,frames,fps_mean,frame_p50_ms,frame_p95_ms,frame_p99_ms,frame_max_ms,process_ms,physics_ms,nodes,draw_calls,enemies,spikes_over_50ms
+window 1x,14851,495.0,1.82,2.82,7.64,58.27,17.05,0.12,1125,220,23.9,1
+window 2x,15472,515.6,1.76,2.9,5.14,15.58,9.68,0.15,1157,204,23.7,0
+micro ManagerLocator.get_room_manager,0,0.0,0.0,0.0,0.0,0.0,0.8,0.0,0,0,0.0,0
+micro ManagerLocator.get_heroes,0,0.0,0.0,0.0,0.0,0.0,2.74,0.0,0,0,0.0,0
+micro ManagerLocator.get_nexo,0,0.0,0.0,0.0,0.0,0.0,1.16,0.0,0,0,0.0,0
+micro RoomManager.find_zone_path,0,0.0,0.0,0.0,0.0,0.0,56.11,0.0,0,0,0.0,0
+micro EnemyManager.get_enemies,0,0.0,0.0,0.0,0.0,0.0,9.09,0.0,0,0,0.0,0
+micro NetSync.capture_snapshot,0,0.0,0.0,0.0,0.0,0.0,53.95,0.0,0,0,0.0,0
+micro FloatingTextManager.spawn_text,0,0.0,0.0,0.0,0.0,0.0,199.14,0.0,0,0,0.0,0
+micro Projectile.new+add+free,0,0.0,0.0,0.0,0.0,0.0,20.05,0.0,0,0,0.0,0
+micro VfxManager.hit,0,0.0,0.0,0.0,0.0,0.0,20.87,0.0,0,0,0.0,0
+micro VfxManager.play death_dust,0,0.0,0.0,0.0,0.0,0.0,5.3,0.0,0,0,0.0,0
+micro BestiaryService.register_kill,0,0.0,0.0,0.0,0.0,0.0,3.3,0.0,0,0,0.0,0
+micro QuestLogger.info,0,0.0,0.0,0.0,0.0,0.0,16.25,0.0,0,0,0.0,0
+micro CharacterStats.take_damage (hero),0,0.0,0.0,0.0,0.0,0.0,13.48,0.0,0,0,0.0,0
+micro Enemy.take_damage (no kill),0,0.0,0.0,0.0,0.0,0.0,12.55,0.0,0,0,0.0,0
+micro Enemy.take_damage (kill),0,0.0,0.0,0.0,0.0,0.0,28.92,0.0,0,0,0.0,0
