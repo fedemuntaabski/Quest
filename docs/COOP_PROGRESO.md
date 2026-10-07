@@ -7,7 +7,7 @@ Plan completo: 7 fases (pedido de la sesión). Estado al cerrar el 2026-10-06.
 | 1. Transporte (Steam + ENet) | hecha | `feat(net): NetworkTransport Steam + ENet y NetSession` |
 | 2. Lobby y arranque compartido | hecha | `feat(net): sala co-op y arranque compartido` |
 | 3. Comandos validados + snapshots | hecha | `feat(net): comandos validados por el host y snapshots` |
-| 4. Control por jugador y color | pendiente | — |
+| 4. Control por jugador y color | hecha | `feat(net): control por jugador y color de dueño` |
 | 5. Pausa por votación / velocidad del host | pendiente | — |
 | 6. Desconexión, reconexión, desync | parcial: hash de desync en NetSync; falta reconexión | — |
 | 7. HUD (jugadores+ping, avisos, chat, ping de mapa) | pendiente | — |

@@ -19,6 +19,14 @@ var selected_ids: Array[String] = []
 var groups: Dictionary = {}
 
 
+func _ready() -> void:
+	var s := Net.session()
+	if s != null:  # NetSession is listed before this autoload
+		s.lobby_changed.connect(func() -> void:
+			if s.in_run:
+				refresh_ownership())
+
+
 func get_primary_id() -> String:
 	return selected_ids[0] if not selected_ids.is_empty() else ""
 
@@ -134,11 +142,41 @@ func on_party_spawned(party_ids: Array[String]) -> void:
 	for id in selected_ids:
 		if party_ids.has(id) and _is_live(id):
 			next.append(id)
-	if next.is_empty() and not party_ids.is_empty():
-		next.append(party_ids[0])
+	if next.is_empty():
+		for id in party_ids:  # coop-12: the first hero this player controls
+			if _is_live(id):
+				next.append(id)
+				break
 	if next != selected_ids:
 		selected_ids = next
 	selection_changed.emit(get_selected_ids())
+
+
+## coop-12: hero owners changed (start, recruit, a player left/came back):
+## drop the heroes this player no longer controls; if nothing is left, select
+## the first own live hero.
+func refresh_ownership() -> void:
+	var changed_groups := false
+	for n: int in groups.keys():
+		var kept: Array = groups[n].filter(func(id: String) -> bool: return _owned(id))
+		if kept.size() != groups[n].size():
+			groups[n] = kept
+			changed_groups = true
+	if changed_groups:
+		groups_changed.emit()
+	var next: Array[String] = []
+	for id in selected_ids:
+		if _is_live(id):
+			next.append(id)
+	if next.is_empty():
+		var ps := ManagerLocator.get_player_stats()
+		for id in (ps.get_hero_ids() if ps else []):
+			if _is_live(id):
+				next.append(id)
+				break
+	if next != selected_ids:
+		selected_ids = next
+		selection_changed.emit(get_selected_ids())
 
 
 ## New run: nobody selected, no groups.
@@ -149,8 +187,14 @@ func reset() -> void:
 	groups_changed.emit()
 
 
+## Online, only the heroes this player owns can be selected (offline: all).
+func _owned(hero_id: String) -> bool:
+	var s := Net.session()
+	return s == null or s.owns(hero_id)
+
+
 func _is_live(hero_id: String) -> bool:
-	if hero_id == "":
+	if hero_id == "" or not _owned(hero_id):
 		return false
 	var ps := ManagerLocator.get_player_stats()
 	var stats: CharacterStats = ps.get_hero_stats(hero_id) if ps else null

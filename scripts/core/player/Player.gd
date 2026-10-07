@@ -76,6 +76,9 @@ func _ready() -> void:
 	var selection := ManagerLocator.get_selection_manager()
 	if selection:
 		selection.selection_changed.connect(_on_selection_changed)
+	var session := Net.session()
+	if session:  # coop-12: owner color ring follows ownership changes
+		session.lobby_changed.connect(queue_redraw)
 
 
 func _on_selection_changed(_selected_ids: Array[String]) -> void:
@@ -90,12 +93,31 @@ func _draw() -> void:
 		draw_arc(Vector2.ZERO, animated_sprite.fit_radius() * 1.2, 0.0, TAU, 32, QuestPalette.BLOOD_LIGHT, 2.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		return
+	var owner_color := get_owner_color()
+	if owner_color.a > 0.0 and stats.is_alive():  # coop-12: whose hero it is
+		draw_set_transform(animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
+		draw_arc(Vector2.ZERO, animated_sprite.fit_radius() * 1.35, 0.0, TAU, 32, owner_color, 2.0)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var selection := ManagerLocator.get_selection_manager()
 	if selection == null or not selection.is_selected(stats.hero_id) or not stats.is_alive():
 		return
 	draw_set_transform(animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
 	draw_arc(Vector2.ZERO, animated_sprite.fit_radius() * 1.2, 0.0, TAU, 32, SELECTION_RING_COLOR, 2.5)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## coop-12: the owning player's color while online (transparent offline, or
+## grey for an ownerless hero left in defensive AI).
+func get_owner_color() -> Color:
+	return Player.owner_color_of(stats.hero_id if stats else "")
+
+
+static func owner_color_of(hero_id: String) -> Color:
+	var s := Net.session()
+	if s == null or not s.is_online() or hero_id == "":
+		return Color.TRANSPARENT
+	var peer: int = s.hero_owner.get(hero_id, 1)
+	return s.player_color(peer) if s.players.has(peer) else Color(0.6, 0.6, 0.6)
 
 
 ## HP dropping = a hit: blink white (heals and level-ups only raise HP).

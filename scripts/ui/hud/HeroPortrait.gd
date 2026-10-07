@@ -66,6 +66,9 @@ func _ready() -> void:
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	tooltip_text = "Clic: seleccionar (si ya está elegido, ver ficha)\nCtrl+clic: agregar/quitar de la selección\nClic derecho: ver ficha"
 	_apply_panel_style()
+	var session := Net.session()
+	if session:
+		session.lobby_changed.connect(_apply_panel_style)
 
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -329,6 +332,9 @@ func set_selected(value: bool) -> void:
 
 func _apply_panel_style() -> void:
 	var border := QuestPalette.GOLD_LIGHT if is_selected else QuestPalette.GOLD_DARK
+	var owner_color := Player.owner_color_of(stats.hero_id if stats else "")
+	if owner_color.a > 0.0:  # coop-12: the owner's color (brighter when selected)
+		border = owner_color.lightened(0.35) if is_selected else owner_color
 	var width := SELECTED_BORDER_WIDTH if is_selected else BORDER_WIDTH
 	add_theme_stylebox_override("panel", UiStyles.build_panel_style(PANEL_BG, border, width, 6, 6))
 
