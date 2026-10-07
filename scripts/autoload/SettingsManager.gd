@@ -18,6 +18,13 @@ const SECTION_AUDIO := "audio"
 const SECTION_VIDEO := "video"
 const SECTION_GAMEPLAY := "gameplay"
 const SECTION_DISPLAY := "display"
+## calidad-13: accessibility flags (mirrored into the Accessibility statics) and
+## the player's control remaps (InputBindings.overrides()).
+const SECTION_ACCESSIBILITY := "accessibility"
+const SECTION_INPUT := "input"
+const SETTINGS_VERSION := 1
+const TEXT_SCALE_MIN := 0.8
+const TEXT_SCALE_MAX := 1.5
 
 const RESOLUTIONS: Array[Vector2i] = [
 	Vector2i(1280, 720),
@@ -88,10 +95,48 @@ var locale: String = "es":
 		TranslationServer.set_locale(locale)
 		settings_changed.emit(SECTION_DISPLAY, "locale", locale)
 
+var text_scale: float = 1.0:
+	set(val):
+		text_scale = clampf(val, TEXT_SCALE_MIN, TEXT_SCALE_MAX)
+		Accessibility.text_scale = text_scale
+		_apply_root_theme()
+		settings_changed.emit(SECTION_ACCESSIBILITY, "text_scale", text_scale)
+
+var colorblind_mode: bool = false:
+	set(val):
+		colorblind_mode = val
+		Accessibility.colorblind = val
+		settings_changed.emit(SECTION_ACCESSIBILITY, "colorblind_mode", val)
+
+var reduce_flashes: bool = false:
+	set(val):
+		reduce_flashes = val
+		Accessibility.reduce_flashes = val
+		settings_changed.emit(SECTION_ACCESSIBILITY, "reduce_flashes", val)
+
+var sound_captions: bool = false:
+	set(val):
+		sound_captions = val
+		Accessibility.sound_captions = val
+		settings_changed.emit(SECTION_ACCESSIBILITY, "sound_captions", val)
+
 
 func _ready() -> void:
+	InputBindings.ensure_defaults()
 	load_settings()
 	apply_video_settings()
+	_apply_root_theme()
+
+
+## Default font size of every Control without its own override (overrides go
+## through Accessibility.font()). Rebuilt UI picks the new size up.
+func _apply_root_theme() -> void:
+	if not is_inside_tree():
+		return
+	var root := get_tree().root
+	if root.theme == null:
+		root.theme = Theme.new()
+	root.theme.default_font_size = Accessibility.font(16)
 
 
 func get_click_volume_db() -> float:
@@ -179,11 +224,13 @@ func apply_fps_limit() -> void:
 
 
 func load_settings() -> void:
+	InputBindings.reset_all()  # a discard in Opciones reloads: unsaved remaps go too
 	var cfg := ConfigFile.new()
-	var err := cfg.load(SETTINGS_PATH)
-	if err != OK:
-		# Use defaults (already set as property initializers)
-		return
+	var status := SafeConfig.load_into(cfg, SETTINGS_PATH)
+	if status == SafeConfig.Status.CORRUPT:
+		QuestLogger.warn(QuestLogger.Category.UI, "settings.cfg was damaged: defaults used (kept as settings.cfg.corrupt).")
+	if status == SafeConfig.Status.MISSING or status == SafeConfig.Status.CORRUPT:
+		return  # defaults (property initializers)
 
 	click_volume = float(cfg.get_value(SECTION_OPTIONS, "click_volume", 1.0))
 	hover_volume = float(cfg.get_value(SECTION_OPTIONS, "hover_volume", 1.0))
@@ -203,9 +250,20 @@ func load_settings() -> void:
 	show_fps_overlay = bool(cfg.get_value(SECTION_DISPLAY, "show_fps_overlay", false))
 	locale = String(cfg.get_value(SECTION_DISPLAY, "locale", "es"))
 
+	text_scale = float(cfg.get_value(SECTION_ACCESSIBILITY, "text_scale", 1.0))
+	colorblind_mode = bool(cfg.get_value(SECTION_ACCESSIBILITY, "colorblind_mode", false))
+	reduce_flashes = bool(cfg.get_value(SECTION_ACCESSIBILITY, "reduce_flashes", false))
+	sound_captions = bool(cfg.get_value(SECTION_ACCESSIBILITY, "sound_captions", false))
+
+	var remaps := {}
+	for action in cfg.get_section_keys(SECTION_INPUT) if cfg.has_section(SECTION_INPUT) else PackedStringArray():
+		remaps[action] = cfg.get_value(SECTION_INPUT, action, [])
+	InputBindings.apply_overrides(remaps)
+
 
 func save_settings() -> Error:
 	var cfg := ConfigFile.new()
+	cfg.set_value("meta", "version", SETTINGS_VERSION)
 
 	cfg.set_value(SECTION_OPTIONS, "click_volume", click_volume)
 	cfg.set_value(SECTION_OPTIONS, "hover_volume", hover_volume)
@@ -225,7 +283,16 @@ func save_settings() -> Error:
 	cfg.set_value(SECTION_DISPLAY, "show_fps_overlay", show_fps_overlay)
 	cfg.set_value(SECTION_DISPLAY, "locale", locale)
 
-	var err := cfg.save(SETTINGS_PATH)
+	cfg.set_value(SECTION_ACCESSIBILITY, "text_scale", text_scale)
+	cfg.set_value(SECTION_ACCESSIBILITY, "colorblind_mode", colorblind_mode)
+	cfg.set_value(SECTION_ACCESSIBILITY, "reduce_flashes", reduce_flashes)
+	cfg.set_value(SECTION_ACCESSIBILITY, "sound_captions", sound_captions)
+
+	var remaps := InputBindings.overrides()
+	for action in remaps:
+		cfg.set_value(SECTION_INPUT, action, remaps[action])
+
+	var err := SafeConfig.save(cfg, SETTINGS_PATH)
 	if err != OK:
-		push_warning("SettingsManager: Failed to save settings to %s (Error %s)" % [SETTINGS_PATH, err])
+		QuestLogger.warn(QuestLogger.Category.UI, "SettingsManager: failed to save settings to %s (Error %s)" % [SETTINGS_PATH, err])
 	return err

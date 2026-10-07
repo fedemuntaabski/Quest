@@ -59,9 +59,13 @@ func _on_base_ready() -> void:
 
 func _on_before_open() -> void:
 	_set_panel(0)
+	if options_button:
+		options_button.grab_focus.call_deferred()  # gamepad / keyboard navigation
 
 
 func _on_before_close() -> void:
+	if controls_help:
+		controls_help.hide()
 	if options_menu:
 		options_menu.close()
 	if bestiary_panel:
@@ -101,6 +105,28 @@ func _connect() -> void:
 	connect_button(options_button, func(): _set_panel(1))
 	connect_button(bestiary_button, func(): _set_panel(2))
 	connect_button(exit_button, _request_exit)
+	_add_controls_button()
+
+
+## calidad-13: "Controles" opens the shortcut list (ControlsHelp), next to Bestiario.
+var controls_button: Button
+var controls_help: ControlsHelp
+
+
+func _add_controls_button() -> void:
+	if bestiary_button == null:
+		return
+	controls_button = Button.new()
+	controls_button.name = "ControlsButton"
+	controls_button.text = "Controles"
+	controls_button.custom_minimum_size = bestiary_button.custom_minimum_size
+	controls_button.size_flags_horizontal = bestiary_button.size_flags_horizontal
+	bestiary_button.add_sibling(controls_button)
+	_style_button(controls_button)
+	controls_help = ControlsHelp.new()
+	controls_help.name = "ControlsHelp"
+	add_child(controls_help)
+	connect_button(controls_button, controls_help.open)
 
 
 func _request_exit() -> void:

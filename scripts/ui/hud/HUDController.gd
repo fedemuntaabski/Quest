@@ -70,6 +70,11 @@ var minimap: Minimap
 ## coop-12 (online only): player list + ping, short chat.
 var player_list: PlayerList
 var chat_panel: ChatPanel
+## calidad-13: shortcut list (show_help / H) and the sound caption line.
+var controls_help: ControlsHelp
+var caption_label: Label
+var _caption_tween: Tween
+const CAPTION_HOLD := 3.0
 
 
 func _ready() -> void:
@@ -151,6 +156,13 @@ func _ready() -> void:
 	_add_nexo_alert()
 	_add_hint_panel()
 	_add_coop_widgets()
+	_add_caption_label()
+	controls_help = ControlsHelp.new()
+	controls_help.name = "ControlsHelp"
+	$Control.add_child(controls_help)
+	var cursor := VirtualCursor.new()
+	cursor.name = "VirtualCursor"
+	add_child(cursor)
 	var bestiary := ManagerLocator.get_bestiary()
 	if bestiary and not bestiary.entry_unlocked.is_connected(_on_bestiary_unlocked):
 		bestiary.entry_unlocked.connect(_on_bestiary_unlocked)
@@ -174,6 +186,8 @@ func close_popups() -> void:
 	character_popup.close()
 	module_popup.close()
 	research_panel.close()
+	if controls_help:
+		controls_help.hide()
 	if building_menu:
 		building_menu.close_menu()
 
@@ -197,15 +211,22 @@ func _on_research_pressed() -> void:
 		building_menu.open_category(BuildingMenu.RESEARCH_TAB)
 
 
-## B / V / R open Mayores / Menores / Investigación (1-9 pick a card once open).
+## build_major / build_minor / build_research (B / V / R by default, remappable since
+## calidad-13) open Mayores / Menores / Investigación (1-9 pick a card once open).
 func _unhandled_key_input(event: InputEvent) -> void:
 	if building_menu == null or not (event is InputEventKey and event.pressed and not event.echo) or event.ctrl_pressed:
 		return
-	if event.keycode == KEY_T and chat_panel and Net.is_online():  # coop-12: chat menu
+	if event.is_action_pressed("chat") and chat_panel and Net.is_online():  # coop-12: chat menu
 		chat_panel.toggle_menu()
 		get_viewport().set_input_as_handled()
 		return
-	var tab := {KEY_B: 0, KEY_V: 1, KEY_R: BuildingMenu.RESEARCH_TAB}.get(event.keycode, -1) as int
+	var tab := -1
+	if event.is_action_pressed("build_major"):
+		tab = 0
+	elif event.is_action_pressed("build_minor"):
+		tab = 1
+	elif event.is_action_pressed("build_research"):
+		tab = BuildingMenu.RESEARCH_TAB
 	if tab >= 0:
 		building_menu.open_category(tab)
 		get_viewport().set_input_as_handled()
@@ -239,7 +260,7 @@ func _add_pause_label() -> void:
 	pause_label.name = "PauseLabel"
 	pause_label.text = PAUSE_TEXT
 	pause_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pause_label.add_theme_font_size_override("font_size", 32)
+	pause_label.add_theme_font_size_override("font_size", Accessibility.font(32))
 	pause_label.visible = false
 	$Control.add_child(pause_label)
 	pause_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, 24)
@@ -269,6 +290,9 @@ func set_nexo_alert(active: bool) -> void:
 	if not active:
 		return
 	nexo_alert.modulate.a = 1.0
+	show_caption("Alerta: el Nexo está bajo ataque")
+	if Accessibility.reduce_flashes:
+		return  # steady border, no blinking
 	_alert_tween = create_tween().set_loops().set_ignore_time_scale()
 	_alert_tween.tween_property(nexo_alert, "modulate:a", 0.25, 0.3)
 	_alert_tween.tween_property(nexo_alert, "modulate:a", 1.0, 0.3)
@@ -289,7 +313,7 @@ func _add_hint_panel() -> void:
 	var box := VBoxContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hint_title = Label.new()
-	_hint_title.add_theme_font_size_override("font_size", 20)
+	_hint_title.add_theme_font_size_override("font_size", Accessibility.font(20))
 	_hint_body = Label.new()
 	_hint_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint_body.custom_minimum_size = Vector2(HINT_WIDTH - 24.0, 0)
@@ -343,6 +367,42 @@ func _on_bestiary_unlocked(enemy_id: String, tier: BestiaryEntry.Tier) -> void:
 	var type := bestiary.get_type(enemy_id) if bestiary else null
 	if type:
 		show_hint("Nuevo registro", "%s: %s" % [type.display_name, BESTIARY_TIER_TEXT.get(tier, "")], QuestPalette.GOLD)
+
+
+func toggle_controls_help() -> void:
+	if controls_help:
+		controls_help.toggle()
+
+
+## Bottom-center caption for important sounds ("♪ ..."), only with sound_captions.
+func _add_caption_label() -> void:
+	caption_label = Label.new()
+	caption_label.name = "SoundCaption"
+	caption_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption_label.add_theme_font_size_override("font_size", Accessibility.font(18))
+	caption_label.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
+	caption_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	caption_label.add_theme_constant_override("outline_size", 6)
+	caption_label.visible = false
+	$Control.add_child(caption_label)
+	caption_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 230)
+
+
+func show_caption(text: String) -> void:
+	if caption_label == null or not Accessibility.sound_captions:
+		return
+	caption_label.text = "♪ " + text
+	caption_label.reset_size()
+	caption_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 230)
+	caption_label.modulate.a = 1.0
+	caption_label.visible = true
+	if _caption_tween:
+		_caption_tween.kill()
+	_caption_tween = create_tween().set_ignore_time_scale()
+	_caption_tween.tween_interval(CAPTION_HOLD)
+	_caption_tween.tween_property(caption_label, "modulate:a", 0.0, 0.4)
+	_caption_tween.tween_callback(caption_label.hide)
 
 
 ## Banner: "PAUSA" while frozen, "2x" while running fast, hidden at plain 1x.
@@ -569,7 +629,7 @@ func _on_enemies_appeared(zone_ids: Array[String], count: int, source: String) -
 		trigger_invasion_alert()
 	else:
 		show_hint("Invasión", "%d enemigos aparecieron en: %s" % [count, ", ".join(names)], ALERT_COLOR)
-	_play_alert()
+	_play_alert("Alerta: enemigos en %s" % ", ".join(names))
 
 
 ## progresion-10: the floor's boss woke up in the exit room.
@@ -594,7 +654,8 @@ func _room_label(room_manager: RoomManager, zone_id: String) -> String:
 
 
 ## Placeholder alert sound: assets/audio/alert.{ogg,wav,mp3} when it exists, else a short generated beep.
-func _play_alert() -> void:
+func _play_alert(caption: String = "Alerta: enemigos") -> void:
+	show_caption(caption)
 	if _alert_player == null:
 		_alert_player = AudioStreamPlayer.new()
 		_alert_player.name = "AlertPlayer"
@@ -622,9 +683,10 @@ func _load_alert_stream() -> AudioStream:
 	return wav
 
 
-## Emergency-light pulse: red overlay alpha 0 -> 0.3 -> 0.
+## Emergency-light pulse: red overlay alpha 0 -> 0.3 -> 0 (none with reduce_flashes:
+## the hint and the minimap ring already say it).
 func trigger_invasion_alert() -> void:
-	if invasion_flash == null:
+	if invasion_flash == null or Accessibility.reduce_flashes:
 		return
 	if _invasion_tween and _invasion_tween.is_valid():
 		_invasion_tween.kill()

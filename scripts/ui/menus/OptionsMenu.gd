@@ -76,6 +76,8 @@ func _ready() -> void:
 
 	_apply_theme()
 	_populate_option_buttons()
+	_build_accessibility_tab()
+	_build_controls_tab()
 	_connect_menu_signals()
 	_update_ui_text_translations()
 
@@ -127,6 +129,188 @@ func _on_tab_changed(tab_idx: int) -> void:
 		0: window_mode_option.grab_focus()
 		1: master_volume_slider.grab_focus()
 		2: screen_shake_slider.grab_focus()
+		3: text_scale_slider.grab_focus()
+		4:
+			if _first_rebind_button:
+				_first_rebind_button.grab_focus()
+
+
+# ---------------- ACCESSIBILITY / CONTROLS (calidad-13, built in code) ----------------
+
+var text_scale_slider: HSlider
+var _text_scale_value: Label
+var colorblind_check: CheckButton
+var reduce_flashes_check: CheckButton
+var captions_check: CheckButton
+var _controls_grid: GridContainer
+var _controls_status: Label
+var _first_rebind_button: Button
+## [action, gamepad?] while waiting for the next key/button; empty otherwise.
+var _capturing: Array = []
+var _help: ControlsHelp
+
+
+func _build_accessibility_tab() -> void:
+	var tab := VBoxContainer.new()
+	tab.name = "Accesibilidad"
+	tab.add_theme_constant_override("separation", 12)
+	options_tabs.add_child(tab)
+	var label := Label.new()
+	label.text = "Tamaño del texto"
+	tab.add_child(label)
+	var row := HBoxContainer.new()
+	tab.add_child(row)
+	text_scale_slider = HSlider.new()
+	text_scale_slider.min_value = TEXT_SCALE_MIN
+	text_scale_slider.max_value = TEXT_SCALE_MAX
+	text_scale_slider.step = 0.1
+	text_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(text_scale_slider)
+	_text_scale_value = Label.new()
+	_text_scale_value.custom_minimum_size = Vector2(70, 0)
+	row.add_child(_text_scale_value)
+	text_scale_slider.value_changed.connect(func(v: float) -> void:
+		_update_percent_label(_text_scale_value, v)
+		var mgr := _get_settings_manager()
+		if mgr and not suppress_change_tracking:
+			mgr.text_scale = v
+		_mark_unsaved_changes())
+	colorblind_check = _a11y_check(tab, "Modo daltónico (barras y rarezas con formas)", "colorblind_mode")
+	reduce_flashes_check = _a11y_check(tab, "Reducir destellos y parpadeos", "reduce_flashes")
+	captions_check = _a11y_check(tab, "Subtítulos para avisos sonoros", "sound_captions")
+	var note := Label.new()
+	note.text = "El temblor de cámara se ajusta en Jugabilidad (0 % lo desactiva).\nEl tamaño del texto se aplica por completo a las pantallas que se abran después."
+	note.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
+	tab.add_child(note)
+	var logs := Button.new()
+	logs.text = "Abrir carpeta de registros"
+	logs.tooltip_text = "Para reportar un error: adjunta el archivo quest.log más reciente."
+	logs.pressed.connect(func() -> void: OS.shell_open(ProjectSettings.globalize_path("user://logs")))
+	logs.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	tab.add_child(logs)
+
+
+const TEXT_SCALE_MIN := 0.8  # = SettingsManager.TEXT_SCALE_MIN/MAX
+const TEXT_SCALE_MAX := 1.5
+
+
+func _a11y_check(parent: Control, text: String, setting: String) -> CheckButton:
+	var check := CheckButton.new()
+	check.text = text
+	parent.add_child(check)
+	check.toggled.connect(func(on: bool) -> void:
+		var mgr := _get_settings_manager()
+		if mgr and not suppress_change_tracking:
+			mgr.set(setting, on)
+			if setting == "reduce_flashes" and on:
+				screen_shake_slider.value = 0.0  # the camera shake goes with it
+		_mark_unsaved_changes())
+	return check
+
+
+func _build_controls_tab() -> void:
+	var tab := VBoxContainer.new()
+	tab.name = "Controles"
+	options_tabs.add_child(tab)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size = Vector2(0, 360)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	tab.add_child(scroll)
+	_controls_grid = GridContainer.new()
+	_controls_grid.columns = 4
+	_controls_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_controls_grid)
+	_controls_status = Label.new()
+	_controls_status.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
+	_controls_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tab.add_child(_controls_status)
+	var buttons := HBoxContainer.new()
+	tab.add_child(buttons)
+	var reset := Button.new()
+	reset.text = "Restablecer todo"
+	reset.pressed.connect(func() -> void:
+		InputBindings.reset_all()
+		_refresh_controls()
+		_mark_unsaved_changes())
+	buttons.add_child(reset)
+	var help := Button.new()
+	help.text = "Ver todos los atajos"
+	help.pressed.connect(func() -> void:
+		if _help == null:
+			_help = ControlsHelp.new()
+			add_child(_help)
+		_help.open())
+	buttons.add_child(help)
+	_refresh_controls()
+
+
+func _refresh_controls() -> void:
+	for child in _controls_grid.get_children():
+		child.queue_free()
+	_first_rebind_button = null
+	for action in InputBindings.REMAPPABLE:
+		var name_label := Label.new()
+		name_label.text = InputBindings.REMAPPABLE[action]
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_controls_grid.add_child(name_label)
+		for gamepad in [false, true]:
+			var b := Button.new()
+			b.custom_minimum_size = Vector2(150, 0)
+			b.text = InputBindings.label(action, gamepad)
+			b.tooltip_text = "Cambiar (%s)" % ("mando" if gamepad else "teclado")
+			b.pressed.connect(_start_capture.bind(action, gamepad, b))
+			_controls_grid.add_child(b)
+			if _first_rebind_button == null:
+				_first_rebind_button = b
+		var r := Button.new()
+		r.text = "↺"
+		r.tooltip_text = "Restablecer"
+		r.pressed.connect(func() -> void:
+			InputBindings.reset(action)
+			_refresh_controls()
+			_mark_unsaved_changes())
+		_controls_grid.add_child(r)
+
+
+func _start_capture(action: String, gamepad: bool, button: Button) -> void:
+	_capturing = [action, gamepad]
+	button.text = "..."
+	_controls_status.text = "Pulsa %s para \"%s\" (Esc cancela)." % ["un botón del mando" if gamepad else "una tecla", InputBindings.REMAPPABLE[action]]
+
+
+## While capturing, the next key / gamepad button / stick push becomes the binding.
+func _input(event: InputEvent) -> void:
+	if _capturing.is_empty() or not visible:
+		return
+	var gamepad: bool = _capturing[1]
+	var captured: InputEvent = null
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			_capturing = []
+			_controls_status.text = "Cancelado."
+			_refresh_controls()
+			get_viewport().set_input_as_handled()
+			return
+		if not gamepad and not event.keycode in [KEY_CTRL, KEY_SHIFT, KEY_ALT, KEY_META]:
+			captured = InputBindings.decode(InputBindings.encode(event))  # clean copy (no echo/pressed state)
+	elif gamepad and event is InputEventJoypadButton and event.pressed:
+		captured = InputBindings.decode(InputBindings.encode(event))
+	elif gamepad and event is InputEventJoypadMotion and absf(event.axis_value) > 0.6:
+		captured = InputBindings.decode(InputBindings.encode(event))
+	if captured == null:
+		return
+	get_viewport().set_input_as_handled()
+	var action: String = _capturing[0]
+	_capturing = []
+	var clash := InputBindings.conflicts(action, captured)
+	InputBindings.rebind(action, captured, gamepad)
+	_controls_status.text = "%s → %s" % [InputBindings.REMAPPABLE[action], InputBindings.event_label(captured)]
+	if not clash.is_empty():
+		var names := clash.map(func(a: String) -> String: return InputBindings.REMAPPABLE[a])
+		_controls_status.text += "  (también la usa: %s)" % ", ".join(names)
+	_refresh_controls()
+	_mark_unsaved_changes()
 
 
 func _get_settings_manager() -> Node:
@@ -264,6 +448,15 @@ func _sync_from_settings_manager() -> void:
 
 	screen_shake_slider.value = clampf(shake, 0.0, 1.0)
 	_update_percent_label(screen_shake_value_label, screen_shake_slider.value)
+
+	if settings_mgr:
+		text_scale_slider.value = settings_mgr.text_scale
+		_update_percent_label(_text_scale_value, text_scale_slider.value)
+		colorblind_check.button_pressed = settings_mgr.colorblind_mode
+		reduce_flashes_check.button_pressed = settings_mgr.reduce_flashes
+		captions_check.button_pressed = settings_mgr.sound_captions
+	_capturing = []
+	_refresh_controls()
 
 	suppress_change_tracking = false
 	has_unsaved_changes = false
@@ -609,6 +802,9 @@ func _update_ui_text_translations() -> void:
 	options_tabs.set_tab_title(0, tr("KEY_TAB_VIDEO"))
 	options_tabs.set_tab_title(1, tr("KEY_TAB_AUDIO"))
 	options_tabs.set_tab_title(2, tr("KEY_TAB_GAMEPLAY"))
+	if options_tabs.get_tab_count() > 4:
+		options_tabs.set_tab_title(3, "Accesibilidad")
+		options_tabs.set_tab_title(4, "Controles")
 
 	for i in range(WINDOW_MODE_LABELS.size()):
 		if i < window_mode_option.item_count:

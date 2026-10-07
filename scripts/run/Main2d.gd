@@ -429,11 +429,17 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif _is_gameplay_active() and hero_input.handle_key(event):
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("hero_cycle") and _is_gameplay_active():
-		# Consumed so Tab never also moves GUI focus (ui_focus_next).
+	elif (event.is_action_pressed("hero_cycle_prev") or event.is_action_pressed("hero_cycle")) and _is_gameplay_active():
+		# Consumed so Tab never also moves GUI focus (ui_focus_next). Prev first:
+		# Shift+Tab also matches hero_cycle (Tab) with inexact matching.
 		var player_stats := ManagerLocator.get_player_stats()
 		if player_stats:
-			player_stats.cycle_active_hero()
+			player_stats.cycle_active_hero(-1 if event.is_action_pressed("hero_cycle_prev") else 1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("show_help") and _is_gameplay_active():
+		var hud := ManagerLocator.get_hud()
+		if hud:
+			hud.toggle_controls_help()
 		get_viewport().set_input_as_handled()
 
 ## progresion-10: run time = real time while the run is ACTIVE (the tactical pause

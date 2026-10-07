@@ -175,11 +175,11 @@ func select_hero(hero_id: String) -> bool:
 
 
 ## Tab: next hero in party order, wrapping. false with fewer than 2 heroes.
-func cycle_active_hero() -> bool:
+func cycle_active_hero(step: int = 1) -> bool:
 	var ids := get_hero_ids()
 	if ids.size() < 2:
 		return false
-	return select_hero(ids[(ids.find(active_hero_id) + 1) % ids.size()])
+	return select_hero(ids[posmod(ids.find(active_hero_id) + step, ids.size())])
 
 
 ## New floor (Main2d, before spawning): drops last floor's CharacterStats.
