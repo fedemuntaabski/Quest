@@ -168,9 +168,10 @@ func _set_under_attack(active: bool) -> void:
 func _play_hit(amount: int) -> void:
 	if _flash_tween:
 		_flash_tween.kill()
-	_flash_material.set_shader_parameter("flash", 1.0)
-	_flash_tween = create_tween().set_ignore_time_scale()
-	_flash_tween.tween_property(_flash_material, "shader_parameter/flash", 0.0, FLASH_SEC)
+	if not Accessibility.reduce_flashes:
+		_flash_material.set_shader_parameter("flash", 1.0)
+		_flash_tween = create_tween().set_ignore_time_scale()
+		_flash_tween.tween_property(_flash_material, "shader_parameter/flash", 0.0, FLASH_SEC)
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr:
 		text_mgr.spawn_text(get_target_position(), "-%d" % amount, QuestPalette.BLOOD_LIGHT)

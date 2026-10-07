@@ -54,7 +54,7 @@ func send(index: int) -> void:
 func add_message(player_name: String, color: Color, text: String) -> void:
 	var line := Label.new()
 	line.text = "%s: %s" % [player_name, text]
-	line.add_theme_font_size_override("font_size", FONT)
+	line.add_theme_font_size_override("font_size", Accessibility.font(FONT))
 	line.add_theme_color_override("font_color", color)
 	line.add_theme_color_override("font_outline_color", QuestPalette.INK)
 	line.add_theme_constant_override("outline_size", 4)

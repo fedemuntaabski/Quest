@@ -50,7 +50,7 @@ func _ready() -> void:
 	_text.bbcode_enabled = true
 	_text.fit_content = false
 	_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_text.add_theme_font_size_override("normal_font_size", 22)
+	_text.add_theme_font_size_override("normal_font_size", Accessibility.font(22))
 	_text.add_theme_color_override("default_color", QuestPalette.PARCHMENT_LIGHT)
 	_text.text = TEXT
 	box.add_child(_text)
@@ -59,7 +59,7 @@ func _ready() -> void:
 	back.text = "Volver"
 	back.custom_minimum_size = Vector2(220, 56)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	back.add_theme_font_size_override("font_size", 26)
+	back.add_theme_font_size_override("font_size", Accessibility.font(26))
 	back.pressed.connect(close)
 	box.add_child(back)
 

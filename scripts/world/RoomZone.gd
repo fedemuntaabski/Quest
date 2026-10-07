@@ -238,7 +238,7 @@ func set_room_type(type: RoomData.RoomType, size_px: Vector2, config: MapVisualC
 	label.material = UNSHADED
 	label.text = visual.display_name
 	label.add_theme_color_override("font_color", color)
-	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_font_size_override("font_size", Accessibility.font(14))
 	label.position = Vector2(r + 4.0, -11.0)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_type_badge.add_child(label)
@@ -390,7 +390,7 @@ func _build_power_icon(half: Vector2) -> void:
 
 	_power_label = Label.new()
 	_power_label.material = UNSHADED
-	_power_label.add_theme_font_size_override("font_size", 12)
+	_power_label.add_theme_font_size_override("font_size", Accessibility.font(12))
 	_power_label.position = Vector2(-28, 12)
 	_power_label.size = Vector2(56, 16)
 	_power_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

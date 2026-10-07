@@ -212,12 +212,13 @@ func _update_bar() -> void:
 	var ratio := clampf(float(current_hp) / float(maxi(max_hp, 1)), 0.0, 1.0)
 	_bar_back.visible = current_hp < max_hp
 	_bar_fill.size.x = BAR_SIZE.x * ratio
-	_bar_fill.color = QuestPalette.BLOOD_LIGHT.lerp(Color(0.45, 0.8, 0.4), ratio)
+	_bar_fill.color = (Color(0.84, 0.37, 0.0).lerp(Color(0.34, 0.71, 0.91), ratio) if Accessibility.colorblind
+		else QuestPalette.BLOOD_LIGHT.lerp(Color(0.45, 0.8, 0.4), ratio))
 
 
 ## White blink + floating damage number (the Nexo's hit feedback, for modules).
 func _play_hit(amount: int) -> void:
-	if icon:
+	if icon and not Accessibility.reduce_flashes:
 		if _flash_tween:
 			_flash_tween.kill()
 		var base: Color = TYPE_COLORS.get(module_type, Color.WHITE)

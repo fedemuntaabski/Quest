@@ -139,7 +139,7 @@ func sacrifice(hero_id: String = "") -> ItemData:
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"hit_sparks", hero.global_position, GLOW)
-	_say("%s (%s)" % [item.display_name, ItemData.RARITY_LABELS[item.rarity]], item.color())
+	_say(item.rarity_label(), item.color())
 	used.emit(hero.stats.hero_id, item)
 	return item
 

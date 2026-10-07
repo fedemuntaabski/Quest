@@ -68,7 +68,7 @@ func _build() -> void:
 	_title = Label.new()
 	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title.add_theme_color_override("font_color", QuestPalette.GOLD)
-	_title.add_theme_font_size_override("font_size", 20)
+	_title.add_theme_font_size_override("font_size", Accessibility.font(20))
 	header.add_child(_title)
 	var x := Button.new()
 	x.text = "X"

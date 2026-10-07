@@ -122,7 +122,7 @@ func _build() -> void:
 	_title = Label.new()
 	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title.add_theme_color_override("font_color", QuestPalette.GOLD)
-	_title.add_theme_font_size_override("font_size", 24)
+	_title.add_theme_font_size_override("font_size", Accessibility.font(24))
 	header.add_child(_title)
 	var close_button := Button.new()
 	close_button.text = "X"
@@ -169,7 +169,7 @@ func _build() -> void:
 	var hint := Label.new()
 	hint.text = "Los niveles se pierden al terminar la partida."
 	hint.add_theme_color_override("font_color", QuestPalette.UI_TEXT_MUTED)
-	hint.add_theme_font_size_override("font_size", 13)
+	hint.add_theme_font_size_override("font_size", Accessibility.font(13))
 	content.add_child(hint)
 	_level_button = Button.new()
 	_level_button.pressed.connect(_on_level_up_pressed)
@@ -325,7 +325,7 @@ func _rebuild_perks(ps: PlayerStats) -> void:
 		var hint := Label.new()
 		hint.text = "Se desbloquea al llegar a nivel %d." % _next_perk_level()
 		hint.add_theme_color_override("font_color", QuestPalette.UI_TEXT_MUTED)
-		hint.add_theme_font_size_override("font_size", 13)
+		hint.add_theme_font_size_override("font_size", Accessibility.font(13))
 		_perk_rows.add_child(hint)
 
 
@@ -353,7 +353,7 @@ func _make_perk_card(perk: HeroPerk) -> Control:
 	description.text = perk.description
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	description.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
-	description.add_theme_font_size_override("font_size", 13)
+	description.add_theme_font_size_override("font_size", Accessibility.font(13))
 	text.add_child(description)
 	var button := Button.new()
 	button.text = "Elegir"

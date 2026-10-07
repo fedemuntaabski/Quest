@@ -116,12 +116,14 @@ func _draw_item_frame() -> void:
 	var rect := Rect2(Vector2.ONE * -ITEM_FRAME * 0.5, Vector2.ONE * ITEM_FRAME)
 	_item_frame.draw_rect(rect, Color(0.05, 0.04, 0.04, 0.85))
 	_item_frame.draw_rect(rect, item.color(), false, 2.0)
+	if item.shape() != "":  # colorblind: rarity shape in the corner
+		_item_frame.draw_string(ThemeDB.fallback_font, rect.position + Vector2(2, 12), item.shape(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, item.color())
 
 
 func _announce() -> void:
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr:
-		text_mgr.spawn_text(global_position + Vector2(0, -64), "%s (%s)" % [item.display_name, ItemData.RARITY_LABELS[item.rarity]], item.color(), item.rarity >= ItemData.Rarity.EPIC)
+		text_mgr.spawn_text(global_position + Vector2(0, -64), item.rarity_label(), item.color(), item.rarity >= ItemData.Rarity.EPIC)
 		if tier:
 			text_mgr.spawn_text(global_position + Vector2(0, -86), "Cofre de %s" % tier.display_name.to_lower(), tier.tint)
 

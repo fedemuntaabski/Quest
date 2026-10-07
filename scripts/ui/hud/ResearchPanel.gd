@@ -138,7 +138,7 @@ func _label(text: String, color: Color, font_size: int) -> Label:
 	label.text = text
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_color_override("font_color", color)
-	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_font_size_override("font_size", Accessibility.font(font_size))
 	return label
 
 

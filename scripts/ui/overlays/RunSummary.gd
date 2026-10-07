@@ -25,7 +25,7 @@ func fill(stats: Dictionary, new_records: Array[String] = [], records: Dictionar
 		var label := Label.new()
 		label.text = line
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 22)
+		label.add_theme_font_size_override("font_size", Accessibility.font(22))
 		var is_record := line.begins_with("¡Nuevo récord")
 		label.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT if is_record else QuestPalette.PARCHMENT_LIGHT)
 		add_child(label)

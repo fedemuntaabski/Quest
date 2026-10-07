@@ -46,7 +46,7 @@ func _row(peer: int) -> HBoxContainer:
 	row.add_child(swatch)
 	var label := Label.new()
 	label.text = row_text(peer)
-	label.add_theme_font_size_override("font_size", ROW_FONT)
+	label.add_theme_font_size_override("font_size", Accessibility.font(ROW_FONT))
 	label.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(label)

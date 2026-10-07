@@ -158,14 +158,15 @@ func _draw() -> void:
 		draw_circle(hero_rect.get_center() + Vector2((i - (_heroes.size() - 1) * 0.5) * radius * 2.0, 0.0), radius, HERO_COLOR)
 
 	# Nexo under attack: blinking red ring on the room (or carrier's room) it is in.
-	if _nexo and _nexo.under_attack and (Time.get_ticks_msec() / 250) % 2 == 0:
+	var blink_on := Accessibility.reduce_flashes or (Time.get_ticks_msec() / 250) % 2 == 0  # steady with reduce_flashes
+	if _nexo and _nexo.under_attack and blink_on:
 		var nexo_zone := _nexo.get_target_zone(_room_manager)
 		if nexo_zone != "" and _room_manager.is_zone_revealed(nexo_zone):
 			var nexo_rect := _to_map(_room_manager.get_zone(nexo_zone)["rect"], scale_px, offset)
 			draw_arc(nexo_rect.get_center(), radius * 2.2, 0.0, TAU, 24, NEXO_ALERT_COLOR, 2.0)
 
 	# Enemies just spawned here: blinking orange ring on each room.
-	if (Time.get_ticks_msec() / 250) % 2 == 0:
+	if blink_on:
 		for zone_id in _spawn_alerts:
 			if _room_manager.is_zone_revealed(zone_id):
 				var alert_rect := _to_map(_room_manager.get_zone(zone_id)["rect"], scale_px, offset)

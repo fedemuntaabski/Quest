@@ -49,7 +49,8 @@ func hit(from: Vector2, target: Vector2, color: Color, amount: int, target_max_h
 
 ## Damage taken (hero, Nexo): red flash.
 func hurt(pos: Vector2, amount: int, max_hp: int) -> void:
-	play(&"damage_flash", pos, config.damage_color)
+	if not Accessibility.reduce_flashes:
+		play(&"damage_flash", pos, config.damage_color)
 	shake_if_strong(amount, max_hp)
 
 

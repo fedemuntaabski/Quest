@@ -11,7 +11,7 @@ func _ready() -> void:
 	layer = 100
 
 	label = Label.new()
-	label.add_theme_font_size_override("font_size", 18)
+	label.add_theme_font_size_override("font_size", Accessibility.font(18))
 	label.add_theme_color_override("font_color", Color(1, 1, 0.4, 1))
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	label.add_theme_constant_override("outline_size", 3)

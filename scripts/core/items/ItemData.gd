@@ -54,8 +54,31 @@ func is_consumable() -> bool:
 	return slot == Slot.CONSUMABLE
 
 
+## calidad-13, colorblind mode: a lightness ramp (dark grey -> white-gold) instead
+## of hues, and a shape per rarity so color is never the only cue.
+const RARITY_COLORS_CB := {
+	Rarity.COMMON: Color(0.55, 0.55, 0.55),
+	Rarity.UNCOMMON: Color(0.34, 0.71, 0.91),
+	Rarity.RARE: Color(0.0, 0.45, 0.70),
+	Rarity.EPIC: Color(0.80, 0.47, 0.65),
+	Rarity.LEGENDARY: Color(0.94, 0.89, 0.26),
+}
+const RARITY_SHAPES := {Rarity.COMMON: "●", Rarity.UNCOMMON: "■", Rarity.RARE: "▲", Rarity.EPIC: "◆", Rarity.LEGENDARY: "★"}
+
+
 func color() -> Color:
-	return RARITY_COLORS[rarity]
+	return RARITY_COLORS_CB[rarity] if Accessibility.colorblind else RARITY_COLORS[rarity]
+
+
+## Rarity shape glyph, shown on item frames in colorblind mode ("" otherwise).
+func shape() -> String:
+	return RARITY_SHAPES[rarity] if Accessibility.colorblind else ""
+
+
+## "Espada (Raro)", with the rarity shape in front in colorblind mode.
+func rarity_label() -> String:
+	var text := "%s (%s)" % [display_name, RARITY_LABELS[rarity]]
+	return "%s %s" % [shape(), text] if Accessibility.colorblind else text
 
 
 ## "+10 Vida · +2 Daño · -0.10 s Intervalo · +20 px Alcance"

@@ -99,7 +99,7 @@ func _build_ui() -> void:
 	title.text = "ELEGÍ TUS %d HÉROES" % PARTY_SIZE
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_override("font", TITLE_FONT)
-	title.add_theme_font_size_override("font_size", 34)
+	title.add_theme_font_size_override("font_size", Accessibility.font(34))
 	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.62))
 	title.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
 	title.add_theme_constant_override("outline_size", 4)
@@ -135,7 +135,7 @@ func _build_ui() -> void:
 		slot.expand_icon = true
 		slot.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		slot.add_theme_font_override("font", UI_FONT)
-		slot.add_theme_font_size_override("font_size", 20)
+		slot.add_theme_font_size_override("font_size", Accessibility.font(20))
 		_style_button(slot)
 		slot.pressed.connect(_on_slot_pressed.bind(i))
 		slots_row.add_child(slot)
@@ -234,7 +234,7 @@ func _build_card(data: CharacterData) -> Button:
 	name_label.text = data.display_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_override("font", UI_FONT)
-	name_label.add_theme_font_size_override("font_size", 22)
+	name_label.add_theme_font_size_override("font_size", Accessibility.font(22))
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(name_label)
 
@@ -267,14 +267,14 @@ func _build_preview_panel() -> PanelContainer:
 	_preview_name = Label.new()
 	_preview_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_preview_name.add_theme_font_override("font", TITLE_FONT)
-	_preview_name.add_theme_font_size_override("font_size", 28)
+	_preview_name.add_theme_font_size_override("font_size", Accessibility.font(28))
 	_preview_name.add_theme_color_override("font_color", Color(0.95, 0.85, 0.62))
 	box.add_child(_preview_name)
 
 	_preview_info = Label.new()
 	_preview_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_preview_info.add_theme_font_override("font", UI_FONT)
-	_preview_info.add_theme_font_size_override("font_size", 17)
+	_preview_info.add_theme_font_size_override("font_size", Accessibility.font(17))
 	box.add_child(_preview_info)
 	return panel
 
@@ -284,7 +284,7 @@ func _make_action_button(text: String, font_size: int) -> Button:
 	btn.text = text
 	btn.custom_minimum_size = Vector2(260, 60)
 	btn.add_theme_font_override("font", UI_FONT)
-	btn.add_theme_font_size_override("font_size", font_size)
+	btn.add_theme_font_size_override("font_size", Accessibility.font(font_size))
 	btn.add_theme_color_override("font_color", Color(0.95, 0.78, 0.42))
 	btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.44, 0.32))
 	btn.mouse_entered.connect(_play_hover)

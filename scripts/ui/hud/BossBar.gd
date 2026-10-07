@@ -17,7 +17,7 @@ func _ready() -> void:
 	visible = false
 	_name = Label.new()
 	_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_name.add_theme_font_size_override("font_size", 18)
+	_name.add_theme_font_size_override("font_size", Accessibility.font(18))
 	_name.add_theme_color_override("font_color", QuestPalette.BLOOD_LIGHT)
 	_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_name)

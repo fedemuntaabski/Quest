@@ -150,7 +150,7 @@ func _grant_floor_end_loot() -> void:
 	if inventory.add_item(item):
 		QuestLogger.info(QuestLogger.Category.MAP, "Floor reward: %s." % item.id)
 		if hud:
-			hud.show_hint("Botín del piso", "%s (%s)" % [item.display_name, ItemData.RARITY_LABELS[item.rarity]], item.color())
+			hud.show_hint("Botín del piso", item.rarity_label(), item.color())
 	elif hud:
 		hud.show_hint("Botín del piso perdido", "La mochila está llena: no cabe %s." % item.display_name, QuestPalette.UI_TEXT_BLOCKED)
 

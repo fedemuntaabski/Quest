@@ -126,6 +126,19 @@ func _ready() -> void:
 	load_settings()
 	apply_video_settings()
 	_apply_root_theme()
+	get_tree().node_added.connect(_scale_scene_font)
+
+
+## Font sizes set in .tscn files (theme_override_font_sizes) follow text_scale when
+## the scene is instanced. Only nodes with an owner (= came from a scene): code-built
+## UI already passes its sizes through Accessibility.font().
+func _scale_scene_font(node: Node) -> void:
+	if text_scale == 1.0 or node.owner == null or not (node is Control):
+		return
+	var control := node as Control
+	if control.has_theme_font_size_override("font_size") and not control.has_meta(&"a11y_font"):
+		control.set_meta(&"a11y_font", true)  # once: a reparent re-enters the tree
+		control.add_theme_font_size_override("font_size", Accessibility.font(control.get_theme_font_size("font_size")))
 
 
 ## Default font size of every Control without its own override (overrides go

@@ -86,13 +86,13 @@ func _build() -> void:
 	content.add_child(header)
 	var title := Label.new()
 	title.text = "BESTIARIO"
-	title.add_theme_font_size_override("font_size", 34)
+	title.add_theme_font_size_override("font_size", Accessibility.font(34))
 	title.add_theme_color_override("font_color", QuestPalette.GOLD)
 	header.add_child(title)
 	_counter = Label.new()
 	_counter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_counter.add_theme_font_size_override("font_size", 22)
+	_counter.add_theme_font_size_override("font_size", Accessibility.font(22))
 	_counter.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
 	header.add_child(_counter)
 	var back := Button.new()
@@ -138,7 +138,7 @@ func _build() -> void:
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	frame.add_child(_sprite)
 	_name_label = Label.new()
-	_name_label.add_theme_font_size_override("font_size", 28)
+	_name_label.add_theme_font_size_override("font_size", Accessibility.font(28))
 	_name_label.add_theme_color_override("font_color", QuestPalette.GOLD)
 	detail.add_child(_name_label)
 	_info = Label.new()

@@ -188,7 +188,7 @@ func _show_floor_card() -> void:
 		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 44)
+		label.add_theme_font_size_override("font_size", Accessibility.font(44))
 		label.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
 		transition_rect.add_child(label)
 	var theme := FloorManager.DEFAULT_CONFIG.theme(current_floor)

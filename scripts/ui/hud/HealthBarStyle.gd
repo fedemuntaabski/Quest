@@ -21,12 +21,32 @@ class_name HealthBarStyle
 @export var flash_time: float = 0.2
 
 
+@export_group("Colorblind (Accessibility.colorblind)")
+## Okabe-Ito based: blue / yellow / vermillion differ in hue AND lightness, and
+## each state also gets a glyph (glyph_for), so color is never the only cue.
+@export var cb_high_color: Color = Color(0.34, 0.71, 0.91, 1.0)
+@export var cb_mid_color: Color = Color(0.94, 0.89, 0.26, 1.0)
+@export var cb_low_color: Color = Color(0.84, 0.37, 0.0, 1.0)
+
+
 func color_for(ratio: float) -> Color:
+	var cb := Accessibility.colorblind
 	if ratio > high_threshold:
-		return high_color
+		return cb_high_color if cb else high_color
 	if ratio >= low_threshold:
-		return mid_color
-	return low_color
+		return cb_mid_color if cb else mid_color
+	return cb_low_color if cb else low_color
+
+
+## Shape cue next to the bar: none when healthy, "▲" hurt, "!" critical.
+## Always shown in colorblind mode; the critical "!" also with reduce_flashes
+## (it replaces the low-HP blink).
+func glyph_for(ratio: float) -> String:
+	if ratio > high_threshold:
+		return ""
+	if ratio >= low_threshold:
+		return "▲" if Accessibility.colorblind else ""
+	return "!" if Accessibility.colorblind or Accessibility.reduce_flashes else ""
 
 
 static func ratio_of(current_hp: int, max_hp: int) -> float:

@@ -29,7 +29,7 @@ func _ready() -> void:
 	add_child(_slots_row)
 	_bonus_label = Label.new()
 	_bonus_label.add_theme_color_override("font_color", QuestPalette.PARCHMENT_LIGHT)
-	_bonus_label.add_theme_font_size_override("font_size", 13)
+	_bonus_label.add_theme_font_size_override("font_size", Accessibility.font(13))
 	add_child(_bonus_label)
 	_stash_title = Label.new()
 	_stash_title.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
@@ -41,7 +41,7 @@ func _ready() -> void:
 	add_child(_stash_grid)
 	_message = Label.new()
 	_message.add_theme_color_override("font_color", QuestPalette.UI_TEXT_BLOCKED)
-	_message.add_theme_font_size_override("font_size", 13)
+	_message.add_theme_font_size_override("font_size", Accessibility.font(13))
 	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_message)
 	var inventory := ManagerLocator.get_party_inventory()
@@ -179,12 +179,22 @@ func _make_cell(item: ItemData, empty_label: String) -> Button:
 		cell.icon = item.icon
 	else:
 		cell.text = item.display_name.left(1)
+	if item and item.shape() != "":  # colorblind: rarity shape in the corner
+		var glyph := Label.new()
+		glyph.text = item.shape()
+		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		glyph.add_theme_font_size_override("font_size", Accessibility.font(11))
+		glyph.add_theme_color_override("font_color", item.color())
+		glyph.add_theme_color_override("font_outline_color", Color.BLACK)
+		glyph.add_theme_constant_override("outline_size", 3)
+		glyph.position = Vector2(2, -2)
+		cell.add_child(glyph)
 	return cell
 
 
 ## Name (rarity), slot, effect, restriction, description and, for gear, the change vs `current`.
 func _item_tooltip(item: ItemData, current: ItemData) -> String:
-	var lines: Array[String] = ["%s (%s) · %s" % [item.display_name, ItemData.RARITY_LABELS[item.rarity], ItemData.SLOT_LABELS[item.slot]]]
+	var lines: Array[String] = ["%s · %s" % [item.rarity_label(), ItemData.SLOT_LABELS[item.slot]]]
 	if item.describe_stats() != "":
 		lines.append(item.describe_stats())
 	if not item.is_consumable() and current != null and current != item:

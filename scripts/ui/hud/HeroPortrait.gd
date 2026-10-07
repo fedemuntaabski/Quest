@@ -39,6 +39,7 @@ var _group_label: Label
 var _perk_dot: Label
 var _group_nums: Array = []
 var _bar: ProgressBar
+var _bar_glyph: Label
 var ability_button: AbilityButton
 var revive_button: Button
 var _low_tween: Tween
@@ -120,6 +121,18 @@ func _ready() -> void:
 	_bar.add_theme_stylebox_override("fill", _fill)
 	_bar.add_theme_stylebox_override("background", background)
 	column.add_child(_bar)
+	# calidad-13: shape cue on the bar (HealthBarStyle.glyph_for), colorblind / reduce_flashes
+	_bar_glyph = Label.new()
+	_bar_glyph.name = "HpGlyph"
+	_bar_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bar_glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_bar_glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_bar_glyph.add_theme_font_size_override("font_size", Accessibility.font(12))
+	_bar_glyph.add_theme_color_override("font_outline_color", Color.BLACK)
+	_bar_glyph.add_theme_constant_override("outline_size", 4)
+	_bar.add_child(_bar_glyph)
+	_bar_glyph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_bar_glyph.offset_right = -3
 
 	_downed_label = Label.new()
 	_downed_label.text = "Caído"
@@ -247,10 +260,11 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 		_bar_tween.tween_property(_bar, "value", target_ratio, style.tween_time)
 		_bar_tween.tween_property(_fill, "bg_color", color, style.tween_time)
 
+	_bar_glyph.text = style.glyph_for(target_ratio) if current_hp > 0 else ""
 	_set_low_blink(current_hp > 0 and target_ratio < style.low_threshold)
 	_refresh_downed()
 
-	if took_damage and is_inside_tree():
+	if took_damage and is_inside_tree() and not Accessibility.reduce_flashes:
 		if _flash_tween and _flash_tween.is_valid():
 			_flash_tween.kill()
 		modulate = style.flash_color
@@ -266,7 +280,7 @@ func _set_low_blink(on: bool) -> void:
 		_low_tween.kill()
 	_low_tween = null
 	_bar.modulate = Color.WHITE
-	if on and is_inside_tree():
+	if on and is_inside_tree() and not Accessibility.reduce_flashes:  # the "!" glyph still marks it
 		_low_tween = create_tween().set_loops().set_ignore_time_scale()
 		_low_tween.tween_property(_bar, "modulate", Color(1, 1, 1, 0.3), 0.3)
 		_low_tween.tween_property(_bar, "modulate", Color.WHITE, 0.3)

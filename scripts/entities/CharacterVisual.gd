@@ -91,9 +91,10 @@ func play_hit() -> void:
 	_hit_left = HIT_TIME
 	if _flash and _flash.is_valid():
 		_flash.kill()
-	_material.set_shader_parameter("flash", 1.0)
-	_flash = create_tween()
-	_flash.tween_property(_material, "shader_parameter/flash", 0.0, FLASH_TIME)
+	if not Accessibility.reduce_flashes:
+		_material.set_shader_parameter("flash", 1.0)
+		_flash = create_tween()
+		_flash.tween_property(_material, "shader_parameter/flash", 0.0, FLASH_TIME)
 	_refresh(false)
 
 

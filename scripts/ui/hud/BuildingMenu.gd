@@ -207,7 +207,7 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 	var effect_label := Label.new()
 	effect_label.text = "%s · %d Ciencia" % [lock, research_cost] if lock != "" else Module.describe_effect(module_type)
 	effect_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_BLOCKED if lock != "" else QuestPalette.UI_TEXT_SECONDARY)
-	effect_label.add_theme_font_size_override("font_size", 13)
+	effect_label.add_theme_font_size_override("font_size", Accessibility.font(13))
 	column.add_child(effect_label)
 
 	var cost_row := HBoxContainer.new()

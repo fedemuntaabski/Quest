@@ -27,7 +27,7 @@ func _ready() -> void:
 	add_theme_stylebox_override("normal", UiStyles.build_panel_style(Color(0.08, 0.07, 0.07, 0.9), QuestPalette.GOLD_DARK, 1, 4, 2))
 	_hint = Label.new()
 	_hint.text = "Q"
-	_hint.add_theme_font_size_override("font_size", 10)
+	_hint.add_theme_font_size_override("font_size", Accessibility.font(10))
 	_hint.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
 	_hint.add_theme_color_override("font_outline_color", Color.BLACK)
 	_hint.add_theme_constant_override("outline_size", 3)
