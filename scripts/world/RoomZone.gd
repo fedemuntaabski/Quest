@@ -440,6 +440,11 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 			if not event.pressed:
 				return
 			clicked.emit(self)
+		# coop-12: Alt + left = map ping (everyone sees it); plain left is selection.
+		MOUSE_BUTTON_LEFT:
+			if not (event.pressed and event.alt_pressed):
+				return
+			ManagerLocator.get_net_commands().request("map_ping", {"zone": zone_id})
 		# Middle = light/unlight on release, unless it was a camera drag.
 		MOUSE_BUTTON_MIDDLE:
 			if event.pressed or kind != "room":

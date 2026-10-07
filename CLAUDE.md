@@ -104,6 +104,15 @@ QUEST: 2D tactical/roguelite game built in Godot 4.6, GDScript only (no C#/.NET)
   - a full floor with 4 heroes (performance, spacing);
   - real generation of Prisoner rooms across floors (`test_rooms` covers quotas).
 
+**Session coop-12** (`session/coop-12`, on top of multijugador-11): 2-4 player co-op, host-authoritative. Status `docs/COOP_PROGRESO.md`, manual Steam/ENet steps + unverified + key logs `docs/COOP_PRUEBAS.md`. Tunables in `NetConfig` (`resources/net/net_config.tres`: colors, snapshot/hash rates, command rate limit, `orphan_mode`, pause vote window/max, chat messages, `ping_sec`).
+- **Transport:** `NetworkTransport` (`scripts/network/`) with `SteamTransport` (lobby id = join code) and `EnetTransport` (`ip:port`, local dev/tests; `-- --net=enet --net-name=X --net-token=Y`); the rest of the game never knows which.
+- **Session:** `NetSession` autoload (`CoopSession`: players, colors, hero picks without repeats, ready, shared seed `start_run`, `hero_owner`, reconnection tokens, `away`, `pings`). Gameplay reads it through the static `Net` (`Net.session()`, `Net.is_authority()` = offline or host, so single player is the local host with no network).
+- **Commands:** `NetCommands` autoload (`CoopCommands`): `request(cmd, args)` is the **only** entry for player actions (move, door, power, build, research, equip, ability, chest, pause_vote, chat, map_ping...); offline/host it runs `_cmd_<name>` directly (same code), a client sends an RPC and the host validates (owner, costs, args, rate). Shared mutators are guarded by `Net.is_authority()`; clients only apply `NetSync` snapshots (interpolated) / events and `RunState` (full state, resync, reconnection, periodic desync hash).
+- **Pause/speed online:** Space = pause vote (majority or window, auto-resume at `max_pause_sec`), X host only, Esc doesn't pause the tree.
+- **Robustness:** a dropped client's heroes go to the host (or ownerless defensive AI), same token rejoins the run in progress, host lost = run ends with the summary.
+- **HUD (online only):** `PlayerList` (color, host/you, ping), join/leave notices, `ChatPanel` (T, predefined messages), Alt+left on a discovered zone = map ping (`Minimap.add_map_ping` + `MapPingMarker`).
+- Bestiary/records stay local per player. Tests: `test_net_transport`, `test_net_lobby`, `test_net_commands`, `test_net_ownership`, `test_net_pause`, `test_net_robustness`, `test_net_hud`, `test_net_sync` (two headless processes over ENet via `tests/tools/net_client_probe.gd`). Steam with two accounts and any real-window co-op game: not verified.
+
 ## Commands
 
 No build system, linter, CI, or export presets exist in this repo. Only real dev commands:

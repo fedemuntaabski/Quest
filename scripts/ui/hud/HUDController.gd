@@ -66,6 +66,10 @@ var nexo_alert: Panel
 var _alert_tween: Tween
 ## Code-built, docked in BottomBar next to BuildingMenu (session 10).
 var research_panel: ResearchPanel
+var minimap: Minimap
+## coop-12 (online only): player list + ping, short chat.
+var player_list: PlayerList
+var chat_panel: ChatPanel
 
 
 func _ready() -> void:
@@ -146,6 +150,7 @@ func _ready() -> void:
 	_add_pause_label()
 	_add_nexo_alert()
 	_add_hint_panel()
+	_add_coop_widgets()
 	var bestiary := ManagerLocator.get_bestiary()
 	if bestiary and not bestiary.entry_unlocked.is_connected(_on_bestiary_unlocked):
 		bestiary.entry_unlocked.connect(_on_bestiary_unlocked)
@@ -195,6 +200,10 @@ func _on_research_pressed() -> void:
 ## B / V / R open Mayores / Menores / Investigación (1-9 pick a card once open).
 func _unhandled_key_input(event: InputEvent) -> void:
 	if building_menu == null or not (event is InputEventKey and event.pressed and not event.echo) or event.ctrl_pressed:
+		return
+	if event.keycode == KEY_T and chat_panel and Net.is_online():  # coop-12: chat menu
+		chat_panel.toggle_menu()
+		get_viewport().set_input_as_handled()
 		return
 	var tab := {KEY_B: 0, KEY_V: 1, KEY_R: BuildingMenu.RESEARCH_TAB}.get(event.keycode, -1) as int
 	if tab >= 0:
@@ -350,9 +359,55 @@ func set_pause_vote(votes: int, needed: int, paused: bool) -> void:
 		pause_label.visible = true
 
 
+## coop-12: player list (top-left, under the floor label), chat (bottom-left) and
+## join/leave notices. Only for a co-op session; offline nothing is added.
+func _add_coop_widgets() -> void:
+	var session := Net.session()
+	if session == null or not session.is_online():
+		return
+	player_list = PlayerList.new()
+	player_list.name = "PlayerList"
+	var top_left := get_node_or_null("Control/TopLeft")
+	if top_left:
+		top_left.add_child(player_list)
+	chat_panel = ChatPanel.new()
+	chat_panel.name = "ChatPanel"
+	$Control.add_child(chat_panel)
+	chat_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, 16)
+	chat_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	# Only the host emits these; show_hint relays the notice to the clients.
+	session.player_joined.connect(func(_peer: int, player_name: String) -> void:
+		show_hint("Jugadores", "%s se unió a la partida" % player_name, QuestPalette.GOLD_LIGHT))
+	session.player_left.connect(func(_peer: int, player_name: String) -> void:
+		show_hint("Jugadores", "%s salió de la partida" % player_name, QuestPalette.PARCHMENT))
+
+
+## coop-12: chat line or map ping (NetCommands._social on the host, NetSync event
+## on a client). data.peer = who sent it.
+func on_social(kind: String, data: Dictionary) -> void:
+	var session := Net.session()
+	var peer: int = data.get("peer", 1)
+	var color: Color = session.player_color(peer) if session else QuestPalette.GOLD_LIGHT
+	match kind:
+		"chat":
+			var messages: Array[String] = session.config.chat_messages if session else []
+			var i: int = data.get("i", -1)
+			if chat_panel and i >= 0 and i < messages.size():
+				chat_panel.add_message(session.player_name(peer), color, messages[i])
+		"map_ping":
+			var zone_id: String = data.get("zone", "")
+			if minimap:
+				minimap.add_map_ping(zone_id, color)
+			var rm := ManagerLocator.get_room_manager()
+			if rm and rm.zones.has(zone_id):
+				var marker := MapPingMarker.new().setup(color)
+				marker.position = rm.zones[zone_id]["center_position"]
+				rm.add_child(marker)
+
+
 ## Built in code (not in HUD.tscn): bottom-right corner, self-wiring.
 func _add_minimap() -> void:
-	var minimap := Minimap.new()
+	minimap = Minimap.new()
 	minimap.name = "Minimap"
 	$Control.add_child(minimap)
 	minimap.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_KEEP_SIZE, 16)

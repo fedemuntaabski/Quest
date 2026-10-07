@@ -24,6 +24,8 @@ signal floor_ready(peer_id: int)
 ## A player joined / left / came back (HUD notices).
 signal player_joined(peer_id: int, player_name: String)
 signal player_left(peer_id: int, player_name: String)
+## Round-trip times changed (phase 7, HUD player list).
+signal pings_changed
 
 const TOKEN_PATH := "user://net_token.txt"
 const CONFIG_PATH := "res://resources/net/net_config.tres"
@@ -50,9 +52,13 @@ var away: Dictionary = {}
 var ready_floor: Dictionary = {}
 ## Steam peers that registered before their auth ticket was validated.
 var _pending_register: Dictionary = {}
+## peer -> last round trip in ms (host measures, everyone gets a copy).
+var pings: Dictionary = {}
+var _ping_ms := 0
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS  # pings keep going in any pause
 	if api == null:
 		api = multiplayer
 	_bind_api()
@@ -175,6 +181,7 @@ func _reset(reason: String) -> void:
 	_pending_register.clear()
 	ready_floor.clear()
 	away.clear()
+	pings.clear()
 	in_run = false
 	current_floor = 1
 	if was != Mode.OFFLINE:
@@ -333,6 +340,7 @@ func _on_peer_disconnected(peer: int) -> void:
 	var gone: Dictionary = players[peer]
 	players.erase(peer)
 	ready_floor.erase(peer)
+	pings.erase(peer)
 	QuestLogger.info(QuestLogger.Category.NETWORK, "Player %d left: %s" % [peer, p_name])
 	player_left.emit(peer, p_name)
 	if in_run:
@@ -553,3 +561,42 @@ func _enter_run(seed: int, owners: Dictionary, difficulty: String, floor_index: 
 	var main := ManagerLocator.get_main_orchestrator()
 	if main:
 		main.start_gameplay(floor_index)
+
+
+
+# ─── Ping (phase 7) ───────────────────────────────────────────
+
+## Host: every NetConfig.ping_sec (real time) asks each client for a round trip.
+func _process(_delta: float) -> void:
+	if not is_host() or not is_online() or players.size() < 2:
+		return
+	var now := Time.get_ticks_msec()
+	if now - _ping_ms < int(config.ping_sec * 1000.0):
+		return
+	_ping_ms = now
+	for peer in players:
+		if peer != 1 and peer in api.get_peers():
+			_rpc_ping.rpc_id(peer, now)
+
+
+@rpc("authority", "unreliable")
+func _rpc_ping(sent_ms: int) -> void:
+	_rpc_pong.rpc_id(1, sent_ms)
+
+
+@rpc("any_peer", "unreliable")
+func _rpc_pong(sent_ms: int) -> void:
+	if not is_host():
+		return
+	var peer := api.get_remote_sender_id()
+	if not players.has(peer):
+		return
+	pings[peer] = maxi(0, Time.get_ticks_msec() - sent_ms)
+	pings_changed.emit()
+	_rpc_pings.rpc(pings)
+
+
+@rpc("authority", "unreliable")
+func _rpc_pings(p_pings: Dictionary) -> void:
+	pings = p_pings
+	pings_changed.emit()

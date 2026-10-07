@@ -65,11 +65,12 @@ func _host_side() -> void:
 			my_hero = id
 	var door: Door = null
 	for d in rm.get_all_doors():
-		if d.get_target_room_for(start) != "" and not rm.is_group_revealed(d.target_room_id):
+		if not d.is_secret and not d.is_opened() and rm.get_zone_kind(d.target_room_id) == "room" and d.get_target_room_for(start) != "" and not rm.is_group_revealed(d.target_room_id):
 			door = d
-	_expect(door != null, "a door next to the start room")
+	_expect(door != null, "a door next to the start room (%s)" % start)
 	if door:
-		_expect(await ManagerLocator.get_net_commands().request("open_door", {"door": door.door_id, "heroes": [my_hero]}) == "", "host opens a door")
+		var reason: String = await ManagerLocator.get_net_commands().request("open_door", {"door": door.door_id, "heroes": [my_hero]})
+		_expect(reason == "", "host opens door %s: '%s'" % [door.door_id, reason])
 	# The client walks its own hero in through a command; the host must execute it.
 	var client_hero := ""
 	for id in net.hero_owner:
@@ -80,6 +81,7 @@ func _host_side() -> void:
 		if h.stats.hero_id == client_hero:
 			hero = h
 	await _wait(func() -> bool: return hero.current_zone_id != start, "host moved the client's hero")
+	await _wait(func() -> bool: return not net.pings.is_empty(), "a ping round trip measured")
 	# Reconnection: the client leaves; its hero goes to the host; it comes back.
 	await _wait(func() -> bool: return net.players.size() == 1, "client left mid-run")
 	_expect(net.owns(client_hero, 1) or net.hero_owner.get(client_hero, 0) == 0, "orphan hero handed to the host (or ownerless)")

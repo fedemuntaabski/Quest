@@ -25,6 +25,7 @@ const NEXO_ALERT_COLOR := Color(0.95, 0.2, 0.2)
 ## Enemies just appeared in a room: blinking orange ring for this long (real time).
 const SPAWN_ALERT_COLOR := Color(1.0, 0.55, 0.1)
 const SPAWN_ALERT_MSEC := 6000
+const MAP_PING_MSEC := 5000
 
 var _room_manager: RoomManager
 var _heroes: Array[Player] = []
@@ -33,6 +34,8 @@ var _nexo: Nexo
 var _bounds := Rect2i()
 ## zone_id -> Time.get_ticks_msec() when its spawn alert expires.
 var _spawn_alerts: Dictionary = {}
+## coop-12: zone_id -> [expiry msec, player color] of a map ping.
+var _map_pings: Dictionary = {}
 
 
 func _ready() -> void:
@@ -168,6 +171,25 @@ func _draw() -> void:
 				var alert_rect := _to_map(_room_manager.get_zone(zone_id)["rect"], scale_px, offset)
 				draw_arc(alert_rect.get_center(), radius * 2.8, 0.0, TAU, 24, SPAWN_ALERT_COLOR, 2.5)
 
+	# coop-12: map pings, a ring in the pinging player's color.
+	for zone_id in _map_pings:
+		var ping_rect := _to_map(_room_manager.get_zone(zone_id)["rect"], scale_px, offset)
+		var phase := fmod(Time.get_ticks_msec() / 600.0, 1.0)
+		draw_arc(ping_rect.get_center(), radius * (1.5 + 2.0 * phase), 0.0, TAU, 24, _map_pings[zone_id][1], 2.5)
+
+
+## coop-12: a player pointed at this zone (MAP_PING_MSEC on the minimap).
+func add_map_ping(zone_id: String, color: Color) -> void:
+	if _room_manager == null or not _room_manager.zones.has(zone_id):
+		return
+	_map_pings[zone_id] = [Time.get_ticks_msec() + MAP_PING_MSEC, color]
+	_update_process()
+	queue_redraw()
+
+
+func has_map_ping(zone_id: String) -> bool:
+	return _map_pings.has(zone_id)
+
 
 func _on_enemies_appeared(zone_ids: Array[String], _count: int, _source: String) -> void:
 	for zone_id in zone_ids:
@@ -178,7 +200,7 @@ func _on_enemies_appeared(zone_ids: Array[String], _count: int, _source: String)
 
 ## Runs only while something blinks: the Nexo under attack or a live spawn alert.
 func _update_process() -> void:
-	set_process((_nexo != null and _nexo.under_attack) or not _spawn_alerts.is_empty())
+	set_process((_nexo != null and _nexo.under_attack) or not _spawn_alerts.is_empty() or not _map_pings.is_empty())
 
 
 func _process(_delta: float) -> void:
@@ -186,6 +208,9 @@ func _process(_delta: float) -> void:
 	for zone_id in _spawn_alerts.keys():
 		if _spawn_alerts[zone_id] <= now:
 			_spawn_alerts.erase(zone_id)
+	for zone_id in _map_pings.keys():
+		if _map_pings[zone_id][0] <= now:
+			_map_pings.erase(zone_id)
 	_update_process()
 	queue_redraw()
 

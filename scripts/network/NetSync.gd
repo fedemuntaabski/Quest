@@ -271,6 +271,10 @@ func apply_event(kind: String, data: Dictionary) -> void:
 			var vfx := ManagerLocator.get_vfx_manager()
 			if vfx:
 				vfx.play(StringName(data.id), data.pos, data.color, data.angle, data.to)
+		"chat", "map_ping":
+			var social_hud := ManagerLocator.get_hud()
+			if social_hud:
+				social_hud.on_social(kind, data)
 		"pause_vote":
 			if main2d.pause_controller:
 				main2d.pause_controller.show_vote(data)

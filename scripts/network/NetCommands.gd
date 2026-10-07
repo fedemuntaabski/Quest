@@ -400,3 +400,31 @@ func _cmd_pause_vote(sender: int, _args: Dictionary) -> String:
 	if pc == null:
 		return INVALID
 	return pc.vote(sender)
+
+
+## coop-12 phase 7: a predefined chat message (NetConfig.chat_messages index).
+func _cmd_chat(sender: int, args: Dictionary) -> String:
+	var net := Net.session()
+	var count: int = net.config.chat_messages.size() if net else 0
+	if not (args.get("i") is int) or args.i < 0 or args.i >= count:
+		return INVALID
+	_social("chat", {"peer": sender, "i": args.i})
+	return ""
+
+
+## coop-12 phase 7: point at a discovered room or corridor for everyone.
+func _cmd_map_ping(sender: int, args: Dictionary) -> String:
+	var zone := _zone(args)
+	var rm := ManagerLocator.get_room_manager()
+	if zone == null or not rm.is_zone_revealed(args.zone):
+		return INVALID
+	_social("map_ping", {"peer": sender, "zone": args.zone})
+	return ""
+
+
+## Chat / map ping: shown here and relayed to every client (no game state).
+func _social(kind: String, data: Dictionary) -> void:
+	var hud := ManagerLocator.get_hud()
+	if hud:
+		hud.on_social(kind, data)
+	NetSync.broadcast(kind, data)
