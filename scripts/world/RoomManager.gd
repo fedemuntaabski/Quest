@@ -246,6 +246,12 @@ func get_center(zone_id: String) -> Vector2:
 	return zones.get(zone_id, {}).get("center_position", Vector2.ZERO)
 
 
+## World point inside that zone's rect (a walking hero crossing into it).
+func zone_has_point(zone_id: String, point: Vector2) -> bool:
+	var rect: Rect2i = zones.get(zone_id, {}).get("rect", Rect2i())
+	return Rect2(Vector2(rect.position) * _tile_size(), Vector2(rect.size) * _tile_size()).has_point(point)
+
+
 func get_cells(zone_id: String) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	cells.assign(zones.get(zone_id, {}).get("cells", []))

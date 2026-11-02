@@ -85,8 +85,7 @@ func _lose_downed_heroes() -> void:
 
 
 ## Rest rooms heal over time (RoomTypeRule.heal_per_tick), paying Comida per tick.
-## Game time: frozen in the tactical pause; skipped while the run isn't ACTIVE
-## (Main2d is PROCESS_MODE_ALWAYS, so the Esc pause doesn't stop this node).
+## Game time: frozen in the tactical pause and with the tree (Esc, end screens).
 func _process(delta: float) -> void:
 	var state := ManagerLocator.get_game_state_manager()
 	if room_manager == null or (state and not state.is_active()) or not Net.is_authority():

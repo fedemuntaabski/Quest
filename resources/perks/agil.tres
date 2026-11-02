@@ -6,7 +6,7 @@
 script = ExtResource("1_perk")
 id = &"agil"
 display_name = "Ágil"
-description = "El Golpe Fulminante se recarga 3 s antes."
+description = "El Golpe Furtivo se recarga 3 s antes."
 unlock_level = 5
 exclusive_group = &"rogue_l5"
 mods = {

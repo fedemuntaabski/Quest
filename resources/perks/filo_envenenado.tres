@@ -6,7 +6,7 @@
 script = ExtResource("1_perk")
 id = &"filo_envenenado"
 display_name = "Filo Envenenado"
-description = "Golpe Fulminante pega ×3,5 en vez de ×3."
+description = "Golpe Furtivo pega ×3,5 en vez de ×3."
 unlock_level = 3
 exclusive_group = &"rogue_l3"
 mods = {

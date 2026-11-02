@@ -23,6 +23,12 @@ func can_execute() -> bool:
 
 
 func execute() -> void:
+	await start().finished
+	finish({"status": "ok", "position": owner.global_position})
+
+
+## Starts the glide; the caller may follow it frame by frame or kill it.
+func start() -> Tween:
 	var tw := owner.create_tween()
 	tw.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
@@ -31,6 +37,4 @@ func execute() -> void:
 		var step_duration := maxf(MIN_STEP_DURATION, from.distance_to(waypoint) / speed)
 		tw.tween_property(owner, "global_position", waypoint, step_duration)
 		from = waypoint
-
-	await tw.finished
-	finish({"status": "ok", "position": owner.global_position})
+	return tw

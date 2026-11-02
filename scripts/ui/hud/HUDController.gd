@@ -146,6 +146,7 @@ func _ready() -> void:
 	if room_manager:
 		room_manager.slot_clicked.connect(_on_slot_clicked)
 		room_manager.module_clicked.connect(_on_module_clicked)
+	_add_hint_panel()  # before the popups: a hint never covers the hero sheet
 	character_popup = CharacterPopup.new()
 	character_popup.name = "CharacterPopup"
 	$Control.add_child(character_popup)
@@ -154,7 +155,6 @@ func _ready() -> void:
 	$Control.add_child(module_popup)
 	_add_pause_label()
 	_add_nexo_alert()
-	_add_hint_panel()
 	_add_coop_widgets()
 	_add_caption_label()
 	controls_help = ControlsHelp.new()
@@ -219,6 +219,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if event.is_action_pressed("chat") and chat_panel and Net.is_online():  # coop-12: chat menu
 		chat_panel.toggle_menu()
 		get_viewport().set_input_as_handled()
+		return
+	var gsm := ManagerLocator.get_game_state_manager()
+	if gsm and not gsm.is_active():  # the HUD processes on a paused tree
 		return
 	var tab := -1
 	if event.is_action_pressed("build_major"):

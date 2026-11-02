@@ -34,8 +34,7 @@ var _drag_start := Vector2.ZERO
 func _ready() -> void:
 	top_level = true
 	add_to_group("game_camera")
-	# Main2d is PROCESS_MODE_ALWAYS; the camera must freeze with pause/death/victory.
-	process_mode = Node.PROCESS_MODE_PAUSABLE
+	process_mode = Node.PROCESS_MODE_PAUSABLE  # freezes with pause/death/victory
 	_hero = get_parent() as Node2D
 	_smoothing = position_smoothing_enabled
 	set_target_zoom(config.default_zoom)

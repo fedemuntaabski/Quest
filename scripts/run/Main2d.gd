@@ -73,7 +73,12 @@ var altars: Dictionary = {}
 # INIT
 # ─────────────────────────────────────────────
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Main (and so WorldContainer) is ALWAYS: the world must opt out to freeze with
+	# the Esc menu and the end screens. Only these stay alive on a paused tree (plus
+	# PauseMenu, GameStateManager, NetSync and PauseController, which say so themselves).
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+	death_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	victory_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("main2d")
 
 	_ensure_game_state_manager()
@@ -98,6 +103,7 @@ func _setup_controllers() -> void:
 	pause_controller = PauseController.new()
 	pause_controller.name = "PauseController"
 	add_child(pause_controller)
+	move_child(pause_controller, 0)  # _input runs last-child-first: PauseMenu's panels see Esc before it
 	pause_controller.setup(game_state_manager)
 
 	hero_input = HeroInputController.new()
@@ -442,19 +448,6 @@ func _input(event: InputEvent) -> void:
 			hud.toggle_controls_help()
 		get_viewport().set_input_as_handled()
 
-## progresion-10: run time = real time while the run is ACTIVE (the tactical pause
-## counts, the Esc menu and the end screens don't).
-var _last_tick_usec: int = 0
-
-
-func _process(_delta: float) -> void:
-	var now := Time.get_ticks_usec()
-	var session := ManagerLocator.get_game_session()
-	if session and _last_tick_usec > 0 and _is_gameplay_active():
-		session.run_stats["elapsed_sec"] = float(session.run_stats.get("elapsed_sec", 0.0)) + (now - _last_tick_usec) / 1000000.0
-	_last_tick_usec = now
-
-
 ## Closes the run: stats + fallen heroes, records into the save slot. Returns
 ## {stats, new_records, records} for the end screen's RunSummary.
 func finish_run(victory: bool) -> Dictionary:
@@ -490,6 +483,10 @@ func _exit_tree() -> void:
 func _is_gameplay_active() -> bool:
 	return not _is_dead and (game_state_manager == null or game_state_manager.is_active())
 
+
+func _is_victory() -> bool:
+	return game_state_manager != null and game_state_manager.current_state == GameStateManager.State.VICTORY
+
 # ─────────────────────────────────────────────
 # GAME EVENTS
 # ─────────────────────────────────────────────
@@ -511,7 +508,7 @@ func _on_hero_died() -> void:
 ## Defeat: every hero dead, or the Nexo destroyed. coop-12: on a client only the
 ## host's "defeat" event (from_host) ends the run.
 func _on_player_died(from_host: bool = false) -> void:
-	if _is_dead or (not Net.is_authority() and not from_host):
+	if _is_dead or (not Net.is_authority() and not from_host) or _is_victory():
 		return
 	NetSync.broadcast("defeat", {})
 
@@ -531,8 +528,8 @@ func _on_player_died(from_host: bool = false) -> void:
 ## coop-12: a client lost its host mid-run. The run ends here with its summary
 ## (records/bestiary stay local); only the main menu is offered.
 func _on_session_ended(reason: String) -> void:
-	if reason != "host_lost" or _is_dead or not is_inside_tree():
-		return
+	if reason != "host_lost" or _is_dead or not is_inside_tree() or _is_victory():
+		return  # on a victory screen the summary is already up and "Volver" still works
 	_is_dead = true
 	QuestLogger.warn(QuestLogger.Category.NETWORK, "Host lost: the run ends")
 	if game_state_manager:

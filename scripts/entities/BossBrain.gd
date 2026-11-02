@@ -95,7 +95,7 @@ func _land_charge(point: Vector2, zone_id: String, base_modulate: Color) -> void
 	var hit := 0
 	for hero in ManagerLocator.get_heroes():
 		if hero.stats.is_alive() and hero.global_position.distance_to(point) <= enemy.type.charge_radius:
-			hero.stats.take_damage(damage)
+			hero.take_hit(damage)
 			hit += 1
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:

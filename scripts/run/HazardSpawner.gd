@@ -68,7 +68,7 @@ func _on_hero_zone_changed(zone_id: String, hero: Player) -> void:
 	mark.queue_free()
 	var mult := _floor_manager.enemy_damage_multiplier() if _floor_manager else 1.0
 	var damage := maxi(1, roundi(_theme.trap_damage * mult))
-	hero.stats.take_damage(damage)
+	hero.take_hit(damage)
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr:
 		text_mgr.spawn_text(hero.global_position + Vector2(0, -48), "¡%s! -%d" % [_theme.trap_name, damage], _theme.trap_color)

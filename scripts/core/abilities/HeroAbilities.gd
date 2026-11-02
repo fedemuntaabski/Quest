@@ -2,7 +2,7 @@ extends Node
 class_name HeroAbilities
 
 ## HeroAbilities: runtime of one hero's passive + active (AbilityData). Child of
-## Player. Passives are read where they act: incoming_damage() (Player._on_hurt)
+## Player. Passives are read where they act: incoming_damage() (Player.take_hit)
 ## and FloorManager.on_room_discovered (passive_discovery_bonus). The active
 ## fires on the `hero_ability` action (Q) for every selected hero, or the
 ## HeroPortrait ability button, then waits `cooldown` seconds. Cooldowns and

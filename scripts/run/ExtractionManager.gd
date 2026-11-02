@@ -81,12 +81,12 @@ func can_declare_victory() -> bool:
 
 
 func declare_victory() -> void:
-	if not Net.is_authority() or not can_declare_victory():
+	var gsm := ManagerLocator.get_game_state_manager()
+	if not Net.is_authority() or (gsm and gsm.is_dead()) or not can_declare_victory():
 		return
 	_spawn_timer.stop()
 	_stage_timer.stop()
 	victory_declared.emit()
-	var gsm := ManagerLocator.get_game_state_manager()
 	if gsm:
 		gsm.request_victory()
 	QuestLogger.info(QuestLogger.Category.NEXO, "Victory: nexo reached the exit room.")

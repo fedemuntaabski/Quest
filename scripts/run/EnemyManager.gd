@@ -119,7 +119,7 @@ func _on_turn_advanced(current_turn: int) -> void:
 
 	var door_roll := _door_roll()
 	var spawn_chance: float = floor_manager.threat_chance(current_turn) if floor_manager else door_roll.threat_chance(current_turn, 1)
-	var enemy_count: int = door_roll.enemy_count(current_turn, _floor_index())
+	var enemy_count: int = floor_manager.threat_enemy_count(current_turn) if floor_manager else door_roll.enemy_count(current_turn, 1)
 	var roll: float = randf()
 	if roll > spawn_chance:
 		QuestLogger.info(QuestLogger.Category.ENEMY, "Turn %d: no invasion (chance %.1f%%, roll %.3f)." % [current_turn, spawn_chance * 100.0, roll])
@@ -186,6 +186,10 @@ func spawn_puppet(slot: int, type_id: String, zone_id: String, pos: Vector2, max
 	enemy.max_hp = max_hp
 	enemy.current_hp = max_hp
 	_enemies.append(enemy)
+	var theme := floor_manager.theme() if floor_manager else null
+	if theme and theme.boss and theme.boss.id == type_id:  # boss_spawned isn't relayed: the bar needs it
+		boss = enemy
+		boss_spawned.emit(enemy)
 	return enemy
 
 

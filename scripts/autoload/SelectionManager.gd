@@ -17,6 +17,8 @@ var selected_ids: Array[String] = []
 ## group number → Array[String] of hero ids. Survives floors (this autoload
 ## outlives Main2d); reset() clears it for a new run.
 var groups: Dictionary = {}
+## Heroes that were selected when they went down (hero_id -> true).
+var _fell_selected: Dictionary = {}
 
 
 func _ready() -> void:
@@ -113,19 +115,14 @@ func group_of(hero_id: String) -> Array[int]:
 	return out
 
 
-## Dead/gone hero: out of the selection and every group. If that empties the
+## Downed hero: out of the selection (it comes back with on_hero_revived). Its groups
+## keep it: recalling one skips heroes that aren't live. If that empties the
 ## selection, another live hero takes over.
 func remove_hero(hero_id: String) -> void:
-	var changed_groups := false
-	for n: int in groups.keys():
-		if groups[n].has(hero_id):
-			groups[n].erase(hero_id)
-			changed_groups = true
-	if changed_groups:
-		groups_changed.emit()
 	if not selected_ids.has(hero_id):
 		return
 	selected_ids.erase(hero_id)
+	_fell_selected[hero_id] = true
 	if selected_ids.is_empty():
 		var ps := ManagerLocator.get_player_stats()
 		for id in (ps.get_hero_ids() if ps else []):
@@ -133,6 +130,14 @@ func remove_hero(hero_id: String) -> void:
 				selected_ids.append(id)
 				break
 	selection_changed.emit(get_selected_ids())
+
+
+## A revived hero that was selected when it fell is selected again.
+func on_hero_revived(hero_id: String) -> void:
+	if _fell_selected.erase(hero_id):
+		var next := selected_ids.duplicate()
+		next.append(hero_id)
+		set_selection(next)
 
 
 ## Main2d, after spawning a floor's party: keep the previous selection where the
@@ -183,6 +188,7 @@ func refresh_ownership() -> void:
 func reset() -> void:
 	selected_ids.clear()
 	groups.clear()
+	_fell_selected.clear()
 	selection_changed.emit(get_selected_ids())
 	groups_changed.emit()
 

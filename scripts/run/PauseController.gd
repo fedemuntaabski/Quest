@@ -14,6 +14,9 @@ extends Node
 ## Clients never decide: they mirror the host's time_scale from the snapshots
 ## (mirror_scale) and the vote count from a "pause_vote" event (show_vote).
 ## Vote clocks run on real time (time_scale is 0 while paused).
+##
+## Always processes: Main2d freezes with the tree, so this node keeps its two
+## always-on jobs going on a paused tree: Esc and the run clock.
 
 const SPEEDS: Array[int] = [1, 2]
 const HOST_ONLY_SPEED := "Solo el anfitrión cambia la velocidad"
@@ -25,6 +28,11 @@ var _state: GameStateManager
 var _votes: Dictionary = {}
 var _vote_started_ms := 0
 var _paused_at_ms := 0
+var _last_tick_usec := 0
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 
 
 func setup(state: GameStateManager) -> void:
@@ -113,9 +121,26 @@ func _flip() -> void:
 
 ## Real-time checks (time_scale may be 0): vote window and the co-op pause cap.
 func _process(_delta: float) -> void:
+	_tick_run_clock()
 	if not (Net.is_online() and Net.is_authority()):
 		return
 	poll(Time.get_ticks_msec())
+
+
+## progresion-10: run time = real time while the run is ACTIVE (the tactical pause
+## counts, the Esc menu and the end screens don't).
+func _tick_run_clock() -> void:
+	var now := Time.get_ticks_usec()
+	var session := ManagerLocator.get_game_session()
+	if session and _last_tick_usec > 0 and _state and _state.is_active():
+		session.run_stats["elapsed_sec"] = float(session.run_stats.get("elapsed_sec", 0.0)) + (now - _last_tick_usec) / 1000000.0
+	_last_tick_usec = now
+
+
+## Main2d takes its keys itself unless the tree is paused (then only Esc does anything).
+func _input(event: InputEvent) -> void:
+	if get_tree().paused:
+		get_parent()._input(event)
 
 
 ## Host: closes an expired vote window / ends an over-long pause at `now_ms`.

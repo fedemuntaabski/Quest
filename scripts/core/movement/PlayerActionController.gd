@@ -164,15 +164,17 @@ func move_heroes(heroes: Array[Player], zone_id: String, peer: int = 1) -> void:
 	await _run_moves(orders, peer)
 
 
-## {hero, waypoints, final_zone_id} along the revealed-zone path, or {} without one.
+## {hero, waypoints, zones} along the revealed-zone path (one zone per waypoint), or {} without one.
 func _order_via_path(hero: Player, zone_id: String) -> Dictionary:
 	var path := room_manager.find_zone_path(hero.current_zone_id, zone_id)
 	if path.is_empty():
 		return {}
+	var zones: Array[String] = []
+	zones.assign(path.slice(1))
 	var waypoints: Array[Vector2] = []
-	for step_id in path.slice(1):
+	for step_id in zones:
 		waypoints.append(room_manager.get_center(step_id))
-	return {"hero": hero, "waypoints": waypoints, "final_zone_id": zone_id}
+	return {"hero": hero, "waypoints": waypoints, "zones": zones}
 
 
 ## Why `heroes` can't open `door` now ("" = they can). Same rules as before coop-12.
@@ -229,7 +231,7 @@ func open_door(door: Door, heroes: Array[Player], peer: int = 1) -> void:
 	var orders: Array[Dictionary] = []
 	var opener_waypoints := room_manager.get_group_centers(door.target_room_id)
 	if not opener_waypoints.is_empty():
-		orders.append({"hero": opener, "waypoints": opener_waypoints, "final_zone_id": final_zone_id})
+		orders.append({"hero": opener, "waypoints": opener_waypoints, "zones": group_zone_ids})
 	for hero in selected:
 		if hero != opener and not _busy.has(hero) and hero.current_zone_id != final_zone_id:
 			var order := _order_via_path(hero, final_zone_id)
@@ -259,7 +261,7 @@ func _run_moves(orders: Array[Dictionary], peer: int = 1) -> void:
 
 
 func _walk_and_count(order: Dictionary, batch: Dictionary) -> void:
-	await _walk(order["hero"], order["waypoints"], order["final_zone_id"])
+	await _walk(order["hero"], order["waypoints"], order["zones"])
 	_busy.erase(order["hero"])
 	batch.left -= 1
 
@@ -270,13 +272,31 @@ func _carrier_speed_mult() -> float:
 	return floor_manager.carrier_speed_mult() if floor_manager else FloorManager.DEFAULT_CONFIG.carrier_speed_mult
 
 
-func _walk(hero: Player, waypoints: Array[Vector2], final_zone_id: String) -> void:
+## Glides along `waypoints` (one per entry of `zones`). The hero is in each zone from
+## the moment it crosses in (traps, chests, enemies, a Nexo drop see the real zone);
+## falling stops it where it stands, and its order ends there.
+func _walk(hero: Player, waypoints: Array[Vector2], zones: Array[String]) -> void:
 	var speed := MoveAction.DEFAULT_SPEED_PX * hero.move_speed_mult() * (_carrier_speed_mult() if hero.is_carrying_nexo else 1.0)
 	var action := MoveAction.new(hero, waypoints, speed)
-	if action.can_execute():
-		await action.execute()
-		hero.set_zone(final_zone_id, room_manager.get_center(final_zone_id), tilemap)
-		if hero.is_carrying_nexo and room_manager.is_exit_room(final_zone_id):
-			var extraction := ManagerLocator.get_extraction_manager()
-			if extraction:
-				extraction.declare_victory()
+	if not action.can_execute():
+		return
+	var tween := action.start()
+	var next := 0
+	while tween.is_valid():
+		await get_tree().process_frame
+		if not hero.stats.is_alive():
+			tween.kill()
+			return
+		while next < zones.size() and room_manager.zone_has_point(zones[next], hero.global_position):
+			hero.enter_zone(zones[next])
+			next += 1
+	for zone_id in zones.slice(next):  # a long frame may jump a zone: nothing is skipped
+		hero.enter_zone(zone_id)
+	if not hero.stats.is_alive():  # the last zone's trap
+		return
+	var final_zone_id: String = zones[-1]
+	hero.set_zone(final_zone_id, room_manager.get_center(final_zone_id), tilemap)
+	if hero.is_carrying_nexo and room_manager.is_exit_room(final_zone_id):
+		var extraction := ManagerLocator.get_extraction_manager()
+		if extraction:
+			extraction.declare_victory()

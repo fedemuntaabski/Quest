@@ -61,14 +61,19 @@ func request_resume() -> void:
 	if current_state == State.PAUSED:
 		pop_state(State.PAUSED)
 
+## DEAD and VICTORY are terminal: the first one stands (only a new Main2d leaves them).
+func _is_over() -> bool:
+	return current_state == State.DEAD or current_state == State.VICTORY
+
+
 func request_death() -> void:
-	if current_state != State.DEAD:
+	if not _is_over():
 		_state_stack.clear()
 		_state_stack.append(State.DEAD)
 		_apply_state_change(State.DEAD, current_state)
 
 func request_victory() -> void:
-	if current_state != State.VICTORY:
+	if not _is_over():
 		_state_stack.clear()
 		_state_stack.append(State.VICTORY)
 		_apply_state_change(State.VICTORY, current_state)

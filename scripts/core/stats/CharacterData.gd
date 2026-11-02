@@ -6,7 +6,7 @@ class_name CharacterData
 
 @export var character_id: String = ""
 @export var display_name: String = "Hero"
-## Short role line for the hero-select screen ("Tanque y Provocador").
+## Short role line for the hero-select screen ("Primera línea").
 @export var role: String = ""
 @export var description: String = ""
 @export var portrait: Texture2D = null

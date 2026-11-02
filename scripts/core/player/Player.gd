@@ -4,7 +4,7 @@ class_name Player
 ## Player: test-scene actor. Owns a CharacterStats component and a grid cell
 ## position. Moves freely — no turn/AP gating.
 
-## Emitted by set_zone() (spawn and every arrival). Minimap listens.
+## Emitted when current_zone_id changes (spawn, and every zone crossed on a walk).
 signal zone_changed(zone_id: String)
 
 const SELECTION_RING_COLOR := Color(0.95, 0.78, 0.35, 0.95)
@@ -64,7 +64,7 @@ func _ready() -> void:
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.register(stats)
-	hurtbox.hurt.connect(_on_hurt)
+	hurtbox.hurt.connect(take_hit)
 	# heroes-9: one target per tick (nearest in range); ranged heroes shoot it.
 	hitbox.single_target = true
 	if is_ranged():
@@ -138,6 +138,9 @@ func _on_hp_changed(current_hp: int, max_hp: int) -> void:
 ## Downed: lies grey on the floor where it fell, no attacks, no hurtbox. A living
 ## ally in the same room can revive it (left click on it, PlayerStats.revive_hero).
 func _set_downed(downed: bool) -> void:
+	var selection := ManagerLocator.get_selection_manager()
+	if selection and not downed:
+		selection.on_hero_revived(stats.hero_id)
 	hitbox.set_active(not downed)
 	hurtbox.set_deferred("monitorable", not downed)
 	animated_sprite.rotation = PI * 0.5 if downed else 0.0
@@ -188,7 +191,8 @@ func _on_attack_changed(_damage: int, _interval: float) -> void:
 	hitbox.configure(stats.effective_attack_damage(), stats.effective_attack_interval())
 
 
-func _on_hurt(amount: int) -> void:
+## Any hit on this hero (contact, trap, boss charge): passives and shields apply.
+func take_hit(amount: int) -> void:
 	if not stats.is_alive():
 		return
 	if abilities:
@@ -235,10 +239,16 @@ func _apply_character_visuals(data: CharacterData) -> void:
 
 
 func set_zone(zone_id: String, center: Vector2, tilemap: TileMapLayer) -> void:
-	current_zone_id = zone_id
 	global_position = center
 	grid_pos = GridUtils.world_to_cell(tilemap, center)
-	zone_changed.emit(zone_id)
+	enter_zone(zone_id)
+
+
+## Now standing in `zone_id`; the position is the caller's (a walk crossing zones).
+func enter_zone(zone_id: String) -> void:
+	if zone_id != current_zone_id:
+		current_zone_id = zone_id
+		zone_changed.emit(zone_id)
 
 
 func can_accept_input() -> bool:
