@@ -58,6 +58,7 @@ func _initialize() -> void:
 	_check_revived_selection()
 	_check_boss_puppet()
 	_check_hint_under_sheet()
+	_check_log_rotation()
 
 	paused = false
 	Engine.time_scale = 1.0
@@ -126,6 +127,9 @@ func _check_esc_freezes_the_world() -> void:
 	_expect(paused and main2d.pause_menu.is_open, "Esc should open the menu and pause the tree")
 	_expect(main2d.pause_menu.can_process() and main2d.death_overlay.can_process() and main2d.victory_overlay.can_process(), "menu and end screens must work while paused")
 	_expect(not hero.can_process() and not enemy.can_process() and not main2d.enemy_manager.can_process(), "the world must not process while paused")
+
+	var box := main2d.pause_menu.pause_panel.get_node("PauseVBox") as Control
+	_expect(box.get_combined_minimum_size().y <= main2d.pause_menu.pause_panel.size.y, "the pause menu buttons overflow the panel")
 
 	var hp: int = hero.stats.current_hp
 	var enemy_hp := enemy.current_hp
@@ -384,3 +388,10 @@ func _check_boss_puppet() -> void:
 func _check_hint_under_sheet() -> void:
 	var hud: HUDController = ManagerLocator.get_hud()
 	_expect(hud._hint_panel.get_index() < hud.character_popup.get_index(), "hints must draw under the hero sheet")
+
+
+## An editor left open can rewrite project.godot: this catches it losing the rotation.
+func _check_log_rotation() -> void:
+	_expect(ProjectSettings.get_setting("debug/file_logging/enable_file_logging.pc"), "file logging off on PC")
+	_expect(ProjectSettings.get_setting("debug/file_logging/log_path") == "user://logs/quest.log", "log path")
+	_expect(ProjectSettings.get_setting("debug/file_logging/max_log_files") == 10, "log rotation")

@@ -147,7 +147,7 @@ grow_vertical = 2
 
 [node name="PausePanel" type="Panel" parent="CenterContainer" unique_id=1211186564]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(560, 420)
+custom_minimum_size = Vector2(560, 500)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -158,9 +158,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -210.0
-offset_top = -171.0
+offset_top = -216.0
 offset_right = 210.0
-offset_bottom = 171.0
+offset_bottom = 216.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 20

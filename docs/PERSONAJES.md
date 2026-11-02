@@ -54,7 +54,7 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 #### Guerrero — `warrior`
 | Campo | Valor | Fuente |
 |---|---|---|
-| Rol | "Tanque y Provocador" | `warrior.tres` |
+| Rol | "Primera línea" | `warrior.tres` |
 | Sprite | `resources/sprite_frames/hero_knight_m.tres` · retrato `assets/portraits/guerrero.png` | |
 | Vida | **26** | `base_hp` |
 | Estilo / velocidad | cuerpo a cuerpo · 420 px/s | `attack_style`, `move_speed_mult` |
@@ -221,7 +221,7 @@ Los porcentajes son el peso dentro del pool entero; en la práctica primero se s
 ### Héroes
 | Héroe | Rol | Vida | Daño | Intervalo | DPS | Radio | Pasiva | Activa (cooldown) | Vida/Daño/Interv. nivel 6 |
 |---|---|---|---|---|---|---|---|---|---|
-| Guerrero | Tanque y Provocador | 26 | 4 | 1.2 s | 3.33 | 150 | −20 % daño recibido | Grito de Guerra: aliados de la sala ×1.5 daño, 8 s (25 s) | 46 / 9 / 0.90 |
+| Guerrero | Primera línea | 26 | 4 | 1.2 s | 3.33 | 150 | −20 % daño recibido | Grito de Guerra: aliados de la sala ×1.5 daño, 8 s (25 s) | 46 / 9 / 0.90 |
 | Mago | Ciencia y Módulos | 18 | 3 | 0.9 s | 3.33 | 220 | +2 Ciencia al descubrir sala | Sobrecarga: torres ×2 8 s + tick extra de generadores (30 s) | 38 / 8 / 0.675 |
 | Pícaro | Explorador Rápido | 16 | 2 | 0.5 s | 4.00 | 130 | +2 Polvo al descubrir sala | Golpe Furtivo: ×3 daño a todo en rango (12 s) | 36 / 7 / 0.375 |
 | Tanque | Defensor de Cristal | 40 | 3 | 1.3 s | 2.31 | 170 | hasta −50 % daño cerca del Nexo (640 px) | Interposición: todos −50 % daño 6 s (30 s) | 80 / 8 / 0.975 |
@@ -255,9 +255,9 @@ Común (refactor-2; ver heroes-9 en §1): sin defensa/armadura, 5 niveles (8/11/
 
 1. **Dos "vida base" distintas**: `StatBalance.PLAYER_BASE_HP = 20` (`StatBalance.gd:7`) vs `base_hp` por héroe (26/18/18/40). `CharacterStats.reset_modifiers()` fija `max_hp = PLAYER_BASE_HP` (`CharacterStats.gd:43-48`) y enseguida `PlayerStats._apply_base_stats()` lo pisa con el valor del héroe (`PlayerStats.gd:93`); el Mago y el Pícaro (18) quedan por debajo de ese "base" y de `clamp_player_hp` (mínimo 20). Además `PlayerStats.base_hp` (cuenta, = héroe por defecto) se "clampa" a sí mismo (`PlayerStats.gd:20, 81-82`) y no se usa para nada más.
 2. **Tope de 60 de vida**: `apply_hp_delta` limita a `PLAYER_MAX_HP` (`StatBalance.gd:20`); el Tanque llega justo a 60 con 5 niveles. Cualquier bono extra de vida (los ítems `hp` si algún día se aplican) quedaría recortado sin aviso.
-3. **"Provocador" sin provocación**: el Guerrero se describe como "Tanque y Provocador / Atrae el peligro" pero no existe mecánica de provocar (los enemigos eligen por distancia: `Enemy._aggro_hero`, `Enemy.gd:356`; solo hay `_provoked_until_msec` de los raiders hacia quien los golpea).
+3. **Resuelto en estabilizar-14 (texto cambiado).** "Provocador" sin provocación: el Guerrero se describe como "Tanque y Provocador / Atrae el peligro" pero no existe mecánica de provocar (los enemigos eligen por distancia: `Enemy._aggro_hero`, `Enemy.gd:356`; solo hay `_provoked_until_msec` de los raiders hacia quien los golpea).
 4. **"Explorador Rápido" sin velocidad**: el Pícaro no se mueve más rápido; no hay stat de velocidad por héroe (`MoveAction.DEFAULT_SPEED_PX` es global).
-5. **Texto vs mecánica**: "Piel de Hierro … mientras protege la sala actual" (`warrior.tres`) pero la pasiva es −20 % plano siempre (`HeroAbilities.passive_reduction`). "Interposición" del Tanque es un escudo de grupo, no una interposición posicional.
+5. **Texto vs mecánica**: "Piel de Hierro" ya no es condicional (estabilizar-14). "Interposición" del Tanque es un escudo de grupo, no una interposición posicional.
 6. **Valores del `.tres` que pisan los defaults del script**: `attack_speed_per_level` 0.05 y `min_attack_interval` 0.3 (script: 0.1 y 0.2; el comentario de `UpgradeConfig.gd:28` habla de 10 %). `Player.tscn` trae `Hitbox damage = 3` y radio 160, que `Player._ready()` sobrescribe con los de `CharacterData`.
 7. `CharacterData.profile_bg` (`CharacterData.gd:13`) **no lo lee nadie**. Hay `passive_ability_desc` pero **no `active_ability_desc`**: `HeroSelectMenu` (`HeroSelectMenu.gd:307`) y `CharacterPopup` solo muestran el *nombre* de la activa.
 8. Los cooldowns de habilidades no tienen ícono (29 `placeholder_*`, 8 son `ability_*`; `docs/MISSING_ICONS.md`), ni hay barra visible en el retrato según ese documento.

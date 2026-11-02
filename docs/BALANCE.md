@@ -236,3 +236,18 @@ Lo que no se tocó: el daño, el intervalo y el alcance de los cuatro; los enemi
 - La Catapulta y el Golpe Furtivo siguen siendo de área: con objetivo único, sus picos se notan más.
 - El grupo de 3-4 (reclutas) reparte todavía más y puede hacer los pisos 1-3 demasiado fáciles.
 - La cura en Descanso (2 de vida/s por 1 de Comida) y el costo de reanimar (15 + 5 por piso).
+
+## Escalado por jugadores (session calidad-13, cerrado en estabilizar-14)
+
+`PlayerScaling` (`resources/floors/player_scaling.tres`), aplicado por `FloorManager` sobre curva y dificultad. `players` se fija al empezar el piso: una caída a mitad de piso no lo cambia.
+
+| Jugadores | Oleada | Tope de enemigos | Vida del Nexo | Amenaza de puerta |
+|---|---|---|---|---|
+| 1 | ×1 | +0 | ×1 | ×1 |
+| 2 | ×1 | +0 | ×1 | ×1,05 |
+| 3 | ×1,5 | +4 | ×1,15 | ×1 |
+| 4 | ×2 | +8 | ×1,3 | ×1 |
+
+`BalanceSim.scaling_rows()` (5 pisos × 2 dificultades × 1–4 jugadores) da paridad 1,00–1,18 frente a jugar solo; `docs/balance/calidad13_scaling.csv`, `test_balance._check_scaling`.
+
+La tabla ya asumía oleadas escaladas en puertas y extracción, pero hasta estabilizar-14 las puertas ignoraban el multiplicador (`EnemyManager` usaba `DoorRollConfig.enemy_count`): con 3–4 jugadores el co-op real era más fácil que la tabla. No cambió ningún número ni el juego con 1–2 jugadores. Todo esto sigue sin validar con personas.

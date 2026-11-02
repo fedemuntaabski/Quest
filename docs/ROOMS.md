@@ -1,6 +1,6 @@
 # Tipos de sala
 
-`RoomData.RoomType` = `COMBAT, START, EXIT, REST, LOOT, ELITE, GENERATOR`. START/EXIT se derivan de `is_start`/`is_exit` (`RoomData.get_room_type()`); el resto lo asigna `MapGenerator.assign_room_types` según las `RoomTypeRule` de `FloorConfig.room_types`. Un tipo sin regla nunca se genera.
+`RoomData.RoomType` = `COMBAT, START, EXIT, REST, LOOT, ELITE, GENERATOR, PRISONER, ALTAR, SECRET`. START/EXIT se derivan de `is_start`/`is_exit` (`RoomData.get_room_type()`); el resto lo asigna `MapGenerator.assign_room_types` según las `RoomTypeRule` de `FloorConfig.room_types`. Un tipo sin regla nunca se genera.
 
 ## Qué define cada cosa
 | Qué | Dónde |

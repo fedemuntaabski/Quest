@@ -3,7 +3,9 @@ extends SceneTree
 ## Session calidad-13: a whole run, accelerated, with a fixed seed, through the
 ## real Main orchestrator. Per floor: open every door in reveal order, let the
 ## fight run (Engine.time_scale 4), pick up the Nexo, run the extraction a few
-## seconds, declare the victory and descend; after floor 5, back to the menu.
+## seconds, kill the boss (floors 3 and 5: the exit refuses the carrier while it
+## lives), walk the carrier to the exit for real and descend; after floor 5, back
+## to the menu.
 ## Heroes and Nexo get a huge HP pool (this checks stability, not balance).
 ## At the end: no ERROR / WARNING on the console (ErrorProbe) and no orphan nodes.
 ##   godot --headless --path . --script res://tests/test_full_run.gd
@@ -13,6 +15,7 @@ const SEED := 1313
 const SLOT := 91
 const FIGHT_SEC := 4.0
 const HUGE_HP := 1000000
+const BOSS_FLOORS: Array[int] = [3, 5]
 
 var failures: Array[String] = []
 var _main: Main
@@ -122,8 +125,19 @@ func _play_floor(f: int) -> bool:
 	ManagerLocator.get_extraction_manager().start_extraction()
 	await _fight(FIGHT_SEC)
 	_expect(ManagerLocator.get_enemy_manager().alive_count() <= main2d.floor_manager.max_enemies() + 1, "floor %d: enemy cap exceeded" % f)
-	ManagerLocator.get_extraction_manager().declare_victory()
+	var enemies := ManagerLocator.get_enemy_manager()
+	var extraction := ManagerLocator.get_extraction_manager()
+	_expect(enemies.is_boss_alive() == BOSS_FLOORS.has(f), "floor %d: boss alive = %s" % [f, enemies.is_boss_alive()])
+	if enemies.is_boss_alive():
+		_expect(not extraction.can_declare_victory(), "floor %d: the boss must guard the exit" % f)
+		enemies.boss.take_damage(enemies.boss.current_hp)
+		await _frames(5)
+	# The real way out: the carrier walks there and arriving declares the victory.
+	Engine.time_scale = 4.0
+	await main2d.player_action_controller.move_heroes([hero] as Array[Player], rm.get_exit_zone_id())
+	Engine.time_scale = 1.0
 	await _frames(20)
+	_expect(gsm.current_state == GameStateManager.State.VICTORY, "floor %d: arriving with the Nexo should win (state %s)" % [f, gsm.current_state])
 	_expect(main2d.victory_overlay.visible, "floor %d: victory overlay" % f)
 	if f < 5:
 		await _main.advance_floor()

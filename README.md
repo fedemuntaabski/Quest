@@ -1,42 +1,43 @@
 # QUEST
 
-2D grid-based roguelike in Godot 4.6. Focus: tactical movement and melee combat, playable offline or in Steam co-op multiplayer.
+Roguelite táctico 2D de mazmorras en Godot 4.6 (solo GDScript), inspirado en *Dungeon of the Endless*. Offline o co-op de 2 a 4 jugadores (Steam, o ENet para desarrollo local).
 
-## Current Status
-- Turn-based loop with action queue
-- Grid movement + pathfinding
-- Occupancy grid for blocking and positions
-- Card-driven actions (strength/agility/magic decks) alongside melee combat with hit/dodge/crit and stat scaling
-- Dungeon generation + enemy spawning
-- Save slots, persistent upgrades, and a run-reward flow (card picks between runs)
-- Steam multiplayer: Host/Join/Offline from the main menu, Steam lobbies (GodotSteam), and mandatory auth-ticket validation for joining clients
+## Cómo se juega
+Elegís 2 de 4 héroes y bajás 5 pisos generados por semilla. Cada puerta abierta es un turno: paga Polvo y un recurso, y puede traer enemigos. Encender salas con Polvo evita que aparezcan enemigos en ellas y habilita construir módulos. En cada piso hay que descubrir la salida, recoger el Nexo en la sala inicial y llevarlo hasta la salida mientras llegan oleadas; en los pisos 3 y 5 hay que matar antes al jefe. Se pierde si caen todos los héroes o se destruye el Nexo.
 
-## Controls
-- Move: WASD / Arrow keys
-- Click: move or attack (melee if in range)
+## Controles
+Se pueden cambiar en Opciones → Controles. Gamepad con cursor virtual.
 
-## Core Systems (Scripts)
-- Turn manager + queue: `scripts/core/actions/TurnManager.gd`, `scripts/core/actions/ActionQueue.gd`
-- Actions: `scripts/core/actions/BaseAction.gd`, `scripts/core/actions/MoveAction.gd`, `scripts/core/actions/WaitAction.gd`, `scripts/core/combat/AttackAction.gd`, `scripts/core/combat/CardAction.gd`
-- Combat: `scripts/core/combat/CombatResolver.gd`, `scripts/core/combat/CombatCardSystem.gd`, `scripts/core/cards/CardManager.gd`
-- Occupancy/map: `scripts/world/rooms/OccupancyManager.gd`, `scripts/world/rooms/MapManager.gd`
-- Managers (autoload + locator): `scripts/autoload/ManagerLocator.gd`, `scripts/autoload/SaveManager.gd`, `scripts/managers/CurrencyManager.gd`, `scripts/autoload/SettingsManager.gd`, `scripts/run/GameStateManager.gd`
-- Networking (Steam): `scripts/network/SteamManager.gd`, `scripts/network/SteamLobbyManager.gd`
+| Acción | Tecla |
+|---|---|
+| Seleccionar / interactuar (puertas, Nexo, jaulas, reanimar) | Clic izquierdo (Ctrl = agregar a la selección) |
+| Mover | Clic derecho |
+| Encender o apagar sala | Clic central (arrastrar = mover cámara) |
+| Pausa táctica / velocidad 2x | Espacio / X |
+| Menú de pausa | Esc |
+| Habilidad / ciclar héroes | Q / Tab |
+| Elegir héroe / grupos | F1–F4 / Ctrl+1..3 y 1..3 |
+| Construir / investigar | B, V / R |
+| Cámara | WASD, flechas, borde de pantalla, rueda; C recentra |
+| Ayuda | H |
 
-See `CLAUDE.md` for full architecture notes.
-
-## Build & Run
-Editor:
+## Ejecutar
 ```bash
-godot --path . --editor
+godot --path . --editor   # abrir en el editor
+godot --path .            # jugar (escena principal: scenes/Main.tscn)
 ```
 
-Play:
+## Tests
 ```bash
-godot --path .
+tools/run_tests.sh [filtro]                   # Git Bash
+powershell -File tools/run_tests.ps1 [-Filter x]
+godot --headless --path . --script res://tests/run_all.gd   # directo
 ```
+Exit code = cantidad de fallos. `OK*` = aserciones bien, pero el motor crasheó al cerrar. Ruta de Godot en `QUEST_GODOT`.
 
-## Next
-- Ranged/spells, AoE, status effects
-- Combat UI feedback
-- AI improvements
+## Documentación
+- `CLAUDE.md`: arquitectura y notas por sesión.
+- `docs/PLAYTEST.md`: guía para jugar una run y qué mirar.
+- `docs/BALANCE.md`, `docs/ECONOMIA.md`, `docs/BUCLE_JUEGO.md`, `docs/ROOMS.md`, `docs/PERSONAJES.md`, `docs/ENEMY_TARGETING.md`: diseño y números.
+- `docs/COOP_PRUEBAS.md`: pruebas manuales de co-op.
+- `CREDITS.md`, `docs/CREDITOS.md`: arte y licencias.

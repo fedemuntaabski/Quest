@@ -37,6 +37,9 @@ AudioDirector="*res://scripts/autoload/AudioDirector.gd"
 [debug]
 
 file_logging/enable_file_logging=true
+file_logging/enable_file_logging.pc=true
+file_logging/log_path="user://logs/quest.log"
+file_logging/max_log_files=10
 
 [display]
 

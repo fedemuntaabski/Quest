@@ -278,6 +278,7 @@ func _test_chests() -> void:
 	main2d.heroes[1].set_zone(rm.get_start_zone_id(), rm.get_center(rm.get_start_zone_id()), main2d.floor_layer)
 	_expect(other.is_closed() and inv.count_of(_item("armor_jade")) == 0, "full stash leaves the chest closed")
 	inv.stash.pop_back()
+	main2d.heroes[1].current_zone_id = ""  # walked out
 	main2d.heroes[1].set_zone(rm.get_start_zone_id(), rm.get_center(rm.get_start_zone_id()), main2d.floor_layer)
 	_expect(not other.is_closed() and inv.count_of(_item("armor_jade")) == 1, "re-entering with room opens it")
 

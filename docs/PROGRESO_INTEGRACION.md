@@ -1,31 +1,22 @@
-# Session calidad-13 (rama `session/calidad-13`) — estado al cortar
+# Session calidad-13 (rama `session/calidad-13`)
 
-Pedido: estabilidad y comodidad sin sistemas nuevos (7 bloques). La sesión se cortó a pedido del usuario. Lo hecho está commiteado; lo pendiente se lista abajo para retomar con el mismo prompt.
+Pedido: estabilidad y comodidad sin sistemas nuevos (7 bloques). Cerrada en `session/estabilizar-14`.
 
 ## Estado por bloque
 
 | # | Bloque | Estado | Dónde |
 |---|---|---|---|
 | 1 | Rendimiento | **Hecho** | `docs/RENDIMIENTO.md`, `tests/tools/bench_floor5.gd`, `docs/perf/*.csv`. El cuello de botella eran los logs INFO por golpe/muerte: p99 37 → 7,6 ms en ventana |
-| 2 | Pruebas automáticas | **Parcial** | Hecho: `tests/test_smoke_scenes.gd` (menú, Opciones con 5 pestañas, ranuras, selección, piso, pausa + ayuda, derrota/reintento, victoria, vuelta al menú, consola limpia vía `tests/support/ErrorProbe.gd`) |
+| 2 | Pruebas automáticas | **Hecho** | Hecho: `tests/test_smoke_scenes.gd` (menú, Opciones con 5 pestañas, ranuras, selección, piso, pausa + ayuda, derrota/reintento, victoria, vuelta al menú, consola limpia vía `tests/support/ErrorProbe.gd`) |
 | 3 | Guardado | **Hecho** | `SafeConfig` (tmp + rename, `.bak`, `.corrupt`), `SaveManager.SAVE_VERSION` 2 + `migrate()`, `save_corrupted` → diálogo en ranuras, settings atómico. `tests/test_save.gd` |
 | 4 | Controles | **Hecho** (falta prueba manual) | `InputBindings`, pestaña Controles en Opciones (`settings.cfg [input]`), `VirtualCursor` (stick der. + A/B/X), LB/RB/LT/RT y Shift+Tab ciclan héroes, Back = menú de pausa, `ControlsHelp` (H, pausa, Opciones), B/V/R/T/H como acciones. `tests/test_input_bindings.gd` |
 | 5 | Accesibilidad | **Hecho** (falta prueba manual) | `Accessibility` (estáticos) + pestaña Accesibilidad: texto 80–150 % (`Accessibility.font()` + escalado de .tscn al instanciar), modo daltónico (Okabe-Ito + glifos ▲/! en barras, formas ●■▲◆★ en rarezas), reducir destellos (+ temblor a 0), subtítulos de avisos sonoros. `tests/test_accessibility.gd` |
-| 6 | Errores y registro | **Parcial** | Hecho: conexiones duplicadas en `Enemy.configure`; audio faltante, Steam ausente y "no save to delete" pasan a INFO; timestamp en `QuestLogger`; botón "Abrir carpeta de registros" |
+| 6 | Errores y registro | **Hecho** | Hecho: conexiones duplicadas en `Enemy.configure`; audio faltante, Steam ausente y "no save to delete" pasan a INFO; timestamp en `QuestLogger`; botón "Abrir carpeta de registros" |
 | 7 | Balance | **Hecho** | `PlayerScaling` (`resources/floors/player_scaling.tres`): oleada ×1/1/1,5/2, tope +0/0/4/8, Nexo ×1/1/1,15/1,3, amenaza ×1,05 con 2 jugadores. `BalanceSim.scaling_rows()` (5 pisos × 2 dificultades × 1–4 jugadores, paridad 1,00–1,18), `docs/balance/calidad13_scaling.csv`, `test_balance._check_scaling` |
 
-## Pendiente para la próxima sesión
+## Pendiente
 
-1. **Runner único** `tests/run_all.gd`: lanza cada `test_*.gd` con `OS.execute`, aplica la regla `OK*` y sale con el número de fallos. Darle a `tools/run_tests.sh` el mismo fallback `OK*` que ya tiene el `.ps1`.
-2. **Run completa** `tests/tools/full_run_wip.gd` (fuera del runner a propósito):
-   - Recorre los 5 pisos sin errores de script.
-   - Falla en "victory overlay" en los **pisos 3 y 5**, que son los pisos con jefe. Probable causa: el jefe custodia la salida y `declare_victory()` no llega a mostrar el overlay.
-   - Investigar, arreglar, renombrarla a `tests/test_full_run.gd` y verificar que el chequeo de nodos huérfanos pase.
-3. **Errores y registro (6)**:
-   - Correr la suite completa y `Main2d.tscn --quit-after 90` con `ErrorProbe` o grep, y limpiar lo que quede. Ya se sabe: `record_run: no slot loaded` solo aparece en tests; las fugas al salir vienen de `--quit-after`.
-   - Configurar la rotación en `project.godot`: `debug/file_logging/log_path = user://logs/quest.log`, `max_log_files = 10` y `enable_file_logging.pc = true`. No se tocó porque el editor estaba abierto.
-4. **Docs**: sección de escalado en `BALANCE.md` y un bloque "Session calidad-13" en `CLAUDE.md` (este bloque ya es el resumen).
-5. **Verificación de cierre**: runner completo en verde y boot headless de `Main2d.tscn`. La suite se corrió por partes durante la sesión: todos los tests tocados quedaron verdes. Aviso: `test_door_roll` tarda ~4,5 min porque spawnea cientos de enemigos (esto ya pasaba antes).
+Lo que quedó pendiente al cortar se cerró en `session/estabilizar-14`: runner único `tests/run_all.gd`, `tests/test_full_run.gd` (el fallo en pisos 3 y 5 era del test, que declaraba victoria con el jefe vivo), rotación de logs en `project.godot`, sección de escalado en `BALANCE.md` y `CLAUDE.md`.
 
 ## Requiere prueba manual
 

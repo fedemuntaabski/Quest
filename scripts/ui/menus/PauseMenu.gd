@@ -121,6 +121,8 @@ func _add_controls_button() -> void:
 	controls_button.text = "Controles"
 	controls_button.custom_minimum_size = bestiary_button.custom_minimum_size
 	controls_button.size_flags_horizontal = bestiary_button.size_flags_horizontal
+	controls_button.add_theme_font_override("font", bestiary_button.get_theme_font("font"))
+	controls_button.add_theme_font_size_override("font_size", bestiary_button.get_theme_font_size("font_size"))
 	bestiary_button.add_sibling(controls_button)
 	_style_button(controls_button)
 	controls_help = ControlsHelp.new()
