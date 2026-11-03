@@ -5,7 +5,7 @@ extends Node
 ## input to game state. Offline and on the host, request() validates and runs the
 ## command right here (same code path, no network); on a client it goes to the host
 ## as an RPC, the host validates it (hero ownership, existing block reasons) and
-## runs the same existing API. A refusal comes back to the sender as floating text.
+## runs the same existing API. A refusal comes back to the sender on the HUD hint card.
 ## Commands never trust args: every handler type-checks what it reads.
 
 ## A command was refused for the local player (UI feedback, tests).
@@ -53,10 +53,9 @@ func _show_refusal(cmd: String, reason: String) -> void:
 	refused.emit(cmd, reason)
 	if reason == INVALID:
 		return
-	var text_mgr := ManagerLocator.get_floating_text_manager()
-	var hero := ManagerLocator.get_player()
-	if text_mgr and hero:
-		text_mgr.spawn_text(hero.global_position + Vector2(0, -56), reason, QuestPalette.PARCHMENT)
+	var hud := ManagerLocator.get_hud()
+	if hud:
+		hud.show_refusal(reason)
 
 
 ## Host side: validates and executes. "" = done, else why not (nothing changed).

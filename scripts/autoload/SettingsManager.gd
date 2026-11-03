@@ -23,6 +23,9 @@ const SECTION_DISPLAY := "display"
 const SECTION_ACCESSIBILITY := "accessibility"
 const SECTION_INPUT := "input"
 const SETTINGS_VERSION := 1
+## First-time help already shown, per install (own file: never touched by the
+## save/discard of the Options menu).
+const HELP_PATH := "user://first_help.cfg"
 const TEXT_SCALE_MIN := 0.8
 const TEXT_SCALE_MAX := 1.5
 
@@ -120,10 +123,22 @@ var sound_captions: bool = false:
 		Accessibility.sound_captions = val
 		settings_changed.emit(SECTION_ACCESSIBILITY, "sound_captions", val)
 
+var first_help_enabled: bool = true:
+	set(val):
+		first_help_enabled = val
+		settings_changed.emit(SECTION_GAMEPLAY, "first_help_enabled", val)
+
+var help_path: String = HELP_PATH
+## Tests and screenshot tools (--script) keep "seen" in memory: a suite run must
+## not spend the help of the player's real first game.
+var help_persist: bool = not OS.get_cmdline_args().has("--script")
+var _seen_help: Dictionary = {}
+
 
 func _ready() -> void:
 	InputBindings.ensure_defaults()
 	load_settings()
+	load_help()
 	apply_video_settings()
 	_apply_root_theme()
 	get_tree().node_added.connect(_scale_scene_font)
@@ -150,6 +165,38 @@ func _apply_root_theme() -> void:
 	if root.theme == null:
 		root.theme = Theme.new()
 	root.theme.default_font_size = Accessibility.font(16)
+
+
+func should_show_help(id: String) -> bool:
+	return first_help_enabled and not _seen_help.has(id)
+
+
+func mark_help_seen(id: String) -> void:
+	_seen_help[id] = true
+	_save_help()
+
+
+## Opciones: "Volver a ver las ayudas".
+func reset_help() -> void:
+	_seen_help.clear()
+	_save_help()
+
+
+func load_help() -> void:
+	_seen_help.clear()
+	var cfg := ConfigFile.new()
+	if cfg.load(help_path) == OK:
+		for id in cfg.get_value("help", "seen", PackedStringArray()):
+			_seen_help[id] = true
+
+
+func _save_help() -> void:
+	if not help_persist:
+		return
+	var cfg := ConfigFile.new()
+	cfg.set_value("help", "seen", PackedStringArray(_seen_help.keys()))
+	if cfg.save(help_path) != OK:
+		QuestLogger.warn(QuestLogger.Category.UI, "SettingsManager: failed to save %s." % help_path)
 
 
 func get_click_volume_db() -> float:
@@ -259,6 +306,7 @@ func load_settings() -> void:
 	fps_limit_index = int(cfg.get_value(SECTION_VIDEO, "fps_limit_index", 1))
 
 	screen_shake_intensity = float(cfg.get_value(SECTION_GAMEPLAY, "screen_shake_intensity", 1.0))
+	first_help_enabled = bool(cfg.get_value(SECTION_GAMEPLAY, "first_help_enabled", true))
 
 	show_fps_overlay = bool(cfg.get_value(SECTION_DISPLAY, "show_fps_overlay", false))
 	locale = String(cfg.get_value(SECTION_DISPLAY, "locale", "es"))
@@ -292,6 +340,7 @@ func save_settings() -> Error:
 	cfg.set_value(SECTION_VIDEO, "fps_limit_index", fps_limit_index)
 
 	cfg.set_value(SECTION_GAMEPLAY, "screen_shake_intensity", screen_shake_intensity)
+	cfg.set_value(SECTION_GAMEPLAY, "first_help_enabled", first_help_enabled)
 
 	cfg.set_value(SECTION_DISPLAY, "show_fps_overlay", show_fps_overlay)
 	cfg.set_value(SECTION_DISPLAY, "locale", locale)

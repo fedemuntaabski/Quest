@@ -26,6 +26,7 @@ const ICON_SIZE := Vector2(28, 28)
 ## Tab index == Building.SlotType (MAJOR, MINOR); the 3rd tab hosts the ResearchPanel.
 const TAB_TITLES := ["Mayores", "Menores", "Investigación"]
 const RESEARCH_TAB := 2
+const TAB_HINTS := ["talleres que producen al abrir puertas", "defensas y trampas"]
 const SLOT_NAMES := ["mayor", "menor"]
 
 @onready var options: VBoxContainer = $Margin/Content/Options
@@ -85,7 +86,8 @@ func _show_tab(tab: int) -> void:
 	var research := tab == RESEARCH_TAB
 	options.visible = not research
 	title.visible = not research  # the ResearchPanel carries its own header
-	title.text = "Construir — elegí una obra (1-9)"
+	if not research:
+		title.text = "%s: %s (1-9)" % [TAB_TITLES[tab], TAB_HINTS[tab]]
 	if not research:
 		_populate()
 	research_tab_changed.emit(research)
@@ -163,7 +165,7 @@ func _make_card(building_type: Building.BuildingType, cfg: Dictionary, hotkey: i
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 1, 6, 6))
 	var research_cost := _research_cost(building_type)
-	var reason := "\n%s (Investigar: %d Saber)" % [lock, research_cost] if lock != "" else ("" if affordable else "\nIndustria insuficiente.")
+	var reason := "\n%s (Investigar: %d Saber)" % [lock, research_cost] if lock != "" else ("" if affordable else "\nHierro insuficiente.")
 	card.tooltip_text = "%s\n%s\n%s\nCosto: %d Hierro · Vida: %d%s" % [cfg["label"], cfg["description"], Building.describe_effect(building_type), cost, int(cfg["hp"]), reason]
 	if not affordable or lock != "":
 		card.modulate = Color(1, 1, 1, 0.55)

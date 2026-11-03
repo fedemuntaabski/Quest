@@ -22,6 +22,7 @@ const TYPE_MARKER_FRACTION := 0.45
 const TYPE_MARKER_MIN := 8.0
 
 const RELIC_ALERT_COLOR := Color(0.95, 0.2, 0.2)
+const RELIC_DROP_COLOR := Color(1.0, 0.85, 0.4)
 ## Enemies just appeared in a room: blinking orange ring for this long (real time).
 const SPAWN_ALERT_COLOR := Color(1.0, 0.55, 0.1)
 const SPAWN_ALERT_MSEC := 6000
@@ -63,6 +64,7 @@ func _ready() -> void:
 	_relic = ManagerLocator.get_relic()
 	if _relic:
 		_relic.under_attack_changed.connect(func(_active: bool): _update_process(); queue_redraw())
+		_relic.drop_changed.connect(func(_dropped: bool): queue_redraw())
 	var enemy_manager := ManagerLocator.get_enemy_manager()
 	if enemy_manager:
 		enemy_manager.enemies_appeared.connect(_on_enemies_appeared)
@@ -165,6 +167,14 @@ func _draw() -> void:
 			var relic_rect := _to_map(_room_manager.get_zone(relic_zone)["rect"], scale_px, offset)
 			draw_arc(relic_rect.get_center(), radius * 2.2, 0.0, TAU, 24, RELIC_ALERT_COLOR, 2.0)
 
+	# Relic lying where its carrier fell: gold diamond + ring, steady.
+	var drop_zone := relic_drop_zone()
+	if drop_zone != "":
+		var center := _to_map(_room_manager.get_zone(drop_zone)["rect"], scale_px, offset).get_center()
+		var r := radius * 1.6
+		draw_colored_polygon(PackedVector2Array([center + Vector2(0, -r), center + Vector2(r, 0), center + Vector2(0, r), center + Vector2(-r, 0)]), RELIC_DROP_COLOR)
+		draw_arc(center, r * 1.8, 0.0, TAU, 24, RELIC_DROP_COLOR, 2.0)
+
 	# Enemies just spawned here: blinking orange ring on each room.
 	if blink_on:
 		for zone_id in _spawn_alerts:
@@ -177,6 +187,11 @@ func _draw() -> void:
 		var ping_rect := _to_map(_room_manager.get_zone(zone_id)["rect"], scale_px, offset)
 		var phase := fmod(Time.get_ticks_msec() / 600.0, 1.0)
 		draw_arc(ping_rect.get_center(), radius * (1.5 + 2.0 * phase), 0.0, TAU, 24, _map_pings[zone_id][1], 2.5)
+
+
+## Zone where the Relic lies after its carrier fell, "" otherwise.
+func relic_drop_zone() -> String:
+	return _relic.drop_zone_id if _relic and _relic.is_dropped() else ""
 
 
 ## coop-12: a player pointed at this zone (MAP_PING_MSEC on the minimap).

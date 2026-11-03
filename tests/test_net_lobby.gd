@@ -55,10 +55,36 @@ func _initialize() -> void:
 	_check(await _wait(func() -> bool: return ended[0] != ""), "client notices the host leaving (%s)" % ended[0])
 	_check(not client.is_online() and client.players.is_empty(), "client back offline, roster cleared")
 
+	await _test_version_refused()
+
 	print("test_net_lobby: %s (%d failures)" % ["OK" if failures.is_empty() else "FAIL", failures.size()])
 	for f in failures:
 		print("  - " + f)
 	quit(0 if failures.is_empty() else 1)
+
+
+## primera-partida-16: a client of another build never reaches the roster.
+func _test_version_refused() -> void:
+	var host := _session("HostBranch2")
+	var client := _session("ClientBranch2")
+	client.game_version = "0.0-otra"
+	var t := EnetTransport.new(host.api)
+	t.port = PORT + 1
+	_check(host.host(4, t) == OK, "version: host starts")
+	var failed := [""]
+	var ended := [""]
+	client.session_failed.connect(func(r: String) -> void: failed[0] = r)
+	client.session_ended.connect(func(r: String) -> void: ended[0] = r)
+	_check(client.join("127.0.0.1:%d" % (PORT + 1), EnetTransport.new(client.api)) == OK, "version: client connects")
+	_check(await _wait(func() -> bool: return ended[0] != ""), "version: the client is sent away")
+	_check(failed[0] == CoopSession.VERSION_MISMATCH and ended[0] == CoopSession.VERSION_MISMATCH, "version: reason is %s / %s" % [failed[0], ended[0]])
+	_check(client.host_version_refused == host.game_version, "version: the client learns the host's version")
+	_check(host.players.size() == 1, "version: the host's roster stays alone")
+	_check(not client.is_online(), "version: client back offline")
+	client.game_version = host.game_version  # same build: the same path still lets it in
+	_check(client.join("127.0.0.1:%d" % (PORT + 1), EnetTransport.new(client.api)) == OK, "version: same build reconnects")
+	_check(await _wait(func() -> bool: return host.players.size() == 2), "version: same build joins")
+	host.leave("test")
 
 
 func _check(cond: bool, msg: String) -> void:

@@ -1,40 +1,56 @@
-# Guía de playtest: una run completa
+# Guía de playtest: primera partida (30 minutos)
 
-Una run de 5 pisos nunca se jugó de corrido. Todo el balance sale del simulador, así que lo que más vale ahora es tu sensación. Calculá unos 60–90 minutos; podés anotar y seguir.
+Nadie jugó todavía una partida completa de corrido, y lo que más vale ahora es tu sensación. Son 30 minutos con 5 paradas: lo importante es ver qué se entiende sin ayuda externa. No hace falta ganar. Una partida de 5 pisos lleva 60–90 minutos: si querés seguir después, seguí; no entra en esta guía.
 
-## Antes de empezar
-1. Reiniciá el editor si estaba abierto durante esta rama (ver "Editor" al final) y arrancá con F5, no F6.
-2. En Opciones activá el contador de FPS si querés mirar rendimiento.
-3. Ranura nueva, Offline, Guerrero + Mago, Normal.
+## Antes de empezar (2 min)
+1. Cerrá el editor si quedó abierto y arrancá con F5, no F6.
+2. Ranura nueva, Offline, Guerrero + Mago, Normal.
+3. No abras esta guía de nuevo hasta el minuto 10: leé primero lo que te muestra el juego.
 
-Si algo se rompe, anotá piso y qué hacías, y adjuntá el `quest.log` más reciente (Opciones → Accesibilidad → "Abrir carpeta de registros"; se guardan los últimos 10).
+Si querés volver a ver las ayudas: Opciones → Accesibilidad → "Volver a ver las ayudas". Ahí también se apagan.
 
-## Primer piso: controles (5 min)
-- [ ] Clic izquierdo selecciona; clic derecho mueve. Clic izquierdo en una sala vacía no hace nada.
-- [ ] Clic central enciende una sala al soltar; arrastrando con el botón central mueve la cámara y no enciende.
-- [ ] Espacio congela combate y deja dar órdenes de caminar; las puertas no abren en pausa.
-- [ ] **Esc en pleno combate:** nada se mueve, nadie pierde vida, no llegan oleadas. Esc de nuevo reanuda. Con el Bestiario abierto, Esc cierra solo el Bestiario.
+Si algo se rompe, anotá piso y qué hacías, y adjuntá el `quest.log` más reciente (Opciones → Accesibilidad → "Abrir carpeta de registros").
 
-## Durante la run: bugs arreglados en esta rama
-- [ ] Bajá a un héroe y subile de nivel o equipalo: **sigue caído**. Reanimar sigue costando Comida y pide un aliado en la sala.
-- [ ] Al reanimarlo vuelve a la selección si estaba elegido, y a sus grupos Ctrl+1..3.
-- [ ] Cruzá un corredor con trampa **sin detenerte**: salta igual. Cruzá una sala con cofre sin detenerte: se abre.
-- [ ] Si cae un héroe caminando, se queda donde cayó, no sigue deslizándose.
-- [ ] Si cae el portador en un corredor, la Reliquia queda ahí. Otro héroe lo recoge yendo a ese corredor.
-- [ ] Durante la pantalla de victoria, el mundo queda congelado. Dejala abierta un minuto con enemigos cerca: no puede volverse derrota.
+## Minutos 0–10: entender el objetivo
+Jugá sin mirar nada más. Al minuto 10 contestá:
+- [ ] ¿Entendiste qué hay que hacer leyendo solo la lista "Objetivo" arriba a la izquierda?
+- [ ] ¿La ayuda "Cómo se juega" alcanzó para moverte y abrir una puerta?
+- [ ] ¿Encontraste solo la Reliquia? Hoy es un frasco azul sin rótulo en la sala inicial.
+- [ ] Hacé clic en la Reliquia antes de encontrar la salida: el motivo debe salir en la tarjeta de arriba, legible.
 
-## Lo que solo vos podés juzgar
-Anotá por piso, aunque sea una línea:
-- **Ritmo:** ¿cuántas puertas abrís antes de tener miedo de abrir otra? ¿Sobra o falta tiempo?
-- **Economía:** ¿te sobra o te falta Brasas, Hierro, Comida, Saber? ¿Alguno no lo usaste nunca?
-- **Obras:** ¿construiste los 7? ¿Cuál no valió la pena?
-- **Dificultad:** vida perdida por piso. El simulador predice piso 1–3 tranquilos y salto fuerte en 4–5 (28 % → 230 % de pérdida sin torres ni niveles).
-- **Jefes (pisos 3 y 5):** ¿se entiende que custodian la salida? ¿Es justa la embestida?
-- **Extracción:** ¿da tensión o es solo caminar? ¿15 % más lento se nota?
-- **Lectura:** ¿sabías siempre qué estaba pasando y por qué perdiste vida?
+## Minutos 10–15: encender y construir
+- [ ] Al descubrir la primera sala oscura aparece la ayuda "Sala oscura". ¿Llegó a tiempo o ya habías abierto otras puertas? Puede salir hasta 14 s después, porque espera a la ayuda anterior.
+- [ ] ¿El cartel "Clic central: encender" se lee sobre la sala oscura?
+- [ ] Encendé una sala con clic central. Después arrastrá con el botón central: mueve la cámara y no enciende.
+- [ ] Construir → Mayores → elegí una obra. El hueco crece y pulsa sobre los héroes. ¿Lo viste sin buscarlo?
+- [ ] Hacé clic en el hueco aunque haya un héroe parado encima: debe construir, no seleccionar al héroe.
+- [ ] Abrí Investigación: las 3 pestañas se ven enteras.
+
+## Minutos 15–22: Reliquia y salida
+- [ ] Con la salida descubierta, volvé a la sala inicial y recogé la Reliquia.
+- [ ] Debe verse sobre la cabeza del portador y al lado de su nombre en el retrato. ¿Se nota mientras caminás?
+- [ ] La tarjeta dice quién la lleva. El objetivo pasa al paso 3.
+- [ ] Hacé clic en una puerta cerrada: la tarjeta explica que están bloqueadas.
+- [ ] ¿La extracción da tensión o es solo caminar? ¿15 % más lento se nota?
+
+## Minutos 22–27: que caiga un héroe
+Dejá que el portador muera (no lo defiendas, o usá solo a ese héroe). Si la Reliquia no está en juego, igual probá la caída de otro héroe.
+- [ ] Aparece la ayuda "Héroe caído" con las reglas. ¿Se entiende que se pierde si bajás de piso sin reanimarlo?
+- [ ] La tarjeta dice en qué sala quedó la Reliquia, con anillo y rótulo sobre ella, y marca dorada en el minimapa.
+- [ ] **Hacé clic justo sobre la Reliquia caída** con el otro héroe en la sala: debe recogerla y **no** gastar Comida en reanimar. El cuerpo está debajo, así que este es el caso más delicado.
+- [ ] Reanimá con clic en el cuerpo o con el botón del retrato.
+- [ ] Si caen todos: pantalla de derrota con resumen.
+
+## Minutos 27–30: anotá
+Una línea por tema, aunque sea corta:
+- **Ritmo:** ¿cuántas puertas abriste antes de tener miedo de abrir otra?
+- **Economía:** ¿qué recurso sobró o faltó?
+- **Lectura:** ¿sabías siempre qué pasaba y por qué perdías vida?
+- **Ayudas:** ¿alguna llegó tarde, sobró o tapó algo?
+- **Lo peor de los 30 minutos:** una sola cosa.
 
 ## Fuera de esta prueba
-Co-op real, Steam con dos cuentas y mando físico: siguen sin probar (`docs/COOP_PRUEBAS.md`). Vocabulario medieval y la vuelta de Reliquia a Reliquia quedan para una fase posterior.
+Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.
 
 ## Editor
-Esta rama agregó la rotación de logs a `project.godot` con tu editor abierto. Si el editor guarda sus ajustes viejos, la pisa: `test_estabilizar` falla en "log rotation" si eso pasa. Solución: cerrar el editor, `git checkout project.godot`, reabrir.
+`project.godot` guarda la rotación de logs y la versión. Si el editor estaba abierto mientras se editó y guarda sus ajustes viejos, los pisa: `test_estabilizar` falla en "log rotation" si eso pasa. Solución: cerrar el editor, `git checkout project.godot`, reabrir.

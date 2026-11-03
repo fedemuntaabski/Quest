@@ -36,6 +36,7 @@ var target_ratio: float = 1.0
 var is_selected: bool = false
 
 var _group_label: Label
+var relic_icon: TextureRect
 var _perk_dot: Label
 var _group_nums: Array = []
 var _bar: ProgressBar
@@ -102,6 +103,16 @@ func _ready() -> void:
 	_perk_dot.mouse_filter = Control.MOUSE_FILTER_PASS
 	_perk_dot.visible = false
 	name_row.add_child(_perk_dot)
+	relic_icon = TextureRect.new()
+	relic_icon.name = "RelicIcon"
+	relic_icon.custom_minimum_size = Vector2(18, 18)
+	relic_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	relic_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	relic_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	relic_icon.tooltip_text = "Lleva la Reliquia"
+	relic_icon.mouse_filter = Control.MOUSE_FILTER_PASS
+	relic_icon.visible = false
+	name_row.add_child(relic_icon)
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.run_upgrades_changed.connect(func(_k: String, _l: int, _id: String) -> void: _update_perk_dot())
@@ -179,6 +190,15 @@ func has_pending_perk() -> bool:
 func _update_perk_dot() -> void:
 	var player_stats := ManagerLocator.get_player_stats()
 	_perk_dot.visible = player_stats != null and stats != null and stats.hero_id != "" and player_stats.has_pending_perk(stats.hero_id)
+
+
+## Relic icon next to the name while this hero carries it.
+func bind_carrier(hero: Player) -> void:
+	var relic := ManagerLocator.get_relic()
+	if relic:
+		relic_icon.texture = relic.get_icon()
+	relic_icon.visible = hero.is_carrying_relic
+	hero.carrying_changed.connect(func(carrying: bool) -> void: relic_icon.visible = carrying)
 
 
 ## Shows the hero's active ability (button with radial cooldown, Q).

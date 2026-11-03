@@ -22,6 +22,9 @@ const MINOR_OUTLINE := Color(0.7, 0.7, 0.7, 0.4)
 const HIGHLIGHT_OUTLINE := Color(1.0, 0.85, 0.4, 1.0)
 const OUTLINE_WIDTH := 1.5
 const HIGHLIGHT_WIDTH := 3.0
+## While armed: bigger (picking too) and over the heroes, who stand on the center slot.
+const HIGHLIGHT_SCALE := 1.8
+const HIGHLIGHT_Z := 8
 ## Armed-mode ghost tint over the building's own icon: can / can't build here.
 const GHOST_OK := Color(0.4, 1.0, 0.4, 0.6)
 const GHOST_BLOCKED := Color(1.0, 0.3, 0.3, 0.6)
@@ -35,6 +38,7 @@ var zone_id: String = ""
 var is_occupied: bool = false
 var built_building: Node2D = null
 var _ghost: Polygon2D = null
+var _pulse: Tween
 
 
 func _ready() -> void:
@@ -92,9 +96,19 @@ func _apply_visual() -> void:
 ## BuildingMenu marks the slot it is building into.
 func set_highlighted(on: bool) -> void:
 	_apply_visual()
+	scale = Vector2.ONE * (HIGHLIGHT_SCALE if on else 1.0)
+	z_index = HIGHLIGHT_Z if on else 2
+	if _pulse:
+		_pulse.kill()
+		_pulse = null
+	outline.modulate.a = 1.0
 	if on:
 		outline.default_color = HIGHLIGHT_OUTLINE
 		outline.width = HIGHLIGHT_WIDTH
+		if not Accessibility.reduce_flashes:
+			_pulse = create_tween().set_loops().set_ignore_time_scale()
+			_pulse.tween_property(outline, "modulate:a", 0.3, 0.45)
+			_pulse.tween_property(outline, "modulate:a", 1.0, 0.45)
 
 
 ## Semi-transparent preview of `building_type` (the building scene's own Icon,

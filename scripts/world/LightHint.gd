@@ -1,7 +1,7 @@
 extends Area2D
 class_name LightHint
 
-## LightHint: "Clic central: encender (10 Brasas)" prompt shown on a revealed,
+## LightHint: "Clic central: encender / 10 Brasas" prompt shown on a revealed,
 ## unlit RoomZone. Passive hint since session 7 (RoomZone keeps it
 ## non-pickable; lighting is RoomZone.toggle_light on middle-click). The click
 ## plumbing below is kept for the signal contract.
@@ -24,7 +24,7 @@ func _refresh_label() -> void:
 
 
 func refresh_label(cost: int) -> void:
-	$Label.text = "Clic central: encender (%d Brasas)" % cost
+	$Label.text = "Clic central: encender\n%d Brasas" % cost
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:

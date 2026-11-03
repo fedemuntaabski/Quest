@@ -6,7 +6,12 @@ class_name Player
 
 ## Emitted when current_zone_id changes (spawn, and every zone crossed on a walk).
 signal zone_changed(zone_id: String)
+## Started / stopped carrying the Relic (HUD portrait).
+signal carrying_changed(carrying: bool)
 
+const CARRY_ICON_MATERIAL: Material = preload("res://resources/maps/unshaded_material.tres")
+## Above the head, in fit_radius units.
+const CARRY_ICON_HEIGHT := 1.9
 const SELECTION_RING_COLOR := Color(0.95, 0.78, 0.35, 0.95)
 ## Vertical squash of the selection ring (a circle seen on the floor).
 const SELECTION_RING_SQUASH := 0.4
@@ -18,7 +23,14 @@ const SELECTION_RING_SQUASH := 0.4
 
 var character_data: CharacterData = null
 var current_zone_id: String = ""
-var is_carrying_relic: bool = false
+var is_carrying_relic: bool = false:
+	set(value):
+		if value == is_carrying_relic:
+			return
+		is_carrying_relic = value
+		_refresh_carry_icon()
+		carrying_changed.emit(value)
+var _carry_icon: Sprite2D
 ## Sprite-only shift so heroes sharing a zone don't overlap (PartyConfig);
 ## position, zone logic and hit/hurtboxes stay on the zone center.
 var sprite_offset: Vector2 = Vector2.ZERO
@@ -257,3 +269,24 @@ func can_accept_input() -> bool:
 
 func pick_up_relic() -> void:
 	is_carrying_relic = true
+
+
+## The Relic hides when picked up: it shows over the carrier's head instead.
+func _refresh_carry_icon() -> void:
+	if _carry_icon == null:
+		var relic := ManagerLocator.get_relic()
+		if relic == null or not is_inside_tree():
+			return
+		_carry_icon = Sprite2D.new()
+		_carry_icon.name = "CarryIcon"
+		_carry_icon.texture = relic.get_icon()
+		_carry_icon.scale = Vector2.ONE * ArtConfig.ART_SCALE
+		_carry_icon.material = CARRY_ICON_MATERIAL
+		_carry_icon.z_index = 5
+		_carry_icon.position = animated_sprite.position + Vector2(0, -animated_sprite.fit_radius() * CARRY_ICON_HEIGHT)
+		add_child(_carry_icon)
+	_carry_icon.visible = is_carrying_relic
+
+
+func is_carry_icon_visible() -> bool:
+	return _carry_icon != null and _carry_icon.visible

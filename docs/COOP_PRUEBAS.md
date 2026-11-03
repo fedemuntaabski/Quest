@@ -101,3 +101,7 @@ las cuentas deben ser amigas para la invitación Friends Only.
 | `Peer N refused: run in progress` | host | alguien sin token de esta run intentó entrar |
 | `Host lost: the run ends` | cliente | el host se fue |
 | `Session closed (motivo)` | todos | cierre de la sesión |
+
+## Versión
+
+Host y clientes deben tener la misma `application/config/version`. Un cliente distinto ve "Versión distinta" y vuelve al menú; lo cubre `test_net_lobby` por ENet. Falta probarlo con Steam real y en dos builds exportadas. Subí la versión cada vez que cambien comandos o claves de `RunState`.

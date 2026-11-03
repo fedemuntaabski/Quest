@@ -12,12 +12,18 @@ signal hp_changed(current: int, maximum: int)
 signal under_attack_changed(active: bool)
 ## HP reached 0: Main2d applies the usual defeat.
 signal destroyed
+## It fell with its carrier (true) or a hero took it (false): marker, HUD, minimap.
+signal drop_changed(dropped: bool)
 
 const FLASH_SHADER := preload("res://resources/shaders/white_flash.gdshader")
 const FLASH_SEC := 0.15
 const UNDER_ATTACK_SEC := 1.5
 ## Crack i shows once HP <= CRACK_THRESHOLDS[i] of max (local px polylines).
 const CRACK_THRESHOLDS := [0.75, 0.5, 0.25]
+const UNSHADED: Material = preload("res://resources/maps/unshaded_material.tres")
+const DROP_MARKER_RADIUS := 34.0
+## Over the fallen hero's body (heroes: z 2).
+const DROPPED_Z := 6
 const CRACK_LINES := [
 	[Vector2(-2, -14), Vector2(2, -8), Vector2(-3, -3)],
 	[Vector2(6, -6), Vector2(1, 0), Vector2(5, 7)],
@@ -36,6 +42,8 @@ var _picked_up: bool = false
 var _flash_material: ShaderMaterial
 var _flash_tween: Tween
 var _attack_timer: Timer
+var _drop_marker: Node2D
+var _drop_tween: Tween
 
 
 func _ready() -> void:
@@ -118,9 +126,13 @@ func is_dropped() -> bool:
 
 func pick_up() -> void:
 	_picked_up = true
+	var was_dropped := drop_zone_id != ""
 	drop_zone_id = ""
 	visible = false
 	input_pickable = false
+	_set_drop_marker(false)
+	if was_dropped:
+		drop_changed.emit(false)
 
 
 ## The carrier fell: the Relic stays on the floor of `zone_id` at `world_position`, clickable again.
@@ -130,7 +142,54 @@ func drop_at(zone_id: String, world_position: Vector2) -> void:
 	global_position = world_position
 	visible = true
 	input_pickable = true
+	_set_drop_marker(true)
+	drop_changed.emit(true)
 	QuestLogger.info(QuestLogger.Category.RELIC, "Relic dropped in '%s'." % zone_id)
+
+
+func get_icon() -> Texture2D:
+	return $Pickup/Sprite2D.texture
+
+
+func is_drop_marker_visible() -> bool:
+	return _drop_marker != null and _drop_marker.visible
+
+
+## Pulsing ring + name: the Relic lies under a body and must be findable.
+func _set_drop_marker(on: bool) -> void:
+	if _drop_marker == null:
+		_build_drop_marker()
+	z_index = DROPPED_Z if on else 2
+	_drop_marker.visible = on
+	if _drop_tween:
+		_drop_tween.kill()
+	_drop_marker.modulate.a = 1.0
+	if on and not Accessibility.reduce_flashes:
+		_drop_tween = create_tween().set_loops().set_ignore_time_scale()
+		_drop_tween.tween_property(_drop_marker, "modulate:a", 0.35, 0.5)
+		_drop_tween.tween_property(_drop_marker, "modulate:a", 1.0, 0.5)
+
+
+func _build_drop_marker() -> void:
+	_drop_marker = Node2D.new()
+	_drop_marker.name = "DropMarker"
+	var ring := Line2D.new()
+	ring.width = 3.0
+	ring.default_color = QuestPalette.GOLD_LIGHT
+	ring.closed = true
+	ring.material = UNSHADED
+	for i in 32:
+		ring.add_point(Vector2.RIGHT.rotated(TAU * i / 32.0) * DROP_MARKER_RADIUS)
+	_drop_marker.add_child(ring)
+	var label := Label.new()
+	label.text = "Reliquia"
+	label.material = UNSHADED
+	label.add_theme_color_override("font_color", QuestPalette.GOLD_LIGHT)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 5)
+	label.position = Vector2(-30, -DROP_MARKER_RADIUS - 26)
+	_drop_marker.add_child(label)
+	add_child(_drop_marker)
 
 
 func _build_feedback() -> void:

@@ -303,7 +303,7 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	_expect(resources.research("dry_tinder"), "research dry_tinder")
 	_expect(RoomZone.get_light_cost() == RoomZone.LIGHT_COST - 3, "discounted light cost %d" % RoomZone.get_light_cost())
 	var hint := other.find_children("*", "LightHint", true, false)
-	_expect(hint.is_empty() or (hint[0].get_node("Label") as Label).text.contains("(7 Brasas)"), "energy hint shows the discounted cost")
+	_expect(hint.is_empty() or (hint[0].get_node("Label") as Label).text.contains("7 Brasas"), "energy hint shows the discounted cost")
 	other.try_light_up()
 	_expect(other.is_lit and resources.get_resource("embers") == embers - 7, "lighting should cost 7 embers: %d" % (embers - resources.get_resource("embers")))
 	other.light_down()

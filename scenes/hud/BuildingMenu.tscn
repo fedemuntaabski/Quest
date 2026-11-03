@@ -28,6 +28,7 @@ text = "Construir"
 
 [node name="Tabs" type="TabBar" parent="Margin/Content"]
 layout_mode = 2
+clip_tabs = false
 tab_count = 3
 tab_0/title = "Mayores"
 tab_1/title = "Menores"

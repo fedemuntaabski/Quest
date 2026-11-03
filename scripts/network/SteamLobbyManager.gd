@@ -62,7 +62,6 @@ func _on_lobby_created(connect_result: int, lobby_id: int) -> void:
 
 	current_lobby_id = lobby_id
 	SteamApi.steam().setLobbyData(lobby_id, "name", "%s's Game" % SteamApi.steam().getPersonaName())
-	SteamApi.steam().setLobbyData(lobby_id, "game_version", str(ProjectSettings.get_setting("application/config/version", "0.0")))
 
 	peer = SteamApi.new_peer()
 	var error: int = peer.call("create_host", 0) if peer != null else ERR_UNAVAILABLE

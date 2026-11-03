@@ -43,9 +43,9 @@ func _on_relic_clicked(p_relic: Relic) -> void:
 	var reason := get_block_reason()
 	if reason != "":
 		QuestLogger.info(QuestLogger.Category.RELIC, "Relic pickup rejected: %s." % reason)
-		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-		if text_mgr:
-			text_mgr.spawn_text(p_relic.global_position, reason, QuestPalette.GOLD_DARK)
+		var hud := ManagerLocator.get_hud()
+		if hud:
+			hud.show_refusal(reason)
 		return
 	if relic.is_dropped():
 		_request_pickup()  # nothing new to warn about: the extraction is already on

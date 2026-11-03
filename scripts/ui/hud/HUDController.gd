@@ -73,6 +73,9 @@ var chat_panel: ChatPanel
 ## calidad-13: shortcut list (show_help / H) and the sound caption line.
 var controls_help: ControlsHelp
 var caption_label: Label
+## primera-partida-16: always-on steps + first-time help (left column).
+var objective_panel: ObjectivePanel
+var help_card: HelpCard
 var _caption_tween: Tween
 const CAPTION_HOLD := 3.0
 
@@ -155,6 +158,7 @@ func _ready() -> void:
 	$Control.add_child(building_popup)
 	_add_pause_label()
 	_add_relic_alert()
+	_add_guidance()
 	_add_coop_widgets()
 	_add_caption_label()
 	controls_help = ControlsHelp.new()
@@ -186,6 +190,8 @@ func close_popups() -> void:
 	character_popup.close()
 	building_popup.close()
 	research_panel.close()
+	if help_card:
+		help_card.clear()
 	if controls_help:
 		controls_help.hide()
 	if building_menu:
@@ -301,6 +307,69 @@ func set_relic_alert(active: bool) -> void:
 	_alert_tween.tween_property(relic_alert, "modulate:a", 1.0, 0.3)
 
 
+## Objective + help, and what triggers each help. Left column: nothing here covers
+## the map's center or takes clicks.
+func _add_guidance() -> void:
+	var top_left := get_node_or_null("Control/TopLeft")
+	if top_left == null:
+		return
+	objective_panel = ObjectivePanel.new()
+	objective_panel.name = "ObjectivePanel"
+	top_left.add_child(objective_panel)
+	help_card = HelpCard.new()
+	help_card.name = "HelpCard"
+	top_left.add_child(help_card)
+	show_help("controles")
+	var rooms := ManagerLocator.get_room_manager()
+	if rooms and rooms.door_turn_system:
+		rooms.door_turn_system.room_revealed.connect(_on_room_revealed)
+	var ps := ManagerLocator.get_player_stats()
+	if ps:
+		ps.hero_downed.connect(func(_id: String) -> void: show_help("heroe_caido"))
+	var extraction := ManagerLocator.get_extraction_manager()
+	if extraction:
+		extraction.phase_changed.connect(_on_extraction_phase)
+	var relic := ManagerLocator.get_relic()
+	if relic:
+		relic.drop_changed.connect(_on_relic_drop_changed)
+
+
+## Once per install; local to each player (never relayed to the others).
+func show_help(id: String) -> void:
+	var settings := ManagerLocator.get_settings_manager()
+	if help_card == null or settings == null or not settings.should_show_help(id):
+		return
+	settings.mark_help_seen(id)
+	help_card.enqueue(id)
+
+
+func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
+	var rooms := ManagerLocator.get_room_manager()
+	for zone_id in rooms.get_group_zone_ids(group_id):
+		if rooms.get_zone_kind(zone_id) == "room" and not rooms.is_zone_lit(zone_id):
+			show_help("sala_oscura")
+
+
+func _on_extraction_phase(new_phase: ExtractionManager.Phase, _old: ExtractionManager.Phase) -> void:
+	if new_phase != ExtractionManager.Phase.EXTRACTION:
+		return
+	var relic := ManagerLocator.get_relic()
+	var carrier := relic.get_carrier() if relic else null
+	var who := carrier.character_data.display_name if carrier and carrier.character_data else "Un héroe"
+	show_local_hint("¡Reliquia recogida!", "%s la lleva. Las puertas se bloquean y llegan oleadas: llevala a la salida." % who, QuestPalette.GOLD_LIGHT)
+
+
+func _on_relic_drop_changed(dropped: bool) -> void:
+	var relic := ManagerLocator.get_relic()
+	if dropped and relic:
+		show_local_hint("¡Reliquia caída!", "Quedó en %s. Cualquier héroe en esa sala puede tomarla: clic en ella." % _room_label(ManagerLocator.get_room_manager(), relic.drop_zone_id), QuestPalette.GOLD_LIGHT)
+
+
+## A refused action: on the hint card, readable, for this player only.
+func show_refusal(reason: String) -> void:
+	show_local_hint("No se puede", reason, QuestPalette.UI_TEXT_BLOCKED)
+
+
 ## First-discovery tip of a room type (FloorManager → ManagerLocator.get_hud().show_hint):
 ## top-center card that fades by itself; a newer hint replaces the old one.
 func _add_hint_panel() -> void:
@@ -334,6 +403,10 @@ var _last_hint_msec := 0
 
 func show_hint(title: String, text: String, color: Color) -> void:
 	NetSync.broadcast("hint", {"title": title, "text": text, "color": color})  # coop-12: shared notices
+	show_local_hint(title, text, color)
+
+
+func show_local_hint(title: String, text: String, color: Color) -> void:
 	# coop-12: a client may get the same notice locally and from the host: show it once.
 	var key := title + "|" + text
 	if not Net.is_authority() and key == _last_hint and Time.get_ticks_msec() - _last_hint_msec < 3000:
@@ -368,7 +441,7 @@ const BESTIARY_TIER_TEXT := {
 func _on_bestiary_unlocked(enemy_id: String, tier: BestiaryEntry.Tier) -> void:
 	var bestiary := ManagerLocator.get_bestiary()
 	var type := bestiary.get_type(enemy_id) if bestiary else null
-	if type:
+	if type and not _hint_panel.visible:  # a toast never replaces a notice being read
 		show_hint("Nuevo registro", "%s: %s" % [type.display_name, BESTIARY_TIER_TEXT.get(tier, "")], QuestPalette.GOLD)
 
 
@@ -528,6 +601,8 @@ func add_hero_portrait(stats: CharacterStats, data: CharacterData) -> HeroPortra
 	portrait.portrait_ctrl_clicked.connect(_on_portrait_ctrl_clicked)
 	portrait.portrait_right_clicked.connect(open_hero_sheet)
 	portraits.add_child(portrait)
+	if owner_player:
+		portrait.bind_carrier(owner_player)
 	_portraits[stats.hero_id] = portrait
 	_refresh_selection()
 	_refresh_groups()
@@ -628,11 +703,15 @@ func _on_enemies_appeared(zone_ids: Array[String], count: int, source: String) -
 	elif source == "summon":
 		show_hint("Invocación", "El jefe llama refuerzos en: %s" % ", ".join(names), ALERT_COLOR)
 	elif source == "wave":
-		show_hint("Oleada", "%d enemigos entran por: %s" % [count, ", ".join(names)], ALERT_COLOR)
+		show_hint("Oleada", "%s por: %s" % [_enemy_count_text(count) + (" entra" if count == 1 else " entran"), ", ".join(names)], ALERT_COLOR)
 		trigger_invasion_alert()
 	else:
-		show_hint("Invasión", "%d enemigos aparecieron en: %s" % [count, ", ".join(names)], ALERT_COLOR)
+		show_hint("Invasión", "%s en: %s" % [_enemy_count_text(count) + (" apareció" if count == 1 else " aparecieron"), ", ".join(names)], ALERT_COLOR)
 	_play_alert("Alerta: enemigos en %s" % ", ".join(names))
+
+
+func _enemy_count_text(count: int) -> String:
+	return "1 enemigo" if count == 1 else "%d enemigos" % count
 
 
 ## progresion-10: the floor's boss woke up in the exit room.

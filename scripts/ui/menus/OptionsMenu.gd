@@ -142,6 +142,7 @@ var _text_scale_value: Label
 var colorblind_check: CheckButton
 var reduce_flashes_check: CheckButton
 var captions_check: CheckButton
+var first_help_check: CheckButton
 var _controls_grid: GridContainer
 var _controls_status: Label
 var _first_rebind_button: Button
@@ -178,6 +179,15 @@ func _build_accessibility_tab() -> void:
 	colorblind_check = _a11y_check(tab, "Modo daltónico (barras y rarezas con formas)", "colorblind_mode")
 	reduce_flashes_check = _a11y_check(tab, "Reducir destellos y parpadeos", "reduce_flashes")
 	captions_check = _a11y_check(tab, "Subtítulos para avisos sonoros", "sound_captions")
+	first_help_check = _a11y_check(tab, "Mostrar ayudas de primera vez", "first_help_enabled")
+	var help_again := Button.new()
+	help_again.text = "Volver a ver las ayudas"
+	help_again.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	help_again.pressed.connect(func() -> void:
+		var mgr := _get_settings_manager()
+		if mgr:
+			mgr.reset_help())
+	tab.add_child(help_again)
 	var note := Label.new()
 	note.text = "El temblor de cámara se ajusta en Jugabilidad (0 % lo desactiva).\nEl tamaño del texto se aplica por completo a las pantallas que se abran después."
 	note.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
@@ -455,6 +465,7 @@ func _sync_from_settings_manager() -> void:
 		colorblind_check.button_pressed = settings_mgr.colorblind_mode
 		reduce_flashes_check.button_pressed = settings_mgr.reduce_flashes
 		captions_check.button_pressed = settings_mgr.sound_captions
+		first_help_check.button_pressed = settings_mgr.first_help_enabled
 	_capturing = []
 	_refresh_controls()
 

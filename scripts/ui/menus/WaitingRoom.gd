@@ -119,7 +119,19 @@ func _on_leave_pressed() -> void:
 
 func _on_session_ended(reason: String) -> void:
 	QuestLogger.warn(QuestLogger.Category.NETWORK, "Lobby closed (%s), back to the main menu" % reason)
+	if reason == CoopSession.VERSION_MISMATCH:
+		await _show_version_refused()
 	_go_to_menu()
+
+
+func _show_version_refused() -> void:
+	var dialog := AcceptDialog.new()
+	dialog.title = "Versión distinta"
+	dialog.dialog_text = "No podés entrar: el anfitrión tiene la versión %s y vos la %s.\nTienen que jugar la misma versión." % [_net.host_version_refused, _net.game_version]
+	add_child(dialog)
+	dialog.popup_centered()
+	await dialog.visibility_changed
+	dialog.queue_free()
 
 
 func _go_to_menu() -> void:

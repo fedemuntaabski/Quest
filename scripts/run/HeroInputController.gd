@@ -9,6 +9,8 @@ extends Node
 
 ## Extra px around a hero's body that still count as a click on it.
 const HERO_PICK_MARGIN := 10.0
+## = the Relic's collision circle.
+const RELIC_PICK_RADIUS := 18.0
 ## Real-time window (ms) for the second tap of a group key.
 const GROUP_DOUBLE_TAP_MS := 300
 ## select_hero_1..4 actions in project.godot.
@@ -40,6 +42,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if hud and hud.building_menu and hud.building_menu.is_armed():
 		return
 	var world_pos: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * event.position
+	if is_on_dropped_relic(world_pos):
+		return  # it lies on the fallen carrier: the click is for the Relic, not a paid revive
 	var hero := pick_hero_at(world_pos)
 	if hero == null:
 		# heroes-9: a downed hero is not selectable; clicking it is a revive
@@ -54,6 +58,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	click_hero(hero, event.ctrl_pressed)
 	get_viewport().set_input_as_handled()
+
+
+func is_on_dropped_relic(world_pos: Vector2) -> bool:
+	var relic := ManagerLocator.get_relic()
+	return relic != null and relic.is_dropped() and world_pos.distance_to(relic.global_position) <= RELIC_PICK_RADIUS
 
 
 ## Living hero whose drawn body contains `world_pos` (the closest one), or null.

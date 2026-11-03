@@ -19,7 +19,7 @@ var _literal: RegEx
 
 
 func _initialize() -> void:
-	_old = RegEx.create_from_string("(?i)\\b(" + OLD_WORDS + ")")
+	_old = RegEx.create_from_string("(?i)(?:\\b|\\\\n)(" + OLD_WORDS + ")")
 	_prose = RegEx.create_from_string(OLD_IN_PROSE)
 	_field = RegEx.create_from_string(TEXT_FIELD)
 	_literal = RegEx.create_from_string("\"((?:[^\"\\\\]|\\\\.)*)\"")
@@ -44,6 +44,7 @@ func _expect(cond: bool, msg: String) -> void:
 ## The scan itself must bite, or a green run proves nothing.
 func _check_detector() -> void:
 	_expect(_bad("Falta Industria"), "detector misses Industria")
+	_expect(_bad("\\nIndustria insuficiente."), "detector misses a word right after an escaped newline")
 	_expect(_bad("el módulo"), "detector misses módulo")
 	_expect(_bad("Nueva run"), "detector misses run in a sentence")
 	_expect(not _bad("res"), "detector flags a plain key")

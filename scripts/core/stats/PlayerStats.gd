@@ -346,10 +346,9 @@ func revive_hero(hero_id: String = "") -> bool:
 	var id := _resolve(hero_id)
 	var reason := get_revive_block_reason(id)
 	if reason != "":
-		var downed := _player_of(id)
-		var text_mgr := ManagerLocator.get_floating_text_manager()
-		if downed and text_mgr and reason != "No está caído":
-			text_mgr.spawn_text(downed.global_position + Vector2(0, -48), reason, QuestPalette.PARCHMENT)
+		var hud := ManagerLocator.get_hud()
+		if hud and reason != "No está caído":
+			hud.show_refusal(reason)
 		return false
 	var cfg := _config_for(id)
 	var rm := ManagerLocator.get_resource_manager()

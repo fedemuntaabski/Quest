@@ -30,12 +30,19 @@ signal pings_changed
 const TOKEN_PATH := "user://net_token.txt"
 const CONFIG_PATH := "res://resources/net/net_config.tres"
 const PARTY_SIZE: int = preload("res://scripts/autoload/GameSession.gd").PARTY_SIZE
+## session_failed / session_ended reason of a client refused for its build.
+const VERSION_MISMATCH := "version_mismatch"
+## The refused client leaves on its own; this kicks one that can't (an older build).
+const VERSION_KICK_SEC := 2.0
 
 var mode: Mode = Mode.OFFLINE
 var transport: NetworkTransport = null
 ## Overridable for in-process tests (two SceneMultiplayer branches).
 var api: MultiplayerAPI = null
 var config: NetConfig = load(CONFIG_PATH)
+## Host and clients must match (commands and RunState keys change between builds):
+## bump application/config/version whenever they do. Var: tests fake another build.
+var game_version: String = str(ProjectSettings.get_setting("application/config/version", "0.0"))
 ## peer_id -> {name, token, color, heroes: Array, ready: bool}. The host owns
 ## it; clients get copies through _rpc_sync_lobby.
 var players: Dictionary = {}
@@ -55,6 +62,8 @@ var _pending_register: Dictionary = {}
 ## peer -> last round trip in ms (host measures, everyone gets a copy).
 var pings: Dictionary = {}
 var _ping_ms := 0
+## Version of the host that last refused this client (WaitingRoom shows it).
+var host_version_refused := ""
 
 
 func _ready() -> void:
@@ -193,7 +202,7 @@ func _on_connected() -> void:
 		return
 	QuestLogger.info(QuestLogger.Category.NETWORK, "Connected to host as peer %d" % api.get_unique_id())
 	connected.emit()
-	_rpc_register.rpc_id(1, local_display_name(), _local_token())
+	_rpc_register.rpc_id(1, local_display_name(), _local_token(), game_version)
 	session_started.emit(Mode.CLIENT)
 
 
@@ -255,14 +264,33 @@ func _free_color() -> int:
 
 
 @rpc("any_peer", "reliable")
-func _rpc_register(p_name: String, token: String) -> void:
+func _rpc_register(p_name: String, token: String, version: String = "") -> void:
 	if not is_host():
 		return
 	var peer := api.get_remote_sender_id()
+	if version != game_version:
+		_refuse_version(peer, version)
+		return
 	if transport != null and not transport.is_peer_trusted(peer):
 		_pending_register[peer] = [p_name, token]  # Steam: wait for the auth ticket
 		return
 	_register(peer, p_name, token)
+
+
+func _refuse_version(peer: int, version: String) -> void:
+	QuestLogger.warn(QuestLogger.Category.NETWORK, "Peer %d refused: version '%s', host has '%s'" % [peer, version, game_version])
+	_rpc_version_refused.rpc_id(peer, game_version)
+	await get_tree().create_timer(VERSION_KICK_SEC, true, false, true).timeout
+	if api.multiplayer_peer != null and api.get_peers().has(peer):
+		api.multiplayer_peer.disconnect_peer(peer)
+
+
+@rpc("authority", "reliable")
+func _rpc_version_refused(host_version: String) -> void:
+	QuestLogger.warn(QuestLogger.Category.NETWORK, "Refused by the host: it has version '%s', this is '%s'" % [host_version, game_version])
+	host_version_refused = host_version
+	session_failed.emit(VERSION_MISMATCH)
+	leave(VERSION_MISMATCH)
 
 
 func _on_peer_trusted(peer: int) -> void:
