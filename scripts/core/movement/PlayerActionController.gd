@@ -266,17 +266,17 @@ func _walk_and_count(order: Dictionary, batch: Dictionary) -> void:
 	batch.left -= 1
 
 
-## Speed factor of the Nexo carrier (FloorConfig.carrier_speed_mult, 0.85 = 15 % slower).
+## Speed factor of the Relic carrier (FloorConfig.carrier_speed_mult, 0.85 = 15 % slower).
 func _carrier_speed_mult() -> float:
 	var floor_manager := ManagerLocator.get_floor_manager()
 	return floor_manager.carrier_speed_mult() if floor_manager else FloorManager.DEFAULT_CONFIG.carrier_speed_mult
 
 
 ## Glides along `waypoints` (one per entry of `zones`). The hero is in each zone from
-## the moment it crosses in (traps, chests, enemies, a Nexo drop see the real zone);
+## the moment it crosses in (traps, chests, enemies, a Relic drop see the real zone);
 ## falling stops it where it stands, and its order ends there.
 func _walk(hero: Player, waypoints: Array[Vector2], zones: Array[String]) -> void:
-	var speed := MoveAction.DEFAULT_SPEED_PX * hero.move_speed_mult() * (_carrier_speed_mult() if hero.is_carrying_nexo else 1.0)
+	var speed := MoveAction.DEFAULT_SPEED_PX * hero.move_speed_mult() * (_carrier_speed_mult() if hero.is_carrying_relic else 1.0)
 	var action := MoveAction.new(hero, waypoints, speed)
 	if not action.can_execute():
 		return
@@ -296,7 +296,7 @@ func _walk(hero: Player, waypoints: Array[Vector2], zones: Array[String]) -> voi
 		return
 	var final_zone_id: String = zones[-1]
 	hero.set_zone(final_zone_id, room_manager.get_center(final_zone_id), tilemap)
-	if hero.is_carrying_nexo and room_manager.is_exit_room(final_zone_id):
+	if hero.is_carrying_relic and room_manager.is_exit_room(final_zone_id):
 		var extraction := ManagerLocator.get_extraction_manager()
 		if extraction:
 			extraction.declare_victory()

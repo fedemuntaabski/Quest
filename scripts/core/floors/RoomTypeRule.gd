@@ -17,7 +17,7 @@ class_name RoomTypeRule
 @export var max_count_per_floor: float = 0.0
 
 @export_group("Effects")
-## One-time reward on discovery. Resource key: industry/food/science/dust.
+## One-time reward on discovery. Resource key: iron/food/lore/embers.
 @export var reward_resource: String = ""
 @export var reward_amount: int = 0
 @export var reward_per_floor: float = 0.0
@@ -38,7 +38,7 @@ class_name RoomTypeRule
 ## Multipliers for enemies spawned in this room (on top of floor scaling).
 @export var enemy_hp_mult: float = 1.0
 @export var enemy_damage_mult: float = 1.0
-## Extra MAJOR build slots once the room is lit (Generator room: 2 majors).
+## Extra MAJOR build slots once the room is lit (Workshop room: 2 majors).
 @export var extra_major_slots: int = 0
 ## Altar (progresion-10): an AltarShrine that trades this share of a hero's max HP
 ## for an item of at least altar_min_rarity (ItemData.Rarity). 0 = no altar.

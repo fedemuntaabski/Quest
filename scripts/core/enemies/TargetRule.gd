@@ -9,13 +9,13 @@ enum Type {
 	HERO_NEAREST,
 	HERO_WEAKEST,
 	HERO_CARRIER,
-	NEXO,
-	MODULE_GENERATOR,
-	MODULE_TURRET,
-	MODULE_TRAP,
-	MODULE_ANY,
+	RELIC,
+	BUILDING_WORKSHOP,
+	BUILDING_DEFENSE,
+	BUILDING_TRAP,
+	BUILDING_ANY,
 }
-enum Condition { ALWAYS, NEXO_CARRIED, NEXO_IDLE }
+enum Condition { ALWAYS, RELIC_CARRIED, RELIC_IDLE }
 
 @export var type: Type = Type.HERO_NEAREST
 ## Hero rules: heroes closer than this (px) count. 0 = any hero reachable over
@@ -38,5 +38,5 @@ func is_hero_rule() -> bool:
 	return type in [Type.HERO_NEAREST, Type.HERO_WEAKEST, Type.HERO_CARRIER]
 
 
-func is_module_rule() -> bool:
-	return type in [Type.MODULE_GENERATOR, Type.MODULE_TURRET, Type.MODULE_TRAP, Type.MODULE_ANY]
+func is_building_rule() -> bool:
+	return type in [Type.BUILDING_WORKSHOP, Type.BUILDING_DEFENSE, Type.BUILDING_TRAP, Type.BUILDING_ANY]

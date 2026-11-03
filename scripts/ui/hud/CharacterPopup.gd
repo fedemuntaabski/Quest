@@ -18,7 +18,7 @@ class_name CharacterPopup
 
 const PREVIEW_SIZE := Vector2(128, 128)
 const PANEL_WIDTH := 520.0
-const STAT_COLUMNS := ["Stat", "Base", "Nivel", "Perks", "Equipo", "Total"]
+const STAT_COLUMNS := ["Atributo", "Base", "Nivel", "Mejoras", "Equipo", "Total"]
 const ABILITY_ICON := Vector2(32, 32)
 const NEXT_COLOR := Color(0.5, 0.95, 0.55)
 ## Tallest the sheet gets (base viewport 1080) before it scrolls.
@@ -267,7 +267,7 @@ func _rebuild_level_up(ps: PlayerStats) -> void:
 	var p: Dictionary = ps.get_level_up_preview(stats.hero_id)
 	var maxed: bool = p["maxed"]
 	var affordable: bool = p["affordable"]
-	var resource_label := str(Module.RESOURCE_LABELS.get(p["cost_resource"], p["cost_resource"]))
+	var resource_label := str(Building.RESOURCE_LABELS.get(p["cost_resource"], p["cost_resource"]))
 	_level_title.text = "Nivel máximo (%d)" % p["level"] if maxed else "Subir de nivel: %d → %d" % [p["level"], p["next_level"]]
 	for row: Dictionary in p["rows"]:
 		var key := str(row["key"])

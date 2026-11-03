@@ -22,6 +22,6 @@ script = ExtResource("1_rule")
 script = ExtResource("1_profile")
 id = &"saboteur"
 display_name = "Saboteador"
-description = "Destruye primero los generadores, luego cualquier módulo. Sin módulos, caza héroes."
+description = "Destruye primero los talleres, luego cualquier obra. Sin obras, caza héroes."
 rules = Array[ExtResource("1_rule")]([SubResource("rule_0"), SubResource("rule_1"), SubResource("rule_2"), SubResource("rule_3")])
 fallback = 2

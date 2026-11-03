@@ -30,7 +30,7 @@ func setup(heroes: Array[Player], camera: GameCamera, is_gameplay_active: Callab
 
 ## Left click on a hero selects it (Ctrl adds/removes). Consumed on purpose so the
 ## RoomZone under the hero doesn't also read it as a move order; a click anywhere
-## else stays a move order. Not while a module is armed (its slots need the click).
+## else stays a move order. Not while a building is armed (its slots need the click).
 func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return

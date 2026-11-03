@@ -4,7 +4,7 @@ extends Node2D
 ## PrisonerCage (heroes-9): a hero locked in a Prisoner room, one the party
 ## didn't pick. Code-built like Chest. Left click with a living hero inside the
 ## room opens a dialog with one button per price (RoomTypeRule.recruit_costs:
-## Industria or Comida); paying frees the hero, who joins the party right away
+## Hierro or Comida); paying frees the hero, who joins the party right away
 ## (Main2d.recruit_hero via `recruit`) and on the next floors. Drawn: the
 ## hero's idle frame in grey behind code-drawn bars.
 
@@ -14,7 +14,7 @@ const SIZE := Vector2(44, 52)
 const BAR_COLOR := Color(0.72, 0.7, 0.66, 1.0)
 ## GameSession.MAX_PARTY (preloaded: autoload names aren't identifiers in --script tests).
 const MAX_PARTY: int = preload("res://scripts/autoload/GameSession.gd").MAX_PARTY
-const RESOURCE_NAMES := {"industry": "Industria", "food": "Comida", "science": "Ciencia", "dust": "Polvo"}
+const RESOURCE_NAMES := {"iron": "Hierro", "food": "Comida", "lore": "Saber", "embers": "Brasas"}
 
 var hero_id: String = ""
 var zone_id: String = ""

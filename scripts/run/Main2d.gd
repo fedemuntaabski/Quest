@@ -10,15 +10,15 @@ extends Node2D
 # generation systems.
 
 const PLAYER_SCENE := preload("res://scenes/entities/Player.tscn")
-const NEXO_SCENE := preload("res://scenes/world/Nexo.tscn")
+const RELIC_SCENE := preload("res://scenes/world/Relic.tscn")
 const TILE_RENDERER_SCENE := preload("res://scenes/world/MapTileRenderer.tscn")
 const DOOR_SCENE := preload("res://scenes/world/Door.tscn")
 ## Party cap with recruits (GameSession; preloaded: autoload names aren't identifiers in --script tests).
 const MAX_PARTY: int = preload("res://scripts/autoload/GameSession.gd").MAX_PARTY
-## Nexo sits above the start room's center: the lit start room's MAJOR build
+## Relic sits above the start room's center: the lit start room's MAJOR build
 ## slot occupies the center itself (RoomZone.BUILDING_SLOT_OFFSETS[0]).
-const NEXO_OFFSET := Vector2(0, -56)
-## Hand-authored map (the pre-generator 5-room layout). Used when
+const RELIC_OFFSET := Vector2(0, -56)
+## Hand-authored map (the pre-workshop 5-room layout). Used when
 ## force_fallback_layout is on or the generated map fails validation.
 const FALLBACK_LAYOUT: MapLayout = preload("res://resources/maps/fallback_layout.tres")
 
@@ -51,8 +51,8 @@ var enemy_manager: EnemyManager
 var extraction_manager: ExtractionManager
 var floor_manager: FloorManager
 var exit_indicator: ExitIndicator
-var nexo: Nexo
-var nexo_controller: NexoController
+var relic: Relic
+var relic_controller: RelicController
 var map_layout: MapLayout
 var tile_renderer: MapTileRenderer
 
@@ -90,7 +90,7 @@ func _ready() -> void:
 	_register_groups_and_doors()
 	_setup_exit_indicator()
 	_spawn_heroes()
-	_spawn_nexo()
+	_spawn_relic()
 	_setup_player_action_controller()
 	_setup_controllers()
 	_connect_signals()
@@ -302,18 +302,18 @@ func _setup_exit_indicator() -> void:
 	exit_indicator.setup(room_manager, door_turn_system, extraction_manager)
 
 
-func _spawn_nexo() -> void:
-	nexo = NEXO_SCENE.instantiate() as Nexo
-	nexo.name = "Nexo"
-	nexo.global_position = room_manager.get_center(room_manager.get_start_zone_id()) + NEXO_OFFSET
-	nexo.max_hp = floor_manager.nexo_max_hp() if floor_manager and floor_manager.config else nexo.max_hp
-	add_child(nexo)
-	nexo.destroyed.connect(_on_player_died)  # same defeat as a dead hero
+func _spawn_relic() -> void:
+	relic = RELIC_SCENE.instantiate() as Relic
+	relic.name = "Relic"
+	relic.global_position = room_manager.get_center(room_manager.get_start_zone_id()) + RELIC_OFFSET
+	relic.max_hp = floor_manager.relic_max_hp() if floor_manager and floor_manager.config else relic.max_hp
+	add_child(relic)
+	relic.destroyed.connect(_on_player_died)  # same defeat as a dead hero
 
-	nexo_controller = NexoController.new()
-	nexo_controller.name = "NexoController"
-	add_child(nexo_controller)
-	nexo_controller.setup(nexo, room_manager)
+	relic_controller = RelicController.new()
+	relic_controller.name = "RelicController"
+	add_child(relic_controller)
+	relic_controller.setup(relic, room_manager)
 
 func _register_groups_and_doors() -> void:
 	var start_group := room_manager.get_group_id(room_manager.get_start_zone_id())
@@ -334,7 +334,7 @@ func _register_groups_and_doors() -> void:
 		doors_root.add_child(door)
 		room_manager.register_door(door)
 
-	# Room-type build slots (Generator room: a second MAJOR slot).
+	# Room-type build slots (Workshop room: a second MAJOR slot).
 	for room in map_layout.rooms:
 		var rule := floor_manager.room_type_rule(room.get_room_type()) if floor_manager else null
 		if rule and rule.extra_major_slots > 0:
@@ -342,8 +342,8 @@ func _register_groups_and_doors() -> void:
 
 	room_manager.refresh_visibility()
 	room_manager.validate_graph()
-	# The start room is lit for free (no dust paid → nothing to refund).
-	room_manager.set_zone_powered(room_manager.get_start_zone_id(), true)
+	# The start room is lit for free (no embers paid → nothing to refund).
+	room_manager.set_zone_lit(room_manager.get_start_zone_id(), true)
 
 func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 	room_manager.on_group_revealed(group_id)
@@ -491,7 +491,7 @@ func _is_victory() -> bool:
 # GAME EVENTS
 # ─────────────────────────────────────────────
 ## A hero fell (PlayerStats.player_died). Only when every hero is down is the run lost;
-## a fallen Nexo carrier leaves the Nexo on the floor for another hero to pick up.
+## a fallen Relic carrier leaves the Relic on the floor for another hero to pick up.
 func _on_hero_died() -> void:
 	if not Net.is_authority():
 		return  # coop-12: the host decides drops and defeats (NetSync relays them)
@@ -499,13 +499,13 @@ func _on_hero_died() -> void:
 	for hero in ManagerLocator.get_heroes():
 		if hero.stats.is_alive():
 			survivors = true
-		elif hero.is_carrying_nexo:
-			hero.is_carrying_nexo = false
-			nexo.drop_at(hero.current_zone_id, hero.global_position)
+		elif hero.is_carrying_relic:
+			hero.is_carrying_relic = false
+			relic.drop_at(hero.current_zone_id, hero.global_position)
 	if not survivors:
 		_on_player_died()
 
-## Defeat: every hero dead, or the Nexo destroyed. coop-12: on a client only the
+## Defeat: every hero dead, or the Relic destroyed. coop-12: on a client only the
 ## host's "defeat" event (from_host) ends the run.
 func _on_player_died(from_host: bool = false) -> void:
 	if _is_dead or (not Net.is_authority() and not from_host) or _is_victory():

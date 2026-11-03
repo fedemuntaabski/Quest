@@ -2,10 +2,10 @@ extends SceneTree
 
 ## Session enemies-2: HUNTER / RAIDER roles over a live Main2d (+ HUD).
 ##   - hunter picks the nearest hero in aggro_range, else the closest hero's zone
-##   - raider ignores heroes, walks the shortest route to the Nexo and damages it
+##   - raider ignores heroes, walks the shortest route to the Relic and damages it
 ##   - raider turns on a hero that blocks / hits it
 ##   - raider share per floor follows FloorConfig.raider_ratio_by_floor
-##   - Nexo: cracks by HP, under_attack, HUD alert, 0 HP = the usual defeat
+##   - Relic: cracks by HP, under_attack, HUD alert, 0 HP = the usual defeat
 ##   - no raider stuck, none stacked, over 30 seeds on floors 1 and 5
 ##   godot --headless --path . --script res://tests/test_enemy_roles.gd
 
@@ -25,7 +25,7 @@ func _initialize() -> void:
 	await _test_raider_route_and_damage()
 	await _test_raider_reaction()
 	await _test_ratios()
-	await _test_nexo_feedback_and_defeat()
+	await _test_relic_feedback_and_defeat()
 	for floor_index in [1, 5]:
 		for s in range(1, 31):
 			await _test_no_stuck(s, floor_index)
@@ -56,8 +56,8 @@ func _boot(fallback: bool, floor_index: int = 1, with_hud: bool = false) -> Arra
 	for group_id in main2d.door_turn_system.rooms.keys():
 		main2d.door_turn_system.rooms[group_id]["visited"] = true
 	main2d.room_manager.refresh_visibility()
-	main2d.nexo.max_hp = 100000  # the defeat is tested on its own
-	main2d.nexo.current_hp = 100000
+	main2d.relic.max_hp = 100000  # the defeat is tested on its own
+	main2d.relic.current_hp = 100000
 	return [main2d, hud]
 
 
@@ -130,33 +130,33 @@ func _test_raider_route_and_damage() -> void:
 	var booted: Array = await _boot(true)
 	var main2d = booted[0]
 	var rm: RoomManager = main2d.room_manager
-	var nexo: Nexo = main2d.nexo
+	var relic: Relic = main2d.relic
 	for hero in main2d.heroes:
 		_place_hero(hero, rm.get_start_zone_id(), FAR)
 	var rooms := _rooms_by_distance(rm, rm.get_start_zone_id())
 	var spawn: String = rooms[rooms.size() - 1]
 	var expected := rm.find_zone_path(spawn, rm.get_start_zone_id())
 	var raider := _make_enemy(main2d, GOBLIN, spawn, 0, true)
-	_expect(raider.role == EnemyType.Role.RAIDER and raider.nexo_damage > 0, "raider: goblin should be a RAIDER with damage_vs_nexo")
-	_expect(raider._goal_zone(rm) == rm.get_start_zone_id(), "raider: goal must be the Nexo's zone")
+	_expect(raider.role == EnemyType.Role.RAIDER and raider.relic_damage > 0, "raider: goblin should be a RAIDER with damage_vs_relic")
+	_expect(raider._goal_zone(rm) == rm.get_start_zone_id(), "raider: goal must be the Reliquia's zone")
 
 	var visited: Array[String] = [spawn]
 	var waited := 0.0
-	while waited < 40.0 and nexo.current_hp == nexo.max_hp:
+	while waited < 40.0 and relic.current_hp == relic.max_hp:
 		await create_timer(0.05).timeout
 		waited += 0.05
 		if raider.current_zone_id != visited[visited.size() - 1]:
 			visited.append(raider.current_zone_id)
-	_expect(nexo.current_hp < nexo.max_hp, "raider: never damaged the Nexo (zone '%s', waited %.1fs)" % [raider.current_zone_id, waited])
+	_expect(relic.current_hp < relic.max_hp, "raider: never damaged the Reliquia (zone '%s', waited %.1fs)" % [raider.current_zone_id, waited])
 	for zone_id in visited:
 		_expect(expected.has(zone_id), "raider: left the shortest route through '%s' (route %s)" % [zone_id, expected])
-	_expect(visited[visited.size() - 1] == rm.get_start_zone_id(), "raider: did not end in the Nexo's zone")
+	_expect(visited[visited.size() - 1] == rm.get_start_zone_id(), "raider: did not end in the Reliquia's zone")
 
-	# Carried Nexo: the target follows the carrier.
-	main2d.heroes[0].is_carrying_nexo = true
+	# Carried Relic: the target follows the carrier.
+	main2d.heroes[0].is_carrying_relic = true
 	_place_hero(main2d.heroes[0], spawn, rm.get_center(spawn) + Vector2(0, 5000))
-	_expect(nexo.get_target_zone(rm) == spawn, "raider: carried Nexo target zone should be the carrier's")
-	main2d.heroes[0].is_carrying_nexo = false
+	_expect(relic.get_target_zone(rm) == spawn, "raider: carried Reliquia target zone should be the carrier's")
+	main2d.heroes[0].is_carrying_relic = false
 	await _free(main2d)
 
 
@@ -217,37 +217,37 @@ func _test_ratios() -> void:
 	await _free(main2d)
 
 
-func _test_nexo_feedback_and_defeat() -> void:
+func _test_relic_feedback_and_defeat() -> void:
 	var booted: Array = await _boot(true, 1, true)
 	var main2d = booted[0]
 	var hud: HUDController = booted[1]
-	var nexo: Nexo = main2d.nexo
-	nexo.max_hp = 100
-	nexo.current_hp = 100
-	_expect(nexo.crack_stage() == 0, "nexo: intact at full HP")
-	nexo.take_damage(25)
-	_expect(nexo.crack_stage() == 1 and nexo.cracks[0].visible and not nexo.cracks[1].visible, "nexo: first crack at 75%")
-	_expect(nexo.under_attack and hud.nexo_alert.visible, "nexo: HUD alert should show while attacked")
-	nexo.take_damage(25)
-	_expect(nexo.crack_stage() == 2, "nexo: second crack at 50%")
-	nexo.take_damage(25)
-	_expect(nexo.crack_stage() == 3, "nexo: third crack at 25%")
-	await create_timer(Nexo.UNDER_ATTACK_SEC + 0.3).timeout
-	_expect(not nexo.under_attack and not hud.nexo_alert.visible, "nexo: alert should end after the last hit")
-	_expect(not main2d.game_state_manager.is_dead(), "nexo: alive at 25 HP")
-	nexo.take_damage(25)
-	_expect(nexo.current_hp == 0 and main2d.game_state_manager.is_dead(), "nexo: 0 HP must apply the usual defeat")
+	var relic: Relic = main2d.relic
+	relic.max_hp = 100
+	relic.current_hp = 100
+	_expect(relic.crack_stage() == 0, "relic: intact at full HP")
+	relic.take_damage(25)
+	_expect(relic.crack_stage() == 1 and relic.cracks[0].visible and not relic.cracks[1].visible, "relic: first crack at 75%")
+	_expect(relic.under_attack and hud.relic_alert.visible, "relic: HUD alert should show while attacked")
+	relic.take_damage(25)
+	_expect(relic.crack_stage() == 2, "relic: second crack at 50%")
+	relic.take_damage(25)
+	_expect(relic.crack_stage() == 3, "relic: third crack at 25%")
+	await create_timer(Relic.UNDER_ATTACK_SEC + 0.3).timeout
+	_expect(not relic.under_attack and not hud.relic_alert.visible, "relic: alert should end after the last hit")
+	_expect(not main2d.game_state_manager.is_dead(), "relic: alive at 25 HP")
+	relic.take_damage(25)
+	_expect(relic.current_hp == 0 and main2d.game_state_manager.is_dead(), "relic: 0 HP must apply the usual defeat")
 	await _free(main2d, hud)
 
 
-## 4 raiders spawned together in the farthest room must all reach the Nexo, not stack.
+## 4 raiders spawned together in the farthest room must all reach the Relic, not stack.
 func _test_no_stuck(s: int, floor_index: int) -> void:
 	seed(s)
 	var booted: Array = await _boot(false, floor_index)
 	var main2d = booted[0]
 	Engine.time_scale = 10.0  # Main2d resets it on exit; set per run
 	var rm: RoomManager = main2d.room_manager
-	var nexo: Nexo = main2d.nexo
+	var relic: Relic = main2d.relic
 	for hero in main2d.heroes:
 		_place_hero(hero, rm.get_start_zone_id(), FAR)
 	var rooms := _rooms_by_distance(rm, rm.get_start_zone_id())
@@ -261,7 +261,7 @@ func _test_no_stuck(s: int, floor_index: int) -> void:
 		await create_timer(0.25).timeout
 		waited += 0.25
 	for e in raiders:
-		_expect(e.current_state == Enemy.State.ATTACKING and e.target_nexo == nexo, "%s: raider stuck in '%s' after %.0fs" % [label, e.current_zone_id, waited])
+		_expect(e.current_state == Enemy.State.ATTACKING and e.target_relic == relic, "%s: raider stuck in '%s' after %.0fs" % [label, e.current_zone_id, waited])
 	for i in raiders.size():
 		for j in range(i + 1, raiders.size()):
 			_expect(raiders[i].global_position.distance_to(raiders[j].global_position) >= 8.0, "%s: raiders %d and %d stacked" % [label, i, j])

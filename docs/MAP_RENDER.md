@@ -10,12 +10,12 @@ Estado **antes** de `session/assets-2` (referencia; la sección final resume qu�
 |---|---|---|
 | Suelo | `Main2d/Floor` (`FloorGenerator`, `TileMapLayer`, z -10, `placeholder_tileset` 64 px) | Una celda de 64 px por celda lógica, pintada **al revelar** (`fill_cells`). No hay muros ni bordes. |
 | Highlight | `RoomZone/Fill` (`Polygon2D`) + `Outline` (`Line2D`), z -5 | Color translúcido según `Highlight` (CURRENT/REACHABLE/OPENABLE/BLOCKED) + contorno; encendida = dorado. |
-| Luz por sala | `RoomLight` (hijo de `RoomZone`) | Sala oscura: overlay que pulsa negro↔rojo; sala encendida: overlay se desvanece y `PointLight2D` cálido entra. Contorno dorado si alcanza el polvo. |
+| Luz por sala | `RoomLight` (hijo de `RoomZone`) | Sala oscura: overlay que pulsa negro↔rojo; sala encendida: overlay se desvanece y `PointLight2D` cálido entra. Contorno dorado si alcanza el brasas. |
 | Oscuridad global | `RoomManager/DarkCanvas` (`CanvasModulate`, `MapVisualConfig` "Dark canvas") | Atenúa todo el canvas del mundo; el HUD (CanvasLayer) no. |
 | Puertas | `Door.tscn` (`Area2D`): `Polygon2D` marrón 48×48 + `CollisionShape2D` | Se oculta al abrirse (`refresh_door_visibility`). El `Area2D` es el clic. |
 | Tipo de sala | `RoomZone.set_room_type` → `TypeBadge` (ícono o rombo + nombre, unshaded), datos en `RoomTypeVisualConfig` | Ver `docs/ROOMS.md`. |
 | Salida | `ExitIndicator` (marcador z 50 + flecha en CanvasLayer 5) | Marcador sobre la sala `is_exit`; visible según `MapVisualConfig.exit_hint_mode`. No es un tile. |
-| Minimapa | `Minimap` (`Control._draw`) | Lee `RoomManager.zones`/reveal/power/`ExitIndicator`; **no** lee tiles. |
+| Minimapa | `Minimap` (`Control._draw`) | Lee `RoomManager.zones`/reveal/light/`ExitIndicator`; **no** lee tiles. |
 
 ## Descubrimiento (ocultamiento)
 `DoorTurnSystem.room_revealed` → `Main2d._on_room_revealed` → `RoomManager.on_group_revealed(group)`:
@@ -36,5 +36,5 @@ No hay colisiones de muro: el movimiento es tween por centros de zona (`MoveActi
 - **Ocultamiento**: `RoomManager.apply_zone_visibility` → `tile_renderer.show_zone()`; `refresh_door_visibility` → `show_door()`. Escalera (`floor_stairs` 2×2) va en el suelo de la sala de salida → aparece solo al descubrirla. `Floor` (64 px) queda oculto como rejilla lógica; `validate_visibility()` sigue válido.
 - **Decor**: banners 0x72 en caras de muro (`wall_decor_density`), props Kenney (armarios, lápidas, yunque…) en el anillo exterior del suelo de las salas (`prop_density`), un cofre Kenney en salas LOOT. El pack no trae antorchas: sin antorchas por ahora.
 - **Puertas** (fix-3): `doors_leaf_closed/open` 32×32 (= 1 celda) ya **no** son tiles. Un tile atlas multi-celda se dibuja centrado sobre el centro de su celda *origen*, así que el leaf 2×2 quedaba ~½ celda arriba-izquierda de la `Door` y del carril del pasillo (la lógica —`MapGenerator._make_corridor`, `register_door`— siempre estuvo centrada; se confirmó con `tests/tools/shot_map.gd`). Ahora `Door.tscn` lleva un `Sprite2D` `Leaf` hijo (centrado en el origen de la puerta = centro de la celda, `AtlasTexture` de la hoja 0x72, transpuesto en pasillos E-O vía `Door.east_west` / `CorridorData.is_east_west()`), así arte, forma de clic y posición comparten origen. `RoomManager.refresh_door_visibility` → `door.visible` + `set_leaf(abierta)`. `tests/test_door_alignment.gd` lo guarda.
-- Sin cambios: descubrimiento, polvo, `RoomLight`, `DarkCanvas`, `ExitIndicator`, `Minimap` (lee `RoomManager.zones`), `fallback_layout.tres`.
+- Sin cambios: descubrimiento, brasas, `RoomLight`, `DarkCanvas`, `ExitIndicator`, `Minimap` (lee `RoomManager.zones`), `fallback_layout.tres`.
 - Revisión visual: `godot --path . --script res://tests/tools/shot_map.gd -- out.png [full|close]` (ventana real, no headless).

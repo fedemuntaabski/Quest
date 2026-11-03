@@ -4,7 +4,7 @@ class_name TargetSelector
 ## TargetSelector: picks what an Enemy goes for from its TargetProfile (rules in
 ## priority order, then the fallback). Child of Enemy; Enemy keeps movement and
 ## attacks and asks this for the destination. Reads the revealed-only
-## RoomManager graph, heroes, Nexo and modules through ManagerLocator, never
+## RoomManager graph, heroes, Relic and buildings through ManagerLocator, never
 ## their internals.
 ## select()/goal_zone() are pure queries; reevaluate() stores the result in
 ## `current`, which makes the choice sticky (a hero already chased is kept until it
@@ -30,10 +30,10 @@ func setup(p_enemy: Enemy, p_profile: TargetProfile) -> void:
 	profile = p_profile
 	var extraction := ManagerLocator.get_extraction_manager()
 	if extraction:
-		extraction.phase_changed.connect(func(_new_phase: int, _old_phase: int) -> void: reevaluate(&"nexo_carried"))
+		extraction.phase_changed.connect(func(_new_phase: int, _old_phase: int) -> void: reevaluate(&"relic_carried"))
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager:
-		room_manager.module_built.connect(func(_zone_id: String, _module: Module) -> void: reevaluate(&"module_built"))
+		room_manager.building_built.connect(func(_zone_id: String, _building: Building) -> void: reevaluate(&"building_built"))
 
 
 # ---------------- provocation ----------------
@@ -57,9 +57,9 @@ func is_provoked() -> bool:
 	return profile.retaliate and Enemy.game_msec() < _provoked_until_msec
 
 
-## Siege-type (Nexo first), not provoked, and a Nexo to hit: ignores heroes and modules.
+## Siege-type (Relic first), not provoked, and a Relic to hit: ignores heroes and buildings.
 func is_raiding() -> bool:
-	return profile.targets_nexo_first() and not is_provoked() and ManagerLocator.get_nexo() != null
+	return profile.targets_relic_first() and not is_provoked() and ManagerLocator.get_relic() != null
 
 
 # ---------------- selection ----------------
@@ -94,7 +94,7 @@ func goal_zone(room_manager: RoomManager) -> String:
 ## Exact spot to close in on inside the goal zone (Vector2.INF = zone center).
 func goal_point(goal_zone_id: String) -> Vector2:
 	if is_raiding():
-		return ManagerLocator.get_nexo().get_target_position()
+		return ManagerLocator.get_relic().get_target_position()
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager == null:
 		return Vector2.INF
@@ -110,9 +110,9 @@ func goal_point(goal_zone_id: String) -> Vector2:
 func _condition_ok(rule: TargetRule) -> bool:
 	if rule.condition == TargetRule.Condition.ALWAYS:
 		return true
-	var nexo := ManagerLocator.get_nexo()
-	var carried := nexo != null and nexo.get_carrier() != null
-	return carried == (rule.condition == TargetRule.Condition.NEXO_CARRIED)
+	var relic := ManagerLocator.get_relic()
+	var carried := relic != null and relic.get_carrier() != null
+	return carried == (rule.condition == TargetRule.Condition.RELIC_CARRIED)
 
 
 func _evaluate(rule: TargetRule, index: int, room_manager: RoomManager) -> Target:
@@ -130,24 +130,24 @@ func _evaluate(rule: TargetRule, index: int, room_manager: RoomManager) -> Targe
 			var weakest := kept_hero if kept_hero else _weakest_hero(room_manager, reach)
 			return Target.new(rule.type, weakest, weakest.current_zone_id, index) if weakest else null
 		TargetRule.Type.HERO_CARRIER:
-			var nexo := ManagerLocator.get_nexo()
-			var carrier := nexo.get_carrier() if nexo else null
+			var relic := ManagerLocator.get_relic()
+			var carrier := relic.get_carrier() if relic else null
 			if carrier and carrier.stats.is_alive() and _reachable(room_manager, carrier):
 				return Target.new(rule.type, carrier, carrier.current_zone_id, index)
 			return null
-		TargetRule.Type.NEXO:
-			var target_nexo := ManagerLocator.get_nexo()
-			return Target.new(rule.type, target_nexo, target_nexo.get_target_zone(room_manager), index) if target_nexo else null
+		TargetRule.Type.RELIC:
+			var target_relic := ManagerLocator.get_relic()
+			return Target.new(rule.type, target_relic, target_relic.get_target_zone(room_manager), index) if target_relic else null
 		_:
-			return _nearest_module(rule.type, index, room_manager)
+			return _nearest_building(rule.type, index, room_manager)
 
 
 func _fallback(room_manager: RoomManager) -> Target:
 	var rule_count := profile.rules.size()
 	match profile.fallback:
-		TargetProfile.Fallback.NEXO:
-			var nexo := ManagerLocator.get_nexo()
-			return Target.new(TargetRule.Type.NEXO, nexo, nexo.get_target_zone(room_manager), rule_count) if nexo else null
+		TargetProfile.Fallback.RELIC:
+			var relic := ManagerLocator.get_relic()
+			return Target.new(TargetRule.Type.RELIC, relic, relic.get_target_zone(room_manager), rule_count) if relic else null
 		TargetProfile.Fallback.HOLD:
 			var held := Target.new(TargetRule.Type.HERO_NEAREST, null, enemy.current_zone_id, rule_count)
 			held.is_hold = true
@@ -221,23 +221,23 @@ func _keep_current(index: int, reach: float, room_manager: RoomManager) -> Playe
 	return null
 
 
-func _module_matches(type: TargetRule.Type, module: Module) -> bool:
-	if not module.is_targetable():
+func _building_matches(type: TargetRule.Type, building: Building) -> bool:
+	if not building.is_targetable():
 		return false
 	match type:
-		TargetRule.Type.MODULE_GENERATOR:
-			return module is GeneratorModule
-		TargetRule.Type.MODULE_TURRET:
-			return module is TurretModule
-		TargetRule.Type.MODULE_TRAP:
-			return module.is_trap()
+		TargetRule.Type.BUILDING_WORKSHOP:
+			return building is WorkshopBuilding
+		TargetRule.Type.BUILDING_DEFENSE:
+			return building is DefenseBuilding
+		TargetRule.Type.BUILDING_TRAP:
+			return building.is_trap()
 	return true
 
 
-## Nearest (fewest zones, then distance) targetable module of `type` in a revealed
-## room reachable from here. Switched-off modules count.
-func _nearest_module(type: TargetRule.Type, index: int, room_manager: RoomManager) -> Target:
-	var best: Module = null
+## Nearest (fewest zones, then distance) targetable building of `type` in a revealed
+## room reachable from here. Switched-off buildings count.
+func _nearest_building(type: TargetRule.Type, index: int, room_manager: RoomManager) -> Target:
+	var best: Building = null
 	var best_zone := ""
 	var best_len := 0
 	var best_dist := 0.0
@@ -247,35 +247,35 @@ func _nearest_module(type: TargetRule.Type, index: int, room_manager: RoomManage
 		var path_len := room_manager.find_zone_path(enemy.current_zone_id, zone_id).size()
 		if path_len == 0:
 			continue
-		for module in room_manager.get_modules_in_group(room_manager.get_group_id(zone_id)):
-			if not _module_matches(type, module):
+		for building in room_manager.get_buildings_in_group(room_manager.get_group_id(zone_id)):
+			if not _building_matches(type, building):
 				continue
-			var dist := enemy.global_position.distance_to(module.get_target_position())
+			var dist := enemy.global_position.distance_to(building.get_target_position())
 			if best == null or path_len < best_len or (path_len == best_len and dist < best_dist):
-				best = module
+				best = building
 				best_zone = zone_id
 				best_len = path_len
 				best_dist = dist
 	return Target.new(type, best, best_zone, index) if best else null
 
 
-## The module to hit on arriving in `room`: the one it is already after, else the
-## first its module rules accept, else (hits_modules_en_route) any targetable one.
-func pick_module_in_room(room: RoomZone) -> Module:
+## The building to hit on arriving in `room`: the one it is already after, else the
+## first its building rules accept, else (hits_buildings_en_route) any targetable one.
+func pick_building_in_room(room: RoomZone) -> Building:
 	if room == null:
 		return null
-	var modules: Array[Module] = []
-	for module in room.get_modules():
-		if is_instance_valid(module) and module.is_targetable():
-			modules.append(module)
-	if current and current.node in modules:
-		return current.node as Module
+	var buildings: Array[Building] = []
+	for building in room.get_buildings():
+		if is_instance_valid(building) and building.is_targetable():
+			buildings.append(building)
+	if current and current.node in buildings:
+		return current.node as Building
 	for rule in profile.rules:
-		if rule.is_module_rule():
-			for module in modules:
-				if _module_matches(rule.type, module):
-					return module
-	return modules[0] if profile.hits_modules_en_route and not modules.is_empty() else null
+		if rule.is_building_rule():
+			for building in buildings:
+				if _building_matches(rule.type, building):
+					return building
+	return buildings[0] if profile.hits_buildings_en_route and not buildings.is_empty() else null
 
 
 # ---------------- tracking ----------------
@@ -308,11 +308,11 @@ func _watch(node: Node) -> void:
 
 
 func _death_signal(node: Node) -> Signal:
-	if node is Module:
-		return (node as Module).module_destroyed
+	if node is Building:
+		return (node as Building).building_destroyed
 	if node is Player:
 		return (node as Player).stats.died
-	return (node as Nexo).destroyed
+	return (node as Relic).destroyed
 
 
 func _on_target_gone() -> void:

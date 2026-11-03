@@ -1,22 +1,22 @@
 class_name Pickup
 extends Node2D
 
-## Pickup: reusable floating item sprite (crystal, dust, weapon, chest). Pure
-## visual — clicking/collecting belongs to the owner (e.g. Nexo, an Area2D
+## Pickup: reusable floating item sprite (relic, embers, weapon, chest). Pure
+## visual — clicking/collecting belongs to the owner (e.g. Relic, an Area2D
 ## that instances this). Bobs with a looping Tween.
 
-enum Kind { CRYSTAL, DUST, WEAPON, CHEST }
+enum Kind { RELIC, EMBERS, WEAPON, CHEST }
 
 ## 0x72 items (assets/art/items); the chest is a Kenney prop (props palette).
 const TEXTURES := {
-	Kind.CRYSTAL: "res://assets/art/items/flask_big_blue.png",
-	Kind.DUST: "res://assets/art/items/coin_anim_f0.png",
+	Kind.RELIC: "res://assets/art/items/flask_big_blue.png",
+	Kind.EMBERS: "res://assets/art/items/coin_anim_f0.png",
 	Kind.WEAPON: "res://assets/art/items/weapon_regular_sword.png",
 }
 const CHEST_SHEET := "res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png"
 const CHEST_REGION := Rect2(80, 112, 16, 16)  # tile (5, 7)
 
-@export var kind: Kind = Kind.CRYSTAL:
+@export var kind: Kind = Kind.RELIC:
 	set(value):
 		kind = value
 		if is_node_ready():

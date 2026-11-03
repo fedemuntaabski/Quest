@@ -121,12 +121,12 @@ func passive_reduction() -> float:
 	match passive.effect:
 		AbilityData.Effect.DAMAGE_REDUCTION_PCT:
 			return passive_value()
-		AbilityData.Effect.NEXO_PROXIMITY_REDUCTION:
-			var nexo := ManagerLocator.get_nexo()
+		AbilityData.Effect.RELIC_PROXIMITY_REDUCTION:
+			var relic := ManagerLocator.get_relic()
 			var radius := passive_radius()
-			if nexo == null or radius <= 0.0:
+			if relic == null or radius <= 0.0:
 				return 0.0
-			return passive_value() * clampf(1.0 - hero.global_position.distance_to(nexo.get_target_position()) / radius, 0.0, 1.0)
+			return passive_value() * clampf(1.0 - hero.global_position.distance_to(relic.get_target_position()) / radius, 0.0, 1.0)
 	return 0.0
 
 
@@ -136,15 +136,15 @@ func incoming_damage(amount: int) -> int:
 	return maxi(1, roundi(amount * keep))
 
 
-## Resource gained when a room is discovered: {"science": n, "dust": n}.
+## Resource gained when a room is discovered: {"lore": n, "embers": n}.
 func passive_discovery_bonus() -> Dictionary:
 	if passive == null:
 		return {}
 	match passive.effect:
-		AbilityData.Effect.SCIENCE_ON_DISCOVERY:
-			return {"science": roundi(passive_value())}
-		AbilityData.Effect.DUST_ON_DISCOVERY:
-			return {"dust": roundi(passive_value())}
+		AbilityData.Effect.LORE_ON_DISCOVERY:
+			return {"lore": roundi(passive_value())}
+		AbilityData.Effect.EMBERS_ON_DISCOVERY:
+			return {"embers": roundi(passive_value())}
 	return {}
 
 
@@ -169,8 +169,8 @@ func try_activate() -> bool:
 			for ally in ManagerLocator.get_heroes():
 				if ally.stats.is_alive():
 					_buff(ally.stats, "shield", func() -> void: ally.stats.damage_taken_mult = 1.0 - active_value(), func() -> void: ally.stats.damage_taken_mult = 1.0)
-		AbilityData.Effect.MODULE_OVERCHARGE:
-			_overcharge_room()
+		AbilityData.Effect.BUILDING_BLESSING:
+			_bless_room()
 		AbilityData.Effect.BURST_STRIKE:
 			_burst_strike()
 		_:
@@ -239,16 +239,16 @@ func _buff(target: Object, key: String, apply: Callable, revert: Callable) -> vo
 		revert.call()
 
 
-func _overcharge_room() -> void:
+func _bless_room() -> void:
 	var room_manager := ManagerLocator.get_room_manager()
 	var resources := ManagerLocator.get_resource_manager()
 	if room_manager == null:
 		return
-	for module in room_manager.get_modules_in_group(room_manager.get_group_id(hero.current_zone_id)):
-		if module is TurretModule:
-			_buff(module, "overcharge", func() -> void: module.damage_mult = 1.0 + active_value(), func() -> void: module.damage_mult = 1.0)
-		elif module is GeneratorModule and resources:
-			resources.add_resource(module.resource_type, module.yield_amount)
+	for building in room_manager.get_buildings_in_group(room_manager.get_group_id(hero.current_zone_id)):
+		if building is DefenseBuilding:
+			_buff(building, "blessing", func() -> void: building.damage_mult = 1.0 + active_value(), func() -> void: building.damage_mult = 1.0)
+		elif building is WorkshopBuilding and resources:
+			resources.add_resource(building.resource_type, building.yield_amount)
 
 
 func _burst_strike() -> void:

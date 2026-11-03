@@ -16,7 +16,7 @@ const NOT_YOURS := "Ese héroe es de otro jugador"
 
 ## Commands that act on heroes the sender must own.
 const OWNED_HERO_CMDS := ["move", "open_door", "ability", "consume", "equip", "unequip",
-	"level_up", "choose_perk", "pickup_nexo", "altar"]
+	"level_up", "choose_perk", "pickup_relic", "altar"]
 
 ## sender peer -> [window_start_msec, count] (rate limit).
 var _rate: Dictionary = {}
@@ -181,56 +181,56 @@ func _cmd_open_door(sender: int, args: Dictionary) -> String:
 	return ""
 
 
-func _cmd_toggle_power(_sender: int, args: Dictionary) -> String:
+func _cmd_toggle_light(_sender: int, args: Dictionary) -> String:
 	var zone := _zone(args)
 	if zone == null or zone.kind != "room":
 		return INVALID
 	if not ManagerLocator.get_room_manager().is_zone_revealed(zone.zone_id):
 		return "Sala sin descubrir"
-	if not zone.is_powered:
+	if not zone.is_lit:
 		var rm := ManagerLocator.get_resource_manager()
-		if rm.get_resource("dust") < zone.next_power_cost():
-			return "Polvo insuficiente"
-	zone.toggle_power()
+		if rm.get_resource("embers") < zone.next_light_cost():
+			return "Brasas insuficientes"
+	zone.toggle_light()
 	return ""
 
 
 func _cmd_build(_sender: int, args: Dictionary) -> String:
 	var slot := _slot(args)
-	if slot == null or not (args.get("type") is int) or not Module.CATALOG.has(args.type):
+	if slot == null or not (args.get("type") is int) or not Building.CATALOG.has(args.type):
 		return INVALID
 	if not slot.is_empty():
-		return "Slot ocupado"
-	var type := args.type as Module.ModuleType
+		return "Hueco ocupado"
+	var type := args.type as Building.BuildingType
 	var reason := BuildingMenu.build_block_reason(slot, type)
 	if reason != "":
 		return reason
-	if not ManagerLocator.get_resource_manager().spend_resource(BuildingMenu.COST_RESOURCE, Module.get_cost(type)):
-		return "Falta Industria"
+	if not ManagerLocator.get_resource_manager().spend_resource(BuildingMenu.COST_RESOURCE, Building.get_cost(type)):
+		return "Falta Hierro"
 	slot.build(type)
-	QuestLogger.info(QuestLogger.Category.MODULE, "Built '%s' in zone '%s'." % [Module.CATALOG[type]["label"], slot.zone_id])
+	QuestLogger.info(QuestLogger.Category.BUILDING, "Built '%s' in zone '%s'." % [Building.CATALOG[type]["label"], slot.zone_id])
 	return ""
 
 
-func _built_module(args: Dictionary) -> Module:
+func _built_building(args: Dictionary) -> Building:
 	var slot := _slot(args)
-	return slot.built_module as Module if slot and not slot.is_empty() else null
+	return slot.built_building as Building if slot and not slot.is_empty() else null
 
 
 func _cmd_repair(_sender: int, args: Dictionary) -> String:
-	var module := _built_module(args)
-	if module == null:
+	var building := _built_building(args)
+	if building == null:
 		return INVALID
-	if module.repair_cost() <= 0:
+	if building.repair_cost() <= 0:
 		return "No está dañado"
-	return "" if module.repair() else "Falta Industria"
+	return "" if building.repair() else "Falta Hierro"
 
 
 func _cmd_demolish(_sender: int, args: Dictionary) -> String:
-	var module := _built_module(args)
-	if module == null or not module.is_targetable():
+	var building := _built_building(args)
+	if building == null or not building.is_targetable():
 		return INVALID
-	module.demolish()
+	building.demolish()
 	return ""
 
 
@@ -241,7 +241,7 @@ func _cmd_research(_sender: int, args: Dictionary) -> String:
 	var reason := rm.get_research_block_reason(args.id)
 	if reason != "":
 		return reason
-	return "" if rm.research(args.id) else "Falta Ciencia"
+	return "" if rm.research(args.id) else "Falta Saber"
 
 
 func _stats_target(args: Dictionary) -> String:
@@ -334,12 +334,12 @@ func _cmd_ability(_sender: int, args: Dictionary) -> String:
 	return "" if hero.abilities.try_activate() else "No se pudo usar"
 
 
-func _cmd_pickup_nexo(_sender: int, args: Dictionary) -> String:
+func _cmd_pickup_relic(_sender: int, args: Dictionary) -> String:
 	var hero := _hero(str(args.get("hero", "")))
 	var main2d := ManagerLocator.get_main2d()
 	if hero == null or main2d == null:
 		return INVALID
-	var ctrl: NexoController = main2d.nexo_controller
+	var ctrl: RelicController = main2d.relic_controller
 	var reason := ctrl.get_block_reason(hero)
 	if reason != "":
 		return reason

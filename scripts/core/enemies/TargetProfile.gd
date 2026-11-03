@@ -6,7 +6,7 @@ class_name TargetProfile
 ## points at one; when it is null EnemyType.get_target_profile() derives one from
 ## the legacy role/behavior so older .tres keep working (see derive()).
 
-enum Fallback { NEAREST_HERO_ZONE, NEXO, HOLD }
+enum Fallback { NEAREST_HERO_ZONE, RELIC, HOLD }
 
 @export var id: StringName = &""
 ## Shown by the bestiary.
@@ -21,10 +21,10 @@ enum Fallback { NEAREST_HERO_ZONE, NEXO, HOLD }
 ## Seconds between target re-evaluations (the enemy's AiTimer). 0 = the
 ## behavior's ai_interval in Enemy.VARIANT_CONFIG.
 @export var reeval_sec: float = 0.0
-## Hits an active module of any kind in a room it walks into (today's behavior of
-## every non-raider), on top of whatever its rules target. false = ignores modules
+## Hits an active building of any kind in a room it walks into (today's behavior of
+## every non-raider), on top of whatever its rules target. false = ignores buildings
 ## it was not sent for (assassins).
-@export var hits_modules_en_route: bool = true
+@export var hits_buildings_en_route: bool = true
 ## A hero is dropped only beyond aggro_range * this (anti-flicker).
 @export var drop_range_mult: float = 1.25
 @export var fallback: Fallback = Fallback.NEAREST_HERO_ZONE
@@ -46,10 +46,10 @@ static func derive(role: int, behavior: int) -> TargetProfile:
 		profile.id = StringName(key)
 		match key:
 			"siege":
-				profile.rules = [TargetRule.make(TargetRule.Type.NEXO)]
+				profile.rules = [TargetRule.make(TargetRule.Type.RELIC)]
 				profile.retaliate = true
 			"saboteur":
-				var rules_list: Array[TargetRule] = [TargetRule.make(TargetRule.Type.MODULE_ANY)]
+				var rules_list: Array[TargetRule] = [TargetRule.make(TargetRule.Type.BUILDING_ANY)]
 				rules_list.append_array(hunter_rules())
 				profile.rules = rules_list
 			_:
@@ -58,6 +58,6 @@ static func derive(role: int, behavior: int) -> TargetProfile:
 	return _derived[key]
 
 
-## True when its first priority is the Nexo (a raider).
-func targets_nexo_first() -> bool:
-	return not rules.is_empty() and rules[0].type == TargetRule.Type.NEXO
+## True when its first priority is the Relic (a raider).
+func targets_relic_first() -> bool:
+	return not rules.is_empty() and rules[0].type == TargetRule.Type.RELIC

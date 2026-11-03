@@ -1,32 +1,32 @@
 extends Node
 
 ## ResourceManager — Autoload singleton ("Banco Central").
-## Single source of truth for the 4 DotE-style base resources (industry/food/science/dust).
+## Single source of truth for the 4 DotE-style base resources (iron/food/lore/embers).
 ## No persistence yet — resources reset each run (intentional simplification).
 
 signal resource_changed(resource_key: String, new_amount: int, delta: int)
-## Per-turn yield may have changed (a generator was built/destroyed). HUD reads get_turn_yield().
+## Per-turn yield may have changed (a workshop was built/destroyed). HUD reads get_turn_yield().
 signal production_changed
 ## A research was completed or the run's research was reset.
 signal research_changed
 
-const KEYS: Array[String] = ["industry", "food", "science", "dust"]
+const KEYS: Array[String] = ["iron", "food", "lore", "embers"]
 
 ## Base production per opened door. 0 since session bucle-7: what a door pays
-## (dust + one random resource per floor) is DoorRollConfig, paid by
-## FloorManager; only generator modules add to the per-turn tick.
-const BASE_YIELD_INDUSTRY: int = 0
+## (embers + one random resource per floor) is DoorRollConfig, paid by
+## FloorManager; only workshop buildings add to the per-turn tick.
+const BASE_YIELD_IRON: int = 0
 const BASE_YIELD_FOOD: int = 0
-const BASE_YIELD_SCIENCE: int = 0
-const BASE_YIELD_DUST: int = 0
+const BASE_YIELD_LORE: int = 0
+const BASE_YIELD_EMBERS: int = 0
 
 const RESEARCH_CONFIG_PATH := "res://resources/research/research_config.tres"
-const RESEARCH_RESOURCE := "science"
+const RESEARCH_RESOURCE := "lore"
 
-var _resources: Dictionary = {"industry": 0, "food": 0, "science": 0, "dust": 0}
+var _resources: Dictionary = {"iron": 0, "food": 0, "lore": 0, "embers": 0}
 ## Research (session 10) lives here, not in its own autoload: same lifetime as
 ## the resources (survives floors, reset by Main._begin_new_run) and it is only
-## a Ciencia sink. Tests may swap the config.
+## a Saber sink. Tests may swap the config.
 var research_config: ResearchConfig = load(RESEARCH_CONFIG_PATH)
 ## Ids researched this run.
 var research_state := ResearchState.new()
@@ -63,37 +63,37 @@ func spend_resource(key: String, amount: int) -> bool:
 	return true
 
 
-## Sum of `yield_amount` from active GeneratorModules producing `resource_key`.
-func _calculate_module_bonus(resource_key: String) -> int:
+## Sum of `yield_amount` from active WorkshopBuildings producing `resource_key`.
+func _calculate_building_bonus(resource_key: String) -> int:
 	var total: int = 0
-	for generator in get_tree().get_nodes_in_group("generators"):
-		if generator.is_working() and generator.resource_type == resource_key:
-			total += generator.yield_amount
-	return roundi(total * (1.0 + get_bonus(ResearchEntry.Effect.GENERATOR_YIELD_PCT)))
+	for workshop in get_tree().get_nodes_in_group("workshops"):
+		if workshop.is_working() and workshop.resource_type == resource_key:
+			total += workshop.yield_amount
+	return roundi(total * (1.0 + get_bonus(ResearchEntry.Effect.WORKSHOP_YIELD_PCT)))
 
 
-## Base yield + active generator bonus for one resource, paid every door-open.
+## Base yield + active workshop bonus for one resource, paid every door-open.
 func get_turn_yield(resource_key: String) -> int:
-	var base: int = {"industry": BASE_YIELD_INDUSTRY, "food": BASE_YIELD_FOOD, "science": BASE_YIELD_SCIENCE, "dust": BASE_YIELD_DUST}.get(resource_key, 0)
-	return base + _calculate_module_bonus(resource_key)
+	var base: int = {"iron": BASE_YIELD_IRON, "food": BASE_YIELD_FOOD, "lore": BASE_YIELD_LORE, "embers": BASE_YIELD_EMBERS}.get(resource_key, 0)
+	return base + _calculate_building_bonus(resource_key)
 
 
 func notify_production_changed() -> void:
 	production_changed.emit()
 
 
-## Pays out the per-turn production (base yield + module bonus). Called by DoorTurnSystem.advance_turn().
+## Pays out the per-turn production (base yield + building bonus). Called by DoorTurnSystem.advance_turn().
 func process_turn_production() -> void:
 	for key: String in KEYS:
 		add_resource(key, get_turn_yield(key))
 
 
-func reset_resources(initial_industry: int = 15, initial_food: int = 15, initial_science: int = 10, initial_dust: int = 20) -> void:
+func reset_resources(initial_iron: int = 15, initial_food: int = 15, initial_lore: int = 10, initial_embers: int = 20) -> void:
 	var initial: Dictionary = {
-		"industry": initial_industry,
+		"iron": initial_iron,
 		"food": initial_food,
-		"science": initial_science,
-		"dust": initial_dust,
+		"lore": initial_lore,
+		"embers": initial_embers,
 	}
 	for key: String in KEYS:
 		var old_amount: int = int(_resources[key])
@@ -121,14 +121,14 @@ func get_research_block_reason(id: String) -> String:
 		var pre := research_config.get_entry(entry.prerequisite)
 		return "Requiere: %s" % (pre.display_name if pre else entry.prerequisite)
 	if get_resource(RESEARCH_RESOURCE) < entry.cost:
-		return "Falta Ciencia"
+		return "Falta Saber"
 	return ""
 
 
-## Researching needs a built, active Scriptorium (a Ciencia generator).
+## Researching needs a built, active Scriptorium (a Saber workshop).
 func _has_working_scriptorium() -> bool:
-	for g in (Engine.get_main_loop() as SceneTree).get_nodes_in_group("generators"):
-		if g is GeneratorModule and g.resource_type == RESEARCH_RESOURCE and g.is_active:
+	for g in (Engine.get_main_loop() as SceneTree).get_nodes_in_group("workshops"):
+		if g is WorkshopBuilding and g.resource_type == RESEARCH_RESOURCE and g.is_active:
 			return true
 	return false
 
@@ -137,7 +137,7 @@ func can_research(id: String) -> bool:
 	return get_research_block_reason(id) == ""
 
 
-## Spends the entry's Ciencia and applies it. False (nothing spent) if blocked.
+## Spends the entry's Saber and applies it. False (nothing spent) if blocked.
 func research(id: String) -> bool:
 	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
 		return false
@@ -149,9 +149,9 @@ func research(id: String) -> bool:
 	return true
 
 
-## False only while the entry that unlocks `module` isn't researched.
-func is_unlocked(module: Module.ModuleType) -> bool:
-	var entry := research_config.get_unlock_entry(module)
+## False only while the entry that unlocks `building` isn't researched.
+func is_unlocked(building: Building.BuildingType) -> bool:
+	var entry := research_config.get_unlock_entry(building)
 	return entry == null or is_researched(entry.id)
 
 

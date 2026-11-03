@@ -12,7 +12,7 @@ Tabla única: reemplaza a la de `CREDITS.md` (que ahora solo apunta acá). Nada 
 |---|---|---|---|---|
 | Tiny Dungeon 1.0 | Kenney (https://kenney.nl/assets/tiny-dungeon) | CC0 1.0 | ✅ `License.txt` en el pack | tiles, props, cofres (`assets/art/_source/kenney_tinyDungeon`, `resources/tilesets/`) |
 | Tiny Creatures 1.0 | Clint Bellanger (clintbellanger.net) | CC0 1.0 | ✅ `License.txt` en el pack; atribución opcional | enemigos `tc_*` |
-| DungeonTileset II v1.7 | 0x72 (https://0x72.itch.io/dungeontileset-ii) | CC0 1.0 según la página del autor | ⚠ el README del pack no trae texto de licencia: guardar captura de la página de itch.io | héroes, enemigos, ítems (`assets/art/{characters,enemies,items}`); desde `multijugador-11` también los íconos de módulos (martillo, ballesta, bomba, frasco, pinchos, fuente roja) y de habilidades activas (espada, báculo, cuchillo, martillo grande) |
+| DungeonTileset II v1.7 | 0x72 (https://0x72.itch.io/dungeontileset-ii) | CC0 1.0 según la página del autor | ⚠ el README del pack no trae texto de licencia: guardar captura de la página de itch.io | héroes, enemigos, ítems (`assets/art/{characters,enemies,items}`); desde `multijugador-11` también los íconos de obras (martillo, ballesta, bomba, frasco, pinchos, fuente roja) y de habilidades activas (espada, báculo, cuchillo, martillo grande) |
 | Super Pixel Effects Gigapack (Free) v2.9.0 | Will Tice / unTied Games (https://untiedgames.itch.io/super-pixel-effects-gigapack) | Propia: uso comercial OK, **atribución obligatoria**, prohibido redistribuir el pack crudo o usarlo para entrenar IA | ✅ atribución ya incluida en la pantalla de Créditos (`CreditsPanel`); el pack crudo no se versiona | `assets/art/vfx` (42 efectos curados) |
 | Raven Fantasy Icons (Free) | ⚠ desconocido | ⚠ desconocida | ⚠ solo local (`assets/nuevos`, `_source/raven_fantasy_icons`, gitignored); **no se usa en el juego** | — |
 | Hojas de ítems (armours, weapons, chests, consumables, potions, books) | ⚠ desconocido | ⚠ desconocida | ⚠ verificar origen/licencia | `assets/art/{armor,weapons,items}`, `resources/items/` |
@@ -42,7 +42,7 @@ Un archivo ausente suena en silencio y deja un aviso en el log una sola vez. Cad
 | `assets/audio/sfx/door.ogg` | abrir una puerta (`PlayerActionController._open_group`) | SFX |
 | `assets/audio/sfx/chest.ogg` | abrir un cofre (`Chest.try_open`) | SFX |
 | `assets/audio/sfx/hit.ogg` | golpe de un héroe (`Player._on_attack_landed`, máx. 1 cada 80 ms) | SFX |
-| `assets/audio/sfx/tower.ogg` | disparo de torre (`TurretModule`) | SFX |
+| `assets/audio/sfx/tower.ogg` | disparo de torre (`DefenseBuilding`) | SFX |
 | `assets/audio/sfx/victory.ogg` | piso superado / run ganada | SFX |
 | `assets/audio/sfx/defeat.ogg` | run perdida | SFX |
 | `assets/audio/music/floor_1.ogg` … `floor_5.ogg` | música de cada piso (`FloorTheme.music_path`, bucle, fundido 1 s) | Music |

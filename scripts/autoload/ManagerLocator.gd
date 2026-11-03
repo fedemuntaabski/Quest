@@ -122,10 +122,10 @@ static func get_hud() -> HUDController:
 	return null
 
 
-static func get_nexo() -> Nexo:
+static func get_relic() -> Relic:
 	var ml = Engine.get_main_loop()
 	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("nexo") as Nexo
+		return ml.get_first_node_in_group("relic") as Relic
 	return null
 
 

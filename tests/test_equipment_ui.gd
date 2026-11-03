@@ -57,7 +57,7 @@ func _test() -> void:
 	var section: EquipmentSection = popup._equipment
 	hud.open_hero_sheet(portrait)
 	_expect(popup.visible and section.hero_id == warrior.stats.hero_id, "sheet opens bound to the hero")
-	_expect(section._slots_row.get_child_count() == 5, "5 slots: weapon, armor, relic, 2 consumables (%d)" % section._slots_row.get_child_count())
+	_expect(section._slots_row.get_child_count() == 5, "5 slots: weapon, armor, talisman, 2 consumables (%d)" % section._slots_row.get_child_count())
 	_expect(hud._stash_label.text == "Mochila 0/20", "counter starts empty: '%s'" % hud._stash_label.text)
 
 	# Stash cell -> equip.

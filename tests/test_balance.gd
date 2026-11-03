@@ -4,7 +4,7 @@ extends SceneTree
 ##  - a floor-1 enemy dies in 2-4 hero hits (every hero, every floor-1 type);
 ##  - the basic (floor-1) encounter costs a hero at most 1/3 of its HP;
 ##  - difficulty grows floor by floor without sudden jumps;
-##  - the Nexo survives long enough to react to the alert, but falls if ignored;
+##  - the Relic survives long enough to react to the alert, but falls if ignored;
 ##  - no hero is strictly better than another (HP, DPS, range), at level 0 and 5;
 ##  - heroes-9 roles on every floor: the Tank outlasts everyone but kills slowest,
 ##    the Rogue is the most fragile, the fastest and has the highest DPS.
@@ -13,9 +13,9 @@ extends SceneTree
 const MAX_BASIC_LOSS_PCT := 33.4
 const MAX_STEP_PCT := 20.0
 const MAX_FLOOR5_LOSS_PCT := 70.0
-const NEXO_ONE_RAIDER_SEC := Vector2(15.0, 45.0)
-const NEXO_THREE_RAIDERS_MIN_SEC := 6.0
-## Tower breakers (session impl-6): they must hurt a turret yet lose to it 1v1.
+const RELIC_ONE_RAIDER_SEC := Vector2(15.0, 45.0)
+const RELIC_THREE_RAIDERS_MIN_SEC := 6.0
+## Tower breakers (session impl-6): they must hurt a defense yet lose to it 1v1.
 const TOWER_HP_LOST_PCT := Vector2(30.0, 99.9)
 
 ## Economy (session economia-8): every resource earns and has something to buy, and over
@@ -28,7 +28,7 @@ var failures: Array[String] = []
 func _initialize() -> void:
 	_check_floor1_hits()
 	_check_encounters()
-	_check_nexo()
+	_check_relic()
 	_check_towers()
 	_check_economy()
 	_check_no_dominance(0)
@@ -110,15 +110,15 @@ func _check_encounters() -> void:
 		_expect(mean_by_floor[i] >= mean_by_floor[i - 1] - 5.0, "average difficulty drops %.1f points on floor %d" % [mean_by_floor[i - 1] - mean_by_floor[i], i + 1])
 
 
-func _check_nexo() -> void:
+func _check_relic() -> void:
 	var min_arrival := BalanceSim.floor_config().raider_min_arrival_sec
-	var rows := BalanceSim.nexo_rows()
+	var rows := BalanceSim.relic_rows()
 	_expect(not rows.is_empty(), "no raider in any pool")
 	for row in rows:
 		var label := "floor %s %s" % [row["floor"], row["enemy"]]
 		var one: float = row["destroy_1_s"]
-		_expect(one >= NEXO_ONE_RAIDER_SEC.x and one <= NEXO_ONE_RAIDER_SEC.y, "%s: 1 raider destroys the Nexo in %.0fs (want %.0f-%.0f)" % [label, one, NEXO_ONE_RAIDER_SEC.x, NEXO_ONE_RAIDER_SEC.y])
-		_expect(float(row["destroy_3_s"]) >= NEXO_THREE_RAIDERS_MIN_SEC, "%s: 3 raiders destroy the Nexo in %.0fs (min %.0f)" % [label, row["destroy_3_s"], NEXO_THREE_RAIDERS_MIN_SEC])
+		_expect(one >= RELIC_ONE_RAIDER_SEC.x and one <= RELIC_ONE_RAIDER_SEC.y, "%s: 1 raider destroys the Reliquia in %.0fs (want %.0f-%.0f)" % [label, one, RELIC_ONE_RAIDER_SEC.x, RELIC_ONE_RAIDER_SEC.y])
+		_expect(float(row["destroy_3_s"]) >= RELIC_THREE_RAIDERS_MIN_SEC, "%s: 3 raiders destroy the Reliquia in %.0fs (min %.0f)" % [label, row["destroy_3_s"], RELIC_THREE_RAIDERS_MIN_SEC])
 		_expect(float(row["arrival_min_s"]) >= min_arrival, "%s: arrives in %.1fs (< gate %.1fs)" % [label, row["arrival_min_s"], min_arrival])
 
 
@@ -126,8 +126,8 @@ func _check_towers() -> void:
 	var rows := BalanceSim.tower_rows()
 	_expect(not rows.is_empty(), "no tower breaker in any pool")
 	for row in rows:
-		var lost: float = row["turret_hp_lost_pct"]
-		_expect(lost >= TOWER_HP_LOST_PCT.x and lost <= TOWER_HP_LOST_PCT.y, "floor %s %s: takes %.1f%% of a turret before dying (want %.0f-%.0f)" % [row["floor"], row["enemy"], lost, TOWER_HP_LOST_PCT.x, TOWER_HP_LOST_PCT.y])
+		var lost: float = row["defense_hp_lost_pct"]
+		_expect(lost >= TOWER_HP_LOST_PCT.x and lost <= TOWER_HP_LOST_PCT.y, "floor %s %s: takes %.1f%% of a defense before dying (want %.0f-%.0f)" % [row["floor"], row["enemy"], lost, TOWER_HP_LOST_PCT.x, TOWER_HP_LOST_PCT.y])
 
 
 ## heroes-9: hero_matchup_rows (single target, level = floor - 1).

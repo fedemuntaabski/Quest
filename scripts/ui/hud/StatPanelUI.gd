@@ -11,16 +11,16 @@ const GAIN_FORMAT := "+%d"
 
 @onready var label_hp: Label = get_node_or_null("ChipHP/LabelHP")
 
-@onready var label_industry: Label = $ChipIndustry/LabelIndustry
+@onready var label_iron: Label = $ChipIron/LabelIron
 @onready var label_food: Label = $ChipFood/LabelFood
-@onready var label_science: Label = $ChipScience/LabelScience
-@onready var label_dust: Label = $ChipDust/LabelDust
+@onready var label_lore: Label = $ChipLore/LabelLore
+@onready var label_embers: Label = $ChipEmbers/LabelEmbers
 
 @onready var gain_labels := {
-	"industry": $ChipIndustry/GainIndustry as Label,
+	"iron": $ChipIron/GainIron as Label,
 	"food": $ChipFood/GainFood as Label,
-	"science": $ChipScience/GainScience as Label,
-	"dust": $ChipDust/GainDust as Label,
+	"lore": $ChipLore/GainLore as Label,
+	"embers": $ChipEmbers/GainEmbers as Label,
 }
 
 
@@ -39,17 +39,17 @@ func update_resource(key: String, amount: int) -> void:
 	var text := RESOURCE_FORMAT % amount
 
 	match key:
-		"industry":
-			_set_label_text(label_industry, text)
+		"iron":
+			_set_label_text(label_iron, text)
 		"food":
 			_set_label_text(label_food, text)
-		"science":
-			_set_label_text(label_science, text)
-		"dust":
-			_set_label_text(label_dust, text)
+		"lore":
+			_set_label_text(label_lore, text)
+		"embers":
+			_set_label_text(label_embers, text)
 
 
-## Hidden when the resource has no per-turn income (dust today).
+## Hidden when the resource has no per-turn income (embers today).
 func update_gain(key: String, amount: int) -> void:
 	var label: Label = gain_labels.get(key)
 	if label == null:

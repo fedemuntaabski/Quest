@@ -6,7 +6,7 @@
 script = ExtResource("1_perk")
 id = &"foco_arcano"
 display_name = "Foco Arcano"
-description = "La Sobrecarga de Módulo se recarga 6 s antes."
+description = "La Bendición de las Obras se recarga 6 s antes."
 unlock_level = 3
 exclusive_group = &"mage_l3"
 mods = {

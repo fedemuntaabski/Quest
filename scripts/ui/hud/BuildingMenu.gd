@@ -4,26 +4,26 @@ class_name BuildingMenu
 ## BuildingMenu: DotE-style build panel docked in the HUD bottom bar, above
 ## the resource/build row. Only entry point (session 8): bottom-bar
 ## "Producción"/"Defensa" → open_category(): pick a card (or press 1-9) → the
-## module is *armed*: free matching slots in powered rooms are outlined, every
-## empty slot becomes pickable and shows a ghost of the module under the cursor
+## building is *armed*: free matching slots in lit rooms are outlined, every
+## empty slot becomes pickable and shows a ghost of the building under the cursor
 ## (green = buildable, red = floating text with the reason) → clicking a slot
 ## (BuildingSlot → RoomManager.slot_clicked → HUDController → open_menu) builds it. Tabs by category
-## (Producción = MAJOR-slot generators, Defensa = MINOR-slot turret/trap), one
-## card per Module.CATALOG entry. Owns the purchase: spends Industria and asks
+## (Producción = MAJOR-slot workshops, Defensa = MINOR-slot defense/trap), one
+## card per Building.CATALOG entry. Owns the purchase: spends Hierro and asks
 ## the slot to build. Right-click or Esc cancels (Esc is consumed, so it never
 ## reaches Main2d's pause toggle); left-click outside closes when not armed.
 ## The session-7 "click an empty slot to open the menu" flow is gone
 ## (_deprecated/session7/).
-## Session 10: modules locked behind research (ResourceManager.is_unlocked)
+## Session 10: buildings locked behind research (ResourceManager.is_unlocked)
 ## show a padlock + "Requiere: <research>", can't be armed (button disabled,
 ## so 1-9 skip them too) and get_block_reason() reports the lock first.
 
 const SHAKE_DISTANCE := 8.0
 const SHAKE_STEP := 0.04
-## Every catalog cost is Industria today.
-const COST_RESOURCE := "industry"
+## Every catalog cost is Hierro today.
+const COST_RESOURCE := "iron"
 const ICON_SIZE := Vector2(28, 28)
-## Tab index == Module.SlotType (MAJOR, MINOR); the 3rd tab hosts the ResearchPanel.
+## Tab index == Building.SlotType (MAJOR, MINOR); the 3rd tab hosts the ResearchPanel.
 const TAB_TITLES := ["Mayores", "Menores", "Investigación"]
 const RESEARCH_TAB := 2
 const SLOT_NAMES := ["mayor", "menor"]
@@ -36,9 +36,9 @@ const SLOT_NAMES := ["mayor", "menor"]
 signal research_tab_changed(shown: bool)
 
 var _shake_tween: Tween
-## Module picked from the bottom bar; -1 = none.
+## Building picked from the bottom bar; -1 = none.
 var _armed_type: int = -1
-## Free matching slots in powered rooms (outlined).
+## Free matching slots in lit rooms (outlined).
 var _armed_slots: Array[BuildingSlot] = []
 ## Every empty slot, pickable + ghost-on-hover while armed → its bound hover Callable.
 var _hover_slots: Dictionary = {}
@@ -59,12 +59,12 @@ func _ready() -> void:
 	# A room lit/unlit while armed changes which slots are free/buildable.
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager:
-		room_manager.room_power_changed.connect(func(_zone_id: String, _powered: bool) -> void:
+		room_manager.room_light_changed.connect(func(_zone_id: String, _lit: bool) -> void:
 			if is_armed():
-				_arm(_armed_type as Module.ModuleType))
+				_arm(_armed_type as Building.BuildingType))
 
 
-## Slot click routed by HUDController. Builds the armed module; without
+## Slot click routed by HUDController. Builds the armed building; without
 ## one armed it does nothing (slots aren't even pickable then).
 func open_menu(slot_node: BuildingSlot) -> void:
 	if slot_node == null or not slot_node.is_empty() or not is_armed() or not visible:
@@ -72,7 +72,7 @@ func open_menu(slot_node: BuildingSlot) -> void:
 	_build_armed_into(slot_node)
 
 
-## Bottom-bar entry: cards for `tab` (== Module.SlotType).
+## Bottom-bar entry: cards for `tab` (== Building.SlotType).
 func open_category(tab: int) -> void:
 	close_menu()
 	tabs.current_tab = tab
@@ -85,7 +85,7 @@ func _show_tab(tab: int) -> void:
 	var research := tab == RESEARCH_TAB
 	options.visible = not research
 	title.visible = not research  # the ResearchPanel carries its own header
-	title.text = "Construir — elegí un módulo (1-9)"
+	title.text = "Construir — elegí una obra (1-9)"
 	if not research:
 		_populate()
 	research_tab_changed.emit(research)
@@ -103,41 +103,41 @@ func close_menu() -> void:
 		research_tab_changed.emit(false)
 
 
-## "" if the armed module can be built in `slot`, else why not.
+## "" if the armed building can be built in `slot`, else why not.
 func get_block_reason(slot: BuildingSlot) -> String:
 	if not is_armed():
-		return "Ningún módulo elegido"
-	return build_block_reason(slot, _armed_type as Module.ModuleType)
+		return "Ninguna obra elegida"
+	return build_block_reason(slot, _armed_type as Building.BuildingType)
 
 
-## coop-12: the same rules for any module type (the host validates build commands with it).
-static func build_block_reason(slot: BuildingSlot, module_type: Module.ModuleType) -> String:
-	var lock := get_lock_reason(module_type)
+## coop-12: the same rules for any building type (the host validates build commands with it).
+static func build_block_reason(slot: BuildingSlot, building_type: Building.BuildingType) -> String:
+	var lock := get_lock_reason(building_type)
 	if lock != "":
 		return lock
-	var cfg: Dictionary = Module.CATALOG[module_type]
+	var cfg: Dictionary = Building.CATALOG[building_type]
 	if int(cfg["slot"]) != int(slot.slot_type):
-		return "Tamaño incorrecto: requiere un slot %s" % SLOT_NAMES[int(cfg["slot"])]
+		return "Tamaño incorrecto: requiere un hueco %s" % SLOT_NAMES[int(cfg["slot"])]
 	if not slot.room_can_build():
 		return "Sala apagada"
 	var rm := ManagerLocator.get_resource_manager()
-	if rm == null or rm.get_resource(COST_RESOURCE) < Module.get_cost(module_type):
-		return "Falta Industria"
+	if rm == null or rm.get_resource(COST_RESOURCE) < Building.get_cost(building_type):
+		return "Falta Hierro"
 	return ""
 
 
-## "Requiere: <research>" while `module_type` is locked behind research, else "".
-static func get_lock_reason(module_type: Module.ModuleType) -> String:
+## "Requiere: <research>" while `building_type` is locked behind research, else "".
+static func get_lock_reason(building_type: Building.BuildingType) -> String:
 	var rm := ManagerLocator.get_resource_manager()
-	if rm == null or rm.is_unlocked(module_type):
+	if rm == null or rm.is_unlocked(building_type):
 		return ""
-	return "Requiere: %s" % rm.research_config.get_unlock_entry(module_type).display_name
+	return "Requiere: %s" % rm.research_config.get_unlock_entry(building_type).display_name
 
 
-## Ciencia the research that unlocks `module_type` costs (0 if none).
-static func _research_cost(module_type: Module.ModuleType) -> int:
+## Saber the research that unlocks `building_type` costs (0 if none).
+static func _research_cost(building_type: Building.BuildingType) -> int:
 	var rm := ManagerLocator.get_resource_manager()
-	var entry := rm.research_config.get_unlock_entry(module_type) if rm else null
+	var entry := rm.research_config.get_unlock_entry(building_type) if rm else null
 	return entry.cost if entry else 0
 
 
@@ -149,22 +149,22 @@ func _populate() -> void:
 	var rm := ManagerLocator.get_resource_manager()
 	var available: int = rm.get_resource(COST_RESOURCE) if rm else 0
 	var index := 0
-	for module_type in Module.CATALOG.keys():
-		var cfg: Dictionary = Module.CATALOG[module_type]
+	for building_type in Building.CATALOG.keys():
+		var cfg: Dictionary = Building.CATALOG[building_type]
 		if int(cfg["slot"]) != tabs.current_tab:
 			continue
 		index += 1
-		options.add_child(_make_card(module_type, cfg, index, available >= Module.get_cost(module_type), get_lock_reason(module_type)))
+		options.add_child(_make_card(building_type, cfg, index, available >= Building.get_cost(building_type), get_lock_reason(building_type)))
 
 
-func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, affordable: bool, lock := "") -> Control:
-	var cost := Module.get_cost(module_type)
+func _make_card(building_type: Building.BuildingType, cfg: Dictionary, hotkey: int, affordable: bool, lock := "") -> Control:
+	var cost := Building.get_cost(building_type)
 	var card := PanelContainer.new()
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 1, 6, 6))
-	var research_cost := _research_cost(module_type)
-	var reason := "\n%s (Investigar: %d Ciencia)" % [lock, research_cost] if lock != "" else ("" if affordable else "\nIndustria insuficiente.")
-	card.tooltip_text = "%s\n%s\n%s\nCosto: %d Industria · Vida: %d%s" % [cfg["label"], cfg["description"], Module.describe_effect(module_type), cost, int(cfg["hp"]), reason]
+	var research_cost := _research_cost(building_type)
+	var reason := "\n%s (Investigar: %d Saber)" % [lock, research_cost] if lock != "" else ("" if affordable else "\nIndustria insuficiente.")
+	card.tooltip_text = "%s\n%s\n%s\nCosto: %d Hierro · Vida: %d%s" % [cfg["label"], cfg["description"], Building.describe_effect(building_type), cost, int(cfg["hp"]), reason]
 	if not affordable or lock != "":
 		card.modulate = Color(1, 1, 1, 0.55)
 
@@ -175,7 +175,7 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 
 	var icon := ColorRect.new()
 	icon.custom_minimum_size = ICON_SIZE
-	icon.color = Module.TYPE_COLORS.get(module_type, Color.WHITE)
+	icon.color = Building.TYPE_COLORS.get(building_type, Color.WHITE)
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(icon)
@@ -205,7 +205,7 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 	name_label.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
 	column.add_child(name_label)
 	var effect_label := Label.new()
-	effect_label.text = "%s · %d Ciencia" % [lock, research_cost] if lock != "" else Module.describe_effect(module_type)
+	effect_label.text = "%s · %d Saber" % [lock, research_cost] if lock != "" else Building.describe_effect(building_type)
 	effect_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_BLOCKED if lock != "" else QuestPalette.UI_TEXT_SECONDARY)
 	effect_label.add_theme_font_size_override("font_size", Accessibility.font(13))
 	column.add_child(effect_label)
@@ -229,19 +229,19 @@ func _make_card(module_type: Module.ModuleType, cfg: Dictionary, hotkey: int, af
 	pick_button.disabled = not affordable or lock != ""
 	pick_button.tooltip_text = card.tooltip_text
 	pick_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	pick_button.pressed.connect(_arm.bind(module_type))
+	pick_button.pressed.connect(_arm.bind(building_type))
 	row.add_child(pick_button)
 	return card
 
 
-## Remember the module, outline every free slot it fits, and make every empty
+## Remember the building, outline every free slot it fits, and make every empty
 ## slot pickable with a ghost preview on hover.
-func _arm(module_type: Module.ModuleType) -> void:
-	if get_lock_reason(module_type) != "":
+func _arm(building_type: Building.BuildingType) -> void:
+	if get_lock_reason(building_type) != "":
 		return
 	_disarm()
-	_armed_type = int(module_type)
-	var slot_type := int(Module.CATALOG[module_type]["slot"])
+	_armed_type = int(building_type)
+	var slot_type := int(Building.CATALOG[building_type]["slot"])
 	_armed_slots = _free_slots(slot_type)
 	for slot in _armed_slots:
 		slot.set_highlighted(true)
@@ -250,11 +250,11 @@ func _arm(module_type: Module.ModuleType) -> void:
 		slot.input_pickable = true
 		slot.mouse_entered.connect(_hover_slots[slot])
 		slot.mouse_exited.connect(slot.clear_ghost)
-	var label := str(Module.CATALOG[module_type]["label"])
+	var label := str(Building.CATALOG[building_type]["label"])
 	if _armed_slots.is_empty():
-		title.text = "%s: no hay slots %ss libres — energizá una sala" % [label, SLOT_NAMES[slot_type]]
+		title.text = "%s: no hay huecos %ss libres — encendé una sala" % [label, SLOT_NAMES[slot_type]]
 	else:
-		title.text = "%s: clic en un slot %s resaltado (clic derecho / Esc cancela)" % [label, SLOT_NAMES[slot_type]]
+		title.text = "%s: clic en un hueco %s resaltado (clic derecho / Esc cancela)" % [label, SLOT_NAMES[slot_type]]
 
 
 func _disarm() -> void:
@@ -276,7 +276,7 @@ func _on_slot_hovered(slot: BuildingSlot) -> void:
 	if not is_armed() or not slot.is_empty():
 		return
 	var reason := get_block_reason(slot)
-	slot.set_ghost(_armed_type as Module.ModuleType, reason == "")
+	slot.set_ghost(_armed_type as Building.BuildingType, reason == "")
 	if reason != "":
 		_float_text(slot, reason)
 
@@ -296,13 +296,13 @@ func _build_armed_into(slot_node: BuildingSlot) -> void:
 	close_menu()
 
 
-## Empty slots of `slot_type` in powered (buildable) rooms.
+## Empty slots of `slot_type` in lit (buildable) rooms.
 func _free_slots(slot_type: int) -> Array[BuildingSlot]:
 	var result: Array[BuildingSlot] = []
 	var rm := ManagerLocator.get_room_manager()
 	if rm == null:
 		return result
-	for room in rm.get_powered_rooms():
+	for room in rm.get_lit_rooms():
 		for node in room.find_children("*", "BuildingSlot", true, false):
 			var slot := node as BuildingSlot
 			if slot.is_empty() and int(slot.slot_type) == slot_type:

@@ -140,7 +140,7 @@ func _reload_world(new_run: bool) -> void:
 
 
 ## ResourceManager is an autoload, so without this a run inherits the
-## previous run's resources (and the very first run starts at 0 dust).
+## previous run's resources (and the very first run starts at 0 embers).
 func _begin_new_run() -> void:
 	current_floor = 1
 	# coop-12: every peer plays the host's seed (same maps: generation is deterministic).

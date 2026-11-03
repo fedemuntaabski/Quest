@@ -6,7 +6,7 @@
 script = ExtResource("1_perk")
 id = &"estudio_profundo"
 display_name = "Estudio Profundo"
-description = "Mente Analítica da 1 Ciencia más por sala descubierta."
+description = "Mente Analítica da 1 Saber más por sala descubierta."
 unlock_level = 3
 exclusive_group = &"mage_l3"
 mods = {

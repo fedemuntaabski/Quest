@@ -25,7 +25,7 @@ script = ExtResource("2_room_type_rule")
 type = 4
 chance = 0.8
 max_count_per_floor = 0.5
-reward_resource = "industry"
+reward_resource = "iron"
 reward_amount = 6
 reward_per_floor = 1.0
 loot_chance = 1.0
@@ -36,14 +36,14 @@ type = 5
 chance = 0.3
 chance_per_floor = 0.1
 max_count_per_floor = 0.25
-reward_resource = "science"
+reward_resource = "lore"
 reward_amount = 8
 reward_per_floor = 1.0
 enemy_hp_mult = 1.5
 enemy_damage_mult = 1.25
 loot_chance = 0.7
 
-[sub_resource type="Resource" id="RoomTypeRule_generator"]
+[sub_resource type="Resource" id="RoomTypeRule_workshop"]
 script = ExtResource("2_room_type_rule")
 type = 6
 extra_major_slots = 1
@@ -54,7 +54,7 @@ script = ExtResource("2_room_type_rule")
 type = 7
 recruit_costs = {
 "food": 15,
-"industry": 20
+"iron": 20
 }
 recruit_cost_per_floor = 5
 blocks_spawns = true
@@ -70,7 +70,7 @@ altar_hp_pct = 0.3
 script = ExtResource("2_room_type_rule")
 type = 9
 chance = 0.0
-reward_resource = "dust"
+reward_resource = "embers"
 reward_amount = 6
 reward_per_floor = 1.0
 blocks_spawns = true
@@ -78,10 +78,10 @@ loot_chance = 1.0
 
 [resource]
 script = ExtResource("1_floor_config")
-room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite"), SubResource("RoomTypeRule_generator"), SubResource("RoomTypeRule_prisoner"), SubResource("RoomTypeRule_altar"), SubResource("RoomTypeRule_secret")])
+room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite"), SubResource("RoomTypeRule_workshop"), SubResource("RoomTypeRule_prisoner"), SubResource("RoomTypeRule_altar"), SubResource("RoomTypeRule_secret")])
 enemy_hp_growth = 0.15
 enemy_damage_growth = 0.1
 enemy_pools = Array[ExtResource("1_7csa3")]([ExtResource("2_j5m1i"), ExtResource("3_kvag3"), ExtResource("4_533ib"), ExtResource("5_erun4"), ExtResource("6_41g3f")])
-nexo_max_hp = 120
+relic_max_hp = 120
 max_enemies_by_floor = null
 raider_ratio_by_floor = null

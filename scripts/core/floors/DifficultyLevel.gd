@@ -11,6 +11,6 @@ class_name DifficultyLevel
 @export var damage_mult: float = 1.0
 @export var threat_mult: float = 1.0
 @export var extra_max_enemies: int = 0
-@export var nexo_hp_mult: float = 1.0
+@export var relic_hp_mult: float = 1.0
 ## Starting resources of the run (ResourceManager.reset_resources).
 @export var start_resource_mult: float = 1.0

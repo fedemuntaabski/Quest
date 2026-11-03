@@ -41,7 +41,7 @@ const MOUSE_HELP := [
 	["Clic izquierdo", "Seleccionar héroe / abrir puerta / interactuar"],
 	["Ctrl + clic izquierdo", "Añadir héroe a la selección"],
 	["Clic derecho", "Mover la selección a la sala"],
-	["Clic central", "Encender / apagar la sala (Polvo)"],
+	["Clic central", "Encender / apagar la sala (Brasas)"],
 	["Arrastrar con botón central", "Mover la cámara"],
 	["Rueda", "Zoom"],
 	["Alt + clic izquierdo", "Marca en el mapa (en línea)"],

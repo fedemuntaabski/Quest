@@ -16,7 +16,7 @@ func _initialize() -> void:
 		"matchups": BalanceSim.hero_matchup_rows(),
 		"duels": BalanceSim.duel_rows(),
 		"encounters": BalanceSim.encounter_rows(),
-		"nexo": BalanceSim.nexo_rows(),
+		"relic": BalanceSim.relic_rows(),
 		"towers": BalanceSim.tower_rows(),
 		"doors": BalanceSim.door_rows(),
 		"extraction": BalanceSim.extraction_rows(),

@@ -25,8 +25,8 @@ Todos con `git mv` (+ el `.uid` del script). Los `.tres`/`.tscn` movidos conserv
 | `HANDOFF_ROOM_GRAPH_MOVEMENT.md` | `docs/archive/HANDOFF_ROOM_GRAPH_MOVEMENT.md` |
 | `NOTES_SESSION.md` | `docs/archive/NOTES_SESSION.md` |
 | `REVIEW_SESSION_10.md` | `docs/archive/REVIEW_SESSION_10.md` |
-| `docs/balance/after_nexus.csv` | `docs/balance/after_nexo.csv` |
-| `docs/balance/before_nexus.csv` | `docs/balance/before_nexo.csv` |
+| `docs/balance/after_nexus.csv` | `docs/balance/after_relic.csv` |
+| `docs/balance/before_nexus.csv` | `docs/balance/before_relic.csv` |
 | `assets/characters/enemy_big_demon.tres` | `resources/sprite_frames/enemy_big_demon.tres` |
 | `assets/characters/enemy_big_zombie.tres` | `resources/sprite_frames/enemy_big_zombie.tres` |
 | `assets/characters/enemy_chort.tres` | `resources/sprite_frames/enemy_chort.tres` |
@@ -106,18 +106,18 @@ Todos con `git mv` (+ el `.uid` del script). Los `.tres`/`.tscn` movidos conserv
 | `Main2dDeathHandler` + `Main2dVictoryHandler` + 6 rutas internas en `Main2d` | `DeathOverlay`, `VictoryOverlay` (base `EndScreenOverlay`) con señales `retry/exit/next_floor/return_requested` | R12 |
 | `ThemeManager` (autoload, `extends Node`) | `UiStyles` (`class_name`, solo estáticos) | R7 |
 | `scripts/managers/` | `scripts/autoload/` + `scripts/run/` | R15 |
-| `RoomPowerSystem`, `ModuleBuildSystem` (pass-throughs) | conexión directa `RoomManager.slot_clicked` → `HUDController`; el log del encendido vive en `RoomZone.try_power_up` | R9 |
+| `RoomLightSystem`, `BuildingBuildSystem` (pass-throughs) | conexión directa `RoomManager.slot_clicked` → `HUDController`; el log del encendido vive en `RoomZone.try_light_up` | R9 |
 | `ManagerLocator` (retornos `Node`) | `get_game_session/selection_manager/settings_manager/steam_manager` tipados, `get_floating_text_manager -> FloatingTextManager`, nuevo `get_hud() -> HUDController` (reemplaza `call_group("hud", …)` en `FloorManager`, `PauseController`, `HeroInputController`) | R21, R23 |
 
 ## Qué se eliminó (solo con grep negativo en scripts/scenes/resources/tests/tools)
 - **Huérfanos:** `resources/sprites/shared_player_idle_frames.tres`, `Sprites/Player/_Idle.png`, `resources/tileset/highlight_tileset.tres`, `assets/texture/enviorment/highlight_placeholder.png`, `godot_debug_output.txt` (ahora en `.gitignore`).
-- **Funciones sin llamadores:** `ThemeManager` ×20 (`build_ap_badge_style`, `get_combat_feedback_*`, 17 `tactical_*`); `GameStateManager` ×7 (`is_paused`, `is_victory`, `can_process_input`, `can_process_turns`, `set_state`, `toggle_pause`, `return_to_previous_state`); `RoomManager` ×7 + 2 privadas (`has_zone`, `get_zone_at_cell`, `get_all_modules`, `are_rooms_connected`, `is_path_open`, `get_adjacent_rooms`, `are_connected`, `_shared_door`, `_door_counterpart`); `SaveManager` ×4 (`get/set/increment_run_cycle`, `set_selected_character_id`); `ResourceManager.add_all`; `DoorTurnSystem.get_room_cells`; `Player.set_grid_position`; `Door.mark_opened`; `StatPanelUI.update_stats`; `FloatingTextManager.spawn_text_from_host` (+ 2 `@export` que solo usaba); `ItemCatalog.get_item`; `ArtConfig.art_px`; `QuestLogger.set_min_level/set_category_enabled`; `ManagerLocator.get_room_power_system/get_module_build_system`.
+- **Funciones sin llamadores:** `ThemeManager` ×20 (`build_ap_badge_style`, `get_combat_feedback_*`, 17 `tactical_*`); `GameStateManager` ×7 (`is_paused`, `is_victory`, `can_process_input`, `can_process_turns`, `set_state`, `toggle_pause`, `return_to_previous_state`); `RoomManager` ×7 + 2 privadas (`has_zone`, `get_zone_at_cell`, `get_all_buildings`, `are_rooms_connected`, `is_path_open`, `get_adjacent_rooms`, `are_connected`, `_shared_door`, `_door_counterpart`); `SaveManager` ×4 (`get/set/increment_run_cycle`, `set_selected_character_id`); `ResourceManager.add_all`; `DoorTurnSystem.get_room_cells`; `Player.set_grid_position`; `Door.mark_opened`; `StatPanelUI.update_stats`; `FloatingTextManager.spawn_text_from_host` (+ 2 `@export` que solo usaba); `ItemCatalog.get_item`; `ArtConfig.art_px`; `QuestLogger.set_min_level/set_category_enabled`; `ManagerLocator.get_room_light_system/get_building_build_system`.
 - **Constantes:** 24 de `QuestPalette` (las 8 del diagnóstico + las que solo usaba el `ThemeManager` borrado).
-- **Señales sin oyente:** `DoorTurnSystem.door_opened`, `GameStateManager.pause_requested/resume_requested/death_entered`, `BaseMenu`/`BaseSubPanel.menu_opened/menu_closed`, `RoomZone.powered_up`, `RoomManager.room_powered`, `RoomPowerSystem.room_energized`.
-- **Clases/archivos:** `RoomPowerSystem`, `ModuleBuildSystem`, `Main2dDeathHandler`, `Main2dVictoryHandler`, `Main2d.active_character_id` (ahora local en `_spawn_heroes`).
+- **Señales sin oyente:** `DoorTurnSystem.door_opened`, `GameStateManager.pause_requested/resume_requested/death_entered`, `BaseMenu`/`BaseSubPanel.menu_opened/menu_closed`, `RoomZone.lit_up`, `RoomManager.room_lit`, `RoomLightSystem.room_lit`.
+- **Clases/archivos:** `RoomLightSystem`, `BuildingBuildSystem`, `Main2dDeathHandler`, `Main2dVictoryHandler`, `Main2d.active_character_id` (ahora local en `_spawn_heroes`).
 
 ## Renombres de datos (R18 parcial)
-`nexus` → `nexo`: `EnemyType.damage_vs_nexus` → `damage_vs_nexo` (solo cambia la clave en 3 `.tres`: goblin, masked_orc, orc_warrior; mismos valores), `Enemy.nexus_damage`, `BalanceSim.nexus_rows`, `AbilityData.Effect.NEXUS_PROXIMITY_REDUCTION` → `NEXO_…` (enum guardado como entero: el valor numérico no cambia), CSV `before/after_nexus` → `*_nexo`. `balance_sim.gd` regenera los mismos números.
+`nexus` → `relic`: `EnemyType.damage_vs_nexus` → `damage_vs_relic` (solo cambia la clave en 3 `.tres`: goblin, masked_orc, orc_warrior; mismos valores), `Enemy.nexus_damage`, `BalanceSim.nexus_rows`, `AbilityData.Effect.NEXUS_PROXIMITY_REDUCTION` → `RELIC_…` (enum guardado como entero: el valor numérico no cambia), CSV `before/after_nexus` → `*_relic`. `balance_sim.gd` regenera los mismos números.
 
 ## Pendiente y por qué
 | Ítem | Por qué no se hizo |
@@ -125,12 +125,12 @@ Todos con `git mv` (+ el `.uid` del script). Los `.tres`/`.tscn` movidos conserv
 | R10 fusionar `BaseMenu`/`BaseSubPanel` | UI visual: sin ejecutar el juego no puedo comprobar apertura/cierre/animaciones. |
 | R11 completo (una sola fuente de la selección de héroes) | Cambia el flujo Offline/WaitingRoom/guardado. Solo quité `Main2d.active_character_id`; el héroe guardado sigue siendo el líder del party por defecto cuando no hay pick de `HeroSelectMenu`. |
 | R13 `RunState` | Toca 5 sistemas con estado de run; fuera del alcance acordado. `Main._begin_new_run()` sigue reseteando a mano. |
-| R14 `ModuleData`/`EconomyConfig`/`EnemyType` absorbe `VARIANT_CONFIG` | Mover balance a Resources es el cambio que la regla "no cambiar valores" desaconseja sin comparar partidas. |
+| R14 `BuildingData`/`EconomyConfig`/`EnemyType` absorbe `VARIANT_CONFIG` | Mover balance a Resources es el cambio que la regla "no cambiar valores" desaconseja sin comparar partidas. |
 | R20 partir `RoomManager` (14 dependientes) | Riesgo alto; solo documenté el vocabulario zone/room/group en su cabecera. |
 | R22 `HUDController`/`OptionsMenu` en componentes | UI visual. |
 | Fase 4 (i18n, guardado, multijugador, `gdlintrc`) | Decisiones de producto. |
 | `assets/ui/background.png`, `assets/ui/256x256 textures (113).png` | El diagnóstico pide confirmarlos en el editor antes de borrar. |
-| `ResourceManager._calculate_module_bonus` usa el grupo `"generators"` | Autoload leyendo nodos de la escena; se resuelve con R13. |
+| `ResourceManager._calculate_building_bonus` usa el grupo `"workshops"` | Autoload leyendo nodos de la escena; se resuelve con R13. |
 | `Door.target_room_id` / `DoorTurnSystem.room_id` (en realidad *group id*) | Renombrar rompe la API y los tests; solo se documentó. |
 | `Main2d._exit_tree` usa `get_first_node_in_group("vfx_manager")` | Deliberado: `ManagerLocator.get_vfx_manager()` *crea* el manager si falta y al salir no debe crearse uno. |
 | `Main.gd` líneas 65/116 (`Engine.time_scale = 1.0`) | Se dejan junto a `paused = false`; `PauseController._exit_tree` ya lo garantiza al salir del piso. |
@@ -143,7 +143,7 @@ Había un **editor de Godot abierto** sobre el proyecto (distinto de la 4.6.2 de
 1. Abrir el proyecto (Godot 4.6.x): sin avisos de recursos/UIDs faltantes; reimportar si lo pide.
 2. Menú → Iniciar partida → Offline → slot → elegir 2 héroes → entra al piso (fondo, fuentes y botones con el mismo aspecto: ahora usan `UiStyles`).
 3. Opciones (menú y desde pausa) y `PauseMenu` con Esc: abre/cierra, "Salir" confirma.
-4. Mover héroes, abrir puertas, minimapa, luces de sala (clic central), construir un módulo (barra inferior → carta → slot), investigación.
+4. Mover héroes, abrir puertas, minimapa, luces de sala (clic central), construir una obra (barra inferior → carta → slot), investigación.
 5. Selección: clic sobre héroe, Ctrl+clic, F1/F2, Ctrl+1..3 y 1..3 (doble toque centra cámara), Tab. (Ahora en `HeroInputController`.)
 6. Espacio: pausa táctica (cartel PAUSA, la cámara se mueve, se puede construir); Esc encima; reanuda. (Ahora en `PauseController`.)
 7. Sala Loot: aparece el cofre en el mismo lugar y suma un hallazgo en el popup del héroe. (Ahora en `LootSpawner`.)

@@ -2,7 +2,7 @@ extends VBoxContainer
 class_name EquipmentSection
 
 ## EquipmentSection: "Equipo" block of CharacterPopup. The hero's slots (weapon,
-## armor, relic, 2 consumables) over the party stash grid. Click only (no drag):
+## armor, talisman, 2 consumables) over the party stash grid. Click only (no drag):
 ## stash item -> PartyInventory.equip (the reason shows in red when refused),
 ## equipped item -> unequip, "Usar" -> InventoryComponent.use. The UI decides
 ## nothing: PartyInventory.can_equip/can_unequip and InventoryComponent
@@ -11,7 +11,7 @@ class_name EquipmentSection
 
 const CELL := Vector2(44, 44)
 const STASH_COLUMNS := 8
-const SLOT_ORDER: Array[ItemData.Slot] = [ItemData.Slot.WEAPON, ItemData.Slot.ARMOR, ItemData.Slot.RELIC, ItemData.Slot.CONSUMABLE]
+const SLOT_ORDER: Array[ItemData.Slot] = [ItemData.Slot.WEAPON, ItemData.Slot.ARMOR, ItemData.Slot.TALISMAN, ItemData.Slot.CONSUMABLE]
 
 var hero_id: String = ""
 

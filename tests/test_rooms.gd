@@ -22,7 +22,7 @@ func _initialize() -> void:
 	_check_generation(config)
 	_check_display(config, visual)
 	await _check_rest_heals_party(config)
-	await _check_generator_slots(config)
+	await _check_workshop_slots(config)
 	await _check_understanding(config)
 	for failure in failures:
 		printerr("FAIL: ", failure)
@@ -168,13 +168,13 @@ func _check_rest_heals_party(config: FloorConfig) -> void:
 	await process_frame
 
 
-## Generator room: lit, it offers 2 MAJOR + 2 MINOR slots (others: 1 + 2).
-func _check_generator_slots(config: FloorConfig) -> void:
-	var boot := await _boot_with_type(config, RoomData.RoomType.GENERATOR)
+## Workshop room: lit, it offers 2 MAJOR + 2 MINOR slots (others: 1 + 2).
+func _check_workshop_slots(config: FloorConfig) -> void:
+	var boot := await _boot_with_type(config, RoomData.RoomType.WORKSHOP)
 	if boot.is_empty():
 		return
 	var main2d: Node = boot["main2d"]
-	var label: String = "generator slots " + boot["label"]
+	var label: String = "workshop slots " + boot["label"]
 	var room_manager: RoomManager = main2d.room_manager
 	var plain := ""
 	for room in main2d.map_layout.rooms:
@@ -182,7 +182,7 @@ func _check_generator_slots(config: FloorConfig) -> void:
 			plain = room.id
 	for pair in [[boot["room_id"], 2], [plain, 1]]:
 		var zone := room_manager.get_zone_node(pair[0])
-		zone.set_powered(true)
+		zone.set_lit(true)
 		var majors := 0
 		var minors := 0
 		for slot in zone._building_slots:

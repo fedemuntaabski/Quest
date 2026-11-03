@@ -31,22 +31,22 @@ class_name EnemyType
 @export var base_speed: float = -1.0
 ## Contact damage to heroes per hit (overridden by damage_vs_heroes when > 0).
 @export var contact_damage: int = -1
-## Damage per AttackTimer tick to modules.
-@export var module_damage: int = -1
+## Damage per AttackTimer tick to buildings.
+@export var building_damage: int = -1
 
 @export_group("Role")
-## HUNTER chases heroes; RAIDER ignores them and goes for the Nexo. Decides the
-## destination; `behavior` keeps deciding base stats (and the Sapper's module hunt).
+## HUNTER chases heroes; RAIDER ignores them and goes for the Relic. Decides the
+## destination; `behavior` keeps deciding base stats (and the Sapper's building hunt).
 enum Role { HUNTER, RAIDER }
 @export var role: Role = Role.HUNTER
 ## HUNTER: heroes closer than this (px) are chased directly.
 @export var aggro_range: float = 320.0
-## Distance (px) at which the target (hero / Nexo) counts as in range.
+## Distance (px) at which the target (hero / Relic) counts as in range.
 @export var attack_range: float = 40.0
 ## 0 = the variant's contact_damage (current stats untouched); >0 overrides it.
 @export var damage_vs_heroes: int = 0
-## Damage per AttackTimer tick to the Nexo (RAIDER only).
-@export var damage_vs_nexo: int = 0
+## Damage per AttackTimer tick to the Relic (RAIDER only).
+@export var damage_vs_relic: int = 0
 
 @export_group("Targeting")
 ## What it goes for. null = derived from `role`/`behavior` (TargetProfile.derive).

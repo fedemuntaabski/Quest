@@ -20,7 +20,7 @@ class_name FloorTheme
 @export var threat_mult: float = 1.0
 ## Max enemies alive at once.
 @export var max_enemies: int = 8
-## Share of spawns that are raiders (go for the Nexo).
+## Share of spawns that are raiders (go for the Relic).
 @export_range(0.0, 1.0) var raider_ratio: float = 0.2
 ## Guards the exit room (EnemyManager.spawn_boss); null = no boss on this floor.
 @export var boss: EnemyType

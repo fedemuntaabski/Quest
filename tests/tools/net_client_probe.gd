@@ -52,7 +52,7 @@ func _initialize() -> void:
 	report["hash_checks"] = _sync().hash_checks
 	report["desyncs"] = _sync().desyncs
 	report["revealed"] = _revealed_rooms(main2d)
-	report["dust"] = ManagerLocator.get_resource_manager().get_resource("dust")
+	report["embers"] = ManagerLocator.get_resource_manager().get_resource("embers")
 	report["enemies_seen"] = main2d.enemy_manager.get_enemies().size()
 	report["other_hero_zone"] = _hero(_other_hero_id()).current_zone_id
 	if leave_after >= 0.0:

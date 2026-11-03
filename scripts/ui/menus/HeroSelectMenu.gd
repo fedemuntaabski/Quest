@@ -13,6 +13,8 @@ signal back_pressed
 const PARTY_SIZE := preload("res://scripts/autoload/GameSession.gd").PARTY_SIZE
 ## Pixel art (16 px tiles) shown big; integer scale keeps it crisp.
 const PREVIEW_SCALE := 6.0
+const PREMISE := "El señor demonio saqueó la abadía y hundió sus cinco reliquias en las profundidades.
+Recuperalas: cada una que toques despertará a la mazmorra."
 const BACKGROUND := preload("res://assets/ui/Selección de Héroes.png")
 const TITLE_FONT := preload("res://assets/fonts/mainfont.ttf")
 const UI_FONT := preload("res://assets/fonts/secundaryfont.ttf")
@@ -104,6 +106,16 @@ func _build_ui() -> void:
 	title.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
 	title.add_theme_constant_override("outline_size", 4)
 	main.add_child(title)
+
+	var premise := Label.new()
+	premise.text = PREMISE
+	premise.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	premise.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	premise.add_theme_font_size_override("font_size", Accessibility.font(18))
+	premise.add_theme_color_override("font_color", Color(0.85, 0.78, 0.62))
+	premise.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
+	premise.add_theme_constant_override("outline_size", 3)
+	main.add_child(premise)
 
 	var content := HBoxContainer.new()
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL

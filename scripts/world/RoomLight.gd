@@ -2,10 +2,10 @@ extends Node2D
 class_name RoomLight
 
 ## RoomLight: per-room lighting placeholder, child of a room-kind RoomZone.
-## Dark (unpowered) = pulsing dark-red overlay (enemies spawn in dark rooms);
-## powered = overlay fades out and a warm PointLight2D fades in. Driven only
-## by signals: RoomZone.power_changed and ResourceManager.resource_changed
-## (gold outline when the player can afford RoomZone.get_power_cost() right now).
+## Dark (unlit) = pulsing dark-red overlay (enemies spawn in dark rooms);
+## lit = overlay fades out and a warm PointLight2D fades in. Driven only
+## by signals: RoomZone.light_changed and ResourceManager.resource_changed
+## (gold outline when the player can afford RoomZone.get_light_cost() right now).
 
 const LIGHT_TEXTURE_SIZE := 256
 
@@ -14,7 +14,7 @@ var _overlay: Polygon2D
 var _afford_outline: Line2D
 var _light: PointLight2D
 var _pulse: Tween
-var _powered: bool = false
+var _lit: bool = false
 var _zone: RoomZone
 
 
@@ -47,33 +47,33 @@ func setup(zone: RoomZone, size_px: Vector2, p_config: MapVisualConfig) -> void:
 	_light.enabled = false
 	add_child(_light)
 
-	zone.power_changed.connect(_on_power_changed)
+	zone.light_changed.connect(_on_light_changed)
 	var resources := ManagerLocator.get_resource_manager()
 	if resources:
 		resources.resource_changed.connect(_on_resource_changed)
-		_on_resource_changed("dust", resources.get_resource("dust"), 0)
-		# Research can lower the light cost without any dust change.
+		_on_resource_changed("embers", resources.get_resource("embers"), 0)
+		# Research can lower the light cost without any embers change.
 		resources.research_changed.connect(_on_research_changed)
 	_start_danger_pulse()
 
 
 func is_dark() -> bool:
-	return not _powered
+	return not _lit
 
 
 func is_affordable_highlighted() -> bool:
 	return _afford_outline.visible
 
 
-func _on_power_changed(_zone_id: String, powered: bool) -> void:
-	_powered = powered
+func _on_light_changed(_zone_id: String, lit: bool) -> void:
+	_lit = lit
 	refresh_affordable()
 	if _pulse:
 		_pulse.kill()
 	# Real time: lighting a room during the tactical pause (time_scale 0) shows at once.
 	var tween := create_tween().set_parallel().set_ignore_time_scale()
-	var t := config.power_transition_time
-	if powered:
+	var t := config.light_transition_time
+	if lit:
 		_light.enabled = true
 		tween.tween_property(_overlay, "color:a", 0.0, t)
 		tween.tween_property(_light, "energy", config.warm_light_energy, t)
@@ -92,15 +92,15 @@ func _on_research_changed() -> void:
 	refresh_affordable()
 
 
-## Gold outline: dark and the dust covers THIS room's next energize cost.
+## Gold outline: dark and the embers covers THIS room's next light cost.
 func refresh_affordable() -> void:
 	var resources := ManagerLocator.get_resource_manager()
-	_on_resource_changed("dust", resources.get_resource("dust") if resources else 0, 0)
+	_on_resource_changed("embers", resources.get_resource("embers") if resources else 0, 0)
 
 
 func _on_resource_changed(key: String, amount: int, _delta: int) -> void:
-	if key == "dust":
-		_afford_outline.visible = not _powered and amount >= (_zone.next_power_cost() if _zone else RoomZone.get_power_cost())
+	if key == "embers":
+		_afford_outline.visible = not _lit and amount >= (_zone.next_light_cost() if _zone else RoomZone.get_light_cost())
 
 
 func _start_danger_pulse() -> void:

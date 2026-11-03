@@ -6,7 +6,7 @@ signal canceled
 
 @export var confirm_text: String = "OK"
 @export var cancel_text: String = "Cancelar"
-@export var message_text: String = "¿Estás seguro de salir? Se perderán los datos de esta run actual."
+@export var message_text: String = "¿Estás seguro de salir? Se perderán los datos de esta partida."
 
 @onready var dim_rect: ColorRect = %DimRect
 @onready var dialog_panel: Panel = %DialogPanel

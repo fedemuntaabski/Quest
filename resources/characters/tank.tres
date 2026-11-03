@@ -16,9 +16,9 @@
 [resource]
 script = ExtResource("1_character_data")
 character_id = "tank"
-display_name = "Tanque"
-role = "Defensor de Cristal"
-description = "Defensor de Cristal. Resistencia elevada para proteger el núcleo de la base."
+display_name = "Paladín"
+role = "Guardián de la Reliquia"
+description = "Guardián de la Reliquia. Resistencia elevada para protegerla mientras la compañía avanza."
 portrait = ExtResource("2_portrait")
 base_hp = 40
 attack_damage = 3
@@ -26,7 +26,7 @@ attack_interval = 1.3
 attack_range = 170.0
 move_speed_mult = 0.9
 passive_ability_name = "Muro Viviente"
-passive_ability_desc = "Aumenta su resistencia cuanto más cerca está del cristal."
+passive_ability_desc = "Aumenta su resistencia cuanto más cerca está de la Reliquia."
 active_ability_name = "Interposición"
 sprite_frames = ExtResource("3_2o3rv")
 passive = ExtResource("4_passive")

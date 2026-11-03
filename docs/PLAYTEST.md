@@ -20,21 +20,21 @@ Si algo se rompe, anotá piso y qué hacías, y adjuntá el `quest.log` más rec
 - [ ] Al reanimarlo vuelve a la selección si estaba elegido, y a sus grupos Ctrl+1..3.
 - [ ] Cruzá un corredor con trampa **sin detenerte**: salta igual. Cruzá una sala con cofre sin detenerte: se abre.
 - [ ] Si cae un héroe caminando, se queda donde cayó, no sigue deslizándose.
-- [ ] Si cae el portador en un corredor, el Nexo queda ahí. Otro héroe lo recoge yendo a ese corredor.
+- [ ] Si cae el portador en un corredor, la Reliquia queda ahí. Otro héroe lo recoge yendo a ese corredor.
 - [ ] Durante la pantalla de victoria, el mundo queda congelado. Dejala abierta un minuto con enemigos cerca: no puede volverse derrota.
 
 ## Lo que solo vos podés juzgar
 Anotá por piso, aunque sea una línea:
 - **Ritmo:** ¿cuántas puertas abrís antes de tener miedo de abrir otra? ¿Sobra o falta tiempo?
-- **Economía:** ¿te sobra o te falta Polvo, Industria, Comida, Ciencia? ¿Alguno no lo usaste nunca?
-- **Módulos:** ¿construiste los 7? ¿Cuál no valió la pena?
+- **Economía:** ¿te sobra o te falta Brasas, Hierro, Comida, Saber? ¿Alguno no lo usaste nunca?
+- **Obras:** ¿construiste los 7? ¿Cuál no valió la pena?
 - **Dificultad:** vida perdida por piso. El simulador predice piso 1–3 tranquilos y salto fuerte en 4–5 (28 % → 230 % de pérdida sin torres ni niveles).
 - **Jefes (pisos 3 y 5):** ¿se entiende que custodian la salida? ¿Es justa la embestida?
 - **Extracción:** ¿da tensión o es solo caminar? ¿15 % más lento se nota?
 - **Lectura:** ¿sabías siempre qué estaba pasando y por qué perdiste vida?
 
 ## Fuera de esta prueba
-Co-op real, Steam con dos cuentas y mando físico: siguen sin probar (`docs/COOP_PRUEBAS.md`). Vocabulario medieval y la vuelta de Nexo a Reliquia quedan para una fase posterior.
+Co-op real, Steam con dos cuentas y mando físico: siguen sin probar (`docs/COOP_PRUEBAS.md`). Vocabulario medieval y la vuelta de Reliquia a Reliquia quedan para una fase posterior.
 
 ## Editor
 Esta rama agregó la rotación de logs a `project.godot` con tu editor abierto. Si el editor guarda sus ajustes viejos, la pisa: `test_estabilizar` falla en "log rotation" si eso pasa. Solución: cerrar el editor, `git checkout project.godot`, reabrir.

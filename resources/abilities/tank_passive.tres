@@ -10,5 +10,5 @@ effect = 1
 value = 0.5
 radius = 640.0
 display_name = "Muro Viviente"
-description = "Junto al Nexo ignora hasta el {value_pct} % del daño; el efecto baja hasta 0 a {radius} px (o del portador)."
+description = "Junto a la Reliquia ignora hasta el {value_pct} % del daño; el efecto baja hasta 0 a {radius} px (o del portador)."
 icon = ExtResource("2_icon")

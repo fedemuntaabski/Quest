@@ -149,7 +149,7 @@ func _test_mage_rogue() -> void:
 	_level_to("mage", 3)
 	_level_to("rogue", 3)
 	_expect(ps.choose_perk("mage", &"estudio_profundo"), "mage: estudio_profundo")
-	_expect(mage.abilities.passive_discovery_bonus() == {"science": 3}, "estudio_profundo: %s" % [mage.abilities.passive_discovery_bonus()])
+	_expect(mage.abilities.passive_discovery_bonus() == {"lore": 3}, "estudio_profundo: %s" % [mage.abilities.passive_discovery_bonus()])
 	_expect(ps.choose_perk("rogue", &"filo_envenenado"), "rogue: filo_envenenado")
 	_expect(_near(rogue.abilities.active_value(), rogue.abilities.active.value + 0.5), "filo_envenenado: x%f" % rogue.abilities.active_value())
 	_level_to("mage", 5)

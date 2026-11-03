@@ -1,15 +1,15 @@
 extends PanelContainer
 class_name ResearchPanel
 
-## ResearchPanel (session 10): Ciencia sink. Docked in the HUD bottom bar
+## ResearchPanel (session 10): Saber sink. Docked in the HUD bottom bar
 ## above the resource row (HUDController adds it next to BuildingMenu, same
 ## style). Bottom-bar "Investigar" → toggle(); one card per ResearchConfig
-## entry: name, effect, cost, state (Disponible / Falta Ciencia / Requiere: X
+## entry: name, effect, cost, state (Disponible / Falta Saber / Requiere: X
 ## / Investigada) and an "Investigar" button → ResourceManager.research().
 ## Esc and right click close it and are consumed (Esc never reaches Main2d's
 ## pause toggle). Plain Controls, so it works at Engine.time_scale 0.
 
-const COST_RESOURCE := "science"
+const COST_RESOURCE := "lore"
 const COLUMNS := 2
 
 var _list: GridContainer
@@ -30,7 +30,7 @@ func _ready() -> void:
 	content.add_theme_constant_override("separation", 6)
 	margin.add_child(content)
 	var title := Label.new()
-	title.text = "Investigar — se paga con Ciencia (Esc cierra)"
+	title.text = "Investigar — se paga con Saber (Esc cierra)"
 	title.add_theme_color_override("font_color", Color(0.95, 0.78, 0.42, 1))
 	content.add_child(title)
 	_list = GridContainer.new()
@@ -103,7 +103,7 @@ func _make_card(entry: ResearchEntry) -> Control:
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(column)
-	var tier: int = (entry as ModuleResearch).tier if entry is ModuleResearch else (2 if entry.prerequisite != "" else 1)
+	var tier: int = (entry as BuildingResearch).tier if entry is BuildingResearch else (2 if entry.prerequisite != "" else 1)
 	column.add_child(_label("T%d · %s" % [tier, entry.display_name], QuestPalette.PARCHMENT, 15))
 	column.add_child(_label(entry.describe_effect(), QuestPalette.UI_TEXT_SECONDARY, 13))
 	var state_label := _label(state, QuestPalette.GOLD if done else (StatIcon.BASE_COLORS[COST_RESOURCE] if available else QuestPalette.UI_TEXT_BLOCKED), 12)

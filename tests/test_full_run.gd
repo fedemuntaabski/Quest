@@ -2,11 +2,11 @@ extends SceneTree
 
 ## Session calidad-13: a whole run, accelerated, with a fixed seed, through the
 ## real Main orchestrator. Per floor: open every door in reveal order, let the
-## fight run (Engine.time_scale 4), pick up the Nexo, run the extraction a few
+## fight run (Engine.time_scale 4), pick up the Relic, run the extraction a few
 ## seconds, kill the boss (floors 3 and 5: the exit refuses the carrier while it
 ## lives), walk the carrier to the exit for real and descend; after floor 5, back
 ## to the menu.
-## Heroes and Nexo get a huge HP pool (this checks stability, not balance).
+## Heroes and Relic get a huge HP pool (this checks stability, not balance).
 ## At the end: no ERROR / WARNING on the console (ErrorProbe) and no orphan nodes.
 ##   godot --headless --path . --script res://tests/test_full_run.gd
 
@@ -79,10 +79,10 @@ func _tough() -> void:
 	for hero: Player in main2d.heroes:
 		hero.stats.max_hp = HUGE_HP
 		hero.stats.current_hp = HUGE_HP
-	var nexo := ManagerLocator.get_nexo()
-	if nexo:
-		nexo.max_hp = HUGE_HP
-		nexo.current_hp = HUGE_HP
+	var relic := ManagerLocator.get_relic()
+	if relic:
+		relic.max_hp = HUGE_HP
+		relic.current_hp = HUGE_HP
 
 
 func _fight(sec: float) -> void:
@@ -121,7 +121,7 @@ func _play_floor(f: int) -> bool:
 		return false
 	var hero: Player = main2d.heroes[0]
 	hero.set_zone(rm.get_start_zone_id(), rm.get_center(rm.get_start_zone_id()), main2d.floor_layer)
-	hero.pick_up_nexo()
+	hero.pick_up_relic()
 	ManagerLocator.get_extraction_manager().start_extraction()
 	await _fight(FIGHT_SEC)
 	_expect(ManagerLocator.get_enemy_manager().alive_count() <= main2d.floor_manager.max_enemies() + 1, "floor %d: enemy cap exceeded" % f)
@@ -137,7 +137,7 @@ func _play_floor(f: int) -> bool:
 	await main2d.player_action_controller.move_heroes([hero] as Array[Player], rm.get_exit_zone_id())
 	Engine.time_scale = 1.0
 	await _frames(20)
-	_expect(gsm.current_state == GameStateManager.State.VICTORY, "floor %d: arriving with the Nexo should win (state %s)" % [f, gsm.current_state])
+	_expect(gsm.current_state == GameStateManager.State.VICTORY, "floor %d: arriving with the Reliquia should win (state %s)" % [f, gsm.current_state])
 	_expect(main2d.victory_overlay.visible, "floor %d: victory overlay" % f)
 	if f < 5:
 		await _main.advance_floor()

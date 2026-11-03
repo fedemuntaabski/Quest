@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/core/research/ResearchConfig.gd" id="1_config"]
 [ext_resource type="Script" path="res://scripts/core/research/ResearchEntry.gd" id="2_entry"]
-[ext_resource type="Script" path="res://scripts/core/research/ModuleResearch.gd" id="3_mod"]
+[ext_resource type="Script" path="res://scripts/core/research/BuildingResearch.gd" id="3_mod"]
 
 [sub_resource type="Resource" id="R_ballesta"]
 script = ExtResource("3_mod")
@@ -11,7 +11,7 @@ display_name = "Planos de ballesta"
 description = "Mecanismos de disparo recuperados de las ruinas."
 cost = 8
 effect = 0
-module = 3
+building = 3
 tier = 1
 
 [sub_resource type="Resource" id="R_brasero"]
@@ -21,7 +21,7 @@ display_name = "Forja de brasas"
 description = "Carbón encantado que frena a quien lo pisa."
 cost = 6
 effect = 0
-module = 4
+building = 4
 tier = 1
 
 [sub_resource type="Resource" id="R_catapulta"]
@@ -32,23 +32,23 @@ description = "Contrapesos y vigas: golpes lentos que alcanzan a todo un grupo."
 cost = 18
 prerequisite = "ballesta"
 effect = 0
-module = 5
+building = 5
 tier = 2
 
 [sub_resource type="Resource" id="R_gen_tuning"]
 script = ExtResource("2_entry")
-id = "generator_tuning"
-display_name = "Engranajes afinados"
-description = "Los generadores rinden más."
+id = "workshop_tuning"
+display_name = "Herramientas afinadas"
+description = "Los talleres rinden más."
 cost = 10
 effect = 1
 value = 0.25
 
-[sub_resource type="Resource" id="R_dust_lenses"]
+[sub_resource type="Resource" id="R_dry_tinder"]
 script = ExtResource("2_entry")
-id = "dust_lenses"
-display_name = "Lentes de polvo"
-description = "Encender una sala consume menos Polvo."
+id = "dry_tinder"
+display_name = "Yesca seca"
+description = "Encender una sala consume menos Brasas."
 cost = 10
 effect = 3
 value = 3.0
@@ -57,24 +57,24 @@ value = 3.0
 script = ExtResource("2_entry")
 id = "cartography"
 display_name = "Cartografía"
-description = "Cada sala descubierta rinde más Polvo."
+description = "Cada sala descubierta rinde más Brasas."
 cost = 8
 effect = 4
 value = 1.0
 
 [sub_resource type="Resource" id="R_overclock"]
 script = ExtResource("2_entry")
-id = "generator_overclock"
-display_name = "Sobrecarga"
-description = "Los generadores empujan al límite."
+id = "workshop_bellows"
+display_name = "Fuelles forzados"
+description = "Los talleres trabajan al límite."
 cost = 30
-prerequisite = "generator_tuning"
+prerequisite = "workshop_tuning"
 effect = 1
 value = 0.25
 
 [sub_resource type="Resource" id="R_rifling"]
 script = ExtResource("2_entry")
-id = "turret_rifling"
+id = "defense_rifling"
 display_name = "Virotes estriados"
 description = "Las ballestas pegan más fuerte."
 cost = 25
@@ -84,4 +84,4 @@ value = 10.0
 
 [resource]
 script = ExtResource("1_config")
-entries = Array[ExtResource("2_entry")]([SubResource("R_ballesta"), SubResource("R_brasero"), SubResource("R_catapulta"), SubResource("R_gen_tuning"), SubResource("R_dust_lenses"), SubResource("R_cartography"), SubResource("R_overclock"), SubResource("R_rifling")])
+entries = Array[ExtResource("2_entry")]([SubResource("R_ballesta"), SubResource("R_brasero"), SubResource("R_catapulta"), SubResource("R_gen_tuning"), SubResource("R_dry_tinder"), SubResource("R_cartography"), SubResource("R_overclock"), SubResource("R_rifling")])

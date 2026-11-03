@@ -93,24 +93,24 @@ mouse_filter = 2
 theme_override_constants/separation = 20
 script = ExtResource("3_nysna")
 
-[node name="ChipIndustry" type="HBoxContainer" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"]
+[node name="ChipIron" type="HBoxContainer" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"]
 layout_mode = 2
 mouse_filter = 0
 theme_override_constants/separation = 6
 
-[node name="IconIndustry" type="Control" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipIndustry"]
+[node name="IconIron" type="Control" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipIron"]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_stat_icon")
-icon_type = "industry"
+icon_type = "iron"
 
-[node name="LabelIndustry" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipIndustry"]
+[node name="LabelIron" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipIron"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "0"
 
-[node name="GainIndustry" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipIndustry"]
+[node name="GainIron" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipIron"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.62, 1, 0.62, 1)
 theme_override_font_sizes/font_size = 16
@@ -139,47 +139,47 @@ theme_override_colors/font_color = Color(0.62, 1, 0.62, 1)
 theme_override_font_sizes/font_size = 16
 text = "+0"
 
-[node name="ChipScience" type="HBoxContainer" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"]
+[node name="ChipLore" type="HBoxContainer" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"]
 layout_mode = 2
 mouse_filter = 0
 theme_override_constants/separation = 6
 
-[node name="IconScience" type="Control" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipScience"]
+[node name="IconLore" type="Control" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipLore"]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_stat_icon")
-icon_type = "science"
+icon_type = "lore"
 
-[node name="LabelScience" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipScience"]
+[node name="LabelLore" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipLore"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "0"
 
-[node name="GainScience" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipScience"]
+[node name="GainLore" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipLore"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.62, 1, 0.62, 1)
 theme_override_font_sizes/font_size = 16
 text = "+0"
 
-[node name="ChipDust" type="HBoxContainer" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"]
+[node name="ChipEmbers" type="HBoxContainer" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"]
 layout_mode = 2
 mouse_filter = 0
 theme_override_constants/separation = 6
 
-[node name="IconDust" type="Control" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipDust"]
+[node name="IconEmbers" type="Control" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipEmbers"]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_stat_icon")
-icon_type = "dust"
+icon_type = "embers"
 
-[node name="LabelDust" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipDust"]
+[node name="LabelEmbers" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipEmbers"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "0"
 
-[node name="GainDust" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipDust"]
+[node name="GainEmbers" type="Label" parent="Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI/ChipEmbers"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.62, 1, 0.62, 1)
 theme_override_font_sizes/font_size = 16
@@ -211,17 +211,17 @@ text = "Construir"
 
 [node name="ProductionButton" type="Button" parent="Control/BottomBar/BottomRow/BuildPanel/MarginContainer/BuildButtons"]
 layout_mode = 2
-tooltip_text = "Módulos de producción (slot mayor)"
+tooltip_text = "Talleres (hueco mayor)"
 text = "Mayores (B)"
 
 [node name="DefenseButton" type="Button" parent="Control/BottomBar/BottomRow/BuildPanel/MarginContainer/BuildButtons"]
 layout_mode = 2
-tooltip_text = "Módulos de defensa (slot menor)"
+tooltip_text = "Defensas (hueco menor)"
 text = "Menores (V)"
 
 [node name="ResearchButton" type="Button" parent="Control/BottomBar/BottomRow/BuildPanel/MarginContainer/BuildButtons"]
 layout_mode = 2
-tooltip_text = "Investigaciones pagadas con Ciencia"
+tooltip_text = "Investigaciones pagadas con Saber"
 text = "Investigar (R)"
 
 [node name="FloorLabel" type="Label" parent="Control/TopLeft"]

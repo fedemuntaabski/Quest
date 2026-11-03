@@ -1,9 +1,9 @@
 extends SceneTree
 
-## Nexo + extraction (session bucle-7):
+## Relic + extraction (session bucle-7):
 ##   - extraction waves go by stages: bigger and closer together, capped at the last stage
 ##   - the carrier is 15 % slower (FloorConfig.carrier_speed_mult)
-##   - a fallen carrier drops the Nexo; another hero picks it up, the run goes on
+##   - a fallen carrier drops the Relic; another hero picks it up, the run goes on
 ##   - the run is lost only when every hero is down
 ##   - assassins go for the carrier; with none they fall back to the next rule
 ##   godot --headless --path . --script res://tests/test_extraction_phases.gd
@@ -55,8 +55,8 @@ func _live_main2d() -> Node:
 	for group_id in main2d.door_turn_system.rooms.keys():
 		main2d.door_turn_system.rooms[group_id]["visited"] = true
 	main2d.room_manager.refresh_visibility()
-	main2d.nexo.max_hp = 100000
-	main2d.nexo.current_hp = 100000
+	main2d.relic.max_hp = 100000
+	main2d.relic.current_hp = 100000
 	main2d.floor_manager.config = main2d.floor_manager.config.duplicate()
 	main2d.floor_manager.config.run_curve = null  # progresion-10: the curve wins over the array
 	main2d.floor_manager.config.max_enemies_by_floor = PackedInt32Array([999])
@@ -68,8 +68,8 @@ func _test_live() -> void:
 	var rm: RoomManager = main2d.room_manager
 	var extraction: ExtractionManager = main2d.extraction_manager
 	var enemies: EnemyManager = main2d.enemy_manager
-	var nexo: Nexo = main2d.nexo
-	var controller: NexoController = main2d.nexo_controller
+	var relic: Relic = main2d.relic
+	var controller: RelicController = main2d.relic_controller
 	var config: FloorConfig = main2d.floor_manager.config
 	var heroes: Array = main2d.heroes
 	_expect(heroes.size() >= 2, "need two heroes")
@@ -93,8 +93,8 @@ func _test_live() -> void:
 	extraction.stage_changed.connect(func(stage: int) -> void: stages.append(stage))
 	carrier.set_zone(start, far, main2d.floor_layer)
 	_expect(controller.get_block_reason() == "" or controller.get_block_reason().begins_with("Descubr"), "unexpected block reason '%s'" % controller.get_block_reason())
-	carrier.pick_up_nexo()
-	nexo.pick_up()
+	carrier.pick_up_relic()
+	relic.pick_up()
 	extraction.start_extraction()
 	_expect(phases == [ExtractionManager.Phase.EXTRACTION], "phase_changed should fire once with EXTRACTION")
 	_expect(extraction.stage == 0 and not extraction._spawn_timer.is_stopped(), "stage 0 / wave timer not started")
@@ -121,19 +121,19 @@ func _test_live() -> void:
 	var target := assassin.selector.select(rm)
 	_expect(target != null and target.type == TargetRule.Type.HERO_CARRIER and target.node == carrier, "assassin should target the carrier")
 
-	# --- the carrier falls (away from the base): the Nexo stays, the run goes on ---
+	# --- the carrier falls (away from the base): the Relic stays, the run goes on ---
 	var carrier_zone := ""
 	for zone_id in rm.get_zone_ids():
 		if rm.get_zone_kind(zone_id) == "room" and zone_id != start:
 			carrier_zone = zone_id
 			break
-	_expect(carrier_zone != "", "no second room to drop the Nexo in")
+	_expect(carrier_zone != "", "no second room to drop the Reliquia in")
 	carrier.set_zone(carrier_zone, rm.get_center(carrier_zone), main2d.floor_layer)
 	carrier.stats.take_damage(carrier.stats.max_hp * 10)
 	_expect(not main2d._is_dead, "the run ended with a hero still alive")
-	_expect(nexo.is_dropped() and nexo.drop_zone_id == carrier_zone and not carrier.is_carrying_nexo, "Nexo not dropped where the carrier fell")
-	_expect(nexo.visible and nexo.input_pickable, "dropped Nexo should be visible and clickable")
-	_expect(nexo.get_target_zone(rm) == carrier_zone, "raiders should head for the dropped Nexo")
+	_expect(relic.is_dropped() and relic.drop_zone_id == carrier_zone and not carrier.is_carrying_relic, "Reliquia not dropped where the carrier fell")
+	_expect(relic.visible and relic.input_pickable, "dropped Reliquia should be visible and clickable")
+	_expect(relic.get_target_zone(rm) == carrier_zone, "raiders should head for the dropped Reliquia")
 	_expect(extraction.current_phase == ExtractionManager.Phase.EXTRACTION, "extraction should go on")
 	target = assassin.selector.select(rm)
 	_expect(target != null and target.type != TargetRule.Type.HERO_CARRIER, "assassin has no carrier to chase")
@@ -141,18 +141,18 @@ func _test_live() -> void:
 	# --- another hero takes it ---
 	root.get_node("SelectionManager").select_only(other.stats.hero_id)
 	other.set_zone(start, far, main2d.floor_layer)
-	_expect(controller.get_block_reason() != "", "pickup allowed away from the dropped Nexo")
+	_expect(controller.get_block_reason() != "", "pickup allowed away from the dropped Reliquia")
 	other.set_zone(carrier_zone, rm.get_center(carrier_zone), main2d.floor_layer)
-	_expect(controller.get_block_reason() == "", "pickup refused next to the dropped Nexo: '%s'" % controller.get_block_reason())
+	_expect(controller.get_block_reason() == "", "pickup refused next to the dropped Reliquia: '%s'" % controller.get_block_reason())
 	controller.confirm_pickup()
-	_expect(other.is_carrying_nexo and nexo.is_carried() and not nexo.visible, "second hero did not take the Nexo")
-	_expect(controller.get_block_reason() != "", "a carried Nexo cannot be taken again")
+	_expect(other.is_carrying_relic and relic.is_carried() and not relic.visible, "second hero did not take the Reliquia")
+	_expect(controller.get_block_reason() != "", "a carried Reliquia cannot be taken again")
 	_expect(phases.size() == 1, "re-pickup must not restart the extraction")
 
 	# --- everyone down = defeat ---
 	other.stats.take_damage(other.stats.max_hp * 10)
 	_expect(main2d._is_dead, "the run should end when every hero is down")
-	_expect(nexo.is_dropped(), "the second carrier's Nexo should drop as well")
+	_expect(relic.is_dropped(), "the second carrier's Reliquia should drop as well")
 
 	main2d.queue_free()
 	await process_frame

@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/Relic.gd" id="1_relic_script"]
+[ext_resource type="PackedScene" path="res://scenes/world/Pickup.tscn" id="2_pickup"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_relic"]
+radius = 18.0
+
+[node name="Relic" type="Area2D"]
+script = ExtResource("1_relic_script")
+
+[node name="Pickup" parent="." instance=ExtResource("2_pickup")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_relic")

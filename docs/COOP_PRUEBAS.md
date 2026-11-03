@@ -6,7 +6,7 @@ y qué logs mirar.
 
 ## 1. Pruebas automáticas (headless)
 
-`powershell -File tools/run_tests.ps1 -Filter net` (o la suite completa):
+`lightshell -File tools/run_tests.ps1 -Filter net` (o la suite completa):
 
 | Test | Qué cubre |
 |---|---|
@@ -47,7 +47,7 @@ godot --path . -- --net=enet --net-name=Beto --net-token=beto
 3. En la sala: cada uno elige 1 héroe (no se puede repetir), ambos "Listo"; Ana inicia.
 4. Verificar en la partida:
    - mismo mapa en ambas ventanas; cada uno ve su anillo de color y solo puede seleccionar sus héroes;
-   - Beto abre una puerta → Ana ve la sala nueva y el polvo sube igual en ambos;
+   - Beto abre una puerta → Ana ve la sala nueva y el brasas sube igual en ambos;
    - construir/investigar desde cualquiera descuenta de los recursos compartidos;
    - Espacio en una ventana muestra "PAUSA? 1/2"; al votar la otra (o a los 5 s) se pausa en las dos; se levanta sola a los 30 s;
    - X en Beto muestra "Solo el anfitrión cambia la velocidad"; X en Ana pone 2x en ambos;

@@ -35,12 +35,12 @@ class_name RoomManager
 signal zone_clicked(zone_id: String)
 signal zone_hovered(zone_id: String)
 signal zone_unhovered(zone_id: String)
-## Any power change (paid, refunded or scripted); bubbled from RoomZone.power_changed.
-signal room_power_changed(zone_id: String, powered: bool)
+## Any light change (paid, refunded or scripted); bubbled from RoomZone.light_changed.
+signal room_light_changed(zone_id: String, lit: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
-## A module was built in a lit room (enemy AI re-evaluates its target).
-signal module_built(zone_id: String, module: Module)
-signal module_clicked(zone_id: String, slot: BuildingSlot)
+## A building was built in a lit room (enemy AI re-evaluates its target).
+signal building_built(zone_id: String, building: Building)
+signal building_clicked(zone_id: String, slot: BuildingSlot)
 
 const ZONE_SCENE := preload("res://scenes/world/RoomZone.tscn")
 const DEFAULT_TILE_SIZE := Vector2(64, 64)
@@ -143,12 +143,12 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.clicked.connect(func(z: RoomZone): zone_clicked.emit(z.zone_id))
 	zone.hovered.connect(func(z: RoomZone): zone_hovered.emit(z.zone_id))
 	zone.unhovered.connect(func(z: RoomZone): zone_unhovered.emit(z.zone_id))
-	zone.power_changed.connect(func(zid: String, on: bool):
-		room_power_changed.emit(zid, on)
-		_refresh_power_hints())
+	zone.light_changed.connect(func(zid: String, on: bool):
+		room_light_changed.emit(zid, on)
+		_refresh_light_hints())
 	zone.slot_clicked.connect(func(zid: String, slot: BuildingSlot): slot_clicked.emit(zid, slot))
-	zone.module_clicked.connect(func(zid: String, slot: BuildingSlot): module_clicked.emit(zid, slot))
-	zone.module_built.connect(func(zid: String, module: Module): module_built.emit(zid, module))
+	zone.building_clicked.connect(func(zid: String, slot: BuildingSlot): building_clicked.emit(zid, slot))
+	zone.building_built.connect(func(zid: String, building: Building): building_built.emit(zid, building))
 
 	record["node"] = zone
 	if record["kind"] == "room":
@@ -310,30 +310,30 @@ func is_zone_visible(zone_id: String) -> bool:
 	return is_zone_revealed(zone_id)
 
 
-## Rooms lit with dust (the free start room doesn't count): each raises the next energize cost.
-func get_energized_count() -> int:
+## Rooms lit with embers (the free start room doesn't count): each raises the next light cost.
+func get_lit_count() -> int:
 	var count := 0
 	for room: RoomZone in rooms_dict.values():
-		if room.is_paid_power():
+		if room.is_paid_light():
 			count += 1
 	return count
 
 
 ## The next cost changed: refresh every room's "Clic central" text and affordable outline.
-func _refresh_power_hints() -> void:
+func _refresh_light_hints() -> void:
 	for room: RoomZone in rooms_dict.values():
-		room.refresh_power_hints()
+		room.refresh_light_hints()
 
 
-func is_zone_powered(zone_id: String) -> bool:
+func is_zone_lit(zone_id: String) -> bool:
 	var node: RoomZone = zones.get(zone_id, {}).get("node")
-	return node.is_powered if node else false
+	return node.is_lit if node else false
 
 
-func set_zone_powered(zone_id: String, v: bool) -> void:
+func set_zone_lit(zone_id: String, v: bool) -> void:
 	var node: RoomZone = zones.get(zone_id, {}).get("node")
 	if node:
-		node.set_powered(v)
+		node.set_lit(v)
 
 
 func is_exit_room(zone_id: String) -> bool:
@@ -357,7 +357,7 @@ func get_exit_zone_id() -> String:
 	return ""
 
 
-## The layout's is_start room (hero spawn + Nexo). Its group starts revealed.
+## The layout's is_start room (hero spawn + Relic). Its group starts revealed.
 func get_start_zone_id() -> String:
 	return _start_zone_id
 
@@ -368,30 +368,30 @@ func get_group_ids() -> Array[String]:
 	return ids
 
 
-func get_modules_in_group(group_id: String) -> Array[Module]:
-	var modules: Array[Module] = []
+func get_buildings_in_group(group_id: String) -> Array[Building]:
+	var buildings: Array[Building] = []
 	for zone_id in (groups.get(group_id, []) as Array):
 		var node: RoomZone = zones.get(zone_id, {}).get("node")
 		if node:
-			modules.append_array(node.get_modules())
-	return modules
+			buildings.append_array(node.get_buildings())
+	return buildings
 
 
-## Built (alive) modules of one type across the whole floor: drives the rising build cost.
-func count_modules(type: int) -> int:
+## Built (alive) buildings of one type across the whole floor: drives the rising build cost.
+func count_buildings(type: int) -> int:
 	var n := 0
 	for zone_id in zones:
 		var node: RoomZone = zones[zone_id].get("node")
 		if node:
-			for module in node.get_modules():
-				if module.module_type == type and module.is_targetable():
+			for building in node.get_buildings():
+				if building.building_type == type and building.is_targetable():
 					n += 1
 	return n
 
 
-## Group ids whose room-kind zone is revealed but not yet powered — the
+## Group ids whose room-kind zone is revealed but not yet lit — the
 ## dark-room pool for enemy spawns (extraction ticks and door-open waves).
-func get_unpowered_revealed_room_group_ids() -> Array[String]:
+func get_unlit_revealed_room_group_ids() -> Array[String]:
 	var result: Array[String] = []
 	for group_id in groups.keys():
 		var room_zone_id := get_room_zone_id_in_group(group_id)
@@ -404,12 +404,12 @@ func get_room(room_id: String) -> RoomZone:
 	return rooms_dict.get(room_id) as RoomZone
 
 
-## Single "dark room" predicate: revealed but not powered.
+## Single "dark room" predicate: revealed but not lit.
 func is_room_dark(zone_id: String) -> bool:
-	return is_zone_revealed(zone_id) and not is_zone_powered(zone_id)
+	return is_zone_revealed(zone_id) and not is_zone_lit(zone_id)
 
 
-## Visited rooms without power — vulnerable zones for enemy spawn risk.
+## Visited rooms without light — vulnerable zones for enemy spawn risk.
 func get_dark_rooms() -> Array[RoomZone]:
 	var dark_rooms: Array[RoomZone] = []
 	for room: RoomZone in rooms_dict.values():
@@ -418,13 +418,13 @@ func get_dark_rooms() -> Array[RoomZone]:
 	return dark_rooms
 
 
-## Visited rooms with power — safe, buildable zones.
-func get_powered_rooms() -> Array[RoomZone]:
-	var powered_rooms: Array[RoomZone] = []
+## Visited rooms with light — safe, buildable zones.
+func get_lit_rooms() -> Array[RoomZone]:
+	var lit_rooms: Array[RoomZone] = []
 	for room: RoomZone in rooms_dict.values():
-		if is_zone_revealed(room.zone_id) and room.is_powered:
-			powered_rooms.append(room)
-	return powered_rooms
+		if is_zone_revealed(room.zone_id) and room.is_lit:
+			lit_rooms.append(room)
+	return lit_rooms
 
 
 ## Integrity check: the door-graph must match the room-graph derived from the

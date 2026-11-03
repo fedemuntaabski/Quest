@@ -1,7 +1,7 @@
 extends Resource
 class_name ResearchConfig
 
-## ResearchConfig: the run's research tree (Ciencia sink, session 10).
+## ResearchConfig: the run's research tree (Saber sink, session 10).
 ## Everything tunable lives in resources/research/research_config.tres.
 
 @export var entries: Array[ResearchEntry] = []
@@ -14,9 +14,9 @@ func get_entry(id: String) -> ResearchEntry:
 	return null
 
 
-## The entry that unlocks `module`, or null if the module is never locked.
-func get_unlock_entry(module: Module.ModuleType) -> ResearchEntry:
+## The entry that unlocks `building`, or null if the building is never locked.
+func get_unlock_entry(building: Building.BuildingType) -> ResearchEntry:
 	for entry in entries:
-		if entry.effect == ResearchEntry.Effect.UNLOCK_MODULE and entry.module == module:
+		if entry.effect == ResearchEntry.Effect.UNLOCK_BUILDING and entry.building == building:
 			return entry
 	return null

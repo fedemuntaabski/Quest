@@ -42,8 +42,8 @@ func _live_main2d(floor_index: int, fallback: bool = true) -> Node:
 	main2d.standalone_floor = floor_index
 	root.add_child(main2d)
 	await process_frame
-	main2d.nexo.max_hp = 100000
-	main2d.nexo.current_hp = 100000
+	main2d.relic.max_hp = 100000
+	main2d.relic.current_hp = 100000
 	return main2d
 
 
@@ -147,7 +147,7 @@ func _test_boss_gate(floor_index: int) -> void:
 	await process_frame
 	_expect(em.is_boss_alive() and em.boss.boss_brain != null and em.boss.current_zone_id == exit_zone, "floor %d: boss wakes in the exit room despite a 0 cap" % floor_index)
 	var hero: Player = main2d.heroes[0]
-	hero.is_carrying_nexo = true
+	hero.is_carrying_relic = true
 	hero.set_zone(exit_zone, rm.get_center(exit_zone), main2d.floor_layer)
 	main2d.extraction_manager.declare_victory()
 	await process_frame

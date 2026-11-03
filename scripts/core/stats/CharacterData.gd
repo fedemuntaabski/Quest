@@ -26,7 +26,7 @@ enum AttackStyle { MELEE, RANGED }
 ## RANGED = the hit travels as a visible Projectile (lands on arrival).
 @export var attack_style: AttackStyle = AttackStyle.MELEE
 @export var projectile_speed: float = 900.0
-## Multiplier on MoveAction.DEFAULT_SPEED_PX (stacks with the Nexo carrier's).
+## Multiplier on MoveAction.DEFAULT_SPEED_PX (stacks with the Relic carrier's).
 @export var move_speed_mult: float = 1.0
 @export_group("")
 

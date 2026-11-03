@@ -6,7 +6,7 @@ class_name ExitIndicator
 ## (drawn above fog) and a screen-edge arrow on its own CanvasLayer (HUD
 ## layer) that points at the exit while it is off-camera.
 ##
-## Visibility follows MapVisualConfig.exit_hint_mode; carrying the crystal
+## Visibility follows MapVisualConfig.exit_hint_mode; carrying the relic
 ## (ExtractionManager EXTRACTION phase) always shows it, recolored and pulsing
 ## harder. State only changes on signals: config.changed,
 ## DoorTurnSystem.room_revealed, ExtractionManager.phase_changed. _process
@@ -75,14 +75,14 @@ func _refresh() -> void:
 			_hint_visible = true
 		MapVisualConfig.ExitHintMode.ON_DISCOVERY:
 			_hint_visible = _carrying or room_manager.is_zone_revealed(exit_zone_id)
-		MapVisualConfig.ExitHintMode.ON_CRYSTAL:
+		MapVisualConfig.ExitHintMode.ON_RELIC:
 			_hint_visible = _carrying
 
-	var color := config.exit_crystal_color if _carrying else config.exit_color
+	var color := config.exit_relic_color if _carrying else config.exit_color
 	_marker.visible = _hint_visible
 	_marker_shape.color = color
 	_marker_label.modulate = color
-	_marker_label.text = "¡SALIDA! Traé el Nexo" if _carrying else "SALIDA"
+	_marker_label.text = "¡SALIDA! Traé la Reliquia" if _carrying else "SALIDA"
 	_arrow.color = color
 	_arrow.visible = false  # placed by _process
 	set_process(_hint_visible)

@@ -1,17 +1,17 @@
 extends Area2D
 class_name BuildingSlot
 
-## BuildingSlot: an empty/filled build slot on a powered RoomZone. Click plumbing
-## mirrors Door.gd/EnergyButton.gd. Not pickable by default (session 8): only
+## BuildingSlot: an empty/filled build slot on a lit RoomZone. Click plumbing
+## mirrors Door.gd/LightHint.gd. Not pickable by default (session 8): only
 ## BuildingMenu's armed mode turns slots pickable, so an unarmed click falls
 ## through to the RoomZone (moves the hero) instead of opening anything.
 ## `slot_clicked` → RoomManager → HUDController → BuildingMenu.open_menu() builds the
-## armed module. Clicks are ignored unless the owning room `can_build()`.
+## armed building. Clicks are ignored unless the owning room `can_build()`.
 
 signal slot_clicked(slot: BuildingSlot)
-signal module_built(module: Module)
+signal building_built(building: Building)
 ## Left click on a built slot (the HUD opens the repair/demolish popup).
-signal module_clicked(slot: BuildingSlot)
+signal building_clicked(slot: BuildingSlot)
 
 enum SlotType { MAJOR, MINOR }
 
@@ -22,7 +22,7 @@ const MINOR_OUTLINE := Color(0.7, 0.7, 0.7, 0.4)
 const HIGHLIGHT_OUTLINE := Color(1.0, 0.85, 0.4, 1.0)
 const OUTLINE_WIDTH := 1.5
 const HIGHLIGHT_WIDTH := 3.0
-## Armed-mode ghost tint over the module's own icon: can / can't build here.
+## Armed-mode ghost tint over the building's own icon: can / can't build here.
 const GHOST_OK := Color(0.4, 1.0, 0.4, 0.6)
 const GHOST_BLOCKED := Color(1.0, 0.3, 0.3, 0.6)
 
@@ -33,7 +33,7 @@ const GHOST_BLOCKED := Color(1.0, 0.3, 0.3, 0.6)
 
 var zone_id: String = ""
 var is_occupied: bool = false
-var built_module: Node2D = null
+var built_building: Node2D = null
 var _ghost: Polygon2D = null
 
 
@@ -55,29 +55,29 @@ func is_empty() -> bool:
 	return not is_occupied
 
 
-func build(module_type: Module.ModuleType) -> Module:
+func build(building_type: Building.BuildingType) -> Building:
 	if is_occupied:
-		return built_module as Module
+		return built_building as Building
 	clear_ghost()
-	var scene_path: String = Module.CATALOG[module_type]["scene"]
-	var module := (load(scene_path) as PackedScene).instantiate() as Module
-	module.paid_cost = Module.get_cost(module_type)  # before add_child: it must not count itself
-	add_child(module)
-	module.position = Vector2.ZERO
-	module.configure(zone_id, module_type)
-	module.module_destroyed.connect(_on_module_destroyed)
-	built_module = module
+	var scene_path: String = Building.CATALOG[building_type]["scene"]
+	var building := (load(scene_path) as PackedScene).instantiate() as Building
+	building.paid_cost = Building.get_cost(building_type)  # before add_child: it must not count itself
+	add_child(building)
+	building.position = Vector2.ZERO
+	building.configure(zone_id, building_type)
+	building.building_destroyed.connect(_on_building_destroyed)
+	built_building = building
 	is_occupied = true
 	_set_marker_visible(false)
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"hit_sparks", global_position, vfx.config.build_color)
-	module_built.emit(module)
-	return module
+	building_built.emit(building)
+	return building
 
 
-func _on_module_destroyed() -> void:
-	built_module = null
+func _on_building_destroyed() -> void:
+	built_building = null
 	is_occupied = false
 	_set_marker_visible(true)
 
@@ -97,16 +97,16 @@ func set_highlighted(on: bool) -> void:
 		outline.width = HIGHLIGHT_WIDTH
 
 
-## Semi-transparent preview of `module_type` (the module scene's own Icon,
+## Semi-transparent preview of `building_type` (the building scene's own Icon,
 ## detached before the scene ever enters the tree → no _ready, no groups).
-func set_ghost(module_type: Module.ModuleType, ok: bool) -> void:
+func set_ghost(building_type: Building.BuildingType, ok: bool) -> void:
 	clear_ghost()
-	var scene := (load(Module.CATALOG[module_type]["scene"]) as PackedScene).instantiate()
+	var scene := (load(Building.CATALOG[building_type]["scene"]) as PackedScene).instantiate()
 	_ghost = scene.get_node("Icon") as Polygon2D
 	scene.remove_child(_ghost)
 	scene.free()
 	_ghost.owner = null
-	_ghost.color = Module.TYPE_COLORS.get(module_type, Color.WHITE)
+	_ghost.color = Building.TYPE_COLORS.get(building_type, Color.WHITE)
 	_ghost.modulate = GHOST_OK if ok else GHOST_BLOCKED
 	add_child(_ghost)
 
@@ -148,7 +148,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 	if get_viewport().is_input_handled():
 		return
 	if is_occupied:
-		module_clicked.emit(self)
+		building_clicked.emit(self)
 		get_viewport().set_input_as_handled()
 		return
 	if not room_can_build():

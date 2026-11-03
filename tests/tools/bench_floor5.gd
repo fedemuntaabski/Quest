@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Session calidad-13: performance bench. Worst case of the run: floor 5, Difícil,
 ## 4 heroes (co-op of 4, PlayerScaling row 4), every room revealed, the live enemy
-## cap kept full (refilled every second), heroes and Nexo kept alive.
+## cap kept full (refilled every second), heroes and Relic kept alive.
 ## Measures SAMPLE_SEC at 1x and at 2x: frame time p50/p95/p99/max, mean FPS,
 ## Performance monitors (process/physics time, nodes, draw calls), plus timed
 ## micro-benchmarks of the hot helpers (group lookups, zone pathfinding, snapshot).
@@ -82,7 +82,7 @@ func _boot() -> void:
 	print("bench: floor %d, %s, %d heroes, cap %d enemies, %d zones" % [fm.floor_index, fm.difficulty.id, _main2d.heroes.size(), fm.max_enemies(), rm.zones.size()])
 
 
-## Heroes and Nexo get a huge HP pool (a defeat would pause the tree and the
+## Heroes and Relic get a huge HP pool (a defeat would pause the tree and the
 ## rest of the sample would measure an idle game).
 const BENCH_HP := 1000000
 
@@ -92,10 +92,10 @@ func _keep_alive() -> void:
 		if is_instance_valid(hero) and hero.stats:
 			hero.stats.max_hp = BENCH_HP
 			hero.stats.current_hp = BENCH_HP
-	var nexo := ManagerLocator.get_nexo()
-	if nexo:
-		nexo.max_hp = BENCH_HP
-		nexo.current_hp = BENCH_HP
+	var relic := ManagerLocator.get_relic()
+	if relic:
+		relic.max_hp = BENCH_HP
+		relic.current_hp = BENCH_HP
 	var em: EnemyManager = _main2d.enemy_manager
 	var missing: int = _main2d.floor_manager.max_enemies() - em.alive_count()
 	if missing > 0:
@@ -179,7 +179,7 @@ func _micro() -> void:
 	var micro := {}
 	micro["ManagerLocator.get_room_manager"] = _time(10000, func() -> void: ManagerLocator.get_room_manager())
 	micro["ManagerLocator.get_heroes"] = _time(10000, func() -> void: ManagerLocator.get_heroes())
-	micro["ManagerLocator.get_nexo"] = _time(10000, func() -> void: ManagerLocator.get_nexo())
+	micro["ManagerLocator.get_relic"] = _time(10000, func() -> void: ManagerLocator.get_relic())
 	micro["RoomManager.find_zone_path"] = _time(2000, func() -> void: rm.find_zone_path(ids[randi() % ids.size()], ids[randi() % ids.size()]))
 	micro["EnemyManager.get_enemies"] = _time(10000, func() -> void: _main2d.enemy_manager.get_enemies())
 	var sync := NetSync.new()

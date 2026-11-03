@@ -2,13 +2,13 @@ extends SceneTree
 
 ## Room type display (session fix-3): every RoomType except COMBAT has an entry in
 ## resources/maps/room_type_visual_config.tres with a name and color; Rest/Loot/
-## Elite/Generator (the generated types) also have icon, banner and props. The tile plan stays
+## Elite/Workshop (the generated types) also have icon, banner and props. The tile plan stays
 ## deterministic and special props only land in rooms of their own type.
 ##   godot --headless --path . --script res://tests/test_room_type_visuals.gd
 
 const FLOOR_CONFIG_PATH := "res://resources/floors/default_floor_config.tres"
 const VISUAL_PATH := "res://resources/maps/map_visual_config.tres"
-const IMPLEMENTED := [RoomData.RoomType.REST, RoomData.RoomType.LOOT, RoomData.RoomType.ELITE, RoomData.RoomType.GENERATOR]
+const IMPLEMENTED := [RoomData.RoomType.REST, RoomData.RoomType.LOOT, RoomData.RoomType.ELITE, RoomData.RoomType.WORKSHOP]
 
 var failures: Array[String] = []
 
@@ -60,7 +60,7 @@ func _check_entries(visual: MapVisualConfig, config: FloorConfig) -> void:
 		failures.append("START: banner would show at run start")
 
 
-## Every implemented type must come out of the generator.
+## Every implemented type must come out of the workshop.
 func _check_generation(config: FloorConfig) -> void:
 	var seen: Dictionary = {}
 	for s in 1000:

@@ -28,10 +28,10 @@ func is_valid() -> bool:
 		return false
 	if node is Player:
 		return (node as Player).stats.is_alive()
-	if node is Nexo:
-		return (node as Nexo).is_alive()
-	if node is Module:
-		return (node as Module).is_targetable()
+	if node is Relic:
+		return (node as Relic).is_alive()
+	if node is Building:
+		return (node as Building).is_targetable()
 	return true
 
 

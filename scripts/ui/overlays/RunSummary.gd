@@ -8,7 +8,7 @@ extends VBoxContainer
 const RECORD_LABELS := {
 	"best_floor": "Piso más profundo",
 	"fastest_victory_sec": "Victoria más rápida",
-	"most_kills": "Más enemigos en una run",
+	"most_kills": "Más enemigos en una partida",
 }
 
 var _labels: Array[Label] = []
@@ -44,7 +44,7 @@ static func lines(stats: Dictionary, new_records: Array[String] = [], records: D
 	out.append("Héroes caídos: %s" % (", ".join(PackedStringArray(fallen)) if not fallen.is_empty() else "ninguno"))
 	out.append("Registros nuevos del bestiario: %d" % int(stats.get("bestiary_new", 0)))
 	if not records.is_empty():
-		out.append("Récords del slot: %d victorias en %d runs, mejor piso %d" % [int(records.get("victories", 0)), int(records.get("runs", 0)), int(records.get("best_floor", 0))])
+		out.append("Récords de la ranura: %d victorias en %d partidas, mejor piso %d" % [int(records.get("victories", 0)), int(records.get("runs", 0)), int(records.get("best_floor", 0))])
 	for key in new_records:
 		out.append("¡Nuevo récord! %s" % RECORD_LABELS.get(key, key))
 	return out

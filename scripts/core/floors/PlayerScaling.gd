@@ -17,7 +17,7 @@ const DEFAULT_PATH := "res://resources/floors/player_scaling.tres"
 @export var damage_mult: PackedFloat32Array = [1.0, 1.0, 1.0, 1.0]
 @export var threat_mult: PackedFloat32Array = [1.0, 1.0, 1.0, 1.0]
 @export var extra_max_enemies: PackedInt32Array = [0, 0, 0, 0]
-@export var nexo_hp_mult: PackedFloat32Array = [1.0, 1.0, 1.0, 1.0]
+@export var relic_hp_mult: PackedFloat32Array = [1.0, 1.0, 1.0, 1.0]
 
 
 static func get_default() -> PlayerScaling:
@@ -47,8 +47,8 @@ func threat(players: int) -> float:
 	return _pick(threat_mult, players, 1.0)
 
 
-func nexo_hp(players: int) -> float:
-	return _pick(nexo_hp_mult, players, 1.0)
+func relic_hp(players: int) -> float:
+	return _pick(relic_hp_mult, players, 1.0)
 
 
 func extra_enemies(players: int) -> int:

@@ -63,7 +63,7 @@ func start_extraction() -> void:
 		_spawn_timer.start()
 		_stage_timer.start()
 	phase_changed.emit(current_phase, old_phase)
-	QuestLogger.info(QuestLogger.Category.NEXO, "Extraction phase started.")
+	QuestLogger.info(QuestLogger.Category.RELIC, "Extraction phase started.")
 
 
 func can_open_doors() -> bool:
@@ -89,7 +89,7 @@ func declare_victory() -> void:
 	victory_declared.emit()
 	if gsm:
 		gsm.request_victory()
-	QuestLogger.info(QuestLogger.Category.NEXO, "Victory: nexo reached the exit room.")
+	QuestLogger.info(QuestLogger.Category.RELIC, "Victory: relic reached the exit room.")
 
 
 func _on_spawn_timeout() -> void:
@@ -111,7 +111,7 @@ func _on_stage_timeout() -> void:
 	stage += 1
 	_spawn_timer.wait_time = _config().extraction_stage_interval(_floor_index(), stage)
 	stage_changed.emit(stage)
-	QuestLogger.info(QuestLogger.Category.NEXO, "Extraction stage %d (wave %d, every %.1fs)." % [stage, wave_size(), _spawn_timer.wait_time])
+	QuestLogger.info(QuestLogger.Category.RELIC, "Extraction stage %d (wave %d, every %.1fs)." % [stage, wave_size(), _spawn_timer.wait_time])
 
 
 ## coop-12 (client): the host's stage (the phase itself goes through start_extraction()).

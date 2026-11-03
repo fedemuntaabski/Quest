@@ -2,8 +2,8 @@ extends SceneTree
 
 ## Raiders must give the player time to react (session enemies-2): over 30 seeds
 ## x 5 floors with every room revealed, no spawn roll in any eligible room may
-## return a raider that reaches the Nexo sooner than FloorConfig.raider_min_arrival_sec.
-## Also checks both roles stay compatible with turrets / Rest rooms (enemy_body
+## return a raider that reaches the Relic sooner than FloorConfig.raider_min_arrival_sec.
+## Also checks both roles stay compatible with defenses / Rest rooms (enemy_body
 ## layer, "enemies" group, blocks_spawns).
 ##   godot --headless --path . --script res://tests/test_raider_timing.gd
 
@@ -62,10 +62,10 @@ func _run(s: int, floor_index: int) -> void:
 		if enemies.raider_arrival_sec(zone_id, EnemyManager.FALLBACK_TYPE) < min_sec:
 			fallbacks_seen += 1
 
-	# Compatibility: every spawned enemy (either role) is a plain turret target.
+	# Compatibility: every spawned enemy (either role) is a plain defense target.
 	for i in 6:
 		var enemy := enemies._spawn_enemy(rm.get_start_zone_id(), rm.get_center(rm.get_start_zone_id()))
-		_expect(enemy.collision_layer == 2 and enemy.is_in_group("enemies"), "%s: enemy not targetable by turrets" % label)
+		_expect(enemy.collision_layer == 2 and enemy.is_in_group("enemies"), "%s: enemy not targetable by defenses" % label)
 		enemy.queue_free()
 	for zone_id in rm.get_zone_ids():
 		if rm.get_zone_kind(zone_id) == "room" and rm.get_room_type(zone_id) == RoomData.RoomType.REST:

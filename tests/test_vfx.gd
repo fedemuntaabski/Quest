@@ -137,7 +137,7 @@ func _check_hooks() -> void:
 	hero.stats.take_damage(2)
 	_expect(hero.stats.current_hp == hp - 2 and _active_scenes(vfx).has("damage_flash"), "hero hurt: wrong HP or no flash")
 	enemy.take_damage(9999)
-	_expect(not enemy.is_alive() and _active_scenes(vfx).has("death_dust"), "enemy death: no dust")
+	_expect(not enemy.is_alive() and _active_scenes(vfx).has("death_dust"), "enemy death: no embers")
 	hero.stats.heal(2)
 	_expect(hero.stats.current_hp == hp, "heal altered by effects")
 

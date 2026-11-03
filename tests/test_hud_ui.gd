@@ -3,7 +3,7 @@ extends SceneTree
 ## Headless checks for the session-6 HUD logic (no rendering needed):
 ## HealthBarStyle thresholds, UpgradeConfig cost curve/bonuses, PlayerStats
 ## hero level-ups (session 7: spend Comida, all stats at once, cap, attack →
-## hitbox values), per-turn yield, Module effect text, HUD bottom bar (resources
+## hitbox values), per-turn yield, Building effect text, HUD bottom bar (resources
 ## + build entry, armed-only build flow with ghost/reasons/hotkeys/Esc — session
 ## 8), tactical pause / right-click move / close on death-victory (session 9),
 ## research (session 10: locks, prerequisites, bonuses, panel, floor/run
@@ -21,7 +21,7 @@ var failures: Array[String] = []
 func _initialize() -> void:
 	_check_health_style()
 	_check_upgrade_config()
-	_check_module_text()
+	_check_building_text()
 	await _check_live()
 	for failure in failures:
 		printerr("FAIL: ", failure)
@@ -60,11 +60,11 @@ func _check_upgrade_config() -> void:
 	_expect(is_equal_approx(cfg.interval_at(1.0, 50), cfg.min_attack_interval), "interval floor")
 
 
-func _check_module_text() -> void:
-	_expect(Module.describe_effect(Module.ModuleType.SCRIPTORIUM) == "+3 Ciencia por turno", "generator effect text: %s" % Module.describe_effect(Module.ModuleType.SCRIPTORIUM))
-	_expect(Module.describe_effect(Module.ModuleType.BRASERO) == "Ralentiza 50% durante 3 s", "trap effect text: %s" % Module.describe_effect(Module.ModuleType.BRASERO))
-	for type in Module.CATALOG:
-		_expect(str(Module.CATALOG[type]["description"]) != "", "missing description for %s" % Module.ModuleType.keys()[type])
+func _check_building_text() -> void:
+	_expect(Building.describe_effect(Building.BuildingType.SCRIPTORIUM) == "+3 Saber por puerta abierta", "workshop effect text: %s" % Building.describe_effect(Building.BuildingType.SCRIPTORIUM))
+	_expect(Building.describe_effect(Building.BuildingType.BRASERO) == "Ralentiza 50% durante 3 s", "trap effect text: %s" % Building.describe_effect(Building.BuildingType.BRASERO))
+	for type in Building.CATALOG:
+		_expect(str(Building.CATALOG[type]["description"]) != "", "missing description for %s" % Building.BuildingType.keys()[type])
 
 
 ## Boots Main2d (hero registers with PlayerStats) + HUD like Main.gd does.
@@ -118,9 +118,9 @@ func _check_live() -> void:
 	var minimap_rect: Rect2 = hud.get_node("Control/Minimap").get_global_rect()
 	_expect(bottom_rect.size.x > 0 and not bottom_rect.intersects(minimap_rect), "bottom bar %s overlaps minimap %s" % [bottom_rect, minimap_rect])
 
-	# Per-turn gain = base yield (no generators yet).
-	_expect(resources.get_turn_yield("industry") == ResourceManager.BASE_YIELD_INDUSTRY, "industry turn yield")
-	_expect(resources.get_turn_yield("dust") == 0, "dust turn yield")
+	# Per-turn gain = base yield (no workshops yet).
+	_expect(resources.get_turn_yield("iron") == ResourceManager.BASE_YIELD_IRON, "iron turn yield")
+	_expect(resources.get_turn_yield("embers") == 0, "embers turn yield")
 
 	# Level-up (8 food, 15 available): every stat rises at once; the next (11) is short.
 	var max_before := stats.max_hp
@@ -132,7 +132,7 @@ func _check_live() -> void:
 	_expect(stats.attack_damage == dmg_before + 1 and player.hitbox.damage == stats.attack_damage, "damage level reached hitbox")
 	_expect(stats.attack_interval < interval_before and is_equal_approx(player.hitbox.hit_interval, stats.attack_interval), "attack speed level reached hitbox")
 	_expect(ps.get_hero_level() == 2 and ps.get_run_upgrade_level("damage") == 1, "hero level %d" % ps.get_hero_level())
-	_expect(resources.get_resource("science") == 10, "level up must not spend science")
+	_expect(resources.get_resource("lore") == 10, "level up must not spend lore")
 	_expect(not ps.get_level_up_preview()["affordable"], "second level should be unaffordable at 7 food")
 	_expect(not ps.level_up_hero(), "level up with 7 food must fail")
 	_expect(ps.get_hero_level() == 2, "failed level up must not change the level")
@@ -180,14 +180,14 @@ func _check_research_lifetime(resources: ResourceManager) -> void:
 	var hud := (load(HUD_PATH) as PackedScene).instantiate() as HUDController
 	root.add_child(hud)
 	await process_frame
-	_expect(resources.is_researched("ballesta") and resources.is_unlocked(Module.ModuleType.BALLESTA), "research must survive the next floor")
+	_expect(resources.is_researched("ballesta") and resources.is_unlocked(Building.BuildingType.BALLESTA), "research must survive the next floor")
 	hud.research_button.pressed.emit()
 	var state := hud.research_panel._list.get_node("ballesta").find_child("State", true, false) as Label
 	_expect(state.text == "Investigada", "next floor's panel should show the research as done")
 	var main := Main.new()
 	main._begin_new_run()
 	main.free()
-	_expect(not resources.is_researched("ballesta") and not resources.is_unlocked(Module.ModuleType.BALLESTA), "_begin_new_run (Retry) must reset research")
+	_expect(not resources.is_researched("ballesta") and not resources.is_unlocked(Building.BuildingType.BALLESTA), "_begin_new_run (Retry) must reset research")
 	state = hud.research_panel._list.get_node("ballesta").find_child("State", true, false) as Label
 	_expect(state.text != "Investigada", "open panel must refresh on reset: '%s'" % state.text)
 	hud.queue_free()
@@ -195,7 +195,7 @@ func _check_research_lifetime(resources: ResourceManager) -> void:
 	await process_frame
 
 
-## Session 10: research as the Ciencia sink. Leaves ballesta
+## Session 10: research as the Saber sink. Leaves ballesta
 ## researched (and no global bonus) for _check_building_menu.
 func _check_research(hud: HUDController, main2d: Node, resources: ResourceManager) -> void:
 	var cfg := resources.research_config
@@ -204,14 +204,14 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	_expect(not tier2.is_empty() and tier2.all(func(e: ResearchEntry) -> bool:
 		var pre := cfg.get_entry(e.prerequisite)
 		return pre != null and pre.cost < e.cost), "T2 entries need an existing, cheaper prerequisite")
-	var locked := Module.CATALOG.keys().filter(func(t: int) -> bool: return not resources.is_unlocked(t))
-	_expect(locked.size() >= 2, "at least 2 modules locked at run start: %s" % [locked])
-	for basic in [Module.ModuleType.FORJA, Module.ModuleType.GRANJA, Module.ModuleType.SCRIPTORIUM, Module.ModuleType.PINCHOS]:
-		_expect(resources.is_unlocked(basic), "basic module %s must stay free" % Module.ModuleType.keys()[basic])
+	var locked := Building.CATALOG.keys().filter(func(t: int) -> bool: return not resources.is_unlocked(t))
+	_expect(locked.size() >= 2, "at least 2 buildings locked at run start: %s" % [locked])
+	for basic in [Building.BuildingType.FORJA, Building.BuildingType.GRANJA, Building.BuildingType.SCRIPTORIUM, Building.BuildingType.PINCHOS]:
+		_expect(resources.is_unlocked(basic), "basic building %s must stay free" % Building.BuildingType.keys()[basic])
 
 	var room_manager: RoomManager = main2d.room_manager
 	var start := room_manager.get_zone_node(room_manager.get_start_zone_id())
-	var major: BuildingSlot = null  # a MINOR slot here: the locked module is the Ballesta
+	var major: BuildingSlot = null  # a MINOR slot here: the locked building is the Ballesta
 	for slot in start.find_children("*", "BuildingSlot", true, false):
 		if slot.slot_type == BuildingSlot.SlotType.MINOR:
 			major = slot
@@ -225,39 +225,39 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	if major == null or other == null:
 		return
 
-	# Locked module: padlock + "Requiere", hotkey/_arm refuse, the build gate holds.
+	# Locked building: padlock + "Requiere", hotkey/_arm refuse, the build gate holds.
 	var menu: BuildingMenu = hud.building_menu
-	resources.add_resource("industry", 100)
+	resources.add_resource("iron", 100)
 	hud.defense_button.pressed.emit()
 	var sci_card: Control = menu.options.get_child(0)  # Ballesta (locked)
 	_expect(sci_card.find_children("*", "StatIcon", true, false).any(func(i: StatIcon) -> bool: return i.icon_type == "lock"), "locked card needs a padlock")
 	_expect(sci_card.tooltip_text.contains("Requiere: Planos de ballesta"), "locked card tooltip: %s" % sci_card.tooltip_text)
 	_press_key(KEY_1)
-	_expect(not menu.is_armed(), "hotkey must not arm a locked module")
-	menu._arm(Module.ModuleType.BALLESTA)
-	_expect(not menu.is_armed(), "_arm must refuse a locked module")
-	menu._armed_type = Module.ModuleType.BALLESTA  # force it: the build path must still refuse
-	var industry := resources.get_resource("industry")
+	_expect(not menu.is_armed(), "hotkey must not arm a locked building")
+	menu._arm(Building.BuildingType.BALLESTA)
+	_expect(not menu.is_armed(), "_arm must refuse a locked building")
+	menu._armed_type = Building.BuildingType.BALLESTA  # force it: the build path must still refuse
+	var iron := resources.get_resource("iron")
 	_expect(menu.get_block_reason(major) == "Requiere: Planos de ballesta", "locked reason: '%s'" % menu.get_block_reason(major))
 	hud.open_building_menu(major)
-	_expect(major.is_empty() and resources.get_resource("industry") == industry, "a locked module must not be built nor paid")
+	_expect(major.is_empty() and resources.get_resource("iron") == iron, "a locked building must not be built nor paid")
 	menu.close_menu()
 
-	# No research without a built Scriptorium, Ciencia or the prerequisite.
-	resources.add_resource("science", 1000)
+	# No research without a built Scriptorium, Saber or the prerequisite.
+	resources.add_resource("lore", 1000)
 	_expect(resources.get_research_block_reason("ballesta") == "Construí un Scriptorium" and not resources.research("ballesta"), "research needs a Scriptorium")
-	var scriptorium := (load(Module.CATALOG[Module.ModuleType.SCRIPTORIUM]["scene"]) as PackedScene).instantiate() as GeneratorModule
-	scriptorium.resource_type = "science"
+	var scriptorium := (load(Building.CATALOG[Building.BuildingType.SCRIPTORIUM]["scene"]) as PackedScene).instantiate() as WorkshopBuilding
+	scriptorium.resource_type = "lore"
 	scriptorium.yield_amount = 0  # only the research gate counts it
 	main2d.add_child(scriptorium)
-	resources.spend_resource("science", resources.get_resource("science"))
-	_expect(not resources.can_research("ballesta") and not resources.research("ballesta"), "research with 0 science must fail")
-	_expect(resources.get_research_block_reason("ballesta") == "Falta Ciencia", "no-science reason")
-	resources.add_resource("science", 1000)
-	_expect(resources.get_research_block_reason("generator_overclock") == "Requiere: Engranajes afinados", "prerequisite reason: '%s'" % resources.get_research_block_reason("generator_overclock"))
-	_expect(not resources.research("generator_overclock") and resources.get_resource("science") == 1000, "T2 without its prerequisite must fail and spend nothing")
+	resources.spend_resource("lore", resources.get_resource("lore"))
+	_expect(not resources.can_research("ballesta") and not resources.research("ballesta"), "research with 0 lore must fail")
+	_expect(resources.get_research_block_reason("ballesta") == "Falta Saber", "no-lore reason")
+	resources.add_resource("lore", 1000)
+	_expect(resources.get_research_block_reason("workshop_bellows") == "Requiere: Herramientas afinadas", "prerequisite reason: '%s'" % resources.get_research_block_reason("workshop_bellows"))
+	_expect(not resources.research("workshop_bellows") and resources.get_resource("lore") == 1000, "T2 without its prerequisite must fail and spend nothing")
 
-	# Panel at time_scale 0: open, research by button, only Ciencia is spent.
+	# Panel at time_scale 0: open, research by button, only Saber is spent.
 	Engine.time_scale = 0.0
 	hud.research_button.pressed.emit()
 	var panel := hud.research_panel
@@ -267,15 +267,15 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	for key in ResourceManager.KEYS:
 		before[key] = resources.get_resource(key)
 	(panel._list.get_node("ballesta").find_child("Research", true, false) as Button).pressed.emit()
-	_expect(resources.is_researched("ballesta") and resources.is_unlocked(Module.ModuleType.BALLESTA), "panel button should research at time_scale 0")
+	_expect(resources.is_researched("ballesta") and resources.is_unlocked(Building.BuildingType.BALLESTA), "panel button should research at time_scale 0")
 	for key in ResourceManager.KEYS:
-		var expected: int = before[key] - (8 if key == "science" else 0)
+		var expected: int = before[key] - (8 if key == "lore" else 0)
 		_expect(resources.get_resource(key) == expected, "research changed %s: %d != %d" % [key, resources.get_resource(key), expected])
 	_expect(hud._hint_panel.visible and hud._hint_title.text.begins_with("Investigado"), "researching should show an \"Investigado\" hint (got '%s')" % hud._hint_title.text)
 	var sci_research := panel._list.get_node("ballesta")
 	_expect((sci_research.find_child("State", true, false) as Label).text == "Investigada", "state after research")
 	_expect((sci_research.find_child("Research", true, false) as Button).disabled, "done research can't be bought twice")
-	_expect((panel._list.get_node("generator_overclock").find_child("State", true, false) as Label).text.begins_with("Requiere"), "T2 card shows its prerequisite")
+	_expect((panel._list.get_node("workshop_bellows").find_child("State", true, false) as Label).text.begins_with("Requiere"), "T2 card shows its prerequisite")
 	_expect(not resources.research("ballesta"), "research twice must fail")
 
 	# Esc closes the panel and never reaches Main2d's pause toggle; right click closes too.
@@ -298,57 +298,57 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	menu.close_menu()
 
 	# Light cost: 10 → 7 (paid and refunded at the discounted price).
-	var dust := resources.get_resource("dust")
-	_expect(RoomZone.get_power_cost() == RoomZone.POWER_COST, "base light cost")
-	_expect(resources.research("dust_lenses"), "research dust_lenses")
-	_expect(RoomZone.get_power_cost() == RoomZone.POWER_COST - 3, "discounted light cost %d" % RoomZone.get_power_cost())
-	var hint := other.find_children("*", "EnergyButton", true, false)
-	_expect(hint.is_empty() or (hint[0].get_node("Label") as Label).text.contains("(7 Polvo)"), "energy hint shows the discounted cost")
-	other.try_power_up()
-	_expect(other.is_powered and resources.get_resource("dust") == dust - 7, "lighting should cost 7 dust: %d" % (dust - resources.get_resource("dust")))
-	other.power_down()
-	_expect(resources.get_resource("dust") == dust, "switching off refunds what was paid")
+	var embers := resources.get_resource("embers")
+	_expect(RoomZone.get_light_cost() == RoomZone.LIGHT_COST, "base light cost")
+	_expect(resources.research("dry_tinder"), "research dry_tinder")
+	_expect(RoomZone.get_light_cost() == RoomZone.LIGHT_COST - 3, "discounted light cost %d" % RoomZone.get_light_cost())
+	var hint := other.find_children("*", "LightHint", true, false)
+	_expect(hint.is_empty() or (hint[0].get_node("Label") as Label).text.contains("(7 Brasas)"), "energy hint shows the discounted cost")
+	other.try_light_up()
+	_expect(other.is_lit and resources.get_resource("embers") == embers - 7, "lighting should cost 7 embers: %d" % (embers - resources.get_resource("embers")))
+	other.light_down()
+	_expect(resources.get_resource("embers") == embers, "switching off refunds what was paid")
 
-	# Generator yield: +25% then +50% on the summed bonus.
-	other.set_powered(true)
+	# Workshop yield: +25% then +50% on the summed bonus.
+	other.set_lit(true)
 	var slots := other.find_children("*", "BuildingSlot", true, false)
 	var other_major: BuildingSlot = slots.filter(func(b: BuildingSlot) -> bool: return b.slot_type == BuildingSlot.SlotType.MAJOR)[0]
 	var other_minor: BuildingSlot = slots.filter(func(b: BuildingSlot) -> bool: return b.slot_type == BuildingSlot.SlotType.MINOR)[0]
-	other_major.build(Module.ModuleType.FORJA)
-	var base_industry := ResourceManager.BASE_YIELD_INDUSTRY
-	_expect(resources.get_turn_yield("industry") == base_industry + 3, "generator yield without research")
-	_expect(resources.research("generator_tuning") and resources.get_turn_yield("industry") == base_industry + 4, "+25%%: %d" % resources.get_turn_yield("industry"))
-	_expect(resources.research("generator_overclock") and resources.get_turn_yield("industry") == base_industry + 5, "+50%%: %d" % resources.get_turn_yield("industry"))
-	var industry_before := resources.get_resource("industry")
+	other_major.build(Building.BuildingType.FORJA)
+	var base_iron := ResourceManager.BASE_YIELD_IRON
+	_expect(resources.get_turn_yield("iron") == base_iron + 3, "workshop yield without research")
+	_expect(resources.research("workshop_tuning") and resources.get_turn_yield("iron") == base_iron + 4, "+25%%: %d" % resources.get_turn_yield("iron"))
+	_expect(resources.research("workshop_bellows") and resources.get_turn_yield("iron") == base_iron + 5, "+50%%: %d" % resources.get_turn_yield("iron"))
+	var iron_before := resources.get_resource("iron")
 	resources.process_turn_production()
-	_expect(resources.get_resource("industry") == industry_before + base_industry + 5, "boosted yield must be what the turn pays")
+	_expect(resources.get_resource("iron") == iron_before + base_iron + 5, "boosted yield must be what the turn pays")
 
-	# Turret damage: 15 → 25 per real shot.
-	var turret := other_minor.build(Module.ModuleType.BALLESTA) as TurretModule
+	# Defense damage: 15 → 25 per real shot.
+	var defense := other_minor.build(Building.BuildingType.BALLESTA) as DefenseBuilding
 	var dummy := DamageDummy.new()
 	root.add_child(dummy)
-	turret.current_targets = [dummy]
-	turret._on_fire_timer_timeout()
-	_expect(dummy.taken == 15, "base turret shot %d" % dummy.taken)
-	_expect(resources.research("turret_rifling"), "research turret_rifling")
-	turret._on_fire_timer_timeout()
-	_expect(dummy.taken == 15 + 25, "rifled turret shot %d" % (dummy.taken - 15))
+	defense.current_targets = [dummy]
+	defense._on_fire_timer_timeout()
+	_expect(dummy.taken == 15, "base defense shot %d" % dummy.taken)
+	_expect(resources.research("defense_rifling"), "research defense_rifling")
+	defense._on_fire_timer_timeout()
+	_expect(dummy.taken == 15 + 25, "rifled defense shot %d" % (dummy.taken - 15))
 	dummy.queue_free()
 
-	# Discovery dust: +1 per room.
+	# Discovery embers: +1 per room.
 	var fm: FloorManager = main2d.floor_manager
-	dust = resources.get_resource("dust")
+	embers = resources.get_resource("embers")
 	fm.on_room_discovered("test_room", [])
-	var plain := resources.get_resource("dust") - dust
+	var plain := resources.get_resource("embers") - embers
 	_expect(resources.research("cartography"), "research cartography")
-	dust = resources.get_resource("dust")
+	embers = resources.get_resource("embers")
 	fm.on_room_discovered("test_room", [])
-	_expect(resources.get_resource("dust") - dust == plain + 1, "cartography: %d vs %d" % [resources.get_resource("dust") - dust, plain])
+	_expect(resources.get_resource("embers") - embers == plain + 1, "cartography: %d vs %d" % [resources.get_resource("embers") - embers, plain])
 
 	# Back to "only the two unlocks" so the build-menu checks see plain numbers.
-	other.set_powered(false)
+	other.set_lit(false)
 	resources.reset_research()
-	_expect(RoomZone.get_power_cost() == RoomZone.POWER_COST and not resources.is_unlocked(Module.ModuleType.BALLESTA), "reset_research wipes bonuses and unlocks")
+	_expect(RoomZone.get_light_cost() == RoomZone.LIGHT_COST and not resources.is_unlocked(Building.BuildingType.BALLESTA), "reset_research wipes bonuses and unlocks")
 	_expect(resources.research("ballesta"), "re-research the unlock")
 	scriptorium.queue_free()
 	await process_frame
@@ -362,12 +362,12 @@ class DamageDummy extends Node2D:
 
 
 ## Session 8: building only through the bottom bar's armed mode. Unarmed slot
-## clicks do nothing; Producción + key 3 arms Gen. Ciencia; ghost green/red
+## clicks do nothing; Producción + key 3 arms Gen. Saber; ghost green/red
 ## with reasons; Esc cancels without pausing; Defensa → Torreta builds.
 func _check_building_menu(hud: HUDController, main2d: Node, resources: ResourceManager) -> void:
 	var room_manager: RoomManager = main2d.room_manager
 	var room := room_manager.get_zone_node(room_manager.get_start_zone_id())
-	room.set_powered(true)
+	room.set_lit(true)
 	var major: BuildingSlot = null
 	var minors: Array[BuildingSlot] = []
 	for slot in room.find_children("*", "BuildingSlot", true, false):
@@ -375,32 +375,32 @@ func _check_building_menu(hud: HUDController, main2d: Node, resources: ResourceM
 			major = slot
 		else:
 			minors.append(slot)
-	_expect(major != null and minors.size() == 2, "powered start room should have 1 MAJOR + 2 MINOR slots")
+	_expect(major != null and minors.size() == 2, "lit start room should have 1 MAJOR + 2 MINOR slots")
 	if major == null or minors.size() != 2:
 		return
 	var menu: BuildingMenu = hud.building_menu
 
 	# Unarmed: slots aren't pickable and a routed slot click does nothing.
 	_expect(not major.input_pickable and not minors[0].input_pickable, "unarmed slots must not be pickable")
-	var industry_before := resources.get_resource("industry")
+	var iron_before := resources.get_resource("iron")
 	hud.open_building_menu(major)
-	_expect(not menu.visible and major.is_empty() and resources.get_resource("industry") == industry_before, "slot click without an armed module must not open/build/spend")
+	_expect(not menu.visible and major.is_empty() and resources.get_resource("iron") == iron_before, "slot click without an armed building must not open/build/spend")
 
-	# Producción with 0 industry: 3 disabled cards, hotkey can't arm.
-	resources.spend_resource("industry", resources.get_resource("industry"))
+	# Producción with 0 iron: 3 disabled cards, hotkey can't arm.
+	resources.spend_resource("iron", resources.get_resource("iron"))
 	hud.production_button.pressed.emit()
 	_expect(menu.visible and menu.tabs.current_tab == 0, "Producción button should open the production tab")
 	_expect(menu.options.get_child_count() == 3, "production tab shows %d cards" % menu.options.get_child_count())
 	var buttons := menu.options.find_children("*", "Button", true, false)
-	_expect(buttons.all(func(b: Button) -> bool: return b.disabled and b.text == "Elegir"), "cards must be 'Elegir' and disabled with 0 industry")
+	_expect(buttons.all(func(b: Button) -> bool: return b.disabled and b.text == "Elegir"), "cards must be 'Elegir' and disabled with 0 iron")
 	_press_key(KEY_3)
 	_expect(not menu.is_armed(), "hotkey must not arm an unaffordable card")
-	resources.add_resource("industry", 100)  # resource_changed → cards rebuilt
+	resources.add_resource("iron", 100)  # resource_changed → cards rebuilt
 	buttons = menu.options.find_children("*", "Button", true, false)
 	_expect(buttons.size() == 3 and buttons.all(func(b: Button) -> bool: return not b.disabled), "cards must enable once affordable")
-	_press_key(KEY_3)  # Gen. Ciencia
+	_press_key(KEY_3)  # Gen. Saber
 	_expect(menu.is_armed(), "key 3 should arm the third card")
-	_expect(major.outline.default_color == BuildingSlot.HIGHLIGHT_OUTLINE, "armed generator should outline the free MAJOR slot")
+	_expect(major.outline.default_color == BuildingSlot.HIGHLIGHT_OUTLINE, "armed workshop should outline the free MAJOR slot")
 	_expect(major.input_pickable and minors[0].input_pickable, "armed mode must make empty slots pickable")
 
 	# Ghost: green on the MAJOR slot, red + reason on a MINOR one.
@@ -412,32 +412,32 @@ func _check_building_menu(hud: HUDController, main2d: Node, resources: ResourceM
 	_expect(minors[0].get_ghost() != null and minors[0].get_ghost().modulate == BuildingSlot.GHOST_BLOCKED, "red ghost over a wrong-size slot")
 	_expect(menu.get_block_reason(minors[0]).begins_with("Tamaño incorrecto"), "wrong-size reason: '%s'" % menu.get_block_reason(minors[0]))
 	minors[0].mouse_exited.emit()
-	var saved := resources.get_resource("industry")
-	resources.spend_resource("industry", saved)
-	_expect(menu.get_block_reason(major) == "Falta Industria", "no-industry reason: '%s'" % menu.get_block_reason(major))
+	var saved := resources.get_resource("iron")
+	resources.spend_resource("iron", saved)
+	_expect(menu.get_block_reason(major) == "Falta Hierro", "no-iron reason: '%s'" % menu.get_block_reason(major))
 	hud.open_building_menu(major)
-	_expect(major.is_empty() and menu.is_armed(), "armed click without industry must not build nor disarm")
-	resources.add_resource("industry", saved)
-	room.set_powered(false)  # room_power_changed → re-arm
+	_expect(major.is_empty() and menu.is_armed(), "armed click without iron must not build nor disarm")
+	resources.add_resource("iron", saved)
+	room.set_lit(false)  # room_light_changed → re-arm
 	_expect(menu.is_armed() and menu.get_block_reason(major) == "Sala apagada", "unlit-room reason: '%s'" % menu.get_block_reason(major))
-	room.set_powered(true)
+	room.set_lit(true)
 
 	# Armed click builds, spends, and leaves armed mode clean.
-	var science_yield := resources.get_turn_yield("science")
-	var gain_label: Label = hud.stat_panel.gain_labels["science"]
-	industry_before = resources.get_resource("industry")
+	var lore_yield := resources.get_turn_yield("lore")
+	var gain_label: Label = hud.stat_panel.gain_labels["lore"]
+	iron_before = resources.get_resource("iron")
 	hud.open_building_menu(major)
 	_expect(not major.is_empty() and not menu.visible and not menu.is_armed(), "armed build did not happen")
-	_expect(resources.get_resource("industry") < industry_before, "armed build did not spend industry")
+	_expect(resources.get_resource("iron") < iron_before, "armed build did not spend iron")
 	_expect(not minors[0].input_pickable and major.outline.default_color != BuildingSlot.HIGHLIGHT_OUTLINE, "armed state not cleared after build")
-	_expect(resources.get_turn_yield("science") == science_yield + 3, "science yield after generator")
-	_expect(gain_label.text == "+%d" % (science_yield + 3), "science gain label '%s'" % gain_label.text)
+	_expect(resources.get_turn_yield("lore") == lore_yield + 3, "lore yield after workshop")
+	_expect(gain_label.text == "+%d" % (lore_yield + 3), "lore gain label '%s'" % gain_label.text)
 
 	# Esc cancels armed mode first — it must not reach Main2d's pause toggle.
 	hud.defense_button.pressed.emit()
 	_expect(menu.visible and menu.tabs.current_tab == 1, "Defensa button should open the defense tab")
 	_press_key(KEY_1)  # Ballesta
-	_expect(menu.is_armed(), "key 1 should arm the turret")
+	_expect(menu.is_armed(), "key 1 should arm the defense")
 	# A probe sitting between Main2d and the HUD in input order tells whether
 	# Esc got past the HUD.
 	var probe := InputProbe.new()
@@ -459,9 +459,9 @@ func _check_building_menu(hud: HUDController, main2d: Node, resources: ResourceM
 	# Defensa → Torreta → click a free MINOR slot builds there.
 	hud.defense_button.pressed.emit()
 	(menu.options.find_children("*", "Button", true, false)[0] as Button).pressed.emit()
-	_expect(minors.all(func(m: BuildingSlot) -> bool: return m.outline.default_color == BuildingSlot.HIGHLIGHT_OUTLINE), "armed turret should outline free minor slots")
+	_expect(minors.all(func(m: BuildingSlot) -> bool: return m.outline.default_color == BuildingSlot.HIGHLIGHT_OUTLINE), "armed defense should outline free minor slots")
 	hud.open_building_menu(minors[0])
-	_expect(not minors[0].is_empty() and not menu.visible and not menu.is_armed(), "armed turret build did not happen")
+	_expect(not minors[0].is_empty() and not menu.visible and not menu.is_armed(), "armed defense build did not happen")
 	_expect(minors[1].outline.default_color != BuildingSlot.HIGHLIGHT_OUTLINE, "other slot highlight not cleared")
 
 
@@ -501,21 +501,21 @@ func _check_tactical_pause(hud: HUDController, main2d: Node, resources: Resource
 		hud.defense_button.pressed.emit()
 		_press_key(KEY_4)  # Trampa de pinchos (Brasero/Catapulta are locked)
 		_expect(menu.is_armed(), "arming must work in tactical pause")
-		var industry_before := resources.get_resource("industry")
+		var iron_before := resources.get_resource("iron")
 		hud.open_building_menu(free_minor)
-		_expect(not free_minor.is_empty() and resources.get_resource("industry") < industry_before, "building must work in tactical pause")
+		_expect(not free_minor.is_empty() and resources.get_resource("iron") < iron_before, "building must work in tactical pause")
 
 	# Light off/on (middle click) and the hero popup while frozen.
-	resources.add_resource("dust", 20)
+	resources.add_resource("embers", 20)
 	var middle := InputEventMouseButton.new()
 	middle.button_index = MOUSE_BUTTON_MIDDLE
 	middle.pressed = false  # heroes-9: the toggle fires on release (press may start a camera drag)
 	_clear_handled()
 	room._on_input_event(root, middle, 0)
-	_expect(not room.is_powered, "middle click should switch the room off in tactical pause")
+	_expect(not room.is_lit, "middle click should switch the room off in tactical pause")
 	_clear_handled()
 	room._on_input_event(root, middle, 0)
-	_expect(room.is_powered, "middle click should light the room in tactical pause")
+	_expect(room.is_lit, "middle click should light the room in tactical pause")
 	var portrait := hud.portraits.get_child(0) as HeroPortrait
 	portrait.portrait_clicked.emit(portrait)
 	_expect(hud.character_popup.visible, "hero popup must open in tactical pause")

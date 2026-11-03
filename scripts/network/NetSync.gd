@@ -67,8 +67,8 @@ static func broadcast(kind: String, data: Dictionary) -> void:
 func _hook_host_signals() -> void:
 	var mark := func(_a = null, _b = null, _c = null) -> void: _dirty = true
 	main2d.door_turn_system.room_revealed.connect(mark)
-	main2d.room_manager.room_power_changed.connect(mark)
-	main2d.room_manager.module_built.connect(mark)
+	main2d.room_manager.room_light_changed.connect(mark)
+	main2d.room_manager.building_built.connect(mark)
 	ManagerLocator.get_resource_manager().resource_changed.connect(mark)
 	ManagerLocator.get_resource_manager().research_changed.connect(mark)
 	ManagerLocator.get_party_inventory().stash_changed.connect(mark)

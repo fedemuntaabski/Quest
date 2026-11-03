@@ -98,10 +98,10 @@ func _test_detail_text() -> void:
 	_expect(seen.contains("Cazador") and not seen.contains("Vida:"), "SEEN shows the behavior, no stats")
 	entry.kill_count = 1
 	var killed := BestiaryPanel.detail_text(skelet, entry)
-	_expect(killed.contains("Vida:") and killed.contains(skelet.description) and not killed.contains("Daño a módulos"), "KILLED shows stats and description")
+	_expect(killed.contains("Vida:") and killed.contains(skelet.description) and not killed.contains("Daño a obras"), "KILLED shows stats and description")
 	entry.kill_count = BestiaryEntry.MASTER_KILLS
 	var mastered := BestiaryPanel.detail_text(skelet, entry)
-	_expect(mastered.contains("Daño a módulos") and mastered.contains("Rol:") and mastered.contains(skelet.lore), "MASTERED shows everything")
+	_expect(mastered.contains("Daño a obras") and mastered.contains("Rol:") and mastered.contains(skelet.lore), "MASTERED shows everything")
 
 
 ## Saves of two slots stay apart; legacy keys are dropped; autosave once a slot is loaded.

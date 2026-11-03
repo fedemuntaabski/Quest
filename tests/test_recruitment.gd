@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## heroes-9: Prisoner room recruitment over a live Main2d + HUD (fallback map).
-## A cage holds a hero the party didn't pick; freeing it costs Industria or
+## A cage holds a hero the party didn't pick; freeing it costs Hierro or
 ## Comida (RoomTypeRule.recruit_costs), adds the hero (portrait, F3/F4) and keeps
 ## it on the next floors (GameSession.recruited_ids). The party caps at 4.
 ##   godot --headless --path . --script res://tests/test_recruitment.gd
@@ -53,12 +53,12 @@ func _check_recruit(main2d: Node, hud: HUDController) -> void:
 	if cage == null:
 		return
 	_expect(cage.hero_id in ["rogue", "tank"], "the prisoner is a hero not picked: '%s'" % cage.hero_id)
-	var industry_cost: int = cage.costs.get("industry", 0)
+	var iron_cost: int = cage.costs.get("iron", 0)
 	var food_cost: int = cage.costs.get("food", 0)
-	_expect(industry_cost > 0 and food_cost > 0, "two prices (Industria, Comida): %s" % [cage.costs])
+	_expect(iron_cost > 0 and food_cost > 0, "two prices (Hierro, Comida): %s" % [cage.costs])
 
 	# Short of both: nothing happens.
-	_expect(not cage.free_with("industry") and main2d.heroes.size() == 2, "can't free without Industria")
+	_expect(not cage.free_with("iron") and main2d.heroes.size() == 2, "can't free without Hierro")
 	cage.open_dialog()
 	var price_buttons := 0
 	for button in cage.dialog.find_children("*", "Button", true, false):
@@ -68,9 +68,9 @@ func _check_recruit(main2d: Node, hud: HUDController) -> void:
 	_expect(price_buttons == 2, "dialog offers both prices (%d)" % price_buttons)
 	cage.dialog.hide()
 
-	resources.add_resource("industry", industry_cost + 3)
-	_expect(cage.free_with("industry"), "pay Industria to free")
-	_expect(resources.get_resource("industry") == 3, "Industria charged (%d left)" % resources.get_resource("industry"))
+	resources.add_resource("iron", iron_cost + 3)
+	_expect(cage.free_with("iron"), "pay Hierro to free")
+	_expect(resources.get_resource("iron") == 3, "Hierro charged (%d left)" % resources.get_resource("iron"))
 	_expect(main2d.heroes.size() == 3 and main2d.heroes[2].stats.hero_id == cage.hero_id, "recruit joins as hero 3")
 	_expect(session.recruited_ids.has(cage.hero_id), "recruit stored in GameSession")
 	_expect(main2d.heroes[2].current_zone_id == start, "recruit stands in the prisoner's room")

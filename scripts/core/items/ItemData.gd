@@ -1,8 +1,8 @@
 extends Resource
 class_name ItemData
 
-## ItemData: un objeto (arma, armadura, consumible, reliquia). Equipo (arma,
-## armadura, reliquia) suma `modifiers` a su portador mientras está equipado
+## ItemData: un objeto (arma, armadura, consumible, talismán). Equipo (arma,
+## armadura, talismán) suma `modifiers` a su portador mientras está equipado
 ## (PartyInventory -> PlayerStats, tercera capa base -> nivel -> equipo).
 ## Los consumibles no tienen modifiers: se gastan y aplican `consumable_effect`
 ## (InventoryComponent). `modifiers` usa solo stats que ya existen: hp (vida
@@ -10,7 +10,7 @@ class_name ItemData
 ## rápido) y attack_range (px). Los .tres de resources/items/ los genera
 ## tools/build_items.gd y se pueden editar a mano.
 
-enum Slot { WEAPON, ARMOR, CONSUMABLE, RELIC }
+enum Slot { WEAPON, ARMOR, CONSUMABLE, TALISMAN }
 enum Rarity { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY }
 enum ConsumableEffect {
 	NONE,
@@ -20,7 +20,7 @@ enum ConsumableEffect {
 }
 
 const MODIFIER_KEYS := ["hp", "attack_damage", "attack_interval", "attack_range"]
-const SLOT_LABELS := {Slot.WEAPON: "Arma", Slot.ARMOR: "Armadura", Slot.CONSUMABLE: "Consumible", Slot.RELIC: "Reliquia"}
+const SLOT_LABELS := {Slot.WEAPON: "Arma", Slot.ARMOR: "Armadura", Slot.CONSUMABLE: "Consumible", Slot.TALISMAN: "Talismán"}
 const RARITY_LABELS := {Rarity.COMMON: "Común", Rarity.UNCOMMON: "Poco común", Rarity.RARE: "Raro", Rarity.EPIC: "Épico", Rarity.LEGENDARY: "Legendario"}
 const RARITY_COLORS := {
 	Rarity.COMMON: Color(0.8, 0.78, 0.72),

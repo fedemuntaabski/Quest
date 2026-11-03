@@ -21,6 +21,6 @@ script = ExtResource("1_rule")
 [resource]
 script = ExtResource("1_profile")
 id = &"tower_breaker"
-display_name = "Rompe-torres"
+display_name = "Rompe-defensas"
 description = "Va directo a las ballestas y luego a las trampas. Sin defensas, caza héroes."
 rules = Array[ExtResource("1_rule")]([SubResource("rule_0"), SubResource("rule_1"), SubResource("rule_2"), SubResource("rule_3")])

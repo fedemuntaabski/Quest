@@ -1,9 +1,9 @@
 extends SceneTree
 
 ## Headless smoke test: boots Main2d (generated map, then fallback), opens
-## every door in reveal order and checks discovery dust + fog consistency,
+## every door in reveal order and checks discovery embers + fog consistency,
 ## room lighting (start lit, middle-click toggle + refund, dark canvas), the
-## exit hint modes and the exit-gated Nexo pickup. Session 11: a map with a
+## exit hint modes and the exit-gated Relic pickup. Session 11: a map with a
 ## loop + Rest/Loot/Elite rooms (rewards, heal, spawn rules, loop paths, badges, discovery banners).
 ##   godot --headless --path . --script res://tests/test_map_flow.gd
 
@@ -54,11 +54,11 @@ func _run(use_fallback: bool) -> void:
 		start_bounds = await _check_camera(camera, main2d.player, label)
 
 	_check_lighting(room_manager, resources, label)
-	var nexo_controller: NexoController = main2d.nexo_controller
-	if nexo_controller.get_block_reason() == "":
-		failures.append("%s: Nexo pickable before discovering the exit" % label)
-	nexo_controller.confirm_pickup()
-	if main2d.extraction_manager.current_phase != ExtractionManager.Phase.EXPLORATION or main2d.player.is_carrying_nexo:
+	var relic_controller: RelicController = main2d.relic_controller
+	if relic_controller.get_block_reason() == "":
+		failures.append("%s: Reliquia pickable before discovering the exit" % label)
+	relic_controller.confirm_pickup()
+	if main2d.extraction_manager.current_phase != ExtractionManager.Phase.EXPLORATION or main2d.player.is_carrying_relic:
 		failures.append("%s: confirm_pickup bypassed the exit gate" % label)
 	var indicator: ExitIndicator = main2d.exit_indicator
 	var config := room_manager.visual_config
@@ -67,11 +67,11 @@ func _run(use_fallback: bool) -> void:
 	_expect_hint_drawn(indicator, false, "%s start (default mode)" % label)
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ALWAYS, true, "%s start" % label)
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_DISCOVERY, false, "%s start" % label)
-	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, false, "%s start" % label)
+	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_RELIC, false, "%s start" % label)
 
 	config.exit_hint_mode = MapVisualConfig.ExitHintMode.ON_DISCOVERY
 	var exit_zone := _exit_zone(room_manager)
-	var per_room: int = main2d.floor_manager.config.discovery_dust(1)
+	var per_room: int = main2d.floor_manager.config.discovery_embers(1)
 	var opened := 0
 	var progress := true
 	while progress:
@@ -79,15 +79,15 @@ func _run(use_fallback: bool) -> void:
 		for door in room_manager.get_all_doors():
 			if door.is_open or door.is_secret or not room_manager.is_zone_revealed(door.from_zone_id):
 				continue  # secret doors open by themselves (Main2d._check_secret_rooms)
-			var dust_before := resources.get_resource("dust")
+			var embers_before := resources.get_resource("embers")
 			if not doors.open_room(door.target_room_id):
 				failures.append("%s: open_room('%s') refused" % [label, door.target_room_id])
 			door.disable_door()
 			opened += 1
 			progress = true
-			var expected_dust := _expected_dust(main2d, door.target_room_id, per_room)
-			if resources.get_resource("dust") - dust_before != expected_dust:
-				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, door.target_room_id, resources.get_resource("dust") - dust_before, expected_dust])
+			var expected_embers := _expected_embers(main2d, door.target_room_id, per_room)
+			if resources.get_resource("embers") - embers_before != expected_embers:
+				failures.append("%s: discovering '%s' gave %d embers, expected %d" % [label, door.target_room_id, resources.get_resource("embers") - embers_before, expected_embers])
 			_expect_hint_drawn(indicator, room_manager.is_zone_revealed(exit_zone), "%s after opening '%s'" % [label, door.target_room_id])
 
 	if camera and not (camera.get_bounds().encloses(start_bounds) and camera.get_bounds().get_area() > start_bounds.get_area()):
@@ -107,15 +107,15 @@ func _run(use_fallback: bool) -> void:
 		failures.append("%s: no revealed path start -> exit" % label)
 
 	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_DISCOVERY, true, "%s explored" % label)
-	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, false, "%s explored" % label)
-	if nexo_controller.get_block_reason() != "":
-		failures.append("%s: Nexo still blocked after exploring: %s" % [label, nexo_controller.get_block_reason()])
-	nexo_controller.confirm_pickup()
-	if main2d.extraction_manager.current_phase != ExtractionManager.Phase.EXTRACTION or not main2d.player.is_carrying_nexo:
-		failures.append("%s: confirming the Nexo dialog did not start extraction" % label)
-	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_CRYSTAL, true, "%s carrying" % label)
+	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_RELIC, false, "%s explored" % label)
+	if relic_controller.get_block_reason() != "":
+		failures.append("%s: Reliquia still blocked after exploring: %s" % [label, relic_controller.get_block_reason()])
+	relic_controller.confirm_pickup()
+	if main2d.extraction_manager.current_phase != ExtractionManager.Phase.EXTRACTION or not main2d.player.is_carrying_relic:
+		failures.append("%s: confirming the Reliquia dialog did not start extraction" % label)
+	_expect_hint(indicator, config, MapVisualConfig.ExitHintMode.ON_RELIC, true, "%s carrying" % label)
 	if not indicator.is_emphasized():
-		failures.append("%s: exit hint not emphasized while carrying the crystal" % label)
+		failures.append("%s: exit hint not emphasized while carrying the relic" % label)
 	# Shared cached .tres: restore the default for the next run.
 	config.exit_hint_mode = MapVisualConfig.ExitHintMode.ON_DISCOVERY
 
@@ -123,8 +123,8 @@ func _run(use_fallback: bool) -> void:
 	await process_frame
 
 
-## Discovery dust for a group: 0 for a loop corridor (no room), else the
-## per-room amount plus the room type's reward when it pays in dust.
+## Discovery embers for a group: 0 for a loop corridor (no room), else the
+## per-room amount plus the room type's reward when it pays in embers.
 ## What the living heroes' discovery passives add to `key` (FloorManager._apply_hero_passives).
 func _hero_passive_bonus(main2d: Node, key: String) -> int:
 	var total := 0
@@ -135,12 +135,12 @@ func _hero_passive_bonus(main2d: Node, key: String) -> int:
 	return total
 
 
-func _expected_dust(main2d: Node, group_id: String, per_room: int) -> int:
+func _expected_embers(main2d: Node, group_id: String, per_room: int) -> int:
 	var room_manager: RoomManager = main2d.room_manager
 	if room_manager.get_zone_kind(group_id) == "corridor":
 		return 0
 	var rule: RoomTypeRule = main2d.floor_manager.room_type_rule(room_manager.get_room_type(group_id))
-	return per_room + (rule.reward_at(main2d.floor_manager.floor_index) if rule and rule.reward_resource == "dust" else 0)
+	return per_room + (rule.reward_at(main2d.floor_manager.floor_index) if rule and rule.reward_resource == "embers" else 0)
 
 
 ## Session 11: boots a floor that has a loop + Rest + Loot + Elite (seed found
@@ -186,7 +186,7 @@ func _run_types_and_loops() -> void:
 	var fm: FloorManager = main2d.floor_manager
 	var enemies: EnemyManager = main2d.enemy_manager
 	var hero_stats: CharacterStats = main2d.player.stats
-	var per_room := config.discovery_dust(floor_index)
+	var per_room := config.discovery_embers(floor_index)
 	fm.config = fm.config.duplicate()  # the door invasions above must not hit the enemy cap
 	fm.config.run_curve = null  # progresion-10: the curve wins over the array
 	fm.config.max_enemies_by_floor = PackedInt32Array([999])
@@ -214,7 +214,7 @@ func _run_types_and_loops() -> void:
 			var reward_before := resources.get_resource(reward_key) if reward_key != "" else 0
 			var reward_yield := resources.get_turn_yield(reward_key) if reward_key != "" else 0
 			var reward_passive := _hero_passive_bonus(main2d, reward_key)
-			var dust_before := resources.get_resource("dust")
+			var embers_before := resources.get_resource("embers")
 			var visual := room_manager.visual_config.room_type_visual(room_manager.get_room_type(group)) if room_manager.get_zone_kind(group) == "room" else null
 			var banners_before := _count_banners(visual.banner_text) if visual else 0
 			if rule and rule.heal_on_discovery > 0:
@@ -230,10 +230,10 @@ func _run_types_and_loops() -> void:
 			progress = true
 			if visual and visual.banner_text != "" and _count_banners(visual.banner_text) != banners_before + 1:
 				failures.append("%s: discovering '%s' did not show the banner '%s' exactly once" % [label, group, visual.banner_text])
-			var expected_dust := _expected_dust(main2d, group, per_room)
-			if resources.get_resource("dust") - dust_before != expected_dust:
-				failures.append("%s: discovering '%s' gave %d dust, expected %d" % [label, group, resources.get_resource("dust") - dust_before, expected_dust])
-			if rule and reward_key != "" and reward_key != "dust":
+			var expected_embers := _expected_embers(main2d, group, per_room)
+			if resources.get_resource("embers") - embers_before != expected_embers:
+				failures.append("%s: discovering '%s' gave %d embers, expected %d" % [label, group, resources.get_resource("embers") - embers_before, expected_embers])
+			if rule and reward_key != "" and reward_key != "embers":
 				# The turn tick also pays the resource's yield and the heroes' discovery passives.
 				var door_bonus: Dictionary = fm.door_bonus(group)
 				var reward_door: int = door_bonus["amount"] if door_bonus["key"] == reward_key else 0
@@ -264,7 +264,7 @@ func _run_types_and_loops() -> void:
 			enemies.spawn_enemies_in_room(room.id, 2)
 			if in_pool or enemies._enemies.size() != count or not room_manager.is_room_dark(room.id):
 				failures.append("%s: Rest room '%s' can host spawns (in pool %s)" % [label, room.id, in_pool])
-			if not (room.id in room_manager.get_unpowered_revealed_room_group_ids()):
+			if not (room.id in room_manager.get_unlit_revealed_room_group_ids()):
 				failures.append("%s: Rest room '%s' should still count as dark" % [label, room.id])
 		elif type != RoomData.RoomType.START and not in_pool:
 			failures.append("%s: dark '%s' missing from the spawn pool" % [label, room.id])
@@ -380,7 +380,7 @@ func _expect_hint_drawn(indicator: ExitIndicator, expected: bool, when: String) 
 		failures.append("%s: arrow visible while hint hidden" % when)
 
 
-## Start room lit for free; middle-click toggle pays/refunds POWER_COST; the
+## Start room lit for free; middle-click toggle pays/refunds LIGHT_COST; the
 ## free start light refunds nothing; dark canvas present.
 func _check_lighting(room_manager: RoomManager, resources: ResourceManager, label: String) -> void:
 	if room_manager.get_node_or_null("DarkCanvas") == null:
@@ -390,21 +390,21 @@ func _check_lighting(room_manager: RoomManager, resources: ResourceManager, labe
 	if light == null:
 		failures.append("%s: start room has no RoomLight" % label)
 		return
-	if not zone.is_powered or light.is_dark():
+	if not zone.is_lit or light.is_dark():
 		failures.append("%s: start room not lit by default" % label)
-	var dust := resources.get_resource("dust")
-	zone.toggle_power()
-	if zone.is_powered or not light.is_dark() or resources.get_resource("dust") != dust:
-		failures.append("%s: switching the free start light off must darken it without refund (dust %d -> %d)" % [label, dust, resources.get_resource("dust")])
+	var embers := resources.get_resource("embers")
+	zone.toggle_light()
+	if zone.is_lit or not light.is_dark() or resources.get_resource("embers") != embers:
+		failures.append("%s: switching the free start light off must darken it without refund (embers %d -> %d)" % [label, embers, resources.get_resource("embers")])
 	if not light.is_affordable_highlighted():
-		failures.append("%s: %d dust >= cost but room not highlighted as affordable" % [label, dust])
-	zone.toggle_power()
-	if not zone.is_powered or light.is_dark() or light.is_affordable_highlighted() or resources.get_resource("dust") != dust - RoomZone.POWER_COST:
-		failures.append("%s: middle-click light should cost %d dust" % [label, RoomZone.POWER_COST])
-	zone.toggle_power()
-	if zone.is_powered or resources.get_resource("dust") != dust:
+		failures.append("%s: %d embers >= cost but room not highlighted as affordable" % [label, embers])
+	zone.toggle_light()
+	if not zone.is_lit or light.is_dark() or light.is_affordable_highlighted() or resources.get_resource("embers") != embers - RoomZone.LIGHT_COST:
+		failures.append("%s: middle-click light should cost %d embers" % [label, RoomZone.LIGHT_COST])
+	zone.toggle_light()
+	if zone.is_lit or resources.get_resource("embers") != embers:
 		failures.append("%s: switching a paid light off should refund it" % label)
-	zone.set_powered(true)  # restore the default for the rest of the run
+	zone.set_lit(true)  # restore the default for the rest of the run
 
 
 func _check_edge_point() -> void:

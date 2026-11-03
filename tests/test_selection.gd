@@ -240,7 +240,7 @@ func _check_groups_and_camera(main2d: Node, hud: HUDController) -> void:
 
 	# Build menu open: digits pick cards (menu wins), Ctrl+N still assigns.
 	sel.select_only("warrior")
-	root.get_node("ResourceManager").add_resource("industry", 100)
+	root.get_node("ResourceManager").add_resource("iron", 100)
 	hud.production_button.pressed.emit()
 	_expect(hud.building_menu.visible, "production button should open the build menu")
 	_press(KEY_1)

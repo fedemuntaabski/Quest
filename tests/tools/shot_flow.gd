@@ -19,6 +19,17 @@ func _initialize() -> void:
 	root.add_child(_main)
 	await _wait(3.0)  # past the first fade, slow on a cold start
 	await _shot("menu")
+	var select := HeroSelectMenu.new()
+	select.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var over_menu := CanvasLayer.new()
+	over_menu.layer = 150
+	root.add_child(over_menu)
+	over_menu.add_child(select)
+	select.open()
+	await _wait(0.8)
+	await _shot("hero_select")
+	over_menu.queue_free()
+	await _wait(0.2)
 
 	root.get_node("SaveManager").load_game(SLOT)
 	root.get_node("GameSession").set_selection(["warrior", "mage"] as Array[String])
@@ -28,6 +39,14 @@ func _initialize() -> void:
 	await _shot("floor")
 
 	var hud: HUDController = ManagerLocator.get_hud()
+	hud.building_menu.open_category(0)
+	await _wait(0.4)
+	await _shot("build")
+	hud.building_menu.open_category(hud.building_menu.RESEARCH_TAB)
+	await _wait(0.4)
+	await _shot("research")
+	hud.building_menu.close_menu()
+	await _wait(0.2)
 	hud.show_hint("Sala de Descanso", "Una pista larga que antes tapaba el encabezado de la ficha de héroe.", QuestPalette.GOLD_LIGHT)
 	var hero: Player = main2d.heroes[0]
 	hud.character_popup.open_for(hero.stats, hero.character_data)

@@ -13,12 +13,12 @@ description = "La mazmorra tal como fue pensada."
 script = ExtResource("2_level")
 id = "hard"
 display_name = "Difícil"
-description = "Enemigos más duros y numerosos, menos recursos al empezar y un Nexo más frágil."
+description = "Enemigos más duros y numerosos, menos recursos al empezar y una Reliquia más frágil."
 hp_mult = 1.35
 damage_mult = 1.25
 threat_mult = 1.25
 extra_max_enemies = 2
-nexo_hp_mult = 0.8
+relic_hp_mult = 0.8
 start_resource_mult = 0.75
 
 [resource]

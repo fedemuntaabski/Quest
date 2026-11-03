@@ -13,6 +13,6 @@ hp_mult = 1.12
 damage_mult = 1.08
 speed_mult = 1.4
 description = "Un lobo de la cripta. Nadie corre más que él, y lo sabe."
-lore = "Sigue el rastro del Nexo por el olor del miedo."
+lore = "Sigue el rastro de la Reliquia por el olor del miedo."
 bestiary_order = 17
 target_profile = ExtResource("tp_profile")

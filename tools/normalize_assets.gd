@@ -42,16 +42,16 @@ var _sizes := {}  # "Epic Explosion 001 Small (Explosions/epic_explosion_001)" -
 ## assets/art/ui/placeholder_<nombre>.png con color por categoría y una X para
 ## que se note a simple vista. Reemplazar por arte real conservando el tamaño.
 const PLACEHOLDERS := {
-	"module": ["gen_industry", "gen_food", "gen_science", "turret", "trap"],
-	"nexo": ["nexo"],
-	"resource": ["res_industry", "res_food", "res_science", "res_dust", "res_lock"],
+	"building": ["gen_iron", "gen_food", "gen_lore", "defense", "trap"],
+	"relic": ["relic"],
+	"resource": ["res_iron", "res_food", "res_lore", "res_embers", "res_lock"],
 	"room": ["room_start", "room_exit"],
 	"status": ["status_slow"],
-	"research": ["research_science_generator", "research_turret_plans", "research_generator_tuning", "research_dust_lenses", "research_cartography", "research_generator_overclock", "research_turret_rifling"],
+	"research": ["research_lore_workshop", "research_defense_plans", "research_workshop_tuning", "research_dry_tinder", "research_cartography", "research_workshop_bellows", "research_defense_rifling"],
 	"ability": ["ability_warrior_passive", "ability_warrior_active", "ability_mage_passive", "ability_mage_active", "ability_rogue_passive", "ability_rogue_active", "ability_tank_passive", "ability_tank_active"],
 }
 const PLACEHOLDER_COLORS := {
-	"module": Color(0.55, 1.0, 0.1), "nexo": Color(0.1, 0.9, 1.0), "resource": Color(0.2, 0.6, 1.0),
+	"building": Color(0.55, 1.0, 0.1), "relic": Color(0.1, 0.9, 1.0), "resource": Color(0.2, 0.6, 1.0),
 	"room": Color(1.0, 0.55, 0.1), "status": Color(1.0, 0.15, 0.15), "research": Color(1.0, 0.1, 0.8),
 	"ability": Color(1.0, 0.95, 0.1),
 }

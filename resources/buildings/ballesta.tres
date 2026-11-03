@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BuildingDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/buildings/BuildingDef.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+type = 3
+display_name = "Ballesta"
+description = "Dispara a los enemigos que entran en la sala."
+slot = 1
+tier = 1
+hp = 15
+base_cost = 4
+requires_light = true
+scene_path = "res://scenes/world/DefenseBuilding.tscn"
+icon_path = "res://assets/art/items/weapon_bow_2.png"
+damage = 15
+fire_rate = 1.0

@@ -44,7 +44,7 @@ func _initialize() -> void:
 
 	await _check_malformed(ida)
 	await _check_doors_and_moves(main2d, a, ida, idb)
-	await _check_power_and_build(main2d)
+	await _check_light_and_build(main2d)
 	await _check_stats(a, ida, idb)
 	await _check_items(ida)
 	await _check_rate_limit()
@@ -76,7 +76,7 @@ func _check_malformed(ida: String) -> void:
 	_expect(await _run(1, "move", {"zone": "start_room"}) == CoopCommands.INVALID, "move without heroes")
 	_expect(await _run(1, "move", {"heroes": [3], "zone": "start_room"}) == CoopCommands.INVALID, "hero ids must be Strings")
 	_expect(await _run(1, "build", {"zone": "start_room"}) == CoopCommands.INVALID, "build without slot/type")
-	_expect(await _run(1, "build", {"zone": "start_room", "slot": 0, "type": 99}) == CoopCommands.INVALID, "unknown module type")
+	_expect(await _run(1, "build", {"zone": "start_room", "slot": 0, "type": 99}) == CoopCommands.INVALID, "unknown building type")
 	_expect(await _run(1, "equip", {"hero": ida, "item": "no_such_item"}) == CoopCommands.INVALID, "unknown item")
 	_expect(await _run(1, "open_door", {"door": "nope", "heroes": [ida]}) == CoopCommands.INVALID, "unknown door")
 
@@ -111,7 +111,7 @@ func _check_doors_and_moves(main2d: Node, a: Player, ida: String, idb: String) -
 	_expect(await _run(OTHER, "move", {"heroes": [idb], "zone": start}) == "", "peer 2 moves its own hero")
 
 
-func _check_power_and_build(main2d: Node) -> void:
+func _check_light_and_build(main2d: Node) -> void:
 	var room_manager: RoomManager = main2d.room_manager
 	var start := room_manager.get_start_zone_id()
 	var dark := ""
@@ -120,20 +120,20 @@ func _check_power_and_build(main2d: Node) -> void:
 			dark = zone_id
 	_expect(dark != "", "a discovered dark room exists")
 	rm.reset_resources(0, 0, 0, 0)
-	_expect(await _run(OTHER, "toggle_power", {"zone": dark}) == "Polvo insuficiente", "lighting needs dust")
-	_expect(await _run(OTHER, "build", {"zone": dark, "slot": 0, "type": int(Module.ModuleType.FORJA)}) != "", "can't build in a dark room")
+	_expect(await _run(OTHER, "toggle_light", {"zone": dark}) == "Brasas insuficientes", "lighting needs embers")
+	_expect(await _run(OTHER, "build", {"zone": dark, "slot": 0, "type": int(Building.BuildingType.FORJA)}) != "", "can't build in a dark room")
 	rm.reset_resources(0, 0, 0, 100)
-	_expect(await _run(OTHER, "toggle_power", {"zone": dark}) == "", "any player can light a room")
-	_expect(room_manager.get_zone_node(dark).is_powered, "the room is lit")
-	var forja := int(Module.ModuleType.FORJA)
-	_expect(await _run(1, "build", {"zone": start, "slot": 0, "type": forja}) == "Falta Industria", "building needs Industria")
+	_expect(await _run(OTHER, "toggle_light", {"zone": dark}) == "", "any player can light a room")
+	_expect(room_manager.get_zone_node(dark).is_lit, "the room is lit")
+	var forja := int(Building.BuildingType.FORJA)
+	_expect(await _run(1, "build", {"zone": start, "slot": 0, "type": forja}) == "Falta Hierro", "building needs Hierro")
 	rm.reset_resources(200, 0, 0, 0)
 	_expect(await _run(OTHER, "build", {"zone": start, "slot": 0, "type": forja}) == "", "any player can build")
-	_expect(not room_manager.get_zone_node(start).get_slot(0).is_empty(), "the module is built")
-	_expect(rm.get_resource("industry") < 200, "the build was paid")
-	_expect(await _run(1, "build", {"zone": start, "slot": 0, "type": forja}) == "Slot ocupado", "occupied slot refused")
-	_expect(String(await _run(1, "build", {"zone": start, "slot": 1, "type": forja})).begins_with("Tamaño"), "a major module in a minor slot is refused")
-	_expect(await _run(1, "repair", {"zone": start, "slot": 0}) == "No está dañado", "undamaged module can't be repaired")
+	_expect(not room_manager.get_zone_node(start).get_slot(0).is_empty(), "the building is built")
+	_expect(rm.get_resource("iron") < 200, "the build was paid")
+	_expect(await _run(1, "build", {"zone": start, "slot": 0, "type": forja}) == "Hueco ocupado", "occupied slot refused")
+	_expect(String(await _run(1, "build", {"zone": start, "slot": 1, "type": forja})).begins_with("Tamaño"), "a major building in a minor slot is refused")
+	_expect(await _run(1, "repair", {"zone": start, "slot": 0}) == "No está dañado", "undamaged building can't be repaired")
 	var entry := rm.research_config.entries[0]
 	_expect(await _run(OTHER, "research", {"id": entry.id}) == "Construí un Scriptorium", "research needs a Scriptorium")
 	_expect(await _run(1, "research", {"id": "no_such"}) == "Investigación desconocida", "unknown research refused")
@@ -190,7 +190,7 @@ func _check_client_gate() -> void:
 	rm.reset_resources(5, 5, 5, 5)
 	net.mode = CoopSession.Mode.CLIENT
 	_expect(not Net.is_authority(), "client is not the authority")
-	rm.add_resource("dust", 10)
-	_expect(not rm.spend_resource("dust", 1), "client can't spend")
-	_expect(rm.get_resource("dust") == 5, "client can't add resources")
+	rm.add_resource("embers", 10)
+	_expect(not rm.spend_resource("embers", 1), "client can't spend")
+	_expect(rm.get_resource("embers") == 5, "client can't add resources")
 	net.mode = CoopSession.Mode.HOST

@@ -4,7 +4,7 @@ extends SceneTree
 ##   - SettingsManager setters mirror into the Accessibility statics; text scale clamps
 ##   - Accessibility.font() scales; the root theme follows text_scale
 ##   - colorblind: HealthBarStyle palette + glyphs, item rarity palette + shape + label
-##   - reduce_flashes: no invasion flash, steady Nexo border, "!" glyph on critical HP
+##   - reduce_flashes: no invasion flash, steady Relic border, "!" glyph on critical HP
 ##   - sound captions: shown only when enabled
 ##   - settings round trip of the accessibility section
 ##   godot --headless --path . --script res://tests/test_accessibility.gd
@@ -100,10 +100,10 @@ func _test_hud() -> void:
 	hud.trigger_invasion_alert()
 	await create_timer(0.1).timeout
 	_expect(is_zero_approx(hud.invasion_flash.color.a), "reduce_flashes: no invasion flash")
-	hud.set_nexo_alert(true)
+	hud.set_relic_alert(true)
 	await create_timer(0.35).timeout
-	_expect(hud.nexo_alert.visible and is_equal_approx(hud.nexo_alert.modulate.a, 1.0), "reduce_flashes: steady Nexo border")
-	hud.set_nexo_alert(false)
+	_expect(hud.relic_alert.visible and is_equal_approx(hud.relic_alert.modulate.a, 1.0), "reduce_flashes: steady Reliquia border")
+	hud.set_relic_alert(false)
 	_settings.reduce_flashes = false
 	hud.trigger_invasion_alert()
 	await create_timer(0.15).timeout

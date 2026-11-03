@@ -1,10 +1,10 @@
 extends CanvasLayer
 class_name HUDController
 
-const TOOLTIP_INDUSTRY := "Industria: Se utiliza para construir módulos de apoyo y defensas en las salas."
+const TOOLTIP_IRON := "Hierro: Se utiliza para construir obras en las salas."
 const TOOLTIP_FOOD := "Comida: Se utiliza para subir de nivel a los héroes (clic derecho en su retrato)."
-const TOOLTIP_SCIENCE := "Ciencia: Se gasta en investigaciones (botón Investigar): desbloquea módulos y mejora generadores, torretas y Polvo."
-const TOOLTIP_DUST := "Polvo: Se utiliza para iluminar salas oscuras y evitar la aparición de enemigos."
+const TOOLTIP_LORE := "Saber: Se gasta en investigaciones (botón Investigar): desbloquea obras y mejora talleres, defensas y Brasas."
+const TOOLTIP_EMBERS := "Brasas: Se utilizan para iluminar salas oscuras y evitar la aparición de enemigos."
 
 const _STAT_BAR_PATH := "Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"
 const _BUILD_BUTTONS_PATH := "Control/BottomBar/BottomRow/BuildPanel/MarginContainer/BuildButtons"
@@ -16,10 +16,10 @@ const _BUILD_BUTTONS_PATH := "Control/BottomBar/BottomRow/BuildPanel/MarginConta
 @onready var stat_tooltip: PanelContainer = get_node_or_null("Control/StatTooltip")
 @onready var stat_tooltip_label: Label = get_node_or_null("Control/StatTooltip/Label")
 
-@onready var chip_industry: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipIndustry")
+@onready var chip_iron: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipIron")
 @onready var chip_food: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipFood")
-@onready var chip_science: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipScience")
-@onready var chip_dust: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipDust")
+@onready var chip_lore: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipLore")
+@onready var chip_embers: Control = get_node_or_null(_STAT_BAR_PATH + "/ChipEmbers")
 
 @onready var invasion_flash: ColorRect = get_node_or_null("Control/InvasionFlash")
 @onready var building_menu: BuildingMenu = get_node_or_null("Control/BottomBar/BuildingMenu")
@@ -53,7 +53,7 @@ var _alert_player: AudioStreamPlayer
 ## One per hero, in party order. hero_id → HeroPortrait.
 var _portraits: Dictionary = {}
 var character_popup: CharacterPopup
-var module_popup: ModulePopup
+var building_popup: BuildingPopup
 var pause_label: Label
 var _stash_label: Label
 var _hint_panel: PanelContainer
@@ -61,8 +61,8 @@ var _hint_title: Label
 var _hint_body: Label
 var _hint_tween: Tween
 var boss_bar: BossBar
-## Red blinking screen border while raiders hit the Nexo (Nexo.under_attack_changed).
-var nexo_alert: Panel
+## Red blinking screen border while raiders hit the Relic (Relic.under_attack_changed).
+var relic_alert: Panel
 var _alert_tween: Tween
 ## Code-built, docked in BottomBar next to BuildingMenu (session 10).
 var research_panel: ResearchPanel
@@ -80,10 +80,10 @@ const CAPTION_HOLD := 3.0
 func _ready() -> void:
 	add_to_group("hud")
 
-	_wire_chip_tooltip(chip_industry, TOOLTIP_INDUSTRY)
+	_wire_chip_tooltip(chip_iron, TOOLTIP_IRON)
 	_wire_chip_tooltip(chip_food, TOOLTIP_FOOD)
-	_wire_chip_tooltip(chip_science, TOOLTIP_SCIENCE)
-	_wire_chip_tooltip(chip_dust, TOOLTIP_DUST)
+	_wire_chip_tooltip(chip_lore, TOOLTIP_LORE)
+	_wire_chip_tooltip(chip_embers, TOOLTIP_EMBERS)
 
 	if stat_tooltip:
 		stat_tooltip.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -121,13 +121,13 @@ func _ready() -> void:
 	if fm and floor_label:
 		floor_label.text = "Piso %d/%d" % [fm.floor_index, fm.config.max_floors]
 
-	# Bottom-bar build entry: tab index == Module.SlotType.
+	# Bottom-bar build entry: tab index == Building.SlotType.
 	_add_research_panel()
 	if building_menu:
 		if production_button:
-			production_button.pressed.connect(building_menu.open_category.bind(int(Module.SlotType.MAJOR)))
+			production_button.pressed.connect(building_menu.open_category.bind(int(Building.SlotType.MAJOR)))
 		if defense_button:
-			defense_button.pressed.connect(building_menu.open_category.bind(int(Module.SlotType.MINOR)))
+			defense_button.pressed.connect(building_menu.open_category.bind(int(Building.SlotType.MINOR)))
 		# The Investigación tab docks the ResearchPanel; closing the panel (Esc, right click) closes the menu.
 		building_menu.research_tab_changed.connect(func(shown: bool) -> void:
 			if shown:
@@ -145,16 +145,16 @@ func _ready() -> void:
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager:
 		room_manager.slot_clicked.connect(_on_slot_clicked)
-		room_manager.module_clicked.connect(_on_module_clicked)
+		room_manager.building_clicked.connect(_on_building_clicked)
 	_add_hint_panel()  # before the popups: a hint never covers the hero sheet
 	character_popup = CharacterPopup.new()
 	character_popup.name = "CharacterPopup"
 	$Control.add_child(character_popup)
-	module_popup = ModulePopup.new()
-	module_popup.name = "ModulePopup"
-	$Control.add_child(module_popup)
+	building_popup = BuildingPopup.new()
+	building_popup.name = "BuildingPopup"
+	$Control.add_child(building_popup)
 	_add_pause_label()
-	_add_nexo_alert()
+	_add_relic_alert()
 	_add_coop_widgets()
 	_add_caption_label()
 	controls_help = ControlsHelp.new()
@@ -184,7 +184,7 @@ func _on_game_state_changed(new_state: GameStateManager.State, _old: GameStateMa
 
 func close_popups() -> void:
 	character_popup.close()
-	module_popup.close()
+	building_popup.close()
 	research_panel.close()
 	if controls_help:
 		controls_help.hide()
@@ -269,36 +269,36 @@ func _add_pause_label() -> void:
 	pause_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, 24)
 
 
-func _add_nexo_alert() -> void:
-	nexo_alert = Panel.new()
-	nexo_alert.name = "NexoAlert"
-	nexo_alert.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	nexo_alert.visible = false
+func _add_relic_alert() -> void:
+	relic_alert = Panel.new()
+	relic_alert.name = "RelicAlert"
+	relic_alert.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	relic_alert.visible = false
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0, 0, 0, 0)
 	style.border_color = QuestPalette.BLOOD
 	style.set_border_width_all(10)
-	nexo_alert.add_theme_stylebox_override("panel", style)
-	$Control.add_child(nexo_alert)
-	nexo_alert.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var nexo := ManagerLocator.get_nexo()
-	if nexo:
-		nexo.under_attack_changed.connect(set_nexo_alert)
+	relic_alert.add_theme_stylebox_override("panel", style)
+	$Control.add_child(relic_alert)
+	relic_alert.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var relic := ManagerLocator.get_relic()
+	if relic:
+		relic.under_attack_changed.connect(set_relic_alert)
 
 
-func set_nexo_alert(active: bool) -> void:
+func set_relic_alert(active: bool) -> void:
 	if _alert_tween:
 		_alert_tween.kill()
-	nexo_alert.visible = active
+	relic_alert.visible = active
 	if not active:
 		return
-	nexo_alert.modulate.a = 1.0
-	show_caption("Alerta: el Nexo está bajo ataque")
+	relic_alert.modulate.a = 1.0
+	show_caption("Alerta: la Reliquia está bajo ataque")
 	if Accessibility.reduce_flashes:
 		return  # steady border, no blinking
 	_alert_tween = create_tween().set_loops().set_ignore_time_scale()
-	_alert_tween.tween_property(nexo_alert, "modulate:a", 0.25, 0.3)
-	_alert_tween.tween_property(nexo_alert, "modulate:a", 1.0, 0.3)
+	_alert_tween.tween_property(relic_alert, "modulate:a", 0.25, 0.3)
+	_alert_tween.tween_property(relic_alert, "modulate:a", 1.0, 0.3)
 
 
 ## First-discovery tip of a room type (FloorManager → ManagerLocator.get_hud().show_hint):
@@ -585,18 +585,18 @@ func _refresh_gains() -> void:
 
 # ---------------- BUILDING MENU ----------------
 
-## Armed-mode slot pick (RoomManager.slot_clicked); a no-op unless a module is armed.
+## Armed-mode slot pick (RoomManager.slot_clicked); a no-op unless a building is armed.
 func _on_slot_clicked(_zone_id: String, slot: BuildingSlot) -> void:
 	if slot.is_empty():
 		open_building_menu(slot)
 
 
-## A built module was clicked: repair/demolish popup (never while a module is armed).
-func _on_module_clicked(_zone_id: String, slot: BuildingSlot) -> void:
+## A built building was clicked: repair/demolish popup (never while a building is armed).
+func _on_building_clicked(_zone_id: String, slot: BuildingSlot) -> void:
 	if building_menu and building_menu.is_armed():
 		return
-	if slot.built_module is Module:
-		module_popup.open_for(slot.built_module)
+	if slot.built_building is Building:
+		building_popup.open_for(slot.built_building)
 
 
 func open_building_menu(slot: BuildingSlot) -> void:
@@ -642,7 +642,7 @@ func _on_boss_spawned(boss: Enemy) -> void:
 		boss_bar.name = "BossBar"
 		$Control.add_child(boss_bar)
 	boss_bar.track(boss)
-	show_hint(boss.type.display_name, "Custodia la salida: derrótalo para poder extraer el Nexo.", QuestPalette.BLOOD_LIGHT)
+	show_hint(boss.type.display_name, "Custodia la salida: derrótalo para poder extraer la Reliquia.", QuestPalette.BLOOD_LIGHT)
 	trigger_invasion_alert()
 
 

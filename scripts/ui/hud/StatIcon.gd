@@ -1,7 +1,7 @@
 extends Control
 class_name StatIcon
 
-@export_enum("hp", "industry", "food", "science", "dust", "lock")
+@export_enum("hp", "iron", "food", "lore", "embers", "lock")
 var icon_type: String = "hp":
 	set(value):
 		if icon_type == value:
@@ -11,10 +11,10 @@ var icon_type: String = "hp":
 
 const BASE_COLORS := {
 	"hp": QuestPalette.BLOOD,
-	"industry": QuestPalette.STEEL,
+	"iron": QuestPalette.STEEL,
 	"food": QuestPalette.BLOOD_LIGHT,
-	"science": QuestPalette.VIOLET,
-	"dust": QuestPalette.PARCHMENT_LIGHT,
+	"lore": QuestPalette.VIOLET,
+	"embers": Color(0.96, 0.55, 0.2),
 	"lock": QuestPalette.GOLD_DARK
 }
 
@@ -45,6 +45,11 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		queue_redraw()
 
+## Unit-square outline of the Brasas flame.
+const FLAME: Array[Vector2] = [Vector2(0.54, 0.04), Vector2(0.66, 0.26), Vector2(0.84, 0.48), Vector2(0.88, 0.68),
+	Vector2(0.72, 0.88), Vector2(0.5, 0.96), Vector2(0.28, 0.88), Vector2(0.12, 0.68), Vector2(0.2, 0.46), Vector2(0.3, 0.54), Vector2(0.36, 0.3)]
+
+
 func _draw() -> void:
 	var draw_size: Vector2 = size.max(Vector2.ONE)
 	var color: Color = BASE_COLORS.get(icon_type, QuestPalette.PARCHMENT_LIGHT)
@@ -65,22 +70,22 @@ func _draw_icon(
 		"hp":
 			_draw_heart(draw_size, color, offset, expand)
 
-		"industry":
-			_draw_gear(draw_size, color, offset, expand)
+		"iron":
+			_draw_anvil(draw_size, color, offset, expand)
 
 		"food":
 			_draw_wheat(draw_size, color, offset, expand)
 
-		"science":
-			_draw_flask(draw_size, color, offset, expand)
+		"lore":
+			_draw_book(draw_size, color, offset, expand)
 
-		"dust":
-			_draw_sparkle(draw_size, color, offset, expand)
+		"embers":
+			_draw_flame(draw_size, color, offset, expand)
 
 		"lock":
 			_draw_lock(draw_size, color, offset, expand)
 
-## Padlock (BuildingMenu: module locked behind research).
+## Padlock (BuildingMenu: building locked behind research).
 func _draw_lock(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
 	var w: float = draw_size.x
 	var h: float = draw_size.y
@@ -107,20 +112,18 @@ func _draw_heart(draw_size: Vector2, color: Color, offset: Vector2, expand: floa
 	draw_circle(right, radius, color)
 	draw_polygon(tri_points, PackedColorArray([color]))
 
-func _draw_gear(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
-	var center: Vector2 = draw_size * 0.5 + offset
-	var outer_radius: float = min(draw_size.x, draw_size.y) * (0.42 + expand * 0.01)
-	var inner_radius: float = outer_radius * 0.55
-	var teeth := 8
-
-	var points := PackedVector2Array()
-	for i in range(teeth * 2):
-		var angle := (float(i) / float(teeth * 2)) * TAU
-		var radius := outer_radius if i % 2 == 0 else inner_radius * 1.15
-		points.append(center + Vector2(cos(angle), sin(angle)) * radius)
-
-	draw_polygon(points, PackedColorArray([color]))
-	draw_circle(center, inner_radius * 0.55, color.darkened(0.4))
+func _draw_anvil(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
+	var w: float = draw_size.x
+	var h: float = draw_size.y
+	# Face with its horn to the left, waist, foot.
+	draw_polygon(PackedVector2Array([
+		Vector2(w * 0.04 - expand, h * 0.3) + offset,
+		Vector2(w * 0.96 + expand, h * 0.3 - expand) + offset,
+		Vector2(w * 0.96 + expand, h * 0.52 + expand) + offset,
+		Vector2(w * 0.34, h * 0.52 + expand) + offset,
+	]), PackedColorArray([color]))
+	draw_rect(Rect2(Vector2(w * 0.42 - expand, h * 0.5) + offset, Vector2(w * 0.3 + expand * 2.0, h * 0.24)), color.darkened(0.15), true)
+	draw_rect(Rect2(Vector2(w * 0.26 - expand, h * 0.72) + offset, Vector2(w * 0.62 + expand * 2.0, h * 0.14 + expand)), color, true)
 
 func _draw_wheat(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
 	var w: float = draw_size.x
@@ -140,41 +143,21 @@ func _draw_wheat(draw_size: Vector2, color: Color, offset: Vector2, expand: floa
 		draw_polygon(PackedVector2Array([left, tip_l, left + Vector2(0, h * 0.06)]), PackedColorArray([color]))
 		draw_polygon(PackedVector2Array([left, tip_r, left + Vector2(0, h * 0.06)]), PackedColorArray([color]))
 
-func _draw_flask(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
+func _draw_book(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
 	var w: float = draw_size.x
 	var h: float = draw_size.y
+	var spine_top := Vector2(w * 0.5, h * 0.3) + offset
+	var spine_bottom := Vector2(w * 0.5, h * 0.88 + expand) + offset
+	draw_polygon(PackedVector2Array([spine_top, Vector2(w * 0.06 - expand, h * 0.16 - expand) + offset,
+		Vector2(w * 0.06 - expand, h * 0.74 + expand) + offset, spine_bottom]), PackedColorArray([color]))
+	draw_polygon(PackedVector2Array([spine_top, spine_bottom, Vector2(w * 0.94 + expand, h * 0.74 + expand) + offset,
+		Vector2(w * 0.94 + expand, h * 0.16 - expand) + offset]), PackedColorArray([color.darkened(0.2)]))
 
-	var neck := Rect2(
-		Vector2(w * 0.42, h * 0.1) + offset,
-		Vector2(w * 0.16, h * 0.22)
-	)
-	draw_rect(neck, color.darkened(0.2), true)
-
-	var body := PackedVector2Array([
-		Vector2(w * 0.42, h * 0.32) + offset,
-		Vector2(w * 0.58, h * 0.32) + offset,
-		Vector2(w * 0.78 + expand, h * 0.86 + expand) + offset,
-		Vector2(w * 0.22 - expand, h * 0.86 + expand) + offset
-	])
-	draw_polygon(body, PackedColorArray([color]))
-
-	var bubble_color := QuestPalette.with_alpha(QuestPalette.UI_TEXT_PRIMARY, 0.35)
-	draw_circle(Vector2(w * 0.4, h * 0.68) + offset, w * 0.05, bubble_color)
-	draw_circle(Vector2(w * 0.58, h * 0.76) + offset, w * 0.04, bubble_color)
-
-func _draw_sparkle(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
-	var center: Vector2 = draw_size * 0.5 + offset
-	var radius: float = min(draw_size.x, draw_size.y) * (0.42 + expand * 0.01)
-
-	var points := PackedVector2Array([
-		center + Vector2(0, -radius),
-		center + Vector2(radius * 0.28, -radius * 0.28),
-		center + Vector2(radius, 0),
-		center + Vector2(radius * 0.28, radius * 0.28),
-		center + Vector2(0, radius),
-		center + Vector2(-radius * 0.28, radius * 0.28),
-		center + Vector2(-radius, 0),
-		center + Vector2(-radius * 0.28, -radius * 0.28),
-	])
-
-	draw_polygon(points, PackedColorArray([color]))
+func _draw_flame(draw_size: Vector2, color: Color, offset: Vector2, expand: float) -> void:
+	var w: float = draw_size.x
+	var h: float = draw_size.y
+	var outline := PackedVector2Array()
+	for point: Vector2 in FLAME:
+		outline.append(Vector2(w * point.x, h * point.y) + (point - Vector2(0.5, 0.6)) * expand * 2.0 + offset)
+	draw_polygon(outline, PackedColorArray([color]))
+	draw_circle(Vector2(w * 0.5, h * 0.72) + offset, w * 0.13, color.lightened(0.45))

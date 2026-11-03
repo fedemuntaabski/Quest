@@ -7,31 +7,31 @@ Hoy ninguno de estos íconos está cableado en la UI (las habilidades ya existen
 ## Faltan (29)
 | Placeholder | Dónde se usa | Qué dibujar |
 |---|---|---|
-| `gen_industry` | `Module.CATALOG` GENERATOR_INDUSTRY: carta de `BuildingMenu`, fantasma del slot, `Module.Icon` (hoy `Polygon2D` gris) | engranaje / yunque |
-| `gen_food` | GENERATOR_FOOD (hoy `Polygon2D` rojo) | hongos / huerto |
-| `gen_science` | GENERATOR_SCIENCE (hoy `Polygon2D` violeta) | instrumento arcano / astrolabio |
-| `turret` | TURRET "Ballesta" | ballesta |
+| `gen_iron` | `Building.CATALOG` WORKSHOP_IRON: carta de `BuildingMenu`, fantasma del slot, `Building.Icon` (hoy `Polygon2D` gris) | engranaje / yunque |
+| `gen_food` | WORKSHOP_FOOD (hoy `Polygon2D` rojo) | hongos / huerto |
+| `gen_lore` | WORKSHOP_LORE (hoy `Polygon2D` violeta) | instrumento arcano / astrolabio |
+| `defense` | DEFENSE "Ballesta" | ballesta |
 | `trap` | TRAP "Trampa" | trampa de pinchos / cepo |
-| `nexo` | `Nexo`/`NexoController`, `ExitIndicator` portando el Nexo, minimapa (hoy flask azul 0x72 como cristal) | cristal grande. Candidato: gema de `items/cave_gems.png` |
-| `res_industry` | `StatIcon` "industry" (resource bar, tooltips, costes del menú de construcción) | lingote / engranaje |
+| `relic` | `Relic`/`RelicController`, `ExitIndicator` portando la Reliquia, minimapa (hoy flask azul 0x72 como cristal) | cristal grande. Candidato: gema de `items/cave_gems.png` |
+| `res_iron` | `StatIcon` "iron" (resource bar, tooltips, costes del menú de construcción) | lingote / engranaje |
 | `res_food` | `StatIcon` "food", coste de subir de nivel | pan / pata de carne |
-| `res_science` | `StatIcon` "science", investigación | pergamino / frasco violeta |
-| `res_dust` | `StatIcon` "dust", `RoomZone.POWER_COST` | polvo brillante (hoy sirve `coin_anim_f0` de 0x72 como parche) |
+| `res_lore` | `StatIcon` "lore", investigación | pergamino / frasco violeta |
+| `res_embers` | `StatIcon` "embers", `RoomZone.LIGHT_COST` | brasas encendidas (hoy sirve `coin_anim_f0` de 0x72 como parche) |
 | `res_lock` | `StatIcon` "lock", cartas bloqueadas de `BuildingMenu.get_lock_reason()` | candado |
 | `room_start` | `RoomTypeVisual` START ("Inicio"): insignia de sala y minimapa (sin ícono hoy) | hoguera / puerta |
 | `room_exit` | `RoomTypeVisual` EXIT ("Salida") (sin ícono; parche posible: `floor_stairs` de 0x72) | escalera |
 | `status_slow` | efecto de la Trampa sobre enemigos (`Enemy.apply_slow`), sin indicador | gota / cadena / reloj de arena |
-| `research_science_generator` | `ResearchEntry` "Instrumental arcano" (`ResearchPanel`, sin campo de ícono) | astrolabio |
-| `research_turret_plans` | "Planos de ballesta" | plano / ballesta |
-| `research_generator_tuning` | "Engranajes afinados" | engranaje con chispa |
-| `research_dust_lenses` | "Lentes de polvo" | lente |
+| `research_lore_workshop` | `ResearchEntry` "Instrumental arcano" (`ResearchPanel`, sin campo de ícono) | astrolabio |
+| `research_defense_plans` | "Planos de ballesta" | plano / ballesta |
+| `research_workshop_tuning` | "Engranajes afinados" | engranaje con chispa |
+| `research_dry_tinder` | "Yesca seca" | lente |
 | `research_cartography` | "Cartografía" | mapa / brújula |
-| `research_generator_overclock` | "Sobrecarga" | rayo / engranaje al rojo |
-| `research_turret_rifling` | "Virotes estriados" | virote |
+| `research_workshop_bellows` | "Sobrecarga" | rayo / engranaje al rojo |
+| `research_defense_rifling` | "Virotes estriados" | virote |
 | `ability_warrior_passive` | `CharacterData.passive_ability_name` "Piel de Hierro" (popup, selección de héroe) | pecho blindado |
 | `ability_warrior_active` | "Grito de Guerra" | boca gritando / cuerno |
 | `ability_mage_passive` | "Mente Analítica" | ojo / cerebro |
-| `ability_mage_active` | "Sobrecarga de Módulo" | rayo sobre engranaje |
+| `ability_mage_active` | "Bendición de las Obras" | rayo sobre engranaje |
 | `ability_rogue_passive` | "Paso Ligero" | bota alada |
 | `ability_rogue_active` | "Golpe Furtivo" | daga |
 | `ability_tank_passive` | "Muro Viviente" | muro / escudo torre |
@@ -42,7 +42,7 @@ Hoy ninguno de estos íconos está cableado en la UI (las habilidades ya existen
 |---|---|---|
 | Vida / corazón | popup, portraits | 0x72 `ui_heart_full/half/empty` (`assets/art/items`) |
 | Ataque | popup | `weapons/weapons.png` (cualquier espada) |
-| Descanso, Botín, Élite, Generador (parche) | `RoomTypeVisual` | 0x72 `flask_big_red`, `chest_full_open_anim_f0`, `weapon_double_axe`, `button_blue_up` (Generador: parche, conviene ícono propio) |
+| Descanso, Botín, Élite, Taller (parche) | `RoomTypeVisual` | 0x72 `flask_big_red`, `chest_full_open_anim_f0`, `weapon_double_axe`, `button_blue_up` (Taller: parche, conviene ícono propio) |
 | Objetos (armas, armaduras, pociones, grimorios) | cofres, `Pickup`, popup "Hallazgos" | `items/`, `armor/`, `weapons/` (ver `resources/items/`) |
 | Estados genéricos animados (alerta, ataque+, defensa+, magia+, veneno, curación, aceleración) | futuros buffs/debuffs | `art/vfx/` (`symbol_*`, `spell_*`, `status_*`) |
 

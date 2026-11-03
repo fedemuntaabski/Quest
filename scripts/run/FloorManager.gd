@@ -22,7 +22,7 @@ var floor_index: int = 1
 ## Deterministic MapGenerator seed for this floor (run seed + floor index).
 var map_seed: int = 0
 ## Set by Main2d; read by on_room_discovered (room types, loop groups).
-## Null = no map info: every discovery pays plain dust (as before session 11).
+## Null = no map info: every discovery pays plain embers (as before session 11).
 var room_manager: RoomManager
 var _completed: bool = false
 ## progresion-10: the run's difficulty (GameSession.difficulty), multiplied over the curve.
@@ -47,10 +47,10 @@ func setup(p_floor_index: int, run_seed: int = 0) -> void:
 	var session := ManagerLocator.get_game_session()
 	if session:
 		session.run_stats["floor_reached"] = maxi(int(session.run_stats.get("floor_reached", 1)), floor_index)
-	if floor_index > 1 and config.dust_bonus_on_descend > 0:
+	if floor_index > 1 and config.embers_bonus_on_descend > 0:
 		var resource_manager := ManagerLocator.get_resource_manager()
 		if resource_manager:
-			resource_manager.add_resource("dust", config.dust_bonus_on_descend)
+			resource_manager.add_resource("embers", config.embers_bonus_on_descend)
 	QuestLogger.info(QuestLogger.Category.MAP, "Floor %d/%d started (enemy HP x%.2f, dmg x%.2f)." % [floor_index, config.max_floors, enemy_hp_multiplier(), enemy_damage_multiplier()])
 
 
@@ -155,7 +155,7 @@ func _grant_floor_end_loot() -> void:
 		hud.show_hint("Botín del piso perdido", "La mochila está llena: no cabe %s." % item.display_name, QuestPalette.UI_TEXT_BLOCKED)
 
 
-## DoorTurnSystem.room_revealed listener: every discovered room pays dust,
+## DoorTurnSystem.room_revealed listener: every discovered room pays embers,
 ## regardless of invasions. Amount scales per floor (FloorConfig "Discovery").
 ## Fires once per group, so room-type rewards/heals are one-time. A loop
 ## corridor group (group id = corridor zone id) discovers no room: nothing.
@@ -170,10 +170,10 @@ func on_room_discovered(room_id: String, _cells: Array[Vector2i]) -> void:
 	_grant_door_bonus(room_id, resource_manager)
 	if room_manager and room_manager.get_zone_kind(room_id) == "corridor":
 		return
-	var amount := config.discovery_dust(floor_index) + roundi(resource_manager.get_bonus(ResearchEntry.Effect.DISCOVERY_DUST))
+	var amount := config.discovery_embers(floor_index) + roundi(resource_manager.get_bonus(ResearchEntry.Effect.DISCOVERY_EMBERS))
 	if amount > 0:
-		resource_manager.add_resource("dust", amount)
-		QuestLogger.info(QuestLogger.Category.MAP, "Discovered '%s': +%d dust." % [room_id, amount])
+		resource_manager.add_resource("embers", amount)
+		QuestLogger.info(QuestLogger.Category.MAP, "Discovered '%s': +%d embers." % [room_id, amount])
 	_apply_hero_passives(resource_manager)
 	if room_manager:
 		_show_room_banner(room_id)
@@ -187,7 +187,7 @@ func door_bonus(group_id: String) -> Dictionary:
 	return {"key": config.door_roll.roll_bonus_resource(floor_index, rng), "amount": config.door_roll.bonus_amount(floor_index)}
 
 
-## Every door pays one random resource besides the dust (DoorRollConfig "Reward"),
+## Every door pays one random resource besides the embers (DoorRollConfig "Reward"),
 ## loop corridors included. Seeded per door so a floor replays the same.
 func _grant_door_bonus(group_id: String, resource_manager: ResourceManager) -> void:
 	var bonus := door_bonus(group_id)
@@ -199,10 +199,10 @@ func _grant_door_bonus(group_id: String, resource_manager: ResourceManager) -> v
 	QuestLogger.info(QuestLogger.Category.MAP, "Door '%s': +%d %s." % [group_id, amount, key])
 	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	if text_mgr and room_manager:
-		text_mgr.spawn_text(room_manager.get_center(group_id) + DOOR_REWARD_OFFSET, "+%d %s" % [amount, Module.RESOURCE_LABELS.get(key, key)], Color.WHITE)
+		text_mgr.spawn_text(room_manager.get_center(group_id) + DOOR_REWARD_OFFSET, "+%d %s" % [amount, Building.RESOURCE_LABELS.get(key, key)], Color.WHITE)
 
 
-## Living heroes' discovery passives (Mente Analítica: Ciencia, Paso Ligero: Polvo).
+## Living heroes' discovery passives (Mente Analítica: Saber, Paso Ligero: Brasas).
 func _apply_hero_passives(resource_manager: ResourceManager) -> void:
 	for hero in ManagerLocator.get_heroes():
 		if hero.abilities == null or not hero.stats.is_alive():
@@ -247,7 +247,7 @@ func _apply_room_type_discovery(room_id: String, resource_manager: ResourceManag
 		resource_manager.add_resource(rule.reward_resource, reward)
 		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 		if text_mgr:
-			text_mgr.spawn_text(room_manager.get_center(room_id), "%s: +%d %s" % [name_of_type, reward, Module.RESOURCE_LABELS.get(rule.reward_resource, rule.reward_resource)], room_manager.visual_config.room_type_color(type))
+			text_mgr.spawn_text(room_manager.get_center(room_id), "%s: +%d %s" % [name_of_type, reward, Building.RESOURCE_LABELS.get(rule.reward_resource, rule.reward_resource)], room_manager.visual_config.room_type_color(type))
 		QuestLogger.info(QuestLogger.Category.MAP, "Room type reward in '%s': +%d %s." % [room_id, reward, rule.reward_resource])
 	var player_stats := ManagerLocator.get_player_stats()
 	if rule.heal_on_discovery > 0 and player_stats:
@@ -348,8 +348,8 @@ func max_enemies() -> int:
 	return config.max_enemies(floor_index) + difficulty.extra_max_enemies + scaling.extra_enemies(players)
 
 
-func nexo_max_hp() -> int:
-	return maxi(1, roundi(config.nexo_max_hp * difficulty.nexo_hp_mult * scaling.nexo_hp(players)))
+func relic_max_hp() -> int:
+	return maxi(1, roundi(config.relic_max_hp * difficulty.relic_hp_mult * scaling.relic_hp(players)))
 
 
 func carrier_speed_mult() -> float:

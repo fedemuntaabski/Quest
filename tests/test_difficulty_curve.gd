@@ -67,8 +67,8 @@ func _test_difficulty_config() -> void:
 	_expect(cfg.levels.size() == 2, "2 difficulties")
 	var normal := cfg.get_level("normal")
 	var hard := cfg.get_level("hard")
-	_expect(normal.hp_mult == 1.0 and normal.damage_mult == 1.0 and normal.threat_mult == 1.0 and normal.extra_max_enemies == 0 and normal.nexo_hp_mult == 1.0 and normal.start_resource_mult == 1.0, "Normal is the identity")
-	_expect(hard.hp_mult > 1.0 and hard.damage_mult > 1.0 and hard.threat_mult > 1.0 and hard.extra_max_enemies > 0 and hard.nexo_hp_mult < 1.0 and hard.start_resource_mult < 1.0, "Difícil is harder on every axis")
+	_expect(normal.hp_mult == 1.0 and normal.damage_mult == 1.0 and normal.threat_mult == 1.0 and normal.extra_max_enemies == 0 and normal.relic_hp_mult == 1.0 and normal.start_resource_mult == 1.0, "Normal is the identity")
+	_expect(hard.hp_mult > 1.0 and hard.damage_mult > 1.0 and hard.threat_mult > 1.0 and hard.extra_max_enemies > 0 and hard.relic_hp_mult < 1.0 and hard.start_resource_mult < 1.0, "Difícil is harder on every axis")
 	_expect(cfg.get_level("nope") == normal, "unknown id falls back to Normal")
 
 
@@ -82,7 +82,7 @@ func _test_floor_manager() -> void:
 			var fm := FloorManager.new()
 			root.add_child(fm)
 			fm.setup(f, 7)
-			values[id] = [fm.enemy_hp_multiplier(), fm.enemy_damage_multiplier(), fm.threat_chance(4), fm.max_enemies(), fm.nexo_max_hp()]
+			values[id] = [fm.enemy_hp_multiplier(), fm.enemy_damage_multiplier(), fm.threat_chance(4), fm.max_enemies(), fm.relic_max_hp()]
 			if id == "normal":
 				_expect(is_equal_approx(fm.enemy_hp_multiplier(), config.theme(f).hp_mult), "floor %d normal: HP mult is the curve's" % f)
 				_expect(fm.theme() == config.theme(f), "floor %d: FloorManager.theme()" % f)

@@ -3,7 +3,7 @@ extends SceneTree
 ## heroes-9: a hero at 0 HP stays downed in its room (no attacks, grey) and the
 ## run goes on; a living ally in the same room revives it for Comida
 ## (UpgradeConfig.revive_*), else it is lost when the floor ends
-## (GameSession.lost_ids). The run is lost when every hero is down or the Nexo
+## (GameSession.lost_ids). The run is lost when every hero is down or the Relic
 ## breaks. Rest rooms heal over time paying Comida, frozen in the tactical pause.
 ##   godot --headless --path . --script res://tests/test_downed.gd
 
@@ -32,7 +32,7 @@ func _initialize() -> void:
 	await _free_world(world)
 
 	world = await _boot()
-	_check_nexo_defeat(world[0])
+	_check_relic_defeat(world[0])
 	await _free_world(world)
 
 	session.clear()
@@ -141,10 +141,10 @@ func _check_all_down(main2d: Node) -> void:
 	_expect(main2d.game_state_manager.current_state == GameStateManager.State.DEAD, "every hero down -> defeat")
 
 
-func _check_nexo_defeat(main2d: Node) -> void:
-	var nexo: Nexo = main2d.nexo
-	nexo.take_damage(nexo.max_hp * 2)
-	_expect(main2d.game_state_manager.current_state == GameStateManager.State.DEAD, "Nexo destroyed -> defeat with heroes alive")
+func _check_relic_defeat(main2d: Node) -> void:
+	var relic: Relic = main2d.relic
+	relic.take_damage(relic.max_hp * 2)
+	_expect(main2d.game_state_manager.current_state == GameStateManager.State.DEAD, "Reliquia destroyed -> defeat with heroes alive")
 
 
 func _other_zone(main2d: Node, zone_id: String) -> String:

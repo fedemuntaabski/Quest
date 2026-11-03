@@ -181,7 +181,7 @@ static func _plan_walls(config: MapVisualConfig, layout: MapLayout, zones: Dicti
 
 
 ## Kenney props on each room's outermost floor-tile ring (never beside a
-## corridor mouth). The centre stays free for build slots / the Nexo. (LOOT
+## corridor mouth). The centre stays free for build slots / the Relic. (LOOT
 ## rooms' chest is a floating Pickup spawned on discovery, not a tile.)
 static func _plan_props(layout: MapLayout, config: MapVisualConfig, zones: Dictionary, floor_tiles: Dictionary) -> void:
 	var rng := RandomNumberGenerator.new()

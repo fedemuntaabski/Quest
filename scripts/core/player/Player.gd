@@ -18,7 +18,7 @@ const SELECTION_RING_SQUASH := 0.4
 
 var character_data: CharacterData = null
 var current_zone_id: String = ""
-var is_carrying_nexo: bool = false
+var is_carrying_relic: bool = false
 ## Sprite-only shift so heroes sharing a zone don't overlap (PartyConfig);
 ## position, zone logic and hit/hurtboxes stay on the zone center.
 var sprite_offset: Vector2 = Vector2.ZERO
@@ -255,5 +255,5 @@ func can_accept_input() -> bool:
 	return stats != null and stats.is_alive()
 
 
-func pick_up_nexo() -> void:
-	is_carrying_nexo = true
+func pick_up_relic() -> void:
+	is_carrying_relic = true

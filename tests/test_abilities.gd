@@ -1,8 +1,8 @@
 extends SceneTree
 
 ## Hero abilities (session balance-4) over a live Main2d: every hero has a passive
-## and an active; the passives (damage reduction, Nexo proximity, discovery
-## bonuses), the actives (buff, shield, overcharge, burst), cooldowns and the
+## and an active; the passives (damage reduction, Relic proximity, discovery
+## bonuses), the actives (buff, shield, blessing, burst), cooldowns and the
 ## hero_ability input gating.
 ##   godot --headless --path . --script res://tests/test_abilities.gd
 
@@ -75,11 +75,11 @@ func _check_warrior_tank() -> void:
 	# Passives.
 	_expect(warrior.abilities.incoming_damage(10) == 8, "Piel de Hierro: 10 -> %d (want 8)" % warrior.abilities.incoming_damage(10))
 	_expect(warrior.abilities.incoming_damage(1) == 1, "damage never drops below 1")
-	var nexo := ManagerLocator.get_nexo()
-	tank.global_position = nexo.get_target_position()
-	_expect(tank.abilities.incoming_damage(10) == 5, "Muro Viviente at the Nexo: 10 -> %d (want 5)" % tank.abilities.incoming_damage(10))
-	tank.global_position = nexo.get_target_position() + Vector2(5000.0, 0.0)
-	_expect(tank.abilities.incoming_damage(10) == 10, "Muro Viviente far from the Nexo should do nothing")
+	var relic := ManagerLocator.get_relic()
+	tank.global_position = relic.get_target_position()
+	_expect(tank.abilities.incoming_damage(10) == 5, "Muro Viviente at the Reliquia: 10 -> %d (want 5)" % tank.abilities.incoming_damage(10))
+	tank.global_position = relic.get_target_position() + Vector2(5000.0, 0.0)
+	_expect(tank.abilities.incoming_damage(10) == 10, "Muro Viviente far from the Reliquia should do nothing")
 
 	# Input gating: only a selected hero, never at time_scale 0.
 	var selection := ManagerLocator.get_selection_manager()
@@ -126,17 +126,17 @@ func _check_mage_rogue() -> void:
 	var room_manager: RoomManager = main2d.room_manager
 	var start_id := room_manager.get_start_zone_id()
 
-	# Discovery passives: Ciencia (mage) and Polvo (rogue) on top of the floor's dust.
-	var science := resources.get_resource("science")
-	var dust := resources.get_resource("dust")
+	# Discovery passives: Saber (mage) and Brasas (rogue) on top of the floor's embers.
+	var lore := resources.get_resource("lore")
+	var embers := resources.get_resource("embers")
 	main2d.floor_manager.on_room_discovered(start_id, [] as Array[Vector2i])
 	var door_bonus: Dictionary = main2d.floor_manager.door_bonus(start_id)  # every door also pays one random resource
-	var bonus_science: int = door_bonus["amount"] if door_bonus["key"] == "science" else 0
-	_expect(resources.get_resource("science") - science - bonus_science == roundi(mage.abilities.passive.value), "Mente Analítica: Ciencia %+d" % (resources.get_resource("science") - science))
-	var expected_dust: int = main2d.floor_manager.config.discovery_dust(1) + roundi(rogue.abilities.passive.value)
-	_expect(resources.get_resource("dust") - dust == expected_dust, "Paso Ligero: Polvo %+d (want %+d)" % [resources.get_resource("dust") - dust, expected_dust])
+	var bonus_lore: int = door_bonus["amount"] if door_bonus["key"] == "lore" else 0
+	_expect(resources.get_resource("lore") - lore - bonus_lore == roundi(mage.abilities.passive.value), "Mente Analítica: Saber %+d" % (resources.get_resource("lore") - lore))
+	var expected_embers: int = main2d.floor_manager.config.discovery_embers(1) + roundi(rogue.abilities.passive.value)
+	_expect(resources.get_resource("embers") - embers == expected_embers, "Paso Ligero: Brasas %+d (want %+d)" % [resources.get_resource("embers") - embers, expected_embers])
 
-	# Sobrecarga de Módulo: turret x2 and one extra generator tick.
+	# Bendición de las Obras: defense x2 and one extra workshop tick.
 	var start := room_manager.get_zone_node(start_id)
 	var major: BuildingSlot = null
 	var minor: BuildingSlot = null
@@ -146,13 +146,13 @@ func _check_mage_rogue() -> void:
 		elif minor == null:
 			minor = slot
 	if major != null and minor != null:
-		major.build(Module.ModuleType.FORJA)
-		var turret := minor.build(Module.ModuleType.BALLESTA) as TurretModule
-		var industry := resources.get_resource("industry")
-		var base_damage := turret.get_damage()
-		_expect(mage.abilities.try_activate(), "Sobrecarga de Módulo did not fire")
-		_expect(turret.get_damage() == base_damage * 2, "turret damage %d (want %d)" % [turret.get_damage(), base_damage * 2])
-		_expect(resources.get_resource("industry") - industry == 3, "generator extra tick: industry %+d (want +3)" % (resources.get_resource("industry") - industry))
+		major.build(Building.BuildingType.FORJA)
+		var defense := minor.build(Building.BuildingType.BALLESTA) as DefenseBuilding
+		var iron := resources.get_resource("iron")
+		var base_damage := defense.get_damage()
+		_expect(mage.abilities.try_activate(), "Bendición de las Obras did not fire")
+		_expect(defense.get_damage() == base_damage * 2, "defense damage %d (want %d)" % [defense.get_damage(), base_damage * 2])
+		_expect(resources.get_resource("iron") - iron == 3, "workshop extra tick: iron %+d (want +3)" % (resources.get_resource("iron") - iron))
 	else:
 		failures.append("start room has no MAJOR/MINOR slot")
 

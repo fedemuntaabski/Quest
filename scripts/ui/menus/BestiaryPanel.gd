@@ -4,7 +4,7 @@ class_name BestiaryPanel
 ## BestiaryPanel: the pause menu's enemy encyclopedia. Grid of every EnemyType
 ## (silhouette until seen) + a detail column that unlocks by tier: seen = sprite,
 ## name, behavior; killed = stats + description; mastered (3 kills) = damage to
-## modules/Nexo, role, floors it appears on, lore. Data from BestiaryService;
+## buildings/Relic, role, floors it appears on, lore. Data from BestiaryService;
 ## stats are the base x multipliers of the deepest floor it was seen on.
 ## Same open()/close()/`closed` contract as OptionsMenu; Esc closes only this panel.
 
@@ -205,9 +205,9 @@ static func detail_text(type: EnemyType, entry: BestiaryEntry) -> String:
 	if tier == BestiaryEntry.Tier.KILLED:
 		lines.append("\n(%d muertes más para saberlo todo)" % (BestiaryEntry.MASTER_KILLS - entry.kill_count))
 		return "\n".join(lines)
-	lines.append("Daño a módulos: %d" % maxi(1, roundi(Enemy.resolved_module_damage(type) * dmg_mult)))
-	if type.damage_vs_nexo > 0:
-		lines.append("Daño al Nexo: %d" % maxi(1, roundi(type.damage_vs_nexo * dmg_mult)))
+	lines.append("Daño a obras: %d" % maxi(1, roundi(Enemy.resolved_building_damage(type) * dmg_mult)))
+	if type.damage_vs_relic > 0:
+		lines.append("Daño a la Reliquia: %d" % maxi(1, roundi(type.damage_vs_relic * dmg_mult)))
 	lines.append("Rol: %s" % ("Saqueador" if type.role == EnemyType.Role.RAIDER else "Cazador"))
 	lines.append(_floor_range_text(type, config))
 	if type.lore != "":

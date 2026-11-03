@@ -36,8 +36,8 @@ const ITEMS := [
 	["potion_health", "Poción de vida", P, 3, 4, S.CONSUMABLE, R.COMMON, {}, "Un trago y las heridas se cierran.", {"stackable": true, "max_stack": 5, "effect": E.HEAL_HP, "value": 10.0, "cooldown": 8.0}],
 	["potion_clarity", "Poción de claridad", P, 11, 4, S.CONSUMABLE, R.UNCOMMON, {}, "La mente se aclara y las manos obedecen.", {"stackable": true, "max_stack": 5, "effect": E.SPEED_BUFF_TIMED, "value": 0.3, "duration": 15.0, "cooldown": 20.0}],
 	["potion_fury", "Poción de furia", P, 13, 4, S.CONSUMABLE, R.RARE, {}, "Sabe a sangre y a hierro.", {"stackable": true, "max_stack": 5, "effect": E.ATTACK_BUFF_TIMED, "value": 0.5, "duration": 20.0, "cooldown": 25.0}],
-	["book_embers", "Grimorio de brasas", B, 3, 0, S.RELIC, R.UNCOMMON, {"attack_damage": 2}, "Las páginas arden sin consumirse.", {"allowed_heroes": MAGE}],
-	["book_tides", "Grimorio de mareas", B, 11, 0, S.RELIC, R.RARE, {"attack_interval": -0.15}, "Cada hechizo llega como una ola.", {"allowed_heroes": MAGE}],
+	["book_embers", "Grimorio de brasas", B, 3, 0, S.TALISMAN, R.UNCOMMON, {"attack_damage": 2}, "Las páginas arden sin consumirse.", {"allowed_heroes": MAGE}],
+	["book_tides", "Grimorio de mareas", B, 11, 0, S.TALISMAN, R.RARE, {"attack_interval": -0.15}, "Cada hechizo llega como una ola.", {"allowed_heroes": MAGE}],
 ]
 
 

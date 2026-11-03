@@ -2,17 +2,17 @@ extends SceneTree
 
 ## Door loop (session bucle-7):
 ##   - DoorRollConfig: the threat chance grows with the doors opened (until max_chance),
-##     the enemy count never shrinks, every floor pays dust + one random resource
-##   - invasions and waves only spawn in dark (unpowered) rooms
+##     the enemy count never shrinks, every floor pays embers + one random resource
+##   - invasions and waves only spawn in dark (unlit) rooms
 ##   - the simultaneous enemy cap holds, door invasions and waves included
 ##   - every opened door (loops too) pays the extra resource
-##   - energizing costs more per room already energized; the refund is what was paid
-##   - a switched-off turret works again when the room is lit
+##   - lighting costs more per room already lit; the refund is what was paid
+##   - a switched-off defense works again when the room is lit
 ##   - spawns are telegraphed: HUD text naming the rooms + minimap alert
 ##   godot --headless --path . --script res://tests/test_door_roll.gd
 
 const MAIN2D_PATH := "res://scenes/Main2d.tscn"
-const TURRET_SCENE := "res://scenes/world/TurretModule.tscn"
+const DEFENSE_SCENE := "res://scenes/world/DefenseBuilding.tscn"
 const SEEDS := 8
 
 var failures: Array[String] = []
@@ -23,7 +23,7 @@ func _initialize() -> void:
 	for floor_index in [1, 3, 5]:
 		for s in range(1, SEEDS + 1):
 			await _run(s, floor_index)
-	await _test_turret_relight()
+	await _test_defense_relight()
 	await _test_telegraph()
 	for failure in failures:
 		printerr("FAIL: ", failure)
@@ -57,7 +57,7 @@ func _test_config() -> void:
 			previous_count = count
 		_expect(grew, "floor %d: the chance never grows with the doors" % floor_index)
 		_expect(is_equal_approx(previous_chance, roll.max_chance), "floor %d: chance never reaches max_chance" % floor_index)
-		_expect(roll.dust_reward(floor_index) > 0 and roll.bonus_amount(floor_index) > 0, "floor %d: a door pays nothing" % floor_index)
+		_expect(roll.embers_reward(floor_index) > 0 and roll.bonus_amount(floor_index) > 0, "floor %d: a door pays nothing" % floor_index)
 		_expect(roll.threat_chance(3, floor_index) >= roll.threat_chance(3, 1), "floor %d: not harder than floor 1" % floor_index)
 	# Every configured resource shows up as the extra reward on some floor.
 	var seen := {}
@@ -92,7 +92,7 @@ func _run(s: int, floor_index: int) -> void:
 	var doors: DoorTurnSystem = main2d.door_turn_system
 	fm.config = fm.config.duplicate()
 
-	# --- reward: every door pays dust (rooms) + the extra resource (rooms and loops) ---
+	# --- reward: every door pays embers (rooms) + the extra resource (rooms and loops) ---
 	var roll := fm.config.door_roll
 	fm.config.run_curve = null  # progresion-10: the curve wins over the array
 	fm.config.max_enemies_by_floor = PackedInt32Array([999])
@@ -108,7 +108,7 @@ func _run(s: int, floor_index: int) -> void:
 		var bonus := fm.door_bonus(group)
 		var key: String = bonus["key"]
 		var before: int = resources.get_resource(key)
-		var dust_before: int = resources.get_resource("dust")
+		var embers_before: int = resources.get_resource("embers")
 		_expect(doors.open_room(group), "%s: open_room('%s') refused" % [label, group])
 		door.disable_door()
 		_expect(resources.get_resource(key) - before >= int(bonus["amount"]), "%s: door '%s' paid no extra %s" % [label, group, key])
@@ -116,7 +116,7 @@ func _run(s: int, floor_index: int) -> void:
 			opened_loop = true
 		else:
 			opened_room = true
-			_expect(resources.get_resource("dust") - dust_before >= roll.dust_reward(floor_index), "%s: room door '%s' paid less than %d dust" % [label, group, roll.dust_reward(floor_index)])
+			_expect(resources.get_resource("embers") - embers_before >= roll.embers_reward(floor_index), "%s: room door '%s' paid less than %d embers" % [label, group, roll.embers_reward(floor_index)])
 	_expect(opened_room, "%s: no room door to open" % label)
 
 	# --- reveal everything, light every other room ---
@@ -127,7 +127,7 @@ func _run(s: int, floor_index: int) -> void:
 	var index := 0
 	for room in rm.get_dark_rooms():
 		if index % 2 == 0:
-			rm.set_zone_powered(room.zone_id, true)
+			rm.set_zone_lit(room.zone_id, true)
 			lit.append(room.zone_id)
 		index += 1
 	var dark_ids: Array[String] = []
@@ -159,9 +159,9 @@ func _run(s: int, floor_index: int) -> void:
 	enemies.spawn_enemies_in_room(rm.get_group_id(dark_ids[0]), 10)
 	_expect(enemies.alive_count() <= cap, "%s: %d enemies alive over cap %d" % [label, enemies.alive_count(), cap])
 
-	# --- energize cost grows per energized room, refund = what was paid ---
+	# --- light cost grows per lit room, refund = what was paid ---
 	if s == 1:
-		_test_power_cost(label, main2d, resources)
+		_test_light_cost(label, main2d, resources)
 
 	main2d.queue_free()
 	await process_frame
@@ -173,11 +173,11 @@ func _clear_enemies(enemies: EnemyManager) -> void:
 	enemies._enemies.clear()
 
 
-func _test_power_cost(label: String, main2d: Node, resources: Node) -> void:
+func _test_light_cost(label: String, main2d: Node, resources: Node) -> void:
 	var rm: RoomManager = main2d.room_manager
-	var step: int = main2d.floor_manager.config.power_cost_step
+	var step: int = main2d.floor_manager.config.light_cost_step
 	for room: RoomZone in rm.rooms_dict.values():
-		rm.set_zone_powered(room.zone_id, false)
+		rm.set_zone_lit(room.zone_id, false)
 	var rooms: Array[RoomZone] = []
 	for room in rm.get_dark_rooms():
 		if rooms.size() < 3:
@@ -185,34 +185,34 @@ func _test_power_cost(label: String, main2d: Node, resources: Node) -> void:
 	_expect(rooms.size() == 3, "%s: need 3 dark rooms for the cost test" % label)
 	if rooms.size() < 3:
 		return
-	resources.add_resource("dust", 1000)
-	var expected := [RoomZone.POWER_COST, RoomZone.POWER_COST + step, RoomZone.POWER_COST + 2 * step]
+	resources.add_resource("embers", 1000)
+	var expected := [RoomZone.LIGHT_COST, RoomZone.LIGHT_COST + step, RoomZone.LIGHT_COST + 2 * step]
 	for i in 3:
-		var before: int = resources.get_resource("dust")
-		_expect(rooms[i].next_power_cost() == expected[i], "%s: cost of room %d is %d, want %d" % [label, i, rooms[i].next_power_cost(), expected[i]])
-		rooms[i].try_power_up()
-		_expect(rooms[i].is_powered and before - resources.get_resource("dust") == expected[i], "%s: room %d paid %d, want %d" % [label, i, before - resources.get_resource("dust"), expected[i]])
-	_expect(rm.get_energized_count() == 3, "%s: energized count %d" % [label, rm.get_energized_count()])
-	var before_refund: int = resources.get_resource("dust")
-	rooms[1].power_down()
-	_expect(resources.get_resource("dust") - before_refund == expected[1], "%s: refund %d, want %d" % [label, resources.get_resource("dust") - before_refund, expected[1]])
-	_expect(rooms[1].next_power_cost() == RoomZone.POWER_COST + 2 * step, "%s: cost after a refund is %d" % [label, rooms[1].next_power_cost()])
-	var cheap: int = resources.get_resource("dust")
-	resources.spend_resource("dust", cheap)
-	rooms[1].try_power_up()
-	_expect(not rooms[1].is_powered, "%s: lit a room without dust" % label)
-	var icon := rooms[1].get_node_or_null("PowerIcon") as Node2D
-	_expect(icon != null, "%s: room has no PowerIcon" % label)
+		var before: int = resources.get_resource("embers")
+		_expect(rooms[i].next_light_cost() == expected[i], "%s: cost of room %d is %d, want %d" % [label, i, rooms[i].next_light_cost(), expected[i]])
+		rooms[i].try_light_up()
+		_expect(rooms[i].is_lit and before - resources.get_resource("embers") == expected[i], "%s: room %d paid %d, want %d" % [label, i, before - resources.get_resource("embers"), expected[i]])
+	_expect(rm.get_lit_count() == 3, "%s: lit count %d" % [label, rm.get_lit_count()])
+	var before_refund: int = resources.get_resource("embers")
+	rooms[1].light_down()
+	_expect(resources.get_resource("embers") - before_refund == expected[1], "%s: refund %d, want %d" % [label, resources.get_resource("embers") - before_refund, expected[1]])
+	_expect(rooms[1].next_light_cost() == RoomZone.LIGHT_COST + 2 * step, "%s: cost after a refund is %d" % [label, rooms[1].next_light_cost()])
+	var cheap: int = resources.get_resource("embers")
+	resources.spend_resource("embers", cheap)
+	rooms[1].try_light_up()
+	_expect(not rooms[1].is_lit, "%s: lit a room without embers" % label)
+	var icon := rooms[1].get_node_or_null("LightIcon") as Node2D
+	_expect(icon != null, "%s: room has no LightIcon" % label)
 
 
-func _test_turret_relight() -> void:
-	var turret := (load(TURRET_SCENE) as PackedScene).instantiate() as TurretModule
-	root.add_child(turret)
+func _test_defense_relight() -> void:
+	var defense := (load(DEFENSE_SCENE) as PackedScene).instantiate() as DefenseBuilding
+	root.add_child(defense)
 	await process_frame
-	turret.powered = false
-	turret._on_fire_timer_timeout()
-	_expect(not turret.fire_timer.is_stopped(), "a switched-off turret stopped its timer for good")
-	turret.free()
+	defense.lit = false
+	defense._on_fire_timer_timeout()
+	_expect(not defense.fire_timer.is_stopped(), "a switched-off defense stopped its timer for good")
+	defense.free()
 
 
 func _test_telegraph() -> void:

@@ -1,7 +1,7 @@
 extends RefCounted
 class_name BalanceSim
 
-## BalanceSim: pure-math duel / wave / Nexo model over the real data (.tres
+## BalanceSim: pure-math duel / wave / Relic model over the real data (.tres
 ## heroes, EnemyTypes, FloorConfig, UpgradeConfig) and the real formulas
 ## (Enemy.resolved_*, FloorConfig multipliers, UpgradeConfig curves). No scene,
 ## no randomness: tools/balance_sim.gd exports it as CSV, tests/test_balance.gd
@@ -24,10 +24,10 @@ const WAVE_TURN := 5
 const LAYOUT_SEEDS := 30
 const FLOOR_CONFIG_PATH := "res://resources/floors/default_floor_config.tres"
 const UPGRADE_CONFIG_PATH := "res://resources/upgrades/run_upgrade_config.tres"
-## Sapper/raider hit-the-Nexo timer (Enemy.attack_speed default).
-const NEXO_TICK_SEC := 1.0
-## ResourceManager.reset_resources() default dust at the start of a run.
-const RESET_DUST := 20
+## Sapper/raider hit-the-Relic timer (Enemy.attack_speed default).
+const RELIC_TICK_SEC := 1.0
+## ResourceManager.reset_resources() default embers at the start of a run.
+const RESET_EMBERS := 20
 ## Distance (px) at which an enemy's contact hitbox reaches a hero (radius ~24 + reach).
 const CONTACT_PX := 40.0
 ## progresion-10: difficulty applied over the run curve by enemy_stats (null = Normal).
@@ -88,7 +88,7 @@ static func hero_stats(hero_id: String, level: int) -> Dictionary:
 
 
 ## Always-on passive reduction (Piel de Hierro). Position-dependent ones
-## (Muro Viviente, only near the Nexo) are not counted: conservative.
+## (Muro Viviente, only near the Relic) are not counted: conservative.
 static func damage_reduction_pct(data: CharacterData) -> float:
 	if data.passive and data.passive.effect == AbilityData.Effect.DAMAGE_REDUCTION_PCT:
 		return data.passive.value
@@ -105,8 +105,8 @@ static func enemy_stats(type: EnemyType, floor_index: int) -> Dictionary:
 		"enemy": type.id, "floor": floor_index, "role": "raider" if type.role == EnemyType.Role.RAIDER else "hunter",
 		"hp": maxi(1, roundi(Enemy.resolved_hp(type) * hp_mult)),
 		"contact": maxi(1, roundi(Enemy.resolved_contact_damage(type) * dmg_mult)),
-		"nexo": maxi(1, roundi(type.damage_vs_nexo * dmg_mult)) if type.damage_vs_nexo > 0 else 0,
-		"module": maxi(1, roundi(Enemy.resolved_module_damage(type) * dmg_mult)),
+		"relic": maxi(1, roundi(type.damage_vs_relic * dmg_mult)) if type.damage_vs_relic > 0 else 0,
+		"building": maxi(1, roundi(Enemy.resolved_building_damage(type) * dmg_mult)),
 		"speed": Enemy.resolved_speed(type) * type.speed_mult,
 	}
 
@@ -270,10 +270,10 @@ static func _arrival_lengths(layout: MapLayout) -> Array[float]:
 	return lengths
 
 
-## Per raider type in the floor's pool: seconds to reach the Nexo from the nearest
+## Per raider type in the floor's pool: seconds to reach the Relic from the nearest
 ## spawnable room (>= raider_min_arrival_sec, the spawn gate) and mean over rooms,
 ## then seconds to destroy it with 1 and 3 raiders.
-static func nexo_rows() -> Array[Dictionary]:
+static func relic_rows() -> Array[Dictionary]:
 	var cfg := floor_config()
 	var rows: Array[Dictionary] = []
 	for f in range(1, FLOORS + 1):
@@ -295,48 +295,48 @@ static func nexo_rows() -> Array[Dictionary]:
 			for a in arrivals:
 				mean += a
 			rows.append({
-				"floor": f, "enemy": type.id, "nexo_hp": cfg.nexo_max_hp, "dmg_per_tick": e["nexo"],
+				"floor": f, "enemy": type.id, "relic_hp": cfg.relic_max_hp, "dmg_per_tick": e["relic"],
 				"arrival_min_s": snappedf(arrivals[0], 0.1) if not arrivals.is_empty() else -1.0,
 				"arrival_mean_s": snappedf(mean / arrivals.size(), 0.1) if not arrivals.is_empty() else -1.0,
-				"destroy_1_s": destroy_sec(cfg.nexo_max_hp, int(e["nexo"]), 1),
-				"destroy_3_s": destroy_sec(cfg.nexo_max_hp, int(e["nexo"]), 3),
+				"destroy_1_s": destroy_sec(cfg.relic_max_hp, int(e["relic"]), 1),
+				"destroy_3_s": destroy_sec(cfg.relic_max_hp, int(e["relic"]), 3),
 			})
 	return rows
 
 
-## Tower breakers (TargetProfile "tower_breaker") vs one turret, 1v1: the turret
+## Tower breakers (TargetProfile "tower_breaker") vs one defense, 1v1: the defense
 ## shoots every fire_rate from the moment the enemy is in range, the breaker hits
-## every NEXO_TICK_SEC (Enemy.attack_speed). `turret_hp_lost_pct` = share of the
-## turret's HP gone by the time the turret has killed it (100 = the turret dies first).
+## every RELIC_TICK_SEC (Enemy.attack_speed). `defense_hp_lost_pct` = share of the
+## defense's HP gone by the time the defense has killed it (100 = the defense dies first).
 static func tower_rows() -> Array[Dictionary]:
-	var turret: Dictionary = Module.CATALOG[Module.ModuleType.BALLESTA]
+	var defense: Dictionary = Building.CATALOG[Building.BuildingType.BALLESTA]
 	var rows: Array[Dictionary] = []
 	for f in range(1, FLOORS + 1):
 		for type in pool_types(f):
 			if type.get_target_profile().id != &"tower_breaker":
 				continue
 			var e := enemy_stats(type, f)
-			var turret_ttk := ceili(float(e["hp"]) / float(turret["damage"])) * float(turret["fire_rate"])
-			var destroy := ceili(float(turret["hp"]) / float(e["module"])) * NEXO_TICK_SEC
+			var defense_ttk := ceili(float(e["hp"]) / float(defense["damage"])) * float(defense["fire_rate"])
+			var destroy := ceili(float(defense["hp"]) / float(e["building"])) * RELIC_TICK_SEC
 			rows.append({
-				"floor": f, "enemy": type.id, "enemy_hp": e["hp"], "module_dmg_per_s": e["module"],
-				"turret_kills_enemy_s": turret_ttk, "enemy_destroys_turret_s": destroy,
-				"turret_hp_lost_pct": snappedf(minf(100.0, 100.0 * turret_ttk / destroy), 0.1),
+				"floor": f, "enemy": type.id, "enemy_hp": e["hp"], "building_dmg_per_s": e["building"],
+				"defense_kills_enemy_s": defense_ttk, "enemy_destroys_defense_s": destroy,
+				"defense_hp_lost_pct": snappedf(minf(100.0, 100.0 * defense_ttk / destroy), 0.1),
 			})
 	return rows
 
 
-static func destroy_sec(nexo_hp: int, dmg_per_tick: int, raiders: int) -> float:
+static func destroy_sec(relic_hp: int, dmg_per_tick: int, raiders: int) -> float:
 	if dmg_per_tick <= 0:
 		return INF
-	return ceili(float(nexo_hp) / float(dmg_per_tick * raiders)) * NEXO_TICK_SEC
+	return ceili(float(relic_hp) / float(dmg_per_tick * raiders)) * RELIC_TICK_SEC
 
 
 ## Door loop (session bucle-7): per floor, opening every room once (rooms - 1 doors).
 ## chance_* = DoorRollConfig.threat_chance at the 1st / 5th / last door; threats and enemies
 ## are expectations (enemies capped by FloorConfig.max_enemies per wave, not over time);
-## dust/bonus = what the doors pay; lit_rooms = rooms the starting dust + the doors' dust
-## can energize with the growing cost (RoomZone.POWER_COST + power_cost_step per lit room).
+## embers/bonus = what the doors pay; lit_rooms = rooms the starting embers + the doors' embers
+## can light with the growing cost (RoomZone.LIGHT_COST + light_cost_step per lit room).
 static func door_rows() -> Array[Dictionary]:
 	var config := floor_config()
 	var roll := config.door_roll
@@ -349,12 +349,12 @@ static func door_rows() -> Array[Dictionary]:
 			var chance := roll.threat_chance(n, f)
 			threats += chance
 			enemies += chance * minf(roll.enemy_count(n, f), config.max_enemies(f))
-		var dust := roll.dust_reward(f) * doors
-		var budget := RESET_DUST + dust
+		var embers := roll.embers_reward(f) * doors
+		var budget := RESET_EMBERS + embers
 		var lit := 0
 		var spent := 0
-		while spent + RoomZone.POWER_COST + config.power_cost_step * lit <= budget:
-			spent += RoomZone.POWER_COST + config.power_cost_step * lit
+		while spent + RoomZone.LIGHT_COST + config.light_cost_step * lit <= budget:
+			spent += RoomZone.LIGHT_COST + config.light_cost_step * lit
 			lit += 1
 		rows.append({
 			"floor": f, "rooms": doors + 1,
@@ -362,7 +362,7 @@ static func door_rows() -> Array[Dictionary]:
 			"chance_door5": snappedf(roll.threat_chance(5, f), 0.01),
 			"chance_last": snappedf(roll.threat_chance(doors, f), 0.01),
 			"threats": snappedf(threats, 0.1), "enemies": snappedf(enemies, 0.1),
-			"cap": config.max_enemies(f), "dust": dust, "bonus_each": roll.bonus_amount(f),
+			"cap": config.max_enemies(f), "embers": embers, "bonus_each": roll.bonus_amount(f),
 			"bonus_total": roll.bonus_amount(f) * doors, "lit_rooms": lit,
 		})
 	return rows
@@ -383,9 +383,9 @@ static func extraction_rows() -> Array[Dictionary]:
 	return rows
 
 
-const MODULE_YIELD := 3
+const BUILDING_YIELD := 3
 ## ResourceManager.reset_resources() defaults: what a run starts with.
-const START_RESOURCES := {"industry": 15, "food": 15, "science": 10, "dust": 20}
+const START_RESOURCES := {"iron": 15, "food": 15, "lore": 10, "embers": 20}
 ## Heroes in a run (GameSession.PARTY_SIZE, the picked pair before recruits; they also
 ## share each invasion wave) and HP a hero loses (and heals back with Comida) per floor.
 const PARTY_SIZE := 2
@@ -397,14 +397,14 @@ const HEAL_HP_PER_HERO := 30
 ## gets its major, split evenly over Forja/Granja/Scriptorium, and 2 minors split over
 ## Ballesta/Pinchos, bought with the rising cost curve; majors work half the floor's doors on
 ## average; research (all entries) and hero levels are spread evenly over the floors; Comida
-## also heals PARTY_SIZE heroes HEAL_HP_PER_HERO HP per floor; Polvo energizes the lit rooms.
-## income = doors (DoorRollConfig) + generators; run_ratio = cumulative income / cumulative
+## also heals PARTY_SIZE heroes HEAL_HP_PER_HERO HP per floor; Brasas lights the lit rooms.
+## income = doors (DoorRollConfig) + workshops; run_ratio = cumulative income / cumulative
 ## sink (> 1 = surplus, < 1 = shortfall); a resource with no sink or no income is "useless".
 static func economy_rows() -> Array[Dictionary]:
 	var config := floor_config()
 	var roll := config.door_roll
 	var up := upgrade_config()
-	var curve := ModuleCostCurve.get_default()
+	var curve := BuildingCostCurve.get_default()
 	var research_total := 0
 	for entry in (load("res://resources/research/research_config.tres") as ResearchConfig).entries:
 		research_total += entry.cost
@@ -412,46 +412,46 @@ static func economy_rows() -> Array[Dictionary]:
 	for lvl in up.max_level:
 		level_total += up.get_cost(lvl)
 	var rows: Array[Dictionary] = []
-	var income_run := {"industry": 0.0, "food": 0.0, "science": 0.0, "dust": 0.0}
-	var sink_run := {"industry": 0.0, "food": 0.0, "science": 0.0, "dust": 0.0}
+	var income_run := {"iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0}
+	var sink_run := {"iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0}
 	for f in range(1, FLOORS + 1):
 		var doors := config.room_count(f) - 1
 		var lit := 0
 		var spent := 0
-		var budget := RESET_DUST + roll.dust_reward(f) * doors
-		var dust_sink := 0
-		while spent + RoomZone.POWER_COST + config.power_cost_step * lit <= budget:
-			var cost := RoomZone.POWER_COST + config.power_cost_step * lit
+		var budget := RESET_EMBERS + roll.embers_reward(f) * doors
+		var embers_sink := 0
+		while spent + RoomZone.LIGHT_COST + config.light_cost_step * lit <= budget:
+			var cost := RoomZone.LIGHT_COST + config.light_cost_step * lit
 			spent += cost
-			dust_sink += cost
+			embers_sink += cost
 			lit += 1
 		var majors := lit + 1
 		var minors := 2 * (lit + 1)
 		var weights: Vector3 = roll.bonus_weights_by_floor[clampi(f - 1, 0, roll.bonus_weights_by_floor.size() - 1)]
-		var share := {"industry": weights.x / (weights.x + weights.y + weights.z), "food": weights.y / (weights.x + weights.y + weights.z), "science": weights.z / (weights.x + weights.y + weights.z)}
+		var share := {"iron": weights.x / (weights.x + weights.y + weights.z), "food": weights.y / (weights.x + weights.y + weights.z), "lore": weights.z / (weights.x + weights.y + weights.z)}
 		var build_sink := 0
 		for k in ceili(majors / 3.0):
-			build_sink += 3 * curve.cost(Module.CATALOG[Module.ModuleType.FORJA]["cost"], k)
+			build_sink += 3 * curve.cost(Building.CATALOG[Building.BuildingType.FORJA]["cost"], k)
 		for k in ceili(minors / 2.0):
-			build_sink += 2 * curve.cost(Module.CATALOG[Module.ModuleType.BALLESTA]["cost"], k)
-		for key in ["industry", "food", "science", "dust"]:
+			build_sink += 2 * curve.cost(Building.CATALOG[Building.BuildingType.BALLESTA]["cost"], k)
+		for key in ["iron", "food", "lore", "embers"]:
 			var income := 0.0
-			if key == "dust":
-				income = roll.dust_reward(f) * doors
+			if key == "embers":
+				income = roll.embers_reward(f) * doors
 			else:
-				income = roll.bonus_amount(f) * doors * share[key] + (majors / 3.0) * MODULE_YIELD * doors / 2.0
+				income = roll.bonus_amount(f) * doors * share[key] + (majors / 3.0) * BUILDING_YIELD * doors / 2.0
 			if f == 1:
 				income += START_RESOURCES[key]
 			var sink := 0.0
 			match key:
-				"industry":
+				"iron":
 					sink = build_sink
 				"food":
 					sink = PARTY_SIZE * level_total / float(FLOORS) + PARTY_SIZE * up.heal_cost(HEAL_HP_PER_HERO)
-				"science":
+				"lore":
 					sink = research_total / float(FLOORS)
-				"dust":
-					sink = dust_sink
+				"embers":
+					sink = embers_sink
 			income_run[key] += income
 			sink_run[key] += sink
 			rows.append({
@@ -462,7 +462,7 @@ static func economy_rows() -> Array[Dictionary]:
 
 
 ## progresion-10: the run curve per floor in both difficulties: multipliers, door
-## threat at WAVE_TURN, cap, Nexo HP, mean party loss per encounter (heroes at level
+## threat at WAVE_TURN, cap, Relic HP, mean party loss per encounter (heroes at level
 ## f - 1) and, on boss floors, the boss's HP, its charge and the seconds BOSS_PARTY
 ## needs to kill it (sum of DPS, no misses).
 static func difficulty_rows() -> Array[Dictionary]:
@@ -481,7 +481,7 @@ static func difficulty_rows() -> Array[Dictionary]:
 				"dmg_mult": snappedf(cfg.enemy_damage_multiplier(f) * level.damage_mult, 0.01),
 				"threat_pct": snappedf(clampf(cfg.door_roll.threat_chance(WAVE_TURN, f) * cfg.threat_multiplier(f) * level.threat_mult, 0.0, cfg.door_roll.max_chance) * 100.0, 0.1),
 				"max_enemies": cfg.max_enemies(f) + level.extra_max_enemies,
-				"nexo_hp": roundi(cfg.nexo_max_hp * level.nexo_hp_mult),
+				"relic_hp": roundi(cfg.relic_max_hp * level.relic_hp_mult),
 				"loss_pct": snappedf(loss / HERO_IDS.size() * 100.0, 0.1),
 				"boss": "", "boss_hp": 0, "boss_charge": 0, "boss_ttk_s": 0.0,
 			}
@@ -519,8 +519,8 @@ static func floor_threats(f: int) -> float:
 ## floor_loss_pct = that x the floor's expected invasions (the per-hero pressure of a
 ## floor); parity = floor_loss / the solo floor_loss of the same difficulty and floor
 ## (1.0 = co-op feels like solo per hero). PlayerScaling is tuned so 2-4 players sit in
-## [PARITY_MIN, PARITY_MAX]. nexo_destroy_s = seconds 3 of the floor's strongest raider
-## need to break the (scaled) Nexo; max_enemies = live cap.
+## [PARITY_MIN, PARITY_MAX]. relic_destroy_s = seconds 3 of the floor's strongest raider
+## need to break the (scaled) Relic; max_enemies = live cap.
 const PARITY_MIN := 0.85
 const PARITY_MAX := 1.2
 
@@ -542,11 +542,11 @@ static func scaling_rows() -> Array[Dictionary]:
 				var floor_loss := loss * floor_threats(f)
 				if p == 1:
 					solo[f] = floor_loss
-				var nexo_hp := roundi(cfg.nexo_max_hp * level.nexo_hp_mult * scaling.nexo_hp(p))
+				var relic_hp := roundi(cfg.relic_max_hp * level.relic_hp_mult * scaling.relic_hp(p))
 				var raider_dmg := 0
 				for type in pool_types(f):
 					if type.role == EnemyType.Role.RAIDER:
-						raider_dmg = maxi(raider_dmg, int(enemy_stats(type, f)["nexo"]))
+						raider_dmg = maxi(raider_dmg, int(enemy_stats(type, f)["relic"]))
 				rows.append({
 					"difficulty": level.id, "players": p, "party": party_size(), "floor": f,
 					"hp_mult": snappedf(cfg.enemy_hp_multiplier(f) * level.hp_mult * scaling.hp(p), 0.01),
@@ -555,8 +555,8 @@ static func scaling_rows() -> Array[Dictionary]:
 					"loss_pct": snappedf(loss * 100.0, 0.1),
 					"floor_loss_pct": snappedf(floor_loss * 100.0, 0.1),
 					"parity": snappedf(floor_loss / maxf(float(solo[f]), 0.0001), 0.01),
-					"nexo_hp": nexo_hp,
-					"nexo_destroy_s": destroy_sec(nexo_hp, raider_dmg, 3) if raider_dmg > 0 else -1.0,
+					"relic_hp": relic_hp,
+					"relic_destroy_s": destroy_sec(relic_hp, raider_dmg, 3) if raider_dmg > 0 else -1.0,
 				})
 	players = 1
 	difficulty = null

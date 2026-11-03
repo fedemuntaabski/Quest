@@ -1,7 +1,7 @@
 extends Node
 
 ## PartyInventory — Autoload. The party's items for the current run: a shared
-## stash (20 stacks) and, per hero, what is equipped (weapon 1, armor 1, relic 1,
+## stash (20 stacks) and, per hero, what is equipped (weapon 1, armor 1, talisman 1,
 ## consumables 2). Run state: Main._begin_new_run() calls reset(); it survives
 ## floors (heroes are rebuilt every floor, PlayerStats re-reads the equipment bonus
 ## when each one registers). Data only: stats go through PlayerStats (third layer),
@@ -19,7 +19,7 @@ const STASH_CAPACITY := 20
 const SLOT_CAPACITY := {
 	ItemData.Slot.WEAPON: 1,
 	ItemData.Slot.ARMOR: 1,
-	ItemData.Slot.RELIC: 1,
+	ItemData.Slot.TALISMAN: 1,
 	ItemData.Slot.CONSUMABLE: 2,
 }
 
@@ -110,7 +110,7 @@ func can_equip(hero_id: String, item: ItemData) -> String:
 	return ""
 
 
-## Equips a stashed item. A full single-item slot (weapon/armor/relic) swaps: the
+## Equips a stashed item. A full single-item slot (weapon/armor/talisman) swaps: the
 ## old one returns to the stash (always fits, the new one just left it).
 func equip(hero_id: String, item: ItemData) -> bool:
 	if can_equip(hero_id, item) != "" or not Net.is_authority():
@@ -165,11 +165,11 @@ func consume(hero_id: String, index: int) -> ItemData:
 	return item
 
 
-## Sum of the `modifiers` of the hero's equipped weapon/armor/relic
+## Sum of the `modifiers` of the hero's equipped weapon/armor/talisman
 ## (keys: hp, attack_damage, attack_interval, attack_range).
 func get_equipment_bonus(hero_id: String) -> Dictionary:
 	var bonus := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0}
-	for slot in [ItemData.Slot.WEAPON, ItemData.Slot.ARMOR, ItemData.Slot.RELIC]:
+	for slot in [ItemData.Slot.WEAPON, ItemData.Slot.ARMOR, ItemData.Slot.TALISMAN]:
 		for item in get_equipped(hero_id, slot):
 			bonus["hp"] += int(item.modifiers.get("hp", 0))
 			bonus["attack_damage"] += int(item.modifiers.get("attack_damage", 0))

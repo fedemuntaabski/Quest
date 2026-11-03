@@ -17,9 +17,9 @@ enum Highlight { NONE, CURRENT, REACHABLE, OPENABLE, BLOCKED }
 const SHAPE_INSET := 6.0
 const OUTLINE_WIDTH := 3.0
 const REVEALED_IDLE_OUTLINE := Color(1, 1, 1, 0.25)
-const POWER_COST: int = 10
-const POWERED_FILL_COLOR := Color(1.0, 0.9, 0.5, 0.30)
-const POWERED_OUTLINE_COLOR := Color(1.0, 0.9, 0.5, 0.95)
+const LIGHT_COST: int = 10
+const LIT_FILL_COLOR := Color(1.0, 0.9, 0.5, 0.30)
+const LIT_OUTLINE_COLOR := Color(1.0, 0.9, 0.5, 0.95)
 
 const FILL_COLORS := {
 	Highlight.NONE: Color(1, 1, 1, 0.0),
@@ -40,22 +40,22 @@ const UNSHADED: CanvasItemMaterial = preload("res://resources/maps/unshaded_mate
 ## Room-type badge: small diamond + name, inset from the room's top-left corner.
 const TYPE_BADGE_INSET := Vector2(18, 18)
 const TYPE_BADGE_RADIUS := 7.0
-## Power status icon (top-right corner, mirrors the type badge).
-const POWER_ICON_INSET := Vector2(34, 26)
-const POWER_ON_COLOR := Color(1.0, 0.85, 0.3)
-const POWER_OFF_COLOR := Color(0.6, 0.6, 0.65)
-const POWER_OFF_SLASH_COLOR := Color(0.9, 0.25, 0.25)
+## Light status icon (top-right corner, mirrors the type badge).
+const LIGHT_ICON_INSET := Vector2(34, 26)
+const LIGHT_ON_COLOR := Color(1.0, 0.85, 0.3)
+const LIGHT_OFF_COLOR := Color(0.6, 0.6, 0.65)
+const LIGHT_OFF_SLASH_COLOR := Color(0.9, 0.25, 0.25)
 
-const ENERGY_BUTTON_SCENE := preload("res://scenes/world/EnergyButton.tscn")
+const LIGHT_HINT_SCENE := preload("res://scenes/world/LightHint.tscn")
 const BUILDING_SLOT_SCENE := preload("res://scenes/world/BuildingSlot.tscn")
 const BUILDING_SLOT_OFFSETS := [Vector2(0, 0), Vector2(-28, 22), Vector2(28, 22)]
 const MAJOR_SLOT_SPACING := 56.0
 
-## Any power state change (player-paid or scripted). RoomLight listens.
-signal power_changed(zone_id: String, powered: bool)
+## Any light state change (player-paid or scripted). RoomLight listens.
+signal light_changed(zone_id: String, lit: bool)
 signal slot_clicked(zone_id: String, slot: BuildingSlot)
-signal module_built(zone_id: String, module: Module)
-signal module_clicked(zone_id: String, slot: BuildingSlot)
+signal building_built(zone_id: String, building: Building)
+signal building_clicked(zone_id: String, slot: BuildingSlot)
 
 @onready var fill: Polygon2D = $Fill
 @onready var outline: Line2D = $Outline
@@ -63,7 +63,7 @@ signal module_clicked(zone_id: String, slot: BuildingSlot)
 
 var zone_id: String = ""
 var kind: String = ""
-var is_powered: bool = false
+var is_lit: bool = false
 
 ## Room-graph node data. `room_id` aliases `zone_id`. Visited/discovery state
 ## is NOT stored here — DoorTurnSystem owns it (query RoomManager.is_zone_revealed).
@@ -76,20 +76,20 @@ var connected_doors: Array[Door] = []
 
 var _state: int = Highlight.NONE
 var _shown: bool = false
-var _energy_button: EnergyButton = null
+var _light_hint: LightHint = null
 var _light: RoomLight = null
 var _type_badge: Node2D = null
-var _power_icon: Node2D = null
-var _power_bolt: Polygon2D = null
-var _power_slash: Line2D = null
-var _power_label: Label = null
+var _light_icon: Node2D = null
+var _light_flame: Polygon2D = null
+var _light_slash: Line2D = null
+var _light_label: Label = null
 var _building_slots: Array[BuildingSlot] = []
 ## Extra MAJOR slots on top of the usual one (RoomTypeRule.extra_major_slots,
 ## set by Main2d before the room is lit).
 var extra_major_slots: int = 0
-## Dust the player paid to light this room; refunded when switched off. 0 for
-## rooms lit for free (the start room), so toggling can't mint dust.
-var _power_paid: int = 0
+## Embers the player paid to light this room; refunded when switched off. 0 for
+## rooms lit for free (the start room), so toggling can't mint embers.
+var _light_paid: int = 0
 @onready var _slots_container: Node2D = $BuildingSlots
 
 
@@ -121,11 +121,11 @@ func configure(p_zone_id: String, size_px: Vector2, p_kind: String) -> void:
 	set_highlight(Highlight.NONE)
 
 	if kind == "room":
-		_energy_button = ENERGY_BUTTON_SCENE.instantiate() as EnergyButton
-		add_child(_energy_button)
-		_energy_button.energy_button_clicked.connect(func(_zid: String): try_power_up())
-		_update_energy_button_visibility()
-		_build_power_icon(half)
+		_light_hint = LIGHT_HINT_SCENE.instantiate() as LightHint
+		add_child(_light_hint)
+		_light_hint.light_hint_clicked.connect(func(_zid: String): try_light_up())
+		_update_light_hint_visibility()
+		_build_light_icon(half)
 
 	_set_render_visible(false)
 
@@ -135,7 +135,7 @@ func set_shown(v: bool) -> void:
 	_shown = v
 	_set_render_visible(v)
 	_apply_visual()
-	_update_energy_button_visibility()
+	_update_light_hint_visibility()
 
 
 ## Fog-of-war switch: hidden zones draw nothing and cannot receive clicks.
@@ -148,17 +148,17 @@ func _set_render_visible(p_visible: bool) -> void:
 		_light.visible = p_visible
 	if _type_badge != null:
 		_type_badge.visible = p_visible
-	if _power_icon != null:
-		_power_icon.visible = p_visible
+	if _light_icon != null:
+		_light_icon.visible = p_visible
 	for slot in _building_slots:
 		slot.visible = p_visible
 		slot.input_pickable = p_visible
-	if _energy_button != null:
+	if _light_hint != null:
 		if p_visible:
-			_update_energy_button_visibility()
+			_update_light_hint_visibility()
 		else:
-			_energy_button.visible = false
-			_energy_button.input_pickable = false
+			_light_hint.visible = false
+			_light_hint.input_pickable = false
 
 
 func is_shown() -> bool:
@@ -170,23 +170,23 @@ func set_highlight(state: int) -> void:
 	_apply_visual()
 
 
-func set_powered(v: bool) -> void:
-	if is_powered == v:
+func set_lit(v: bool) -> void:
+	if is_lit == v:
 		return
-	is_powered = v
-	var had_generator := false
-	for module in get_modules():
-		module.powered = v
-		had_generator = had_generator or module is GeneratorModule
-	if had_generator:
+	is_lit = v
+	var had_workshop := false
+	for building in get_buildings():
+		building.lit = v
+		had_workshop = had_workshop or building is WorkshopBuilding
+	if had_workshop:
 		var resources := ManagerLocator.get_resource_manager()
 		if resources:
 			resources.notify_production_changed()
-	power_changed.emit(zone_id, v)
+	light_changed.emit(zone_id, v)
 	_apply_visual()
-	_update_power_icon()
-	_update_energy_button_visibility()
-	if is_powered and _building_slots.is_empty() and kind == "room":
+	_update_light_icon()
+	_update_light_hint_visibility()
+	if is_lit and _building_slots.is_empty() and kind == "room":
 		_spawn_building_slots()
 
 
@@ -245,76 +245,76 @@ func set_room_type(type: RoomData.RoomType, size_px: Vector2, config: MapVisualC
 	_type_badge.visible = _shown
 
 
-## POWER_COST + FloorConfig.power_cost_step per room already energized with dust
-## (`energized_count`, the free start room excluded), minus the research discount (min 1).
-static func get_power_cost(energized_count: int = 0) -> int:
+## LIGHT_COST + FloorConfig.light_cost_step per room already lit with embers
+## (`lit_count`, the free start room excluded), minus the research discount (min 1).
+static func get_light_cost(lit_count: int = 0) -> int:
 	var rm := ManagerLocator.get_resource_manager()
 	var fm := ManagerLocator.get_floor_manager()
-	var step: int = (fm.config if fm else FloorManager.DEFAULT_CONFIG).power_cost_step
-	return maxi(1, POWER_COST + step * energized_count - (roundi(rm.get_bonus(ResearchEntry.Effect.POWER_COST)) if rm else 0))
+	var step: int = (fm.config if fm else FloorManager.DEFAULT_CONFIG).light_cost_step
+	return maxi(1, LIGHT_COST + step * lit_count - (roundi(rm.get_bonus(ResearchEntry.Effect.LIGHT_COST)) if rm else 0))
 
 
-## What lighting THIS room costs right now (grows per energized room).
-func next_power_cost() -> int:
+## What lighting THIS room costs right now (grows per lit room).
+func next_light_cost() -> int:
 	var room_manager := ManagerLocator.get_room_manager()
-	return get_power_cost(room_manager.get_energized_count() if room_manager else 0)
+	return get_light_cost(room_manager.get_lit_count() if room_manager else 0)
 
 
-## Lit with dust (the free start room is not): each one raises the next cost.
-func is_paid_power() -> bool:
-	return is_powered and _power_paid > 0
+## Lit with embers (the free start room is not): each one raises the next cost.
+func is_paid_light() -> bool:
+	return is_lit and _light_paid > 0
 
 
-## Cost text / affordability follow the energized count (RoomManager calls this on every power change).
-func refresh_power_hints() -> void:
-	if _energy_button != null:
-		_energy_button.refresh_label(next_power_cost())
+## Cost text / affordability follow the lit count (RoomManager calls this on every light change).
+func refresh_light_hints() -> void:
+	if _light_hint != null:
+		_light_hint.refresh_label(next_light_cost())
 	if _light != null:
 		_light.refresh_affordable()
 
 
-## Pays next_power_cost() dust to light this room. No-op if already powered.
-func try_power_up() -> void:
-	if is_powered:
+## Pays next_light_cost() embers to light this room. No-op if already lit.
+func try_light_up() -> void:
+	if is_lit:
 		return
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager == null:
 		return
-	var cost := next_power_cost()
-	if not resource_manager.spend_resource("dust", cost):
+	var cost := next_light_cost()
+	if not resource_manager.spend_resource("embers", cost):
 		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 		if text_mgr:
-			text_mgr.spawn_text(center_position, "Polvo insuficiente", QuestPalette.GOLD_DARK)
+			text_mgr.spawn_text(center_position, "Brasas insuficientes", QuestPalette.GOLD_DARK)
 		return
-	_power_paid = cost
-	set_powered(true)
-	QuestLogger.info(QuestLogger.Category.ROOM, "Zone '%s' energized for %d dust." % [zone_id, cost])
+	_light_paid = cost
+	set_lit(true)
+	QuestLogger.info(QuestLogger.Category.ROOM, "Zone '%s' lit for %d embers." % [zone_id, cost])
 
 
-## Switches a lit room off and refunds the dust paid for it (DotE-style).
-func power_down() -> void:
-	if not is_powered:
+## Switches a lit room off and refunds the embers paid for it (DotE-style).
+func light_down() -> void:
+	if not is_lit:
 		return
 	var resource_manager := ManagerLocator.get_resource_manager()
-	if resource_manager and _power_paid > 0:
-		resource_manager.add_resource("dust", _power_paid)
-	_power_paid = 0
-	set_powered(false)
+	if resource_manager and _light_paid > 0:
+		resource_manager.add_resource("embers", _light_paid)
+	_light_paid = 0
+	set_lit(false)
 
 
-## Middle-click on a revealed room: light it (pays dust) or switch it off.
-func toggle_power() -> void:
+## Middle-click on a revealed room: light it (pays embers) or switch it off.
+func toggle_light() -> void:
 	if kind != "room" or not _shown:
 		return
-	if is_powered:
-		power_down()
+	if is_lit:
+		light_down()
 	else:
-		try_power_up()
+		try_light_up()
 
 
-## Sole build gate: only powered rooms accept modules.
+## Sole build gate: only lit rooms accept buildings.
 func can_build() -> bool:
-	return is_powered
+	return is_lit
 
 
 ## coop-12: build slot by index (majors first, then the 2 minors); null if none.
@@ -326,23 +326,23 @@ func get_slot_index(slot: BuildingSlot) -> int:
 	return _building_slots.find(slot)
 
 
-func get_power_paid() -> int:
-	return _power_paid
+func get_light_paid() -> int:
+	return _light_paid
 
 
-## coop-12 (client mirror): the host's power state, no dust moves here.
-func apply_power(powered: bool, paid: int) -> void:
-	_power_paid = paid
-	if powered != is_powered:
-		set_powered(powered)
+## coop-12 (client mirror): the host's light state, no embers moves here.
+func apply_light(lit: bool, paid: int) -> void:
+	_light_paid = paid
+	if lit != is_lit:
+		set_lit(lit)
 
 
-func get_modules() -> Array[Module]:
-	var modules: Array[Module] = []
+func get_buildings() -> Array[Building]:
+	var buildings: Array[Building] = []
 	for slot in _building_slots:
 		if not slot.is_empty():
-			modules.append(slot.built_module)
-	return modules
+			buildings.append(slot.built_building)
+	return buildings
 
 
 func _spawn_building_slots() -> void:
@@ -362,65 +362,65 @@ func _spawn_building_slots() -> void:
 		slot.position = offsets[i]
 		slot.configure(zone_id, slot_types[i])
 		slot.slot_clicked.connect(func(s: BuildingSlot): slot_clicked.emit(zone_id, s))
-		slot.module_clicked.connect(func(s: BuildingSlot): module_clicked.emit(zone_id, s))
-		slot.module_built.connect(func(m: Module): module_built.emit(zone_id, m))
+		slot.building_clicked.connect(func(s: BuildingSlot): building_clicked.emit(zone_id, s))
+		slot.building_built.connect(func(m: Building): building_built.emit(zone_id, m))
 		_building_slots.append(slot)
 
 
-## Top-right status icon of a room: gold bolt + "Encendida" when lit, grey crossed
-## bolt + "Apagada" when dark. Unshaded (reads in the dark), hidden with the fog.
-func _build_power_icon(half: Vector2) -> void:
-	_power_icon = Node2D.new()
-	_power_icon.name = "PowerIcon"
-	_power_icon.position = Vector2(half.x - POWER_ICON_INSET.x, -half.y + POWER_ICON_INSET.y)
-	_power_icon.visible = _shown
-	add_child(_power_icon)
+## Top-right status icon of a room: gold flame + "Encendida" when lit, grey crossed
+## flame + "Apagada" when dark. Unshaded (reads in the dark), hidden with the fog.
+func _build_light_icon(half: Vector2) -> void:
+	_light_icon = Node2D.new()
+	_light_icon.name = "LightIcon"
+	_light_icon.position = Vector2(half.x - LIGHT_ICON_INSET.x, -half.y + LIGHT_ICON_INSET.y)
+	_light_icon.visible = _shown
+	add_child(_light_icon)
 
-	_power_bolt = Polygon2D.new()
-	_power_bolt.material = UNSHADED
-	_power_bolt.polygon = PackedVector2Array([Vector2(3, -11), Vector2(-7, 2), Vector2(-1, 2), Vector2(-3, 11), Vector2(7, -3), Vector2(1, -3)])
-	_power_icon.add_child(_power_bolt)
+	_light_flame = Polygon2D.new()
+	_light_flame.material = UNSHADED
+	_light_flame.polygon = PackedVector2Array([Vector2(1, -12), Vector2(3, -6), Vector2(7, -1), Vector2(8, 4), Vector2(5, 9), Vector2(0, 11), Vector2(-5, 9), Vector2(-8, 4), Vector2(-6, -1), Vector2(-4, 1), Vector2(-3, -5)])
+	_light_icon.add_child(_light_flame)
 
-	_power_slash = Line2D.new()
-	_power_slash.material = UNSHADED
-	_power_slash.points = PackedVector2Array([Vector2(-9, -9), Vector2(9, 9)])
-	_power_slash.width = 3.0
-	_power_slash.default_color = POWER_OFF_SLASH_COLOR
-	_power_icon.add_child(_power_slash)
+	_light_slash = Line2D.new()
+	_light_slash.material = UNSHADED
+	_light_slash.points = PackedVector2Array([Vector2(-9, -9), Vector2(9, 9)])
+	_light_slash.width = 3.0
+	_light_slash.default_color = LIGHT_OFF_SLASH_COLOR
+	_light_icon.add_child(_light_slash)
 
-	_power_label = Label.new()
-	_power_label.material = UNSHADED
-	_power_label.add_theme_font_size_override("font_size", Accessibility.font(12))
-	_power_label.position = Vector2(-28, 12)
-	_power_label.size = Vector2(56, 16)
-	_power_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_power_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_power_icon.add_child(_power_label)
-	_update_power_icon()
+	_light_label = Label.new()
+	_light_label.material = UNSHADED
+	_light_label.add_theme_font_size_override("font_size", Accessibility.font(12))
+	_light_label.position = Vector2(-28, 12)
+	_light_label.size = Vector2(56, 16)
+	_light_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_light_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_light_icon.add_child(_light_label)
+	_update_light_icon()
 
 
-func _update_power_icon() -> void:
-	if _power_icon == null:
+func _update_light_icon() -> void:
+	if _light_icon == null:
 		return
-	_power_bolt.color = POWER_ON_COLOR if is_powered else POWER_OFF_COLOR
-	_power_slash.visible = not is_powered
-	_power_label.text = "Encendida" if is_powered else "Apagada"
-	_power_label.add_theme_color_override("font_color", POWER_ON_COLOR if is_powered else POWER_OFF_COLOR)
+	_light_flame.color = LIGHT_ON_COLOR if is_lit else LIGHT_OFF_COLOR
+	_light_slash.visible = not is_lit
+	_light_label.text = "Encendida" if is_lit else "Apagada"
+	_light_label.add_theme_color_override("font_color", LIGHT_ON_COLOR if is_lit else LIGHT_OFF_COLOR)
 
 
-func _update_energy_button_visibility() -> void:
-	if _energy_button == null:
+func _update_light_hint_visibility() -> void:
+	if _light_hint == null:
 		return
-	var should_show := _shown and not is_powered
-	_energy_button.visible = should_show
-	# Passive hint since session 7: the room is lit with middle-click (toggle_power).
-	_energy_button.input_pickable = false
+	var should_show := _shown and not is_lit
+	_light_hint.visible = should_show
+	# Passive hint since session 7: the room is lit with middle-click (toggle_light).
+	_light_hint.input_pickable = false
 
 
 func _apply_visual() -> void:
-	if _state == Highlight.NONE and is_powered:
-		fill.color = POWERED_FILL_COLOR
-		outline.default_color = POWERED_OUTLINE_COLOR
+	if _state == Highlight.NONE and is_lit:
+		fill.color = LIT_FILL_COLOR
+		outline.default_color = LIT_OUTLINE_COLOR
 		return
 	fill.color = FILL_COLORS.get(_state, FILL_COLORS[Highlight.NONE])
 	outline.default_color = REVEALED_IDLE_OUTLINE if (_state == Highlight.NONE and _shown) \
@@ -434,7 +434,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 		return
 	match event.button_index:
 		# heroes-9 (DotE): right = move; left selects (HeroInputController) and
-		# does nothing on an empty room. While a module is armed,
+		# does nothing on an empty room. While a building is armed,
 		# BuildingMenu._input consumes the right click first (cancel).
 		MOUSE_BUTTON_RIGHT:
 			if not event.pressed:
@@ -452,7 +452,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 			var camera := ManagerLocator.get_camera()
 			if camera and camera.was_dragged():
 				return
-			ManagerLocator.get_net_commands().request("toggle_power", {"zone": zone_id})
+			ManagerLocator.get_net_commands().request("toggle_light", {"zone": zone_id})
 		_:
 			return
 	get_viewport().set_input_as_handled()

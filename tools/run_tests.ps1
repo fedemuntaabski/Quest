@@ -1,5 +1,5 @@
 # Corre todos los tests con tests/run_all.gd (regla OK/OK*/FAIL ahí). Exit code = cantidad de fallos.
-# Uso: powershell -File tools/run_tests.ps1 [-Filter hud] [-Godot <ruta al exe console>]
+# Uso: lightshell -File tools/run_tests.ps1 [-Filter hud] [-Godot <ruta al exe console>]
 param(
 	[string]$Filter = "",
 	[string]$Godot = $(if ($env:QUEST_GODOT) { $env:QUEST_GODOT } else { "E:\Descargas\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe" })

@@ -90,7 +90,7 @@ func spawn_minions(zone_id: String, type: EnemyType, count: int) -> int:
 
 ## Dark rooms enemies may spawn in: RoomManager.get_dark_rooms() minus room
 ## types whose RoomTypeRule blocks spawns (Rest). Lit or not is the only
-## power check, and it lives in get_dark_rooms().
+## light check, and it lives in get_dark_rooms().
 func get_spawn_rooms() -> Array[RoomZone]:
 	var rooms: Array[RoomZone] = []
 	for room in room_manager.get_dark_rooms():
@@ -240,7 +240,7 @@ func _spawn_enemy(zone_id: String, world_position: Vector2, forced_type: EnemyTy
 
 
 ## Role by the floor's ratio, then a type of that role. A raider that could
-## reach the Nexo sooner than raider_min_arrival_sec from here is swapped for a hunter.
+## reach the Relic sooner than raider_min_arrival_sec from here is swapped for a hunter.
 func _roll_type(zone_id: String) -> EnemyType:
 	if floor_manager == null:
 		return FALLBACK_TYPE
@@ -253,12 +253,12 @@ func _roll_type(zone_id: String) -> EnemyType:
 	return type if type else FALLBACK_TYPE
 
 
-## Seconds a `type` raider spawned in `zone_id` needs to reach the Nexo (INF = unreachable).
+## Seconds a `type` raider spawned in `zone_id` needs to reach the Relic (INF = unreachable).
 func raider_arrival_sec(zone_id: String, type: EnemyType) -> float:
-	var nexo := ManagerLocator.get_nexo()
-	if nexo == null or room_manager == null:
+	var relic := ManagerLocator.get_relic()
+	if relic == null or room_manager == null:
 		return INF
-	var path := room_manager.find_zone_path(zone_id, nexo.get_target_zone(room_manager))
+	var path := room_manager.find_zone_path(zone_id, relic.get_target_zone(room_manager))
 	if path.is_empty():
 		return INF
 	var length := 0.0
@@ -290,7 +290,7 @@ func _on_enemy_spawned(enemy: Enemy) -> void:
 		bestiary.register_seen(enemy.type, _floor_index())
 
 
-## `died` is only emitted for deaths by damage (hero or turret): those are kills.
+## `died` is only emitted for deaths by damage (hero or defense): those are kills.
 func _on_enemy_died(enemy: Enemy) -> void:
 	_enemies.erase(enemy)
 	var bestiary := ManagerLocator.get_bestiary()
@@ -303,13 +303,13 @@ func _on_enemy_died(enemy: Enemy) -> void:
 		_on_boss_defeated()
 
 
-## The exit is free: a Nexo carrier already waiting there wins at once.
+## The exit is free: a Relic carrier already waiting there wins at once.
 func _on_boss_defeated() -> void:
 	var hud := ManagerLocator.get_hud()
 	if hud:
 		hud.show_hint("¡Jefe derrotado!", "%s cayó. La salida está libre." % boss.type.display_name, QuestPalette.GOLD_LIGHT)
 	var extraction := ManagerLocator.get_extraction_manager()
 	for hero in ManagerLocator.get_heroes():
-		if extraction and hero.is_carrying_nexo and hero.stats.is_alive() and room_manager.is_exit_room(hero.current_zone_id):
+		if extraction and hero.is_carrying_relic and hero.stats.is_alive() and room_manager.is_exit_room(hero.current_zone_id):
 			extraction.declare_victory()
 			return

@@ -1,4 +1,4 @@
-floor,rooms,chance_door1,chance_door5,chance_last,threats,enemies,cap,dust,bonus_each,bonus_total,lit_rooms
+floor,rooms,chance_door1,chance_door5,chance_last,threats,enemies,cap,embers,bonus_each,bonus_total,lit_rooms
 1,8,0.16,0.4,0.52,2.4,3.8,6,28,2,14,3
 2,9,0.21,0.45,0.63,3.4,5.5,8,32,2,16,4
 3,10,0.26,0.5,0.74,4.5,7.6,10,45,3,27,4

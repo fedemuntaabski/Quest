@@ -6,7 +6,7 @@
 script = ExtResource("1_perk")
 id = &"bastion"
 display_name = "Bastión"
-description = "Muro Viviente protege en 160 px más de radio alrededor del Nexo."
+description = "Muro Viviente protege en 160 px más de radio alrededor de la Reliquia."
 unlock_level = 3
 exclusive_group = &"tank_l3"
 mods = {

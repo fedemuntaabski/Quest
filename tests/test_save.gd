@@ -23,6 +23,7 @@ func _initialize() -> void:
 	_save.delete_save(SLOT)
 	_test_roundtrip()
 	_test_migration()
+	_test_pre_medieval_slot()
 	_test_atomic()
 	_test_corrupt_with_backup()
 	_test_corrupt_without_backup()
@@ -81,6 +82,26 @@ func _test_migration() -> void:
 	var cfg := ConfigFile.new()
 	cfg.load(_path())
 	_expect(not cfg.has_section_key("save_data", "gold") and int(cfg.get_value("save_data", "version", 0)) == _save.SAVE_VERSION, "saved file is v%d without legacy keys" % _save.SAVE_VERSION)
+
+
+## medieval-15 renamed resources/buildings/the Relic, but a slot holds none of those
+## names: a slot written before the rename (v2, hero id "tank") must load untouched.
+func _test_pre_medieval_slot() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("save_data", "version", 2)
+	cfg.set_value("save_data", "base_hp", 120)
+	cfg.set_value("save_data", "selected_character_id", "tank")
+	cfg.set_value("save_data", "first_time_player", false)
+	cfg.set_value("save_data", "playtime_seconds", 321.0)
+	cfg.set_value("records", "normal", {"runs": 3, "victories": 1, "best_floor": 4, "most_kills": 50, "fastest_victory_sec": 900.0})
+	cfg.set_value("bestiary", "goblin", {"seen": 1, "kills": 3})
+	_expect(cfg.save(_save.get_save_path(SLOT)) == OK, "pre-medieval fixture written")
+	_save.load_game(SLOT)
+	_expect(_save.get_selected_character_id() == "tank", "old hero id survives (%s)" % _save.get_selected_character_id())
+	_expect(is_equal_approx(_save.playtime_seconds, 321.0), "old playtime survives")
+	_expect(int(_save.read_slot(SLOT).get_value("records", "normal", {}).get("best_floor", 0)) == 4, "old records survive")
+	_expect(CharacterDatabase.get_by_id("tank").display_name == "Paladín", "the old hero id is the Paladin")
+	_save.delete_save(SLOT)
 
 
 func _test_atomic() -> void:

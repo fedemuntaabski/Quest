@@ -183,9 +183,9 @@ func _check_pickups() -> void:
 		await create_timer(0.25).timeout
 		_expect(not is_equal_approx(pickup.sprite.position.y, y0), "pickup %s does not float" % Pickup.Kind.keys()[kind])
 		pickup.queue_free()
-	var nexo := (load("res://scenes/world/Nexo.tscn") as PackedScene).instantiate()
-	_expect(nexo.get_node_or_null("Pickup") is Pickup, "Nexo should use the Pickup scene")
-	nexo.free()
+	var relic := (load("res://scenes/world/Relic.tscn") as PackedScene).instantiate()
+	_expect(relic.get_node_or_null("Pickup") is Pickup, "Reliquia should use the Pickup scene")
+	relic.free()
 
 
 func _check_portrait() -> void:

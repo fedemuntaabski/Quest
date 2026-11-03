@@ -9,5 +9,5 @@ id = "mage_passive"
 effect = 2
 value = 2.0
 display_name = "Mente Analítica"
-description = "+{value} Ciencia cada vez que se descubre una sala."
+description = "+{value} Saber cada vez que se descubre una sala."
 icon = ExtResource("2_icon")

@@ -2,9 +2,9 @@ extends SceneTree
 
 ## End of run (progresion-10) over a live Main2d:
 ##   - defeat (every hero down): DeathOverlay shows the RunSummary (floors, time,
-##     kills, items, fallen heroes, new bestiary entries), "Nueva run" + "Volver al menú",
+##     kills, items, fallen heroes, new bestiary entries), "Nueva partida" + "Volver al menú",
 ##     and the run lands in the slot's records
-##   - victory on the final floor: summary + "Nueva run" / "Volver al menú", no "Descender"
+##   - victory on the final floor: summary + "Nueva partida" / "Volver al menú", no "Descender"
 ##   - victory on an earlier floor: "Descender", no summary
 ##   - run time only counts while the run is ACTIVE; reset_run clears the stats
 ##   godot --headless --path . --script res://tests/test_run_end.gd
@@ -77,7 +77,7 @@ func _test_defeat() -> void:
 	for needle in ["Dificultad: Normal", "llegaste al 2", "Tiempo: ", "Enemigos derrotados: 7", "Objetos obtenidos: 2", "Registros nuevos del bestiario: 3", "Héroes caídos: "]:
 		_expect(text.contains(needle), "defeat summary lacks '%s':\n%s" % [needle, text])
 	_expect(not text.contains("Héroes caídos: ninguno"), "every hero fell: the summary must name them")
-	_expect(overlay._retry_button.text == "Nueva run" and overlay._exit_button.text == "Volver al menú", "defeat buttons: %s / %s" % [overlay._retry_button.text, overlay._exit_button.text])
+	_expect(overlay._retry_button.text == "Nueva partida" and overlay._exit_button.text == "Volver al menú", "defeat buttons: %s / %s" % [overlay._retry_button.text, overlay._exit_button.text])
 	var rec: Dictionary = _save.get_records("normal")
 	_expect(int(rec.get("runs", 0)) == 1 and int(rec.get("best_floor", 0)) == 2 and int(rec.get("victories", 0)) == 0, "defeat recorded: %s" % rec)
 	var frozen := float(_session.run_stats["elapsed_sec"])
@@ -94,7 +94,7 @@ func _test_final_victory() -> void:
 	await process_frame
 	var overlay: VictoryOverlay = main2d.victory_overlay
 	_expect(overlay.visible and overlay.summary.visible, "final victory shows the summary")
-	_expect(overlay._new_run_button.visible and overlay._return_button.visible and not overlay._next_floor_button.visible, "final victory: Nueva run + menu, no Descender")
+	_expect(overlay._new_run_button.visible and overlay._return_button.visible and not overlay._next_floor_button.visible, "final victory: Nueva partida + menu, no Descender")
 	var text := _summary_text(overlay.summary)
 	_expect(text.contains("superaste 1") and text.contains("llegaste al 5"), "victory summary floors:\n%s" % text)
 	var rec: Dictionary = _save.get_records("normal")

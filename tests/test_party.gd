@@ -289,18 +289,18 @@ func _check_regression(main2d: Node, hud: HUDController) -> void:
 			major = slot
 	_expect(major != null, "start room should be lit with a free MAJOR slot")
 	if major:
-		resources.add_resource("industry", 100)
-		var industry_before := resources.get_resource("industry")
-		var yield_before := resources.get_turn_yield("industry")
+		resources.add_resource("iron", 100)
+		var iron_before := resources.get_resource("iron")
+		var yield_before := resources.get_turn_yield("iron")
 		hud.production_button.pressed.emit()
 		_press_key(KEY_1)
 		hud.open_building_menu(major)
-		_expect(not major.is_empty() and resources.get_resource("industry") < industry_before, "build with 2 heroes failed")
-		_expect(resources.get_turn_yield("industry") > yield_before, "generator yield with 2 heroes")
+		_expect(not major.is_empty() and resources.get_resource("iron") < iron_before, "build with 2 heroes failed")
+		_expect(resources.get_turn_yield("iron") > yield_before, "workshop yield with 2 heroes")
 
-	resources.add_resource("science", 20)
-	var scriptorium := (load(Module.CATALOG[Module.ModuleType.SCRIPTORIUM]["scene"]) as PackedScene).instantiate() as GeneratorModule
-	scriptorium.resource_type = "science"
+	resources.add_resource("lore", 20)
+	var scriptorium := (load(Building.CATALOG[Building.BuildingType.SCRIPTORIUM]["scene"]) as PackedScene).instantiate() as WorkshopBuilding
+	scriptorium.resource_type = "lore"
 	scriptorium.yield_amount = 0  # research needs a built Scriptorium
 	root.add_child(scriptorium)
 	_expect(resources.research("ballesta") and resources.is_researched("ballesta"), "research with 2 heroes failed")
@@ -313,12 +313,12 @@ func _check_regression(main2d: Node, hud: HUDController) -> void:
 	var side := room_manager.get_zone_node(side_room) if side_room != "" else null
 	_expect(side != null, "no revealed side room to light")
 	if side:
-		resources.add_resource("dust", 30)
-		var dust_before := resources.get_resource("dust")
-		side.toggle_power()
-		_expect(side.is_powered and resources.get_resource("dust") < dust_before, "lighting a room with 2 heroes failed")
-		side.toggle_power()
-		_expect(not side.is_powered and resources.get_resource("dust") == dust_before, "switching off should refund")
+		resources.add_resource("embers", 30)
+		var embers_before := resources.get_resource("embers")
+		side.toggle_light()
+		_expect(side.is_lit and resources.get_resource("embers") < embers_before, "lighting a room with 2 heroes failed")
+		side.toggle_light()
+		_expect(not side.is_lit and resources.get_resource("embers") == embers_before, "switching off should refund")
 
 
 # ---------------- DEATH ----------------

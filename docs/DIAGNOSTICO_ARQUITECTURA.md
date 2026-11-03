@@ -49,7 +49,7 @@ Limitaciones de los métodos: (a) las referencias se detectan por texto; cargas 
 │  ├─ ui/                   BuildingMenu.gd suelto + character_select/ hud/ menus/ overlays/ visual/
 │  └─ world/                15 scripts + map/ (9)
 ├─ tests/                   20 tests + tests/tools/shot_map.gd
-├─ tools/                   5 generadores/herramientas (build_*, normalize_assets, balance_sim)
+├─ tools/                   5 talleres/herramientas (build_*, normalize_assets, balance_sim)
 └─ docs/                    ASSETS, BALANCE (+balance/*.csv), ENEMY_TARGETING, ENTITY_VISUALS, MAP_RENDER, MISSING_ICONS, ROOMS
 ```
 
@@ -58,12 +58,12 @@ Limitaciones de los métodos: (a) las referencias se detectan por texto; cargas 
 | Carpeta | Veredicto | Evidencia |
 |---|---|---|
 | `scripts/managers/` | **No.** Mezcla 3 cosas distintas: autoloads (`SaveManager`, `SettingsManager`, `ResourceManager`, `GameSession`, `SelectionManager`), composición de escena (`Main`, `Main2d`, `Main2dDeathHandler`, `Main2dVictoryHandler`, `GameStateManager`) y sistemas por piso (`FloorManager`, `EnemyManager`, `ExtractionManager`, `VfxManager`) + `ManagerLocator`. | `ls scripts/managers` |
-| `scripts/core/actions/` | **Parcial.** `BaseAction/MoveAction/EnemyMoveAction` son acciones; `DoorTurnSystem` y `RoomPowerSystem` son sistemas de partida. | `scripts/core/actions/` |
+| `scripts/core/actions/` | **Parcial.** `BaseAction/MoveAction/EnemyMoveAction` son acciones; `DoorTurnSystem` y `RoomLightSystem` son sistemas de partida. | `scripts/core/actions/` |
 | `scripts/core/floors/` | **No.** Contiene `EnemyType`, `EnemyPool` (datos de enemigos) junto a `FloorConfig`, `RoomTypeRule`. | `scripts/core/floors/` |
 | `scripts/core/stats/` | **Parcial.** Además de stats tiene `PartyConfig`, `UpgradeConfig`, `CharacterDatabase`, `CharacterData`. | |
 | `scripts/entities/` | **Dudoso.** Solo `Enemy` y `CharacterVisual`; `Player` vive en `core/player/` y usa `CharacterVisual`. | |
 | `scripts/ui/` | **Inconsistente.** `BuildingMenu.gd` suelto en la raíz de `ui/` (es un widget del HUD); `ui/character_select/` tiene 1 archivo (`CharacterCardOption`, lo usa `WaitingRoom`, no la selección de héroes, que es `menus/HeroSelectMenu`). | |
-| `scripts/world/` + `world/map/` | **Aceptable**, pero mezcla nodos de juego (`Module`, `Nexo`, `Door`, `RoomZone`) con sistemas (`ModuleBuildSystem`) y `FloorGenerator` (grilla lógica oculta). | |
+| `scripts/world/` + `world/map/` | **Aceptable**, pero mezcla nodos de juego (`Building`, `Relic`, `Door`, `RoomZone`) con sistemas (`BuildingBuildSystem`) y `FloorGenerator` (grilla lógica oculta). | |
 | `scenes/` | **Inconsistente.** 16 escenas sueltas y 3 subcarpetas (`entities`, `ui`, `world`); `HUD.tscn` en raíz, `BuildingMenu.tscn` en `ui/`. | |
 | `assets/` vs `resources/` | **No hay criterio.** `assets/characters/*.tres`, `assets/tilesets/*.tres` y `assets/vfx/*.tscn` son resources/escenas; los datos están en `resources/`. `assets/art/vfx` (frames) vs `assets/vfx` (escenas). `assets/texture/enviorment` con typo. `Sprites/` en la raíz con mayúscula. | |
 | Raíz | Ruidosa: 5 HANDOFF + REVIEW + NOTES + log viejo. | |
@@ -83,7 +83,7 @@ Limitaciones de los métodos: (a) las referencias se detectan por texto; cargas 
 | `SettingsManager` | 231 | Audio/video/gameplay a `user://settings.cfg`, aplica al arrancar | Sí | Cohesivo. |
 | `FPSOverlay` | 37 | Contador FPS | UI | Autoload para un overlay: aceptable. |
 | `SteamManager` | 203 | Init Steam (AppID 480), tickets de auth, `connected_clients`; hijo `SteamLobbyManager` | Sí | `_process` solo corre `run_callbacks` si Steam inicializó (`SteamManager.gd:47`). AppID 480 = app de pruebas (`SteamManager.gd:3`, `steam_appid.txt`). |
-| `ResourceManager` | 160 | 4 recursos + **investigación** (`research`, `is_unlocked`, `get_bonus`) + bonus de generadores | Sí (de run) | Mezcla economía y árbol de investigación (`ResourceManager.gd:108-160`). Rendimientos base (`:16-19`) y recursos iniciales (`reset_resources`, `:92`) hardcodeados. Lo resetea `Main._begin_new_run()`. |
+| `ResourceManager` | 160 | 4 recursos + **investigación** (`research`, `is_unlocked`, `get_bonus`) + bonus de talleres | Sí (de run) | Mezcla economía y árbol de investigación (`ResourceManager.gd:108-160`). Rendimientos base (`:16-19`) y recursos iniciales (`reset_resources`, `:92`) hardcodeados. Lo resetea `Main._begin_new_run()`. |
 | `GameSession` | 37 | Pareja elegida en `HeroSelectMenu` | Sí | Una de **cuatro** fuentes de verdad de la selección de héroes (§7). |
 | `SelectionManager` | 157 | Selección en partida y grupos de control 1-3 | Sí (de run) | Devuelto como `Node` sin tipo por `ManagerLocator` (`ManagerLocator.gd:36`). |
 
@@ -108,8 +108,8 @@ Main.tscn (Node, scripts/managers/Main.gd, group main_orchestrator, PROCESS_MODE
 - `Main` hace `preload` de 4 escenas (`Main.gd:10-13`) y expone `show_main_menu / start_gameplay / go_to_waiting_room / reload_gameplay / advance_floor / return_to_main_menu`. Es el único dueño de `current_floor` y `run_seed` (`Main.gd:25,28`).
 - **Menú:** `MainMenu.tscn` (Control: fondo, perfil, 3 botones, `OptionsMenu` hijo, `AnimationPlayer`) + `MainMenuFlow` (`RefCounted`, 424 líneas, no es nodo; instancia `SlotSelection`, `NetworkModeSelect`, `HeroSelectMenu` — `MainMenuFlow.gd:64,81,108`). `CLAUDE.md` no menciona `MainMenuFlow`.
 - **Selección de héroes:** `HeroSelectMenu.tscn` es un `Control` vacío; **toda la UI se construye en código** (`HeroSelectMenu._build_ui`, 82 líneas, `:80`).
-- **Partida:** `Main2d.tscn` = `Floor` (TileMapLayer lógico, oculto), `RoomManager`, `PlayerActionController`, `Doors`, `PauseMenu`, `DeathOverlay`, `VictoryOverlay`. En `_ready()` Main2d crea **por código** 9 sistemas hijos (`DoorTurnSystem`, `FloorManager`, `RoomPowerSystem`, `ModuleBuildSystem`, `EnemyManager`, `ExtractionManager`, `ExitIndicator`, `NexoController`, `GameStateManager`) y los héroes/Nexo/`MapTileRenderer` (`Main2d.gd:90-115`). Es la raíz de composición **y** además controla input, selección, cofres y pausa táctica (§8).
-- **HUD:** `HUD.tscn` (CanvasLayer) con `Control/{InvasionFlash, TopLeft, BottomBar{BuildingMenu, BottomRow{ResourcePanel, BuildPanel}}, Portraits, StatTooltip}`. `HUDController` agrega **por código** el panel de investigación, pausa táctica, alerta del Nexo, hint, minimapa y retratos (`HUDController.gd:138-254`). Dos estilos de construcción conviven; los nodos de escena se obtienen con rutas largas en strings (`HUDController.gd:9-10,12-29`, 15 `get_node_or_null`).
+- **Partida:** `Main2d.tscn` = `Floor` (TileMapLayer lógico, oculto), `RoomManager`, `PlayerActionController`, `Doors`, `PauseMenu`, `DeathOverlay`, `VictoryOverlay`. En `_ready()` Main2d crea **por código** 9 sistemas hijos (`DoorTurnSystem`, `FloorManager`, `RoomLightSystem`, `BuildingBuildSystem`, `EnemyManager`, `ExtractionManager`, `ExitIndicator`, `RelicController`, `GameStateManager`) y los héroes/Reliquia/`MapTileRenderer` (`Main2d.gd:90-115`). Es la raíz de composición **y** además controla input, selección, cofres y pausa táctica (§8).
+- **HUD:** `HUD.tscn` (CanvasLayer) con `Control/{InvasionFlash, TopLeft, BottomBar{BuildingMenu, BottomRow{ResourcePanel, BuildPanel}}, Portraits, StatTooltip}`. `HUDController` agrega **por código** el panel de investigación, pausa táctica, alerta de la Reliquia, hint, minimapa y retratos (`HUDController.gd:138-254`). Dos estilos de construcción conviven; los nodos de escena se obtienen con rutas largas en strings (`HUDController.gd:9-10,12-29`, 15 `get_node_or_null`).
 - **Pausa:** dos mecanismos independientes. (1) Esc → `PauseMenu` (`BaseMenu`, CanvasLayer) → `GameStateManager` pone `get_tree().paused`. (2) Espacio → `Main2d._tactical_paused` → `Engine.time_scale = 0` (`Main2d.gd:474-477`). La fuga del segundo se parchea a mano en 3 sitios (`Main.gd:65,116`, `Main2d._exit_tree:458`).
 - **Jugador:** `Player.tscn` = `Player(Node2D)/{AnimatedSprite2D, Camera2D(GameCamera), Stats, Hurtbox, Hitbox}`. Main2d borra la `Camera2D` de los héroes 2+ en runtime (`Main2d.gd:142`). Hay una escena por héroe instanciada N veces, no una por tipo.
 - `Main2d/PauseMenu`, `MainMenu/OptionsMenu` y `PauseMenu/{OptionsMenu, ExitConfirmDialog}` son escenas instanciadas dentro del `.tscn` (aparecen sin `type` en el árbol).
@@ -121,21 +121,21 @@ Main.tscn (Node, scripts/managers/Main.gd, group main_orchestrator, PROCESS_MODE
 Método: 104 scripts runtime, aristas = `preload/load("res://…gd")` + uso de `class_name`/nombre de autoload en código no comentado. Resultado: **un solo componente fuertemente conexo de 38 scripts**, y su causa es `ManagerLocator`:
 
 - Sin `ManagerLocator` ni `Logger` el componente se descompone en **4 ciclos pequeños**:
-  1. `Module ↔ GeneratorModule ↔ TurretModule ↔ ResearchEntry` (base ↔ subclases; `ResearchEntry` usa `Module.ModuleType`).
-  2. `RoomZone ↔ EnergyButton ↔ RoomLight` (padre ↔ hijos).
-  3. `Enemy ↔ EnemyMoveAction ↔ Player ↔ HeroAbilities ↔ Nexo` (entidades que se conocen entre sí: `Enemy` busca héroes y Nexo, `Player` expone habilidades).
+  1. `Building ↔ WorkshopBuilding ↔ DefenseBuilding ↔ ResearchEntry` (base ↔ subclases; `ResearchEntry` usa `Building.BuildingType`).
+  2. `RoomZone ↔ LightHint ↔ RoomLight` (padre ↔ hijos).
+  3. `Enemy ↔ EnemyMoveAction ↔ Player ↔ HeroAbilities ↔ Relic` (entidades que se conocen entre sí: `Enemy` busca héroes y Reliquia, `Player` expone habilidades).
   4. `Main ↔ WaitingRoom` (`WaitingRoom` llama `ManagerLocator.get_main_orchestrator().start_gameplay()`, `Main` hace `preload` de `WaitingRoom`).
-- Los pares mutuos (16) incluyen `ManagerLocator ↔ {PlayerStats, SaveManager, Main, EnemyManager, ExtractionManager, FloorManager, Nexo, Player}`: el locator conoce el tipo concreto y el tipo concreto usa el locator. En GDScript no rompe porque `class_name` resuelve al compilar, pero impide aislar cualquier sistema en un test sin cargar media base.
+- Los pares mutuos (16) incluyen `ManagerLocator ↔ {PlayerStats, SaveManager, Main, EnemyManager, ExtractionManager, FloorManager, Relic, Player}`: el locator conoce el tipo concreto y el tipo concreto usa el locator. En GDScript no rompe porque `class_name` resuelve al compilar, pero impide aislar cualquier sistema en un test sin cargar media base.
 
-**Fan-in (más dependidos):** `ManagerLocator` 38, `Logger` 27, `QuestPalette` 17, `RoomManager` 14, `Module` 13, `RoomData` 12, `CharacterData` 9, `ThemeManager` 9.
+**Fan-in (más dependidos):** `ManagerLocator` 38, `Logger` 27, `QuestPalette` 17, `RoomManager` 14, `Building` 13, `RoomData` 12, `CharacterData` 9, `ThemeManager` 9.
 **Fan-out (más dependen de otros):** `Main2d` 30, `ManagerLocator` 16, `HUDController` 16, `Enemy` 13, `RoomZone` 13, `RoomManager` 12, `FloorManager` 11.
 
 **Acoplamiento fuerte observado (con evidencia):**
 
 | Acoplamiento | Evidencia |
 |---|---|
-| Grupo `"hud"` por string desde 4 sitios, sin tipo ni contrato | `FloorManager.gd:101,103` (`call_group("hud","show_hint")`), `Main2d.gd:383` (`hud.building_menu` sobre un `Node` sin tipo), `Main2d.gd:477` (`call_group("hud","set_pause_label")`), `ModuleBuildSystem.gd:27` |
-| Un sistema por-piso busca a otro por grupo en vez de recibirlo | `ResourceManager.gd:70` (`get_nodes_in_group("generators")`: un autoload lee nodos de la escena) |
+| Grupo `"hud"` por string desde 4 sitios, sin tipo ni contrato | `FloorManager.gd:101,103` (`call_group("hud","show_hint")`), `Main2d.gd:383` (`hud.building_menu` sobre un `Node` sin tipo), `Main2d.gd:477` (`call_group("hud","set_pause_label")`), `BuildingBuildSystem.gd:27` |
+| Un sistema por-piso busca a otro por grupo en vez de recibirlo | `ResourceManager.gd:70` (`get_nodes_in_group("workshops")`: un autoload lee nodos de la escena) |
 | Main2d conoce los nodos internos de los overlays | `Main2d.gd:49-54` (6 rutas `$DeathOverlay/CenterContainer/VBoxContainer/...`) |
 | `Main` hace reset de 5 sistemas ajenos | `Main.gd:131-145` |
 | IDs con vocabulario mezclado: `zone_id`, `room_id`, `group_id` | `DoorTurnSystem.rooms` indexa por *group id* pero se llama `room_id`; `Main2d.gd:270` `door.target_room_id = room_manager.get_group_id(corridor.id)` |
@@ -155,7 +155,7 @@ Totales: 84 `signal` declaradas en runtime, 207 `.connect(` en código + 3 conex
 |---|---|---|
 | `door_opened` | `DoorTurnSystem.gd:13` (emit `:47`) | Redundante con `room_revealed` |
 | `enemy_wave_requested` | `DoorTurnSystem.gd:17` (emit `:68`) | `CLAUDE.md` la declara "kept for any future listener" |
-| `room_energized` | `RoomPowerSystem.gd:8` | El único propósito del script |
+| `room_lit` | `RoomLightSystem.gd:8` | El único propósito del script |
 | `pause_requested`, `resume_requested`, `death_entered` | `GameStateManager.gd:19-21` | Main2d solo escucha `victory_entered` y `state_changed` |
 | `ability_used` | `HeroAbilities.gd:11` | Ningún HUD/VFX la usa (los VFX se llaman directo) |
 | `completed` | `BaseAction.gd:4` | `finish()` la emite; ningún llamador la espera |
@@ -166,7 +166,7 @@ Totales: 84 `signal` declaradas en runtime, 207 `.connect(` en código + 3 conex
 **Conectadas pero nunca emitidas:** ninguna (el chequeo inicial `attack_changed` fue falso positivo: se emite en `CharacterStats.gd:78,84`).
 
 **Observaciones de diseño:**
-- Los emisores tienen oyentes únicos en su mayoría; el bus de eventos **de hecho** es `RoomManager` (re-emite `zone_clicked/hovered/room_powered/room_power_changed/slot_clicked`) y `ResourceManager.resource_changed`. No hay un bus global (correcto para este tamaño).
+- Los emisores tienen oyentes únicos en su mayoría; el bus de eventos **de hecho** es `RoomManager` (re-emite `zone_clicked/hovered/room_lit/room_light_changed/slot_clicked`) y `ResourceManager.resource_changed`. No hay un bus global (correcto para este tamaño).
 - `Main2d._connect_signals` protege cada `connect` con `is_connected` (`Main2d.gd:324-351`): el nodo se crea una vez por piso, el guard no hace falta (ruido).
 - `PlayerStats.player_died` se conecta desde un nodo de escena (`Main2d`) a un autoload: se limpia solo al liberar Main2d (Callable de objeto liberado), OK.
 
@@ -180,12 +180,12 @@ Totales: 84 `signal` declaradas en runtime, 207 `.connect(` en código + 3 conex
 
 | Dónde | Qué | Propuesta |
 |---|---|---|
-| `Module.gd:17` `CATALOG` (+ `TYPE_COLORS :25`, `DESCRIPTIONS :34`, `RESOURCE_LABELS :42`) | Hp/costo/rendimiento/daño/escena de los 5 módulos | `ModuleData` Resource (como `AbilityData`/`ItemData`) |
+| `Building.gd:17` `CATALOG` (+ `TYPE_COLORS :25`, `DESCRIPTIONS :34`, `RESOURCE_LABELS :42`) | Hp/costo/rendimiento/daño/escena de los 5 obras | `BuildingData` Resource (como `AbilityData`/`ItemData`) |
 | `Enemy.gd:13` `VARIANT_CONFIG` | HP/velocidad/intervalo/daño de 3 comportamientos; luego `EnemyType` los pisa con centinela `-1` (`resolved_*`, `Enemy.gd:37-55`) | Dos capas para un mismo dato; mover base a `.tres` y quitar centinelas |
 | `ResourceManager.gd:16-19, :92` | Rendimiento base por turno (2/2/1/0) y recursos iniciales (15/15/10/20) | `EconomyConfig` o dentro de `FloorConfig` |
-| `RoomZone.POWER_COST` (const, + investigación) | Costo de encender sala | Ya parcialmente en `ResearchEntry`; mover base a config |
+| `RoomZone.LIGHT_COST` (const, + investigación) | Costo de encender sala | Ya parcialmente en `ResearchEntry`; mover base a config |
 | `HUDController.gd:4-7` | Textos de tooltips de recursos | Traducciones |
-| `Main2d.gd:18-20, 27-29` | Offsets de Nexo/cofre, margen de click, doble tap | OK como consts de escena; los de gameplay → config |
+| `Main2d.gd:18-20, 27-29` | Offsets de Reliquia/cofre, margen de click, doble tap | OK como consts de escena; los de gameplay → config |
 | `FloorManager.gd:14-16` | Offsets/intensidad de banners | `MapVisualConfig` |
 | `PlayerStats`/`StatBalance` (25 l.) | HP/clamp | Ver "Guardado" |
 | `ItemData.gd:16-18`, `UpgradeConfig.gd:10` | Etiquetas de rareza/slot/stat en español | Traducciones |
@@ -201,21 +201,21 @@ Estado: **Completo** = implementado y con evidencia (test o uso en el flujo); **
 
 | Sistema | Archivos | Responsabilidad | Estado | Evidencia |
 |---|---|---|---|---|
-| Combate Hitbox/Hurtbox | `core/combat/{Hitbox,Hurtbox}Component`, `Player.gd`, `Enemy.gd`, `TurretModule.gd` | Auto-ataque por capas físicas, números de daño | **Completo** (el test del radio está desactualizado, no el código) | `test_sprites` falla en `hero attack hitbox radius changed`: espera 160 px, pero `Player._apply_attack_range` (`Player.gd:51,123`) ahora toma `CharacterData.attack_range` (130-220 según héroe, `resources/characters/*.tres:20`); `test_enemy_roles` OK. Torretas usan `DetectionZone` propio, no estos componentes (duplicación de modelo). |
+| Combate Hitbox/Hurtbox | `core/combat/{Hitbox,Hurtbox}Component`, `Player.gd`, `Enemy.gd`, `DefenseBuilding.gd` | Auto-ataque por capas físicas, números de daño | **Completo** (el test del radio está desactualizado, no el código) | `test_sprites` falla en `hero attack hitbox radius changed`: espera 160 px, pero `Player._apply_attack_range` (`Player.gd:51,123`) ahora toma `CharacterData.attack_range` (130-220 según héroe, `resources/characters/*.tres:20`); `test_enemy_roles` OK. Defensas usan `DetectionZone` propio, no estos componentes (duplicación de modelo). |
 | IA de enemigos | `entities/Enemy.gd` (443), `EnemyManager`, `core/floors/EnemyType/EnemyPool`, `core/actions/EnemyMoveAction` | Roles HUNTER/RAIDER, aggro, oleadas | **Completo** | `test_enemy_roles` (65 errores de `--script` conocidos, resultado OK), `test_raider_timing` OK |
-| Progresión de pisos | `FloorManager`, `FloorConfig`, `Main.advance_floor`, `Main2d._on_floor_completed` | 5 pisos, multiplicadores, semilla por piso | **Parcial** (lógica OK; reset de run disperso) | `test_map_flow` ejecuta pisos 1-3 y falla solo por esperar 10 de ciencia en una sala de tipo y recibir 12 (pasiva de héroe, ver §10) |
+| Progresión de pisos | `FloorManager`, `FloorConfig`, `Main.advance_floor`, `Main2d._on_floor_completed` | 5 pisos, multiplicadores, semilla por piso | **Parcial** (lógica OK; reset de run disperso) | `test_map_flow` ejecuta pisos 1-3 y falla solo por esperar 10 de saber en una sala de tipo y recibir 12 (pasiva de héroe, ver §10) |
 | Generación de mapa | `world/map/{MapGenerator,MapLayout,RoomData,CorridorData}`, `FloorConfig` | Árbol sembrado + bucles + tipos de sala | **Completo** (mejor cubierto) | `test_map_generator` (OK), `test_rooms` (30 semillas × 5 pisos), `test_corridor_picking` |
 | Render del mapa | `MapTileRenderer`, `DungeonTiles`, `FloorGenerator` (grilla oculta), `RoomZone` | Tiles, puertas como `Sprite2D`, props por tipo | **Completo** pero con **dos mapas paralelos**: `Floor` lógico oculto + `MapTileRenderer` | `test_tile_renderer`, `test_door_alignment` OK; `floor_layer.visible = false` (`Main2d.gd:189`) |
 | Luces | `RoomLight`, `ExitIndicator`, `MapVisualConfig`, `RoomManager/DarkCanvas` | Sala oscura/encendida, indicador de salida | **Completo** | `test_room_type_visuals`, `test_hud_ui`; `RoomLight.is_dark` solo la usa un test |
-| Polvo (4º recurso) | `ResourceManager`, `FloorManager.on_room_discovered`, `RoomZone.toggle_power` | Polvo por descubrir sala, costo de iluminar | **Completo** | `test_map_flow` (dust/fog) |
-| Módulos y slots | `Module`, `GeneratorModule`, `TurretModule`, `BuildingSlot`, `BuildingMenu`, `ModuleBuildSystem` | Construir generadores/torretas/trampas | **Completo**; `ModuleBuildSystem` es solo un reenvío (31 líneas) | `test_hud_ui` (BuildingMenu), `GeneratorModule`/`ModuleBuildSystem` sin test directo |
-| Energía de sala | `RoomZone.toggle_power`, `RoomPowerSystem` | Pagar polvo, encender | **Completo**; `RoomPowerSystem` es un shell de 25 líneas sin lógica | `RoomPowerSystem.gd` (solo log + `room_energized` sin oyentes) |
-| Nexo + extracción | `Nexo`, `NexoController`, `ExtractionManager`, `Main2dVictoryHandler` | Recoger, fase de extracción, victoria | **Completo** | `test_enemy_roles`, `test_raider_timing`, `test_map_flow` |
+| Brasas (4º recurso) | `ResourceManager`, `FloorManager.on_room_discovered`, `RoomZone.toggle_light` | Brasas por descubrir sala, costo de iluminar | **Completo** | `test_map_flow` (embers/fog) |
+| Obras y slots | `Building`, `WorkshopBuilding`, `DefenseBuilding`, `BuildingSlot`, `BuildingMenu`, `BuildingBuildSystem` | Construir talleres/defensas/trampas | **Completo**; `BuildingBuildSystem` es solo un reenvío (31 líneas) | `test_hud_ui` (BuildingMenu), `WorkshopBuilding`/`BuildingBuildSystem` sin test directo |
+| Luz de sala | `RoomZone.toggle_light`, `RoomLightSystem` | Pagar brasas, encender | **Completo**; `RoomLightSystem` es un shell de 25 líneas sin lógica | `RoomLightSystem.gd` (solo log + `room_lit` sin oyentes) |
+| Reliquia + extracción | `Relic`, `RelicController`, `ExtractionManager`, `Main2dVictoryHandler` | Recoger, fase de extracción, victoria | **Completo** | `test_enemy_roles`, `test_raider_timing`, `test_map_flow` |
 | Tienda | — | — | **No existe** (la tienda de Oro y la moneda se eliminaron en `session/fix-3`); verificado: `git grep -i "gold\|store"` no devuelve nada funcional en `scripts/`. `docs/ROOMS.md` y `CLAUDE.md` lo registran | |
 | Selección de héroes (menú) | `HeroSelectMenu` (423), `GameSession`, `MainMenuFlow`, `CharacterDatabase/CharacterData` | Elegir 2 de 4 | **Completo** | `test_hero_select` OK |
 | Selección en partida | `SelectionManager`, `Main2d._input/_unhandled_input`, `HeroPortrait`, `HUDController` | Multi-selección, grupos 1-3, Tab | **Completo**, pero la lógica de input vive en `Main2d` (`:353-455`) | `test_selection` (67 checks) OK |
 | HUD | `HUDController` (443), `StatPanelUI`, `StatIcon`, `HeroPortrait`, `CharacterPopup`, `Minimap`, `ResearchPanel`, `BuildingMenu` | Recursos, retratos, popups, minimapa | **Completo**; 1 test rojo por valor de balance | `test_hud_ui` falla en `interval_at(1.0, 3)` (esperaba 0.7; `run_upgrade_config.tres` ahora 0.05/nivel, `d9c5971`) |
-| Investigación | `ResourceManager`, `ResearchConfig/Entry`, `ResearchPanel` | Gastar Ciencia, desbloquear módulos | **Completo** | `test_hud_ui` |
+| Investigación | `ResourceManager`, `ResearchConfig/Entry`, `ResearchPanel` | Gastar Saber, desbloquear obras | **Completo** | `test_hud_ui` |
 | Habilidades | `core/abilities/*`, `Player`, `resources/abilities` | Pasiva/activa por héroe, tecla Q | **Completo** | `test_abilities` OK |
 | VFX | `VfxManager`, `core/vfx/*`, `assets/vfx/*.tscn` | Pool y tope de efectos | **Completo** | `test_vfx` OK |
 | Cámara | `GameCamera`, `CameraConfig` | Seguir/paneo/zoom/límites | **Completo** | cubierto vía `test_*` que la consultan |
@@ -233,8 +233,8 @@ Estado: **Completo** = implementado y con evidencia (test o uso en el flujo); **
 **Scripts largos (runtime, >250 líneas):** `RoomManager` 681, `OptionsMenu` 669, `Main2d` 538, `Enemy` 444, `HUDController` 444, `MainMenuFlow` 425, `HeroSelectMenu` 424, `RoomZone` 348, `BuildingMenu` 342, `PlayerStats` 282, `BalanceSim` 262 (solo la usan tests/tools), `CharacterPopup` 261.
 
 **Responsabilidades múltiples:**
-- `Main2d` (538, fan-out 30): composición de 9 sistemas + spawn de héroes/Nexo + **cofres de sala Loot** (`:298-310`, no es su trabajo) + **input global** (`_input` `:353`, `_unhandled_input` `:378`) + **selección/grupos/doble tap/cámara** (`:420-455`) + pausa táctica + overlays de muerte/victoria + navegación entre escenas (`:518-537`).
-- `RoomManager` (681, 66 funciones, `max-public-methods` de gdlint): datos del grafo, fábrica de `RoomZone`, consultas (módulos, salas oscuras, encendidas), pathfinding (`find_zone_path :528`), validación (`validate_graph :454`, `validate_visibility :638`), presentación (`apply_zone_visibility :594`), creación del `DarkCanvas` (`:151`).
+- `Main2d` (538, fan-out 30): composición de 9 sistemas + spawn de héroes/Reliquia + **cofres de sala Loot** (`:298-310`, no es su trabajo) + **input global** (`_input` `:353`, `_unhandled_input` `:378`) + **selección/grupos/doble tap/cámara** (`:420-455`) + pausa táctica + overlays de muerte/victoria + navegación entre escenas (`:518-537`).
+- `RoomManager` (681, 66 funciones, `max-public-methods` de gdlint): datos del grafo, fábrica de `RoomZone`, consultas (obras, salas oscuras, encendidas), pathfinding (`find_zone_path :528`), validación (`validate_graph :454`, `validate_visibility :638`), presentación (`apply_zone_visibility :594`), creación del `DarkCanvas` (`:151`).
 - `HUDController`: orquesta 8 widgets, muchos construidos en código dentro del mismo script.
 - `PlayerStats`: ver §2.
 - `OptionsMenu` 669 líneas: tres pestañas en un solo archivo.
@@ -244,24 +244,24 @@ Estado: **Completo** = implementado y con evidencia (test o uso en el flujo); **
 **Código duplicado:**
 - `BaseMenu` (CanvasLayer) vs `BaseSubPanel` (Control): **95 % idéntico** (difflib 0.95), mismas señales `menu_opened/menu_closed`.
 - `Main2dDeathHandler` vs `Main2dVictoryHandler`: 56 %, mismo patrón `setup(main2d, overlay)` + `show_*_screen`.
-- Bloque de HP (`take_damage`/`die`/`clamp`) copiado en `Module.gd:95`, `Enemy.gd:150`, `CharacterStats.gd:53` (reconocido en comentarios de `Enemy.gd`).
-- Torretas (`DetectionZone`+`FireTimer`) vs combate Hitbox/Hurtbox: dos modelos de ataque.
+- Bloque de HP (`take_damage`/`die`/`clamp`) copiado en `Building.gd:95`, `Enemy.gd:150`, `CharacterStats.gd:53` (reconocido en comentarios de `Enemy.gd`).
+- Defensas (`DetectionZone`+`FireTimer`) vs combate Hitbox/Hurtbox: dos modelos de ataque.
 - `Floor` oculto + `MapTileRenderer`: dos representaciones del mapa.
 
 **Código muerto (51 funciones públicas sin ningún llamador + 22 solo usadas por tests):**
 - `ThemeManager`: 20 de 23 (`build_ap_badge_style`, `get_combat_feedback_palette/timing`, 17 `tactical_*`). Vestigios del sistema AP/tablero eliminado.
 - `GameStateManager`: `is_paused`, `is_victory`, `can_process_input`, `can_process_turns`, `set_state`, `toggle_pause`, `return_to_previous_state`.
-- `RoomManager`: `has_zone`, `get_zone_at_cell`, `get_all_modules`, `are_rooms_connected`, `is_path_open`, `get_adjacent_rooms`, `are_connected`.
+- `RoomManager`: `has_zone`, `get_zone_at_cell`, `get_all_buildings`, `are_rooms_connected`, `is_path_open`, `get_adjacent_rooms`, `are_connected`.
 - `SaveManager`: `get_run_cycle`, `set_run_cycle`, `increment_run_cycle`, `set_selected_character_id`.
-- Otros: `ResourceManager.add_all`, `DoorTurnSystem.get_room_cells`, `Player.set_grid_position`, `Door.mark_opened`, `StatPanelUI.update_stats`, `FloatingTextManager.spawn_text_from_host`, `ItemCatalog.get_item`, `ArtConfig.art_px`, `Logger.{debug,set_min_level,set_category_enabled}`, `ManagerLocator.{get_room_power_system,get_module_build_system}`.
+- Otros: `ResourceManager.add_all`, `DoorTurnSystem.get_room_cells`, `Player.set_grid_position`, `Door.mark_opened`, `StatPanelUI.update_stats`, `FloatingTextManager.spawn_text_from_host`, `ItemCatalog.get_item`, `ArtConfig.art_px`, `Logger.{debug,set_min_level,set_category_enabled}`, `ManagerLocator.{get_room_light_system,get_building_build_system}`.
 - `QuestPalette`: 8 de 46 constantes sin uso (`DUNGEON_ASH`, `METAL`, `UI_TEXT_READY`, `UI_TEXT_WARN`, `COMBAT_TEXT_HEAL`, `CARD_STRENGTH`, `CARD_AGILITY`, `CARD_MAGIC`).
 - Solo tests: `BalanceSim.*` (herramienta), getters de `GameCamera`, `HeroAbilities.is_ready`, etc. (legítimo como API de inspección).
 
-**Nombres inconsistentes:** `Nexo` (clase) vs `damage_vs_nexus` / `nexus_rows` / `*_nexus.csv`; `Player` = héroe, grupo `"player"`, `PlayerStats` guarda héroes; `zone/room/group` (§4); `Main` vs `Main2d` (el segundo es "la escena del piso"); `GameSession` vs `SelectionManager` vs `PartyConfig`; typo `enviorment`; `wizzard` (heredado del pack, aceptable).
+**Nombres inconsistentes:** `Relic` (clase) vs `damage_vs_nexus` / `nexus_rows` / `*_nexus.csv`; `Player` = héroe, grupo `"player"`, `PlayerStats` guarda héroes; `zone/room/group` (§4); `Main` vs `Main2d` (el segundo es "la escena del piso"); `GameSession` vs `SelectionManager` vs `PartyConfig`; typo `enviorment`; `wizzard` (heredado del pack, aceptable).
 
 **`_process`/`_physics_process`:** **no hay `_physics_process`** en runtime (movimiento por `Tween`/acciones; física solo por `Area2D`). `_process` en 7 scripts, todos razonables: `Minimap` y `ExitIndicator` lo activan solo si hace falta (`set_process`), `SteamManager` solo con Steam, `GameCamera` y `CharacterVisual` por frame. Mejorables: `HeroAbilities._process` emite `cooldown_changed` **cada frame** mientras hay cooldown (podría ser `Timer`/tween), y `CharacterVisual._process` corre por cada enemigo.
 
-**Convenciones GDScript 2.0 (gdlint):** `class-definitions-order` **284** (no-test: `Enemy` 26, `HUDController` 23, `Main2d` 22, `RoomZone` 18, `Module` 12; típico: consts/signals después de vars/funciones estáticas), `max-line-length` 735 (límite 100 por defecto; `.editorconfig` no define ninguno; 81 en `ui/menus`, 44 en `ui/hud`), 3 `trailing-whitespace` (`Main2dDeathHandler.gd:21,26`, `WaitingRoom.gd:68`), `signal-name` ×1 (`_batch_done`), `function-preload-variable-name` ×1 (`ManagerLocator.gd:159`), 2 `unused-argument`, `max-public-methods` ×1 (`RoomManager`). Se usa `QuestLogger` en lugar de `print` (los 34 `print(` restantes son tests y el propio Logger). `PlayerStats`/`SaveManager` hacen `const StatBalance = preload(...)` sombreando el `class_name` global (`PlayerStats.gd:3-4`) por el problema de `--script`.
+**Convenciones GDScript 2.0 (gdlint):** `class-definitions-order` **284** (no-test: `Enemy` 26, `HUDController` 23, `Main2d` 22, `RoomZone` 18, `Building` 12; típico: consts/signals después de vars/funciones estáticas), `max-line-length` 735 (límite 100 por defecto; `.editorconfig` no define ninguno; 81 en `ui/menus`, 44 en `ui/hud`), 3 `trailing-whitespace` (`Main2dDeathHandler.gd:21,26`, `WaitingRoom.gd:68`), `signal-name` ×1 (`_batch_done`), `function-preload-variable-name` ×1 (`ManagerLocator.gd:159`), 2 `unused-argument`, `max-public-methods` ×1 (`RoomManager`). Se usa `QuestLogger` en lugar de `print` (los 34 `print(` restantes son tests y el propio Logger). `PlayerStats`/`SaveManager` hacen `const StatBalance = preload(...)` sombreando el `class_name` global (`PlayerStats.gd:3-4`) por el problema de `--script`.
 
 ---
 
@@ -300,7 +300,7 @@ Ejecución (Godot 4.6.2 headless, un test por vez, 2026-10-02, HEAD `8201ba8`):
 | test_hero_select | 184 | sí | OK |
 | **test_hud_ui** | 615 | sí | **FALLA** `interval_at(1.0, 3)` |
 | test_items | 82 | no | OK |
-| **test_map_flow** | 408 | sí | **FALLA** `types (seed 0 floor 3): 'room_4' reward 12 science, expected 10` |
+| **test_map_flow** | 408 | sí | **FALLA** `types (seed 0 floor 3): 'room_4' reward 12 lore, expected 10` |
 | test_map_generator | 229 | no | OK |
 | test_party | 380 | sí | OK |
 | test_raider_timing | 77 | sí | OK |
@@ -311,11 +311,11 @@ Ejecución (Godot 4.6.2 headless, un test por vez, 2026-10-02, HEAD `8201ba8`):
 | test_tile_renderer | 152 | no | OK |
 | test_vfx | 150 | sí | OK |
 
-- **Los 3 fallos son tests desactualizados, no regresiones de gameplay** (los tests tienen valores viejos como literales). Causas: (a) `interval_at(1.0, 3)`: `d9c5971` ("Balance… solo en .tres") añadió `attack_speed_per_level = 0.05` y `min_attack_interval = 0.3` a `run_upgrade_config.tres` (diff verificado); (b) hitbox: el rango de ataque pasó a ser dato por héroe (`Player.gd:51,123`, 130-220 px; commit `eb6e3b8`); (c) `reward 12 science, expected 10`: la pasiva `SCIENCE_ON_DISCOVERY` de un héroe (`AbilityData.gd:11`, `FloorManager._apply_hero_passives`, `FloorManager.gd:75`) suma Ciencia al descubrir (commit `26eb413`). (b) y (c) están atribuidos por lectura de código, **no bisectados ni instrumentados**.
+- **Los 3 fallos son tests desactualizados, no regresiones de gameplay** (los tests tienen valores viejos como literales). Causas: (a) `interval_at(1.0, 3)`: `d9c5971` ("Balance… solo en .tres") añadió `attack_speed_per_level = 0.05` y `min_attack_interval = 0.3` a `run_upgrade_config.tres` (diff verificado); (b) hitbox: el rango de ataque pasó a ser dato por héroe (`Player.gd:51,123`, 130-220 px; commit `eb6e3b8`); (c) `reward 12 lore, expected 10`: la pasiva `LORE_ON_DISCOVERY` de un héroe (`AbilityData.gd:11`, `FloorManager._apply_hero_passives`, `FloorManager.gd:75`) suma Saber al descubrir (commit `26eb413`). (b) y (c) están atribuidos por lectura de código, **no bisectados ni instrumentados**.
 - **Hallazgo crítico — falsos verdes por arranque parcial.** En modo `--script` los identificadores de autoload no existen: `ThemeManager` falla al compilar, arrastra `PauseMenu`, y `Main2d.gd:45` (`@onready var pause_menu: PauseMenu = $PauseMenu`) aborta con `Trying to assign value of type 'CanvasLayer' to a variable of type 'PauseMenu.gd'`. Lo verifiqué con una sonda aparte: tras instanciar `Main2d.tscn`, `pause_menu`, `death_overlay`, `victory_overlay` y `retry_button` son `null` (y `death_handler` se crea con overlay nulo). **12 de los 20 tests** corren con ese Main2d a medias (el error aparece en 12 logs). `CLAUDE.md` lo presenta como "ruido esperado"; en realidad significa que pausa, muerte, victoria y botones **no están cubiertos** por ningún test y que los tests pasan en una configuración distinta a la del juego.
-- **Cobertura por nombre:** 64 de 104 scripts runtime aparecen nombrados en algún test. **Sin test directo (40):** `SaveManager`, `SettingsManager`, `SteamManager`, `SteamLobbyManager`, `OptionsMenu`, `MainMenu`, `MainMenuFlow`, `SaveSlotSelector`, `WaitingRoom`, `NetworkModeSelect`, `PauseMenu` base (`BaseMenu`, `BaseSubPanel`, `ExitConfirmDialog`), `ResearchPanel`, `StatPanelUI`, `FloatingTextManager`, `ModuleBuildSystem`, `RoomPowerSystem`, `GeneratorModule`, `Main2d*Handler`, `HeroAbilities`/`AbilityData` (los cubre `test_abilities` por escena), `MoveAction/EnemyMoveAction/BaseAction`, `Hitbox/HurtboxComponent` (indirecto), `ThemeManager/QuestPalette`, `CameraConfig`. Los componentes de combate y movimiento sí se ejercitan indirectamente al arrancar `Main2d`.
+- **Cobertura por nombre:** 64 de 104 scripts runtime aparecen nombrados en algún test. **Sin test directo (40):** `SaveManager`, `SettingsManager`, `SteamManager`, `SteamLobbyManager`, `OptionsMenu`, `MainMenu`, `MainMenuFlow`, `SaveSlotSelector`, `WaitingRoom`, `NetworkModeSelect`, `PauseMenu` base (`BaseMenu`, `BaseSubPanel`, `ExitConfirmDialog`), `ResearchPanel`, `StatPanelUI`, `FloatingTextManager`, `BuildingBuildSystem`, `RoomLightSystem`, `WorkshopBuilding`, `Main2d*Handler`, `HeroAbilities`/`AbilityData` (los cubre `test_abilities` por escena), `MoveAction/EnemyMoveAction/BaseAction`, `Hitbox/HurtboxComponent` (indirecto), `ThemeManager/QuestPalette`, `CameraConfig`. Los componentes de combate y movimiento sí se ejercitan indirectamente al arrancar `Main2d`.
 - **Tipo:** son pruebas de integración (arrancan escenas reales) con pocos tests unitarios puros (`test_map_generator`, `test_balance`, `test_items`, `test_art_config`). Sin framework, sin runner único, sin CI: hay que lanzar cada archivo a mano y revisar el exit code.
-- **Huecos funcionales importantes:** guardado/carga, opciones, flujo de red/Steam, extracción→victoria→siguiente piso con overlays reales, derrota/reintento, `Engine.time_scale` (fuga entre escenas), construcción de módulos de punta a punta con dinero.
+- **Huecos funcionales importantes:** guardado/carga, opciones, flujo de red/Steam, extracción→victoria→siguiente piso con overlays reales, derrota/reintento, `Engine.time_scale` (fuga entre escenas), construcción de obras de punta a punta con dinero.
 
 ---
 
@@ -324,13 +324,13 @@ Ejecución (Godot 4.6.2 headless, un test por vez, 2026-10-02, HEAD `8201ba8`):
 ### ALTO
 1. **Red de seguridad poco fiable (tests).** 3/20 rojos en HEAD, 12/20 con `Main2d` incompleto, sin runner ni CI. Cualquier refactor grande (RoomManager/Main2d) pierde la garantía que debería dar. *Justificación:* verificado con ejecución real y sonda (§10).
 2. **Estado de run sin dueño.** `Main._begin_new_run()` resetea 5 sistemas y 1 estático (`FloorManager._seen_types`, `FloorManager.gd:28`); un sistema nuevo con estado de run que no se añada allí **filtra estado entre partidas** (Retry/menú). *Justificación:* `Main.gd:131-145` es el único punto y es manual.
-3. **`ManagerLocator` como nudo (38 scripts en un ciclo) + acoplamiento por grupos con strings.** Fallos silenciosos: la mayoría de los usos hacen `if x:` y siguen (`ModuleBuildSystem` solo emite un warning si falta el HUD). Un renombre de grupo rompe sin error de compilación. *Justificación:* §4.
+3. **`ManagerLocator` como nudo (38 scripts en un ciclo) + acoplamiento por grupos con strings.** Fallos silenciosos: la mayoría de los usos hacen `if x:` y siguen (`BuildingBuildSystem` solo emite un warning si falta el HUD). Un renombre de grupo rompe sin error de compilación. *Justificación:* §4.
 4. **Cuatro fuentes de verdad para "qué héroes juego".** `GameSession.selected_hero_ids` (menú), `SaveManager.selected_character_id` (persistido; también usado por `WaitingRoom`), `SelectionManager.selected_ids` (en partida), `PlayerStats.active_hero_id` (vista) + `Main2d.active_character_id` y `PartyConfig` como fallback (`Main2d.gd:100,131`). Cualquier cambio de flujo (p. ej. reclutar, 3 héroes) toca todos. *Justificación:* grep de usos (§2, §7).
 5. **God-scripts `Main2d` y `RoomManager`.** Alto fan-out/fan-in, 14 dependientes directos de `RoomManager`; el cambio de una parte exige entender las demás. *Justificación:* §8.
 
 ### MEDIO
 6. **Dos pausas y `Engine.time_scale` global.** Parcheado en 3 lugares; cualquier escena nueva que cambie de escena sin pasar por `Main` lo hereda. `Timer`s y `Tween`s ya necesitan `set_ignore_time_scale()` (documentado en CLAUDE.md).
-7. **Datos duplicados en dos capas** (`VARIANT_CONFIG` + `EnemyType` con centinela `-1`; `Module.CATALOG` en código frente a `AbilityData`/`ItemData` como Resource). Aumenta la superficie de errores de balance.
+7. **Datos duplicados en dos capas** (`VARIANT_CONFIG` + `EnemyType` con centinela `-1`; `Building.CATALOG` en código frente a `AbilityData`/`ItemData` como Resource). Aumenta la superficie de errores de balance.
 8. **Multijugador incompleto con expectativa de producto.** Lobby y auth existen (203+100 líneas), pero el juego no replica estado; sin tests; AppID 480. Riesgo de mantener código que no tiene consumidor real.
 9. **Deriva de documentación.** `CLAUDE.md` (141 líneas, párrafos de 1500+ caracteres) cita `_deprecated/` (inexistente), `assets/nuevos`, y omite `MainMenuFlow`; `docs/ENTITY_VISUALS.md` afirma un recurso huérfano; 1146 líneas de `NOTES_SESSION.md`. Las IAs/personas que lo leen toman decisiones sobre código que ya no existe.
 10. **i18n a medias** (25 claves vs. cientos de literales). Cambiar de idioma produce UI mixta.
@@ -354,9 +354,9 @@ Orden por dependencias. **Riesgo** = probabilidad de romper el juego. **Verifica
 |---|---|---|---|---|---|
 | R1 | **Arreglar los 3 tests rojos** leyendo los valores de los `.tres` en vez de literales: `interval_at` ← `run_upgrade_config.tres`; reward de sala de tipo ← `RoomTypeRule` **más** el bonus de pasiva de los héroes de la partida (o fijar un `PartyConfig` sin pasiva de descubrimiento); radio ← `CharacterData.attack_range` del héroe | `tests/test_hud_ui.gd:59`, `tests/test_map_flow.gd`, `tests/test_sprites.gd:128` | Bajo | — | Los 20 tests en verde |
 | R2 | **Runner único de tests** que lance todos los `tests/test_*.gd`, agregue exit codes e imprima resumen (`tools/run_tests.ps1` + `.sh`) | nuevo `tools/run_tests.*` | Bajo | R1 | Un solo comando, exit ≠ 0 si falla alguno |
-| R3 | **Eliminar código muerto** de §8: 20 funciones de `ThemeManager` (dejar `build_panel_style`, `build_reward_card_style`, `build_slot_icon_style`), helpers de `GameStateManager`, `RoomManager` (7), `SaveManager` run-cycle, `ResourceManager.add_all`, `DoorTurnSystem.get_room_cells`, `Player.set_grid_position`, `Door.mark_opened`, `StatPanelUI.update_stats`, `FloatingTextManager.spawn_text_from_host`, `ItemCatalog.get_item`, `ArtConfig.art_px`, `Logger.{debug,set_*}`, 8 consts de `QuestPalette`, `ManagerLocator.{get_room_power_system,get_module_build_system}` | los archivos listados | Bajo | R2 (para ver que nada rompe) | Tests + `godot --headless --path . res://scenes/Main2d.tscn --quit-after 90` sin `SCRIPT ERROR` |
+| R3 | **Eliminar código muerto** de §8: 20 funciones de `ThemeManager` (dejar `build_panel_style`, `build_reward_card_style`, `build_slot_icon_style`), helpers de `GameStateManager`, `RoomManager` (7), `SaveManager` run-cycle, `ResourceManager.add_all`, `DoorTurnSystem.get_room_cells`, `Player.set_grid_position`, `Door.mark_opened`, `StatPanelUI.update_stats`, `FloatingTextManager.spawn_text_from_host`, `ItemCatalog.get_item`, `ArtConfig.art_px`, `Logger.{debug,set_*}`, 8 consts de `QuestPalette`, `ManagerLocator.{get_room_light_system,get_building_build_system}` | los archivos listados | Bajo | R2 (para ver que nada rompe) | Tests + `godot --headless --path . res://scenes/Main2d.tscn --quit-after 90` sin `SCRIPT ERROR` |
 | R4 | **Eliminar huérfanos** (§9): `shared_player_idle_frames.tres`, `Sprites/`, `highlight_tileset.tres`, `highlight_placeholder.png`, `godot_debug_output.txt` (+ `.gitignore`), `assets/ui/background.png` y `256x256 textures (113).png` tras confirmar en el editor | ver §9 | Bajo | — | Boot headless + `test_assets_art` |
-| R5 | **Eliminar señales sin oyente** o documentarlas como API: `door_opened`, `room_energized` (con R8), `pause_requested`/`resume_requested`/`death_entered`, `menu_opened`/`menu_closed` (con R9), `client_rejected` (decidir con multijugador). Mantener `ability_used`/`completed` solo si hay consumidor planeado | `DoorTurnSystem`, `RoomPowerSystem`, `GameStateManager`, `BaseMenu`, `BaseSubPanel`, `SteamManager` | Bajo | R3 | Tests |
+| R5 | **Eliminar señales sin oyente** o documentarlas como API: `door_opened`, `room_lit` (con R8), `pause_requested`/`resume_requested`/`death_entered`, `menu_opened`/`menu_closed` (con R9), `client_rejected` (decidir con multijugador). Mantener `ability_used`/`completed` solo si hay consumidor planeado | `DoorTurnSystem`, `RoomLightSystem`, `GameStateManager`, `BaseMenu`, `BaseSubPanel`, `SteamManager` | Bajo | R3 | Tests |
 | R6 | **Documentación:** mover `HANDOFF_*.md`, `REVIEW_SESSION_10.md` a `docs/archive/`; `NOTES_SESSION.md` a `docs/archive/`; corregir `CLAUDE.md` (quitar `_deprecated/` y `assets/nuevos`, añadir `MainMenuFlow`, resumir secciones por sesión) y `docs/ENTITY_VISUALS.md:7` | docs | Nulo | — | Revisión manual |
 
 ### Fase 1 — Unificar y quitar fuentes duplicadas
@@ -365,12 +365,12 @@ Orden por dependencias. **Riesgo** = probabilidad de romper el juego. **Verifica
 |---|---|---|---|---|---|
 | R7 | **`ThemeManager`: dejar de ser autoload.** Convertirlo en `class_name UiStyles` (solo estáticos); actualizar 24 usos y quitar la entrada de `project.godot`. Elimina la causa raíz de los `Identifier not found` en `--script` | `ThemeManager.gd`, `PauseMenu`, `BuildingMenu`, `HeroSelectMenu`, `MainMenu`, `CharacterCardOption`, `ExitConfirmDialog`, etc., `project.godot` | Bajo-medio | R3 | `Main2d.gd:45` deja de fallar en `--script` |
 | R8 | **Reejecutar los 12 tests de Main2d ya con Main2d completo** y arreglar lo que aflore (pausa/overlays). Añadir 1 test de pausa+muerte+victoria que ejerza `pause_menu`/overlays reales | `tests/` | Medio (puede destapar bugs ocultos) | R7, R2 | Probe: `pause_menu`, `death_overlay` no nulos |
-| R9 | **Borrar los pass-through** `RoomPowerSystem` (25 l.) y `ModuleBuildSystem` (31 l.): `Main2d`/`HUDController` se conectan directo a `RoomManager.slot_clicked`/`room_powered` (el log de energía va al sitio que paga el polvo). Quita 2 grupos y 2 getters | `RoomPowerSystem.gd/.uid`, `ModuleBuildSystem.gd/.uid`, `Main2d.gd`, `HUDController.gd`, `RoomManager.gd`, `ManagerLocator.gd` | Bajo | R3, R5 | `test_hud_ui` (BuildingMenu), `test_map_flow` |
+| R9 | **Borrar los pass-through** `RoomLightSystem` (25 l.) y `BuildingBuildSystem` (31 l.): `Main2d`/`HUDController` se conectan directo a `RoomManager.slot_clicked`/`room_lit` (el log de luz va al sitio que paga el brasas). Quita 2 grupos y 2 getters | `RoomLightSystem.gd/.uid`, `BuildingBuildSystem.gd/.uid`, `Main2d.gd`, `HUDController.gd`, `RoomManager.gd`, `ManagerLocator.gd` | Bajo | R3, R5 | `test_hud_ui` (BuildingMenu), `test_map_flow` |
 | R10 | **Fusionar `BaseMenu` y `BaseSubPanel`** (95 % iguales): extraer el comportamiento común a un helper (`MenuBehavior`/composición) que ambos usen, o hacer que `BaseSubPanel` sea el único con `extends Control` y `PauseMenu` lo envuelva en un `CanvasLayer` | `BaseMenu.gd`, `BaseSubPanel.gd`, `PauseMenu.gd`, `ExitConfirmDialog.gd`, `OptionsMenu.gd` | Medio (UI visual) | R8 | Prueba manual de apertura/cierre de Pausa, Opciones, Confirmar salida |
 | R11 | **Una sola fuente de verdad de la selección de héroes:** `GameSession` = pareja del menú; `SelectionManager` = selección en partida; `SaveManager.selected_character_id` solo para el último héroe guardado; quitar `Main2d.active_character_id` y dejar `PartyConfig` solo como valor por defecto | `GameSession`, `SelectionManager`, `PlayerStats` (quitar su getter de `active_hero_id` o invertir la dependencia), `SaveManager`, `Main2d`, `WaitingRoom`, `MainMenuFlow` | Medio | R8 | `test_hero_select`, `test_party`, `test_selection` |
 | R12 | **Unificar Death/Victory** en dos escenas con script propio (`DeathOverlay.tscn`, `VictoryOverlay.tscn`) que expongan señales `retry/exit/next_floor`; Main2d deja de conocer 6 rutas internas y se borran `Main2dDeathHandler/VictoryHandler` | `Main2d.tscn/.gd`, 2 handlers, escenas nuevas | Bajo-medio | R8 | Test de R8 (muerte/victoria) |
 | R13 | **Estado de run con dueño:** `RunState` (nodo hijo de `Main` o autoload) con `start_run()` que emite `run_started`; `ResourceManager`, `PlayerStats`, `SelectionManager`, `FloorManager._seen_types`, `GameSession` se suscriben y se resetean solos. `Main._begin_new_run()` solo llama `RunState.start_run()` | `Main.gd`, `ResourceManager`, `PlayerStats`, `SelectionManager`, `FloorManager`, nuevo script | Medio | R11 | `test_map_flow` (varias runs seguidas) + test nuevo "reset entre runs" |
-| R14 | **Datos de código a Resources:** `ModuleData` (`resources/modules/*.tres`, sustituye `Module.CATALOG/TYPE_COLORS/DESCRIPTIONS/RESOURCE_LABELS`); `EconomyConfig` (rendimientos base, recursos iniciales); `EnemyType` absorbe `VARIANT_CONFIG` y se eliminan los centinelas `-1` | `Module.gd`, `BuildingMenu.gd`, `Module*.tscn`, `ResourceManager.gd`, `Enemy.gd`, `EnemyType.gd`, `resources/enemies/*.tres` (20), `BalanceSim.gd` | Medio | R1 | `test_balance`, `test_hud_ui`, `test_enemy_roles`; comparar `docs/BALANCE.md` antes/después |
+| R14 | **Datos de código a Resources:** `BuildingData` (`resources/buildings/*.tres`, sustituye `Building.CATALOG/TYPE_COLORS/DESCRIPTIONS/RESOURCE_LABELS`); `EconomyConfig` (rendimientos base, recursos iniciales); `EnemyType` absorbe `VARIANT_CONFIG` y se eliminan los centinelas `-1` | `Building.gd`, `BuildingMenu.gd`, `Building*.tscn`, `ResourceManager.gd`, `Enemy.gd`, `EnemyType.gd`, `resources/enemies/*.tres` (20), `BalanceSim.gd` | Medio | R1 | `test_balance`, `test_hud_ui`, `test_enemy_roles`; comparar `docs/BALANCE.md` antes/después |
 
 ### Fase 2 — Reorganización de carpetas y nombres (hacer en el editor)
 
@@ -379,7 +379,7 @@ Orden por dependencias. **Riesgo** = probabilidad de romper el juego. **Verifica
 | R15 | **Partir `scripts/managers/`:** `scripts/autoload/` (`SaveManager`, `SettingsManager`, `ResourceManager`, `GameSession`, `SelectionManager`, `ManagerLocator`) y `scripts/run/` (`Main`, `Main2d`, `GameStateManager`, `FloorManager`, `EnemyManager`, `ExtractionManager`, `VfxManager`, `DoorTurnSystem`). `core/actions` queda con `BaseAction/MoveAction/EnemyMoveAction` | ~16 scripts + referencias en `project.godot`, `.tscn` | Medio-alto (rutas en `project.godot`, `preload` literales) | R3, R9, R12 | Boot headless + los 20 tests |
 | R16 | **`core/floors` → separar enemigos:** `EnemyType/EnemyPool` a `scripts/core/enemies/`; `BuildingMenu.gd` a `scripts/ui/hud/`; `CharacterCardOption` a `scripts/ui/menus/`; `BalanceSim.gd` a `tools/` | listados | Bajo-medio | R15 | Tests |
 | R17 | **`assets/` vs `resources/`:** `assets/characters/*.tres` → `resources/sprite_frames/`, `assets/tilesets/*.tres` → `resources/tilesets/`, `assets/vfx/*.tscn` → `scenes/vfx/` (actualizar `VfxManager.SCENE_PATH`); renombrar `enviorment`; ordenar `scenes/` en `menus/ hud/ world/ entities/ vfx/` | muchos `.tscn/.tres` | Medio-alto (referencias por ruta en 30+ resources) | R4, R15 | `test_assets_art`, `test_sprites`, `test_vfx`, boot |
-| R18 | **Vocabulario y nombres:** `nexus`→`nexo` (`EnemyType.damage_vs_nexus` + 20 `.tres`, `BalanceSim.nexus_rows`, CSVs); documentar `zone` (celda lógica), `room` (zona de tipo sala), `group` (unidad de revelado) y usar `group_id` donde corresponda (`DoorTurnSystem`, `Door.target_room_id`) | `EnemyType.gd`, `resources/enemies/*.tres`, `DoorTurnSystem`, `Door`, `Main2d` | Medio (renombrar campo de Resource rompe `.tres` si no se migran) | R14 | `test_balance`, `test_enemy_roles` |
+| R18 | **Vocabulario y nombres:** `nexus`→`relic` (`EnemyType.damage_vs_nexus` + 20 `.tres`, `BalanceSim.nexus_rows`, CSVs); documentar `zone` (celda lógica), `room` (zona de tipo sala), `group` (unidad de revelado) y usar `group_id` donde corresponda (`DoorTurnSystem`, `Door.target_room_id`) | `EnemyType.gd`, `resources/enemies/*.tres`, `DoorTurnSystem`, `Door`, `Main2d` | Medio (renombrar campo de Resource rompe `.tres` si no se migran) | R14 | `test_balance`, `test_enemy_roles` |
 
 ### Fase 3 — Partir los god-scripts (con la red de seguridad ya sólida)
 
@@ -388,7 +388,7 @@ Orden por dependencias. **Riesgo** = probabilidad de romper el juego. **Verifica
 | R19 | **`Main2d` → raíz de composición delgada.** Extraer `HeroInputController` (clic sobre héroe, F1/F2, grupos, doble tap, `_unhandled_input`) y mover la lógica de cofres Loot a `FloorManager`/nuevo `LootSpawner`; que `PauseController` posea `Engine.time_scale` y su reseteo | `Main2d.gd` (538 → <250), nuevos scripts | Medio | R11, R12, R13 | `test_selection`, `test_party`, `test_map_flow` |
 | R20 | **`RoomManager` (681) → `RoomGraph` + `RoomVisibility` + fachada.** `RoomGraph`: zonas, vecinos, `find_zone_path`, `validate_graph`; `RoomVisibility`: `apply_zone_visibility/on_group_revealed/refresh_*`; la fachada conserva la API pública para no tocar los 14 dependientes en el mismo commit | `RoomManager.gd` + 2 nuevos | **Alto** (14 dependientes, 30+ tests) | R2, R3, R8 | `test_rooms`, `test_corridor_picking`, `test_map_flow`, `test_tile_renderer`, `test_door_alignment` |
 | R21 | **Acoplamiento por grupo `"hud"`:** `ManagerLocator.get_hud()` tipado + señales del HUD (`show_hint`, `set_pause_label`) en vez de `call_group`; eliminar los `get_first_node_in_group` sueltos | `FloorManager`, `Main2d`, `ResourceManager.gd:70`, `HUDController` | Bajo-medio | R9, R19 | `test_hud_ui` |
-| R22 | **`HUDController` y UI en código:** sacar a scripts propios `HintPanel`, `NexoAlert`, `PauseLabel`, `TooltipPanel`; usar `%NombreUnico` en `HUD.tscn` en vez de rutas largas; separar `OptionsMenu` por pestaña (Video/Audio/Juego) | `HUDController.gd`, `HUD.tscn`, `OptionsMenu.gd` | Medio | R19 | `test_hud_ui` + prueba visual |
+| R22 | **`HUDController` y UI en código:** sacar a scripts propios `HintPanel`, `RelicAlert`, `PauseLabel`, `TooltipPanel`; usar `%NombreUnico` en `HUD.tscn` en vez de rutas largas; separar `OptionsMenu` por pestaña (Video/Audio/Juego) | `HUDController.gd`, `HUD.tscn`, `OptionsMenu.gd` | Medio | R19 | `test_hud_ui` + prueba visual |
 | R23 | **Tipado del locator:** cambiar el retorno `Node` de `get_selection_manager/get_game_session/get_settings_manager/get_steam_manager` por el identificador del autoload (como ya hacen `get_save_manager`/`get_resource_manager`/`get_player_stats`, que no tienen `class_name`) y `get_floating_text_manager` por `FloatingTextManager` (esa clase sí existe, `FloatingTextManager.gd:2`) | `ManagerLocator.gd` | Bajo | R7 | Parser + tests |
 
 ### Fase 4 — Producto (decidir antes de invertir)
@@ -397,7 +397,7 @@ Orden por dependencias. **Riesgo** = probabilidad de romper el juego. **Verifica
 |---|---|---|---|
 | R24 | **i18n:** o bien mover los literales de UI a `translations.csv` (HUD, build menu, popups, ítems, investigación, textos de `.tres`) o quitar el selector de idioma hasta que exista | Bajo (volumen alto) | R14 |
 | R25 | **Guardado:** decidir qué se persiste (meta-progresión). Si no hay: quitar `run_cycle`, `post_victory_popup_pending`, `contracts_completed`, `clamp_player_hp(x,x)`; si hay: definir esquema versionado y test | Medio | R13 |
-| R26 | **Multijugador:** decidir alcance. Mientras no haya replicación, mover Steam/Lobby a un módulo opcional (o detrás de feature flag) y sacar AppID 480 a config; añadir tests de la lógica de tickets con un mock | Medio | R15 |
+| R26 | **Multijugador:** decidir alcance. Mientras no haya replicación, mover Steam/Lobby a una obra opcional (o detrás de feature flag) y sacar AppID 480 a config; añadir tests de la lógica de tickets con un mock | Medio | R15 |
 | R27 | **Estilo:** añadir `gdlintrc`/`.gdformatrc` (límite de línea acordado) y aplicar `gdformat`+orden de definiciones solo en archivos tocados por R19-R22 | Bajo | R20 |
 
 **Secuencia mínima recomendada para el siguiente paso:** R1 → R2 → R3 → R4 → R6 → R7 → R8. Con eso hay red de seguridad real y el repositorio queda limpio antes de mover nada. Luego R9, R11, R12, R13 (reducen Main2d), y recién después R15-R17 (mover carpetas) y R19-R20 (partir scripts).

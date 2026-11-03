@@ -6,7 +6,7 @@ extends SceneTree
 ##   1. Esc freezes the world and Esc closes the menu again; run time stops.
 ##   2. Victory and defeat are terminal: neither replaces the other.
 ##   3. Level-up / equipment never revive a downed hero.
-##   4. A walking hero changes zone on the way (traps, chests, Nexo drop); a
+##   4. A walking hero changes zone on the way (traps, chests, Relic drop); a
 ##      fallen one stops where it fell.
 ##   5. Door invasions use the PlayerScaling count.
 ##   + minors: trap/boss charge go through the passives, a revived hero is back
@@ -174,7 +174,7 @@ func _check_victory_is_terminal() -> void:
 	var next_button := main2d.victory_overlay.find_child("NextFloorButton", true, false) as Button
 	_expect(next_button != null and next_button.can_process(), "victory buttons must work on the paused tree")
 
-	# Even a defeat that does get through (Nexo destroyed) can't replace it.
+	# Even a defeat that does get through (Relic destroyed) can't replace it.
 	main2d._on_player_died()
 	_expect(gsm.current_state == GameStateManager.State.VICTORY and not main2d._is_dead and not main2d.death_overlay.visible, "a late defeat must not replace the victory")
 
@@ -280,8 +280,8 @@ func _check_carrier_falls_on_the_way() -> void:
 	main2d.heroes[1].stats.max_hp = HUGE_HP  # the ally keeps the run going
 	main2d.heroes[1].stats.current_hp = HUGE_HP
 	_at_start(main2d, hero)
-	hero.is_carrying_nexo = true
-	main2d.nexo.pick_up()
+	hero.is_carrying_relic = true
+	main2d.relic.pick_up()
 
 	var controller: PlayerActionController = main2d.player_action_controller
 	controller.move_heroes([hero] as Array[Player], path[-1])
@@ -293,7 +293,7 @@ func _check_carrier_falls_on_the_way() -> void:
 	await process_frame
 
 	var fell_at := hero.global_position
-	_expect(main2d.nexo.is_dropped() and main2d.nexo.drop_zone_id == path[1], "the Nexo must drop in the corridor (zone '%s', wanted '%s')" % [main2d.nexo.drop_zone_id, path[1]])
+	_expect(main2d.relic.is_dropped() and main2d.relic.drop_zone_id == path[1], "the Reliquia must drop in the corridor (zone '%s', wanted '%s')" % [main2d.relic.drop_zone_id, path[1]])
 	await _seconds(0.5)
 	_expect(hero.global_position.distance_to(fell_at) < 1.0, "a fallen hero must stop where it fell (slid %.0f px)" % hero.global_position.distance_to(fell_at))
 	_expect(hero.current_zone_id == path[1], "a fallen hero stays in its zone ('%s')" % hero.current_zone_id)

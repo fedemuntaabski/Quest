@@ -3,7 +3,7 @@ class_name DoorTurnSystem
 
 ## DoorTurnSystem: minimal DotE-style turn/room stub. The global turn advances
 ## only when a door is opened — reveals the target room (basic fog-of-war),
-## and ticks resource production (in advance_turn; includes Generator modules' bonus via ResourceManager).
+## and ticks resource production (in advance_turn; includes Workshop buildings' bonus via ResourceManager).
 ## Enemy invasions are rolled by EnemyManager off turn_advanced.
 ##
 ## Sole owner of per-room dynamic state (visited/discovery), keyed by reveal

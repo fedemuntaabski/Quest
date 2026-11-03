@@ -9,5 +9,5 @@ id = "rogue_passive"
 effect = 3
 value = 2.0
 display_name = "Paso Ligero"
-description = "+{value} Polvo cada vez que se descubre una sala."
+description = "+{value} en Brasas cada vez que se descubre una sala."
 icon = ExtResource("2_icon")

@@ -28,22 +28,22 @@ Kenney: `Tiles/tile_NNNN.png`, donde (x, y) = (N % 12, N / 12).
 
 | Uso en el juego | Hoy | Candidato (origen → uso) | Estado |
 |---|---|---|---|
-| Módulo Forja | `placeholder_gen_industry` | `art/items/weapon_hammer.png` | **aplicado** |
-| Módulo Scriptorium | `placeholder_gen_science` | `art/items/flask_big_green.png` | **aplicado** |
-| Módulo Ballesta | `placeholder_turret` | `art/items/weapon_bow_2.png` | **aplicado** |
-| Módulo Catapulta | `placeholder_catapult` | `art/items/bomb_f0.png` | **aplicado** |
-| Módulo Pinchos | `placeholder_spikes` | `art/tiles/floor_spikes_anim_f3.png` | **aplicado** |
-| Módulo Brasero | `placeholder_trap` | `art/tiles/wall_fountain_basin_red_anim_f0.png` | **aplicado** (provisorio: es una fuente, no un brasero) |
-| Módulo Granja | `placeholder_gen_food` | celda de comida/barril en `items_sheets/consumables.png` | pendiente (necesita `AtlasTexture`; licencia ⚠) |
+| Obra Forja | `placeholder_gen_iron` | `art/items/weapon_hammer.png` | **aplicado** |
+| Obra Scriptorium | `placeholder_gen_lore` | `art/items/flask_big_green.png` | **aplicado** |
+| Obra Ballesta | `placeholder_defense` | `art/items/weapon_bow_2.png` | **aplicado** |
+| Obra Catapulta | `placeholder_catapult` | `art/items/bomb_f0.png` | **aplicado** |
+| Obra Pinchos | `placeholder_spikes` | `art/tiles/floor_spikes_anim_f3.png` | **aplicado** |
+| Obra Brasero | `placeholder_trap` | `art/tiles/wall_fountain_basin_red_anim_f0.png` | **aplicado** (provisorio: es una fuente, no un brasero) |
+| Obra Granja | `placeholder_gen_food` | celda de comida/barril en `items_sheets/consumables.png` | pendiente (necesita `AtlasTexture`; licencia ⚠) |
 | Habilidad activa Guerrero | `placeholder_ability_warrior_active` | `art/items/weapon_knight_sword.png` | **aplicado** |
 | Habilidad activa Maga | `placeholder_ability_mage_active` | `art/items/weapon_red_magic_staff.png` | **aplicado** |
 | Habilidad activa Pícaro | `placeholder_ability_rogue_active` | `art/items/weapon_knife.png` | **aplicado** |
-| Habilidad activa Tanque | `placeholder_ability_tank_active` | `art/items/weapon_big_hammer.png` | **aplicado** |
+| Habilidad activa Paladín | `placeholder_ability_tank_active` | `art/items/weapon_big_hammer.png` | **aplicado** |
 | Pasivas (4 héroes) | `placeholder_ability_*_passive` | celdas de `armours.png` / `books.png`; escudo Kenney `tile_0102` (tanque) | pendiente (`AtlasTexture`) |
 | Cofres por tier | Kenney (5,7) teñido (`Chest.gd`) | `items_sheets/chests.png` (madera/hierro/oro, cerrado y abierto) | pendiente: cambiar `Chest.gd` y verificar en ventana |
 | Jaula del prisionero | líneas en código (`PrisonerCage.gd`) | Kenney `tile_0081` (barrotes de madera) o `tile_0070` (reja) | pendiente: verificar en ventana |
 | Altar | rectángulo + brillo (`AltarShrine.gd`) | Kenney `tile_0020` (gárgola) sobre `tile_0032` (pedestal con orbe), o la fuente roja de 0x72 | pendiente |
-| Nexo | `flask_big_blue` + grietas en código | gema de `cave_gems.png` o Kenney `tile_0032` | pendiente (el actual funciona) |
+| Reliquia | `flask_big_blue` + grietas en código | gema de `cave_gems.png` o Kenney `tile_0032` | pendiente (el actual funciona) |
 | Proyectil a distancia | círculo + estela (`Projectile.gd`) | `art/items/weapon_arrow.png` (7×21) para arqueros | pendiente. Para el mago hace falta un **proyectil mágico**: pendiente de arte (se puede tomar del pack de FX) |
 | Íconos de recursos HUD | vectores (`StatIcon.gd`) | `weapon_hammer` / comida / `flask_big_green` / `coin_anim_f0` | pendiente (los vectores se leen bien) |
 | Corazones de HP | vector | `art/ui/ui_heart_full/half/empty.png` (copiados, sin usar) | pendiente |
@@ -53,7 +53,7 @@ Kenney: `Tiles/tile_NNNN.png`, donde (x, y) = (N % 12, N / 12).
 
 ## 3. Aplicados en esta sesión
 
-10 reemplazos, todos de bajo riesgo: solo cambia la ruta de textura en un `.tres` (`resources/modules/{forja,scriptorium,ballesta,catapulta,pinchos,brasero}.tres` → `icon_path`; `resources/abilities/{warrior,mage,rogue,tank}_active.tres` → `ext_resource`).
+10 reemplazos, todos de bajo riesgo: solo cambia la ruta de textura en un `.tres` (`resources/buildings/{forja,scriptorium,ballesta,catapulta,pinchos,brasero}.tres` → `icon_path`; `resources/abilities/{warrior,mage,rogue,tank}_active.tres` → `ext_resource`).
 - Son archivos ya copiados en `assets/art/` desde 0x72 (CC0 ⚠, ver `CREDITOS.md`).
 - El filtro es Nearest por defecto en el proyecto (`project.godot`, `default_texture_filter=0`); la escala no cambia.
 - No se tocaron SpriteFrames ni escenas.

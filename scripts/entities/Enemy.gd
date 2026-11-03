@@ -46,9 +46,9 @@ static func resolved_contact_damage(p_type: EnemyType) -> int:
 	return p_type.contact_damage if p_type.contact_damage >= 0 else int(VARIANT_CONFIG[p_type.behavior]["contact_damage"])
 
 
-static func resolved_module_damage(p_type: EnemyType) -> int:
-	if p_type.module_damage >= 0:
-		return p_type.module_damage
+static func resolved_building_damage(p_type: EnemyType) -> int:
+	if p_type.building_damage >= 0:
+		return p_type.building_damage
 	return int(VARIANT_CONFIG[p_type.behavior].get("damage_per_tick", DEFAULT_ATTACK_DAMAGE))
 
 @onready var visual: CharacterVisual = $Visual
@@ -62,14 +62,14 @@ static func resolved_module_damage(p_type: EnemyType) -> int:
 var attack_damage: int = DEFAULT_ATTACK_DAMAGE
 
 var current_state: State = State.MOVING
-var target_module: Node2D = null
+var target_building: Node2D = null
 var variant: Variant
 ## Art + stat multipliers (null = plain variant, no art). Set by configure().
 var type: EnemyType
 var role: EnemyType.Role = EnemyType.Role.HUNTER
 var aggro_range: float = 320.0
 var attack_range: float = 40.0
-var nexo_damage: int = 0
+var relic_damage: int = 0
 var current_zone_id: String = ""
 var max_hp: int = 0
 var current_hp: int = 0
@@ -77,10 +77,10 @@ var _slowed_until_msec: int = 0
 var _moving: bool = false
 ## Zone the current trip was planned for (see goal_changed()).
 var _active_goal: String = ""
-## True only when HP reached 0 through take_damage (hero or turret). Freeing the
+## True only when HP reached 0 through take_damage (hero or defense). Freeing the
 ## node (floor change) never sets it nor emits `died`: the bestiary counts kills by this.
 var killed_by_damage: bool = false
-var target_nexo: Nexo = null
+var target_relic: Relic = null
 ## Ring slot (set by EnemyManager, consecutive) so enemies converging on a point spread out.
 var slot: int = 0
 ## Floor x room x type damage multiplier (bosses scale their charge with it).
@@ -130,14 +130,14 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 	ai_timer.start()
 
 	var contact_damage := int(cfg.get("contact_damage", 1))
-	var module_damage := int(cfg.get("damage_per_tick", DEFAULT_ATTACK_DAMAGE))
+	var building_damage := int(cfg.get("damage_per_tick", DEFAULT_ATTACK_DAMAGE))
 	if p_type:
 		role = p_type.role
 		aggro_range = p_type.aggro_range
 		attack_range = p_type.attack_range
-		nexo_damage = maxi(1, roundi(p_type.damage_vs_nexo * damage_multiplier)) if p_type.damage_vs_nexo > 0 else 0
+		relic_damage = maxi(1, roundi(p_type.damage_vs_relic * damage_multiplier)) if p_type.damage_vs_relic > 0 else 0
 		contact_damage = resolved_contact_damage(p_type)
-		module_damage = resolved_module_damage(p_type)
+		building_damage = resolved_building_damage(p_type)
 	hitbox.configure(maxi(1, roundi(contact_damage * damage_multiplier)), CONTACT_HIT_INTERVAL)
 	selector.setup(self, p_type.get_target_profile() if p_type else TargetProfile.derive(role, variant))
 	if not selector.target_lost.is_connected(_on_target_lost):
@@ -145,7 +145,7 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 	if selector.profile.reeval_sec > 0.0:
 		ai_timer.wait_time = selector.profile.reeval_sec
 
-	attack_damage = maxi(1, roundi(module_damage * damage_multiplier))
+	attack_damage = maxi(1, roundi(building_damage * damage_multiplier))
 	attack_timer.wait_time = attack_speed
 	attack_timer.one_shot = false
 	if not attack_timer.timeout.is_connected(_perform_attack):
@@ -164,7 +164,7 @@ func _on_contact_landed(target: HurtboxComponent, _amount: int) -> void:
 		vfx.play(&"hit_sparks", target.global_position, vfx.config.enemy_hit_color)
 
 
-## Hurtbox hits only come from heroes (turrets call take_damage directly).
+## Hurtbox hits only come from heroes (defenses call take_damage directly).
 func _on_hurt(amount: int) -> void:
 	selector.note_hit_by_hero()
 	take_damage(amount)
@@ -215,7 +215,7 @@ func _draw() -> void:
 	draw_rect(Rect2(rect.position, Vector2(rect.size.x * ratio, rect.size.y)), HP_BAR_STYLE.color_for(ratio))
 
 
-## The only path that emits `died` (hero hit, turret shot). Kill counters rely on it.
+## The only path that emits `died` (hero hit, defense shot). Kill counters rely on it.
 func _die_from_damage() -> void:
 	killed_by_damage = true
 	QuestLogger.debug(QuestLogger.Category.ENEMY, "Enemy '%s' died in zone '%s'." % [Variant.keys()[variant], current_zone_id])
@@ -246,7 +246,7 @@ static func game_msec() -> int:
 
 ## Speed factor while slowed: the Trap's catalog slow_factor.
 static func slow_factor() -> float:
-	return float(Module.CATALOG[Module.ModuleType.BRASERO]["slow_factor"])
+	return float(Building.CATALOG[Building.BuildingType.BRASERO]["slow_factor"])
 
 
 func current_speed() -> float:
@@ -287,9 +287,9 @@ func _mark_as_raider() -> void:
 	add_child(marker)
 
 
-## The module to hit in `room` (its profile's pick), or null.
-func scan_room_for_modules(room: RoomZone) -> Node2D:
-	return selector.pick_module_in_room(room)
+## The building to hit in `room` (its profile's pick), or null.
+func scan_room_for_buildings(room: RoomZone) -> Node2D:
+	return selector.pick_building_in_room(room)
 
 
 ## Called by EnemyMoveAction each time the enemy reaches a zone center.
@@ -299,41 +299,41 @@ func on_zone_entered(zone_id: String) -> void:
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager == null or room_manager.get_zone_kind(zone_id) != "room" or _is_raiding():
 		return
-	var module := scan_room_for_modules(room_manager.get_zone_node(zone_id))
-	if module == null:
+	var building := scan_room_for_buildings(room_manager.get_zone_node(zone_id))
+	if building == null:
 		return
-	target_module = module
+	target_building = building
 	current_state = State.ATTACKING
 	attack_timer.start()
 
 
 func _perform_attack() -> void:
-	if target_nexo != null:
-		if not (_is_raiding() and _nexo_in_range()):
+	if target_relic != null:
+		if not (_is_raiding() and _relic_in_range()):
 			_resume_moving()
 			return
-		target_nexo.take_damage(nexo_damage)
+		target_relic.take_damage(relic_damage)
 		return
 	if not _target_is_valid():
 		_resume_moving()
 		return
-	var module_pos := target_module.global_position
-	target_module.take_damage(attack_damage)
+	var building_pos := target_building.global_position
+	target_building.take_damage(attack_damage)
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
-		vfx.play(&"hit_sparks", module_pos, vfx.config.enemy_hit_color)
+		vfx.play(&"hit_sparks", building_pos, vfx.config.enemy_hit_color)
 	if not _target_is_valid():
 		_resume_moving()
 
 
 func _target_is_valid() -> bool:
-	return is_instance_valid(target_module) and (target_module as Module).is_active
+	return is_instance_valid(target_building) and (target_building as Building).is_active
 
 
 func _resume_moving() -> void:
 	attack_timer.stop()
-	target_module = null
-	target_nexo = null
+	target_building = null
+	target_relic = null
 	current_state = State.MOVING
 	_on_ai_tick()
 
@@ -348,13 +348,13 @@ func _on_ai_tick() -> void:
 	var room_manager := ManagerLocator.get_room_manager()
 	if room_manager == null:
 		return
-	# Modules in the current room (built later, or a second one after a kill)
+	# Buildings in the current room (built later, or a second one after a kill)
 	# are only scanned on arrival otherwise.
 	on_zone_entered(current_zone_id)
 	if current_state == State.ATTACKING:
 		return
 	_note_blocking_hero()
-	if _try_attack_nexo():
+	if _try_attack_relic():
 		return
 
 	selector.reevaluate(&"tick")
@@ -362,14 +362,14 @@ func _on_ai_tick() -> void:
 	_active_goal = goal
 	await _pursue_zone(room_manager, goal, _goal_point(goal))
 	if is_instance_valid(self):
-		_try_attack_nexo()
+		_try_attack_relic()
 
 
 ## The thing it was after died or was destroyed: stop hitting it and pick anew now.
 func _on_target_lost(old: Target) -> void:
 	if not is_alive():
 		return
-	if current_state == State.ATTACKING and old != null and old.node != null and old.node == target_module:
+	if current_state == State.ATTACKING and old != null and old.node != null and old.node == target_building:
 		_resume_moving()
 	elif current_state == State.MOVING:
 		_on_ai_tick()
@@ -408,15 +408,15 @@ func _player_zone(room_manager: RoomManager) -> String:
 	return selector.zone_of_closest_hero(room_manager)
 
 
-func _nexo_in_range() -> bool:
-	var nexo := ManagerLocator.get_nexo()
-	return nexo != null and nexo.is_alive() and global_position.distance_to(nexo.get_target_position()) <= attack_range
+func _relic_in_range() -> bool:
+	var relic := ManagerLocator.get_relic()
+	return relic != null and relic.is_alive() and global_position.distance_to(relic.get_target_position()) <= attack_range
 
 
-func _try_attack_nexo() -> bool:
-	if not (_is_raiding() and nexo_damage > 0 and _nexo_in_range()):
+func _try_attack_relic() -> bool:
+	if not (_is_raiding() and relic_damage > 0 and _relic_in_range()):
 		return false
-	target_nexo = ManagerLocator.get_nexo()
+	target_relic = ManagerLocator.get_relic()
 	current_state = State.ATTACKING
 	attack_timer.start()
 	return true
@@ -461,14 +461,14 @@ func _check_trap_in_current_room(room_manager: RoomManager) -> void:
 	var group_id := room_manager.get_group_id(current_zone_id)
 	var slowed := false
 	var spiked := false
-	for module in room_manager.get_modules_in_group(group_id):
-		if not module.is_trap() or not module.is_working():
+	for building in room_manager.get_buildings_in_group(group_id):
+		if not building.is_trap() or not building.is_working():
 			continue
-		var cfg: Dictionary = Module.CATALOG[module.module_type]
-		if module.module_type == Module.ModuleType.BRASERO and not slowed:
+		var cfg: Dictionary = Building.CATALOG[building.building_type]
+		if building.building_type == Building.BuildingType.BRASERO and not slowed:
 			slowed = true
 			apply_slow(float(cfg["slow_duration"]))
-		elif module.module_type == Module.ModuleType.PINCHOS and not spiked:
+		elif building.building_type == Building.BuildingType.PINCHOS and not spiked:
 			spiked = true  # one spiked trap hurts once per arrival, extra ones don't stack
 			take_damage(int(cfg["spike_damage"]))
 		else:

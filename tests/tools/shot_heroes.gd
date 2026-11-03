@@ -34,7 +34,7 @@ func _initialize() -> void:
 	for i in 2:
 		var cage: PrisonerCage = main2d.prisoner_spawner.spawn_for(start)
 		if cage:
-			cage.free_with("industry")
+			cage.free_with("iron")
 	main2d.heroes[1].stats.take_damage(main2d.heroes[1].stats.max_hp - 3)  # low HP: blink
 	main2d.heroes[2].stats.take_damage(main2d.heroes[2].stats.max_hp)  # downed
 	main2d.heroes[0].abilities.try_activate()
@@ -42,7 +42,7 @@ func _initialize() -> void:
 
 	# A cage drawn next to the party (decor only: the party is full).
 	var cage := PrisonerCage.new()
-	cage.setup("rogue", start, {"industry": 20, "food": 15}, Callable())
+	cage.setup("rogue", start, {"iron": 20, "food": 15}, Callable())
 	cage.position = rm.get_center(start) + Vector2(110, -40)
 	main2d.prisoner_spawner.add_child(cage)
 

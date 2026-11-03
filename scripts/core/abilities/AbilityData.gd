@@ -7,12 +7,12 @@ class_name AbilityData
 enum Effect {
 	## Passives
 	DAMAGE_REDUCTION_PCT,   ## value = fraction of incoming damage ignored (0.2 = -20 %)
-	NEXO_PROXIMITY_REDUCTION,  ## value = max reduction at the Nexo, fading to 0 at `radius` px
-	SCIENCE_ON_DISCOVERY,   ## value = Ciencia gained when a new room is discovered
-	DUST_ON_DISCOVERY,      ## value = Polvo gained when a new room is discovered
+	RELIC_PROXIMITY_REDUCTION,  ## value = max reduction at the Relic, fading to 0 at `radius` px
+	LORE_ON_DISCOVERY,   ## value = Saber gained when a new room is discovered
+	EMBERS_ON_DISCOVERY,      ## value = Brasas gained when a new room is discovered
 	## Actives (cooldown + duration)
 	TEAM_ATTACK_BUFF,       ## allies in the caster's room: attack damage x(1 + value)
-	MODULE_OVERCHARGE,      ## turrets in the caster's room: damage x(1 + value); generators pay one extra tick
+	BUILDING_BLESSING,      ## defenses in the caster's room: damage x(1 + value); workshops pay one extra tick
 	BURST_STRIKE,           ## every enemy in the caster's attack range takes attack damage x value
 	TEAM_SHIELD,            ## all living heroes take (1 - value) of the damage
 }

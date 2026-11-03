@@ -3,7 +3,7 @@ window 1x,1793,59.7,16.68,17.12,36.95,61.15,39.88,0.18,1130,276,23.8,6
 window 2x,10728,357.5,2.39,4.99,9.1,29.06,17.0,0.15,1161,285,23.7,0
 micro ManagerLocator.get_room_manager,0,0.0,0.0,0.0,0.0,0.0,0.77,0.0,0,0,0.0,0
 micro ManagerLocator.get_heroes,0,0.0,0.0,0.0,0.0,0.0,2.76,0.0,0,0,0.0,0
-micro ManagerLocator.get_nexo,0,0.0,0.0,0.0,0.0,0.0,0.77,0.0,0,0,0.0,0
+micro ManagerLocator.get_relic,0,0.0,0.0,0.0,0.0,0.0,0.77,0.0,0,0,0.0,0
 micro RoomManager.find_zone_path,0,0.0,0.0,0.0,0.0,0.0,47.13,0.0,0,0,0.0,0
 micro EnemyManager.get_enemies,0,0.0,0.0,0.0,0.0,0.0,7.44,0.0,0,0,0.0,0
 micro NetSync.capture_snapshot,0,0.0,0.0,0.0,0.0,0.0,49.52,0.0,0,0,0.0,0

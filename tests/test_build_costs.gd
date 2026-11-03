@@ -1,7 +1,7 @@
 extends SceneTree
 
-## Module costs (session economia-8): price grows with the built count,
-## demolishing refunds 50 % of what was paid, repairs cost Industria by missing
+## Building costs (session economia-8): price grows with the built count,
+## demolishing refunds 50 % of what was paid, repairs cost Hierro by missing
 ## HP, Comida heals a hero.
 ##   godot --headless --path . --script res://tests/test_build_costs.gd
 
@@ -25,8 +25,8 @@ func _expect(cond: bool, msg: String) -> void:
 
 
 func _check_curve() -> void:
-	var curve := ModuleCostCurve.get_default()
-	_expect(curve.cost(4, 0) == 4, "first module costs its base")
+	var curve := BuildingCostCurve.get_default()
+	_expect(curve.cost(4, 0) == 4, "first building costs its base")
 	_expect(curve.cost(4, 1) > curve.cost(4, 0) and curve.cost(4, 2) > curve.cost(4, 1), "cost must rise with the built count")
 	_expect(curve.cost(4, 2) == 4 + roundi(4 * curve.step * 2), "cost formula")
 	_expect(curve.refund(7) == roundi(7 * 0.5) and is_equal_approx(curve.refund_pct, 0.5), "refund is 50%")
@@ -50,7 +50,7 @@ func _check_live() -> void:
 	await process_frame
 	var room_manager: RoomManager = main2d.room_manager
 	var room := room_manager.get_zone_node(room_manager.get_start_zone_id())
-	room.set_powered(true)
+	room.set_lit(true)
 	var major: BuildingSlot = null
 	var minors: Array[BuildingSlot] = []
 	for slot in room.find_children("*", "BuildingSlot", true, false):
@@ -61,37 +61,37 @@ func _check_live() -> void:
 	_expect(major != null and minors.size() == 2, "start room slots")
 	if major == null or minors.size() != 2:
 		return
-	var curve := ModuleCostCurve.get_default()
-	var T := Module.ModuleType
+	var curve := BuildingCostCurve.get_default()
+	var T := Building.BuildingType
 
 	# Rising cost: each Pinchos built makes the next one dearer.
-	var base := int(Module.CATALOG[T.PINCHOS]["cost"])
-	_expect(Module.get_cost(T.PINCHOS) == base and room_manager.count_modules(T.PINCHOS) == 0, "first spikes trap costs base")
+	var base := int(Building.CATALOG[T.PINCHOS]["cost"])
+	_expect(Building.get_cost(T.PINCHOS) == base and room_manager.count_buildings(T.PINCHOS) == 0, "first spikes trap costs base")
 	var first := minors[0].build(T.PINCHOS)
-	_expect(room_manager.count_modules(T.PINCHOS) == 1 and Module.get_cost(T.PINCHOS) == curve.cost(base, 1), "second costs %d" % curve.cost(base, 1))
+	_expect(room_manager.count_buildings(T.PINCHOS) == 1 and Building.get_cost(T.PINCHOS) == curve.cost(base, 1), "second costs %d" % curve.cost(base, 1))
 	_expect(first.paid_cost == base, "paid_cost remembers the price")
 	var second := minors[1].build(T.PINCHOS)
-	_expect(second.paid_cost == curve.cost(base, 1) and Module.get_cost(T.PINCHOS) == curve.cost(base, 2), "third costs %d" % curve.cost(base, 2))
-	_expect(Module.get_cost(T.FORJA) == int(Module.CATALOG[T.FORJA]["cost"]), "other types keep their own count")
+	_expect(second.paid_cost == curve.cost(base, 1) and Building.get_cost(T.PINCHOS) == curve.cost(base, 2), "third costs %d" % curve.cost(base, 2))
+	_expect(Building.get_cost(T.FORJA) == int(Building.CATALOG[T.FORJA]["cost"]), "other types keep their own count")
 
 	# Demolish: 50 % of what was paid, slot freed, count drops.
-	var industry := rm.get_resource("industry")
+	var iron := rm.get_resource("iron")
 	var refund := second.refund_value()
 	_expect(refund == curve.refund(second.paid_cost), "refund_value")
 	second.demolish()
-	_expect(rm.get_resource("industry") == industry + refund, "demolish refund %d" % refund)
-	_expect(minors[1].is_empty() and room_manager.count_modules(T.PINCHOS) == 1, "slot freed and count updated")
+	_expect(rm.get_resource("iron") == iron + refund, "demolish refund %d" % refund)
+	_expect(minors[1].is_empty() and room_manager.count_buildings(T.PINCHOS) == 1, "slot freed and count updated")
 
-	# Repair: costs Industria by missing HP, restores full HP; refuses when intact or short.
+	# Repair: costs Hierro by missing HP, restores full HP; refuses when intact or short.
 	var forja := major.build(T.FORJA)
-	_expect(forja.repair_cost() == 0 and not forja.repair(), "intact module needs no repair")
+	_expect(forja.repair_cost() == 0 and not forja.repair(), "intact building needs no repair")
 	forja.take_damage(9)
 	var cost := forja.repair_cost()
-	_expect(cost == curve.repair_cost(int(Module.CATALOG[T.FORJA]["cost"]), 9, forja.max_hp) and cost >= 1, "repair cost %d" % cost)
-	rm.spend_resource("industry", rm.get_resource("industry"))
-	_expect(not forja.repair() and forja.current_hp < forja.max_hp, "repair without Industria must fail")
-	rm.add_resource("industry", 50)
-	_expect(forja.repair() and forja.current_hp == forja.max_hp and rm.get_resource("industry") == 50 - cost, "repair spends %d and heals" % cost)
+	_expect(cost == curve.repair_cost(int(Building.CATALOG[T.FORJA]["cost"]), 9, forja.max_hp) and cost >= 1, "repair cost %d" % cost)
+	rm.spend_resource("iron", rm.get_resource("iron"))
+	_expect(not forja.repair() and forja.current_hp < forja.max_hp, "repair without Hierro must fail")
+	rm.add_resource("iron", 50)
+	_expect(forja.repair() and forja.current_hp == forja.max_hp and rm.get_resource("iron") == 50 - cost, "repair spends %d and heals" % cost)
 
 	# Comida heals a hero.
 	var stats: CharacterStats = ps.stats
@@ -103,7 +103,7 @@ func _check_live() -> void:
 	_expect(ps.heal_hero() and stats.current_hp == stats.max_hp and rm.get_resource("food") == food - heal_cost, "heal_hero spends Comida and restores HP")
 
 	# Catapulta: one shot hits everything near the target; the Ballesta only the target.
-	var catapult := minors[1].build(T.CATAPULTA) as TurretModule
+	var catapult := minors[1].build(T.CATAPULTA) as DefenseBuilding
 	var near := Dummy.new()
 	var also_near := Dummy.new()
 	var far := Dummy.new()

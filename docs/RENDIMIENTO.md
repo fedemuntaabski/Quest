@@ -5,7 +5,7 @@
 Banco `tests/tools/bench_floor5.gd` (peor caso de la run):
 
 - Escenario: piso 5, Difícil, 4 héroes (fila de 4 jugadores de `PlayerScaling`), todas las salas reveladas y el tope de enemigos vivos lleno (24, se rellena cada segundo).
-- Héroes y Nexo tienen vida enorme: una derrota pausaría el árbol y la muestra mediría un juego quieto.
+- Héroes y Reliquia tienen vida enorme: una derrota pausaría el árbol y la muestra mediría un juego quieto.
 - Mide 30 s a 1x y 30 s a 2x tras 3 s de calentamiento:
   - tiempo de frame p50/p95/p99/máx y picos de más de 50 ms;
   - monitores de `Performance` (nodos, draw calls);
@@ -38,7 +38,7 @@ Arreglo: esos logs pasan a nivel DEBUG, que está apagado por defecto (`Player.g
 
 | helper | µs |
 |---|---|
-| `ManagerLocator.get_room_manager` / `get_nexo` | 0,8 |
+| `ManagerLocator.get_room_manager` / `get_relic` | 0,8 |
 | `ManagerLocator.get_heroes` | 2,8 |
 | `RoomManager.find_zone_path` | 47 |
 | `EnemyManager.get_enemies` | 7,4 |

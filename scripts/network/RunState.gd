@@ -3,7 +3,7 @@ extends Object
 
 ## RunState (coop-12): the slow-changing state of a floor as plain data, captured
 ## on the host and applied on clients through the same game APIs (no side effects:
-## reveal_room, set_powered, BuildingSlot.build, apply_state()). One serializer
+## reveal_room, set_lit, BuildingSlot.build, apply_state()). One serializer
 ## for the periodic resync, reconnection and the desync hash.
 
 
@@ -14,28 +14,28 @@ static func capture(main2d: Node) -> Dictionary:
 		if rm.is_group_revealed(group_id):
 			revealed.append(group_id)
 	revealed.sort()
-	var power := {}
-	var modules := {}
+	var light := {}
+	var buildings := {}
 	var zone_ids: Array = rm.get_zone_ids()
 	zone_ids.sort()
 	for zone_id: String in zone_ids:
 		var zone := rm.get_zone_node(zone_id)
 		if zone == null or zone.kind != "room":
 			continue
-		if zone.is_powered:
-			power[zone_id] = zone.get_power_paid()
+		if zone.is_lit:
+			light[zone_id] = zone.get_light_paid()
 		var i := 0
 		while zone.get_slot(i) != null:
 			var slot := zone.get_slot(i)
-			if not slot.is_empty() and is_instance_valid(slot.built_module):
-				var m := slot.built_module as Module
-				modules["%s#%d" % [zone_id, i]] = [int(m.module_type), m.current_hp]
+			if not slot.is_empty() and is_instance_valid(slot.built_building):
+				var m := slot.built_building as Building
+				buildings["%s#%d" % [zone_id, i]] = [int(m.building_type), m.current_hp]
 			i += 1
 	var gs := ManagerLocator.get_game_session()
-	var nexo: Nexo = main2d.nexo
+	var relic: Relic = main2d.relic
 	var carrier := ""
 	for hero in ManagerLocator.get_heroes():
-		if hero.is_carrying_nexo:
+		if hero.is_carrying_relic:
 			carrier = hero.stats.hero_id
 	return {
 		"floor": main2d.floor_manager.floor_index,
@@ -44,14 +44,14 @@ static func capture(main2d: Node) -> Dictionary:
 		"inv": ManagerLocator.get_party_inventory().get_state(),
 		"stats": ManagerLocator.get_player_stats().get_run_state(),
 		"revealed": revealed,
-		"power": power,
-		"modules": modules,
+		"light": light,
+		"buildings": buildings,
 		"chests": _keys_where(main2d.loot_spawner.chests, func(c: Chest) -> bool: return not c.is_closed()),
 		"cages": _keys_where(main2d.prisoner_spawner.cages, func(c: PrisonerCage) -> bool: return c.is_freed),
 		"altars": _keys_where(main2d.altars, func(a: AltarShrine) -> bool: return a.is_used),
 		"recruited": gs.recruited_ids.duplicate() if gs else [],
 		"lost": gs.lost_ids.duplicate() if gs else [],
-		"nexo": [nexo.current_hp, carrier, nexo.drop_zone_id, nexo.global_position],
+		"relic": [relic.current_hp, carrier, relic.drop_zone_id, relic.global_position],
 		"extraction": [int(main2d.extraction_manager.current_phase), main2d.extraction_manager.stage],
 	}
 
@@ -93,16 +93,16 @@ static func apply(main2d: Node, d: Dictionary) -> void:
 	if revealed_any:
 		rm.refresh_door_visibility()
 
-	var power: Dictionary = d.get("power", {})
-	var modules: Dictionary = d.get("modules", {})
+	var light: Dictionary = d.get("light", {})
+	var buildings: Dictionary = d.get("buildings", {})
 	for zone_id: String in rm.get_zone_ids():
 		var zone := rm.get_zone_node(zone_id)
 		if zone == null or zone.kind != "room":
 			continue
-		zone.apply_power(power.has(zone_id), int(power.get(zone_id, 0)))
+		zone.apply_light(light.has(zone_id), int(light.get(zone_id, 0)))
 		var i := 0
 		while zone.get_slot(i) != null:
-			_apply_slot(zone.get_slot(i), modules.get("%s#%d" % [zone_id, i]))
+			_apply_slot(zone.get_slot(i), buildings.get("%s#%d" % [zone_id, i]))
 			i += 1
 
 	ManagerLocator.get_party_inventory().apply_state(d.get("inv", {}))
@@ -120,7 +120,7 @@ static func apply(main2d: Node, d: Dictionary) -> void:
 		if altar and not altar.is_used:
 			altar.is_used = true
 			altar.queue_redraw()
-	_apply_nexo(main2d, d.get("nexo", []))
+	_apply_relic(main2d, d.get("relic", []))
 	var ex: Array = d.get("extraction", [0, 0])
 	if int(ex[0]) == ExtractionManager.Phase.EXTRACTION:
 		main2d.extraction_manager.start_extraction()  # timers stay off on a client
@@ -129,31 +129,31 @@ static func apply(main2d: Node, d: Dictionary) -> void:
 
 static func _apply_slot(slot: BuildingSlot, entry: Variant) -> void:
 	if entry == null:
-		if not slot.is_empty() and is_instance_valid(slot.built_module):
-			(slot.built_module as Module).die()
+		if not slot.is_empty() and is_instance_valid(slot.built_building):
+			(slot.built_building as Building).die()
 		return
 	var type := int(entry[0])
-	if not slot.is_empty() and is_instance_valid(slot.built_module) and int(slot.built_module.module_type) != type:
-		(slot.built_module as Module).die()
+	if not slot.is_empty() and is_instance_valid(slot.built_building) and int(slot.built_building.building_type) != type:
+		(slot.built_building as Building).die()
 		return  # rebuilt on the next apply, once the slot freed itself
-	var module := slot.build(type as Module.ModuleType)
-	if module and module.current_hp != int(entry[1]):
-		module.current_hp = int(entry[1])
-		module.hp_changed.emit(module.current_hp, module.max_hp)
-		module._update_bar()
+	var building := slot.build(type as Building.BuildingType)
+	if building and building.current_hp != int(entry[1]):
+		building.current_hp = int(entry[1])
+		building.hp_changed.emit(building.current_hp, building.max_hp)
+		building._update_bar()
 
 
-static func _apply_nexo(main2d: Node, n: Array) -> void:
+static func _apply_relic(main2d: Node, n: Array) -> void:
 	if n.size() < 4:
 		return
-	var nexo: Nexo = main2d.nexo
+	var relic: Relic = main2d.relic
 	var hp := int(n[0])
-	if hp < nexo.current_hp:
-		nexo.take_damage(nexo.current_hp - hp)  # flash + cracks; `destroyed` is ignored on clients
+	if hp < relic.current_hp:
+		relic.take_damage(relic.current_hp - hp)  # flash + cracks; `destroyed` is ignored on clients
 	var carrier: String = n[1]
 	for hero in ManagerLocator.get_heroes():
-		hero.is_carrying_nexo = hero.stats.hero_id == carrier
-	if carrier != "" and not nexo.is_carried():
-		nexo.pick_up()
-	elif carrier == "" and String(n[2]) != "" and not nexo.is_dropped():
-		nexo.drop_at(n[2], n[3])
+		hero.is_carrying_relic = hero.stats.hero_id == carrier
+	if carrier != "" and not relic.is_carried():
+		relic.pick_up()
+	elif carrier == "" and String(n[2]) != "" and not relic.is_dropped():
+		relic.drop_at(n[2], n[3])

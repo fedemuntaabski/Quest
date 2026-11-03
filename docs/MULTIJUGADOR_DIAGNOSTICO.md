@@ -7,7 +7,7 @@ Sesión `multijugador-11`: auditoría solamente. El multijugador **no** está im
 | Punto | Estado |
 |---|---|
 | Versión | GodotSteam **4.22.1** Community Edition (`addons/godotsteam/plugin.cfg`), licencia MIT |
-| Instalación | **GDExtension** (`godotsteam.gdextension`, `compatibility_minimum = "4.4"`): compatible con 4.6.2. No es un módulo; el plugin de editor (updater) no está habilitado y no hace falta |
+| Instalación | **GDExtension** (`godotsteam.gdextension`, `compatibility_minimum = "4.4"`): compatible con 4.6.2. No es una obra; el plugin de editor (updater) no está habilitado y no hace falta |
 | Binarios | win32/win64/linux32/linux64/linuxarm64/osx/androidarm64 en disco. **`.gitignore:74` (`*.dll`) excluye los de Windows**: un clon nuevo en Windows no trae la extensión |
 | `SteamMultiplayerPeer` | incluido en la misma extensión (`ClassDB.class_exists` = true; `create_host`, `create_client`, `get_peer_id_for_steam_id`) |
 | `steam_appid.txt` | `480` (Spacewar, app de prueba de Valve). Para publicar hace falta un App ID propio |
@@ -43,9 +43,9 @@ Patrón general: un solo grupo de héroes, con el estado en autoloads globales i
 
 | Área | Evidencia | Riesgo co-op | Esfuerzo |
 |---|---|---|---|
-| `ManagerLocator.get_player()` | = héroe primario de la selección global (`ManagerLocator.gd:85`). Solo lo usa `NexoController.gd:34,59` | medio | chico (`get_player(peer_id)`) |
+| `ManagerLocator.get_player()` | = héroe primario de la selección global (`ManagerLocator.gd:85`). Solo lo usa `RelicController.gd:34,59` | medio | chico (`get_player(peer_id)`) |
 | `get_heroes()` / grupo `player` | ~30 usos que significan "todos los héroes del mundo": siguen bien en co-op | bajo | nada |
-| Entrada | `HeroInputController` escribe directo en `SelectionManager`. `PlayerActionController._selected_heroes()` mueve la selección global; `_action_in_flight` es una orden a la vez para todo el grupo. RoomZone, Door, Nexo, BuildingSlot, PrisonerCage, AltarShrine y Chest actúan localmente. Teclas en `Main2d._input` | **alto** | **grande**: capa de comandos |
+| Entrada | `HeroInputController` escribe directo en `SelectionManager`. `PlayerActionController._selected_heroes()` mueve la selección global; `_action_in_flight` es una orden a la vez para todo el grupo. RoomZone, Door, Reliquia, BuildingSlot, PrisonerCage, AltarShrine y Chest actúan localmente. Teclas en `Main2d._input` | **alto** | **grande**: capa de comandos |
 | `SelectionManager` | `selected_ids`/`groups` únicos. Además manejan gameplay (`PlayerStats.active_hero_id`, la habilidad Q, el destino de las órdenes) | medio | medio (propiedad `hero_id → peer_id`) |
 | HUD | lee autoloads y reacciona a sus señales: sirve con espejos replicados. Pero sus botones mutan directo (`level_up_hero`, `equip`, `research`, construir) | medio | medio (pasar los botones a pedidos) |
 | `PlayerStats` / `PartyInventory` / `GameSession` | estado de la run por héroe. La mochila compartida encaja con co-op | **alto** | medio/grande (replicación) |
@@ -54,7 +54,7 @@ Patrón general: un solo grupo de héroes, con el estado en autoloads globales i
 | RNG | mapa, puertas, cofres, trampas, altar y prisionero con semilla (`run_seed` → `map_seed` → `hash([...])`). **Sin semilla:** `EnemyManager.gd:122,127,144,163,218-223`, `FloorManager.gd:285`, `EnemyPool.gd:26` | bajo con host autoritativo; alto con lockstep | chico (~6 llamadas) |
 | `EnemyManager` / IA de `Enemy` | simula local, con `Timer`s; reloj `Enemy.game_time_msec` es `static` | **alto** | **grande** (replicar enemigos) |
 | `FloorManager` / `ExtractionManager` / `DoorTurnSystem` | deterministas pero ejecutan efectos y oleadas en cualquier peer | alto | medio (solo host) |
-| Nexo | `NexoController` usa `get_player()` local y un diálogo local | medio | chico |
+| Reliquia | `RelicController` usa `get_player()` local y un diálogo local | medio | chico |
 | Pausa táctica / 2x | `PauseController` toca `Engine.time_scale` (global del proceso). Esc, muerte y victoria hacen `get_tree().paused = true` (`GameStateManager.gd:85-89`, `Main.gd`) | **alto** | medio |
 | Tiempo | `run_stats.elapsed_sec` con `Time.get_ticks_usec` en `Main2d._process`. El resto de los `get_ticks_msec` son UI/meta | bajo | chico |
 
@@ -63,12 +63,12 @@ Patrón general: un solo grupo de héroes, con el estado en autoloads globales i
 **Host autoritativo** sobre `SteamMultiplayerPeer` (el host es peer 1 y simula todo; los clientes envían comandos y dibujan).
 
 - **Capa de comandos:** un nodo `NetCommands` con `@rpc("any_peer", "reliable") func request(cmd: StringName, args: Dictionary)`. El host valida (propiedad del héroe, recursos, `get_block_reason` existentes) y ejecuta la misma API que hoy usa el juego local. Offline, la llamada es directa (la misma ruta, sin red), así hay un solo camino de código.
-  - Comandos: `move(hero_ids, zone)`, `open_door(door_id)`, `toggle_power(zone)`, `build(slot, type)`, `demolish`/`repair`, `research(id)`, `level_up`/`heal`/`revive`/`choose_perk(hero)`, `equip`/`unequip`/`consume`, `ability(hero)`, `pickup_nexo(hero)`, `recruit(cage, resource)`, `altar(hero)`, `pause`/`speed`.
-- **Snapshot** (unreliable, 10–15 Hz, solo host → clientes): héroes y enemigos (id, posición, HP, estado/caído), `Enemy.game_time_msec`, fase/stage de extracción, HP del Nexo y `Engine.time_scale`. Los clientes interpolan.
-- **RPC reliable** (eventos discretos): `run_seed` + piso al empezar (cada cliente genera el mismo mapa: ya es determinista); grupo revelado; puerta abierta; sala encendida; módulo construido/destruido; recursos (delta); investigación; inventario/equipo; nivel/perk; spawn/muerte de enemigo (id estable); recoger/soltar Nexo; victoria/derrota; avisos del HUD (`enemies_appeared`).
+  - Comandos: `move(hero_ids, zone)`, `open_door(door_id)`, `toggle_light(zone)`, `build(slot, type)`, `demolish`/`repair`, `research(id)`, `level_up`/`heal`/`revive`/`choose_perk(hero)`, `equip`/`unequip`/`consume`, `ability(hero)`, `pickup_relic(hero)`, `recruit(cage, resource)`, `altar(hero)`, `pause`/`speed`.
+- **Snapshot** (unreliable, 10–15 Hz, solo host → clientes): héroes y enemigos (id, posición, HP, estado/caído), `Enemy.game_time_msec`, fase/stage de extracción, HP de la Reliquia y `Engine.time_scale`. Los clientes interpolan.
+- **RPC reliable** (eventos discretos): `run_seed` + piso al empezar (cada cliente genera el mismo mapa: ya es determinista); grupo revelado; puerta abierta; sala encendida; obra construido/destruido; recursos (delta); investigación; inventario/equipo; nivel/perk; spawn/muerte de enemigo (id estable); recoger/soltar Reliquia; victoria/derrota; avisos del HUD (`enemies_appeared`).
 - **Control de héroes:** tabla `hero_owner: hero_id → peer_id` en el host. En el lobby cada jugador elige su(s) héroe(s); los reclutados van a quien los liberó (o al que tenga menos). La selección y los grupos de control son locales y **solo** permiten seleccionar héroes propios; ver y curar o reanimar a los de otros está permitido. Si un jugador se va, sus héroes pasan al host (IA quieta) hasta que vuelva.
 - **Pausa y velocidad:** las controla el host y se difunden. Cualquiera puede pedir la pausa táctica (Space) o el cambio de velocidad (X) y el host la aplica a todos (estilo DotE co-op), con un aviso "Pausado por X". Esc pasa a ser un overlay **local** que no hace `get_tree().paused`; muerte y victoria siguen las decide el host.
-- **Reconexión:** el host guarda `steam_id → hero_ids`. Al volver, el cliente recibe la semilla + piso, regenera el mapa y recibe un snapshot completo (grupos revelados, salas encendidas, módulos, recursos, inventario, investigación, enemigos). Después se le devuelven sus héroes.
+- **Reconexión:** el host guarda `steam_id → hero_ids`. Al volver, el cliente recibe la semilla + piso, regenera el mapa y recibe un snapshot completo (grupos revelados, salas encendidas, obras, recursos, inventario, investigación, enemigos). Después se le devuelven sus héroes.
 - **Metaprogresión:** cada jugador guarda la suya. El host envía `register_seen`/`register_kill` y el resumen de la run.
 
 ## 5. Decisiones abiertas (con recomendación)
@@ -89,7 +89,7 @@ Patrón general: un solo grupo de héroes, con el estado en autoloads globales i
 1. **Lobby completo:** roster del cliente por miembros del lobby, Start difundido (RPC `start_run(seed, picks)`), el cliente entra a gameplay, salida/desconexión limpias. Prueba: dos cuentas de Steam ven el mismo mapa.
 2. **Capa de comandos offline:** pasar toda entrada y botón del HUD por `NetCommands` sin red (el mismo comportamiento). Agregar `hero_owner`. Prueba: los tests actuales siguen pasando.
 3. **Host autoritativo:** los managers solo simulan en el host; en el cliente se desactiva la IA/los timers. Eventos reliable + snapshot de héroes y enemigos con interpolación.
-4. **Estado compartido:** recursos, investigación, inventario, niveles, Nexo y extracción replicados; HUD sobre los espejos.
+4. **Estado compartido:** recursos, investigación, inventario, niveles, Reliquia y extracción replicados; HUD sobre los espejos.
 5. **Pausa/velocidad compartidas**, Esc local, avisos.
 6. **Reconexión** y traspaso de héroes; endurecer (validación, rate limit de comandos).
 7. **Pulido:** latencia (predicción del movimiento propio), pruebas con 2–4 jugadores y App ID propio.
