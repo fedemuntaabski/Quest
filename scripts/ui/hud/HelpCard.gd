@@ -49,6 +49,17 @@ func enqueue(id: String) -> void:
 		_show_next()
 
 
+## intro-tutorial-17: a Tutorial step card. Replaces whatever is shown and stays
+## (no fade) until the next one: the step ends on a game event, not on time.
+func show_pinned(id: String, title: String, body: String) -> void:
+	clear()
+	shown_id = id
+	_title.text = title
+	_body.text = body
+	modulate.a = 1.0
+	show()
+
+
 func get_body_text() -> String:
 	return _body.text
 

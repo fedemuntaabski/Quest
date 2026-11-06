@@ -31,3 +31,10 @@ func set_floor_result(completed_floor: int, has_next_floor: bool) -> void:
 	_next_floor_button.text = "Descender al piso %d" % (completed_floor + 1)
 	if has_next_floor:
 		_title.text = "¡Piso %d superado!" % completed_floor
+
+
+## intro-tutorial-17: the Tutorial ends here; only the main menu is offered.
+func set_tutorial_result() -> void:
+	_next_floor_button.visible = false
+	_new_run_button.visible = false
+	_title.text = "¡Tutorial completado!"

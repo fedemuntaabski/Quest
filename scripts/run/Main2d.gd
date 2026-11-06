@@ -66,6 +66,8 @@ var loot_spawner: LootSpawner
 var prisoner_spawner: PrisonerSpawner
 var hazard_spawner: HazardSpawner
 var net_sync: NetSync
+## intro-tutorial-17: only in the menu's Tutorial.
+var tutorial: Tutorial
 ## zone_id -> AltarShrine (progresion-10).
 var altars: Dictionary = {}
 
@@ -125,6 +127,12 @@ func _setup_controllers() -> void:
 	hazard_spawner.name = "HazardSpawner"
 	add_child(hazard_spawner)
 	hazard_spawner.setup(room_manager, door_turn_system, floor_manager)
+
+	if is_tutorial():
+		tutorial = Tutorial.new()
+		tutorial.name = "Tutorial"
+		add_child(tutorial)
+		tutorial.setup(self)
 
 	if Net.is_online():  # coop-12: snapshots/state/events host <-> clients
 		net_sync = NetSync.new()
@@ -261,7 +269,7 @@ func _apply_floor_theme() -> void:
 
 
 func _build_map_layout() -> MapLayout:
-	if force_fallback_layout:
+	if force_fallback_layout or is_tutorial():
 		return FALLBACK_LAYOUT
 	var layout := MapGenerator.generate_floor(floor_manager.map_seed, floor_manager.config, floor_manager.floor_index)
 	var problems := layout.validate()
@@ -466,7 +474,10 @@ func finish_run(victory: bool) -> Dictionary:
 		fallen.append(data.display_name if data else id)
 	stats["heroes_fallen"] = fallen
 	var save_mgr := ManagerLocator.get_save_manager()
-	var new_records: Array[String] = save_mgr.record_run(stats) if save_mgr else []
+	var tutorial := session != null and session.tutorial  # intro-tutorial-17: no records
+	var new_records: Array[String] = []
+	if save_mgr and not tutorial:
+		new_records = save_mgr.record_run(stats)
 	var records: Dictionary = save_mgr.get_records(str(stats.get("difficulty", "normal"))) if save_mgr and save_mgr.slot_loaded else {}
 	var audio := ManagerLocator.get_audio()
 	if audio:
@@ -556,7 +567,16 @@ func _on_victory() -> void:
 ## Fires before victory_entered (ExtractionManager emits victory_declared
 ## before requesting the VICTORY state), so the overlay is ready when shown.
 func _on_floor_completed(completed_floor: int) -> void:
+	if is_tutorial():
+		victory_overlay.set_tutorial_result()
+		return
 	victory_overlay.set_floor_result(completed_floor, not floor_manager.is_final_floor())
+
+
+## intro-tutorial-17: the menu's Tutorial (GameSession.tutorial).
+func is_tutorial() -> bool:
+	var session := ManagerLocator.get_game_session()
+	return session != null and session.tutorial
 
 # ─────────────────────────────────────────────
 # PAUSE / SCENE FLOW

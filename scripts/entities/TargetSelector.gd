@@ -268,7 +268,7 @@ func pick_building_in_room(room: RoomZone) -> Building:
 	for building in room.get_buildings():
 		if is_instance_valid(building) and building.is_targetable():
 			buildings.append(building)
-	if current and current.node in buildings:
+	if current and current.node is Building and current.node in buildings:  # a hero/Reliquia target is not in Array[Building]
 		return current.node as Building
 	for rule in profile.rules:
 		if rule.is_building_rule():

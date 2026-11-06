@@ -183,6 +183,18 @@ func start_pressed() -> void:
 	)
 
 
+## intro-tutorial-17: straight into the Tutorial (no slot, no hero pick, no network).
+func tutorial_pressed() -> void:
+	if is_transitioning:
+		return
+	if options_menu:
+		options_menu.close(false)
+	_animate_main_menu(false)
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		await orchestrator.start_tutorial()
+
+
 func exit_pressed() -> void:
 	if is_transitioning:
 		return

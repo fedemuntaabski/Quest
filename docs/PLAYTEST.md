@@ -7,7 +7,9 @@ Nadie jugó todavía una partida completa de corrido, y lo que más vale ahora e
 2. Ranura nueva, Offline, Guerrero + Mago, Normal.
 3. No abras esta guía de nuevo hasta el minuto 10: leé primero lo que te muestra el juego.
 
-Si querés volver a ver las ayudas: Opciones → Accesibilidad → "Volver a ver las ayudas". Ahí también se apagan.
+Opcional, antes (5 min): menú principal → **TUTORIAL**. Muestra la intro (una vez) y guía un piso fijo en 8 pasos; anotá el paso donde te trabaste. Desde ahí no se guardan récords ni bestiario.
+
+Si querés volver a ver las ayudas (y la intro): Opciones → Accesibilidad → "Volver a ver las ayudas". Ahí también se apagan.
 
 Si algo se rompe, anotá piso y qué hacías, y adjuntá el `quest.log` más reciente (Opciones → Accesibilidad → "Abrir carpeta de registros").
 
@@ -15,7 +17,7 @@ Si algo se rompe, anotá piso y qué hacías, y adjuntá el `quest.log` más rec
 Jugá sin mirar nada más. Al minuto 10 contestá:
 - [ ] ¿Entendiste qué hay que hacer leyendo solo la lista "Objetivo" arriba a la izquierda?
 - [ ] ¿La ayuda "Cómo se juega" alcanzó para moverte y abrir una puerta?
-- [ ] ¿Encontraste solo la Reliquia? Hoy es un frasco azul sin rótulo en la sala inicial.
+- [ ] ¿Encontraste solo la Reliquia? Es una gema roja sobre la sala inicial.
 - [ ] Hacé clic en la Reliquia antes de encontrar la salida: el motivo debe salir en la tarjeta de arriba, legible.
 
 ## Minutos 10–15: encender y construir

@@ -1,3 +1,31 @@
+# Session intro-tutorial-17 (rama `session/intro-tutorial-17`)
+
+Intro y tutorial del primer piso. Sin cambios de balance, enemigos, obras ni salas.
+
+Decisiones (preguntadas con opciones): premisa de tres párrafos, Guerrero + Mago fijos, al terminar se vuelve al menú. Sin notas de playtest (no se jugaron los 30 minutos).
+
+- **Intro** (`IntroScreen`): "La abadía saqueada", tres párrafos que aparecen de a uno, botón "Saltar" que pasa a "Comenzar", Esc/Enter saltan. Antes del cartel del piso 1 de una partida nueva, sólo offline. Una vez por instalación con el mismo mecanismo que las ayudas (`SettingsManager` id `intro`, mismo interruptor de Opciones > Accesibilidad). Bajo `--script` no se guarda y `Main.play_intro` está apagado (ningún test espera la intro).
+- **Tutorial**: botón TUTORIAL en el menú principal, sin ranura ni elección de héroes. Mapa fijo `fallback_layout.tres`. Ocho pasos en `ObjectivePanel` + tarjeta fija en `HelpCard`, cada uno cerrado por un evento real:
+
+| # | Paso | Evento |
+|---|---|---|
+| 1 | Elegí al Mago | `SelectionManager.selection_changed` |
+| 2 | Abrí la puerta de la sala | `DoorTurnSystem.turn_advanced` |
+| 3 | Volvé a la sala inicial con clic derecho | `RoomManager.zone_clicked` en una zona donde no está un héroe elegido |
+| 4 | Encendé la sala nueva con clic central | `room_light_changed` (no la inicial) |
+| 5 | Construí una obra en la sala encendida | `building_built` |
+| 6 | Abrí puertas hasta encontrar la salida | salida revelada |
+| 7 | Recogé la Reliquia en la sala inicial | `ExtractionManager.phase_changed` → EXTRACTION |
+| 8 | Llevá la Reliquia a la salida | `victory_declared` → "¡Tutorial completado!" + Volver al menú |
+
+  "Moverse" va después de "abrir la puerta": antes no hay otra zona revelada adonde ir. Un evento adelantado se guarda (`Tutorial.hit`). Sin récords ni bestiario; las ayudas de primera vez no se gastan en el tutorial.
+- **Arreglo de paso**: `TargetSelector.pick_building_in_room` buscaba un héroe o la Reliquia dentro de un `Array[Building]` (error del motor en `find`); apareció al construir en el tutorial.
+- **Tests**: `test_intro` (se muestra, se salta con botón y Esc, una sola vez, interruptor, no toca el disco), `test_tutorial` (un chequeo por paso sobre el `Main` real, + sin récords/bestiario, + evento adelantado). Capturas: `tests/tools/shot_tutorial.gd` (menú, intro, cada paso, fin).
+
+**Verificación**: suite completa 59 tests, 0 fallos, 2 OK* (`test_ability_cooldown`, `test_run_end`: crash de cierre de Godot 4.6.2, ver abajo). Boot de `Main.tscn` sin errores. `test_vocabulario` en verde (331 archivos). 13 capturas en ventana revisadas.
+
+---
+
 # Cierre de session/primera-partida-16
 
 Sin cambios de balance ni contenido.

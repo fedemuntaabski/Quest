@@ -65,7 +65,7 @@ func unlocked_count() -> int:
 
 ## First spawn of a type counts as "seen" (spawns are always in revealed rooms).
 func register_seen(type: EnemyType, floor_index: int) -> void:
-	if type == null or type.id == "":
+	if type == null or type.id == "" or _in_tutorial():
 		return
 	var entry := _entry_for_write(type.id)
 	var before := entry.tier()
@@ -78,7 +78,7 @@ func register_seen(type: EnemyType, floor_index: int) -> void:
 
 ## Only for deaths caused by damage (Enemy.killed_by_damage), never for a node freed by a floor change.
 func register_kill(type: EnemyType, floor_index: int) -> void:
-	if type == null or type.id == "":
+	if type == null or type.id == "" or _in_tutorial():
 		return
 	var entry := _entry_for_write(type.id)
 	var before := entry.tier()
@@ -89,6 +89,12 @@ func register_kill(type: EnemyType, floor_index: int) -> void:
 	entry.first_seen_floor = entry.first_seen_floor if entry.first_seen_floor > 0 else floor_index
 	entry.max_floor_seen = maxi(entry.max_floor_seen, floor_index)
 	_after_change(entry, before)
+
+
+## intro-tutorial-17: the Tutorial never writes the bestiary.
+func _in_tutorial() -> bool:
+	var session := get_node_or_null("/root/GameSession")
+	return session != null and session.tutorial
 
 
 func reset() -> void:

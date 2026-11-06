@@ -24,6 +24,9 @@ var difficulty: String = "normal"
 ## (item_acquired), BestiaryService (entry_unlocked), FloorManager (floors) and
 ## Main2d (time, only while the run is ACTIVE).
 var run_stats: Dictionary = new_run_stats()
+## intro-tutorial-17: this run is the menu's Tutorial (fixed map and heroes, no
+## records, no bestiary). Set by Main.start_gameplay(); a Retry keeps it.
+var tutorial: bool = false
 
 
 func _ready() -> void:

@@ -28,6 +28,11 @@ var current_floor: int = 1
 ## Picked per run in _begin_new_run(); FloorManager derives each floor's map
 ## seed from it, so floors differ within a run and Retry gives a new dungeon.
 var run_seed: int = 0
+## intro-tutorial-17: the premise screen before floor 1 (once per install, see
+## _play_intro_if_due). Off under --script so no test waits on it; tests turn it on.
+var play_intro: bool = not OS.get_cmdline_args().has("--script")
+## The IntroScreen on screen, if any (tests skip it).
+var intro_screen: IntroScreen
 
 
 func _ready() -> void:
@@ -73,20 +78,50 @@ func return_to_main_menu() -> void:
 
 ## `floor_index` > 1 only when a co-op client (re)joins a run in progress.
 ## coop-12: a network start can arrive mid-transition (menu fade): it waits for it.
-func start_gameplay(floor_index: int = 1) -> void:
+## intro-tutorial-17: `tutorial` = the menu's Tutorial (GameSession.tutorial).
+func start_gameplay(floor_index: int = 1, tutorial: bool = false) -> void:
 	await _wait_transition()
 	_is_transitioning = true
 
 	await _fade_to_black()
 	await _clear_containers(true, true, true)
+	var session := ManagerLocator.get_game_session()
+	if session:
+		session.tutorial = tutorial
 	_begin_new_run()
 	current_floor = floor_index
+	if floor_index == 1 and not Net.is_online():
+		await _play_intro_if_due()
 	await _show_floor_card()
 	_current_world_add(MAIN2D_SCENE.instantiate())
 	_current_hud_add(HUD_SCENE.instantiate())
 	await _fade_from_black()
 
 	_is_transitioning = false
+
+
+## The menu's Tutorial: fixed heroes (Tutorial.HEROES), fixed map, no slot needed.
+func start_tutorial() -> void:
+	var session := ManagerLocator.get_game_session()
+	if session:
+		session.set_selection(Tutorial.HEROES)
+	await start_gameplay(1, true)
+
+
+## Premise screen over the black transition, once per install: same switch and file
+## as the first-time help (SettingsManager id "intro", which under --script never
+## reaches the disk). Offline only: online nobody waits for one player reading.
+func _play_intro_if_due() -> void:
+	var settings := ManagerLocator.get_settings_manager()
+	if not play_intro or settings == null or not settings.should_show_help(IntroScreen.HELP_ID):
+		return
+	settings.mark_help_seen(IntroScreen.HELP_ID)
+	intro_screen = IntroScreen.new()
+	intro_screen.name = "IntroScreen"
+	transition_rect.get_parent().add_child(intro_screen)
+	await intro_screen.finished
+	intro_screen.queue_free()
+	intro_screen = null
 
 
 func _wait_transition() -> void:

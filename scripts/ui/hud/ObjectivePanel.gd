@@ -37,7 +37,11 @@ func _process(_delta: float) -> void:
 
 
 ## 0 = find the exit, 1 = take the Reliquia, 2 = carry it to the exit.
+## intro-tutorial-17: in the Tutorial, its own steps (3 shown around the current one).
 func current_step() -> int:
+	var tutorial := _tutorial()
+	if tutorial:
+		return tutorial.step - _first_shown(tutorial)
 	var extraction := ManagerLocator.get_extraction_manager()
 	if extraction and extraction.current_phase == ExtractionManager.Phase.EXTRACTION:
 		return 2
@@ -46,6 +50,13 @@ func current_step() -> int:
 
 
 func step_texts() -> Array[String]:
+	var tutorial := _tutorial()
+	if tutorial:
+		var texts: Array[String] = []
+		var first := _first_shown(tutorial)
+		for i in mini(3, Tutorial.STEPS.size() - first):
+			texts.append(tutorial.objective_text(first + i))
+		return texts
 	return ["Abrí puertas hasta encontrar la salida", "Recogé la Reliquia en la sala inicial", _carry_text()]
 
 
@@ -56,6 +67,15 @@ func get_lines() -> Array[String]:
 	for i in texts.size():
 		lines.append("%s %s" % [STEP_DONE if i < step else (STEP_NOW if i == step else STEP_NEXT), texts[i]])
 	return lines
+
+
+func _tutorial() -> Tutorial:
+	return get_tree().get_first_node_in_group("tutorial") as Tutorial
+
+
+## The last step done stays on screen above the current one.
+func _first_shown(tutorial: Tutorial) -> int:
+	return clampi(tutorial.step - 1, 0, Tutorial.STEPS.size() - 3)
 
 
 func _carry_text() -> String:
@@ -75,7 +95,7 @@ func _refresh() -> void:
 	_last_lines = lines
 	var step := current_step()
 	for i in _labels.size():
-		_labels[i].text = lines[i]
+		_labels[i].text = lines[i] if i < lines.size() else ""
 		var color := QuestPalette.UI_TEXT_SECONDARY if i < step else (QuestPalette.GOLD_LIGHT if i == step else QuestPalette.PARCHMENT)
 		_labels[i].add_theme_color_override("font_color", color)
 	reset_size()

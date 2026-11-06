@@ -20,12 +20,15 @@ var flow: MainMenuFlow
 var _button_tweens: Dictionary = {}
 ## progresion-10: code-built copy of OptionsButton (style), opens CreditsPanel.
 var credits_button: Button
+## intro-tutorial-17: code-built copy of OptionsButton, under Start: plays the Tutorial.
+var tutorial_button: Button
 
 
 func _ready() -> void:
 	$AnimationPlayer.play("menu_intro")
 	_apply_audio_settings()
 	_add_credits_button()
+	_add_tutorial_button()
 	_connect_signals()
 	_setup_profile()
 
@@ -99,6 +102,7 @@ func _on_avatar_loaded(steam_id: int, texture: ImageTexture) -> void:
 func _connect_signals() -> void:
 	var buttons: Array[Button] = [
 		start_button,
+		tutorial_button,
 		options_button,
 		credits_button,
 		exit_button
@@ -125,6 +129,19 @@ func _add_credits_button() -> void:
 	main_vbox.move_child(credits_button, options_button.get_index() + 1)
 	credits_button.pressed.connect(open_credits)
 	create_tween().tween_property(credits_button, "modulate:a", 1.0, 0.4).set_delay(0.6)
+
+
+func _add_tutorial_button() -> void:
+	tutorial_button = options_button.duplicate(0) as Button
+	tutorial_button.name = "TutorialButton"
+	tutorial_button.text = "TUTORIAL"
+	main_vbox.add_child(tutorial_button)
+	main_vbox.move_child(tutorial_button, start_button.get_index() + 1)
+	tutorial_button.pressed.connect(func() -> void:
+		_play_click()
+		if flow:
+			flow.tutorial_pressed())
+	create_tween().tween_property(tutorial_button, "modulate:a", 1.0, 0.4).set_delay(0.5)
 
 
 func open_credits() -> CreditsPanel:
