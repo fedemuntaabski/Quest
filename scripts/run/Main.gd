@@ -58,6 +58,7 @@ func show_main_menu() -> void:
 
 	await _fade_to_black()
 	await _clear_containers(true, true, true)
+	_play_menu_music()
 	_current_ui_add(MAIN_MENU_SCENE.instantiate())
 	await _fade_from_black()
 
@@ -108,6 +109,12 @@ func start_tutorial() -> void:
 	await start_gameplay(1, true)
 
 
+func _play_menu_music() -> void:
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.play_music(audio.MUSIC_MENU)
+
+
 ## Premise screen over the black transition, once per install: same switch and file
 ## as the first-time help (SettingsManager id "intro", which under --script never
 ## reaches the disk). Offline only: online nobody waits for one player reading.
@@ -116,6 +123,7 @@ func _play_intro_if_due() -> void:
 	if not play_intro or settings == null or not settings.should_show_help(IntroScreen.HELP_ID):
 		return
 	settings.mark_help_seen(IntroScreen.HELP_ID)
+	_play_menu_music()  # audio-18: the intro keeps the menu theme (Retry comes from a floor)
 	intro_screen = IntroScreen.new()
 	intro_screen.name = "IntroScreen"
 	transition_rect.get_parent().add_child(intro_screen)

@@ -67,6 +67,9 @@ func confirm_pickup(hero: Player = null) -> void:
 	var player := hero if hero else ManagerLocator.get_player()
 	player.pick_up_relic()
 	relic.pick_up()
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.play_sfx(&"relic")
 
 	var extraction := ManagerLocator.get_extraction_manager()
 	if extraction:

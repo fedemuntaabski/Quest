@@ -1,3 +1,31 @@
+# Session audio-18 (rama `session/audio-18`)
+
+Audio de juego. Sin cambios de balance ni contenido. **No entró ningún archivo de audio**: en `assets/audio/` solo están `click.mp3` y `hover.mp3`; los 17 que faltan (rutas y qué buscar) están en `docs/CREDITOS.md` y suenan en silencio hasta que lleguen.
+
+Decisiones (preguntadas con opciones): la extracción tiene **tema aparte** (`music/extraction.ogg`, uno para los cinco pisos); el **Tutorial usa la música del piso 1**.
+
+| Sonido | Dónde se dispara | Co-op |
+|---|---|---|
+| `door` | `PlayerActionController.open_door` | host + relevo |
+| `chest` | `Chest.try_open` | host + relevo |
+| `hit` | `Player._on_attack_landed` (máx. 1 cada 80 ms) | host + relevo |
+| `tower` | `DefenseBuilding._on_fire_timer_timeout` | host + relevo |
+| `light` | `RoomZone.try_light_up` (apagar no suena) | host + relevo |
+| `build` | `BuildingSlot.build` | host + relevo |
+| `relic` | `RelicController.confirm_pickup` | host + relevo |
+| `alert` | `HUDController._play_alert` (beep generado mientras falte el archivo) | cada proceso (ya llega `enemies_appeared`) |
+| `victory` / `defeat` | `Main2d._on_victory` / `finish_run` | cada proceso |
+| música | menú + intro (`menu`), piso N (`floor_N`), extracción (`extraction`), silencio en el final | local |
+
+- **Nada suena dos veces**: las claves "host + relevo" (`AudioDirector.HOST_KEYS`) las toca el host y las reenvía (evento `sfx` de NetSync); un cliente descarta sus propias llamadas a esas claves (cuando `RunState` reconstruye una obra o reenciende una sala) y solo toca la reenviada.
+- **Fundidos**: cambio de piso = fundido de 1 s entre temas; el fundido ya no se congela en la pausa táctica ni se pisa con otro cambio.
+- **Volumen**: `Opciones` → buses Master/Music/SFX/UI (ya existía); el test lo comprueba y que cada reproductor esté en su bus.
+- **Arreglo de paso**: `DefenseBuilding` filtraba objetivos con una lambda tipada que fallaba con un enemigo ya liberado.
+- **Tests**: `test_audio` (claves y archivos, cada evento una vez, música, buses) y `test_audio_net` (dos procesos ENet: cada clave una vez en el host y la misma cantidad en el cliente).
+- **No escuchado en ventana**: no hay archivos que escuchar. Log de sonidos disparados: salida de `test_audio` ("sonidos disparados").
+
+---
+
 # Session intro-tutorial-17 (rama `session/intro-tutorial-17`)
 
 Intro y tutorial del primer piso. Sin cambios de balance, enemigos, obras ni salas.

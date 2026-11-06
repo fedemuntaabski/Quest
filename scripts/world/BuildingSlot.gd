@@ -76,6 +76,9 @@ func build(building_type: Building.BuildingType) -> Building:
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"hit_sparks", global_position, vfx.config.build_color)
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.play_sfx(&"build")
 	building_built.emit(building)
 	return building
 

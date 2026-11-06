@@ -288,6 +288,9 @@ func try_light_up() -> void:
 		return
 	_light_paid = cost
 	set_lit(true)
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.play_sfx(&"light")
 	QuestLogger.info(QuestLogger.Category.ROOM, "Zone '%s' lit for %d embers." % [zone_id, cost])
 
 

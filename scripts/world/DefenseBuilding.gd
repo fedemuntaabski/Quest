@@ -54,7 +54,7 @@ func _on_body_exited(body: Node2D) -> void:
 func _on_fire_timer_timeout() -> void:
 	if not is_working() or not Net.is_authority():
 		return  # idle tick: the timer keeps running so re-lighting the room revives the defense
-	current_targets = current_targets.filter(func(t: Node2D) -> bool: return is_instance_valid(t))
+	current_targets = current_targets.filter(func(t: Variant) -> bool: return is_instance_valid(t))
 	if current_targets.is_empty():
 		return
 	var target := current_targets[0]

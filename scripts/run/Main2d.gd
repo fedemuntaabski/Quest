@@ -100,6 +100,11 @@ func _ready() -> void:
 	var theme := floor_manager.theme()
 	if audio and theme:
 		audio.play_music(theme.music_path)
+	# audio-18: the Reliquia is taken -> extraction theme (every peer gets phase_changed)
+	extraction_manager.phase_changed.connect(func(phase: int, _old: int) -> void:
+		var a := ManagerLocator.get_audio()
+		if a and phase == ExtractionManager.Phase.EXTRACTION:
+			a.play_music(a.MUSIC_EXTRACTION))
 
 func _setup_controllers() -> void:
 	pause_controller = PauseController.new()

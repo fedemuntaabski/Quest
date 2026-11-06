@@ -278,6 +278,10 @@ func apply_event(kind: String, data: Dictionary) -> void:
 		"pause_vote":
 			if main2d.pause_controller:
 				main2d.pause_controller.show_vote(data)
+		"sfx":  # audio-18: AudioDirector.HOST_KEYS relayed by the host
+			var audio := ManagerLocator.get_audio()
+			if audio:
+				audio.play_sfx(StringName(data.key), true)
 		"hint":
 			var hud := ManagerLocator.get_hud()
 			if hud:

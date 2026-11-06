@@ -756,9 +756,15 @@ func _room_label(room_manager: RoomManager, zone_id: String) -> String:
 	return "Sala %s" % zone_id.get_slice("_", 1) if zone_id.begins_with("room_") else zone_id
 
 
-## Placeholder alert sound: assets/audio/alert.{ogg,wav,mp3} when it exists, else a short generated beep.
+## Alert sound: AudioDirector "alert" (sfx/alert.ogg) when the file exists, else a short generated beep.
+## Runs on every peer (enemies_appeared is relayed), so it is not a host-relayed key.
 func _play_alert(caption: String = "Alerta: enemigos") -> void:
 	show_caption(caption)
+	var audio := ManagerLocator.get_audio()
+	if audio:
+		audio.play_sfx(&"alert")
+		if audio.has_sfx(&"alert"):
+			return
 	if _alert_player == null:
 		_alert_player = AudioStreamPlayer.new()
 		_alert_player.name = "AlertPlayer"
@@ -769,10 +775,6 @@ func _play_alert(caption: String = "Alerta: enemigos") -> void:
 
 
 func _load_alert_stream() -> AudioStream:
-	for ext in ["ogg", "wav", "mp3"]:
-		var path := "res://assets/audio/alert.%s" % ext
-		if ResourceLoader.exists(path):
-			return load(path) as AudioStream
 	var samples := int(ALERT_BEEP_RATE * ALERT_BEEP_SEC)
 	var data := PackedByteArray()
 	data.resize(samples * 2)

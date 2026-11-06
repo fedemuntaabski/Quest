@@ -4,7 +4,9 @@ extends SceneTree
 ## headless Godot. Joins the host over local ENet, picks a free hero, gets ready,
 ## plays the shared run (Main.tscn, like the real game) and reports what it saw
 ## to user://net_probe_<token>.json. `--leave-after=N`: drop the connection after
-## the checks and rejoin N s later (reconnection test).
+## the checks and rejoin N s later (reconnection test). audio-18: `--audio-keys=a,b`
+## (tests/test_audio_net.gd): once the host opened a door, wait for those
+## AudioDirector keys, report `sfx_fired` and stop there.
 ##   godot --headless --path . --script res://tests/tools/net_client_probe.gd -- --port=7801 --net-token=probe1
 
 const TIMEOUT := 40.0
@@ -15,6 +17,7 @@ var token := "probe"
 var port := 7801
 var leave_after := -1.0
 var refusals: Array = []
+var audio_keys: PackedStringArray = []
 
 
 func _initialize() -> void:
@@ -25,6 +28,8 @@ func _initialize() -> void:
 			token = a.substr(12)
 		elif a.begins_with("--leave-after="):
 			leave_after = float(a.substr(14))
+		elif a.begins_with("--audio-keys="):
+			audio_keys = a.substr(13).split(",")
 	await process_frame
 	root.add_child((load("res://scenes/Main.tscn") as PackedScene).instantiate())
 	net = root.get_node("NetSession") as CoopSession
@@ -40,6 +45,9 @@ func _initialize() -> void:
 	# Wait for the host to open a door, then walk our hero there through a command.
 	if not await _wait(func() -> bool: return _revealed_rooms(main2d).size() >= 2, "door opened by host"):
 		return _finish()
+	if not audio_keys.is_empty():
+		await _audio_report()
+		return
 	var target: String = _revealed_rooms(main2d)[1]
 	report["move_target"] = target
 	ManagerLocator.get_net_commands().request("move", {"heroes": [report.own_hero], "zone": target})
@@ -67,6 +75,24 @@ func _initialize() -> void:
 		report["rejoin_revealed"] = _revealed_rooms(ManagerLocator.get_main2d())
 		report["rejoin_owns"] = net.owns(report.own_hero)
 		report["rejoin_hero_zone"] = _hero(report.own_hero).current_zone_id
+	report["ok"] = true
+	report["step"] = "done"
+	_finish()
+
+
+func _audio_report() -> void:
+	var audio := root.get_node("AudioDirector")
+	await _wait(func() -> bool:
+		for k in audio_keys:
+			if not audio.fired.has(StringName(k)):
+				return false
+		return true, "audio keys heard")
+	await create_timer(1.5).timeout  # a duplicate (RunState apply, late relay) would land here
+	var fired := {}
+	for k in audio.fired:
+		fired[String(k)] = audio.fired[k]
+	report["sfx_fired"] = fired
+	report["music"] = audio.music_path
 	report["ok"] = true
 	report["step"] = "done"
 	_finish()

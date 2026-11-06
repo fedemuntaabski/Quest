@@ -12,7 +12,19 @@ const SFX_PATHS := {
 	&"tower": "res://assets/audio/sfx/tower.ogg",
 	&"victory": "res://assets/audio/sfx/victory.ogg",
 	&"defeat": "res://assets/audio/sfx/defeat.ogg",
+	&"light": "res://assets/audio/sfx/light.ogg",
+	&"build": "res://assets/audio/sfx/build.ogg",
+	&"relic": "res://assets/audio/sfx/relic.ogg",
+	&"alert": "res://assets/audio/sfx/alert.ogg",
 }
+## audio-18: menu + intro, and the extraction theme (same for every floor).
+const MUSIC_MENU := "res://assets/audio/music/menu.ogg"
+const MUSIC_EXTRACTION := "res://assets/audio/music/extraction.ogg"
+## audio-18: keys whose event only happens on the host (door, chest, combat, build...).
+## Online the host plays them and relays them (NetSync "sfx"); a client drops its own
+## calls (a RunState apply rebuilding a building must not play it again) and plays
+## only the relayed one. The other keys (victory, defeat, alert) already run on every peer.
+const HOST_KEYS: Array[StringName] = [&"door", &"chest", &"hit", &"tower", &"light", &"build", &"relic"]
 ## Same key again within this many ms is dropped (a melee brawl = many hits).
 const SFX_MIN_GAP_MSEC := 80
 const SFX_VOICES := 6
@@ -26,6 +38,9 @@ var _next_voice: int = 0
 var _last_played: Dictionary = {}
 var _cache: Dictionary = {}
 var _warned: Dictionary = {}
+var _music_tween: Tween
+## audio-18: key -> times it passed the throttle (played or silent if the file is missing). Tests/logs.
+var fired: Dictionary = {}
 
 
 func _ready() -> void:
@@ -42,12 +57,19 @@ func _ready() -> void:
 		_voices.append(voice)
 
 
-## Plays `key` (SFX_PATHS). False when throttled or the file is missing.
-func play_sfx(key: StringName) -> bool:
+## Plays `key` (SFX_PATHS). False when throttled, dropped (client, HOST_KEYS) or the file is missing.
+## `from_net` = relayed by the host (NetSync "sfx").
+func play_sfx(key: StringName, from_net: bool = false) -> bool:
+	if key in HOST_KEYS and Net.is_online() and not Net.is_authority() and not from_net:
+		return false
 	var now := Time.get_ticks_msec()
 	if now - int(_last_played.get(key, -SFX_MIN_GAP_MSEC)) < SFX_MIN_GAP_MSEC:
 		return false
 	_last_played[key] = now
+	fired[key] = int(fired.get(key, 0)) + 1
+	QuestLogger.debug(QuestLogger.Category.GENERAL, "AudioDirector: sfx '%s'%s." % [key, " (host)" if from_net else ""])
+	if key in HOST_KEYS:
+		NetSync.broadcast("sfx", {"key": String(key)})
 	var stream := load_stream(SFX_PATHS.get(key, ""))
 	if stream == null:
 		return false
@@ -63,8 +85,13 @@ func play_music(path: String) -> void:
 	if path == music_path and (_music.playing or path == ""):
 		return
 	music_path = path
+	QuestLogger.debug(QuestLogger.Category.GENERAL, "AudioDirector: music '%s'." % path)
 	var stream := load_stream(path)
-	var tween := create_tween()
+	if _music_tween:
+		_music_tween.kill()  # a second change mid-fade must not leave two tweens fighting
+	# the tactical pause sets time_scale 0: a fade must still finish
+	var tween := create_tween().set_ignore_time_scale()
+	_music_tween = tween
 	if _music.playing:
 		tween.tween_property(_music, "volume_db", -40.0, MUSIC_FADE_SEC * 0.5)
 	tween.tween_callback(func() -> void:
@@ -82,6 +109,11 @@ func play_music(path: String) -> void:
 
 func stop_music() -> void:
 	play_music("")
+
+
+## True if `key` has a file (else play_sfx is silent).
+func has_sfx(key: StringName) -> bool:
+	return load_stream(SFX_PATHS.get(key, "")) != null
 
 
 ## The stream at `path` (or the same name as .wav/.mp3); null if none exists.
