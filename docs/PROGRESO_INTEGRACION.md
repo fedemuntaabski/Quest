@@ -1,3 +1,32 @@
+# Cierre de session/primera-partida-16
+
+Sin cambios de balance ni contenido.
+
+- **Reescritura del editor commiteada** (`chore`): uids, orden de propiedades, defaults omitidos, líneas `= null` fuera de `map_visual_config.tres`. Ningún valor cambió. Rama subida a `origin`.
+- **Flecha de salida**: `ExitIndicator.above()` recorta el rectángulo de borde en `HUDController.get_bottom_bar_top()` (tope de la BottomBar visible, con BuildingMenu abierto o cerrado). Test: `tests/test_exit_arrow.gd`.
+- **Arte de la Reliquia**: gema roja de `assets/art/items/cave_gems.png` (`Pickup.RELIC_REGION`), elegida entre gema, evangeliario y cráneo. Licencia desconocida: reemplazar antes de publicar (`docs/ASSETS.md`).
+
+## Crash al cerrar (OK*): es de Godot 4.6.2
+
+`signal 11` después de la última línea del test, intermitente. Decisión: se documenta, no se parchea.
+
+| Prueba | Crashes |
+|---|---|
+| `test_map_flow` tal cual | 3/16, 11/20, 8/20, 5/20 (editor cerrado) |
+| Proyecto Godot vacío, `quit()` | 0/60 |
+| Vacío + 13 autoloads triviales | 0/60 |
+| Quest, sólo autoloads (sin `Main2d`) | 4/30, 7/40, 3/40 |
+| Quest sin ningún autoload | 0/40 |
+| Sin Steam (`steamInitEx` salteado) / sin GodotSteam / sin file logging | 2/20, 4/20, 3/40 |
+| Todos los nodos liberados a mano antes de `quit()` | 3/60 |
+| Bajo un debugger (Win32 Debug API) | 0/40 |
+| Vaciar las static vars con objetos (en `_exit_tree`, `PREDELETE` o antes de `quit()`) | 6/20, 6/20, 3/20 |
+| El script del test **nombra** `InputBindings`, `CharacterDatabase` o `VfxEffect` (sin hacer nada) | 0/30 cada una |
+
+Lectura: el crash ocurre en el desmontaje del motor, después de todo nuestro código y aun sin nodos vivos; desaparece bajo debugger (carrera de tiempos) y depende sólo de qué objetos `GDScript` siguen referenciados al salir, no de ningún dato ni lógica nuestra. No usamos hilos ni código nativo. El patrón que lo esquiva (referenciar clases desde el script principal) no es un arreglo, así que no se aplicó. `tests/run_all.gd` ya distingue OK* (aserciones pasadas, crash al salir) de FAIL. Si Godot sale con una versión nueva, medir de nuevo con el mismo bucle.
+
+---
+
 # Session calidad-13 (rama `session/calidad-13`)
 
 Pedido: estabilidad y comodidad sin sistemas nuevos (7 bloques). Cerrada en `session/estabilizar-14`.

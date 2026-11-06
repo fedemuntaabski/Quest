@@ -8,13 +8,15 @@ extends Node2D
 enum Kind { RELIC, EMBERS, WEAPON, CHEST }
 
 ## 0x72 items (assets/art/items); the chest is a Kenney prop (props palette).
+## The Reliquia is a red gem cut from cave_gems.png (licence unknown, docs/ASSETS.md).
 const TEXTURES := {
-	Kind.RELIC: "res://assets/art/items/flask_big_blue.png",
+	Kind.RELIC: "res://assets/art/items/cave_gems.png",
 	Kind.EMBERS: "res://assets/art/items/coin_anim_f0.png",
 	Kind.WEAPON: "res://assets/art/items/weapon_regular_sword.png",
 }
 const CHEST_SHEET := "res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png"
 const CHEST_REGION := Rect2(80, 112, 16, 16)  # tile (5, 7)
+const RELIC_REGION := Rect2(48, 16, 16, 16)  # cave_gems tile (3, 1)
 
 @export var kind: Kind = Kind.RELIC:
 	set(value):
@@ -64,5 +66,10 @@ func _apply_kind() -> void:
 		atlas.atlas = load(CHEST_SHEET)
 		atlas.region = CHEST_REGION
 		sprite.texture = atlas
+	elif kind == Kind.RELIC:
+		var gem := AtlasTexture.new()
+		gem.atlas = load(TEXTURES[kind])
+		gem.region = RELIC_REGION
+		sprite.texture = gem
 	else:
 		sprite.texture = load(TEXTURES[kind])

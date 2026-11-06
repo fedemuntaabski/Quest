@@ -94,12 +94,22 @@ func _process(_delta: float) -> void:
 	var viewport := get_viewport()
 	var screen_pos := viewport.get_canvas_transform() * _marker.global_position
 	var rect := viewport.get_visible_rect().grow(-config.arrow_margin)
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud and hud.has_method("get_bottom_bar_top"):
+		rect = above(rect, hud.get_bottom_bar_top() - config.arrow_margin)
 	if rect.has_point(screen_pos):
 		_arrow.visible = false
 		return
 	_arrow.visible = true
 	_arrow.position = edge_point(rect, screen_pos)
 	_arrow.rotation = (screen_pos - rect.get_center()).angle()
+
+
+## `rect` cut so it ends at `top_y` (the HUD's BottomBar): the arrow never sits on it.
+static func above(rect: Rect2, top_y: float) -> Rect2:
+	if top_y > rect.position.y and top_y < rect.end.y:
+		rect.size.y = top_y - rect.position.y
+	return rect
 
 
 ## Where the ray from `rect`'s center toward `target` leaves `rect`.

@@ -85,6 +85,15 @@ func _initialize() -> void:
 	await _wait(1.0)
 	await _shot("9_carrying")
 
+	# Exit straight below the screen with the build menu open: the edge arrow sits above the BottomBar.
+	var indicator := get_first_node_in_group("exit_indicator") as ExitIndicator
+	var screen := indicator.get_viewport().get_visible_rect().size
+	indicator._marker.global_position = indicator.get_viewport().get_canvas_transform().affine_inverse() * Vector2(screen.x * 0.5, screen.y + 3000.0)
+	hud.building_menu.open_category(0)
+	await _wait(0.3)
+	await _shot("9b_exit_arrow")
+	hud.building_menu.close_menu()
+
 	world.heroes[0].stats.take_damage(100000)
 	await _wait(0.8)
 	await _shot("10_carrier_down")

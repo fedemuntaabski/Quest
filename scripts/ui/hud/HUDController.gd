@@ -186,6 +186,16 @@ func _on_game_state_changed(new_state: GameStateManager.State, _old: GameStateMa
 		close_popups()
 
 
+## Screen y of the top of the visible BottomBar (resources, open menus):
+## ExitIndicator keeps its edge arrow above it. INF when there is none.
+func get_bottom_bar_top() -> float:
+	var top := INF
+	for child in $Control/BottomBar.get_children():
+		if child is Control and child.visible:
+			top = minf(top, child.get_global_transform_with_canvas().origin.y)
+	return top
+
+
 func close_popups() -> void:
 	character_popup.close()
 	building_popup.close()

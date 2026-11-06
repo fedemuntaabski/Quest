@@ -41,7 +41,7 @@ Recursos: `resources/sprite_frames/*.tres` (SpriteFrames), `resources/enemies/*.
 | Piso 4 | masked_orc, orc_warrior, chort, wogol, big_zombie (32×36) + TC ogro verde, demonio rojo, lobo |
 | Piso 5 | chort, orc_warrior, ogre, big_demon (32×36), necromancer + TC dragón, demonio mayor, ogro |
 | Comportamiento | cada `EnemyType.behavior` = Swarm/Sapper/Hunter; stats = variante × piso × multiplicadores del tipo |
-| Cristal (Reliquia) | 0x72 `flask_big_blue` vía `Pickup` |
+| Reliquia | gema roja de `items/cave_gems.png` (tile 3,1) vía `Pickup.RELIC_REGION` — ⚠ licencia desconocida, reemplazar antes de publicar |
 | Brasas / Arma | 0x72 `coin` / `weapon_regular_sword` (`Pickup`, aún sin cablear) |
 | Cofre (sala Botín) | Kenney `(5,7)` vía `Pickup`, aparece al descubrir la sala |
 | Suelo / muros / puertas / escalera | ver etapa 2 (`docs/MAP_RENDER.md`) |
