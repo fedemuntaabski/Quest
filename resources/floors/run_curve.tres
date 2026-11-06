@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://c6r8ejl7uvtyp" path="res://scripts/core/floors/RunCurve.gd" id="1_curve"]
 [ext_resource type="Script" uid="uid://dpyivh2bwtkcq" path="res://scripts/core/floors/FloorTheme.gd" id="2_theme"]
 [ext_resource type="Resource" path="res://resources/enemies/boss_ogre_chief.tres" id="boss_3"]
-[ext_resource type="Resource" path="res://resources/enemies/boss_demon_lord.tres" id="boss_5"]
+[ext_resource type="Resource" uid="uid://dbla1onk27nwb" path="res://resources/enemies/boss_demon_lord.tres" id="boss_5"]
 [ext_resource type="Resource" path="res://resources/floors/enemy_pool_f1.tres" id="pool_1"]
 [ext_resource type="Resource" path="res://resources/floors/enemy_pool_f2.tres" id="pool_2"]
 [ext_resource type="Resource" path="res://resources/floors/enemy_pool_f3.tres" id="pool_3"]

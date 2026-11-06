@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://corvewst7sxsf" path="res://scripts/core/enemies/EnemyPool.gd" id="1_7csa3"]
 [ext_resource type="Script" uid="uid://blnmwdtwhuark" path="res://scripts/core/floors/FloorConfig.gd" id="1_floor_config"]
-[ext_resource type="Resource" path="res://resources/floors/door_roll_config.tres" id="1_j5m1i"]
+[ext_resource type="Resource" uid="uid://ck7y1qo0xxsk7" path="res://resources/floors/door_roll_config.tres" id="1_j5m1i"]
 [ext_resource type="Resource" path="res://resources/floors/enemy_pool_f1.tres" id="2_j5m1i"]
 [ext_resource type="Script" uid="uid://cvqaah7y6ydju" path="res://scripts/core/floors/RoomTypeRule.gd" id="2_room_type_rule"]
 [ext_resource type="Resource" path="res://resources/floors/enemy_pool_f2.tres" id="3_kvag3"]

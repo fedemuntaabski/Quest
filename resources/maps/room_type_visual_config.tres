@@ -4,11 +4,11 @@
 [ext_resource type="Script" uid="uid://cwpk6fhgdv6k1" path="res://scripts/world/map/RoomTypeVisual.gd" id="2_vis"]
 [ext_resource type="Texture2D" uid="uid://xtt6tqoy2mwe" path="res://assets/art/items/weapon_knife.png" id="icon_altar"]
 [ext_resource type="Texture2D" uid="uid://cjoql0hf6nby6" path="res://assets/art/items/weapon_double_axe.png" id="icon_elite"]
-[ext_resource type="Texture2D" uid="uid://wtnwoh5hpoyd" path="res://assets/art/ui/button_blue_up.png" id="icon_workshop"]
 [ext_resource type="Texture2D" uid="uid://b5kodgkdoloto" path="res://assets/art/items/chest_full_open_anim_f0.png" id="icon_loot"]
 [ext_resource type="Texture2D" uid="uid://cdsd5iq567bud" path="res://assets/art/items/skull.png" id="icon_prisoner"]
 [ext_resource type="Texture2D" uid="uid://clrxpiehnhwt3" path="res://assets/art/items/flask_big_red.png" id="icon_rest"]
 [ext_resource type="Texture2D" uid="uid://dfmbaxqa8686" path="res://assets/art/items/coin_anim_f0.png" id="icon_secret"]
+[ext_resource type="Texture2D" uid="uid://wtnwoh5hpoyd" path="res://assets/art/ui/button_blue_up.png" id="icon_workshop"]
 
 [sub_resource type="Resource" id="Resource_start"]
 script = ExtResource("2_vis")

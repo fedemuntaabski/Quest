@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="EnemyType" format=3]
+[gd_resource type="Resource" script_class="EnemyType" format=3 uid="uid://dbla1onk27nwb"]
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_type"]
 [ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_big_demon.tres" id="2_frames"]
-[ext_resource type="Resource" path="res://resources/enemies/profiles/hunter.tres" id="3_profile"]
-[ext_resource type="Resource" path="res://resources/enemies/imp.tres" id="4_minion"]
+[ext_resource type="Resource" uid="uid://gr71syhw0ls4" path="res://resources/enemies/profiles/hunter.tres" id="3_profile"]
+[ext_resource type="Resource" uid="uid://dtsoyc0veuvxs" path="res://resources/enemies/imp.tres" id="4_minion"]
 
 [resource]
 script = ExtResource("1_type")
@@ -27,4 +27,5 @@ charge_damage = 8
 summon_type = ExtResource("4_minion")
 summon_count = 2
 summon_cooldown = 9.0
-boss_pattern = "Fase 1: embestida contra el héroe más cercano.\nFase 2 (bajo 50 % de vida): embiste más seguido e invoca diablillos cada pocos segundos."
+boss_pattern = "Fase 1: embestida contra el héroe más cercano.
+Fase 2 (bajo 50 % de vida): embiste más seguido e invoca diablillos cada pocos segundos."

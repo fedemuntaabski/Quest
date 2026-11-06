@@ -1,27 +1,8 @@
 [gd_resource type="Resource" script_class="MapVisualConfig" format=3 uid="uid://cwkg1ajw6yk6g"]
 
 [ext_resource type="Script" uid="uid://dvdh8dfpbeeex" path="res://scripts/world/map/MapVisualConfig.gd" id="1_mvc"]
-[ext_resource type="Resource" path="res://resources/maps/room_type_visual_config.tres" id="2_rtv"]
+[ext_resource type="Resource" uid="uid://c0w781yjlc3as" path="res://resources/maps/room_type_visual_config.tres" id="2_rtv"]
 
 [resource]
 script = ExtResource("1_mvc")
-exit_hint_mode = null
-exit_color = null
-exit_relic_color = null
-arrow_margin = null
-dark_canvas_enabled = null
-dark_canvas_color = null
-dark_overlay_color = null
-danger_overlay_color = null
-danger_pulse_time = null
-affordable_outline_color = null
-warm_light_color = null
-warm_light_energy = null
-light_transition_time = null
-wall_decor_density = null
-prop_density = null
-floor_variant_chance = null
-rest_room_color = null
-loot_room_color = null
-elite_room_color = null
 room_type_visuals = ExtResource("2_rtv")

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_y41uk"]
 [ext_resource type="SpriteFrames" uid="uid://bpbltbgb46hsn" path="res://resources/sprite_frames/tc_demon.tres" id="2_o04qr"]
-[ext_resource type="Resource" path="res://resources/enemies/profiles/assassin.tres" id="tp_profile"]
+[ext_resource type="Resource" uid="uid://7em1cgcylaaf" path="res://resources/enemies/profiles/assassin.tres" id="tp_profile"]
 
 [resource]
 script = ExtResource("1_y41uk")
