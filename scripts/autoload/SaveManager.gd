@@ -16,7 +16,7 @@ const SAVE_PATH_TEMPLATE := "user://slot_%d.cfg"
 const SAVE_SECTION := "save_data"
 ## calidad-13: format version in [save_data] version; files without it are v1.
 ## Bump it and add a step to _migrate() whenever the format changes.
-const SAVE_VERSION := 2
+const SAVE_VERSION := 3
 ## Keys of older formats, dropped by the v1 -> v2 migration.
 const LEGACY_KEYS := ["run_cycle", "contracts_completed", "post_victory_popup_pending", "active_upgrades", "gold"]
 
@@ -83,7 +83,10 @@ static func migrate(cfg: ConfigFile) -> int:
 		for key in LEGACY_KEYS:
 			if cfg.has_section_key(SAVE_SECTION, key):
 				cfg.erase_section_key(SAVE_SECTION, key)
-	# next step: if from < 3: ...
+	if from < 3:  # v2 (pre guardado-19): [run] did not exist; a stray one is not ours
+		if cfg.has_section(RUN_SECTION):
+			cfg.erase_section(RUN_SECTION)
+	# next step: if from < 4: ...
 	cfg.set_value(SAVE_SECTION, "version", SAVE_VERSION)
 	return from
 
@@ -201,6 +204,47 @@ func record_run(stats: Dictionary, slot: int = current_slot) -> Array[String]:
 	if first:
 		beaten.clear()
 	return beaten
+
+
+## guardado-19: the offline run in progress, saved at the start of every floor
+## from 2 on (Main.advance_floor) so it resumes from that floor's start. One key
+## [run] state = the Dictionary Main.capture_run() builds. Cleared when the run
+## ends (Main2d.finish_run) or a new one starts (Main.start_gameplay).
+const RUN_SECTION := "run"
+
+
+func save_run(state: Dictionary, slot: int = current_slot) -> void:
+	if not slot_loaded:
+		return
+	var cfg := read_slot(slot)
+	cfg.set_value(RUN_SECTION, "state", state)
+	if _write(cfg, slot) == OK:
+		QuestLogger.info(QuestLogger.Category.SAVE, "Run saved in slot %d (floor %d)." % [slot, int(state.get("floor", 0))])
+
+
+## The saved run, or {} when there is none (or it is not usable: no heroes, floor < 2).
+func get_saved_run(slot: int = current_slot) -> Dictionary:
+	if not has_save(slot):
+		return {}
+	var state: Variant = read_slot(slot).get_value(RUN_SECTION, "state", {})
+	if not state is Dictionary or int(state.get("floor", 0)) < 2 or (state.get("heroes", []) as Array).is_empty():
+		return {}
+	return state
+
+
+func has_saved_run(slot: int = current_slot) -> bool:
+	return not get_saved_run(slot).is_empty()
+
+
+func clear_run(slot: int = current_slot) -> void:
+	if not slot_loaded or not has_save(slot):
+		return
+	var cfg := read_slot(slot)
+	if not cfg.has_section(RUN_SECTION):
+		return
+	cfg.erase_section(RUN_SECTION)
+	if _write(cfg, slot) == OK:
+		QuestLogger.info(QuestLogger.Category.SAVE, "Run cleared in slot %d." % slot)
 
 
 func has_save(slot: int) -> bool:

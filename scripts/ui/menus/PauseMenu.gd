@@ -148,7 +148,23 @@ func _on_exit_canceled() -> void:
 
 
 func _show_exit_confirm_dialog() -> void:
+	exit_confirm_dialog.message_label.text = exit_message()
 	exit_confirm_dialog.open()
+
+
+## guardado-19: what leaving costs. Offline from floor 2 the run is saved at the
+## floor's start; online and on floor 1 nothing is kept.
+func exit_message() -> String:
+	var save_mgr := ManagerLocator.get_save_manager()
+	var session := ManagerLocator.get_game_session()
+	if session and session.tutorial:
+		return "¿Salir del tutorial?"
+	if Net.is_online():
+		return "¿Salir al menú? El co-op no guarda la partida: se perderá."
+	var run: Dictionary = save_mgr.get_saved_run() if save_mgr else {}
+	if not run.is_empty():
+		return "¿Salir al menú? Se pierde el progreso de este piso: al continuar, la partida se retoma desde el inicio del piso %d." % int(run["floor"])
+	return exit_confirm_dialog.message_text
 
 
 func _emit_exit_requested() -> void:

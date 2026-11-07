@@ -33,6 +33,9 @@ var run_seed: int = 0
 var play_intro: bool = not OS.get_cmdline_args().has("--script")
 ## The IntroScreen on screen, if any (tests skip it).
 var intro_screen: IntroScreen
+## guardado-19: a saved run continue_run() hands to start_gameplay (restored
+## right after _begin_new_run).
+var _pending_run: Dictionary = {}
 
 
 func _ready() -> void:
@@ -91,6 +94,11 @@ func start_gameplay(floor_index: int = 1, tutorial: bool = false) -> void:
 		session.tutorial = tutorial
 	_begin_new_run()
 	current_floor = floor_index
+	if not _pending_run.is_empty():
+		_restore_run(_pending_run)
+		_pending_run = {}
+	elif not tutorial and not Net.is_online():
+		_clear_saved_run()  # guardado-19: a new offline run replaces the saved one
 	if floor_index == 1 and not Net.is_online():
 		await _play_intro_if_due()
 	await _show_floor_card()
@@ -99,6 +107,17 @@ func start_gameplay(floor_index: int = 1, tutorial: bool = false) -> void:
 	await _fade_from_black()
 
 	_is_transitioning = false
+
+
+## guardado-19: the slot's saved run, from the start of its floor. false = none.
+func continue_run() -> bool:
+	var save_mgr := ManagerLocator.get_save_manager()
+	var run: Dictionary = save_mgr.get_saved_run() if save_mgr else {}
+	if run.is_empty():
+		return false
+	_pending_run = run
+	await start_gameplay(int(run["floor"]))
+	return true
 
 
 ## The menu's Tutorial: fixed heroes (Tutorial.HEROES), fixed map, no slot needed.
@@ -174,6 +193,8 @@ func _reload_world(new_run: bool) -> void:
 	await _clear_containers(true, false, true)
 	if new_run:
 		_begin_new_run()
+	else:
+		_save_run()  # guardado-19: after the old floor is gone (it runs during the fade: a last kill counts)
 	await _show_floor_card()
 	_current_world_add(MAIN2D_SCENE.instantiate())
 	_current_hud_add(HUD_SCENE.instantiate())
@@ -204,6 +225,65 @@ func _begin_new_run() -> void:
 	var session := ManagerLocator.get_game_session()
 	if session:
 		session.reset_run()  # recruits and lost heroes (heroes-9); the pick stays
+
+
+# ─────────────────────────────────────────────
+# RUN SAVE (guardado-19)
+# ─────────────────────────────────────────────
+## What a floor needs to start again exactly as it did: the map comes back from
+## run_seed (generation is deterministic), HP is full at every floor start.
+## Called between floors, so nothing of the old Main2d is read.
+func capture_run() -> Dictionary:
+	var session := ManagerLocator.get_game_session()
+	var seen: Array = FloorManager._seen_types.keys()
+	seen.sort()
+	return {
+		"floor": current_floor,
+		"run_seed": run_seed,
+		"difficulty": session.difficulty,
+		"heroes": session.selected_hero_ids.duplicate(),
+		"recruited": session.recruited_ids.duplicate(),
+		"lost": session.lost_ids.duplicate(),
+		"run_stats": session.run_stats.duplicate(),
+		"stats": ManagerLocator.get_player_stats().get_run_state(),
+		"inv": ManagerLocator.get_party_inventory().get_state(),
+		"res": ManagerLocator.get_resource_manager().get_state(),
+		"seen_types": seen,
+	}
+
+
+## Offline only, never the Tutorial, only with a picked slot (SaveManager checks).
+func _save_run() -> void:
+	var session := ManagerLocator.get_game_session()
+	var save_mgr := ManagerLocator.get_save_manager()
+	if Net.is_online() or save_mgr == null or session == null or session.tutorial:
+		return
+	save_mgr.save_run(capture_run())
+
+
+func _clear_saved_run() -> void:
+	var save_mgr := ManagerLocator.get_save_manager()
+	if save_mgr:
+		save_mgr.clear_run()
+
+
+## Puts a capture_run() back, after _begin_new_run() reset everything.
+func _restore_run(run: Dictionary) -> void:
+	current_floor = int(run["floor"])
+	run_seed = int(run["run_seed"])
+	var session := ManagerLocator.get_game_session()
+	session.tutorial = false
+	session.difficulty = str(run.get("difficulty", session.difficulty))
+	session.selected_hero_ids.assign(run.get("heroes", []))
+	session.recruited_ids.assign(run.get("recruited", []))
+	session.lost_ids.assign(run.get("lost", []))
+	session.run_stats = (run.get("run_stats", session.new_run_stats()) as Dictionary).duplicate()
+	for type in run.get("seen_types", []):
+		FloorManager._seen_types[type] = true
+	ManagerLocator.get_player_stats().apply_run_state(run.get("stats", {}))
+	ManagerLocator.get_party_inventory().apply_state(run.get("inv", {}))
+	ManagerLocator.get_resource_manager().apply_state(run.get("res", {}))
+	QuestLogger.info(QuestLogger.Category.SAVE, "Run restored: floor %d, seed %d." % [current_floor, run_seed])
 
 
 # ─────────────────────────────────────────────

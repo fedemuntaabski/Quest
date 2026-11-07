@@ -6,6 +6,7 @@ signal join_selected
 signal offline_selected
 signal back_pressed
 
+const COOP_NO_SAVE := "El co-op no guarda la partida entre pisos; solo un jugador puede continuarla."
 @onready var mode_card: PanelContainer = $CenterContainer/ModeCard
 @onready var status_label: Label = $CenterContainer/ModeCard/VBoxContainer/StatusLabel
 @onready var host_button: Button = $CenterContainer/ModeCard/VBoxContainer/HostButton
@@ -34,6 +35,17 @@ func _ready() -> void:
 	join_button.get_parent().move_child(code_edit, join_button.get_index())
 	_connect_events()
 	_refresh_steam_availability()
+	# guardado-19: only offline runs are saved between floors.
+	host_button.tooltip_text = COOP_NO_SAVE
+	join_button.tooltip_text = COOP_NO_SAVE
+	var note := Label.new()
+	note.name = "CoopSaveNote"
+	note.text = COOP_NO_SAVE
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note.add_theme_font_size_override("font_size", Accessibility.font(14))
+	note.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
+	offline_button.get_parent().add_child(note)
+	offline_button.get_parent().move_child(note, offline_button.get_index())
 
 
 func _connect_events() -> void:

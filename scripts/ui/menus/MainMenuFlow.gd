@@ -28,6 +28,8 @@ var hover_sound: AudioStreamPlayer = null
 var slot_selector: SaveSlotSelector = null
 var network_mode_select: NetworkModeSelect = null
 var hero_select: HeroSelectMenu = null
+## guardado-19: "Continuar / Nueva partida" for a slot with a saved run (tests press it).
+var continue_dialog: ConfirmationDialog = null
 
 const MAX_PLAYERS := 4
 
@@ -251,12 +253,50 @@ func _on_slot_selected(slot_id: int) -> void:
 		is_transitioning = false
 		if net == null or net.join(_join_code) != OK:
 			_on_lobby_failed("join_failed")
+	elif save_mgr.has_saved_run(slot_id):
+		is_transitioning = false
+		_ask_continue(int(save_mgr.get_saved_run(slot_id)["floor"]))
 	else:
-		current_state = MenuState.CHARACTER_SELECT
-		if slot_selector:
-			slot_selector.close(true)
-		if hero_select:
-			hero_select.open()
+		_open_hero_select()
+
+
+func _open_hero_select() -> void:
+	current_state = MenuState.CHARACTER_SELECT
+	if slot_selector:
+		slot_selector.close(true)
+	if hero_select:
+		hero_select.open()
+
+
+## guardado-19: a slot with a run in progress (offline only) offers to resume it
+## from the start of its floor or to start a new one (which erases the saved run
+## once the heroes are picked and the run starts).
+func _ask_continue(floor_index: int) -> void:
+	continue_dialog = ConfirmationDialog.new()
+	continue_dialog.name = "ContinueDialog"
+	continue_dialog.title = "Partida en curso"
+	continue_dialog.dialog_text = "Esta ranura tiene una partida guardada al inicio del piso %d." % floor_index
+	continue_dialog.ok_button_text = "Continuar partida (piso %d)" % floor_index
+	continue_dialog.cancel_button_text = "Volver"
+	continue_dialog.add_button("Nueva partida", true, "new")
+	continue_dialog.confirmed.connect(_on_continue_chosen)
+	continue_dialog.custom_action.connect(func(_action: StringName) -> void:
+		continue_dialog.hide()
+		continue_dialog.queue_free()
+		_open_hero_select())
+	continue_dialog.canceled.connect(continue_dialog.queue_free)
+	owner.add_child(continue_dialog)
+	continue_dialog.popup_centered()
+
+
+func _on_continue_chosen() -> void:
+	continue_dialog.queue_free()
+	if slot_selector:
+		slot_selector.close(true)
+	ManagerLocator.flush_saves()
+	var orchestrator := _get_orchestrator()
+	if orchestrator:
+		await orchestrator.continue_run()
 
 
 func _proceed_after_character_ready() -> void:

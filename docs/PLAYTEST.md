@@ -51,6 +51,13 @@ Una línea por tema, aunque sea corta:
 - **Ayudas:** ¿alguna llegó tarde, sobró o tapó algo?
 - **Lo peor de los 30 minutos:** una sola cosa.
 
+## Guardado entre pisos (5 min, aparte)
+Sin conexión, en una ranura:
+- [ ] Ganá el piso 1 y bajá al 2. Esc → Salir: el aviso dice que se pierde el piso y que se retoma desde el inicio del piso 2.
+- [ ] En el menú, la ranura dice "PISO 2" y al elegirla ofrece "Continuar partida (piso 2)", "Nueva partida" y "Volver".
+- [ ] Continuar: mismos héroes, nivel, equipo, mochila, recursos e investigación; el mapa del piso 2 es el mismo que antes.
+- [ ] Perder (o elegir "Nueva partida" y empezar) borra el guardado: la ranura vuelve a "GUARDADA".
+
 ## Fuera de esta prueba
 Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.
 

@@ -483,6 +483,7 @@ func finish_run(victory: bool) -> Dictionary:
 	var new_records: Array[String] = []
 	if save_mgr and not tutorial:
 		new_records = save_mgr.record_run(stats)
+		save_mgr.clear_run()  # guardado-19: a finished run (won or lost) can't be continued
 	var records: Dictionary = save_mgr.get_records(str(stats.get("difficulty", "normal"))) if save_mgr and save_mgr.slot_loaded else {}
 	var audio := ManagerLocator.get_audio()
 	if audio:

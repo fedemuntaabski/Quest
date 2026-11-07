@@ -227,6 +227,7 @@ var _applied_hash := 0
 ## New run (Main._begin_new_run).
 func reset() -> void:
 	var heroes := loadouts.keys()
+	_applied_hash = 0  # guardado-19: the same state can be applied again after a reset
 	stash.clear()
 	loadouts.clear()
 	stash_changed.emit()

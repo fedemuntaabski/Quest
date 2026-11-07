@@ -71,7 +71,13 @@ func _host_side() -> void:
 	var door: Door = null
 	for d in rm.get_all_doors():
 		if not d.is_secret and not d.is_opened() and rm.get_zone_kind(d.target_room_id) == "room" and d.get_target_room_for(start) != "":
-			door = d
+			# guardado-19: a Rest/Prisoner room blocks spawns and the wave below needs it (seed flake)
+			var spawnable := false
+			for z in rm.get_group_zone_ids(d.target_room_id):
+				if rm.get_zone_kind(z) == "room" and not em._spawns_blocked(z):
+					spawnable = true
+			if spawnable or door == null:
+				door = d
 	_expect(door != null, "a door next to the start room")
 	if door == null:
 		return

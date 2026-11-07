@@ -122,7 +122,12 @@ func refresh() -> void:
 		var del_btn := delete_buttons[i]
 
 		var has_save := bool(save_mgr and save_mgr.has_save(slot_id))
-		if has_save:
+		var run: Dictionary = save_mgr.get_saved_run(slot_id) if has_save else {}
+		if not run.is_empty():
+			btn.text = "RANURA %d (PISO %d)" % [slot_id, int(run["floor"])]
+			del_btn.disabled = false
+			del_btn.modulate.a = 1.0
+		elif has_save:
 			btn.text = "RANURA %d (GUARDADA)" % slot_id
 			del_btn.disabled = false
 			del_btn.modulate.a = 1.0
@@ -251,8 +256,10 @@ func _get_slot_summary(slot_id: int) -> String:
 		var total_min := int(playtime_seconds / 60.0)
 		playtime_str = "%dh %02dm" % [total_min / 60, total_min % 60]
 
+	var run: Dictionary = save_mgr.get_saved_run(slot_id)
+	var run_line := "• Partida en curso: piso %d\n" % int(run["floor"]) if not run.is_empty() else ""
 	return (
-		"DATOS DE LA RANURA %d:\n\n" +
+		"DATOS DE LA RANURA %d:\n\n" + run_line +
 		"• Guardado: %s\n" +
 		"• Tiempo jugado: %s\n" +
 		"• Bestiario: %d enemigos descubiertos\n" +
