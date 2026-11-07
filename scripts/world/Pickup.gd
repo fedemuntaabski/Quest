@@ -14,7 +14,7 @@ const TEXTURES := {
 	Kind.EMBERS: "res://assets/art/items/coin_anim_f0.png",
 	Kind.WEAPON: "res://assets/art/items/weapon_regular_sword.png",
 }
-const CHEST_SHEET := "res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png"
+const CHEST_SHEET := "res://assets/art/tiles/kenney_tiny_dungeon_packed.png"
 const CHEST_REGION := Rect2(80, 112, 16, 16)  # tile (5, 7)
 const RELIC_REGION := Rect2(144, 0, 16, 16)  # own/items.png cell 9 "relic_gem"
 

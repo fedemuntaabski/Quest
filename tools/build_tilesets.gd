@@ -5,9 +5,9 @@ extends SceneTree
 ##   godot --headless --path . --script res://tools/build_tilesets.gd
 ## Physics layer 0 (collision layer 16 = "wall", mask 0) only on wall tiles.
 
-const SHEET := "res://assets/art/_source/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png"
+const SHEET := "res://assets/art/tiles/dungeon_tileset_ii.png"
 const FILL := "res://assets/art/tiles/atlas_walls_low-16x16.png"
-const KENNEY := "res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png"
+const KENNEY := "res://assets/art/tiles/kenney_tiny_dungeon_packed.png"
 const WALL_LAYER_BIT := 16
 
 
@@ -56,20 +56,20 @@ func _build_dungeon() -> void:
 	for coords in DungeonTiles.FLOOR_ROOM_VARIANTS:
 		_add(sheet, coords).probability = 1.0
 	# Walls: solid, with a flip_v alternative for the cap of a south wall.
-	for coords in [DungeonTiles.WALL_TOP_LEFT, DungeonTiles.WALL_TOP_MID, DungeonTiles.WALL_TOP_RIGHT, DungeonTiles.WALL_LEFT, DungeonTiles.WALL_MID, DungeonTiles.WALL_RIGHT]:
+	for coords in [DungeonTiles.WALL_TOP_LEFT, DungeonTiles.WALL_TOP_MID, DungeonTiles.WALL_TOP_RIGHT, DungeonTiles.WALL_LEFT, DungeonTiles.WALL_MID, DungeonTiles.WALL_RIGHT] + DungeonTiles.WALL_WEAR:
 		_solid(_add(sheet, coords))
 	sheet.create_alternative_tile(DungeonTiles.WALL_TOP_MID, DungeonTiles.ALT_FLIP_V)
 	sheet.get_tile_data(DungeonTiles.WALL_TOP_MID, DungeonTiles.ALT_FLIP_V).flip_v = true
 	_solid(sheet.get_tile_data(DungeonTiles.WALL_TOP_MID, DungeonTiles.ALT_FLIP_V))
-	# Wall decoration (drawn on the Decor layer over a face tile: no physics).
+	# Banner faces (full face tiles on the Walls layer, solid like any face).
 	for coords in DungeonTiles.BANNERS:
-		_add(sheet, coords)
+		_solid(_add(sheet, coords))
 	_add(sheet, DungeonTiles.STAIRS)
 
 	var fill := _source(ts, DungeonTiles.SRC_FILL, FILL)
 	_solid(_add(fill, DungeonTiles.WALL_FILL))
 
-	print("dungeon_tileset save: ", error_string(ResourceSaver.save(ts, "res://resources/tilesets/dungeon_tileset.tres")))
+	_save(ts, "res://resources/tilesets/dungeon_tileset.tres")
 
 
 func _build_props() -> void:
@@ -80,4 +80,15 @@ func _build_props() -> void:
 	for y in 11:
 		for x in 12:
 			_add(src, Vector2i(x, y))
-	print("props_tileset save: ", error_string(ResourceSaver.save(ts, "res://resources/tilesets/props_tileset.tres")))
+	_save(ts, "res://resources/tilesets/props_tileset.tres")
+
+
+## Keeps the .tres uid (scenes reference it): a fresh TileSet would get none.
+func _save(ts: TileSet, path: String) -> void:
+	var header := FileAccess.get_file_as_string(path).get_slice("\n", 0)  # [gd_resource ... uid="uid://..."]
+	var uid := header.get_slice("uid=\"", 1).get_slice("\"", 0) if header.contains("uid=\"") else ""
+	print(path.get_file(), " save: ", error_string(ResourceSaver.save(ts, path)))
+	if uid != "":  # ResourceSaver drops it for a new TileSet object: write it back into the header
+		var plain := "[gd_resource type=\"TileSet\" format=3]"
+		var text := FileAccess.get_file_as_string(path).replace(plain, plain.replace("]", " uid=\"%s\"]" % uid))
+		FileAccess.open(path, FileAccess.WRITE).store_string(text)

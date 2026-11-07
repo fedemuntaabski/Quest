@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## session/juego-21
+- Hojas 0x72 y Kenney fuera de `assets/art/_source/` (ahora en `assets/art/tiles/`); `test_licencias` prohíbe `_source/` en runtime.
+- Animaciones por código: embestida al atacar, héroe caído que se vuelca, enemigo que cae y se desvanece.
+- Efectos propios nuevos: llamas al encender sala, anillo dorado al tomar la Reliquia, portal rojo al aparecer enemigos, polvo al abrir puerta.
+- Muros: ladrillos gastados, masa de muro uniforme detrás de las tapas, banners sólidos. Co-op: el cliente ya no ve doble polvo de muerte.
+
 ## session/licencias-20
 - Arte listo para publicar: armaduras, grimorios, espadas y pociones con arte Kenney/0x72 (CC0) o propio; la Reliquia es una gema roja propia; los efectos de combate son propios (sin unTied Games). Créditos actualizados.
 - `tests/test_licencias.gd` falla si el juego referencia un archivo sin licencia conocida (tabla en `docs/CREDITOS.md`). Retoque del arte propio con LibreSprite (`tools/libresprite.sh`).

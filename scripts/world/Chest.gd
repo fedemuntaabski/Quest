@@ -12,7 +12,7 @@ signal opened(item: ItemData)
 
 enum State { CLOSED, OPEN }
 
-const SHEET := "res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png"
+const SHEET := "res://assets/art/tiles/kenney_tiny_dungeon_packed.png"
 const CLOSED_REGION := Rect2(80, 112, 16, 16)  # tile (5, 7)
 const OPEN_REGION := Rect2(112, 112, 16, 16)   # tile (7, 7)
 const ITEM_OFFSET := Vector2(0, -34)

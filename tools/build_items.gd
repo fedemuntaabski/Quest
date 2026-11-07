@@ -7,7 +7,7 @@ extends SceneTree
 
 ## Hojas con licencia conocida (docs/CREDITOS.md): Kenney Tiny Dungeon (CC0, celdas
 ## 16x16) y arte propio de tools/build_own_art.gd (celda = índice en OWN_CELLS).
-const K := "res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png"
+const K := "res://assets/art/tiles/kenney_tiny_dungeon_packed.png"
 const O := "res://assets/art/own/items.png"
 const OUT := "res://resources/items/"
 const S := ItemData.Slot

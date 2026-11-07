@@ -5,7 +5,7 @@ extends SceneTree
 
 const SHEETS := [
 	"res://assets/art/own/items.png",
-	"res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png",
+	"res://assets/art/tiles/kenney_tiny_dungeon_packed.png",
 ]
 const VFX_DIR := "res://assets/art/own/vfx/"
 const IMPORT_DIRS := ["items", "own", "own/vfx"]

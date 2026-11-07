@@ -155,8 +155,7 @@ func _set_downed(downed: bool) -> void:
 		selection.on_hero_revived(stats.hero_id)
 	hitbox.set_active(not downed)
 	hurtbox.set_deferred("monitorable", not downed)
-	animated_sprite.rotation = PI * 0.5 if downed else 0.0
-	animated_sprite.self_modulate = Color(0.45, 0.45, 0.5, 0.85) if downed else Color.WHITE
+	animated_sprite.set_downed(downed)
 	queue_redraw()
 
 
@@ -175,6 +174,8 @@ func move_speed_mult() -> float:
 
 func _fire_projectile(target: HurtboxComponent, amount: int) -> void:
 	var parent := get_parent() if get_parent() else self
+	if is_instance_valid(target):
+		animated_sprite.lunge(global_position.direction_to(target.global_position))
 	Projectile.fire(parent, to_global(animated_sprite.body_center()), target, hitbox, amount, character_data.projectile_speed, vfx_color())
 
 
@@ -196,6 +197,7 @@ func _on_attack_landed(target: HurtboxComponent, amount: int) -> void:
 		vfx.play(&"hit_sparks", target.global_position, vfx_color())
 		vfx.shake_if_strong(amount, enemy.max_hp if enemy else 1)
 		return
+	animated_sprite.lunge(global_position.direction_to(target.global_position))
 	vfx.hit(global_position, target.global_position, vfx_color(), amount, enemy.max_hp if enemy else 1)
 
 

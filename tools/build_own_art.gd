@@ -11,7 +11,7 @@ extends SceneTree
 ## Un PNG con su .ase en own/src/ (retoque a mano, tools/libresprite.sh) no se regenera.
 
 const OUT := "res://assets/art/own/"
-const KENNEY := "res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png"
+const KENNEY := "res://assets/art/tiles/kenney_tiny_dungeon_packed.png"
 const CELL := 16
 const FPS := 15
 
@@ -148,6 +148,10 @@ func _vfx() -> void:
 	index["own_ring_blue"] = _strip("own_ring_blue", 40, 8, _ring.bind(Color("60a8ff")))
 	index["own_ring_violet"] = _strip("own_ring_violet", 40, 8, _ring.bind(Color("c080ff")))
 	index["own_ring_green"] = _strip("own_ring_green", 40, 8, _ring.bind(Color("80ff70")))
+	# juego-21: sala encendida, Reliquia, aparición de enemigos.
+	index["own_flame_gold"] = _strip("own_flame_gold", 40, 8, _flame.bind(Color("ffb030")))
+	index["own_ring_gold"] = _strip("own_ring_gold", 40, 8, _ring.bind(Color("ffd860")))
+	index["own_portal_red"] = _strip("own_portal_red", 40, 8, _portal.bind(Color("d02828")))
 	var f := FileAccess.open(OUT + "vfx/index.json", FileAccess.WRITE)
 	f.store_string(JSON.stringify(index, "\t", true))
 	print("own vfx: %d hojas" % index.size())
@@ -236,6 +240,47 @@ func _ring(img: Image, o: Vector2, size: int, t: float, seeds: Array, color: Col
 		var pos := c + Vector2((seeds[i].x - 0.5) * size * 0.6, 6.0 - t * 14.0 - seeds[i].y * 4.0)
 		_px(img, o, size, pos, Color(color, a))
 		_px(img, o, size, pos + Vector2.DOWN, Color(color, a * 0.5))
+
+
+## Encendido: lenguas de fuego que nacen abajo, suben y se apagan + brasas sueltas.
+func _flame(img: Image, o: Vector2, size: int, t: float, seeds: Array, color: Color) -> void:
+	var base := Vector2(size * 0.5, size - 5.0)
+	var grow := minf(t * 3.0, 1.0) * clampf(1.0 - (t - 0.6) / 0.4, 0.0, 1.0)
+	_disc(img, o, size, base, 6.0 * grow, Color(color, 0.35 * grow))  # brillo en la base
+	for i in 5:
+		var x: float = base.x + (float(i) - 2.0) * 4.0 + (seeds[i].x - 0.5) * 2.0
+		var h: float = (10.0 + seeds[i].y * 10.0) * grow * (1.0 - absf(float(i) - 2.0) * 0.2)
+		for k in int(h):
+			var f := float(k) / maxf(h, 1.0)
+			var sway := sin(t * TAU * 1.5 + seeds[i].x * 6.0 + f * 3.0) * f * 1.5
+			var col := Color("fff4c0").lerp(color, minf(f * 2.0, 1.0)).lerp(Color("d03010"), maxf(f - 0.5, 0.0) * 2.0)
+			var half := int(round((1.0 - f) * 1.5))
+			for w in range(-half, half + 1):
+				_px(img, o, size, Vector2(x + sway + w, base.y - k), Color(col, 1.0 if w == 0 else 0.7))
+	for i in 8:
+		var phase := fmod(t * 1.3 + seeds[i + 4].y, 1.0)
+		var pos := Vector2(6.0 + seeds[i + 4].x * (size - 12.0), base.y - 4.0 - phase * (size - 12.0))
+		_px(img, o, size, pos, Color(Color("ffd060"), sin(phase * PI) * (1.0 - t * 0.5)))
+
+
+## Aparición: anillo que se cierra hacia el centro con rayos oscuros y un destello final.
+func _portal(img: Image, o: Vector2, size: int, t: float, seeds: Array, color: Color) -> void:
+	var c := Vector2(size, size) * 0.5
+	var r := (size * 0.45) * (1.0 - t * 0.85)
+	var a := minf(t * 3.0, 1.0) * (1.0 - maxf(t - 0.75, 0.0) * 4.0)
+	for y in size:
+		for x in size:
+			var d := Vector2(x, y).distance_to(c)
+			if absf(d - r) < 1.0:
+				_px(img, o, size, Vector2(x, y), Color(color, a))
+			elif d < r and fmod(d + t * 8.0, 4.0) < 1.0:
+				_px(img, o, size, Vector2(x, y), Color(Color("400810"), a * 0.6))
+	for i in 8:
+		var dir := Vector2.from_angle(TAU * (i + seeds[i].x * 0.3) / 8.0)
+		for k in 3:
+			_px(img, o, size, c + dir * (r + 2.0 + k), Color(color.lerp(Color.BLACK, 0.3), a * (1.0 - k / 3.0)))
+	if t > 0.7:
+		_disc(img, o, size, c, 3.0 * (1.0 - t) / 0.3 + 0.5, Color(Color("ff8060"), (1.0 - t) / 0.3))
 
 
 func _disc(img: Image, o: Vector2, size: int, c: Vector2, r: float, col: Color) -> void:

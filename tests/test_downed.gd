@@ -58,7 +58,8 @@ func _check_downed_and_revive(main2d: Node, hud: HUDController) -> void:
 	await process_frame
 	_expect(b.is_downed() and gsm.is_active(), "one hero down: the run goes on")
 	_expect(not b.hitbox.is_active(), "a downed hero doesn't attack")
-	_expect(b.animated_sprite.rotation != 0.0, "a downed hero lies on the floor")
+	await create_timer(CharacterVisual.TOPPLE_TIME + 0.1).timeout  # juego-21: it tips over (tween)
+	_expect(is_equal_approx(b.animated_sprite.rotation, PI * 0.5), "a downed hero lies on the floor (%.2f)" % b.animated_sprite.rotation)
 	_expect(not b.can_accept_input(), "a downed hero takes no orders")
 	_expect(not root.get_node("SelectionManager").is_selected(b.stats.hero_id), "a downed hero leaves the selection")
 	var portrait: HeroPortrait = hud._portraits.get(b.stats.hero_id)
@@ -88,8 +89,8 @@ func _check_downed_and_revive(main2d: Node, hud: HUDController) -> void:
 	_expect(b.stats.is_alive(), "left click on the downed hero revives it")
 	_expect(resources.get_resource("food") == 40 - cost, "revive paid %d Comida (%d left)" % [cost, resources.get_resource("food")])
 	_expect(b.stats.current_hp == roundi(b.stats.max_hp * 0.3), "revived at 30 %% HP (%d/%d)" % [b.stats.current_hp, b.stats.max_hp])
-	_expect(b.hitbox.is_active() and b.animated_sprite.rotation == 0.0, "revived hero fights and stands again")
-	await process_frame
+	await create_timer(CharacterVisual.TOPPLE_TIME + 0.1).timeout
+	_expect(b.hitbox.is_active() and is_zero_approx(b.animated_sprite.rotation), "revived hero fights and stands again")
 	_expect(not portrait.is_downed() and not portrait.revive_button.visible, "portrait back to normal")
 	_expect(portrait.is_low_blinking(), "30 % HP is below the low threshold: the bar blinks")
 	b.stats.heal(b.stats.max_hp)

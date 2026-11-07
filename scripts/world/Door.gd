@@ -27,7 +27,7 @@ var is_open: bool = false
 ## is revealed, never opened by a click.
 var is_secret: bool = false
 
-const SHEET := preload("res://assets/art/_source/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png")
+const SHEET := preload("res://assets/art/tiles/dungeon_tileset_ii.png")
 const LEAF_PX := Vector2(32, 32)
 
 @onready var leaf: Sprite2D = $Leaf

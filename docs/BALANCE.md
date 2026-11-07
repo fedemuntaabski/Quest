@@ -251,3 +251,13 @@ Lo que no se tocó: el daño, el intervalo y el alcance de los cuatro; los enemi
 `BalanceSim.scaling_rows()` (5 pisos × 2 dificultades × 1–4 jugadores) da paridad 1,00–1,18 frente a jugar solo; `docs/balance/calidad13_scaling.csv`, `test_balance._check_scaling`.
 
 La tabla ya asumía oleadas escaladas en puertas y extracción, pero hasta estabilizar-14 las puertas ignoraban el multiplicador (`EnemyManager` usaba `DoorRollConfig.enemy_count`): con 3–4 jugadores el co-op real era más fácil que la tabla. No cambió ningún número ni el juego con 1–2 jugadores. Todo esto sigue sin validar con personas.
+
+## Mejoras de gameplay propuestas (session juego-21, sin hacer)
+El dueño eligió no tocar mecánicas ni balance en juego-21. Lista para decidir después (costo = trabajo + riesgo):
+
+| Mejora | A favor | En contra | Costo |
+|---|---|---|---|
+| **Botín al matar**: 1 Brasa con 25 % (élite 50 %) | el combate deja algo, premia defender | infla la luz; re-correr `BalanceSim` | bajo, sin bump (la Brasa la suma el host) |
+| **Reparar la Reliquia** en la sala inicial: 10 Hierro = +20 vida, solo en exploración | uso para el Hierro, decisión antes de extraer | extracción más fácil | medio, comando nuevo → bump `config/version` 1.2 |
+| **Chamán y Nigromante a distancia**: proyectil cada 2 s desde 200 px | variedad, obliga a moverse | más difícil en pisos 3–5, retocar balance | medio, sin bump (proyectil visual por el evento `fx`) |
+| **Armadura plana** en ítems (stat nuevo) | da sentido a las 7 armaduras | toca `CharacterStats`, `RunState`, guardado | alto, bump |

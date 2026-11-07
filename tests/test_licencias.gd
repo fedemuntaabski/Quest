@@ -11,8 +11,8 @@ const ROOTS := ["res://scenes", "res://resources", "res://scripts"]
 const CODE_EXT := ["gd", "tscn", "tres", "gdshader"]
 const MEDIA := "png|jpg|jpeg|webp|svg|ttf|otf|woff2?|ogg|wav|mp3"
 ## Nunca pueden estar permitidos (licencia desconocida o sin permiso para el repo público).
-const BANNED := ["res://assets/art/_rejected/", "res://assets/art/_source/items_sheets/",
-	"res://assets/art/_source/super_pixel_effects/", "res://assets/art/_source/raven_fantasy_icons/"]
+## _source/ entero (juego-21): originales intactos, el export lo excluye; el runtime usa copias normalizadas.
+const BANNED := ["res://assets/art/_rejected/", "res://assets/art/_source/"]
 
 var _failures := 0
 var _rules: Array[String] = []
@@ -26,6 +26,7 @@ func _init() -> void:
 			_check(not rule.begins_with(banned) and not banned.begins_with(rule), "regla %s no habilita %s" % [rule, banned])
 	_check(_allowed("res://assets/art/own/items.png"), "control: arte propio permitido")
 	_check(not _allowed("res://assets/art/_rejected/licencia/items/cave_gems.png"), "control: cave_gems rechazada")
+	_check(not _allowed("res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png"), "control: _source fuera del runtime")
 
 	var refs := {}  # path -> archivo que la nombra
 	var files: Array[String] = ["res://project.godot"]

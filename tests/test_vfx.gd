@@ -119,6 +119,64 @@ func _active_scenes(vfx: VfxManager) -> Array[String]:
 	return names
 
 
+## Effect ids currently playing (VfxEffect remembers nothing: match by sheet/scene of the def).
+func _active_ids(vfx: VfxManager) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for child in vfx.get_children():
+		var effect := child as VfxEffect
+		if effect == null or not effect.visible:
+			continue
+		var sprite := effect.get_node_or_null("Sprite") as AnimatedSprite2D
+		for id: StringName in vfx.config.effects:
+			var def: Dictionary = vfx.config.effects[id]
+			if String(def["scene"]) == effect.scene_name and sprite and sprite.visible and sprite.sprite_frames == VfxEffect.frames_for(String(def["sheet"])) and String(def["sheet"]) != "":
+				ids.append(id)
+	return ids
+
+
+func _corpses(main2d: Node) -> int:
+	var n := 0
+	for child in main2d.enemy_manager._enemies_root.get_children():
+		if child is Sprite2D and not child.is_queued_for_deletion():
+			n += 1
+	return n
+
+
+## juego-21: a co-op client frees a puppet when its host enemy died. The host
+## relays death_dust as an "fx" event, so the puppet must not play it again (it
+## did: two puffs per kill on clients); it only drops its local corpse.
+func _check_puppet_death(main2d: Node, vfx: VfxManager, zone_id: String, hero: Player) -> void:
+	await create_timer(CharacterVisual.CORPSE_TIME + 0.2).timeout  # the previous kill's corpse is gone
+	_expect(_corpses(main2d) == 0, "corpse fades and frees itself (%d left)" % _corpses(main2d))
+	var puppet := main2d.enemy_manager._spawn_enemy(zone_id, hero.global_position + Vector2(30, 0)) as Enemy
+	await process_frame
+	vfx.clear()
+	await process_frame
+	var sync := NetSync.new()
+	sync._free_puppet(puppet)
+	_expect(not _active_scenes(vfx).has("death_dust"), "client puppet freed: death_dust played twice (host already relays it)")
+	_expect(_corpses(main2d) == 1, "client puppet freed: its corpse falls (%d)" % _corpses(main2d))
+	sync.free()
+
+
+## juego-21: lighting a room shows its flame (Reliquia/door effects: tests/tools/shot_juego21.gd).
+func _check_world_hooks(main2d: Node, vfx: VfxManager, hero: Player) -> void:
+	vfx.clear()
+	await process_frame
+	var resources := root.get_node("ResourceManager")
+	resources.add_resource("embers", 500)
+	var dark: RoomZone = null
+	for zone_id in main2d.room_manager.get_zone_ids():
+		var zone: RoomZone = main2d.room_manager.get_zone_node(zone_id)
+		if zone and main2d.room_manager.get_zone_kind(zone_id) == "room" and not zone.is_lit:
+			dark = zone
+			break
+	_expect(dark != null, "a dark room to light in the fallback layout")
+	if dark:
+		dark.try_light_up()
+		_expect(dark.is_lit and _active_ids(vfx).has(&"room_lit"), "room lit: no flame (%s)" % [_active_ids(vfx)])
+
+
 ## Live Main2d: combat events spawn effects, effects never change the combat result, the cap holds.
 func _check_hooks() -> void:
 	var main2d := (load("res://scenes/Main2d.tscn") as PackedScene).instantiate()
@@ -130,6 +188,7 @@ func _check_hooks() -> void:
 	var hero: Player = main2d.heroes[0]
 	var start_id: String = main2d.room_manager.get_start_zone_id()
 	var enemy := main2d.enemy_manager._spawn_enemy(start_id, hero.global_position) as Enemy
+	_expect(_active_ids(vfx).has(&"enemy_spawn"), "enemy spawn: no portal (%s)" % [_active_ids(vfx)])
 
 	hero.hitbox.hit_landed.emit(enemy.hurtbox, 3)
 	_expect(_active_scenes(vfx).has("slash_arc") and _active_scenes(vfx).has("impact_sparks"), "hero hit: no slash/sparks (%s)" % [_active_scenes(vfx)])
@@ -138,6 +197,9 @@ func _check_hooks() -> void:
 	_expect(hero.stats.current_hp == hp - 2 and _active_scenes(vfx).has("damage_flash"), "hero hurt: wrong HP or no flash")
 	enemy.take_damage(9999)
 	_expect(not enemy.is_alive() and _active_scenes(vfx).has("death_dust"), "enemy death: no embers")
+	_expect(_corpses(main2d) == 1, "enemy death: one corpse falls (%d)" % _corpses(main2d))
+	await _check_puppet_death(main2d, vfx, start_id, hero)
+	await _check_world_hooks(main2d, vfx, hero)
 	hero.stats.heal(2)
 	_expect(hero.stats.current_hp == hp, "heal altered by effects")
 

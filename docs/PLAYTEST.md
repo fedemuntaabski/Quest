@@ -65,6 +65,14 @@ Capturas de referencia: `tests/tools/shot_licencias.gd` (HUD, Reliquia, ficha, m
 - [ ] La Reliquia (gema roja) se lee como objeto valioso sobre el suelo y mientras se la lleva.
 - [ ] Mochila y equipo: ¿se distinguen las 7 armaduras (escudos por color) y las espadas?
 
+## Animaciones y efectos nuevos (3 min, aparte)
+Captura de referencia: `tests/tools/shot_juego21.gd` (`j21_fx`).
+- [ ] Al pegar, el héroe y el enemigo dan un pasito hacia el otro. ¿Se nota sin marear con 4 héroes?
+- [ ] Un héroe caído se vuelca de costado (no salta de golpe) y se levanta al reanimarlo.
+- [ ] El enemigo que muere cae de costado y se desvanece junto al polvo.
+- [ ] Encender una sala: llamas doradas en el centro. Recoger la Reliquia: anillo dorado. Enemigos que aparecen: portal rojo. Abrir una puerta: polvo.
+- [ ] Muros: algunos ladrillos gastados en salas y pasillos. ¿Se ven como variación o como error?
+
 ## Fuera de esta prueba
 Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.
 

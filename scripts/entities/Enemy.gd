@@ -159,6 +159,8 @@ func configure(p_variant: Variant, p_zone_id: String, hp_multiplier: float = 1.0
 
 ## Contact hit on a hero: sparks in the enemy palette (the hero's own flash is Player's).
 func _on_contact_landed(target: HurtboxComponent, _amount: int) -> void:
+	if is_instance_valid(target):
+		visual.lunge(global_position.direction_to(target.global_position))
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx and is_instance_valid(target):
 		vfx.play(&"hit_sparks", target.global_position, vfx.config.enemy_hit_color)
@@ -222,6 +224,7 @@ func _die_from_damage() -> void:
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"death_dust", global_position, vfx.config.dust_color)
+	visual.spawn_corpse(get_parent())
 	died.emit(self)
 	queue_free()
 

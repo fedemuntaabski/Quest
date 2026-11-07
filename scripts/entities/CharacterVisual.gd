@@ -21,6 +21,13 @@ const BOUNCE_PX := 2.0
 ## Knockback (heroes-9): visual-only push away from the hit, then back.
 const KNOCKBACK_PX := 6.0
 const KNOCKBACK_TIME := 0.12
+## Attack lunge (juego-21): visual-only step toward the target, then back.
+const LUNGE_PX := 5.0
+const LUNGE_TIME := 0.14
+## Downed topple / revive stand-up and the enemy corpse that falls and fades.
+const TOPPLE_TIME := 0.25
+const CORPSE_TIME := 0.45
+const DOWNED_TINT := Color(0.45, 0.45, 0.5, 0.85)
 const BOUNCE_IDLE_TIME := 0.7
 const BOUNCE_RUN_TIME := 0.3
 ## Collision circle = this fraction of the drawn body's longer side.
@@ -39,6 +46,7 @@ var _bounce_time: float = 0.0
 var _bounce: Tween
 var _flash: Tween
 var _knock: Tween
+var _topple: Tween
 ## Rest position while a knockback tween runs (the owner's actions never touch
 ## the visual's position, only the owner's).
 var _rest_position := Vector2.INF
@@ -112,6 +120,55 @@ func knockback(dir: Vector2) -> void:
 	_knock.tween_property(self, "position", _rest_position + dir.normalized() * KNOCKBACK_PX, KNOCKBACK_TIME * 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_knock.tween_property(self, "position", _rest_position, KNOCKBACK_TIME * 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	_knock.finished.connect(func() -> void: _rest_position = Vector2.INF)
+
+
+## Attack lunge toward `dir` (unit): same rest-position bookkeeping as knockback,
+## a hit taken meanwhile simply replaces it.
+func lunge(dir: Vector2) -> void:
+	if dir == Vector2.ZERO or is_knocked_back():
+		return
+	if absf(dir.x) > 0.01:
+		flip_h = dir.x < 0.0
+	if _rest_position == Vector2.INF:
+		_rest_position = position
+	position = _rest_position
+	_knock = create_tween()
+	_knock.tween_property(self, "position", _rest_position + dir.normalized() * LUNGE_PX, LUNGE_TIME * 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_knock.tween_property(self, "position", _rest_position, LUNGE_TIME * 0.65).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	_knock.finished.connect(func() -> void: _rest_position = Vector2.INF)
+
+
+## Downed hero: tips over onto its side and greys out; `false` stands it back up.
+func set_downed(downed: bool) -> void:
+	if _topple and _topple.is_valid():
+		_topple.kill()
+	_topple = create_tween().set_parallel()
+	_topple.tween_property(self, "rotation", PI * 0.5 if downed else 0.0, TOPPLE_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN if downed else Tween.EASE_OUT)
+	_topple.tween_property(self, "self_modulate", DOWNED_TINT if downed else Color.WHITE, TOPPLE_TIME)
+
+
+## Enemy death: a copy of the current frame topples and fades under `parent` (the
+## enemies root: freed with the floor; the owner is freed right away). Cosmetic,
+## null when there is nothing to copy.
+func spawn_corpse(parent: Node) -> Sprite2D:
+	if parent == null or sprite_frames == null or not visible:
+		return null
+	var corpse := Sprite2D.new()
+	corpse.texture = sprite_frames.get_frame_texture(animation, frame)
+	corpse.centered = centered
+	corpse.offset = _base_offset
+	corpse.flip_h = flip_h
+	corpse.scale = scale
+	corpse.modulate = modulate
+	corpse.z_index = 1
+	parent.add_child(corpse)
+	corpse.global_position = global_position
+	var side := -1.0 if flip_h else 1.0
+	var tween := corpse.create_tween().set_parallel()
+	tween.tween_property(corpse, "rotation", side * PI * 0.5, CORPSE_TIME * 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(corpse, "modulate:a", 0.0, CORPSE_TIME).set_delay(CORPSE_TIME * 0.3)
+	tween.chain().tween_callback(corpse.queue_free)
+	return corpse
 
 
 func is_knocked_back() -> bool:

@@ -16,6 +16,8 @@ enum Highlight { NONE, CURRENT, REACHABLE, OPENABLE, BLOCKED }
 
 const SHAPE_INSET := 6.0
 const OUTLINE_WIDTH := 3.0
+## The flame strip draws its base near the frame bottom: lift it so it burns on the centre.
+const ROOM_LIT_FX_OFFSET := Vector2(0, -48)
 const REVEALED_IDLE_OUTLINE := Color(1, 1, 1, 0.25)
 const LIGHT_COST: int = 10
 const LIT_FILL_COLOR := Color(1.0, 0.9, 0.5, 0.30)
@@ -291,6 +293,9 @@ func try_light_up() -> void:
 	var audio := ManagerLocator.get_audio()
 	if audio:
 		audio.play_sfx(&"light")
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx:  # host-side action (NetCommands); VfxManager relays it
+		vfx.play(&"room_lit", center_position + ROOM_LIT_FX_OFFSET)
 	QuestLogger.info(QuestLogger.Category.ROOM, "Zone '%s' lit for %d embers." % [zone_id, cost])
 
 

@@ -28,6 +28,7 @@ const WALL_MID := Vector2i(2, 1)
 const WALL_RIGHT := Vector2i(3, 1)
 const WALL_FILL := Vector2i(9, 2)  # in SRC_FILL
 
+const WALL_WEAR: Array[Vector2i] = [Vector2i(3, 2), Vector2i(3, 3)]  # wall_hole_1/2: worn face bricks
 const BANNERS: Array[Vector2i] = [Vector2i(1, 2), Vector2i(2, 2), Vector2i(1, 3), Vector2i(2, 3)]  # red, blue, green, yellow (face tiles)
 
 const STAIRS := Vector2i(5, 12)     # floor_stairs

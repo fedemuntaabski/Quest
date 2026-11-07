@@ -1,6 +1,6 @@
 # Assets gráficos
 
-Todo el arte es 16×16 px por tile: CC0 (0x72, Kenney, Tiny Creatures) o propio; licencias en `docs/CREDITOS.md`, verificadas por `tests/test_licencias.gd`. Originales intactos en `assets/art/_source/`; copias por categoría en `assets/art/{tiles,characters,enemies,items,ui}/` (las que usa el juego). Tras copiar, mantener PNG en Nearest / lossless / sin mipmaps (default del proyecto).
+Todo el arte es 16×16 px por tile: CC0 (0x72, Kenney, Tiny Creatures) o propio; licencias en `docs/CREDITOS.md`, verificadas por `tests/test_licencias.gd`. Originales intactos en `assets/art/_source/`; copias por categoría en `assets/art/{tiles,characters,enemies,items,ui}/` (las que usa el juego). **Desde juego-21 nada del runtime apunta a `_source/`** (`test_licencias` lo prohíbe; el export puede excluir la carpeta entera): las dos hojas enteras viven en `assets/art/tiles/dungeon_tileset_ii.png` (0x72, `Door`, `dungeon_tileset.tres`, uid conservado) y `assets/art/tiles/kenney_tiny_dungeon_packed.png` (Kenney: `Chest`, `Pickup`, 7 ítems, `props_tileset.tres`, `build_items`/`build_own_art`). Tras copiar, mantener PNG en Nearest / lossless / sin mipmaps (default del proyecto).
 
 ## Escala y celda lógica
 - `ArtConfig` (`scripts/core/art/ArtConfig.gd`): `TILE_SIZE = 16`, `ART_SCALE = 2`, `CELL_TILES = 2`, `CELL_PX = 64`.
@@ -55,7 +55,7 @@ Generado por `tools/build_own_art.gd` (headless, determinista):
 | Archivo | Contenido |
 |---|---|
 | `own/items.png` | fila de celdas 16×16, orden `OWN_CELLS`: 7 armaduras (escudos Kenney `tile_0101`/`0102` re-coloreados por material), grimorios de brasas y mareas, gema de la Reliquia (celda 9), espadas de jade y oro (Kenney `0105`/`0106` re-coloreadas) |
-| `own/vfx/*.png` + `index.json` | 8 tiras horizontales a 15 FPS: `own_slash` (32 px, 6 frames, blanco teñido por código), `own_sparks_yellow`, `own_smoke_brown`, `own_sparkle_green` (32 px), `own_ring_{red,blue,violet,green}` (40 px, 8 frames) |
+| `own/vfx/*.png` + `index.json` | 11 tiras horizontales a 15 FPS: `own_slash` (32 px, 6 frames, blanco teñido por código), `own_sparks_yellow`, `own_smoke_brown`, `own_sparkle_green` (32 px), `own_ring_{red,blue,violet,green,gold}` (40 px, 8 frames), `own_flame_gold` (llamas + brasas, 40 px) y `own_portal_red` (anillo que se cierra, 40 px) (las 3 últimas de juego-21) |
 | `own/src/*.ase`, `own/src/vfx/*.ase` | fuentes editables en LibreSprite (ver abajo) |
 
 **Retoque a mano con LibreSprite** (`E:\LibreSprite`, GPL: la herramienta no afecta la licencia del arte): `tools/libresprite.sh import` crea los `.ase` (no pisa los existentes; cada FX entra como animación de un frame por cuadro), se retocan en LibreSprite, `tools/libresprite.sh export` escribe los PNG del juego y actualiza `index.json` (frames y tamaño). Con un `.ase` presente, `build_own_art.gd` ya no regenera ese PNG: para volver a la versión por fórmula, borrar el `.ase`. Ida y vuelta verificada exacta al píxel. `items.png` no cambia de ancho sin tocar `OWN_CELLS`, `build_items.gd` y `Pickup.RELIC_REGION`.
@@ -72,3 +72,15 @@ Generado por `tools/build_own_art.gd` (headless, determinista):
 
 ## VFX en juego (balance-4, arte desde licencias-20)
 Escenas en `scenes/vfx/*.tscn` (slash_arc, projectile_trail, impact_sparks, heal_glow, buff_aura, death_dust, damage_flash) usadas por `VfxManager` (`resources/vfx/vfx_config.tres`). Hojas de `assets/art/own/vfx` por uso: tajo `own_slash`, chispas `own_sparks_yellow`, curación `own_sparkle_green`, ataque+ `own_ring_red`, escudo `own_ring_blue`, obras `own_ring_violet`, nivel `own_ring_green`, polvo de muerte `own_smoke_brown`. Partículas: cuadrados de 1-2 px de arte, Nearest, color = `CharacterData.vfx_color`.
+
+**juego-21** sumó (todos desde el host; `VfxManager.play` los reenvía a los clientes por el evento `fx`): `room_lit` (`own_flame_gold`, al encender una sala, `RoomZone.try_light_up`), `relic_pickup` (`own_ring_gold`, `RelicController.confirm_pickup`), `enemy_spawn` (`own_portal_red`, `EnemyManager._spawn_enemy`: invasiones y oleadas de extracción), `door_dust` (`own_smoke_brown` ×1.3, al abrir una puerta). Captura: `tests/tools/shot_juego21.gd`.
+
+## Animaciones (juego-21)
+0x72 trae solo `idle`/`run` (+ `hit` de 1 frame en héroes) y Tiny Creatures 1 frame: no hay frames de ataque, caída ni muerte en ningún pack CC0 usado. Se resuelven por código en `CharacterVisual` (solo visual, no toca posición ni zona del dueño):
+- **Ataque**: `lunge(dir)` = paso de 5 px hacia el objetivo y vuelta (0,14 s); héroe cuerpo a cuerpo al pegar, Mago al disparar, enemigo al golpear por contacto. En co-op solo se ve en el host (el cliente no recibe el golpe como evento).
+- **Caído/reanimado**: `set_downed()` = vuelco de 90° con tween (0,25 s) y gris; al reanimar se levanta.
+- **Muerte de enemigo**: `spawn_corpse()` = copia del frame actual que se vuelca y se desvanece (0,45 s) bajo `VfxManager`, junto al polvo. También en el cliente al liberar el puppet.
+- Velocidades sin cambio: `idle` 6 FPS, `run` 10 FPS (se ven bien con 420 px/s).
+
+## Muros (juego-21)
+`MapVisualConfig.wall_wear_density` (0,1): caras de ladrillo lisas de salas y pasillos dibujadas como `wall_hole_1/2` de 0x72 (`DungeonTiles.WALL_WEAR`), con su propio stream (`hash([seed, "wall_wear"])`), así los banners de una semilla no se mueven. Los banners ahora son sólidos (antes eran la única cara sin polígono de la capa `wall`). Los bordes laterales finos de 0x72 (`wall_edge_*`) no están en la rejilla de 16 px de la hoja (y = 120/136/152/168): quedan fuera; los laterales siguen siendo relleno sólido.

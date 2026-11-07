@@ -126,11 +126,16 @@ func _check_live(layout: MapLayout, visual: MapVisualConfig) -> void:
 	var start_id := layout.get_start_room_id()
 	renderer.show_zone(start_id)
 	var zone: Dictionary = renderer.get_plan()["zones"][start_id]
-	if renderer.floor_layer.get_used_cells().size() != zone["floor"].size():
-		failures.append("live: floor tiles drawn != plan of the start room")
+	if renderer.floor_layer.get_used_cells().size() != zone["floor"].size() + zone["under"].size():
+		failures.append("live: floor tiles drawn != plan of the start room (floor + under the caps)")
 	if renderer.walls_layer.get_used_cells().size() != zone["walls"].size():
 		failures.append("live: wall tiles drawn != plan of the start room")
 	for tile in renderer.floor_layer.get_used_cells():
+		if zone["under"].has(tile):  # fill behind a wall cap: must sit under a wall tile
+			if renderer.walls_layer.get_cell_source_id(tile) == -1:
+				failures.append("live: fill under %s with no wall cap over it" % tile)
+				break
+			continue
 		if not zone["floor"].has(tile):
 			failures.append("live: floor tile %s drawn outside the start room" % tile)
 			break
@@ -146,7 +151,30 @@ func _check_live(layout: MapLayout, visual: MapVisualConfig) -> void:
 			failures.append("live: wall tile %s has no collision polygon" % tile)
 			break
 	renderer.show_zone(start_id)  # idempotent
-	if renderer.floor_layer.get_used_cells().size() != zone["floor"].size():
+	if renderer.floor_layer.get_used_cells().size() != zone["floor"].size() + zone["under"].size():
 		failures.append("live: show_zone not idempotent")
+
+	# juego-21: every zone shown -> every planned tile exists in the baked tilesets
+	# (no broken texture after moving the sheets out of _source/), every wall tile
+	# is solid (banner faces had none), and some faces are worn bricks.
+	var wear := 0
+	for zone_id in renderer.get_plan()["zones"]:
+		renderer.show_zone(zone_id)
+		var z: Dictionary = renderer.get_plan()["zones"][zone_id]
+		for key in ["floor", "walls", "decor", "under"]:
+			var layer: TileMapLayer = {"floor": renderer.floor_layer, "walls": renderer.walls_layer, "decor": renderer.decor_layer, "under": renderer.floor_layer}[key]
+			for tile in z[key]:
+				var v: Vector4i = z[key][tile]
+				var src := layer.tile_set.get_source(v.x) as TileSetAtlasSource if layer.tile_set.has_source(v.x) else null
+				if src == null or src.texture == null or not src.has_tile(Vector2i(v.y, v.z)) or not src.has_alternative_tile(Vector2i(v.y, v.z), v.w):
+					failures.append("live: %s tile %s of %s not in the tileset (%s)" % [key, tile, zone_id, v])
+				elif key == "walls" and Vector2i(v.y, v.z) in DungeonTiles.WALL_WEAR:
+					wear += 1
+	for tile in renderer.walls_layer.get_used_cells():
+		if renderer.walls_layer.get_cell_tile_data(tile).get_collision_polygons_count(0) == 0:
+			failures.append("live: wall tile %s (%s) has no collision polygon" % [tile, renderer.walls_layer.get_cell_atlas_coords(tile)])
+			break
+	if wear == 0:
+		failures.append("live: no worn brick faces on the whole map")
 
 	renderer.queue_free()

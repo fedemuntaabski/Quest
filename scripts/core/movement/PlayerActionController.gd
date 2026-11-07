@@ -224,6 +224,9 @@ func open_door(door: Door, heroes: Array[Player], peer: int = 1) -> void:
 	var audio := ManagerLocator.get_audio()
 	if audio:
 		audio.play_sfx(&"door")
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx:
+		vfx.play(&"door_dust", door.global_position)
 
 	var group_zone_ids := room_manager.get_group_zone_ids(door.target_room_id)
 	var final_zone_id := group_zone_ids[-1] if not group_zone_ids.is_empty() else opener.current_zone_id

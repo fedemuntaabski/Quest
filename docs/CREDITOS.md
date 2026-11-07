@@ -11,7 +11,7 @@ Tabla única: `CREDITS.md` solo apunta acá.
 
 | Pack / archivo | Autor | Licencia | Estado | Dónde se usa |
 |---|---|---|---|---|
-| Tiny Dungeon 1.0 | Kenney (https://kenney.nl/assets/tiny-dungeon) | CC0 1.0 | ✅ `License.txt` en el pack | tiles, props, cofres, espadas y pociones de los ítems, base de los escudos teñidos (`_source/kenney_tinyDungeon`, `resources/tilesets/`, `resources/items/`) |
+| Tiny Dungeon 1.0 | Kenney (https://kenney.nl/assets/tiny-dungeon) | CC0 1.0 | ✅ `License.txt` en el pack | tiles, props, cofres, espadas y pociones de los ítems, base de los escudos teñidos (`assets/art/tiles/kenney_tiny_dungeon_packed.png`, `resources/tilesets/`, `resources/items/`) |
 | Tiny Creatures 1.0 | Clint Bellanger (clintbellanger.net) | CC0 1.0 | ✅ `License.txt` en el pack | enemigos `tc_*` |
 | DungeonTileset II v1.7 | 0x72 (https://0x72.itch.io/dungeontileset-ii) | CC0 1.0 | ✅ verificado en la página del autor el 2026-11-07; texto citado en `_source/0x72_DungeonTilesetII_v1.7/LICENSE_VERIFICADA.txt` (el zip no trae licencia) | héroes, enemigos, tiles, íconos de obras y habilidades activas, espadas de brasa y dorada (`assets/art/{characters,enemies,items,tiles,ui}`) |
 | Arte propio (`assets/art/own/`) | proyecto (`tools/build_own_art.gd`) | propio | ✅ | armaduras (escudo Kenney 101/102 re-coloreado), grimorios, gema de la Reliquia (`items.png`), 8 hojas de efectos (`own/vfx/`) |
@@ -32,18 +32,15 @@ Tabla única: `CREDITS.md` solo apunta acá.
 
 ### Licencias permitidas (la lee `tests/test_licencias.gd`)
 
-Cada ruta `res://` de arte, fuente o audio nombrada en `scenes/`, `resources/`, `scripts/` o `project.godot` debe ser igual a una fila o empezar con una fila terminada en `/`. Al sumar un asset: agregar su fila acá con licencia verificada (o sumarlo bajo una carpeta ya listada solo si es del mismo pack y licencia).
+Cada ruta `res://` de arte, fuente o audio nombrada en `scenes/`, `resources/`, `scripts/` o `project.godot` debe ser igual a una fila o empezar con una fila terminada en `/`. Nada bajo `res://assets/art/_source/` puede usarse en runtime (originales intactos; el export lo excluye entero): copiar la hoja a su carpeta normalizada. Al sumar un asset: agregar su fila acá con licencia verificada (o sumarlo bajo una carpeta ya listada solo si es del mismo pack y licencia).
 
 <!-- licencias:inicio -->
 | Regla | Licencia |
 |---|---|
-| `res://assets/art/_source/0x72_DungeonTilesetII_v1.7/` | CC0 1.0 (0x72) |
-| `res://assets/art/_source/kenney_tinyDungeon/` | CC0 1.0 (Kenney) |
-| `res://assets/art/_source/tiny-creatures/` | CC0 1.0 (Clint Bellanger) |
 | `res://assets/art/characters/` | CC0 1.0 (0x72) |
 | `res://assets/art/enemies/` | CC0 1.0 (0x72, Tiny Creatures) |
 | `res://assets/art/items/` | CC0 1.0 (0x72) |
-| `res://assets/art/tiles/` | CC0 1.0 (0x72, Kenney) |
+| `res://assets/art/tiles/` | CC0 1.0 (0x72 `dungeon_tileset_ii.png` y piezas, Kenney `kenney_tiny_dungeon_packed.png`) |
 | `res://assets/art/ui/` | CC0 1.0 (0x72) + propio (`placeholder_*`) |
 | `res://assets/art/own/` | propio (`tools/build_own_art.gd`) |
 | `res://assets/texture/enviorment/` | propio |

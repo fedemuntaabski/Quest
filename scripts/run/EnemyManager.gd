@@ -235,6 +235,9 @@ func _spawn_enemy(zone_id: String, world_position: Vector2, forced_type: EnemyTy
 	enemy.configure(Enemy.Variant.SWARM, zone_id, hp_mult, dmg_mult, type)
 	enemy.died.connect(_on_enemy_died)
 	_enemies.append(enemy)
+	var vfx := ManagerLocator.get_vfx_manager()
+	if vfx:  # host only (returned above on clients); VfxManager relays it
+		vfx.play(&"enemy_spawn", enemy.global_position)
 	enemy_spawned.emit(enemy)
 	return enemy
 

@@ -230,11 +230,12 @@ func _client_interpolate() -> void:
 		node.global_position = (e.from as Vector2).lerp(e.to, alpha)
 
 
+## A puppet leaves only when its host enemy died (Enemy._die_from_damage is the one
+## exit): the host already relays the death_dust "fx" (playing it here too doubled it,
+## fixed in juego-21); the corpse is local, like the host's.
 func _free_puppet(enemy: Enemy) -> void:
 	_interp.erase(enemy)
-	var vfx := ManagerLocator.get_vfx_manager()
-	if vfx:
-		vfx.play(&"death_dust", enemy.global_position, vfx.config.dust_color)
+	enemy.visual.spawn_corpse(enemy.get_parent())
 	enemy.queue_free()
 
 

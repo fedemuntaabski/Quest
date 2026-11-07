@@ -10,7 +10,10 @@ extends Node2D
 ##
 ## build_plan() is pure and deterministic (same layout + config -> same plan),
 ## keyed by zone id so a zone's tiles are only painted when it is revealed:
-##   {"zones": {zone_id: {"floor": {tile: Vector4i}, "walls": {...}, "decor": {...}}}}
+##   {"zones": {zone_id: {"floor": {tile: Vector4i}, "walls": {...}, "decor": {...}, "under": {...}}}}
+## "under" (juego-21) = solid fill painted on the Floor layer behind wall caps: a cap's
+## upper half is transparent, so without it the grey side columns stuck out above the
+## north lip at every corner; with it the whole wall mass reads as one block.
 ## Tile values are DungeonTiles.tile(source, atlas, alt). Walls are the 1-cell
 ## ring around all floor (2 tiles thick): the row touching floor below is a
 ## brick face, the row above it its cap, the row touching floor above a flipped
@@ -54,6 +57,7 @@ func show_zone(zone_id: String) -> void:
 	_paint(floor_layer, zone["floor"])
 	_paint(walls_layer, zone["walls"])
 	_paint(decor_layer, zone["decor"])
+	_paint(floor_layer, zone["under"])
 
 
 func _paint(layer: TileMapLayer, tiles: Dictionary) -> void:
@@ -75,7 +79,7 @@ static func build_plan(layout: MapLayout, config: MapVisualConfig) -> Dictionary
 	for corridor in layout.corridors:
 		_add_zone(corridor.id, corridor.get_zone_rect(), order, zone_cells, floor_cells)
 	for id in order:
-		zones[id] = {"floor": {}, "walls": {}, "decor": {}}
+		zones[id] = {"floor": {}, "walls": {}, "decor": {}, "under": {}}
 
 	# Wall ring: 8-neighbours of floor that are not floor; the first zone in order owns it.
 	var wall_owner: Dictionary = {}
@@ -145,6 +149,9 @@ static func _plan_floor(layout: MapLayout, config: MapVisualConfig, zones: Dicti
 static func _plan_walls(config: MapVisualConfig, layout: MapLayout, zones: Dictionary, floor_tiles: Dictionary, wall_tiles: Dictionary) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash([layout.map_seed, "banners"])
+	# Own stream (juego-21): worn bricks never move the banners of an existing seed.
+	var wear_rng := RandomNumberGenerator.new()
+	wear_rng.seed = hash([layout.map_seed, "wall_wear"])
 	var room_ids := _room_ids(layout)
 	var down := Vector2i(0, 1)
 	var left := Vector2i(-1, 0)
@@ -163,6 +170,8 @@ static func _plan_walls(config: MapVisualConfig, layout: MapLayout, zones: Dicti
 				atlas = DungeonTiles.WALL_RIGHT
 			elif room_ids.has(owner_id) and rng.randf() < config.wall_decor_density:
 				atlas = DungeonTiles.BANNERS[rng.randi() % DungeonTiles.BANNERS.size()]
+			elif wear_rng.randf() < config.wall_wear_density:
+				atlas = DungeonTiles.WALL_WEAR[wear_rng.randi() % DungeonTiles.WALL_WEAR.size()]
 			value = DungeonTiles.tile(DungeonTiles.SRC_SHEET, atlas)
 		elif wall_tiles.has(tile + down) and floor_tiles.has(tile + down + down):
 			# Cap above a face row.
@@ -174,9 +183,11 @@ static func _plan_walls(config: MapVisualConfig, layout: MapLayout, zones: Dicti
 			elif not run_right:
 				atlas = DungeonTiles.WALL_TOP_RIGHT
 			value = DungeonTiles.tile(DungeonTiles.SRC_SHEET, atlas)
+			zones[owner_id]["under"][tile] = DungeonTiles.tile(DungeonTiles.SRC_FILL, DungeonTiles.WALL_FILL)
 		elif floor_tiles.has(tile - down):
 			# South wall: cap flipped so its edge meets the floor above.
 			value = DungeonTiles.tile(DungeonTiles.SRC_SHEET, DungeonTiles.WALL_TOP_MID, DungeonTiles.ALT_FLIP_V)
+			zones[owner_id]["under"][tile] = DungeonTiles.tile(DungeonTiles.SRC_FILL, DungeonTiles.WALL_FILL)
 		zones[owner_id]["walls"][tile] = value
 
 

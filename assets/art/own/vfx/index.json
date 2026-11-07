@@ -1,5 +1,26 @@
 {
+	"own_flame_gold": {
+		"columns": 8,
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 8
+	},
+	"own_portal_red": {
+		"columns": 8,
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 8
+	},
 	"own_ring_blue": {
+		"columns": 8,
+		"fps": 15,
+		"frame_h": 40,
+		"frame_w": 40,
+		"frames": 8
+	},
+	"own_ring_gold": {
 		"columns": 8,
 		"fps": 15,
 		"frame_h": 40,

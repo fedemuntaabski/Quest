@@ -48,6 +48,8 @@ enum ExitHintMode {
 @export_range(0.0, 1.0) var wall_decor_density: float = 0.12
 ## Chance per tile on a room's outermost floor ring to hold a Kenney prop.
 @export_range(0.0, 1.0) var prop_density: float = 0.06
+## juego-21: share of plain brick faces (rooms and corridors) drawn as worn bricks (0x72 wall_hole_1/2).
+@export_range(0.0, 1.0) var wall_wear_density: float = 0.1
 ## Chance a room floor tile uses a variant (cracks/stains) instead of plain.
 @export_range(0.0, 1.0) var floor_variant_chance: float = 0.25
 
