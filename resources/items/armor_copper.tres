@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="ItemData" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/art/armor/armours.png" id="1_wp5v1"]
+[ext_resource type="Texture2D" path="res://assets/art/own/items.png" id="1_wp5v1"]
 [ext_resource type="Script" path="res://scripts/core/items/ItemData.gd" id="2_fs3e6"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gq71c"]
 atlas = ExtResource("1_wp5v1")
-region = Rect2(48, 176, 16, 16)
+region = Rect2(48, 0, 16, 16)
 
 [resource]
 script = ExtResource("2_fs3e6")

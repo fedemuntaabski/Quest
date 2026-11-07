@@ -5,7 +5,7 @@ class_name VfxConfig
 ## `effects` maps an effect id to {scene, sheet, tint, duration, scale}:
 ##  - scene: one of the 7 scenes in scenes/vfx (slash_arc, projectile_trail, impact_sparks,
 ##    heal_glow, buff_aura, death_dust, damage_flash);
-##  - sheet: sprite sheet name in assets/art/vfx/index.json ("" = particles only);
+##  - sheet: sprite sheet name in assets/art/own/vfx/index.json (tools/build_own_art.gd) ("" = particles only);
 ##  - tint: multiply the sheet by the palette color (only for white sheets);
 ##  - duration: seconds the whole effect lives (the sheet is sped up/slowed to fit);
 ##  - scale: extra multiplier on top of ArtConfig.ART_SCALE.

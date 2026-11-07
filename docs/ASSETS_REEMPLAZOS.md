@@ -1,6 +1,6 @@
 # Assets: inventario, reemplazos y pendientes de arte
 
-Sesión `multijugador-11`. Base: `docs/ASSETS.md`, `docs/ASSETS_AUDITORIA.md`, `docs/MISSING_ICONS.md`, licencias en `docs/CREDITOS.md`. No se borró nada.
+Sesión `multijugador-11`. Actualizado en `licencias-20` (packs dudosos retirados, ver `docs/CREDITOS.md`). Base: `docs/ASSETS.md`, `docs/ASSETS_AUDITORIA.md`, `docs/MISSING_ICONS.md`, licencias en `docs/CREDITOS.md`. No se borró nada.
 
 ## 1. Inventario de packs
 
@@ -11,8 +11,8 @@ El "% en uso" es una estimación: archivos o tiles que alguna `.tres`, `.tscn` o
 | `_source/0x72_DungeonTilesetII_v1.7` | 377 (370 frames) | héroes, enemigos, tiles, props, 27 armas, 8 frascos | ~45 % | la hoja alimenta `dungeon_tileset.tres` (19 tiles + relleno); 4 héroes, 13 enemigos y 9 ítems. Ahora también 10 íconos (ver §3) |
 | `_source/kenney_tinyDungeon` | 142 (132 tiles) | muros, props, cofres, personajes, armas, pociones | ~14 % | `build_tilesets.gd` hornea los 132, pero solo ~19 se referencian (props, cofres y `decor_props`) |
 | `_source/tiny-creatures` | 193 (180 tiles) | monstruos de un frame | ~4 % | 7 `tc_*` |
-| `_source/items_sheets` | 8 hojas | armaduras 171 celdas, armas 72, pociones 315, libros 168, cofres 48, consumibles 748, cueva 24 | <5 % | 18 ítems. `chests.png`, `consumables.png` y `cave_gems.png` solo se usan en tests |
-| `_source/super_pixel_effects` | 5932 | efectos | 42 curados en `art/vfx`, 8 en uso | crudo gitignoreado (licencia) |
+| `_source/items_sheets` | 8 hojas | armaduras, armas, pociones, libros, cofres, consumibles, cueva | 0 % | ⛔ licencia desconocida: retirado en `licencias-20` (solo local) |
+| `_source/super_pixel_effects` | 5932 | efectos | 0 % | ⛔ retirado en `licencias-20`: efectos propios en `art/own/vfx` |
 | `_source/raven_fantasy_icons` | 4387 | 2192 íconos | 0 % | licencia desconocida: **no usar** hasta verificarla |
 | `art/characters` | 107 | | 37 | sin usar: angel, doc, variantes `*_f` y lizard |
 | `art/enemies` | 132 | | 13 tipos | sin usar: ice_zombie, muddy, pumpkin_dude, slug, swampy, tiny_slug, zombie |
@@ -34,16 +34,16 @@ Kenney: `Tiles/tile_NNNN.png`, donde (x, y) = (N % 12, N / 12).
 | Obra Catapulta | `placeholder_catapult` | `art/items/bomb_f0.png` | **aplicado** |
 | Obra Pinchos | `placeholder_spikes` | `art/tiles/floor_spikes_anim_f3.png` | **aplicado** |
 | Obra Brasero | `placeholder_trap` | `art/tiles/wall_fountain_basin_red_anim_f0.png` | **aplicado** (provisorio: es una fuente, no un brasero) |
-| Obra Granja | `placeholder_gen_food` | celda de comida/barril en `items_sheets/consumables.png` | pendiente (necesita `AtlasTexture`; licencia ⚠) |
+| Obra Granja | `placeholder_gen_food` | barril Kenney `tile_0082` | pendiente |
 | Habilidad activa Guerrero | `placeholder_ability_warrior_active` | `art/items/weapon_knight_sword.png` | **aplicado** |
 | Habilidad activa Maga | `placeholder_ability_mage_active` | `art/items/weapon_red_magic_staff.png` | **aplicado** |
 | Habilidad activa Pícaro | `placeholder_ability_rogue_active` | `art/items/weapon_knife.png` | **aplicado** |
 | Habilidad activa Paladín | `placeholder_ability_tank_active` | `art/items/weapon_big_hammer.png` | **aplicado** |
 | Pasivas (4 héroes) | `placeholder_ability_*_passive` | celdas de `armours.png` / `books.png`; escudo Kenney `tile_0102` (tanque) | pendiente (`AtlasTexture`) |
-| Cofres por tier | Kenney (5,7) teñido (`Chest.gd`) | `items_sheets/chests.png` (madera/hierro/oro, cerrado y abierto) | pendiente: cambiar `Chest.gd` y verificar en ventana |
+| Cofres por tier | Kenney (5,7) teñido (`Chest.gd`) | cofres Kenney `tile_0089`–`0092` | pendiente: cambiar `Chest.gd` y verificar en ventana |
 | Jaula del prisionero | líneas en código (`PrisonerCage.gd`) | Kenney `tile_0081` (barrotes de madera) o `tile_0070` (reja) | pendiente: verificar en ventana |
 | Altar | rectángulo + brillo (`AltarShrine.gd`) | Kenney `tile_0020` (gárgola) sobre `tile_0032` (pedestal con orbe), o la fuente roja de 0x72 | pendiente |
-| Reliquia | `flask_big_blue` + grietas en código | gema de `cave_gems.png` o Kenney `tile_0032` | pendiente (el actual funciona) |
+| Reliquia | gema propia (`own/items.png` celda 9) + grietas en código | — | **aplicado** en `licencias-20` |
 | Proyectil a distancia | círculo + estela (`Projectile.gd`) | `art/items/weapon_arrow.png` (7×21) para arqueros | pendiente. Para el mago hace falta un **proyectil mágico**: pendiente de arte (se puede tomar del pack de FX) |
 | Íconos de recursos HUD | vectores (`StatIcon.gd`) | `weapon_hammer` / comida / `flask_big_green` / `coin_anim_f0` | pendiente (los vectores se leen bien) |
 | Corazones de HP | vector | `art/ui/ui_heart_full/half/empty.png` (copiados, sin usar) | pendiente |

@@ -12,7 +12,7 @@ Hoy ninguno de estos íconos está cableado en la UI (las habilidades ya existen
 | `gen_lore` | WORKSHOP_LORE (hoy `Polygon2D` violeta) | instrumento arcano / astrolabio |
 | `defense` | DEFENSE "Ballesta" | ballesta |
 | `trap` | TRAP "Trampa" | trampa de pinchos / cepo |
-| `relic` | `Relic`/`RelicController`, `ExitIndicator` portando la Reliquia, minimapa (hoy flask azul 0x72 como cristal) | cristal grande. Candidato: gema de `items/cave_gems.png` |
+| `relic` | `Relic`/`RelicController`, `ExitIndicator` portando la Reliquia, minimapa (hoy la gema propia de `own/items.png`) | cristal grande. Cubierto en `licencias-20` por la gema propia |
 | `res_iron` | `StatIcon` "iron" (resource bar, tooltips, costes del menú de construcción) | lingote / engranaje |
 | `res_food` | `StatIcon` "food", coste de subir de nivel | pan / pata de carne |
 | `res_lore` | `StatIcon` "lore", investigación | pergamino / frasco violeta |
@@ -41,10 +41,10 @@ Hoy ninguno de estos íconos está cableado en la UI (las habilidades ya existen
 | Ícono | Dónde | Fuente |
 |---|---|---|
 | Vida / corazón | popup, portraits | 0x72 `ui_heart_full/half/empty` (`assets/art/items`) |
-| Ataque | popup | `weapons/weapons.png` (cualquier espada) |
+| Ataque | popup | espada de Kenney |
 | Descanso, Botín, Élite, Taller (parche) | `RoomTypeVisual` | 0x72 `flask_big_red`, `chest_full_open_anim_f0`, `weapon_double_axe`, `button_blue_up` (Taller: parche, conviene ícono propio) |
-| Objetos (armas, armaduras, pociones, grimorios) | cofres, `Pickup`, popup "Hallazgos" | `items/`, `armor/`, `weapons/` (ver `resources/items/`) |
-| Estados genéricos animados (alerta, ataque+, defensa+, magia+, veneno, curación, aceleración) | futuros buffs/debuffs | `art/vfx/` (`symbol_*`, `spell_*`, `status_*`) |
+| Objetos (armas, armaduras, pociones, grimorios) | cofres, `Pickup`, ficha del héroe | Kenney + `own/items.png` (ver `resources/items/`, `tools/build_items.gd`) |
+| Estados genéricos animados | buffs | `art/own/vfx/` (`own_ring_*`, `own_sparkle_green`) |
 
 ## Raven Fantasy Icons
-Descartado como fuente por estilo (saturado, contorno grueso) y licencia sin verificar (ver `CREDITS.md`). Si se verifica la licencia, puede cubrir `res_*`, `research_*` y `ability_*` cuando se elijan íconos a mano de `Full Spritesheet/16x16.png` (celdas de 16×16, 16 columnas).
+Descartado: licencia desconocida y estilo saturado. Retirado del repo en `licencias-20` (solo local, ver `docs/CREDITOS.md`).

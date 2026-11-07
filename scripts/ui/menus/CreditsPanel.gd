@@ -2,8 +2,7 @@ class_name CreditsPanel
 extends Control
 
 ## CreditsPanel (progresion-10): full-screen credits over the main menu (button
-## "CRÉDITOS"). Player-facing summary of docs/CREDITOS.md, including the mandatory
-## unTied Games attribution. Esc / Volver closes it.
+## "CRÉDITOS"). Player-facing summary of docs/CREDITOS.md. Esc / Volver closes it.
 
 signal closed
 
@@ -14,7 +13,7 @@ Un juego de Bazinga Studio
 Tiny Dungeon — Kenney (kenney.nl), CC0
 Tiny Creatures — Clint Bellanger, CC0
 DungeonTileset II — 0x72, CC0
-Super Pixel Effects Gigapack — Will Tice / unTied Games
+Efectos, armaduras, grimorios y Reliquia — arte propio
 
 [font_size=26][color=#f2c76b]Fuentes[/color][/font_size]
 Almendra SC — Ana Sanfelippo, SIL Open Font License 1.1

@@ -4,15 +4,11 @@ extends SceneTree
 ## hojas, filtro Nearest en el proyecto y .import lossless sin mipmaps (si existen).
 
 const SHEETS := [
-	"res://assets/art/armor/armours.png",
-	"res://assets/art/weapons/weapons.png",
-	"res://assets/art/items/chests.png",
-	"res://assets/art/items/consumables.png",
-	"res://assets/art/items/potions.png",
-	"res://assets/art/items/books.png",
-	"res://assets/art/items/cave_gems.png",
+	"res://assets/art/own/items.png",
+	"res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png",
 ]
-const IMPORT_DIRS := ["armor", "weapons", "items", "vfx"]
+const VFX_DIR := "res://assets/art/own/vfx/"
+const IMPORT_DIRS := ["items", "own", "own/vfx"]
 
 var _failures := 0
 
@@ -22,11 +18,14 @@ func _init() -> void:
 	for path: String in SHEETS:
 		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
 		_check(img != null and img.get_width() % 16 == 0 and img.get_height() % 16 == 0, "%s en celdas de 16 px" % path)
-	var index: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/art/vfx/index.json"))
-	_check(index.size() == 42, "42 FX en index.json (hay %d)" % index.size())
+	var index: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(VFX_DIR + "index.json"))
+	var config: VfxConfig = load("res://resources/vfx/vfx_config.tres")
+	for key in config.effects:
+		var sheet := String(config.effects[key].get("sheet", ""))
+		_check(sheet == "" or index.has(sheet), "vfx_config %s: hoja '%s' está en index.json" % [key, sheet])
 	for fx: String in index:
 		var e: Dictionary = index[fx]
-		var img := Image.load_from_file(ProjectSettings.globalize_path("res://assets/art/vfx/%s.png" % fx))
+		var img := Image.load_from_file(ProjectSettings.globalize_path(VFX_DIR + "%s.png" % fx))
 		var cols := int(e["columns"])
 		var rows := ceili(float(e["frames"]) / cols)
 		_check(img != null and cols * int(e["frame_w"]) <= img.get_width() and rows * int(e["frame_h"]) <= img.get_height() and int(e["frames"]) > 0, "FX %s: frames caben en la hoja" % fx)

@@ -58,6 +58,13 @@ Sin conexión, en una ranura:
 - [ ] Continuar: mismos héroes, nivel, equipo, mochila, recursos e investigación; el mapa del piso 2 es el mismo que antes.
 - [ ] Perder (o elegir "Nueva partida" y empezar) borra el guardado: la ranura vuelve a "GUARDADA".
 
+## Arte nuevo por licencias (3 min, aparte)
+Capturas de referencia: `tests/tools/shot_licencias.gd` (HUD, Reliquia, ficha, mochila).
+- [ ] En pelea a zoom normal, ¿se ven el tajo, las chispas y el polvo de muerte? (los efectos propios son más chicos y simples que los de antes)
+- [ ] Grito de Guerra, escudo del Paladín, subir de nivel y curar: ¿el anillo de color se distingue de cada uno?
+- [ ] La Reliquia (gema roja) se lee como objeto valioso sobre el suelo y mientras se la lleva.
+- [ ] Mochila y equipo: ¿se distinguen las 7 armaduras (escudos por color) y las espadas?
+
 ## Fuera de esta prueba
 Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.
 

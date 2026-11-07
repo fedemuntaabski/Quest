@@ -8,15 +8,15 @@ extends Node2D
 enum Kind { RELIC, EMBERS, WEAPON, CHEST }
 
 ## 0x72 items (assets/art/items); the chest is a Kenney prop (props palette).
-## The Reliquia is a red gem cut from cave_gems.png (licence unknown, docs/ASSETS.md).
+## The Reliquia is our own red gem (tools/build_own_art.gd, cell 9 of own/items.png).
 const TEXTURES := {
-	Kind.RELIC: "res://assets/art/items/cave_gems.png",
+	Kind.RELIC: "res://assets/art/own/items.png",
 	Kind.EMBERS: "res://assets/art/items/coin_anim_f0.png",
 	Kind.WEAPON: "res://assets/art/items/weapon_regular_sword.png",
 }
 const CHEST_SHEET := "res://assets/art/_source/kenney_tinyDungeon/Tilemap/tilemap_packed.png"
 const CHEST_REGION := Rect2(80, 112, 16, 16)  # tile (5, 7)
-const RELIC_REGION := Rect2(48, 16, 16, 16)  # cave_gems tile (3, 1)
+const RELIC_REGION := Rect2(144, 0, 16, 16)  # own/items.png cell 9 "relic_gem"
 
 @export var kind: Kind = Kind.RELIC:
 	set(value):

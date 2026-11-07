@@ -9,21 +9,21 @@ effects = {
 "duration": 0.9,
 "scale": 1.0,
 "scene": "buff_aura",
-"sheet": "spell_attack_up_001_red",
+"sheet": "own_ring_red",
 "tint": false
 },
 &"buff_building": {
 "duration": 0.9,
 "scale": 1.5,
 "scene": "buff_aura",
-"sheet": "symbol_magic_up_001_violet",
+"sheet": "own_ring_violet",
 "tint": false
 },
 &"buff_shield": {
 "duration": 0.9,
 "scale": 1.0,
 "scene": "buff_aura",
-"sheet": "spell_defense_up_001_blue",
+"sheet": "own_ring_blue",
 "tint": false
 },
 &"damage_flash": {
@@ -37,35 +37,35 @@ effects = {
 "duration": 0.6,
 "scale": 1.0,
 "scene": "death_dust",
-"sheet": "symmetrical_smoke_burst_001_brown",
+"sheet": "own_smoke_brown",
 "tint": false
 },
 &"heal_glow": {
 "duration": 0.9,
 "scale": 1.0,
 "scene": "heal_glow",
-"sheet": "round_sparkle_burst_002_green",
+"sheet": "own_sparkle_green",
 "tint": false
 },
 &"hit_slash": {
 "duration": 0.28,
 "scale": 1.0,
 "scene": "slash_arc",
-"sheet": "directional_impact_002_white",
+"sheet": "own_slash",
 "tint": true
 },
 &"hit_sparks": {
 "duration": 0.35,
 "scale": 0.6,
 "scene": "impact_sparks",
-"sheet": "symmetrical_impact_001_yellow",
+"sheet": "own_sparks_yellow",
 "tint": false
 },
 &"level_up": {
 "duration": 1.0,
 "scale": 1.0,
 "scene": "buff_aura",
-"sheet": "spell_haste_001_green",
+"sheet": "own_ring_green",
 "tint": false
 },
 &"projectile_trail": {

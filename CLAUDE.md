@@ -50,7 +50,7 @@ Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` pe
 - **Logging**: `QuestLogger` (`scripts/core/utils/Logger.gd`), not `print()`. Hot-path logs are DEBUG (an INFO line costs ~1 ms with file logging).
 - **`ManagerLocator.get_main_orchestrator()` can be null** (scene run standalone): null-check and log.
 - **Signal 11 on exit (OK\*)** is a Godot 4.6.2 GDScript-teardown crash, not ours (evidence in `docs/PROGRESO_INTEGRACION.md`). Don't hunt it; re-measure on a new Godot.
-- `.import` files are gitignored; Raven/raw FX packs are gitignored (licence forbids redistribution, see `CREDITS.md`).
+- **Licences.** Every `res://` art/font/audio path in `scenes/ resources/ scripts/ project.godot` must match the allowlist table in `docs/CREDITOS.md` (`test_licencias`). New asset → add its row with a verified licence. Unknown-licence packs (item sheets, unTied FX, Raven) are local-only and gitignored (`_source/items_sheets`, `_source/super_pixel_effects`, `_rejected/licencia/`); never reference them. `.import` files are gitignored.
 - Expected headless noise: GodotSteam/Steam not running; `ObjectDB instances leaked` when cut by `--quit-after`.
 
 ## Architecture
@@ -107,7 +107,7 @@ Top-left floor label + `ObjectivePanel` + `HelpCard`; top-right `HeroPortrait`s 
 ## Directory layout
 
 - `scripts/autoload/` autoloads + `ManagerLocator`; `scripts/run/` per-run composition (Main, Main2d, managers, controllers, Tutorial); `scripts/core/` data + systems by area (abilities, actions, buildings, camera, combat, enemies, floors, input, items, movement, player, research, stats, …); `scripts/entities/` enemies + targeting; `scripts/world/` zones, doors, buildings, relic, chests, cages, map; `scripts/network/`; `scripts/ui/` (hud, menus, overlays, visual).
-- `resources/` `.tres` data (characters, sprite_frames, tilesets, buildings, enemies, floors, items, maps, research, upgrades, net, ui, …). `tools/` headless builders (`build_tilesets`, `build_characters`, `build_items`, `normalize_assets`, `balance_sim`). `assets/art/` normalized art (`_source` untouched packs, `docs/ASSETS.md`).
+- `resources/` `.tres` data (characters, sprite_frames, tilesets, buildings, enemies, floors, items, maps, research, upgrades, net, ui, …). `tools/` headless builders (`build_tilesets`, `build_characters`, `build_items`, `build_own_art`, `normalize_assets` = placeholders only, `balance_sim`) + `libresprite.sh` (own art ↔ `.ase` in `assets/art/own/src/`; `build_own_art` skips outputs that have a `.ase`). `assets/art/` normalized CC0 art + `own/` (project-made item icons, Reliquia gem, VFX strips) (`_source` untouched packs, `docs/ASSETS.md`).
 - `docs/` topic docs (start at `docs/PLAYTEST.md` for manual checks, `docs/PROGRESO_INTEGRACION.md` for status); `docs/archive/` history (old names on purpose).
 
 ## Not verified in a real window

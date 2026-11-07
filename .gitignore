@@ -97,10 +97,13 @@ desktop.ini
 # =========================
 # ASSETS CRUDOS CON LICENCIA RESTRICTIVA (solo locales)
 # =========================
-# Super Pixel Effects (unTied Games) prohíbe redistribuir el pack crudo, en todo o en parte.
-# Se versionan solo license/readme/guide y los assets curados en assets/art/vfx.
-assets/art/_source/super_pixel_effects/PNG/
-assets/art/_source/super_pixel_effects/spritesheet/
+# Super Pixel Effects (unTied Games) prohíbe distribuir el pack fuera de un juego
+# (el repo es público). Desde licencias-20 no se usa ni se versiona nada del pack.
+assets/art/_source/super_pixel_effects/
+# Hojas de ítems de autor/licencia desconocidos: solo locales, no se usan (licencias-20).
+assets/art/_source/items_sheets/
+# Arte de licencia dudosa retirado del juego en licencias-20 (copia local).
+assets/art/_rejected/licencia/
 # Raven Fantasy Icons: licencia desconocida; se versionan solo los íconos usados (assets/art/ui).
 assets/art/_source/raven_fantasy_icons/
 # FX rechazados (copia local del pack FX, mismo motivo de licencia)

@@ -1,0 +1,7 @@
+DungeonTileset II - 0x72 - https://0x72.itch.io/dungeontileset-ii
+Licencia de los assets: Creative Commons Zero v1.0 Universal (CC0 1.0).
+Texto de la página (verificado 2026-11-07, sesión licencias-20):
+  sidebar "License: Creative Commons Zero v1.0 Universal"
+  "You can use this tileset for whatever you like" (enlazado a CC0)
+  "Credit is not necessary, but if you create something using this tileset I'd be happy to see your work"
+El zip del pack no trae archivo de licencia; este archivo deja constancia.

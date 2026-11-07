@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## session/licencias-20
+- Arte listo para publicar: armaduras, grimorios, espadas y pociones con arte Kenney/0x72 (CC0) o propio; la Reliquia es una gema roja propia; los efectos de combate son propios (sin unTied Games). Créditos actualizados.
+- `tests/test_licencias.gd` falla si el juego referencia un archivo sin licencia conocida (tabla en `docs/CREDITOS.md`). Retoque del arte propio con LibreSprite (`tools/libresprite.sh`).
+
 ## session/medieval-15
 - Vocabulario medieval en una pasada (textos, código, señales, `.tres`, docs): Reliquia, Brasas, Hierro, Saber, Obra, Taller, Defensa, Paladín, Bendición de las Obras, partida, hueco, Talismán. Ícono de llama en lugar del rayo. Sin cambios de mecánica ni balance.
 - Premisa mínima en la selección de héroes (reliquias robadas de la abadía).

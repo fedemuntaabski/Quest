@@ -1,39 +1,70 @@
 # Créditos y licencias
 
-Revisión de licencias de todos los assets antes de Steam (uso comercial), sesión `progresion-10`.
-Tabla única: reemplaza a la de `CREDITS.md` (que ahora solo apunta acá). Nada se borró: lo dudoso queda marcado.
+Revisión de licencias de todos los assets antes de Steam (uso comercial). Primera pasada en `progresion-10`; en `licencias-20` se retiró todo lo dudoso del juego y del repo público.
+Tabla única: `CREDITS.md` solo apunta acá.
 
-- ✅ = licencia verificada en el pack, uso comercial permitido.
-- ⚠ = no permite uso comercial, no tiene licencia clara o falta verificar el origen. **Resolver antes de publicar.**
+- ✅ = licencia verificada, uso comercial permitido.
+- 🟦 = propio del proyecto, declarado por el dueño del repo (`licencias-20`).
+- ⛔ = licencia desconocida o sin permiso para el repo público: **retirado** del juego y del índice de git (copia local gitignoreada en `assets/art/_rejected/licencia/` o en su carpeta de `_source`).
 
 ## Arte y fuentes
 
 | Pack / archivo | Autor | Licencia | Estado | Dónde se usa |
 |---|---|---|---|---|
-| Tiny Dungeon 1.0 | Kenney (https://kenney.nl/assets/tiny-dungeon) | CC0 1.0 | ✅ `License.txt` en el pack | tiles, props, cofres (`assets/art/_source/kenney_tinyDungeon`, `resources/tilesets/`) |
-| Tiny Creatures 1.0 | Clint Bellanger (clintbellanger.net) | CC0 1.0 | ✅ `License.txt` en el pack; atribución opcional | enemigos `tc_*` |
-| DungeonTileset II v1.7 | 0x72 (https://0x72.itch.io/dungeontileset-ii) | CC0 1.0 según la página del autor | ⚠ el README del pack no trae texto de licencia: guardar captura de la página de itch.io | héroes, enemigos, ítems (`assets/art/{characters,enemies,items}`); desde `multijugador-11` también los íconos de obras (martillo, ballesta, bomba, frasco, pinchos, fuente roja) y de habilidades activas (espada, báculo, cuchillo, martillo grande) |
-| Super Pixel Effects Gigapack (Free) v2.9.0 | Will Tice / unTied Games (https://untiedgames.itch.io/super-pixel-effects-gigapack) | Propia: uso comercial OK, **atribución obligatoria**, prohibido redistribuir el pack crudo o usarlo para entrenar IA | ✅ atribución ya incluida en la pantalla de Créditos (`CreditsPanel`); el pack crudo no se versiona | `assets/art/vfx` (42 efectos curados) |
-| Raven Fantasy Icons (Free) | ⚠ desconocido | ⚠ desconocida | ⚠ solo local (`assets/nuevos`, `_source/raven_fantasy_icons`, gitignored); **no se usa en el juego** | — |
-| Hojas de ítems (armours, weapons, chests, consumables, potions, books) | ⚠ desconocido | ⚠ desconocida | ⚠ verificar origen/licencia | `assets/art/{armor,weapons,items}`, `resources/items/` |
-| pixelquest16 (cave, july-2025) | ⚠ desconocido | ⚠ desconocida | ⚠ verificar | `assets/art/items/cave_gems.png` |
-| Retratos de héroe (`assets/portraits/*.png`) | ⚠ desconocido | ⚠ desconocida | ⚠ verificar autor/origen | `CharacterData.portrait` |
-| Fondos de menú (`assets/ui/*.png`: `mainbackground`, `background`, `Opciones`, `Selección de Héroes`, `Lobby Multijugador`, `256x256 textures (113)`) | ⚠ desconocido | ⚠ desconocida | ⚠ verificar | menús |
-| GodotSteam 4.22.1 (`addons/godotsteam`) | GodotSteam (https://godotsteam.com) | MIT | ✅ (Steamworks SDK: términos de Valve) | red / Steam |
-| Ícono y splash (`QuestIcon.png`, `bazingastudio.png`) | ⚠ ¿propios del proyecto? | ⚠ por confirmar | ⚠ confirmar que son propios | `project.godot` |
+| Tiny Dungeon 1.0 | Kenney (https://kenney.nl/assets/tiny-dungeon) | CC0 1.0 | ✅ `License.txt` en el pack | tiles, props, cofres, espadas y pociones de los ítems, base de los escudos teñidos (`_source/kenney_tinyDungeon`, `resources/tilesets/`, `resources/items/`) |
+| Tiny Creatures 1.0 | Clint Bellanger (clintbellanger.net) | CC0 1.0 | ✅ `License.txt` en el pack | enemigos `tc_*` |
+| DungeonTileset II v1.7 | 0x72 (https://0x72.itch.io/dungeontileset-ii) | CC0 1.0 | ✅ verificado en la página del autor el 2026-11-07; texto citado en `_source/0x72_DungeonTilesetII_v1.7/LICENSE_VERIFICADA.txt` (el zip no trae licencia) | héroes, enemigos, tiles, íconos de obras y habilidades activas, espadas de brasa y dorada (`assets/art/{characters,enemies,items,tiles,ui}`) |
+| Arte propio (`assets/art/own/`) | proyecto (`tools/build_own_art.gd`) | propio | ✅ | armaduras (escudo Kenney 101/102 re-coloreado), grimorios, gema de la Reliquia (`items.png`), 8 hojas de efectos (`own/vfx/`) |
+| Íconos `placeholder_*` (`assets/art/ui`) | proyecto (`tools/normalize_assets.gd`) | propio | ✅ | investigación, pasivas de habilidades, Granja |
 | Tile placeholder (`assets/texture/enviorment/tileset_placeholder.png`) | proyecto | propio | ✅ (no se ve: grilla lógica oculta) | `Floor` |
-| Íconos `placeholder_*` (`assets/art/ui`) | generados por `tools/normalize_assets.gd` | propios | ✅ | investigación, pasivas de habilidades, Granja (el resto se reemplazó en `multijugador-11`, ver `docs/ASSETS_REEMPLAZOS.md`) |
-| Almendra SC (`assets/fonts/mainfont.ttf`) | Ana Sanfelippo | SIL OFL 1.1 | ✅ incluir el texto de la OFL al distribuir | UI |
-| EB Garamond (`assets/fonts/secundaryfont.ttf`) | Georg Duffner / The EB Garamond Project Authors | SIL OFL 1.1 | ✅ incluir el texto de la OFL al distribuir | UI |
+| Retratos de héroe (`assets/portraits/*.png`) | dueño del repo | propio / con licencia | 🟦 | `CharacterData.portrait` |
+| Fondos de menú (`assets/ui/*.png`) | dueño del repo | propio / con licencia | 🟦 | menús |
+| Ícono y splash (`QuestIcon.png`, `bazingastudio.png`) | dueño del repo | propio | 🟦 | `project.godot` |
+| Almendra SC (`assets/fonts/mainfont.ttf`) | Ana Sanfelippo | SIL OFL 1.1 | ✅ texto en `assets/fonts/OFL.txt`; distribuirlo con el ejecutable | UI |
+| EB Garamond (`assets/fonts/secundaryfont.ttf`) | Georg Duffner / The EB Garamond Project Authors | SIL OFL 1.1 | ✅ ídem | UI |
+| GodotSteam 4.22.1 (`addons/godotsteam`) | GodotSteam (https://godotsteam.com) | MIT | ✅ (Steamworks SDK: términos de Valve) | red / Steam |
+| Hojas de ítems (armours, weapons, chests, consumables, potions, books) | desconocido | desconocida | ⛔ retiradas en `licencias-20`: ítems → Kenney/0x72/propio | — |
+| pixelquest16 (`cave_gems.png`) | desconocido | desconocida | ⛔ retirada: la Reliquia es una gema propia | — |
+| Super Pixel Effects Gigapack (Free) v2.9.0 | Will Tice / unTied Games | propia: OK dentro de un juego, prohibido distribuir el pack fuera de él | ⛔ retirado: el repo es público y versionaba 42 efectos; los 8 en uso pasaron a hojas propias | — |
+| Raven Fantasy Icons (Free) | desconocido | desconocida | ⛔ nunca se usó; solo local | — |
+
+**Historial de git:** los archivos ⛔ siguen en commits anteriores a `licencias-20` del repo público. Sacarlos del todo requiere reescribir el historial (`git filter-repo`) y forzar el push: decisión del dueño, no se hizo.
+
+### Licencias permitidas (la lee `tests/test_licencias.gd`)
+
+Cada ruta `res://` de arte, fuente o audio nombrada en `scenes/`, `resources/`, `scripts/` o `project.godot` debe ser igual a una fila o empezar con una fila terminada en `/`. Al sumar un asset: agregar su fila acá con licencia verificada (o sumarlo bajo una carpeta ya listada solo si es del mismo pack y licencia).
+
+<!-- licencias:inicio -->
+| Regla | Licencia |
+|---|---|
+| `res://assets/art/_source/0x72_DungeonTilesetII_v1.7/` | CC0 1.0 (0x72) |
+| `res://assets/art/_source/kenney_tinyDungeon/` | CC0 1.0 (Kenney) |
+| `res://assets/art/_source/tiny-creatures/` | CC0 1.0 (Clint Bellanger) |
+| `res://assets/art/characters/` | CC0 1.0 (0x72) |
+| `res://assets/art/enemies/` | CC0 1.0 (0x72, Tiny Creatures) |
+| `res://assets/art/items/` | CC0 1.0 (0x72) |
+| `res://assets/art/tiles/` | CC0 1.0 (0x72, Kenney) |
+| `res://assets/art/ui/` | CC0 1.0 (0x72) + propio (`placeholder_*`) |
+| `res://assets/art/own/` | propio (`tools/build_own_art.gd`) |
+| `res://assets/texture/enviorment/` | propio |
+| `res://assets/fonts/mainfont.ttf` | SIL OFL 1.1 (Almendra SC) |
+| `res://assets/fonts/secundaryfont.ttf` | SIL OFL 1.1 (EB Garamond) |
+| `res://assets/portraits/` | propio (declarado) |
+| `res://assets/ui/` | propio (declarado) |
+| `res://assets/audio/click.mp3` | propio (declarado) |
+| `res://assets/audio/hover.mp3` | propio (declarado) |
+| `res://QuestIcon.png` | propio (declarado) |
+| `res://bazingastudio.png` | propio (declarado) |
+<!-- licencias:fin -->
 
 ## Audio
 
 | Archivo | Autor | Licencia | Estado | Dónde se usa |
 |---|---|---|---|---|
-| `assets/audio/click.mp3`, `hover.mp3` | ⚠ desconocido | ⚠ desconocida | ⚠ verificar o reemplazar por Kenney Interface Sounds (CC0) | menús (bus UI) |
+| `assets/audio/click.mp3`, `hover.mp3` | dueño del repo | propio / con licencia | 🟦 declarado en `licencias-20` | menús (bus UI) |
 | Alerta de enemigos (respaldo) | generada en código (`HUDController._load_alert_stream`, onda seno) | propia | ✅ suena solo mientras falte `sfx/alert.ogg` | HUD |
 
-`audio-18`: no entró ningún archivo nuevo (en `assets/audio/` solo están `click.mp3` y `hover.mp3`). Cuando entre uno, sumarlo a la tabla de arriba con autor y licencia; si la licencia no es clara, no se usa.
+`licencias-20`: no entró ningún archivo nuevo (en `assets/audio/` solo están `click.mp3` y `hover.mp3`). Cuando entre uno, sumarlo a la tabla de arriba y a "Licencias permitidas" con autor y licencia; si la licencia no es clara, no se usa (`test_licencias` falla hasta que tenga fila).
 
 ### Audio faltante (rutas ya cableadas en `AudioDirector`)
 
@@ -69,6 +100,6 @@ Si se usa un pack CC-BY en lugar de CC0, agregar su autor a esta tabla y al text
 
 ## Pendiente antes de Steam
 
-1. Resolver cada ⚠: conseguir autor y licencia, o reemplazar el asset.
-2. Guardar el texto de la OFL junto al ejecutable exportado.
-3. Si entra audio nuevo, sumarlo a las tablas y a `CreditsPanel`.
+1. Decidir si se purga el historial de git de los archivos ⛔ (ver arriba).
+2. Distribuir `assets/fonts/OFL.txt` junto al ejecutable exportado.
+3. Si entra audio o arte nuevo, sumarlo a las tablas, a "Licencias permitidas" y, si pide atribución, a `CreditsPanel`.
