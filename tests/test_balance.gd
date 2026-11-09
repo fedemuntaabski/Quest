@@ -42,6 +42,7 @@ func _initialize() -> void:
 	_check_scaling()
 	_check_runs()
 	_check_run_towers()
+	_check_boss_play()
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
 	for failure in failures:
 		printerr("FAIL: ", failure)
@@ -90,6 +91,24 @@ func _check_run_towers() -> void:
 	_expect(float(dark[0]["towers"]) >= 1.0, "runs: %.1f Ballestas on floor 1" % float(dark[0]["towers"]))
 	_expect(float(off[0]["towers"]) == 0.0, "runs without towers built %.1f" % float(off[0]["towers"]))
 	_expect(win3.call(near) > win3.call(dark) + 0.2, "boss next to a Ballesta %.2f vs in the dark %.2f" % [win3.call(near), win3.call(dark)])
+
+
+## juego-24: the boss-play assumptions move the floor-3 boss the right way (Guerrero + Paladín,
+## Hard, always next to a Ballesta; on Normal it already wins ~90 %): healing with Comida first raises the HP it is met with,
+## meeting it before the extraction waves too, and dodging every Embestida wins more fights.
+func _check_boss_play() -> void:
+	var pair: Array = [["warrior", "tank"]]
+	var hard: Array = [DifficultyConfig.get_default().levels[1]]
+	var f3 := func(play: Dictionary) -> Dictionary:
+		return BalanceSim.run_rows(50, pair, hard, true, 1.0, play).filter(func(r: Dictionary) -> bool: return int(r["floor"]) == 3)[0]
+	var none: Dictionary = f3.call({"dodge": 0.0, "heal": "none", "boss_first": false})
+	var first: Dictionary = f3.call({"dodge": 0.0, "heal": "none", "boss_first": true})
+	var healed: Dictionary = f3.call({"dodge": 0.0, "heal": "comida", "boss_first": true})
+	var dodged: Dictionary = f3.call({"dodge": 1.0, "heal": "comida", "boss_first": true})
+	_expect(float(first["boss_hp_in"]) > float(none["boss_hp_in"]), "boss before the extraction: HP in %.2f vs after %.2f" % [first["boss_hp_in"], none["boss_hp_in"]])
+	_expect(float(healed["boss_hp_in"]) >= 0.9 and float(healed["boss_hp_in"]) > float(first["boss_hp_in"]), "heal with Comida first: HP in %.2f vs %.2f" % [healed["boss_hp_in"], first["boss_hp_in"]])
+	_expect(float(dodged["boss_win"]) > float(healed["boss_win"]), "dodging every Embestida: boss won %.2f vs %.2f" % [dodged["boss_win"], healed["boss_win"]])
+	_expect(BalanceSim._play == BalanceSim.BOSS_PLAY, "run_rows restores the boss play")
 
 
 ## calidad-13: 5 floors x both difficulties x 1-4 players. Per-hero pressure of a

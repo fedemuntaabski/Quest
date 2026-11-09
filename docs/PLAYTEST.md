@@ -80,6 +80,8 @@ Capturas de referencia: `tests/tools/shot_movilidad.gd` (`j22_party`, `j22_corri
 - [ ] El portador de la Reliquia camina más lento (×0,85). ¿Se nota?
 - [ ] **Jefe del piso 3 con vida real**: en la captura de juego-23 (`tests/tools/shot_jefe.gd`, sin órdenes) un par de nivel 2 con vida llena lo gana solo junto a una Ballesta, por 4 de vida; sin ella cae a los 9 s. Jugándolo de verdad (esquivando la Embestida, llegando curado): ¿se puede? ¿Hubo que llevarlo hasta una torre? Si es una pared, decidir: ayuda de texto, bajarle la vida o curar antes de la salida.
 - [ ] Co-op de 3-4 jugadores: cada jugador entra con su héroe (antes los jugadores 3 y 4 entraban sin héroe).
+- [ ] **Jefe, juego-24**: el simulador supone que esquivás la mitad de las Embestidas (moverte cuando se pone rojo) y que te curás con Comida antes de pelear. Según el modelo, en Normal se gana junto a una Ballesta y nunca a oscuras. ¿Esquivás más o menos que la mitad? ¿Lo llevaste hasta una Ballesta sin que te lo digan? En la ventana, `tests/tools/shot_jefe.gd -- <dir> esquiva_ballesta` lo gana con el Guerrero en 18 de vida.
+- [ ] **Armadura** (juego-24): equipá la coraza de acero al Guerrero. La hoja muestra «Armadura +1» y los golpes de 2 le sacan 1. ¿Se nota en los pisos 1-2? ¿Se entiende que tiene menos vida que antes (+5)?
 
 ## Fuera de esta prueba
 Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.

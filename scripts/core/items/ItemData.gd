@@ -7,7 +7,8 @@ class_name ItemData
 ## Los consumibles no tienen modifiers: se gastan y aplican `consumable_effect`
 ## (InventoryComponent). `modifiers` usa solo stats que ya existen: hp (vida
 ## máx.), attack_damage, attack_interval (delta en segundos, negativo = más
-## rápido) y attack_range (px). Los .tres de resources/items/ los genera
+## rápido), attack_range (px) y armor (juego-24: armadura plana, se resta de cada
+## golpe recibido, mínimo 1; HeroAbilities.incoming_damage). Los .tres de resources/items/ los genera
 ## tools/build_items.gd y se pueden editar a mano.
 
 enum Slot { WEAPON, ARMOR, CONSUMABLE, TALISMAN }
@@ -19,7 +20,7 @@ enum ConsumableEffect {
 	SPEED_BUFF_TIMED,   ## intervalo de ataque x(1 - value) durante `effect_duration` s
 }
 
-const MODIFIER_KEYS := ["hp", "attack_damage", "attack_interval", "attack_range"]
+const MODIFIER_KEYS := ["hp", "attack_damage", "attack_interval", "attack_range", "armor"]
 const SLOT_LABELS := {Slot.WEAPON: "Arma", Slot.ARMOR: "Armadura", Slot.CONSUMABLE: "Consumible", Slot.TALISMAN: "Talismán"}
 const RARITY_LABELS := {Rarity.COMMON: "Común", Rarity.UNCOMMON: "Poco común", Rarity.RARE: "Raro", Rarity.EPIC: "Épico", Rarity.LEGENDARY: "Legendario"}
 const RARITY_COLORS := {
@@ -107,6 +108,8 @@ static func format_modifiers(mods: Dictionary) -> String:
 		parts.append("%+.2f s Intervalo" % float(mods["attack_interval"]))
 	if mods.has("attack_range"):
 		parts.append("%+d px Alcance" % int(mods["attack_range"]))
+	if mods.has("armor"):
+		parts.append("%+d Armadura" % int(mods["armor"]))
 	return " · ".join(parts)
 
 

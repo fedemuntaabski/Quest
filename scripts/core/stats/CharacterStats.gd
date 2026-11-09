@@ -49,6 +49,8 @@ var attack_interval_mult: float:
 	get:
 		return _product(_interval_mults)
 var damage_taken_mult: float = 1.0
+## juego-24: flat armor from equipment (PlayerStats), taken off every hit (HeroAbilities.incoming_damage).
+var armor: int = 0
 
 # -------------------------
 # RESET

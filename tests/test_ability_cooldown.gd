@@ -40,7 +40,7 @@ func _initialize() -> void:
 	hud.open_hero_sheet(hud._portraits[warrior.stats.hero_id])
 	var sheet := hud.character_popup.get_abilities_text()
 	_expect(sheet.contains("Piel de Hierro") and sheet.contains("20 %") and sheet.contains("Grito de Guerra"), "sheet shows passive + active with real text: '%s'" % sheet)
-	_expect(hud.character_popup._stat_table.get_child_count() == 6 * 5, "stat table: header + 4 rows x 6 columns (%d cells)" % hud.character_popup._stat_table.get_child_count())
+	_expect(hud.character_popup._stat_table.get_child_count() == 6 * 6, "stat table: header + 5 rows (armor since juego-24) x 6 columns (%d cells)" % hud.character_popup._stat_table.get_child_count())
 	hud.character_popup.close()
 
 	# Tactical pause: refused with a reason, cooldown frozen.

@@ -130,10 +130,10 @@ func passive_reduction() -> float:
 	return 0.0
 
 
-## Damage after the passive and any TEAM_SHIELD (never below 1).
+## Damage after the passive and any TEAM_SHIELD, then the flat armor (juego-24); never below 1.
 func incoming_damage(amount: int) -> int:
 	var keep := (1.0 - minf(passive_reduction(), MAX_REDUCTION)) * hero.stats.damage_taken_mult
-	return maxi(1, roundi(amount * keep))
+	return maxi(1, roundi(amount * keep) - hero.stats.armor)
 
 
 ## Resource gained when a room is discovered: {"lore": n, "embers": n}.

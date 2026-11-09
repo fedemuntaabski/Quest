@@ -3,9 +3,11 @@ extends SceneTree
 ## juego-23: the floor-3 boss with its real HP against a level-2 Guerrero + Mago, with or
 ## without one Ballesta in the start room (needs a real window, NOT --headless). The boss is
 ## spawned in the room next to the start room and walks in; nobody gives orders (auto-combat
-## only, so the Embestida is never dodged: the worst case). Saves j23_boss_<mode>_<s>s.png and
-## prints a 1 s timeline (boss HP, hero HP) and the outcome.
-##   godot --path . --resolution 1920x1080 --script res://tests/tools/shot_jefe.gd -- <out_dir> ballesta|sin
+## only, so the Embestida is never dodged: the worst case). juego-24: the `esquiva` modes give one
+## order: when the boss starts its telegraph, both heroes walk to the other room next to the start
+## room (and back on the next one), so the dash lands where they were. Saves j23_boss_<mode>_<s>s.png
+## and prints a 1 s timeline (boss HP, hero HP), the Embestidas (heroes hit each) and the outcome.
+##   godot --path . --resolution 1920x1080 --script res://tests/tools/shot_jefe.gd -- <out_dir> ballesta|sin|esquiva|esquiva_ballesta
 
 const SHOTS_AT := [3, 8, 15]
 const MAX_SEC := 60
@@ -41,7 +43,7 @@ func _initialize() -> void:
 		for i in 2:
 			stats.level_up_hero(hero.stats.hero_id)
 		hero.stats.current_hp = hero.stats.max_hp
-	if mode == "ballesta":
+	if mode.ends_with("ballesta"):
 		resources.research_state.add("ballesta")  # "Planos de ballesta" (Saber + a Scriptorium)
 		var zone: RoomZone = rm.get_zone_node(start)
 		var i := 0
@@ -49,15 +51,30 @@ func _initialize() -> void:
 			i += 1
 		var err: String = await root.get_node("NetCommands").request("build", {"zone": start, "slot": i, "type": Building.BuildingType.BALLESTA})
 		print("ballesta in slot %d: %s" % [i, "ok" if err == "" else err])
-	var boss_room := ""
+	var rooms: Array[String] = []
 	for id in rm.get_zone_ids():
 		if id != start and rm.get_zone_kind(id) == "room" and rm.is_zone_revealed(id):
-			boss_room = id
-			break
+			rooms.append(id)
+	var boss_room: String = rooms[0]
+	var dodge_to: Array[String] = [rooms[1] if rooms.size() > 1 else rm.find_zone_path(start, boss_room)[1], start]
 	var theme: FloorTheme = main2d.floor_manager.config.theme(3)
 	var boss: Enemy = main2d.enemy_manager.spawn_boss(boss_room, theme.boss)
 	print("floor %d, boss %s HP %d in %s; heroes %s" % [main2d.floor_manager.floor_index, boss.type.id, boss.current_hp, boss_room,
 		main2d.heroes.map(func(h: Player) -> String: return "%s lvl %d HP %d" % [h.stats.hero_id, stats.get_hero_level(h.stats.hero_id), h.stats.max_hp])])
+	var charges := []
+	boss.boss_brain.charged.connect(func(_p: Vector2, hit: int) -> void: charges.append(hit))
+	if mode.begins_with("esquiva"):
+		var ids: Array = main2d.heroes.map(func(h: Player) -> String: return h.stats.hero_id)
+		var commands := root.get_node("NetCommands")
+		var enemies: EnemyManager = main2d.enemy_manager  # not the boss itself: a freed capture errors
+		var dodge := [0, false]  # [next target index, boss was charging last frame]
+		process_frame.connect(func() -> void:
+			if not enemies.is_boss_alive():
+				return
+			if enemies.boss.charging and not dodge[1]:
+				commands.request("move", {"heroes": ids, "zone": dodge_to[dodge[0] % 2]})
+				dodge[0] += 1
+			dodge[1] = enemies.boss.charging)
 	main2d.camera.set_target_zoom(2.0)
 	main2d.camera.focus_on((rm.get_center(start) + rm.get_center(boss_room)) * 0.5)
 	var outcome := "time out"
@@ -75,6 +92,6 @@ func _initialize() -> void:
 			outcome = "party down at %d s (boss %d HP left)" % [sec, boss.current_hp]
 			break
 	root.get_viewport().get_texture().get_image().save_png(out_dir.path_join("j23_boss_%s_end.png" % mode))
-	print("RESULT %s: %s" % [mode, outcome])
+	print("RESULT %s: %s; Embestidas %d, heroes hit %s" % [mode, outcome, charges.size(), charges])
 	session.clear()
 	quit()

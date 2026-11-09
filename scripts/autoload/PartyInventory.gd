@@ -166,15 +166,16 @@ func consume(hero_id: String, index: int) -> ItemData:
 
 
 ## Sum of the `modifiers` of the hero's equipped weapon/armor/talisman
-## (keys: hp, attack_damage, attack_interval, attack_range).
+## (keys: hp, attack_damage, attack_interval, attack_range, armor).
 func get_equipment_bonus(hero_id: String) -> Dictionary:
-	var bonus := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0}
+	var bonus := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0, "armor": 0}
 	for slot in [ItemData.Slot.WEAPON, ItemData.Slot.ARMOR, ItemData.Slot.TALISMAN]:
 		for item in get_equipped(hero_id, slot):
 			bonus["hp"] += int(item.modifiers.get("hp", 0))
 			bonus["attack_damage"] += int(item.modifiers.get("attack_damage", 0))
 			bonus["attack_interval"] += float(item.modifiers.get("attack_interval", 0.0))
 			bonus["attack_range"] += float(item.modifiers.get("attack_range", 0.0))
+			bonus["armor"] += int(item.modifiers.get("armor", 0))
 	return bonus
 
 

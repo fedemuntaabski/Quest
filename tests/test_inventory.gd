@@ -136,21 +136,22 @@ func _test_stats_layer() -> void:
 	var base_hp := s.max_hp
 	var cfg: UpgradeConfig = ps.run_upgrade_config
 	var ember := _item("sword_ember")      # +3 damage, -0.1 interval
-	var armor := _item("armor_steel")      # +23 hp
+	var armor := _item("armor_steel")      # +5 hp, +1 armor
 	inv.add_item(ember)
 	inv.add_item(armor)
 	inv.equip("warrior", ember)
 	_expect(s.attack_damage == base_damage + 3 and _near(s.attack_interval, maxf(cfg.min_attack_interval, base_interval - 0.1)), "sword: damage %d interval %f" % [s.attack_damage, s.attack_interval])
 	var hp_before := s.current_hp
 	inv.equip("warrior", armor)
-	_expect(s.max_hp == base_hp + 23 and s.current_hp == hp_before + 23, "armor: %d/%d" % [s.current_hp, s.max_hp])
-	_expect(ps.get_bonus("warrior")["hp"] == 23 and ps.get_bonus("warrior")["attack_damage"] == 3, "get_bonus reports the layer")
+	_expect(s.max_hp == base_hp + 5 and s.current_hp == hp_before + 5, "armor: %d/%d" % [s.current_hp, s.max_hp])
+	_expect(s.armor == 1, "armor_steel: flat armor %d, want 1" % s.armor)
+	_expect(ps.get_bonus("warrior")["hp"] == 5 and ps.get_bonus("warrior")["attack_damage"] == 3 and ps.get_bonus("warrior")["armor"] == 1, "get_bonus reports the layer")
 
 	# Levels keep the equipment (third layer).
 	resources.add_resource("food", 999)
 	_expect(ps.level_up_hero("warrior"), "level up")
 	_expect(s.attack_damage == cfg.damage_at(s.base_attack_damage, 1) + 3, "level-up overwrote the sword bonus (%d)" % s.attack_damage)
-	_expect(s.max_hp == base_hp + cfg.hp_per_level + 23, "level-up lost the armor HP (%d)" % s.max_hp)
+	_expect(s.max_hp == base_hp + cfg.hp_per_level + 5 and s.armor == 1, "level-up lost the armor HP / armor (%d, %d)" % [s.max_hp, s.armor])
 
 	# Unequip shrinks HP but never kills.
 	s.current_hp = 5
@@ -166,7 +167,7 @@ func _test_stats_layer() -> void:
 	var jade := _item("armor_jade")
 	inv.add_item(jade)
 	inv.equip("tank", jade)
-	_expect(tank.max_hp == tank.base_hp + 30 and tank.max_hp <= StatBalance.PLAYER_MAX_HP and StatBalance.PLAYER_MAX_HP == 120, "tank + jade: %d (cap %d)" % [tank.max_hp, StatBalance.PLAYER_MAX_HP])
+	_expect(tank.max_hp == tank.base_hp + 12 and tank.max_hp <= StatBalance.PLAYER_MAX_HP and StatBalance.PLAYER_MAX_HP == 120, "tank + jade: %d (cap %d)" % [tank.max_hp, StatBalance.PLAYER_MAX_HP])
 
 	# New run: stash, loadouts and bonus are gone.
 	inv.reset()

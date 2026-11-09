@@ -399,6 +399,7 @@ func _apply_run_attack(s: CharacterStats, levels: int) -> void:
 		maxf(cfg.min_attack_interval, cfg.interval_at(s.base_attack_interval, levels) + float(bonus["attack_interval"]))
 	)
 	s.set_attack_range(s.base_attack_range + float(bonus["attack_range"]))
+	s.armor = int(bonus["armor"])
 
 
 ## The hero's own level curve (CharacterData.upgrade_override) or the global one.
@@ -486,9 +487,9 @@ func choose_perk(hero_id: String, perk_id: StringName) -> bool:
 
 
 ## Third stat layer for a hero: class perks + equipped items (PartyInventory).
-## Keys: hp (int), attack_damage (int), attack_interval (s, negative = faster), attack_range (px).
+## Keys: hp (int), attack_damage (int), attack_interval (s, negative = faster), attack_range (px), armor (int, items only).
 func _bonus(hero_id: String) -> Dictionary:
-	var bonus := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0}
+	var bonus := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0, "armor": 0}
 	for perk in get_perks_of(hero_id):
 		bonus["hp"] += int(perk.mods.get("hp", 0))
 		bonus["attack_damage"] += int(perk.mods.get("attack_damage", 0))
@@ -518,12 +519,12 @@ func get_stat_breakdown(hero_id: String = "") -> Array[Dictionary]:
 		return rows
 	var cfg := _config_for(id)
 	var levels := _levels_of(id)
-	var perks := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0}
+	var perks := {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0, "armor": 0}
 	for perk in get_perks_of(id):
 		for key: String in perks:
 			perks[key] += perk.mods.get(key, 0)
 	var inventory := ManagerLocator.get_party_inventory()
-	var equipment: Dictionary = inventory.get_equipment_bonus(id) if inventory and id != "" else {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0}
+	var equipment: Dictionary = inventory.get_equipment_bonus(id) if inventory and id != "" else {"hp": 0, "attack_damage": 0, "attack_interval": 0.0, "attack_range": 0.0, "armor": 0}
 	rows.append({"key": "hp", "label": "Vida máx.", "base": s.base_hp, "level": cfg.hp_per_level * levels,
 		"perks": int(perks["hp"]), "equipment": int(equipment["hp"]), "total": s.max_hp})
 	rows.append({"key": "attack_damage", "label": "Daño", "base": s.base_attack_damage,
@@ -534,6 +535,8 @@ func get_stat_breakdown(hero_id: String = "") -> Array[Dictionary]:
 		"perks": float(perks["attack_interval"]), "equipment": float(equipment["attack_interval"]), "total": s.attack_interval})
 	rows.append({"key": "attack_range", "label": "Alcance (px)", "base": s.base_attack_range, "level": 0.0,
 		"perks": float(perks["attack_range"]), "equipment": float(equipment["attack_range"]), "total": s.attack_range})
+	rows.append({"key": "armor", "label": "Armadura", "base": 0, "level": 0, "perks": int(perks["armor"]),
+		"equipment": int(equipment["armor"]), "total": s.armor})
 	return rows
 
 
