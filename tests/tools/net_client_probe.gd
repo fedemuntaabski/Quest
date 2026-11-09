@@ -55,6 +55,17 @@ func _initialize() -> void:
 		return _finish()
 	ManagerLocator.get_net_commands().request("move", {"heroes": [_other_hero_id()], "zone": rm_start(main2d)})
 	await _wait(func() -> bool: return not refusals.is_empty(), "refusal for a foreign hero")
+	# juego-22: a move into the fog is refused by the host (validated there, not here).
+	var hidden := ""
+	for zone_id in main2d.room_manager.get_zone_ids():
+		if not main2d.room_manager.is_zone_revealed(zone_id):
+			hidden = zone_id
+	report["fog_zone"] = hidden
+	report["fog_hero_zone_before"] = _hero(report.own_hero).current_zone_id
+	if hidden != "":
+		ManagerLocator.get_net_commands().request("move", {"heroes": [report.own_hero], "zone": hidden})
+		await _wait(func() -> bool: return refusals.size() >= 2, "refusal for a move into the fog")
+	report["fog_hero_zone_after"] = _hero(report.own_hero).current_zone_id
 	report["refusals"] = refusals
 	await _wait(func() -> bool: return _sync().hash_checks >= 1, "a hash check")
 	report["hash_checks"] = _sync().hash_checks

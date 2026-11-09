@@ -4,7 +4,8 @@ class_name PartyConfig
 ## PartyConfig: which heroes Main2d spawns every floor (session 12; fixed
 ## base party; recruits come from GameSession, heroes-9). Fallback when GameSession holds no pick
 ## (editor F6, multiplayer): the saved hero comes first, then `companion_ids`
-## in order (skipping it) until `party_size`, which also caps a GameSession pick.
+## in order (skipping it) until `party_size`, which also caps an offline GameSession pick (co-op parties
+## are capped by GameSession.MAX_PARTY instead).
 ## party_size 1 = the single-hero game.
 
 @export_range(1, 3) var party_size: int = 2

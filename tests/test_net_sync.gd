@@ -109,6 +109,9 @@ func _check_report(path: String) -> void:
 	_expect(int(report.get("desyncs", -1)) == 0, "no desync")
 	var refusals: Array = report.get("refusals", [])
 	_expect(not refusals.is_empty() and refusals[0][1] == CoopCommands.NOT_YOURS, "the host refused moving a hero the client doesn't own: %s" % [refusals])
+	if str(report.get("fog_zone", "")) != "":
+		_expect(refusals.size() >= 2 and refusals[1][1] == "Sala sin descubrir", "the host refused a client move into the fog: %s" % [refusals])
+		_expect(report.get("fog_hero_zone_after") == report.get("fog_hero_zone_before"), "the refused fog move still moved the hero")
 	_expect(report.get("rejoin_owns", false), "after rejoining the client owns its hero again")
 	_expect((report.get("rejoin_revealed", []) as Array).size() == (report.get("revealed", []) as Array).size(), "rejoin gets the discovered rooms")
 

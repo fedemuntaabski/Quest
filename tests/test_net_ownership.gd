@@ -63,6 +63,23 @@ func _initialize() -> void:
 	net.lobby_changed.emit()
 	_expect(sel.toggle(idb), "a hero handed to the host becomes selectable")
 
+	# juego-22: 4 players, 1 hero each (NetSession._enter_run -> GameSession.set_party):
+	# every player's hero spawns (the single-player PartyConfig.party_size 2 cut players 3-4).
+	var four: Array[String] = ["warrior", "mage", "rogue", "tank"]
+	var session := root.get_node("GameSession")
+	session.set_party(four)
+	net.players = {1: net._new_player("Host", "t1", 0), 2: net._new_player("B", "t2", 1), 3: net._new_player("C", "t3", 2), 4: net._new_player("D", "t4", 3)}
+	net.hero_owner = {"warrior": 1, "mage": 2, "rogue": 3, "tank": 4}
+	var coop := (load(MAIN2D_PATH) as PackedScene).instantiate()
+	coop.force_fallback_layout = true
+	main2d.queue_free()
+	await process_frame
+	root.add_child(coop)
+	await process_frame
+	_expect(coop.heroes.size() == 4, "co-op party of 4 spawned %d heroes" % coop.heroes.size())
+	session.clear()
+	main2d = coop
+
 	# Back offline.
 	net.mode = CoopSession.Mode.OFFLINE
 	net.in_run = false

@@ -168,7 +168,10 @@ func _spawn_heroes() -> void:
 	else:  # no HeroSelectMenu pick (standalone floor, tests): saved hero + PartyConfig companions
 		var save_mgr := ManagerLocator.get_save_manager()
 		ids = party_config.get_party_ids(save_mgr.get_selected_character_id() if save_mgr else CharacterDatabase.get_default_id())
-	ids.resize(mini(ids.size(), party_config.party_size))
+	# juego-22: a co-op party (1 hero per player with 3-4 players) is capped by resolve_party
+	# (MAX_PARTY), not by the single-player party_size: players 3-4 got no hero.
+	if not Net.is_online():
+		ids.resize(mini(ids.size(), party_config.party_size))
 	if session:  # + recruits, - heroes lost on earlier floors (heroes-9)
 		ids = session.resolve_party(ids)
 	var spawn_zone_id := room_manager.get_start_zone_id()
