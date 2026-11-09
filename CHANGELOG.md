@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## session/juego-23
+- Espada de acero pasa a Rara (antes Poco común, igual que la de hierro pero siempre mejor).
+- Grimorio de mareas: el Mago ataca 0,3 s más rápido (antes 0,15 s).
+- Coraza de acero: +23 de vida (antes +20, igual que la de cobre siendo épica).
+- El simulador de balance construye Ballestas (con su investigación) y el jefe pega a todo el grupo, como en la partida; el jefe del piso 3 no cambió.
+
 ## session/juego-22
 - Co-op de 3-4 jugadores: cada jugador entra con su héroe. Antes, el grupo se recortaba a 2 y los jugadores 3 y 4 no tenían héroe.
 - En un pasillo vertical, el grupo se ordena a lo largo del pasillo, sin dibujarse sobre los muros; el anillo de selección acompaña.

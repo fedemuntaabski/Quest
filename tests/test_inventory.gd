@@ -136,21 +136,21 @@ func _test_stats_layer() -> void:
 	var base_hp := s.max_hp
 	var cfg: UpgradeConfig = ps.run_upgrade_config
 	var ember := _item("sword_ember")      # +3 damage, -0.1 interval
-	var armor := _item("armor_steel")      # +20 hp
+	var armor := _item("armor_steel")      # +23 hp
 	inv.add_item(ember)
 	inv.add_item(armor)
 	inv.equip("warrior", ember)
 	_expect(s.attack_damage == base_damage + 3 and _near(s.attack_interval, maxf(cfg.min_attack_interval, base_interval - 0.1)), "sword: damage %d interval %f" % [s.attack_damage, s.attack_interval])
 	var hp_before := s.current_hp
 	inv.equip("warrior", armor)
-	_expect(s.max_hp == base_hp + 20 and s.current_hp == hp_before + 20, "armor: %d/%d" % [s.current_hp, s.max_hp])
-	_expect(ps.get_bonus("warrior")["hp"] == 20 and ps.get_bonus("warrior")["attack_damage"] == 3, "get_bonus reports the layer")
+	_expect(s.max_hp == base_hp + 23 and s.current_hp == hp_before + 23, "armor: %d/%d" % [s.current_hp, s.max_hp])
+	_expect(ps.get_bonus("warrior")["hp"] == 23 and ps.get_bonus("warrior")["attack_damage"] == 3, "get_bonus reports the layer")
 
 	# Levels keep the equipment (third layer).
 	resources.add_resource("food", 999)
 	_expect(ps.level_up_hero("warrior"), "level up")
 	_expect(s.attack_damage == cfg.damage_at(s.base_attack_damage, 1) + 3, "level-up overwrote the sword bonus (%d)" % s.attack_damage)
-	_expect(s.max_hp == base_hp + cfg.hp_per_level + 20, "level-up lost the armor HP (%d)" % s.max_hp)
+	_expect(s.max_hp == base_hp + cfg.hp_per_level + 23, "level-up lost the armor HP (%d)" % s.max_hp)
 
 	# Unequip shrinks HP but never kills.
 	s.current_hp = 5

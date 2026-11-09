@@ -13,7 +13,7 @@ id = "sword_steel"
 display_name = "Espada de acero"
 description = "Acero templado: corta hueso y armadura."
 icon = SubResource("AtlasTexture_qjpad")
-rarity = 1
+rarity = 2
 modifiers = {
 "attack_damage": 3
 }

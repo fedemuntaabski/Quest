@@ -330,12 +330,60 @@ Poder = ganancia de DPS + ganancia de vida efectiva (+ la mitad de la de alcance
 - Rarezas invertidas: `book_tides` (rara) rinde un tercio de `book_embers` (poco común); `armor_steel` (épica) rinde lo mismo que `armor_copper` (rara). Ninguna se arregla con ±25 %.
 - El daño plano pesa más en el Pícaro (2 de daño base): las espadas le duplican el DPS. Es la deuda ya anotada en "Pícaro a nivel alto".
 
-## Propuestas (juego-22, sin hacer)
-| Propuesta | Por qué | Costo |
-|---|---|---|
-| `sword_steel` pasa a Rara (o `sword_iron` a Común) | dos espadas poco comunes y una es siempre mejor | bajo, `.tres` (rareza) |
-| `book_tides` −0,15 → −0,3 s | la rara rinde un tercio de la poco común | bajo, fuera de ±25 % |
-| `armor_steel` 20 → 23 de vida, o pasarla a Rara | una épica igual a una rara | bajo |
-| Ayuda del jefe: "pelealo junto a tus Ballestas" | el modelo dice que sin torres el jefe del piso 3 tumba a cualquier par | bajo, texto |
-| Re-orden a mitad de camino (cambiar el rumbo en vez de rechazar) | sensación de RTS; hoy responde "Ya hay una orden en curso" | medio: `PlayerActionController` corta el tween y re-planifica desde la zona actual; revisar co-op |
-| Torres en `BalanceSim.run_rows` (Ballesta en salas encendidas, peleas cerca) | sin eso el modelo no juzga los pisos 3-5 | medio, solo herramienta |
+## Propuestas (juego-22; decididas en juego-23)
+| Propuesta | Decisión (juego-23) |
+|---|---|
+| `sword_steel` pasa a Rara (o `sword_iron` a Común) | **hecho**: `sword_steel` Rara (poder 106 %, −17 % de la media de las raras, ya no domina a nadie) |
+| `book_tides` −0,15 → −0,3 s | **hecho**: poder 20 → 50 % (`book_embers` 67 %; de un tercio a tres cuartos) |
+| `armor_steel` 20 → 23 de vida, o pasarla a Rara | **hecho**: 23 de vida, poder 73 % (`armor_copper` 64 %, `armor_gold` 79 %) |
+| Ayuda del jefe: "pelealo junto a tus Ballestas" | no (el dueño eligió no tocar el jefe ni su texto) |
+| Re-orden a mitad de camino | no, se queda el rechazo hasta un playtest con gente |
+| Torres en `BalanceSim.run_rows` | **hecho** (ver «Torres en las corridas») |
+
+## Torres en las corridas (session juego-23)
+Corrida: `godot --headless --path . --script res://tools/balance_sim.gd -- juego23 runs` (~10 s; `docs/balance/juego23_runs.csv`). Las otras 11 tablas no cambian (son iguales a las de progresion10/calidad13).
+
+**Supuestos nuevos de `run_rows`** (`towers` = true por defecto):
+- La Ballesta pide la investigación «Planos de ballesta» (8 Saber + un Scriptorium funcionando; dura toda la corrida). Hasta tenerla, el primer Taller del piso es un Scriptorium y se investiga apenas alcanza el Saber.
+- Investigada: la sala inicial recibe una Ballesta al empezar el piso y cada sala encendida después recibe una **antes** de su Taller (4 Hierro, +25 % por cada una del piso; las obras no pasan de piso). Las torres no caen.
+- Una oleada de puerta o de extracción se pelea junto a una Ballesta con probabilidad (salas con Ballesta / salas reveladas); la Ballesta suma 15 de daño por s a la velocidad con que el grupo mata.
+- El jefe nace en la sala de salida, apagada; el grupo lo lleva hasta una Ballesta con probabilidad `BOSS_NEAR_TOWERS` = **0,5** (supuesto, sin datos de playtest).
+- **Corrección del jefe**: su contacto y su Embestida pegan a **todos** los héroes vivos (están juntos), no a uno. Se vio en la ventana real (`tests/tools/shot_jefe.gd`: Guerrero y Mago de nivel 2 pierden vida a la vez). Con esa corrección, el modelo reproduce la pelea real: con vida llena y una Ballesta, el jefe muere y el Guerrero queda con 5 de vida (real: 4); sin Ballesta, caen los dos (real: el jefe queda con 90 de 156).
+- Sigue sin modelar: esquivar la Embestida, alejarse del jefe, trampas, salas Rest/Elite/Loot, ítems, perks.
+
+| Dificultad | Grupo | Victoria por piso 1/2/3/4/5 (%) | juego-22 (sin torres) | Vida perdida piso 1 / 3 (%) | Ballestas piso 1 / 3 | Comida / Hierro / Saber / Brasas al final del piso 1 |
+|---|---|---|---|---|---|---|
+| Normal | Guerrero | 100 / 98 / 0 / 0 / 0 | 96 / 90 / 0 / 0 / 0 | 36 / 98 | 1,7 / 1,6 | 24 / 6 / 21 / 11 |
+| Normal | Mago | 94 / 62 / 0 / 0 / 0 | 76 / 40 / 0 / 0 / 0 | 50 / 93 | 1,8 / 1,4 | 23 / 6 / 34 / 10 |
+| Normal | Pícaro | 86 / 70 / 0 / 0 / 0 | 66 / 48 / 0 / 0 / 0 | 55 / 95 | 2,3 / 1,3 | 22 / 3 / 20 / 9 |
+| Normal | Paladín | 96 / 94 / 6 / 0 / 0 | 92 / 74 / 0 / 0 / 0 | 35 / 91 | 1,9 / 1,4 | 23 / 5 / 21 / 10 |
+| Normal | Guerrero + Mago | 100 / 100 / 0 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 16 / 97 | 1,8 / 1,5 | 22 / 6 / 34 / 10 |
+| Normal | Guerrero + Pícaro | 100 / 100 / 2 / 2 / 0 | 100 / 100 / 10 / 0 / 0 | 15 / 96 | 2,1 / 1,4 | 24 / 3 / 21 / 9 |
+| Normal | Guerrero + Paladín | 100 / 100 / 12 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 11 / 96 | 1,9 / 1,7 | 23 / 6 / 21 / 11 |
+| Normal | Mago + Pícaro | 100 / 100 / 0 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 20 / 93 | 2,4 / 1,5 | 22 / 3 / 34 / 9 |
+| Normal | Mago + Paladín | 100 / 100 / 6 / 2 / 0 | 100 / 100 / 0 / 0 / 0 | 15 / 97 | 1,7 / 1,3 | 24 / 5 / 35 / 11 |
+| Normal | Pícaro + Paladín | 100 / 100 / 4 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 15 / 96 | 2,4 / 1,4 | 23 / 2 / 20 / 9 |
+| Normal | los 4 | 100 / 100 / 4 / 0 / 0 | 100 / 100 / 52 / 4 / 0 | 13 / 89 | 2,3 / 1,5 | 23 / 3 / 34 / 9 |
+| Difícil | Guerrero | 92 / 58 / 0 / 0 / 0 | 90 / 40 / 0 / 0 / 0 | 51 / 92 | 1,8 / 1,4 | 23 / 6 / 21 / 10 |
+| Difícil | Mago | 30 / 6 / 0 / 0 / 0 | 12 / 0 / 0 / 0 / 0 | 86 / 76 | 1,8 / 1,7 | 22 / 5 / 31 / 8 |
+| Difícil | Pícaro | 26 / 2 / 0 / 0 / 0 | 20 / 2 / 0 / 0 / 0 | 85 / 98 | 2,2 / 1,0 | 22 / 3 / 18 / 10 |
+| Difícil | Paladín | 48 / 20 / 0 / 0 / 0 | 34 / 12 / 0 / 0 / 0 | 80 / 92 | 1,7 / 1,3 | 23 / 6 / 20 / 9 |
+| Difícil | Guerrero + Mago | 100 / 100 / 0 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 27 / 91 | 1,8 / 1,4 | 22 / 6 / 34 / 10 |
+| Difícil | Guerrero + Pícaro | 100 / 100 / 0 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 29 / 93 | 2,3 / 1,5 | 22 / 3 / 21 / 9 |
+| Difícil | Guerrero + Paladín | 100 / 100 / 0 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 23 / 94 | 1,8 / 1,5 | 22 / 5 / 21 / 10 |
+| Difícil | Mago + Pícaro | 98 / 74 / 0 / 0 / 0 | 100 / 82 / 0 / 0 / 0 | 55 / 88 | 2,2 / 1,1 | 18 / 3 / 34 / 9 |
+| Difícil | Mago + Paladín | 100 / 92 / 0 / 0 / 0 | 100 / 88 / 0 / 0 / 0 | 34 / 89 | 1,8 / 1,4 | 21 / 5 / 34 / 10 |
+| Difícil | Pícaro + Paladín | 100 / 96 / 0 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 30 / 88 | 2,4 / 1,4 | 20 / 3 / 21 / 9 |
+| Difícil | los 4 | 100 / 98 / 0 / 0 / 0 | 100 / 94 / 0 / 0 / 0 | 28 / 68 | 2,2 / 1,3 | 23 / 3 / 35 / 9 |
+
+Media por héroe en grupos de 2-4 contra la media de los cuatro: Normal ±0,4 pp, Difícil ±1,3 pp (`test_balance._check_runs` sigue en verde).
+
+Sensibilidad del piso 3 (pares, Normal; victoria media, rango entre pares): sin torres 0 %; torres pero el jefe siempre a oscuras 0 %; `boss_near` 0,5 → 4 % (0-12); siempre junto a la Ballesta → 8 % (0-28). Difícil: 0 % en todos los casos. Grupo de 4: 4-8 % en Normal.
+
+**Lectura: el jefe del piso 3 sigue siendo una pared.**
+- Las torres ayudan donde el jefe no está: solos y pisos 1-2 suben (Mago solo Normal 76/40 → 94/62), pero el piso 3 no.
+- La pelea contra el jefe solo se gana si el grupo llega con casi toda la vida **y** lo pelea junto a una Ballesta (la captura: el Guerrero gana con 4 de vida). El modelo llega al jefe con ~90 % de la vida del piso ya perdida (oleadas de puerta y de extracción; solo cura con Comida al empezar el piso), así que pierde.
+- El grupo de 4 cae de 52 % a 4 %: la corrección (el jefe pega a todos) le pega más al que tiene más héroes juntos.
+- Lo que el modelo no tiene y podría cambiarlo en partida: esquivar la Embestida y salir del contacto (de los ~6 de daño por s que recibe cada héroe, 5 son contacto y ~1,2 la carga), curarse en una sala Rest antes de abrir la salida, separar al grupo. Barrido de juego-23 (sin aplicar, el dueño eligió no tocar el jefe): vida 120 → 90 sube los pares en Normal de 19 a 32 % con el modelo de un solo blanco; con el modelo corregido haría falta re-medir.
+
+**Ajustes de juego-23:** solo los tres ítems (arriba). `test_balance._check_run_towers`: hay Ballestas en el piso 1, sin torres no se construye ninguna, y el jefe junto a una Ballesta gana > 20 pp más que a oscuras (Guerrero + Paladín, Normal). `test_equipo_efectos._check_rarity_picks`: una sola arma poco común, `book_tides` ≥ 70 % de `book_embers`, `armor_steel` > 1,1 × `armor_copper`.

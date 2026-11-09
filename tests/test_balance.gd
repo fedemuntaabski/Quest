@@ -41,6 +41,7 @@ func _initialize() -> void:
 	_check_hero_roles()
 	_check_scaling()
 	_check_runs()
+	_check_run_towers()
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
 	for failure in failures:
 		printerr("FAIL: ", failure)
@@ -74,6 +75,21 @@ func _check_runs() -> void:
 		var mean := total / maxf(means.size(), 1)
 		for hero_id in means:
 			_expect(absf(means[hero_id] - mean) * 100.0 <= RUN_HERO_SPREAD_PP, "%s: %s wins %.1f pp off the mean (parties of 2-4)" % [level.id, hero_id, (means[hero_id] - mean) * 100.0])
+
+
+## juego-23: the runs build Ballestas (every party has one on floor 1) and pulling the floor-3
+## boss to one beats fighting it in the dark; towers off builds none.
+func _check_run_towers() -> void:
+	var pair: Array = [["warrior", "tank"]]
+	var normal: Array = [DifficultyConfig.get_default().levels[0]]
+	var win3 := func(rows: Array[Dictionary]) -> float:
+		return float(rows.filter(func(r: Dictionary) -> bool: return int(r["floor"]) == 3)[0]["win_rate"])
+	var dark: Array[Dictionary] = BalanceSim.run_rows(50, pair, normal, true, 0.0)
+	var near: Array[Dictionary] = BalanceSim.run_rows(50, pair, normal, true, 1.0)
+	var off: Array[Dictionary] = BalanceSim.run_rows(50, pair, normal, false)
+	_expect(float(dark[0]["towers"]) >= 1.0, "runs: %.1f Ballestas on floor 1" % float(dark[0]["towers"]))
+	_expect(float(off[0]["towers"]) == 0.0, "runs without towers built %.1f" % float(off[0]["towers"]))
+	_expect(win3.call(near) > win3.call(dark) + 0.2, "boss next to a Ballesta %.2f vs in the dark %.2f" % [win3.call(near), win3.call(dark)])
 
 
 ## calidad-13: 5 floors x both difficulties x 1-4 players. Per-hero pressure of a

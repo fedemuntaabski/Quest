@@ -9,6 +9,9 @@ extends SceneTree
 ## Prints a power table (dps gain + effective-HP gain vs the hero's level-0 numbers, averaged
 ## over the heroes that may carry it) and marks items > DOMINANT_PCT over the mean of their
 ## rarity and slot (a weapon and an armor are worn together: they don't compete).
+## juego-23 (owner's picks, docs/BALANCE.md): no uncommon weapon dominates another (sword_steel
+## went Rare), the Rare talisman reaches 70 % of the Uncommon one (was 30 %) (book_tides -0.3 s) and the
+## Epic armor_steel beats the Rare armor_copper (23 HP).
 ##   godot --headless --path . --script res://tests/test_equipo_efectos.gd
 
 const HEROES: Array[String] = ["warrior", "mage", "rogue", "tank"]
@@ -49,6 +52,7 @@ func _initialize() -> void:
 	_check_stack(catalog)
 	_check_perks(stats)
 	_report(power_rows)
+	_check_rarity_picks(power_rows)
 	for id in HEROES:
 		stats[id].queue_free()
 	ps.clear_party()
@@ -193,3 +197,15 @@ func _report(rows: Array[Dictionary]) -> void:
 		for row in list:
 			var over: float = (row["power"] / maxf(mean, 0.0001) - 1.0) * 100.0
 			print("  %-14s %-9s slot %d power %5.1f %%  vs rarity+slot mean %+5.0f %%%s" % [row["id"], ItemData.Rarity.keys()[rarity], row["slot"], row["power"] * 100.0, over, "  <- DOMINANT" if over > DOMINANT_PCT and list.size() > 1 else ""])
+
+
+func _check_rarity_picks(rows: Array[Dictionary]) -> void:
+	var power := {}
+	var weapons_by_rarity := {}
+	for row in rows:
+		power[row["id"]] = float(row["power"])
+		if int(row["slot"]) == ItemData.Slot.WEAPON:
+			weapons_by_rarity[row["rarity"]] = int(weapons_by_rarity.get(row["rarity"], 0)) + 1
+	_expect(int(weapons_by_rarity.get(ItemData.Rarity.UNCOMMON, 0)) == 1, "uncommon weapons: %d (sword_steel dominated sword_iron)" % int(weapons_by_rarity.get(ItemData.Rarity.UNCOMMON, 0)))
+	_expect(float(power["book_tides"]) >= 0.7 * float(power["book_embers"]), "book_tides %.0f %% vs book_embers %.0f %%" % [power["book_tides"] * 100.0, power["book_embers"] * 100.0])
+	_expect(float(power["armor_steel"]) > 1.1 * float(power["armor_copper"]), "armor_steel %.0f %% vs armor_copper %.0f %%" % [power["armor_steel"] * 100.0, power["armor_copper"] * 100.0])

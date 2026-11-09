@@ -16,6 +16,6 @@ icon = SubResource("AtlasTexture_v5mbu")
 slot = 3
 rarity = 2
 modifiers = {
-"attack_interval": -0.15
+"attack_interval": -0.3
 }
 allowed_heroes = Array[String](["mage"])

@@ -77,3 +77,10 @@ Ventana real, mismo banco (`bench_floor5.gd -- juego22`, `docs/perf/juego22.csv`
 Meta (p95 ≤ 16,7 ms) cumplida con margen; el p99 y los picos mejoraron. Los draw calls se duplicaron desde calidad-13 (el mapa de juego-21 suma ladrillos gastados y el relleno detrás de las tapas): no pesa hoy, vigilar en hardware modesto.
 
 Soak headless (`tests/tools/soak_runs.gd -- 20`): 20 semillas × 5 pisos con guardar → menú → continuar en cada piso desde el 2, ~46 s por semilla, 0 fallos, sin ERROR/WARNING, sin nodos huérfanos; nodos al empezar el piso 2: media 827 en las primeras 10 semillas y 834 en las últimas 10 (sin fuga; la diferencia son enemigos vivos). El piso con más enemigos fue el 5 (14 vivos): el headless está capado a 120 fps (8,33 ms por frame), así que esa medición solo sirve para la lógica.
+
+## Soak (session juego-23)
+
+`tests/tools/soak_runs.gd -- 20` sobre el código de juego-23 (ítems retocados; el simulador no corre en el juego): 20 semillas × 5 pisos con guardar → menú → continuar desde el piso 2, 0 fallos, sin ERROR/WARNING de juego, 44,9-48,7 s por semilla (media 46,7). Nodos al empezar el piso 2: media 827 en las primeras 10 semillas y 834 en las últimas 10, igual que juego-22 (sin fuga). Al salir, Godot avisa `ObjectDB instances leaked` (ruido conocido del cierre por `--script`).
+
+Frame time en el pico (piso 5, 14 enemigos vivos, 240 frames a time_scale 1): frame medio 8,33 ms, p95 8,61 ms, máx 8,68 ms (el headless está capado a 120 fps: es el tope, no el costo); tiempo de `_process` + física (monitores de Godot, se suman aunque se solapen con el tope) medio 10,79 ms, p95 12,8 ms, máx 12,8 ms; juego-22 no anotó este número, queda como línea base. La medición en ventana real sigue siendo la de juego-22 (no cambió nada del render).
+

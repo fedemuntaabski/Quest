@@ -78,7 +78,7 @@ Capturas de referencia: `tests/tools/shot_movilidad.gd` (`j22_party`, `j22_corri
 - [ ] Con 4 héroes (2 + 2 reclutas) en un pasillo vertical, se ordenan a lo largo del pasillo, dentro de los muros. En una sala vuelven a quedar lado a lado.
 - [ ] Mandá a un héroe lejos y, mientras camina, hacé clic derecho en otra sala: la tarjeta dice "Ya hay una orden en curso" y el héroe sigue su camino. ¿Molesta, o preferirías que cambie de rumbo? (está en Propuestas de `docs/BALANCE.md`)
 - [ ] El portador de la Reliquia camina más lento (×0,85). ¿Se nota?
-- [ ] **Jefe del piso 3 con vida real**: el simulador dice que, sin una Ballesta cerca, el jefe tumba a cualquier par. ¿Pasa eso? ¿Hubo que llevarlo hasta una torre?
+- [ ] **Jefe del piso 3 con vida real**: en la captura de juego-23 (`tests/tools/shot_jefe.gd`, sin órdenes) un par de nivel 2 con vida llena lo gana solo junto a una Ballesta, por 4 de vida; sin ella cae a los 9 s. Jugándolo de verdad (esquivando la Embestida, llegando curado): ¿se puede? ¿Hubo que llevarlo hasta una torre? Si es una pared, decidir: ayuda de texto, bajarle la vida o curar antes de la salida.
 - [ ] Co-op de 3-4 jugadores: cada jugador entra con su héroe (antes los jugadores 3 y 4 entraban sin héroe).
 
 ## Fuera de esta prueba

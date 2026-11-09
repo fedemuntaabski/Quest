@@ -577,15 +577,28 @@ static func scaling_rows() -> Array[Dictionary]:
 ## workshops pay BUILDING_YIELD per door; discovery passives pay their Saber/Brasas. After every
 ## fight a downed hero is revived (Comida) while an ally stands. Actives by uptime (duration /
 ## cooldown): Golpe Furtivo in the Rogue's active_dps, Grito de Guerra x the living party's DPS,
-## Interposición x the damage the party takes. Not modelled: towers/traps, Rest/Elite/Loot rooms,
+## Interposición x the damage the party takes. Not modelled: traps, Rest/Elite/Loot rooms,
 ## items, perks, raiders on the Relic. A floor is lost when every hero is down.
+## juego-23, towers (assumption, `towers` true): Ballestas need the "ballesta" research (Saber,
+## a working Scriptorium; kept for the run), so until it is done the first workshop of a floor is a
+## Scriptorium and the research is bought as soon as the Saber allows it. Once researched, the start
+## room gets a Ballesta at floor start and every room lit afterwards gets one BEFORE its workshop (the per-type cost curve applies; buildings
+## don't carry over floors). Towers never fall and shoot whatever is in their room (Ballesta
+## damage / fire_rate per s, added to the kill rate). A door or extraction wave is fought next to
+## a Ballesta with chance (rooms with one / revealed rooms); the boss (born in the dark exit room)
+## is drawn back to one Ballesta with chance `boss_near`. The boss's contact + Embestida hit every
+## living hero (they stand together; seen in tests/tools/shot_jefe.gd), never dodged.
 ## Rows per (difficulty, party, floor): win_rate (share of runs that cleared this floor), party
 ## DPS, hp_lost_pct (damage taken / party max HP), resources at floor end and turns to the exit
 ## (means over the runs that played the floor).
 const RUNS := 50
+## juego-23: chance that the party pulls the boss back to a room with a Ballesta (playtest guess).
+const BOSS_NEAR_TOWERS := 0.5
 ## Average px walked per room on the carrier's path (half a slot pitch of 64 px cells).
 const ROOM_WALK_PX := MapGenerator.SLOT_PITCH * 64.0 * 0.5
 static var _duel_cache: Dictionary = {}
+static var _towers := true
+static var _boss_near := BOSS_NEAR_TOWERS
 
 
 ## Every hero alone, every pair, every trio and the four.
@@ -604,8 +617,10 @@ static func run_parties() -> Array:
 	return out
 
 
-static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = []) -> Array[Dictionary]:
+static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], towers: bool = true, boss_near: float = BOSS_NEAR_TOWERS) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
+	_towers = towers
+	_boss_near = boss_near
 	if parties.is_empty():
 		parties = run_parties()
 	if levels.is_empty():
@@ -617,7 +632,7 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = []) 
 			_duel_cache.clear()
 			var acc: Array[Dictionary] = []
 			for f in FLOORS:
-				acc.append({"played": 0, "won": 0, "dps": 0.0, "lost": 0.0, "iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0, "turns": 0.0})
+				acc.append({"played": 0, "won": 0, "dps": 0.0, "lost": 0.0, "iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0, "turns": 0.0, "towers": 0.0})
 			for r in runs:
 				var rng := RandomNumberGenerator.new()
 				rng.seed = hash(["run", party, level.id, r])
@@ -631,10 +646,12 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = []) 
 					"dps": snappedf(a["dps"] / n, 0.01), "hp_lost_pct": snappedf(a["lost"] / n * 100.0, 0.1),
 					"iron": snappedf(a["iron"] / n, 0.1), "food": snappedf(a["food"] / n, 0.1),
 					"lore": snappedf(a["lore"] / n, 0.1), "embers": snappedf(a["embers"] / n, 0.1),
-					"turns": snappedf(a["turns"] / n, 0.1),
+					"turns": snappedf(a["turns"] / n, 0.1), "towers": snappedf(a["towers"] / n, 0.1),
 				})
 	players = 1
 	difficulty = null
+	_towers = true
+	_boss_near = BOSS_NEAR_TOWERS
 	_duel_cache.clear()
 	return rows
 
@@ -646,6 +663,7 @@ static func _cached_duel(hero_id: String, lvl: int, type: EnemyType, f: int) -> 
 		var hero := hero_stats(hero_id, lvl)
 		d["approach"] = approach_sec(hero, float(enemy_stats(type, f)["speed"]))
 		d["interval"] = float(hero["interval"])
+		d["enemy_hp"] = float(enemy_stats(type, f)["hp"])
 		_duel_cache[key] = d
 	return _duel_cache[key]
 
@@ -669,6 +687,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 	var res := START_RESOURCES.duplicate()
 	var levels := {}
 	var hp := {}
+	var researched := not _towers
 	for id: String in party:
 		levels[id] = 0
 		hp[id] = _max_hp(id, 0)
@@ -712,6 +731,11 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		var lit := 0
 		var workshops := {"iron": 0, "food": 0, "lore": 0}
 		var built := 0
+		var ballestas := 0
+		var ballesta_cost := int(Building.CATALOG[Building.BuildingType.BALLESTA]["cost"])
+		if _towers and researched and res["iron"] >= curve.cost(ballesta_cost, 0):  # the start room is lit free
+			res["iron"] -= curve.cost(ballesta_cost, 0)
+			ballestas = 1
 		var turns := 0
 		var threat_mult := cfg.threat_multiplier(f) * difficulty.threat_mult * scaling.threat(players)
 		var cap := cfg.max_enemies(f) + difficulty.extra_max_enemies + scaling.extra_enemies(players)
@@ -744,25 +768,33 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			if res["embers"] >= light_cost:
 				res["embers"] -= light_cost
 				lit += 1
+				if _towers and researched and res["iron"] >= curve.cost(ballesta_cost, ballestas):
+					res["iron"] -= curve.cost(ballesta_cost, ballestas)
+					ballestas += 1
 				var cost := curve.cost(Building.CATALOG[Building.BuildingType.FORJA]["cost"], built)
 				if res["iron"] >= cost:
 					res["iron"] -= cost
-					workshops[["iron", "food", "lore"][built % 3]] += 1
+					workshops["lore" if not researched and workshops["lore"] == 0 else ["iron", "food", "lore"][built % 3]] += 1
 					built += 1
+			if not researched and workshops["lore"] > 0 and res["lore"] >= ballesta_research_cost():
+				res["lore"] -= ballesta_research_cost()
+				researched = true
 			if rng.randf() < clampf(cfg.door_roll.threat_chance(turns, f) * threat_mult, 0.0, cfg.door_roll.max_chance):
 				var count := mini(scaling.wave(cfg.door_roll.enemy_count(turns, f), players), cap)
-				_fight(party, levels, hp, _roll_wave(f, count, rng), f, rng, damage)
+				_fight(party, levels, hp, _roll_wave(f, count, rng), f, rng, damage, _near(ballestas, revealed.size(), rng))
 				_revive_downed(party, levels, hp, res, f)
 		a["turns"] += turns
+		a["towers"] += ballestas
 		var walk_sec := ROOM_WALK_PX * maxi(_room_path(layout, start_id, exit_id).size() - 1, 1) / (MoveAction.DEFAULT_SPEED_PX * cfg.carrier_speed_mult)
 		var waves := 1 + int(walk_sec / cfg.extraction_stage_interval(f, 0))
 		for _w in waves:
 			if _alive(party, hp):
-				_fight(party, levels, hp, _roll_wave(f, mini(scaling.wave(cfg.extraction_wave_size(0), players), cap), rng), f, rng, damage)
+				_fight(party, levels, hp, _roll_wave(f, mini(scaling.wave(cfg.extraction_wave_size(0), players), cap), rng), f, rng, damage, _near(ballestas, revealed.size(), rng))
 				_revive_downed(party, levels, hp, res, f)
 		var theme := cfg.theme(f)
 		if theme and theme.boss and _alive(party, hp):
-			_boss_fight(party, levels, hp, theme.boss, f, damage, res)
+			var near := 1 if ballestas > 0 and rng.randf() < _boss_near else 0
+			_boss_fight(party, levels, hp, theme.boss, f, damage, res, near)
 		a["lost"] += damage[0] / maxf(max_total, 1.0)
 		for key in ["iron", "food", "lore", "embers"]:
 			a[key] += res[key]
@@ -800,6 +832,23 @@ static func _revive_downed(party: Array, levels: Dictionary, hp: Dictionary, res
 			hp[id] = _max_hp(id, levels[id]) * up.revive_hp_pct
 
 
+## Ballestas shooting at a wave: one when the fight lands in a room that has one.
+static func _near(ballestas: int, revealed: int, rng: RandomNumberGenerator) -> int:
+	return 1 if ballestas > 0 and rng.randf() < float(ballestas) / maxf(revealed, 1.0) else 0
+
+
+static func ballesta_research_cost() -> int:
+	for entry in (load("res://resources/research/research_config.tres") as ResearchConfig).entries:
+		if entry.id == "ballesta":
+			return entry.cost
+	return 0
+
+
+static func tower_dps() -> float:
+	var b: Dictionary = Building.CATALOG[Building.BuildingType.BALLESTA]
+	return float(b["damage"]) / maxf(float(b["fire_rate"]), 0.01)
+
+
 static func _alive(party: Array, hp: Dictionary) -> bool:
 	return party.any(func(id: String) -> bool: return hp[id] > 0.0)
 
@@ -815,7 +864,7 @@ static func _roll_wave(f: int, count: int, rng: RandomNumberGenerator) -> Array[
 
 
 ## Round-robin over the living heroes; one that falls hands its unkilled enemies on.
-static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array[EnemyType], f: int, rng: RandomNumberGenerator, damage: Array) -> void:
+static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array[EnemyType], f: int, rng: RandomNumberGenerator, damage: Array, towers_near: int = 0) -> void:
 	var queue: Array[EnemyType] = wave.duplicate()
 	while not queue.is_empty():
 		var alive := party.filter(func(id: String) -> bool: return hp[id] > 0.0)
@@ -829,6 +878,7 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 			shares[id].append(queue[i])
 		queue.clear()
 		var mults := _team_mults(party, hp)
+		var tower_share := towers_near * tower_dps() / alive.size()
 		for id: String in shares:
 			var left: Array = shares[id]
 			var hero := _cached_hero(id, levels[id])
@@ -836,7 +886,11 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 			var t := rng.randf() * float(_cached_duel(id, levels[id], left[0], f)["interval"])
 			for i in left.size():
 				var d := _cached_duel(id, levels[id], left[i], f)
-				t += int(d["hits_to_kill"]) * float(d["interval"]) / speedup
+				var kill := int(d["hits_to_kill"]) * float(d["interval"]) / speedup
+				if tower_share > 0.0:  # the hero's kill rate + the towers' share of this enemy's HP
+					var enemy_hp := float(d["enemy_hp"])
+					kill = enemy_hp / (enemy_hp / kill + tower_share)
+				t += kill
 				var exposure := maxf(t - float(d["interval"]) - float(d["approach"]), 0.0)
 				var hit := float(d["hit_taken"]) * mults[1] * exposure / Enemy.CONTACT_HIT_INTERVAL
 				damage[0] += minf(hit, hp[id])
@@ -848,29 +902,30 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 					break
 
 
-static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary) -> void:
+static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary, towers_near: int = 0) -> void:
 	var stats := enemy_stats(boss, f)
 	var boss_hp := float(stats["hp"])
 	var charge := maxf(1.0, roundf(boss.charge_damage * floor_config().enemy_damage_multiplier(f) * boss.damage_mult * difficulty.damage_mult))
 	while boss_hp > 0.0 and _alive(party, hp):
-		var dps := 0.0
-		var target := ""
+		var dps := towers_near * tower_dps()
 		var mults := _team_mults(party, hp)
+		var per_sec := {}
+		var t := INF
 		for id: String in party:
 			if hp[id] > 0.0:
-				dps += float(_cached_hero(id, levels[id])["active_dps"]) * mults[0]
-				if target == "":
-					target = id
-		var hero := _cached_hero(target, levels[target])
-		var per_sec := (float(stats["contact"]) * (1.0 - float(hero["reduction_pct"])) / Enemy.CONTACT_HIT_INTERVAL + charge / maxf(boss.charge_cooldown, 0.1)) * mults[1]
-		var t := minf(boss_hp / maxf(dps, 0.01), hp[target] / maxf(per_sec, 0.01))
+				var hero := _cached_hero(id, levels[id])
+				dps += float(hero["active_dps"]) * mults[0]
+				per_sec[id] = (float(stats["contact"]) * (1.0 - float(hero["reduction_pct"])) / Enemy.CONTACT_HIT_INTERVAL + charge / maxf(boss.charge_cooldown, 0.1)) * mults[1]
+				t = minf(t, hp[id] / maxf(per_sec[id], 0.01))
+		t = minf(t, boss_hp / maxf(dps, 0.01))
 		boss_hp -= dps * t
-		var taken := minf(per_sec * t, hp[target])
-		hp[target] -= taken
-		damage[0] += taken
-		if hp[target] <= 0.001:
-			hp[target] = 0.0
-			_revive_downed(party, levels, hp, res, f)
+		for id: String in per_sec:
+			var taken := minf(per_sec[id] * t, hp[id])
+			hp[id] -= taken
+			damage[0] += taken
+			if hp[id] <= 0.001:
+				hp[id] = 0.0
+		_revive_downed(party, levels, hp, res, f)
 
 
 ## Rooms on the shortest corridor path (both ends included).
