@@ -12,6 +12,8 @@ const HOST_ONLY_BUTTONS := ["NextFloorButton", "NewRunButton", "RetryButton"]
 
 func show_screen() -> void:
 	visible = true
+	for button: Button in find_children("*", "Button", true, false):
+		UiStyles.style_menu_button(button)  # visual-24: was the grey default theme
 	if Net.is_online() and not Net.is_authority():
 		for button in find_children("*", "Button", true, false):
 			if HOST_ONLY_BUTTONS.has(String(button.name)):

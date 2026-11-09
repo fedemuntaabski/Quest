@@ -79,14 +79,24 @@ func refresh() -> void:
 func _make_slot(slot: ItemData.Slot, index: int, item: ItemData) -> Control:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 2)
-	var cell := _make_cell(item, ItemData.SLOT_LABELS[slot])
+	var cell := _make_cell(item)
+	cell.size_flags_horizontal = Control.SIZE_SHRINK_CENTER  # square even under a wider name
 	cell.tooltip_text = ("%s\nClic: desequipar" % _item_tooltip(item, null)) if item else "%s: vacío" % ItemData.SLOT_LABELS[slot]
 	if item:
 		cell.pressed.connect(_on_slot_pressed.bind(slot, index))
 	else:
 		cell.disabled = true
 	box.add_child(cell)
-	if slot == ItemData.Slot.CONSUMABLE:
+	if slot != ItemData.Slot.CONSUMABLE:
+		# visual-24: the slot's full name under it (the 3-letter "Arm" read the same
+		# for Arma and Armadura).
+		var name_label := Label.new()
+		name_label.text = ItemData.SLOT_LABELS[slot]
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.add_theme_font_size_override("font_size", Accessibility.font(13))
+		name_label.add_theme_color_override("font_color", QuestPalette.UI_TEXT_MUTED)
+		box.add_child(name_label)
+	else:
 		var use := Button.new()
 		use.text = "Usar"
 		use.disabled = item == null
@@ -123,7 +133,7 @@ func _hero() -> Player:
 
 func _make_stash_cell(stack: ItemStack) -> Control:
 	var item := stack.item
-	var cell := _make_cell(item, "")
+	var cell := _make_cell(item)
 	if stack.count > 1:
 		cell.text = "x%d" % stack.count
 		cell.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -164,7 +174,7 @@ func _bonus_text(inventory) -> String:
 # ---------------- shared ----------------
 
 ## Square button framed in the item's rarity color (placeholder letter if it has no icon).
-func _make_cell(item: ItemData, empty_label: String) -> Button:
+func _make_cell(item: ItemData) -> Button:
 	var cell := Button.new()
 	cell.custom_minimum_size = CELL
 	cell.expand_icon = true
@@ -173,8 +183,7 @@ func _make_cell(item: ItemData, empty_label: String) -> Button:
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		cell.add_theme_stylebox_override(state, UiStyles.build_panel_style(QuestPalette.DUNGEON_STONE, border, 3 if state == "hover" else 2, 4, 3))
 	if item == null:
-		cell.text = empty_label.left(3)
-		cell.add_theme_color_override("font_disabled_color", QuestPalette.UI_TEXT_MUTED)
+		pass  # empty: the slot's name is under it (or "Usar" for consumables)
 	elif item.icon:
 		cell.icon = item.icon
 	else:
@@ -183,7 +192,7 @@ func _make_cell(item: ItemData, empty_label: String) -> Button:
 		var glyph := Label.new()
 		glyph.text = item.shape()
 		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		glyph.add_theme_font_size_override("font_size", Accessibility.font(11))
+		glyph.add_theme_font_size_override("font_size", Accessibility.glyph(11))
 		glyph.add_theme_color_override("font_color", item.color())
 		glyph.add_theme_color_override("font_outline_color", Color.BLACK)
 		glyph.add_theme_constant_override("outline_size", 3)

@@ -157,7 +157,9 @@ func _scale_scene_font(node: Node) -> void:
 
 
 ## Default font size of every Control without its own override (overrides go
-## through Accessibility.font()). Rebuilt UI picks the new size up.
+## through Accessibility.font()). Rebuilt UI picks the new size up. A Control under
+## a CanvasLayer (every menu and the whole HUD) doesn't inherit the root window's
+## theme, so the engine's default theme carries the size too.
 func _apply_root_theme() -> void:
 	if not is_inside_tree():
 		return
@@ -165,6 +167,7 @@ func _apply_root_theme() -> void:
 	if root.theme == null:
 		root.theme = Theme.new()
 	root.theme.default_font_size = Accessibility.font(16)
+	ThemeDB.get_default_theme().default_font_size = Accessibility.font(16)
 
 
 func should_show_help(id: String) -> bool:

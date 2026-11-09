@@ -15,12 +15,14 @@ func _ready() -> void:
 	label.add_theme_color_override("font_color", Color(1, 1, 0.4, 1))
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	label.add_theme_constant_override("outline_size", 3)
-	label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	label.offset_left = -120
-	label.offset_top = 8
-	label.offset_right = -8
-	label.offset_bottom = 32
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	# visual-24: bottom-left, the one corner the HUD leaves free (top-right covered
+	# the first hero portrait's name).
+	label.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	label.offset_left = 8
+	label.offset_top = -4
+	label.offset_right = 160
+	label.offset_bottom = -4
 	add_child(label)
 
 	visible = SettingsManager.show_fps_overlay

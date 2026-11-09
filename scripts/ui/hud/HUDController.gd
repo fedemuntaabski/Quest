@@ -208,11 +208,17 @@ func close_popups() -> void:
 		building_menu.close_menu()
 
 
-## Docked above the resource row, right under BuildingMenu; one open at a time.
+## Inside BuildingMenu's frame, under its tabs, like the Mayores/Menores cards
+## (visual-24: docked apart, the tab strip floated over the room). Without a
+## BuildingMenu, above the resource row.
 func _add_research_panel() -> void:
 	research_panel = ResearchPanel.new()
 	research_panel.name = "ResearchPanel"
 	research_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	if building_menu:
+		building_menu.options.get_parent().add_child(research_panel)
+		research_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())  # the menu's frame is enough
+		return
 	var bar := $Control/BottomBar
 	bar.add_child(research_panel)
 	bar.move_child(research_panel, $Control/BottomBar/BottomRow.get_index())

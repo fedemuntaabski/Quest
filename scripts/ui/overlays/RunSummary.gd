@@ -44,7 +44,10 @@ static func lines(stats: Dictionary, new_records: Array[String] = [], records: D
 	out.append("Héroes caídos: %s" % (", ".join(PackedStringArray(fallen)) if not fallen.is_empty() else "ninguno"))
 	out.append("Registros nuevos del bestiario: %d" % int(stats.get("bestiary_new", 0)))
 	if not records.is_empty():
-		out.append("Récords de la ranura: %d victorias en %d partidas, mejor piso %d" % [int(records.get("victories", 0)), int(records.get("runs", 0)), int(records.get("best_floor", 0))])
+		var wins := int(records.get("victories", 0))
+		var runs := int(records.get("runs", 0))
+		out.append("Récords de la ranura: %d %s en %d %s, mejor piso %d" % [wins, "victoria" if wins == 1 else "victorias",
+			runs, "partida" if runs == 1 else "partidas", int(records.get("best_floor", 0))])
 	for key in new_records:
 		out.append("¡Nuevo récord! %s" % RECORD_LABELS.get(key, key))
 	return out

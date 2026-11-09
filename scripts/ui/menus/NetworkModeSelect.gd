@@ -70,6 +70,10 @@ func _refresh_steam_availability() -> void:
 	host_button.disabled = false
 	join_button.disabled = false
 	status_label.visible = not available
+	# visual-24: the buttons say which network they use (they read "(STEAM)" even with ENet).
+	var net_name := "STEAM" if available else "RED LOCAL"
+	host_button.text = "CREAR PARTIDA (%s)" % net_name
+	join_button.text = "UNIRSE (%s)" % net_name
 	if not available:
 		status_label.text = "Steam no está disponible: co-op por red local (ENet)."
 

@@ -261,9 +261,13 @@ func _build_preview_panel() -> PanelContainer:
 	panel.size_flags_stretch_ratio = 2.0
 	panel.add_theme_stylebox_override("panel", UiStyles.build_slot_icon_style())
 
+	var pad := MarginContainer.new()  # visual-24: the stats sat flush on the panel's left edge
+	for side in ["left", "right", "top", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, 16)
+	panel.add_child(pad)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
-	panel.add_child(box)
+	pad.add_child(box)
 
 	_preview_holder = Control.new()
 	_preview_holder.custom_minimum_size = Vector2(0, 240)

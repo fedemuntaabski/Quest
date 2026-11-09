@@ -261,7 +261,7 @@ func _check_research(hud: HUDController, main2d: Node, resources: ResourceManage
 	Engine.time_scale = 0.0
 	hud.research_button.pressed.emit()
 	var panel := hud.research_panel
-	_expect(panel.visible and menu.visible and menu.tabs.current_tab == BuildingMenu.RESEARCH_TAB and panel.get_parent().name == "BottomBar", "Investigar should open the docked panel")
+	_expect(panel.visible and menu.visible and menu.tabs.current_tab == BuildingMenu.RESEARCH_TAB and panel.get_parent() == menu.options.get_parent(), "Investigar should open the docked panel")
 	_expect(panel._list.get_child_count() == cfg.entries.size(), "one card per research")
 	var before := {}
 	for key in ResourceManager.KEYS:

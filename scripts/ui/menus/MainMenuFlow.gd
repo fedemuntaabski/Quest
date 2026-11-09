@@ -285,8 +285,24 @@ func _ask_continue(floor_index: int) -> void:
 		continue_dialog.queue_free()
 		_open_hero_select())
 	continue_dialog.canceled.connect(continue_dialog.queue_free)
+	_style_dialog(continue_dialog)
 	owner.add_child(continue_dialog)
 	continue_dialog.popup_centered()
+
+
+## visual-24: the menus' gold frame instead of Godot's grey dialog theme.
+func _style_dialog(dialog: AcceptDialog) -> void:
+	dialog.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.DUNGEON_CHARCOAL, 0, 0, 12))
+	var frame := UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 12)
+	frame.expand_margin_top = dialog.get_theme_constant("title_height") + 6  # the title bar sits in the border
+	for side in ["expand_margin_left", "expand_margin_right", "expand_margin_bottom"]:
+		frame.set(side, 6)
+	dialog.add_theme_stylebox_override("embedded_border", frame)
+	dialog.add_theme_stylebox_override("embedded_unfocused_border", frame)
+	dialog.add_theme_color_override("title_color", QuestPalette.GOLD_LIGHT)
+	dialog.get_label().add_theme_color_override("font_color", QuestPalette.PARCHMENT)
+	for button: Button in dialog.get_ok_button().get_parent().find_children("*", "Button", false, false):
+		UiStyles.style_menu_button(button)
 
 
 func _on_continue_chosen() -> void:

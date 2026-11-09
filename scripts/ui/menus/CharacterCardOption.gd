@@ -50,7 +50,7 @@ func setup(data: CharacterData) -> void:
 	if role_label:
 		role_label.text = data.description
 	if stats_label:
-		stats_label.text = "HP %d" % data.base_hp
+		stats_label.text = "Vida: %d" % data.base_hp
 	if ability_label:
 		ability_label.text = "%s\n%s" % [data.passive_ability_name, data.passive_ability_desc]
 

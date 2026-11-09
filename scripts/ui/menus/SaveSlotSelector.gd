@@ -132,7 +132,7 @@ func refresh() -> void:
 			del_btn.disabled = false
 			del_btn.modulate.a = 1.0
 		else:
-			btn.text = "RANURA %d (VACIA)" % slot_id
+			btn.text = "RANURA %d (VACÍA)" % slot_id
 			del_btn.disabled = true
 			del_btn.modulate.a = 0.45
 

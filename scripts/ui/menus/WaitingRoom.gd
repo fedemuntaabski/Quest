@@ -39,11 +39,29 @@ func _ready() -> void:
 	_net.session_ended.connect(_on_session_ended)
 	_build_character_cards()
 	_refresh()
+	_scroll_when_tall()
 
 	var tween := MenuTransitionFX.play_entrance(self, [{"node": self, "max_alpha": 1.0}], [],
 		0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2.ONE)
 	if tween != null:
 		await tween.finished
+
+
+## visual-24: with large text the card is taller than the screen (Abandonar fell off
+## the bottom); a ScrollContainer around the centered card lets it scroll instead.
+## At text x1.0 it fits and nothing moves. The @onready paths are already resolved.
+func _scroll_when_tall() -> void:
+	var center := $CenterContainer as CenterContainer
+	var scroll := ScrollContainer.new()
+	scroll.name = "Scroll"
+	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	add_child(scroll)
+	move_child(scroll, center.get_index())
+	remove_child(center)
+	scroll.add_child(center)
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
 func _build_character_cards() -> void:

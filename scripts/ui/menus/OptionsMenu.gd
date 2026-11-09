@@ -78,6 +78,7 @@ func _ready() -> void:
 	_populate_option_buttons()
 	_build_accessibility_tab()
 	_build_controls_tab()
+	_wrap_tabs_in_scroll()
 	_connect_menu_signals()
 	_update_ui_text_translations()
 
@@ -94,6 +95,27 @@ func _ready() -> void:
 		settings_mgr.volume_changed.connect(_on_settings_volume_changed)
 
 
+## visual-24: the card has a fixed size; a tab taller than it (Video and Audio at
+## 1080p, all of them at text ×1.5) scrolls instead of pushing Guardar/Volver out.
+## The ScrollContainer takes the tab's name (= its title); the @onready paths are
+## already resolved.
+func _wrap_tabs_in_scroll() -> void:
+	for tab in options_tabs.get_children():
+		if tab is ScrollContainer or tab.get_children().any(func(c: Node) -> bool: return c is ScrollContainer):
+			continue  # Controles scrolls its own list
+		var index := tab.get_index()
+		var scroll := ScrollContainer.new()
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		options_tabs.remove_child(tab)
+		scroll.name = tab.name
+		tab.name = "Content"
+		scroll.add_child(tab)
+		tab.visible = true  # TabContainer had hidden it; now it hides the ScrollContainer
+		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		options_tabs.add_child(scroll)
+		options_tabs.move_child(scroll, index)
+
+
 func _apply_theme() -> void:
 	if options_card:
 		options_card.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 20))
@@ -102,26 +124,8 @@ func _apply_theme() -> void:
 
 
 func _style_button(button: Button, danger: bool = false) -> void:
-	if button == null:
-		return
-
-	var border_base: Color = QuestPalette.BLOOD if danger else QuestPalette.GOLD_DARK
-	var border_hover: Color = QuestPalette.BLOOD_LIGHT if danger else QuestPalette.GOLD_LIGHT
-	var text_base: Color = QuestPalette.PARCHMENT
-	var text_hover: Color = QuestPalette.PARCHMENT_LIGHT
-	var text_pressed: Color = QuestPalette.BLOOD_LIGHT if danger else QuestPalette.GOLD
-
-	button.add_theme_color_override("font_color", text_base)
-	button.add_theme_color_override("font_focus_color", text_hover)
-	button.add_theme_color_override("font_hover_color", text_hover)
-	button.add_theme_color_override("font_pressed_color", text_pressed)
-	button.add_theme_color_override("font_outline_color", QuestPalette.INK)
-	button.add_theme_constant_override("outline_size", 3)
-
-	button.add_theme_stylebox_override("normal", UiStyles.build_panel_style(QuestPalette.DUNGEON_MUD, border_base, 3, 16, 16))
-	button.add_theme_stylebox_override("pressed", UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, border_base, 3, 16, 16))
-	button.add_theme_stylebox_override("hover", UiStyles.build_panel_style(QuestPalette.DUNGEON_MUD, border_hover, 3, 16, 16))
-	button.add_theme_stylebox_override("focus", UiStyles.build_panel_style(QuestPalette.DUNGEON_MUD, QuestPalette.PARCHMENT_LIGHT, 4, 16, 16))
+	if button:
+		UiStyles.style_menu_button(button, danger)
 
 
 func _on_tab_changed(tab_idx: int) -> void:
@@ -224,7 +228,7 @@ func _build_controls_tab() -> void:
 	options_tabs.add_child(tab)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.custom_minimum_size = Vector2(0, 360)
+	scroll.custom_minimum_size = Vector2(0, 200)  # expands; 360 pushed Volver out of the card at text x1.5
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	tab.add_child(scroll)
 	_controls_grid = GridContainer.new()

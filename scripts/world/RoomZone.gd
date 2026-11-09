@@ -398,7 +398,7 @@ func _build_light_icon(half: Vector2) -> void:
 
 	_light_label = Label.new()
 	_light_label.material = UNSHADED
-	_light_label.add_theme_font_size_override("font_size", Accessibility.font(12))
+	_light_label.add_theme_font_size_override("font_size", Accessibility.glyph(12))
 	_light_label.position = Vector2(-28, 12)
 	_light_label.size = Vector2(56, 16)
 	_light_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

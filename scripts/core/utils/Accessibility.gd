@@ -15,6 +15,16 @@ static var reduce_flashes: bool = false
 static var sound_captions: bool = false
 
 
-## Font size `px` scaled by text_scale.
+## visual-24: no UI text below this base size (13 px and less got ~7 px at 1280x720).
+const MIN_TEXT_PX := 14
+
+
+## Font size `px` (at least MIN_TEXT_PX) scaled by text_scale.
 static func font(px: int) -> int:
+	return glyph(maxi(px, MIN_TEXT_PX))
+
+
+## Font size `px` scaled by text_scale, without the minimum: corner glyphs on icons
+## (hotkey letter, rarity shape) and world-space labels.
+static func glyph(px: int) -> int:
 	return maxi(6, roundi(px * text_scale))

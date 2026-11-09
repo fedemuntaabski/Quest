@@ -138,7 +138,7 @@ func _ready() -> void:
 	_bar_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bar_glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_bar_glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_bar_glyph.add_theme_font_size_override("font_size", Accessibility.font(12))
+	_bar_glyph.add_theme_font_size_override("font_size", Accessibility.glyph(12))
 	_bar_glyph.add_theme_color_override("font_outline_color", Color.BLACK)
 	_bar_glyph.add_theme_constant_override("outline_size", 4)
 	_bar.add_child(_bar_glyph)
