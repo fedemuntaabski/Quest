@@ -22,7 +22,10 @@ const SELECTION_RING_SQUASH := 0.4
 @onready var hitbox: HitboxComponent = $Hitbox
 
 var character_data: CharacterData = null
-var current_zone_id: String = ""
+var current_zone_id: String = "":
+	set(value):
+		current_zone_id = value
+		_orient_sprite()
 var is_carrying_relic: bool = false:
 	set(value):
 		if value == is_carrying_relic:
@@ -56,7 +59,9 @@ func _ready() -> void:
 	# so wire it before register() re-applies upgrades.
 	stats.attack_changed.connect(_on_attack_changed)
 	stats.attack_range_changed.connect(_apply_attack_range)
+	_sprite_base = animated_sprite.position
 	animated_sprite.position += sprite_offset
+	_sprite_target = animated_sprite.position
 	if character_data:
 		stats.hero_id = character_data.character_id
 		stats.character_name = character_data.display_name
@@ -250,6 +255,27 @@ func _apply_character_visuals(data: CharacterData) -> void:
 	circle.radius = animated_sprite.fit_radius()
 	shape.shape = circle
 	shape.position = animated_sprite.body_center() - animated_sprite.position
+
+
+## juego-22: the party's sprite offset is horizontal; in a vertical corridor (64 px wide)
+## heroes 3-4 stood outside the walls, so there it turns to run along the corridor.
+var _sprite_base := Vector2.INF
+var _sprite_target := Vector2.INF
+
+
+func _orient_sprite() -> void:
+	if _sprite_base == Vector2.INF or animated_sprite == null:
+		return
+	var rm := ManagerLocator.get_room_manager()
+	var rect: Rect2i = rm.zones.get(current_zone_id, {}).get("rect", Rect2i()) if rm else Rect2i()
+	var vertical := rm != null and rm.get_zone_kind(current_zone_id) == "corridor" and rect.size.y > rect.size.x
+	var target := _sprite_base + (Vector2(0.0, sprite_offset.x) if vertical else sprite_offset)
+	if target != _sprite_target:  # snapshots re-set the same zone: leave a running lunge alone
+		_sprite_target = target
+		animated_sprite.set_rest(target)
+		queue_redraw()  # the selection ring is drawn under the sprite
+		if _carry_icon:
+			_carry_icon.position = target + Vector2(0, -animated_sprite.fit_radius() * CARRY_ICON_HEIGHT)
 
 
 func set_zone(zone_id: String, center: Vector2, tilemap: TileMapLayer) -> void:

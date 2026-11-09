@@ -9,7 +9,8 @@ extends SceneTree
 ##   - refusals: unknown zone, fog, own zone = no-op (no zone change, nothing busy)
 ##   - speed: game time = sum(leg / (420 x move_speed_mult)) per hero; the carrier x carrier_speed_mult
 ##   - a second order mid-walk is refused (one order at a time per player): no double tween
-##   - whole selection and control groups walk; heroes sharing a zone keep apart sprites
+##   - whole selection and control groups walk; heroes sharing a zone keep apart sprites,
+##     inside a vertical corridor too (the offset turns along it)
 ##   - downed: refused; revived: walks again
 ##   - tactical pause (time_scale 0) and menu pause (tree paused) freeze the glide, it resumes
 ##   - a hunter follows the party into its new zone
@@ -45,6 +46,7 @@ func _initialize() -> void:
 	await _check_speeds()
 	await _check_reorder()
 	await _check_selection()
+	await _check_vertical_corridor()
 	await _check_downed()
 	await _check_pauses()
 	await _check_enemy_follows()
@@ -312,6 +314,35 @@ func _check_selection() -> void:
 	await _wait_idle(heroes)
 	Engine.time_scale = 1.0
 	selection.set_selection(_ids(heroes))
+
+
+## juego-22 bug: the party offset is horizontal (+-54 px for heroes 3-4); a vertical corridor
+## is one 64 px cell wide, so they stood outside its walls.
+func _check_vertical_corridor() -> void:
+	var heroes: Array = main2d.heroes
+	var start: String = heroes[0].current_zone_id
+	var vertical := ""
+	for id in rm.get_zone_ids():
+		var rect: Rect2i = rm.zones[id]["rect"]
+		if rm.get_zone_kind(id) == "corridor" and rm.is_zone_revealed(id) and rect.size.y > rect.size.x:
+			vertical = id
+	if vertical == "":
+		failures.append("test map has no vertical corridor")
+		return
+	Engine.time_scale = SCALE
+	await _move(heroes, vertical)
+	await _wait_idle(heroes)
+	var half := ArtConfig.CELL_PX * 0.5
+	var center := rm.get_center(vertical)
+	for i in heroes.size():
+		var sprite: Vector2 = heroes[i].animated_sprite.global_position
+		_expect(heroes[i].current_zone_id == vertical and absf(sprite.x - center.x) < half, "hero %d drawn %.0f px off a vertical corridor's axis (half width %.0f)" % [i, sprite.x - center.x, half])
+		for j in range(i + 1, heroes.size()):
+			_expect(sprite.distance_to(heroes[j].animated_sprite.global_position) >= 20.0, "heroes %d and %d stacked in the vertical corridor" % [i, j])
+	await _move(heroes, start)
+	await _wait_idle(heroes)
+	Engine.time_scale = 1.0
+	_expect(absf(heroes[3].animated_sprite.global_position.y - rm.get_center(start).y) < 1.0, "back in a room, the offset is horizontal again")
 
 
 # ---------------- downed ----------------

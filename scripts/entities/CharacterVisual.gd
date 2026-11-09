@@ -122,6 +122,15 @@ func knockback(dir: Vector2) -> void:
 	_knock.finished.connect(func() -> void: _rest_position = Vector2.INF)
 
 
+## juego-22: moves the rest spot (Player turns its party offset in vertical corridors);
+## a running lunge ends right there.
+func set_rest(p: Vector2) -> void:
+	if _knock and _knock.is_valid():
+		_knock.kill()
+	_rest_position = Vector2.INF
+	position = p
+
+
 ## Attack lunge toward `dir` (unit): same rest-position bookkeeping as knockback,
 ## a hit taken meanwhile simply replaces it.
 func lunge(dir: Vector2) -> void:
