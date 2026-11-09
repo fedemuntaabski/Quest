@@ -24,6 +24,8 @@ func _initialize() -> void:
 		"difficulty": BalanceSim.difficulty_rows(),
 		"scaling": BalanceSim.scaling_rows(),
 	}
+	if args.size() <= 1 or args[1] == "runs":  # juego-22: Monte Carlo, the slow one
+		tables["runs"] = BalanceSim.run_rows()
 	if args.size() > 1:  # optional table filter: -- <tag> <table>
 		tables = {args[1]: tables[args[1]]}
 	for name in tables:

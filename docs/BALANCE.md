@@ -261,3 +261,81 @@ El dueño eligió no tocar mecánicas ni balance en juego-21. Lista para decidir
 | **Reparar la Reliquia** en la sala inicial: 10 Hierro = +20 vida, solo en exploración | uso para el Hierro, decisión antes de extraer | extracción más fácil | medio, comando nuevo → bump `config/version` 1.2 |
 | **Chamán y Nigromante a distancia**: proyectil cada 2 s desde 200 px | variedad, obliga a moverse | más difícil en pisos 3–5, retocar balance | medio, sin bump (proyectil visual por el evento `fx`) |
 | **Armadura plana** en ítems (stat nuevo) | da sentido a las 7 armaduras | toca `CharacterStats`, `RunState`, guardado | alto, bump |
+
+## Corridas completas Monte Carlo (session juego-22)
+Corrida: `godot --headless --path . --script res://tools/balance_sim.gd -- juego22 runs` (solo la tabla nueva, ~7 s; `docs/balance/juego22_runs.csv`). Las otras 11 tablas no cambiaron (no se tocó ningún `.tres`).
+
+**Modelo `BalanceSim.run_rows()`** (50 corridas por configuración; 15 grupos: cada héroe solo, los 6 pares, los 4 tríos y los 4; Normal y Difícil; pisos 1-5). Por piso: mapa real (`MapGenerator`), puertas en orden de revelado al azar hasta ver la salida (= turnos), cada puerta paga Brasas de descubrimiento + su recurso al azar + pasivas (Mente Analítica, Paso Ligero) y tira la amenaza (`DoorRollConfig` × piso × dificultad × `PlayerScaling`, con tope). La oleada sale del pool del piso y se reparte en ronda entre los héroes en pie; cada uno mata los suyos de a uno con el mismo modelo de exposición de `encounter_loss` (golpe único, aproximación del Mago). Después el portador camina inicio → salida bajo las oleadas de la etapa 0 de extracción; en los pisos 3 y 5 todo el grupo pega al jefe, que pega a un héroe (contacto + Embestida cada `charge_cooldown`). Gasto de Comida al empezar cada piso: reanimar, subir a cada héroe hasta el nivel piso − 1, curar con lo que sobra; tras cada pelea se reanima a un caído si queda alguien en pie. Cada sala descubierta se enciende si alcanzan las Brasas y recibe un Taller (Forja/Granja/Scriptorium en ronda) si alcanza el Hierro. Activas por uptime: Golpe Furtivo en el DPS del Pícaro, Grito de Guerra × el DPS del grupo, Interposición × el daño recibido. **No modela**: torres y trampas, salas Rest/Elite/Loot, ítems, perks, saqueadores sobre la Reliquia. `hp_lost_pct` puede pasar de 100 % (cuenta lo perdido antes de reanimar).
+
+| Dificultad | Grupo | Victoria por piso 1/2/3/4/5 (%) | Vida perdida piso 1 / 2 (%) | DPS piso 1 | Turnos hasta la salida (piso 1) | Comida / Hierro / Saber / Brasas al final del piso 1 |
+|---|---|---|---|---|---|---|
+| Normal | Guerrero | 96 / 90 / 0 / 0 / 0 | 53 / 65 | 3,3 | 6,8 | 34 / 16 / 20 / 11 |
+| Normal | Mago | 76 / 40 / 0 / 0 / 0 | 68 / 71 | 3,3 | 6,7 | 34 / 16 / 34 / 11 |
+| Normal | Pícaro | 66 / 48 / 0 / 0 / 0 | 76 / 73 | 4,0 | 6,4 | 32 / 9 / 22 / 10 |
+| Normal | Paladín | 92 / 74 / 0 / 0 / 0 | 46 / 67 | 2,3 | 6,5 | 33 / 15 / 20 / 10 |
+| Normal | Guerrero + Mago | 100 / 100 / 0 / 0 / 0 | 19 / 22 | 6,7 | 6,4 | 32 / 15 / 32 / 10 |
+| Normal | Mago + Pícaro | 100 / 100 / 0 / 0 / 0 | 26 / 34 | 7,3 | 6,7 | 34 / 10 / 35 / 10 |
+| Normal | Pícaro + Paladín | 100 / 100 / 0 / 0 / 0 | 18 / 24 | 6,3 | 6,6 | 34 / 10 / 21 / 9 |
+| Normal | los 4 | 100 / 100 / 52 / 4 / 0 | 17 / 21 | 13,0 | 6,7 | 34 / 10 / 35 / 9 |
+| Difícil | Guerrero | 90 / 40 / 0 / 0 / 0 | 60 / 83 | 3,3 | 6,5 | 32 / 16 / 20 / 10 |
+| Difícil | Mago | 12 / 0 / 0 / 0 / 0 | 96 / 98 | 3,3 | 5,7 | 30 / 12 / 29 / 7 |
+| Difícil | Pícaro | 20 / 2 / 0 / 0 / 0 | 93 / 94 | 4,0 | 5,9 | 30 / 7 / 20 / 9 |
+| Difícil | Paladín | 34 / 12 / 0 / 0 / 0 | 88 / 82 | 2,3 | 5,9 | 30 / 13 / 18 / 8 |
+| Difícil | Guerrero + Mago | 100 / 100 / 0 / 0 / 0 | 33 / 40 | 6,7 | 6,7 | 33 / 16 / 34 / 11 |
+| Difícil | Mago + Pícaro | 100 / 82 / 0 / 0 / 0 | 68 / 73 | 7,3 | 6,6 | 23 / 9 / 35 / 9 |
+| Difícil | Pícaro + Paladín | 100 / 100 / 0 / 0 / 0 | 45 / 41 | 6,3 | 6,7 | 26 / 9 / 22 / 9 |
+| Difícil | los 4 | 100 / 94 / 0 / 0 / 0 | 36 / 47 | 13,0 | 6,6 | 30 / 8 / 36 / 9 |
+
+Victoria media por héroe en grupos de 2-4 (todos los pisos) contra la media de los cuatro: Normal ±0,9 pp, Difícil ±1,1 pp. Solo: Normal Guerrero +8,1, Mago −5,9, Pícaro −6,3, Paladín +4,1; Difícil **Guerrero +15,5**, Mago −8,1, Pícaro −6,1, Paladín −1,3.
+
+`test_balance._check_runs`: todo par gana el piso 1 en ≥ 90 % de las corridas en las dos dificultades, y en grupos de 2-4 ningún héroe se aleja más de 10 pp de la media (por dificultad).
+
+**Lectura.**
+- Piso 1 ganable por cualquier par (100 % en Normal y Difícil). Objetivo cumplido.
+- Grupos de 2-4: ningún héroe sobresale (±1 pp). El único caso fuera de los 10 pp es el **Guerrero solo en Difícil** (Piel de Hierro −20 % siempre activa + 26 de vida). Un héroe solo no es un modo de juego (offline siempre son 2; co-op, uno por jugador, mínimo 2): queda como dato, sin ajuste.
+- **El jefe del piso 3 es una pared en el modelo**: sin jefe, cualquier par gana el piso 3 el 100 % de las veces (el piso 4 el 30-65 %, el 5 el 0-10 %). El Jefe orco (156 de vida en Normal, 5 de contacto, Embestida de 7 cada 6 s) tarda 11-13 s en caer frente a un par y tumba al héroe al que pega en ~6 s. Una sola Ballesta (15 de daño por s, más que el par entero) cambia el resultado: 156 / (13,6 + 15) ≈ 5,5 s. Es decir, **el modelo sin torres no sirve para juzgar los pisos 3-5**. No se tocó el jefe por eso: bajarle la vida con un modelo que ignora las torres lo dejaría trivial en partida. Nadie peleó todavía con un jefe con vida real (`test_full_run` usa vida enorme).
+- Recursos al final del piso 1: Comida ~33 (las subidas de nivel la gastan desde el piso 2), Saber 20-35 (alto con el Mago; sin sumidero en el modelo porque no investiga), Hierro 9-16, Brasas 9-11.
+
+**Ajustes: ninguno.** Los objetivos de la sesión se cumplen en grupos de 2-4; lo que no se cumple está fuera de un modo real (héroe solo) o del alcance del modelo (pisos con jefe, sin torres).
+
+**Pendiente de playtest.**
+- Jefe del piso 3 con un par de nivel 2 y vida real: ¿hace falta pelearlo junto a una Ballesta? Si es así, que el juego lo insinúe (la ayuda del jefe) o bajar `boss_ogre_chief` (ver Propuestas).
+- Pisos 4-5 sin torres caen al 0-60 %: confirmar que en partida las torres y la Rest equilibran.
+
+## Ítems y perks (session juego-22)
+`tests/test_equipo_efectos.gd`: cada ítem equipable (15) en cada héroe que puede llevarlo pone exactamente sus modificadores en la columna "equipo" de `PlayerStats.get_stat_breakdown`, el total los sigue (vida con el tope de 120) y al desequipar vuelve a lo de antes; arma + armadura + talismán en el Mago se suman; los 16 perks ponen sus modificadores en la columna "perks" y una corrida nueva la limpia. Ningún ítem sin efecto (los 3 consumibles tienen el suyo).
+
+Poder = ganancia de DPS + ganancia de vida efectiva (+ la mitad de la de alcance) contra los números de nivel 0, promediada sobre los héroes que lo pueden llevar; se compara dentro de cada rareza **y hueco** (arma y armadura se llevan juntas, no compiten):
+
+| Ítem | Rareza | Hueco | Modificadores | Poder | vs media de rareza y hueco |
+|---|---|---|---|---|---|
+| sword_bronze | Común | arma | +1 daño | 35 % | — |
+| sword_iron | Poco común | arma | +2 daño | 71 % | −20 % |
+| **sword_steel** | Poco común | arma | +3 daño | 106 % | **+20 % (dominante)** |
+| sword_ember | Rara | arma | +3 daño, −0,1 s | 136 % | −2 % |
+| sword_jade | Rara | arma | +4 daño | 142 % | +2 % |
+| sword_gold | Épica | arma | +5 daño, −0,1 s | 218 % | — |
+| armor_leather | Común | armadura | +5 vida | 23 % | — |
+| armor_robe | Poco común | armadura | +1 daño, +6 vida (Mago, Pícaro) | 77 % | +26 % (otros héroes: ver abajo) |
+| armor_iron | Poco común | armadura | +10 vida | 45 % | −26 % |
+| armor_copper | Rara | armadura | +14 vida | 64 % | — |
+| armor_steel | Épica | armadura | +20 vida (Guerrero, Paladín) | 64 % | −11 % |
+| armor_gold | Épica | armadura | +25 vida (Guerrero, Paladín) | 79 % | +11 % |
+| armor_jade | Legendaria | armadura | +2 daño, +30 vida | 207 % | — |
+| book_embers | Poco común | talismán | +2 daño (Mago) | 67 % | — |
+| book_tides | Rara | talismán | −0,15 s (Mago) | 20 % | — |
+
+- `sword_steel` es estrictamente mejor que `sword_iron` (misma rareza, mismos héroes). Con daño entero no hay ajuste dentro de ±25 %: queda en Propuestas.
+- `armor_robe` contra `armor_iron` compara grupos distintos: sobre el Mago y el Pícaro la de hierro da ~58 % y la túnica 77 % (+15 %, en el límite). Sin cambio.
+- Rarezas invertidas: `book_tides` (rara) rinde un tercio de `book_embers` (poco común); `armor_steel` (épica) rinde lo mismo que `armor_copper` (rara). Ninguna se arregla con ±25 %.
+- El daño plano pesa más en el Pícaro (2 de daño base): las espadas le duplican el DPS. Es la deuda ya anotada en "Pícaro a nivel alto".
+
+## Propuestas (juego-22, sin hacer)
+| Propuesta | Por qué | Costo |
+|---|---|---|
+| `sword_steel` pasa a Rara (o `sword_iron` a Común) | dos espadas poco comunes y una es siempre mejor | bajo, `.tres` (rareza) |
+| `book_tides` −0,15 → −0,3 s | la rara rinde un tercio de la poco común | bajo, fuera de ±25 % |
+| `armor_steel` 20 → 23 de vida, o pasarla a Rara | una épica igual a una rara | bajo |
+| Ayuda del jefe: "pelealo junto a tus Ballestas" | el modelo dice que sin torres el jefe del piso 3 tumba a cualquier par | bajo, texto |
+| Re-orden a mitad de camino (cambiar el rumbo en vez de rechazar) | sensación de RTS; hoy responde "Ya hay una orden en curso" | medio: `PlayerActionController` corta el tween y re-planifica desde la zona actual; revisar co-op |
+| Torres en `BalanceSim.run_rows` (Ballesta en salas encendidas, peleas cerca) | sin eso el modelo no juzga los pisos 3-5 | medio, solo herramienta |

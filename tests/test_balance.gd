@@ -7,7 +7,10 @@ extends SceneTree
 ##  - the Relic survives long enough to react to the alert, but falls if ignored;
 ##  - no hero is strictly better than another (HP, DPS, range), at level 0 and 5;
 ##  - heroes-9 roles on every floor: the Tank outlasts everyone but kills slowest,
-##    the Rogue is the most fragile, the fastest and has the highest DPS.
+##    the Rogue is the most fragile, the fastest and has the highest DPS;
+##  - juego-22 Monte Carlo runs (BalanceSim.run_rows): floor 1 is won by every party of 2 on
+##    both difficulties, and in parties of 2-4 no hero's mean win rate is more than
+##    RUN_HERO_SPREAD_PP from the heroes' mean (per difficulty).
 ##   godot --headless --path . --script res://tests/test_balance.gd
 
 const MAX_BASIC_LOSS_PCT := 33.4
@@ -21,6 +24,8 @@ const TOWER_HP_LOST_PCT := Vector2(30.0, 99.9)
 ## Economy (session economia-8): every resource earns and has something to buy, and over
 ## the run neither runs dry (< MIN) nor piles up unspent (> MAX).
 const ECONOMY_RUN_RATIO := Vector2(0.2, 3.0)
+const RUN_FLOOR1_PAIR_WIN := 0.9
+const RUN_HERO_SPREAD_PP := 10.0
 
 var failures: Array[String] = []
 
@@ -35,11 +40,40 @@ func _initialize() -> void:
 	_check_no_dominance(5)
 	_check_hero_roles()
 	_check_scaling()
+	_check_runs()
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_balance: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
 	quit(0 if failures.is_empty() else 1)
+
+
+func _check_runs() -> void:
+	var rows := BalanceSim.run_rows()
+	_expect(rows.size() == BalanceSim.run_parties().size() * BalanceSim.FLOORS * DifficultyConfig.get_default().levels.size(), "run rows: %d" % rows.size())
+	_expect(BalanceSim.players == 1 and BalanceSim.difficulty == null, "run_rows restores players/difficulty")
+	for level in DifficultyConfig.get_default().levels:
+		var per_hero := {}
+		for row in rows:
+			if row["difficulty"] != level.id or int(row["size"]) < 2:
+				continue
+			if int(row["size"]) == 2 and int(row["floor"]) == 1:
+				_expect(float(row["win_rate"]) >= RUN_FLOOR1_PAIR_WIN, "%s: %s wins floor 1 in %.0f %% of runs" % [level.id, row["party"], float(row["win_rate"]) * 100.0])
+			for hero_id: String in str(row["party"]).split("+"):
+				if not per_hero.has(hero_id):
+					per_hero[hero_id] = []
+				per_hero[hero_id].append(float(row["win_rate"]))
+		var means := {}
+		var total := 0.0
+		for hero_id in per_hero:
+			var sum := 0.0
+			for w in per_hero[hero_id]:
+				sum += w
+			means[hero_id] = sum / per_hero[hero_id].size()
+			total += means[hero_id]
+		var mean := total / maxf(means.size(), 1)
+		for hero_id in means:
+			_expect(absf(means[hero_id] - mean) * 100.0 <= RUN_HERO_SPREAD_PP, "%s: %s wins %.1f pp off the mean (parties of 2-4)" % [level.id, hero_id, (means[hero_id] - mean) * 100.0])
 
 
 ## calidad-13: 5 floors x both difficulties x 1-4 players. Per-hero pressure of a

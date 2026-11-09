@@ -563,6 +563,337 @@ static func scaling_rows() -> Array[Dictionary]:
 	return rows
 
 
+## juego-22: Monte Carlo run model. Per (party, difficulty) RUNS runs of floors 1-5 over the
+## real data: a generated map per floor (MapGenerator), doors opened in a random reveal order
+## until the exit shows up (turns), each door pays discovery embers + its random resource and
+## rolls the threat (DoorRollConfig x floor x difficulty x PlayerScaling, wave capped); a wave
+## is rolled from the floor pool and dealt round-robin to the living heroes, each killing its
+## share one by one (same exposure model as encounter_loss, per real enemy). Then the carrier
+## walks start -> exit at carrier speed under the stage-0 extraction waves; on boss floors the
+## whole party hits the boss while it hits one hero (contact + Embestida every charge_cooldown).
+## Spending (each floor start, in this order): revive the downed, level every hero up to
+## floor - 1, heal with what is left (all Comida); each discovered room is lit when the Brasas
+## allow it and gets a Forja/Granja/Scriptorium (round robin) when the Hierro allows it;
+## workshops pay BUILDING_YIELD per door; discovery passives pay their Saber/Brasas. After every
+## fight a downed hero is revived (Comida) while an ally stands. Actives by uptime (duration /
+## cooldown): Golpe Furtivo in the Rogue's active_dps, Grito de Guerra x the living party's DPS,
+## Interposición x the damage the party takes. Not modelled: towers/traps, Rest/Elite/Loot rooms,
+## items, perks, raiders on the Relic. A floor is lost when every hero is down.
+## Rows per (difficulty, party, floor): win_rate (share of runs that cleared this floor), party
+## DPS, hp_lost_pct (damage taken / party max HP), resources at floor end and turns to the exit
+## (means over the runs that played the floor).
+const RUNS := 50
+## Average px walked per room on the carrier's path (half a slot pitch of 64 px cells).
+const ROOM_WALK_PX := MapGenerator.SLOT_PITCH * 64.0 * 0.5
+static var _duel_cache: Dictionary = {}
+
+
+## Every hero alone, every pair, every trio and the four.
+static func run_parties() -> Array:
+	var out: Array = []
+	for i in HERO_IDS.size():
+		out.append([HERO_IDS[i]])
+	for i in HERO_IDS.size():
+		for j in range(i + 1, HERO_IDS.size()):
+			out.append([HERO_IDS[i], HERO_IDS[j]])
+	for i in HERO_IDS.size():
+		var trio: Array = HERO_IDS.duplicate()
+		trio.remove_at(i)
+		out.append(trio)
+	out.append(HERO_IDS.duplicate())
+	return out
+
+
+static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = []) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	if parties.is_empty():
+		parties = run_parties()
+	if levels.is_empty():
+		levels = DifficultyConfig.get_default().levels
+	for level: DifficultyLevel in levels:
+		difficulty = level
+		for party: Array in parties:
+			players = 1 if party.size() <= 2 else party.size()  # alone = 2 heroes; co-op = 1 each
+			_duel_cache.clear()
+			var acc: Array[Dictionary] = []
+			for f in FLOORS:
+				acc.append({"played": 0, "won": 0, "dps": 0.0, "lost": 0.0, "iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0, "turns": 0.0})
+			for r in runs:
+				var rng := RandomNumberGenerator.new()
+				rng.seed = hash(["run", party, level.id, r])
+				_simulate_run(party, rng, acc)
+			for f in FLOORS:
+				var a: Dictionary = acc[f]
+				var n := maxf(float(a["played"]), 1.0)
+				rows.append({
+					"difficulty": level.id, "party": "+".join(party), "size": party.size(), "floor": f + 1,
+					"runs": runs, "win_rate": snappedf(float(a["won"]) / runs, 0.01),
+					"dps": snappedf(a["dps"] / n, 0.01), "hp_lost_pct": snappedf(a["lost"] / n * 100.0, 0.1),
+					"iron": snappedf(a["iron"] / n, 0.1), "food": snappedf(a["food"] / n, 0.1),
+					"lore": snappedf(a["lore"] / n, 0.1), "embers": snappedf(a["embers"] / n, 0.1),
+					"turns": snappedf(a["turns"] / n, 0.1),
+				})
+	players = 1
+	difficulty = null
+	_duel_cache.clear()
+	return rows
+
+
+static func _cached_duel(hero_id: String, lvl: int, type: EnemyType, f: int) -> Dictionary:
+	var key := "%s|%d|%s|%d" % [hero_id, lvl, type.id, f]
+	if not _duel_cache.has(key):
+		var d := duel(hero_id, lvl, type, f)
+		var hero := hero_stats(hero_id, lvl)
+		d["approach"] = approach_sec(hero, float(enemy_stats(type, f)["speed"]))
+		d["interval"] = float(hero["interval"])
+		_duel_cache[key] = d
+	return _duel_cache[key]
+
+
+static func _max_hp(id: String, lvl: int) -> float:
+	return float(_cached_hero(id, lvl)["hp"])
+
+
+static func _cached_hero(id: String, lvl: int) -> Dictionary:
+	var key := "hero|%s|%d" % [id, lvl]
+	if not _duel_cache.has(key):
+		_duel_cache[key] = hero_stats(id, lvl)
+	return _duel_cache[key]
+
+
+static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[Dictionary]) -> void:
+	var cfg := floor_config()
+	var up := upgrade_config()
+	var scaling := PlayerScaling.get_default()
+	var curve := BuildingCostCurve.get_default()
+	var res := START_RESOURCES.duplicate()
+	var levels := {}
+	var hp := {}
+	for id: String in party:
+		levels[id] = 0
+		hp[id] = _max_hp(id, 0)
+	for f in range(1, FLOORS + 1):
+		var a: Dictionary = acc[f - 1]
+		a["played"] += 1
+		for id: String in party:  # revive (a hero lost on an earlier floor stays at -INF)
+			if hp[id] == 0.0 and res["food"] >= up.revive_cost(f):
+				res["food"] -= up.revive_cost(f)
+				hp[id] = _max_hp(id, levels[id]) * up.revive_hp_pct
+		for id: String in party:  # level up to floor - 1
+			while hp[id] > 0.0 and levels[id] < mini(f - 1, up.max_level) and res["food"] >= up.get_cost(levels[id]):
+				res["food"] -= up.get_cost(levels[id])
+				var before := _max_hp(id, levels[id])
+				levels[id] += 1
+				hp[id] += _max_hp(id, levels[id]) - before
+		for id: String in party:  # heal with the rest
+			var missing := floori(_max_hp(id, levels[id]) - hp[id])
+			if hp[id] > 0.0 and missing > 0:
+				var heal := mini(missing, floori(res["food"] / maxf(up.heal_cost_per_hp, 0.001)))
+				while heal > 0 and up.heal_cost(heal) > res["food"]:
+					heal -= 1
+				if heal > 0:
+					res["food"] -= up.heal_cost(heal)
+					hp[id] += heal
+		var max_total := 0.0
+		var dps := 0.0
+		for id: String in party:
+			if hp[id] > 0.0:
+				max_total += _max_hp(id, levels[id])
+				dps += float(_cached_hero(id, levels[id])["dps"])
+		a["dps"] += dps
+		var damage := [0.0]
+		var layout := MapGenerator.generate_floor(rng.randi(), cfg, f)
+		var start_id := layout.get_start_room_id()
+		var revealed := {start_id: true}
+		var exit_id := ""
+		for room in layout.rooms:
+			if room.is_exit:
+				exit_id = room.id
+		var lit := 0
+		var workshops := {"iron": 0, "food": 0, "lore": 0}
+		var built := 0
+		var turns := 0
+		var threat_mult := cfg.threat_multiplier(f) * difficulty.threat_mult * scaling.threat(players)
+		var cap := cfg.max_enemies(f) + difficulty.extra_max_enemies + scaling.extra_enemies(players)
+		while not revealed.has(exit_id) and _alive(party, hp):
+			var frontier: Array[String] = []
+			for c in layout.corridors:
+				if c.is_secret:
+					continue
+				if revealed.has(c.room_a) and not revealed.has(c.room_b) and not frontier.has(c.room_b):
+					frontier.append(c.room_b)
+				elif revealed.has(c.room_b) and not revealed.has(c.room_a) and not frontier.has(c.room_a):
+					frontier.append(c.room_a)
+			if frontier.is_empty():
+				break
+			revealed[frontier[rng.randi_range(0, frontier.size() - 1)]] = true
+			turns += 1
+			res["embers"] += cfg.discovery_embers(f)
+			for id: String in party:
+				var passive := hero_data(id).passive
+				if hp[id] > 0.0 and passive and passive.effect == AbilityData.Effect.LORE_ON_DISCOVERY:
+					res["lore"] += roundi(passive.value)
+				elif hp[id] > 0.0 and passive and passive.effect == AbilityData.Effect.EMBERS_ON_DISCOVERY:
+					res["embers"] += roundi(passive.value)
+			var bonus_key := cfg.door_roll.roll_bonus_resource(f, rng)
+			if bonus_key != "":
+				res[bonus_key] += cfg.door_roll.bonus_amount(f)
+			for key in workshops:
+				res[key] += workshops[key] * BUILDING_YIELD
+			var light_cost := RoomZone.LIGHT_COST + cfg.light_cost_step * lit
+			if res["embers"] >= light_cost:
+				res["embers"] -= light_cost
+				lit += 1
+				var cost := curve.cost(Building.CATALOG[Building.BuildingType.FORJA]["cost"], built)
+				if res["iron"] >= cost:
+					res["iron"] -= cost
+					workshops[["iron", "food", "lore"][built % 3]] += 1
+					built += 1
+			if rng.randf() < clampf(cfg.door_roll.threat_chance(turns, f) * threat_mult, 0.0, cfg.door_roll.max_chance):
+				var count := mini(scaling.wave(cfg.door_roll.enemy_count(turns, f), players), cap)
+				_fight(party, levels, hp, _roll_wave(f, count, rng), f, rng, damage)
+				_revive_downed(party, levels, hp, res, f)
+		a["turns"] += turns
+		var walk_sec := ROOM_WALK_PX * maxi(_room_path(layout, start_id, exit_id).size() - 1, 1) / (MoveAction.DEFAULT_SPEED_PX * cfg.carrier_speed_mult)
+		var waves := 1 + int(walk_sec / cfg.extraction_stage_interval(f, 0))
+		for _w in waves:
+			if _alive(party, hp):
+				_fight(party, levels, hp, _roll_wave(f, mini(scaling.wave(cfg.extraction_wave_size(0), players), cap), rng), f, rng, damage)
+				_revive_downed(party, levels, hp, res, f)
+		var theme := cfg.theme(f)
+		if theme and theme.boss and _alive(party, hp):
+			_boss_fight(party, levels, hp, theme.boss, f, damage, res)
+		a["lost"] += damage[0] / maxf(max_total, 1.0)
+		for key in ["iron", "food", "lore", "embers"]:
+			a[key] += res[key]
+		if not _alive(party, hp):
+			return
+		a["won"] += 1
+		for id: String in party:  # still down when the floor ends: lost for the run
+			if hp[id] == 0.0:
+				hp[id] = -INF
+
+
+## Party-wide active uptime: [DPS multiplier (Grito de Guerra), damage-taken multiplier (Interposición)]
+## from the living heroes' TEAM_ATTACK_BUFF / TEAM_SHIELD actives.
+static func _team_mults(party: Array, hp: Dictionary) -> Array[float]:
+	var dps := 1.0
+	var taken := 1.0
+	for id: String in party:
+		var active := hero_data(id).active
+		if hp[id] <= 0.0 or active == null:
+			continue
+		var uptime := minf(active.duration / maxf(active.cooldown, 0.001), 1.0)
+		if active.effect == AbilityData.Effect.TEAM_ATTACK_BUFF:
+			dps *= 1.0 + active.value * uptime
+		elif active.effect == AbilityData.Effect.TEAM_SHIELD:
+			taken *= 1.0 - active.value * uptime
+	return [dps, taken]
+
+
+## A downed hero gets up (Comida) while somebody stands (PlayerStats.revive_hero needs an ally).
+static func _revive_downed(party: Array, levels: Dictionary, hp: Dictionary, res: Dictionary, f: int) -> void:
+	var up := upgrade_config()
+	for id: String in party:
+		if hp[id] == 0.0 and _alive(party, hp) and res["food"] >= up.revive_cost(f):
+			res["food"] -= up.revive_cost(f)
+			hp[id] = _max_hp(id, levels[id]) * up.revive_hp_pct
+
+
+static func _alive(party: Array, hp: Dictionary) -> bool:
+	return party.any(func(id: String) -> bool: return hp[id] > 0.0)
+
+
+static func _roll_wave(f: int, count: int, rng: RandomNumberGenerator) -> Array[EnemyType]:
+	var pool := floor_config().enemy_pool(f)
+	var out: Array[EnemyType] = []
+	for i in count:
+		var t := pool.roll(rng) if pool else null
+		if t:
+			out.append(t)
+	return out
+
+
+## Round-robin over the living heroes; one that falls hands its unkilled enemies on.
+static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array[EnemyType], f: int, rng: RandomNumberGenerator, damage: Array) -> void:
+	var queue: Array[EnemyType] = wave.duplicate()
+	while not queue.is_empty():
+		var alive := party.filter(func(id: String) -> bool: return hp[id] > 0.0)
+		if alive.is_empty():
+			return
+		var shares := {}
+		for i in queue.size():
+			var id: String = alive[i % alive.size()]
+			if not shares.has(id):
+				shares[id] = []
+			shares[id].append(queue[i])
+		queue.clear()
+		var mults := _team_mults(party, hp)
+		for id: String in shares:
+			var left: Array = shares[id]
+			var hero := _cached_hero(id, levels[id])
+			var speedup := mults[0] * float(hero["active_dps"]) / maxf(float(hero["dps"]), 0.001)
+			var t := rng.randf() * float(_cached_duel(id, levels[id], left[0], f)["interval"])
+			for i in left.size():
+				var d := _cached_duel(id, levels[id], left[i], f)
+				t += int(d["hits_to_kill"]) * float(d["interval"]) / speedup
+				var exposure := maxf(t - float(d["interval"]) - float(d["approach"]), 0.0)
+				var hit := float(d["hit_taken"]) * mults[1] * exposure / Enemy.CONTACT_HIT_INTERVAL
+				damage[0] += minf(hit, hp[id])
+				hp[id] -= hit
+				if hp[id] <= 0.0:
+					hp[id] = 0.0
+					for j in range(i + 1, left.size()):
+						queue.append(left[j])
+					break
+
+
+static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary) -> void:
+	var stats := enemy_stats(boss, f)
+	var boss_hp := float(stats["hp"])
+	var charge := maxf(1.0, roundf(boss.charge_damage * floor_config().enemy_damage_multiplier(f) * boss.damage_mult * difficulty.damage_mult))
+	while boss_hp > 0.0 and _alive(party, hp):
+		var dps := 0.0
+		var target := ""
+		var mults := _team_mults(party, hp)
+		for id: String in party:
+			if hp[id] > 0.0:
+				dps += float(_cached_hero(id, levels[id])["active_dps"]) * mults[0]
+				if target == "":
+					target = id
+		var hero := _cached_hero(target, levels[target])
+		var per_sec := (float(stats["contact"]) * (1.0 - float(hero["reduction_pct"])) / Enemy.CONTACT_HIT_INTERVAL + charge / maxf(boss.charge_cooldown, 0.1)) * mults[1]
+		var t := minf(boss_hp / maxf(dps, 0.01), hp[target] / maxf(per_sec, 0.01))
+		boss_hp -= dps * t
+		var taken := minf(per_sec * t, hp[target])
+		hp[target] -= taken
+		damage[0] += taken
+		if hp[target] <= 0.001:
+			hp[target] = 0.0
+			_revive_downed(party, levels, hp, res, f)
+
+
+## Rooms on the shortest corridor path (both ends included).
+static func _room_path(layout: MapLayout, from: String, to: String) -> Array[String]:
+	var prev := {from: ""}
+	var frontier: Array[String] = [from]
+	while not frontier.is_empty():
+		var at: String = frontier.pop_front()
+		if at == to:
+			break
+		for c in layout.corridors:
+			var other := c.room_b if c.room_a == at else (c.room_a if c.room_b == at else "")
+			if other != "" and not prev.has(other):
+				prev[other] = at
+				frontier.append(other)
+	var path: Array[String] = []
+	var cur := to
+	while cur != "" and prev.has(cur):
+		path.push_front(cur)
+		cur = prev[cur]
+	return path
+
+
 static func to_csv(rows: Array[Dictionary]) -> String:
 	if rows.is_empty():
 		return ""
