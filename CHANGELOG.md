@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## session/visual-24
+- Opciones: Guardar y Volver ya no se salen del marco; las pestañas largas se desplazan.
+- Sala de espera: entra en pantalla en 1080p, las descripciones de los héroes se leen enteras y con texto grande se desplaza hasta Abandonar. "Vida" en vez de "HP".
+- El tamaño de texto de Accesibilidad ahora agranda todo el HUD y los menús (antes parte quedaba igual). Ningún texto baja de 14 px de base.
+- Botones de red: "CREAR PARTIDA" / "UNIRSE" con la red que se usa de verdad (Steam o red local).
+- El contador de FPS pasa abajo a la izquierda (tapaba el primer retrato).
+- Investigación se abre dentro del mismo marco que Mayores y Menores.
+- Ficha del héroe: las casillas de equipo vacías dicen Arma, Armadura y Talismán debajo.
+- "Partida en curso" y los botones de victoria y derrota con el marco dorado de los menús.
+- Textos: "VACÍA", "1 partida", "Volumen al pasar el cursor".
+
 ## session/juego-23
 - Espada de acero pasa a Rara (antes Poco común, igual que la de hierro pero siempre mejor).
 - Grimorio de mareas: el Mago ataca 0,3 s más rápido (antes 0,15 s).

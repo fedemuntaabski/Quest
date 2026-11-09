@@ -26,7 +26,7 @@ Jugá sin mirar nada más. Al minuto 10 contestá:
 - [ ] Encendé una sala con clic central. Después arrastrá con el botón central: mueve la cámara y no enciende.
 - [ ] Construir → Mayores → elegí una obra. El hueco crece y pulsa sobre los héroes. ¿Lo viste sin buscarlo?
 - [ ] Hacé clic en el hueco aunque haya un héroe parado encima: debe construir, no seleccionar al héroe.
-- [ ] Abrí Investigación: las 3 pestañas se ven enteras.
+- [x] ~~Abrí Investigación: las 3 pestañas se ven enteras.~~ Visto en `shot_barrido` (visual-24): ahora van dentro del mismo marco que las cartas.
 
 ## Minutos 15–22: Reliquia y salida
 - [ ] Con la salida descubierta, volvé a la sala inicial y recogé la Reliquia.
@@ -80,6 +80,14 @@ Capturas de referencia: `tests/tools/shot_movilidad.gd` (`j22_party`, `j22_corri
 - [ ] El portador de la Reliquia camina más lento (×0,85). ¿Se nota?
 - [ ] **Jefe del piso 3 con vida real**: en la captura de juego-23 (`tests/tools/shot_jefe.gd`, sin órdenes) un par de nivel 2 con vida llena lo gana solo junto a una Ballesta, por 4 de vida; sin ella cae a los 9 s. Jugándolo de verdad (esquivando la Embestida, llegando curado): ¿se puede? ¿Hubo que llevarlo hasta una torre? Si es una pared, decidir: ayuda de texto, bajarle la vida o curar antes de la salida.
 - [ ] Co-op de 3-4 jugadores: cada jugador entra con su héroe (antes los jugadores 3 y 4 entraban sin héroe).
+
+## Menús y HUD con el barrido visual (visual-24, 5 min, aparte)
+Capturas de referencia: `tests/tools/shot_barrido.gd -- <dir>` (cada pantalla en 1280x720, 1920x1080 y 1920x1080 con el texto al 150 %). Ya se vio en captura, no hace falta mirarlo: ~~Opciones con Guardar/Volver dentro del marco~~, ~~sala de espera entera en 1080p~~, ~~descripciones de héroes completas~~, ~~el texto al 150 % llega al HUD~~, ~~botones de red con la red real~~, ~~contador de FPS abajo a la izquierda~~, ~~diálogo "Partida en curso" y botones de victoria/derrota con marco dorado~~, ~~casillas de equipo con nombre~~.
+Lo que solo se ve con input real:
+- [ ] Opciones → Audio con el texto al 150 %: la rueda del mouse desplaza la pestaña y Guardar/Volver quedan quietos.
+- [ ] Sala de espera con el texto al 150 %: se desplaza con la rueda hasta ABANDONAR.
+- [ ] Con teclado o mando: Tab/flechas en el menú, ranuras, modo de red, Opciones y el diálogo "Partida en curso". ¿Se ve siempre qué botón tiene el foco?
+- [ ] En 1280x720, ¿se leen las cartas de Investigación y la Mochila sin acercarse? (mínimo de texto 14 px de base)
 
 ## Fuera de esta prueba
 Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.

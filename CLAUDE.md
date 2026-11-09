@@ -34,7 +34,7 @@ python -m gdtoolkit.parser <files.gd>                           # gdparse (not o
 
 Godot on the dev machine: `E:\Descargas\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe`.
 
-Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` per area, each run in its own process by `tests/run_all.gd` (logs in `user://test_logs`; 0 tests run = failure). Add new tests in the same style. `tests/support/ErrorProbe.gd` collects engine ERROR/WARNING. `tests/tools/` = real-window screenshot tools (`shot_*.gd`), benches, net probes, `soak_runs.gd` (N seeds × 5 floors with save/continue; ~50 s per seed). `test_door_roll` takes ~4.5 min. Tests that need the pause tree or flow boot the real `Main` (`test_estabilizar`, `test_full_run`, `test_run_save`, `test_tutorial`).
+Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` per area, each run in its own process by `tests/run_all.gd` (logs in `user://test_logs`; 0 tests run = failure). Add new tests in the same style. `tests/support/ErrorProbe.gd` collects engine ERROR/WARNING. `tests/tools/` = real-window screenshot tools (`shot_*.gd`; `shot_barrido.gd -- <dir>` = every menu and HUD piece at 1280x720, 1920x1080 and text ×1.5), benches, net probes, `soak_runs.gd` (N seeds × 5 floors with save/continue; ~50 s per seed). `test_door_roll` takes ~4.5 min. Tests that need the pause tree or flow boot the real `Main` (`test_estabilizar`, `test_full_run`, `test_run_save`, `test_tutorial`).
 
 ## Gotchas (read before editing)
 
@@ -48,6 +48,7 @@ Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` pe
 - **Co-op authority.** Every player action goes through `NetCommands.request(cmd, args)` (offline/host runs `_cmd_<name>` directly; clients RPC, host validates). Shared mutators are guarded by `Net.is_authority()`; clients only apply `NetSync` snapshots/events and `RunState`. **Bump `application/config/version` in `project.godot` (now 1.1) whenever commands or `RunState` keys change** — mismatched peers are refused.
 - **Audio in co-op.** `AudioDirector.HOST_KEYS` sounds play on the host and are relayed; wire a new sound at the host-side action, never on a signal `RunState` also fires, or add it to `HOST_KEYS`. Missing audio files play silence (list in `docs/CREDITOS.md`).
 - **First-time help** (`SettingsManager.should_show_help`, `user://first_help.cfg`) is not persisted under `--script` (`help_persist` false) and `Main.play_intro` is false there; tests that need them turn them on.
+- **Text size.** UI fonts go through `Accessibility.font(px)` (min 14 px base × text scale); only corner glyphs and world labels use `Accessibility.glyph(px)`. A Control under a `CanvasLayer` (HUD, every menu) doesn't inherit `root.theme`: `SettingsManager` also sets the engine default theme's size. Screens that may outgrow the card scroll (Opciones tabs, WaitingRoom).
 - **Logging**: `QuestLogger` (`scripts/core/utils/Logger.gd`), not `print()`. Hot-path logs are DEBUG (an INFO line costs ~1 ms with file logging).
 - **`ManagerLocator.get_main_orchestrator()` can be null** (scene run standalone): null-check and log.
 - **Signal 11 on exit (OK\*)** is a Godot 4.6.2 GDScript-teardown crash, not ours (evidence in `docs/PROGRESO_INTEGRACION.md`). Don't hunt it; re-measure on a new Godot.
@@ -99,7 +100,7 @@ Offline only, never in Tutorial: `Main._save_run()` at each floor start from flo
 
 ### HUD (`scenes/hud/HUD.tscn`, `HUDController`, group `hud`)
 
-Top-left floor label + `ObjectivePanel` + `HelpCard`; top-right `HeroPortrait`s (HP, ability radial, consumables, revive) → `CharacterPopup`; bottom-center `BottomBar` (`BuildingMenu`/`ResearchPanel` over resources + build buttons + Mochila counter); bottom-right `Minimap`; hints/refusals via `show_hint`/`show_refusal`/`show_help`; online-only `PlayerList`, `ChatPanel`, map pings. Many HUD pieces are code-built.
+Top-left floor label + `ObjectivePanel` + `HelpCard`; top-right `HeroPortrait`s (HP, ability radial, consumables, revive) → `CharacterPopup`; bottom-center `BottomBar` (`BuildingMenu`, with `ResearchPanel` inside its frame, over resources + build buttons + Mochila counter); bottom-right `Minimap`; FPS counter bottom-left; hints/refusals via `show_hint`/`show_refusal`/`show_help`; online-only `PlayerList`, `ChatPanel`, map pings. Many HUD pieces are code-built.
 
 ### Network (`scripts/network/`)
 
