@@ -106,19 +106,19 @@ func _on_selection_changed(_selected_ids: Array[String]) -> void:
 ## sprite, so it sits behind it).
 func _draw() -> void:
 	if is_downed():  # red ring: downed, waiting for a revive
-		draw_set_transform(animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
+		draw_set_transform(_sprite_target if _sprite_target != Vector2.INF else animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
 		draw_arc(Vector2.ZERO, animated_sprite.fit_radius() * 1.2, 0.0, TAU, 32, QuestPalette.BLOOD_LIGHT, 2.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		return
 	var owner_color := get_owner_color()
 	if owner_color.a > 0.0 and stats.is_alive():  # coop-12: whose hero it is
-		draw_set_transform(animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
+		draw_set_transform(_sprite_target if _sprite_target != Vector2.INF else animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
 		draw_arc(Vector2.ZERO, animated_sprite.fit_radius() * 1.35, 0.0, TAU, 32, owner_color, 2.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var selection := ManagerLocator.get_selection_manager()
 	if selection == null or not selection.is_selected(stats.hero_id) or not stats.is_alive():
 		return
-	draw_set_transform(animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
+	draw_set_transform(_sprite_target if _sprite_target != Vector2.INF else animated_sprite.position, 0.0, Vector2(1.0, SELECTION_RING_SQUASH))
 	draw_arc(Vector2.ZERO, animated_sprite.fit_radius() * 1.2, 0.0, TAU, 32, SELECTION_RING_COLOR, 2.5)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -273,7 +273,7 @@ func _orient_sprite() -> void:
 	if target != _sprite_target:  # snapshots re-set the same zone: leave a running lunge alone
 		_sprite_target = target
 		animated_sprite.set_rest(target)
-		queue_redraw()  # the selection ring is drawn under the sprite
+		queue_redraw()  # the selection ring sits under the sprite's rest spot
 		if _carry_icon:
 			_carry_icon.position = target + Vector2(0, -animated_sprite.fit_radius() * CARRY_ICON_HEIGHT)
 

@@ -113,6 +113,7 @@ func knockback(dir: Vector2) -> void:
 		return
 	if _knock and _knock.is_valid():
 		_knock.kill()
+	_end_slide()
 	if _rest_position == Vector2.INF:
 		_rest_position = position
 	position = _rest_position
@@ -122,13 +123,33 @@ func knockback(dir: Vector2) -> void:
 	_knock.finished.connect(func() -> void: _rest_position = Vector2.INF)
 
 
-## juego-22: moves the rest spot (Player turns its party offset in vertical corridors);
-## a running lunge ends right there.
+## juego-22: slides the rest spot to `p` (Player turns its party offset in vertical
+## corridors) instead of jumping there; a running lunge/knockback ends first.
+const REST_SLIDE_TIME := 0.15
+var _slide: Tween
+var _slide_to := Vector2.INF
+
+
 func set_rest(p: Vector2) -> void:
 	if _knock and _knock.is_valid():
 		_knock.kill()
+		position = _rest_position if _rest_position != Vector2.INF else position
 	_rest_position = Vector2.INF
-	position = p
+	_end_slide()
+	if not is_inside_tree():
+		position = p
+		return
+	_slide_to = p
+	_slide = create_tween()
+	_slide.tween_property(self, "position", p, REST_SLIDE_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+## A push/lunge starting mid-slide starts from where the slide was going.
+func _end_slide() -> void:
+	if _slide and _slide.is_valid():
+		_slide.kill()
+		position = _slide_to
+	_slide_to = Vector2.INF
 
 
 ## Attack lunge toward `dir` (unit): same rest-position bookkeeping as knockback,
@@ -138,6 +159,7 @@ func lunge(dir: Vector2) -> void:
 		return
 	if absf(dir.x) > 0.01:
 		flip_h = dir.x < 0.0
+	_end_slide()
 	if _rest_position == Vector2.INF:
 		_rest_position = position
 	position = _rest_position
