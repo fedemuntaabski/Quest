@@ -63,3 +63,17 @@ Lo dejan sin hacer los números, no la falta de tiempo:
 - Co-op real de 4 jugadores (el banco simula 4 héroes en un solo proceso, sin red).
 - Hardware más modesto.
 - El pico aislado de 58 ms.
+
+## Re-medición (session juego-22)
+
+Ventana real, mismo banco (`bench_floor5.gd -- juego22`, `docs/perf/juego22.csv`), piso 5, Difícil, 4 héroes, ~24 enemigos vivos:
+
+| caso | fps medio | p50 ms | p95 ms | p99 ms | máx ms | picos > 50 ms | draw calls |
+|---|---|---|---|---|---|---|---|
+| calidad-13 después 1x | 495,0 | 1,82 | 2,82 | 7,64 | 58,27 | 1 | 220 |
+| juego-22 1x | 394,4 | 2,43 | 2,92 | **3,67** | 35,63 | 0 | 488 |
+| juego-22 2x | 378,0 | 2,48 | 3,41 | 5,69 | 21,29 | 0 | 493 |
+
+Meta (p95 ≤ 16,7 ms) cumplida con margen; el p99 y los picos mejoraron. Los draw calls se duplicaron desde calidad-13 (el mapa de juego-21 suma ladrillos gastados y el relleno detrás de las tapas): no pesa hoy, vigilar en hardware modesto.
+
+Soak headless (`tests/tools/soak_runs.gd -- 20`): 20 semillas × 5 pisos con guardar → menú → continuar en cada piso desde el 2, ~46 s por semilla, 0 fallos, sin ERROR/WARNING, sin nodos huérfanos; nodos al empezar el piso 2: media 827 en las primeras 10 semillas y 834 en las últimas 10 (sin fuga; la diferencia son enemigos vivos). El piso con más enemigos fue el 5 (14 vivos): el headless está capado a 120 fps (8,33 ms por frame), así que esa medición solo sirve para la lógica.

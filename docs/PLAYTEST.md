@@ -73,6 +73,14 @@ Captura de referencia: `tests/tools/shot_juego21.gd` (`j21_fx`).
 - [ ] Encender una sala: llamas doradas en el centro. Recoger la Reliquia: anillo dorado. Enemigos que aparecen: portal rojo. Abrir una puerta: polvo.
 - [ ] Muros: algunos ladrillos gastados en salas y pasillos. ¿Se ven como variación o como error?
 
+## Movilidad y jefe (juego-22, 5 min, aparte)
+Capturas de referencia: `tests/tools/shot_movilidad.gd` (`j22_party`, `j22_corridor`, `j22_vertical`).
+- [ ] Con 4 héroes (2 + 2 reclutas) en un pasillo vertical, se ordenan a lo largo del pasillo, dentro de los muros. En una sala vuelven a quedar lado a lado.
+- [ ] Mandá a un héroe lejos y, mientras camina, hacé clic derecho en otra sala: la tarjeta dice "Ya hay una orden en curso" y el héroe sigue su camino. ¿Molesta, o preferirías que cambie de rumbo? (está en Propuestas de `docs/BALANCE.md`)
+- [ ] El portador de la Reliquia camina más lento (×0,85). ¿Se nota?
+- [ ] **Jefe del piso 3 con vida real**: el simulador dice que, sin una Ballesta cerca, el jefe tumba a cualquier par. ¿Pasa eso? ¿Hubo que llevarlo hasta una torre?
+- [ ] Co-op de 3-4 jugadores: cada jugador entra con su héroe (antes los jugadores 3 y 4 entraban sin héroe).
+
 ## Fuera de esta prueba
 Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.
 

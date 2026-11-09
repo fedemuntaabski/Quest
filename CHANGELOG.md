@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## session/juego-22
+- Co-op de 3-4 jugadores: cada jugador entra con su héroe. Antes, el grupo se recortaba a 2 y los jugadores 3 y 4 no tenían héroe.
+- En un pasillo vertical, el grupo se ordena a lo largo del pasillo, sin dibujarse sobre los muros; el anillo de selección acompaña.
+- Tests nuevos de salas, movilidad y efectos de ítems y perks; el simulador de balance corre partidas completas (sin cambios de números).
+
 ## session/juego-21
 - Hojas 0x72 y Kenney fuera de `assets/art/_source/` (ahora en `assets/art/tiles/`); `test_licencias` prohíbe `_source/` en runtime.
 - Animaciones por código: embestida al atacar, héroe caído que se vuelca, enemigo que cae y se desvanece.

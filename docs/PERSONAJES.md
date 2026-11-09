@@ -28,6 +28,7 @@ Archivo de referencia para otras sesiones. **Todo sale del código y los `.tres`
   - Feedback al recibir daño (héroe y enemigo): destello blanco + retroceso breve del sprite (`CharacterVisual.knockback`, 6 px, solo visual). Los enemigos dañados muestran una barra de vida sobre la cabeza (`Enemy._draw`, colores de `HealthBarStyle`).
 - **Daño recibido**: los enemigos pegan por contacto (1 golpe/s); `HeroAbilities.incoming_damage()` aplica pasiva y escudo, mínimo 1 (`HeroAbilities.gd:70`). **No existe stat de defensa/armadura**: solo `damage_taken_mult` (escudo temporal) y las pasivas.
 - **Velocidad de movimiento**: `MoveAction.DEFAULT_SPEED_PX = 420` px/s × `CharacterData.move_speed_mult`. Valores: Pícaro ×1,2 = 504, Paladín ×0,9 = 378, el resto ×1. El portador de la Reliquia además va a ×`FloorConfig.carrier_speed_mult` (`PlayerActionController._walk`).
+- **Movilidad** (juego-22, `tests/test_movilidad.gd`): clic derecho en una zona → `NetCommands` "move" → `PlayerActionController.move_heroes`. El camino sale de `RoomManager.find_zone_path`, que solo usa zonas descubiertas: una zona con niebla o desconocida se rechaza sin mover a nadie ("Sala sin descubrir"), y la zona propia no hace nada. El héroe se desliza de centro en centro con un solo tween (sin saltos), y `enter_zone()` salta una vez por cada zona que cruza, en orden; al llegar queda en el centro exacto de la zona. Tiempo de juego = Σ tramo / (420 × `move_speed_mult` × 0,85 si lleva la Reliquia). No hay ítems ni perks de velocidad. **Una orden a la vez por jugador**: mientras un héroe camina, otra orden del mismo jugador se rechaza ("Ya hay una orden en curso"), sin cambiar el rumbo; la de otro jugador en co-op sí corre. Un héroe caído no recibe órdenes; reanimado vuelve a caminar. Con la pausa táctica (`Engine.time_scale` 0) o la de menú el deslizamiento se congela y sigue al reanudar. Durante la extracción se camina, pero no se abren puertas. Héroes en la misma zona comparten el punto lógico; el sprite se corre `PartyConfig.sprite_offset` (±18 / ±54 px en horizontal) y en un pasillo vertical el corrimiento gira y va a lo largo (antes los héroes 3 y 4 quedaban fuera de los muros). Los enemigos persiguen la zona del héroe más cercano y lo siguen cuando cambia de zona.
 - **Caído** (heroes-9): a 0 de vida el héroe **no muere**.
   - Queda tumbado y gris en su sala, con un aro rojo, sin atacar y sin hurtbox (`Player._set_downed`).
   - Sale de la selección y su retrato muestra "Caído" y un botón "Reanimar (N Comida)".
@@ -205,7 +206,7 @@ Los porcentajes son el peso dentro del pool entero; en la práctica primero se s
 |---|---|
 | **Condición de derrota** | **Sí.** `Relic.destroyed` (HP 0) → `Main2d._on_player_died`, la misma derrota que la muerte de un héroe (`Main2d.gd:229`). |
 | **Punto de defensa** | **Sí.** Los RAIDER caminan hacia la zona de la Reliquia y lo golpean desde el inicio del piso (no hace falta haberlo recogido); la alerta HUD `RelicAlert` (borde rojo) y un aro rojo en el minimapa avisan mientras recibe daño. |
-| **Objetivo de extracción / victoria** | **Sí.** Recogerlo (`RelicController.confirm_pickup()`) pone `is_carrying_relic`, inicia `ExtractionManager.start_extraction()` (puertas bloqueadas, oleadas cada 5 s en salas oscuras) y el portador va a ×0.75 de velocidad. Llevarlo a la **sala de salida** (`is_exit_room`) dispara `declare_victory()`. |
+| **Objetivo de extracción / victoria** | **Sí.** Recogerlo (`RelicController.confirm_pickup()`) pone `is_carrying_relic`, inicia `ExtractionManager.start_extraction()` (puertas bloqueadas, oleadas cada 5 s en salas oscuras) y el portador va a ×0,85 de velocidad (`FloorConfig.carrier_speed_mult`). Llevarlo a la **sala de salida** (`is_exit_room`) dispara `declare_victory()`. |
 | **Fuente de recursos** | **No.** No produce ni modifica Hierro/Comida/Saber/Brasas. |
 | **Relación con obras y salas** | Indirecta: está en la sala de inicio (encendida gratis por `Main2d`); los RAIDER ignoran las obras; las torres pueden dañar raiders en su rango; el Paladín lo usa como ancla de su pasiva; `ExitIndicator` se pone dorado mientras se lleva. No depende de la luz de ninguna sala. |
 
@@ -240,7 +241,7 @@ Común (refactor-2; ver heroes-9 en §1): sin defensa/armadura, 5 niveles (8/11/
 ### Reliquia
 | HP | Derrota si 0 | Daña | Se recoge | Efecto al recogerlo |
 |---|---|---|---|---|
-| 120 (por piso) | sí | solo RAIDER, 4/s c/u (piso 1) | sala de inicio, con la salida descubierta | puertas bloqueadas, oleadas cada 5 s, portador ×0.75 de velocidad |
+| 120 (por piso) | sí | solo RAIDER, 4/s c/u (piso 1) | sala de inicio, con la salida descubierta | puertas bloqueadas, oleadas cada 5 s, portador ×0,85 de velocidad |
 
 ---
 

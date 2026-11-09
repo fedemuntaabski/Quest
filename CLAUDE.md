@@ -34,7 +34,7 @@ python -m gdtoolkit.parser <files.gd>                           # gdparse (not o
 
 Godot on the dev machine: `E:\Descargas\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe`.
 
-Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` per area, each run in its own process by `tests/run_all.gd` (logs in `user://test_logs`; 0 tests run = failure). Add new tests in the same style. `tests/support/ErrorProbe.gd` collects engine ERROR/WARNING. `tests/tools/` = real-window screenshot tools (`shot_*.gd`), benches, net probes. `test_door_roll` takes ~4.5 min. Tests that need the pause tree or flow boot the real `Main` (`test_estabilizar`, `test_full_run`, `test_run_save`, `test_tutorial`).
+Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` per area, each run in its own process by `tests/run_all.gd` (logs in `user://test_logs`; 0 tests run = failure). Add new tests in the same style. `tests/support/ErrorProbe.gd` collects engine ERROR/WARNING. `tests/tools/` = real-window screenshot tools (`shot_*.gd`), benches, net probes, `soak_runs.gd` (N seeds × 5 floors with save/continue; ~50 s per seed). `test_door_roll` takes ~4.5 min. Tests that need the pause tree or flow boot the real `Main` (`test_estabilizar`, `test_full_run`, `test_run_save`, `test_tutorial`).
 
 ## Gotchas (read before editing)
 
@@ -86,7 +86,7 @@ Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` pe
 - `Player` (`scripts/core/player/`): `current_zone_id` is the authoritative position; moves by **right click** on a zone (`PlayerActionController._walk`, tween through zone centres, `enter_zone()` as it crosses; `move_speed_mult` per hero, carrier ×`carrier_speed_mult`). Left click = select (`HeroInputController`, F1–F4, Tab, Ctrl+1..3 / 1..3) or interact (doors, Reliquia, cages, downed bodies). Q = ability (`HeroAbilities`, `AbilityData`). Downed state, revive with Comida.
 - Auto-combat: `HitboxComponent`/`HurtboxComponent` on physics layers (3 `player_hurtbox`, 4 `enemy_hurtbox`, 2 `enemy_body`); heroes `single_target`, ranged heroes fire `Projectile`. Hero data: `CharacterData` `.tres` in `resources/characters/` (role, base_hp, attack, perks, `attack_style`). Packs have no attack/death frames: `CharacterVisual` fakes them (`lunge`, `set_downed` topple, `spawn_corpse` under the enemies root), visual only. New world VFX are played host-side (`VfxManager.play` relays them as `fx`; never also play them on a client path). Docs: `docs/PERSONAJES.md`, `docs/ASSETS.md`.
 - Enemies: `Enemy` (`scripts/entities/`), types `EnemyType` with `role` HUNTER/RAIDER; destination from `TargetSelector` + `TargetProfile` (`resources/enemies/profiles/`). Movement = `EnemyMoveAction` over `find_zone_path`, 8-slot ring, no physics. Bosses: `BossBrain` (floors 3, 5; exit refused while alive). Docs: `docs/ENEMY_TARGETING.md`.
-- Recruitment: Prisoner rooms → `PrisonerCage` → `Main2d.recruit_hero` (max party 4).
+- Party: offline pick = 2 heroes (`PartyConfig.party_size` caps it offline only); co-op = 1 hero per player (party of 2–4, `NetSession.heroes_per_player`), capped by `GameSession.MAX_PARTY` in `resolve_party`. Recruitment: Prisoner rooms → `PrisonerCage` → `Main2d.recruit_hero` (max party 4).
 
 ### Extraction & floors
 
