@@ -137,6 +137,14 @@ func _test_click_on_slot_under_hero() -> void:
 	var hero_start := hero.global_position
 	hero.global_position = world_pos - hero.animated_sprite.body_center()
 	_check(main2d.hero_input.pick_hero_at(world_pos) != null, "setup: a hero should stand on the slot")
+	# juego-22: the camera follows the moved hero with smoothing; a screen point taken
+	# before it settles lands elsewhere (the 2-in-8 flake of juego-21).
+	var last := Transform2D()
+	for _i in 180:
+		await process_frame
+		if root.get_canvas_transform().is_equal_approx(last):
+			break
+		last = root.get_canvas_transform()
 	var screen_pos: Vector2 = root.get_canvas_transform() * world_pos
 	var motion := InputEventMouseMotion.new()
 	motion.position = screen_pos
