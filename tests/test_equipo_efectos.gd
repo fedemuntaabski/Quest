@@ -15,7 +15,9 @@ extends SceneTree
 ##   godot --headless --path . --script res://tests/test_equipo_efectos.gd
 
 const HEROES: Array[String] = ["warrior", "mage", "rogue", "tank"]
-const KEYS: Array[String] = ["hp", "attack_damage", "attack_interval", "attack_range"]
+const KEYS: Array[String] = ["hp", "attack_damage", "attack_interval", "attack_range", "armor"]
+## juego-24: flat armor is valued against the floor-3 pool (the middle of the run).
+const ARMOR_FLOOR := 3
 ## Range is worth half: it only shortens the walk-in of a fight.
 const RANGE_WEIGHT := 0.5
 const DOMINANT_PCT := 15.0
@@ -120,7 +122,7 @@ func _power(before: Dictionary, after: Dictionary, id: String) -> float:
 	var dps0 := float(before["attack_damage"]["total"]) / maxf(float(before["attack_interval"]["total"]), 0.05)
 	var dps1 := float(after["attack_damage"]["total"]) / maxf(float(after["attack_interval"]["total"]), 0.05)
 	var ehp0 := float(before["hp"]["total"]) / (1.0 - reduction)
-	var ehp1 := float(after["hp"]["total"]) / (1.0 - reduction)
+	var ehp1 := float(after["hp"]["total"]) / (1.0 - reduction) * BalanceSim.armor_ehp_mult(int(after["armor"]["total"]), ARMOR_FLOOR)
 	var range_gain := float(after["attack_range"]["total"]) / maxf(float(before["attack_range"]["total"]), 1.0) - 1.0
 	return (dps1 / dps0 - 1.0) + (ehp1 / ehp0 - 1.0) + RANGE_WEIGHT * range_gain
 

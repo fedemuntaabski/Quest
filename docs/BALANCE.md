@@ -252,15 +252,15 @@ Lo que no se tocó: el daño, el intervalo y el alcance de los cuatro; los enemi
 
 La tabla ya asumía oleadas escaladas en puertas y extracción, pero hasta estabilizar-14 las puertas ignoraban el multiplicador (`EnemyManager` usaba `DoorRollConfig.enemy_count`): con 3–4 jugadores el co-op real era más fácil que la tabla. No cambió ningún número ni el juego con 1–2 jugadores. Todo esto sigue sin validar con personas.
 
-## Mejoras de gameplay propuestas (session juego-21, sin hacer)
-El dueño eligió no tocar mecánicas ni balance en juego-21. Lista para decidir después (costo = trabajo + riesgo):
+## Mejoras de gameplay propuestas (session juego-21; decididas en juego-24)
+El dueño eligió no tocar mecánicas ni balance en juego-21. En juego-24 eligió **solo la armadura plana** (ver «Armadura plana»); las otras tres quedan sin hacer. Costo = trabajo + riesgo:
 
 | Mejora | A favor | En contra | Costo |
 |---|---|---|---|
 | **Botín al matar**: 1 Brasa con 25 % (élite 50 %) | el combate deja algo, premia defender | infla la luz; re-correr `BalanceSim` | bajo, sin bump (la Brasa la suma el host) |
 | **Reparar la Reliquia** en la sala inicial: 10 Hierro = +20 vida, solo en exploración | uso para el Hierro, decisión antes de extraer | extracción más fácil | medio, comando nuevo → bump `config/version` 1.2 |
 | **Chamán y Nigromante a distancia**: proyectil cada 2 s desde 200 px | variedad, obliga a moverse | más difícil en pisos 3–5, retocar balance | medio, sin bump (proyectil visual por el evento `fx`) |
-| **Armadura plana** en ítems (stat nuevo) | da sentido a las 7 armaduras | toca `CharacterStats`, `RunState`, guardado | alto, bump |
+| **Armadura plana** en ítems (stat nuevo) | da sentido a las 7 armaduras | toca `CharacterStats`, `RunState`, guardado | alto, bump · **hecha en juego-24**: no tocó `RunState` ni el guardado (sale de los ids de ítems); bump a 1.2 igual |
 
 ## Corridas completas Monte Carlo (session juego-22)
 Corrida: `godot --headless --path . --script res://tools/balance_sim.gd -- juego22 runs` (solo la tabla nueva, ~7 s; `docs/balance/juego22_runs.csv`). Las otras 11 tablas no cambiaron (no se tocó ningún `.tres`).
@@ -382,8 +382,86 @@ Sensibilidad del piso 3 (pares, Normal; victoria media, rango entre pares): sin 
 
 **Lectura: el jefe del piso 3 sigue siendo una pared.**
 - Las torres ayudan donde el jefe no está: solos y pisos 1-2 suben (Mago solo Normal 76/40 → 94/62), pero el piso 3 no.
-- La pelea contra el jefe solo se gana si el grupo llega con casi toda la vida **y** lo pelea junto a una Ballesta (la captura: el Guerrero gana con 4 de vida). El modelo llega al jefe con ~90 % de la vida del piso ya perdida (oleadas de puerta y de extracción; solo cura con Comida al empezar el piso), así que pierde.
+- La pelea contra el jefe solo se gana si el grupo llega con casi toda la vida **y** lo pelea junto a una Ballesta (la captura: el Guerrero gana con 4 de vida). El modelo llega al jefe con ~90 % de la vida del piso ya perdida (**corregido en juego-24**: ese número era la vida perdida en todo el piso, contando la pelea contra el jefe; al llegar al jefe le quedaba ~60 %, ver «El jefe como se juega») (oleadas de puerta y de extracción; solo cura con Comida al empezar el piso), así que pierde.
 - El grupo de 4 cae de 52 % a 4 %: la corrección (el jefe pega a todos) le pega más al que tiene más héroes juntos.
 - Lo que el modelo no tiene y podría cambiarlo en partida: esquivar la Embestida y salir del contacto (de los ~6 de daño por s que recibe cada héroe, 5 son contacto y ~1,2 la carga), curarse en una sala Rest antes de abrir la salida, separar al grupo. Barrido de juego-23 (sin aplicar, el dueño eligió no tocar el jefe): vida 120 → 90 sube los pares en Normal de 19 a 32 % con el modelo de un solo blanco; con el modelo corregido haría falta re-medir.
 
 **Ajustes de juego-23:** solo los tres ítems (arriba). `test_balance._check_run_towers`: hay Ballestas en el piso 1, sin torres no se construye ninguna, y el jefe junto a una Ballesta gana > 20 pp más que a oscuras (Guerrero + Paladín, Normal). `test_equipo_efectos._check_rarity_picks`: una sola arma poco común, `book_tides` ≥ 70 % de `book_embers`, `armor_steel` > 1,1 × `armor_copper`.
+
+## El jefe como se juega (session juego-24)
+Corrida: `godot --headless --path . --script res://tools/balance_sim.gd -- juego24 runs` (~20 s; `docs/balance/juego24_runs.csv`, columnas nuevas `boss_hp_in` y `boss_win`). Las otras 11 tablas no cambian.
+
+**Supuestos nuevos de `run_rows`** (`play`, valores por defecto en `BalanceSim.BOSS_PLAY`):
+- `boss_first` = true: el jefe se despierta al revelar la sala de salida (`EnemyManager._on_room_revealed`) y caza al grupo (perfil cazador), así que se pelea **antes** de las oleadas de extracción. juego-23 lo peleaba después.
+- `heal` = "comida": antes del jefe, cada héroe vivo se cura con la Comida que queda, por el retrato (0,15 Comida por punto de vida; se puede en cualquier momento). Con "rest" solo se cura si se reveló una sala Rest, a su precio: 1 Comida cada 2 de vida (0,5 por punto). **Rest es más cara que el retrato**, así que no suma nada. Con "none" solo se cura al empezar el piso.
+- `dodge` = **0,5**: la parte de las Embestidas que se esquiva. Es un supuesto, sin datos de gente; el script de la ventana esquiva todas. Una esquivada no daña a nadie.
+- `dodge_sec` = **2,0**: por cada esquive, el grupo pasa 2 s fuera del contacto (ni pega ni recibe) y la Ballesta sigue tirando. Con 2 s se reproduce la ventana.
+- Se arregló un cuelgue: `_boss_fight` podía repetir pasos cada vez más chicos por restos de coma flotante en la vida del jefe. Ahora corta en 0,001, como ya hacía con los héroes.
+
+**Calibración** (`tests/tools/shot_jefe.gd`, ventana real; piso 3, jefe con 156 de vida, Guerrero + Mago de nivel 2 con vida llena). El modo `esquiva` mueve a los dos a la otra sala vecina en cuanto el jefe se pone rojo:
+
+| Modo | Ventana real | Modelo |
+|---|---|---|
+| `sin` | caen a los 9 s, al jefe le quedan 90 | caen los dos |
+| `esquiva` | caen a los 12 s, al jefe le quedan 68 | caen los dos |
+| `ballesta` | muere el jefe, Guerrero con 4 | muere el jefe, Guerrero con 5 |
+| `esquiva_ballesta` | muere el jefe, Guerrero con 18 y Mago con 6 | Guerrero con 17 y Mago con 5 |
+
+En la ventana, el contacto pega 4 por s a cada héroe y la Embestida ~6 a cada uno, una cada ~6 s. La Embestida es ~20 % del daño; el resto es contacto.
+
+| Dificultad | Grupo | Victoria por piso 1/2/3/4/5 (%) | juego-23 | Vida al llegar al jefe del piso 3 (%) | Peleas contra el jefe ganadas (%) |
+|---|---|---|---|---|---|
+| Normal | Guerrero | 100 / 98 / 40 / 4 / 0 | 100 / 98 / 0 / 0 / 0 | 98 | 52 |
+| Normal | Mago | 94 / 62 / 0 / 0 / 0 | 94 / 62 / 0 / 0 / 0 | 98 | 0 |
+| Normal | Pícaro | 86 / 70 / 0 / 0 / 0 | 86 / 70 / 0 / 0 / 0 | 95 | 0 |
+| Normal | Paladín | 96 / 94 / 22 / 0 / 0 | 96 / 94 / 6 / 0 / 0 | 97 | 41 |
+| Normal | Guerrero + Mago | 100 / 100 / 18 / 2 / 0 | 100 / 100 / 0 / 0 / 0 | 98 | 34 |
+| Normal | Guerrero + Pícaro | 100 / 100 / 40 / 8 / 0 | 100 / 100 / 2 / 2 / 0 | 97 | 54 |
+| Normal | Guerrero + Paladín | 100 / 100 / 34 / 12 / 0 | 100 / 100 / 12 / 0 / 0 | 97 | 34 |
+| Normal | Mago + Pícaro | 100 / 100 / 0 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 88 | 0 |
+| Normal | Mago + Paladín | 100 / 100 / 26 / 0 / 0 | 100 / 100 / 6 / 2 / 0 | 95 | 36 |
+| Normal | Pícaro + Paladín | 100 / 100 / 46 / 6 / 0 | 100 / 100 / 4 / 0 / 0 | 94 | 48 |
+| Normal | los 4 | 100 / 100 / 28 / 0 / 0 | 100 / 100 / 4 / 0 / 0 | 78 | 46 |
+| Difícil | Guerrero | 92 / 58 / 0 / 0 / 0 | 92 / 58 / 0 / 0 / 0 | 98 | 0 |
+| Difícil | Mago | 30 / 6 / 0 / 0 / 0 | 30 / 6 / 0 / 0 / 0 | 99 | 0 |
+| Difícil | Pícaro | 26 / 2 / 0 / 0 / 0 | 26 / 2 / 0 / 0 / 0 | — | — |
+| Difícil | Paladín | 48 / 20 / 0 / 0 / 0 | 48 / 20 / 0 / 0 / 0 | 84 | 0 |
+| Difícil | Guerrero + Mago | 100 / 100 / 0 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 77 | 0 |
+| Difícil | Guerrero + Pícaro | 100 / 100 / 0 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 85 | 0 |
+| Difícil | Guerrero + Paladín | 100 / 100 / 2 / 0 / 0 | 100 / 100 / 0 / 0 / 0 | 92 | 6 |
+| Difícil | Mago + Pícaro | 98 / 74 / 0 / 0 / 0 | 98 / 74 / 0 / 0 / 0 | 76 | 0 |
+| Difícil | Mago + Paladín | 100 / 92 / 0 / 0 / 0 | 100 / 92 / 0 / 0 / 0 | 81 | 0 |
+| Difícil | Pícaro + Paladín | 100 / 96 / 0 / 0 / 0 | 100 / 96 / 0 / 0 / 0 | 71 | 0 |
+| Difícil | los 4 | 100 / 98 / 0 / 0 / 0 | 100 / 98 / 0 / 0 / 0 | 62 | 0 |
+
+**Sensibilidad del piso 3** (pares, juego por defecto; victoria media de los 6 pares):
+
+| Cambio | Normal, jefe a oscuras | Normal, `boss_near` 0,5 | Normal, siempre junto a Ballesta | Difícil, `boss_near` 0,5 |
+|---|---|---|---|---|
+| ninguno | 0 % | 27 % | 60 % | 0 % |
+| sin curar antes ni esquivar (juego-23) | 0 % | 4 % | — | 0 % |
+| esquivar todo (`dodge` 1) | — | 36 % | — | 7 % |
+| vida del jefe 120 → 90 | 0 % | 36 % | — | 7 % |
+| Embestida 6 → 3 | 0 % | 31 % | — | 0 % |
+
+**Lectura: el jefe del piso 3 es una pared solo a oscuras y en Difícil.**
+- Si el grupo se cura con Comida y esquiva la mitad de las Embestidas, en Normal llega con ~97 % de la vida. Junto a una Ballesta lo mata en 84-92 % de las peleas. A oscuras no lo mata nunca: 0 %, con cualquier vida o Embestida. Cuando se gana, la Ballesta es lo que decide la pelea.
+- Mago + Pícaro: 0 % siempre. Es el único par sin un héroe que aguante el contacto.
+- En Difícil sigue siendo una pared (0-2 %). En Normal, la próxima pared es el piso 4 (≤ 12 %); el piso 5 está en 0 % en todos los casos.
+- **Decisión del dueño (juego-24): no se toca el jefe** (ni texto ni números), igual que en juego-23.
+
+## Armadura plana (session juego-24)
+Es un modificador de ítem nuevo, `armor` (`ItemData.MODIFIER_KEYS`). La suma la da `PartyInventory.get_equipment_bonus`, llega a `CharacterStats.armor` y aparece como fila «Armadura» en la hoja del héroe. `HeroAbilities.incoming_damage` la resta de cada golpe **después** de Piel de Hierro e Interposición, y el golpe nunca baja de 1. No toca `RunState` ni el guardado: las dos máquinas la calculan desde los ids de ítems y el daño lo aplica el host. Igual se subió `config/version` a 1.2, porque dos versiones distintas calcularían distinta la vida de las corazas.
+
+Con 1 punto de armadura, el daño de contacto recibido baja 45 % en el piso 1, 44 % en el 2, 33 % en el 3 y el 4, y 28 % en el 5 (`BalanceSim.armor_ehp_mult`). Con 2 puntos baja hasta 63 %, así que solo se usa 1.
+
+**Decisión del dueño:** las tres corazas pesadas cambian vida por 1 de armadura, con el mismo poder en el piso 3. Las otras cuatro (cuero, túnica, hierro, cobre) siguen dando solo vida.
+
+| Ítem | Antes | Ahora | Poder antes → ahora (piso 3) |
+|---|---|---|---|
+| `armor_steel` (Épica, Guerrero/Paladín) | +23 vida | +5 vida, +1 armadura | 73 → 74 % |
+| `armor_gold` (Épica, Guerrero/Paladín) | +25 vida | +7 vida, +1 armadura | 79 → 83 % |
+| `armor_jade` (Legendaria) | +2 daño, +30 vida | +2 daño, +12 vida, +1 armadura | 207 → 202 % |
+
+Rinden más contra muchos golpes chicos (pisos 1-2) y menos en el piso 5. `run_rows` sigue sin modelar ítems, así que la tabla de corridas no cambia por la armadura. Tests: `test_abilities` (armadura 1: 10 → 7, 2 → 1, `take_hit` resta 7), `test_inventory` (coraza de acero: +5 de vida y armadura 1, también después de subir de nivel), `test_equipo_efectos` (columna «equipo» de la armadura, poder con `armor_ehp_mult`; `armor_steel` > 1,1 × `armor_copper` sigue en verde).
+

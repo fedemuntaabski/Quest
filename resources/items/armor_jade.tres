@@ -17,5 +17,6 @@ slot = 1
 rarity = 4
 modifiers = {
 "attack_damage": 2,
-"hp": 30
+"armor": 1,
+"hp": 12
 }

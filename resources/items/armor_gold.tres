@@ -16,6 +16,7 @@ icon = SubResource("AtlasTexture_76o8i")
 slot = 1
 rarity = 3
 modifiers = {
-"hp": 25
+"armor": 1,
+"hp": 7
 }
 allowed_heroes = Array[String](["warrior", "tank"])

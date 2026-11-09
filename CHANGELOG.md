@@ -11,6 +11,11 @@
 - "Partida en curso" y los botones de victoria y derrota con el marco dorado de los menús.
 - Textos: "VACÍA", "1 partida", "Volumen al pasar el cursor".
 
+## session/juego-24
+- Armadura: las corazas de acero, dorada y de jade restan 1 a cada golpe recibido (mínimo 1) y dan menos vida (acero +5, dorada +7, jade +12). La hoja del héroe muestra la fila «Armadura».
+- Versión 1.2: no se puede jugar en co-op con la 1.1.
+- El simulador de balance pelea al jefe como se juega: antes de la extracción, curado con Comida y esquivando parte de las Embestidas. El jefe no cambió.
+
 ## session/juego-23
 - Espada de acero pasa a Rara (antes Poco común, igual que la de hierro pero siempre mejor).
 - Grimorio de mareas: el Mago ataca 0,3 s más rápido (antes 0,15 s).

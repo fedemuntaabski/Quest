@@ -95,6 +95,19 @@ static func damage_reduction_pct(data: CharacterData) -> float:
 	return 0.0
 
 
+## juego-24: effective-HP multiplier of `armor` flat armor on floor `f` (pool-weighted contact
+## hits, each minus the armor, at least 1). Ignores the order with percentage reductions.
+static func armor_ehp_mult(armor: int, f: int) -> float:
+	var pool := floor_config().enemy_pool(f)
+	var raw := 0.0
+	var kept := 0.0
+	for i in pool.types.size():
+		var hit := int(enemy_stats(pool.types[i], f)["contact"])
+		raw += pool.weight_of(i) * hit
+		kept += pool.weight_of(i) * maxi(1, hit - armor)
+	return raw / maxf(kept, 0.001)
+
+
 ## Enemy numbers after floor + type multipliers, exactly as Enemy.configure() applies them.
 static func enemy_stats(type: EnemyType, floor_index: int) -> Dictionary:
 	var cfg := floor_config()
@@ -587,10 +600,21 @@ static func scaling_rows() -> Array[Dictionary]:
 ## damage / fire_rate per s, added to the kill rate). A door or extraction wave is fought next to
 ## a Ballesta with chance (rooms with one / revealed rooms); the boss (born in the dark exit room)
 ## is drawn back to one Ballesta with chance `boss_near`. The boss's contact + Embestida hit every
-## living hero (they stand together; seen in tests/tools/shot_jefe.gd), never dodged.
+## living hero (they stand together; seen in tests/tools/shot_jefe.gd); a share of the Embestidas is dodged (BOSS_PLAY "dodge").
+## juego-24, how the boss is played (`play`, defaults BOSS_PLAY; assumptions, see docs/BALANCE.md):
+##  - "dodge": share of the Embestidas the party walks out of (they move to the next room on the
+##    red telegraph; tests/tools/shot_jefe.gd esquiva). A dodged one hurts nobody, and for
+##    "dodge_sec" s per dodge the party is out of contact: neither the heroes nor the boss hit,
+##    the Ballesta keeps shooting (2 s reproduces the window: Warrior 17 / Mage 5 left, real 18 / 6).
+##  - "heal": before the boss, "comida" = heal every living hero with the Comida left (portrait,
+##    UpgradeConfig.heal_cost_per_hp, allowed any time); "rest" = only if a Rest room was revealed
+##    this floor, at its rate (heal_food_per_tick per heal_per_tick); "none" = floor start only.
+##  - "boss_first": the boss wakes when the exit room is revealed and hunts the party, so it is
+##    fought right then and the extraction waves come after (the real order); false = after them.
 ## Rows per (difficulty, party, floor): win_rate (share of runs that cleared this floor), party
 ## DPS, hp_lost_pct (damage taken / party max HP), resources at floor end and turns to the exit
-## (means over the runs that played the floor).
+## (means over the runs that played the floor); boss floors add boss_hp_in (party HP / max HP
+## when the boss fight starts, after the pre-boss heal) and boss_win (share of boss fights won).
 const RUNS := 50
 ## juego-23: chance that the party pulls the boss back to a room with a Ballesta (playtest guess).
 const BOSS_NEAR_TOWERS := 0.5
@@ -599,6 +623,9 @@ const ROOM_WALK_PX := MapGenerator.SLOT_PITCH * 64.0 * 0.5
 static var _duel_cache: Dictionary = {}
 static var _towers := true
 static var _boss_near := BOSS_NEAR_TOWERS
+## juego-24: default boss play (see run_rows). dodge 0.5 = guess (the shot_jefe script dodges all).
+const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_first": true}
+static var _play: Dictionary = BOSS_PLAY
 
 
 ## Every hero alone, every pair, every trio and the four.
@@ -617,10 +644,11 @@ static func run_parties() -> Array:
 	return out
 
 
-static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], towers: bool = true, boss_near: float = BOSS_NEAR_TOWERS) -> Array[Dictionary]:
+static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], towers: bool = true, boss_near: float = BOSS_NEAR_TOWERS, play: Dictionary = {}) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	_towers = towers
 	_boss_near = boss_near
+	_play = BOSS_PLAY.merged(play, true)
 	if parties.is_empty():
 		parties = run_parties()
 	if levels.is_empty():
@@ -632,7 +660,7 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 			_duel_cache.clear()
 			var acc: Array[Dictionary] = []
 			for f in FLOORS:
-				acc.append({"played": 0, "won": 0, "dps": 0.0, "lost": 0.0, "iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0, "turns": 0.0, "towers": 0.0})
+				acc.append({"played": 0, "won": 0, "dps": 0.0, "lost": 0.0, "iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0, "turns": 0.0, "towers": 0.0, "boss_in": 0.0, "bosses": 0, "boss_won": 0})
 			for r in runs:
 				var rng := RandomNumberGenerator.new()
 				rng.seed = hash(["run", party, level.id, r])
@@ -647,11 +675,14 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 					"iron": snappedf(a["iron"] / n, 0.1), "food": snappedf(a["food"] / n, 0.1),
 					"lore": snappedf(a["lore"] / n, 0.1), "embers": snappedf(a["embers"] / n, 0.1),
 					"turns": snappedf(a["turns"] / n, 0.1), "towers": snappedf(a["towers"] / n, 0.1),
+					"boss_hp_in": snappedf(a["boss_in"] / maxf(a["bosses"], 1.0), 0.01),
+					"boss_win": snappedf(float(a["boss_won"]) / maxf(a["bosses"], 1.0), 0.01),
 				})
 	players = 1
 	difficulty = null
 	_towers = true
 	_boss_near = BOSS_NEAR_TOWERS
+	_play = BOSS_PLAY
 	_duel_cache.clear()
 	return rows
 
@@ -704,15 +735,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				var before := _max_hp(id, levels[id])
 				levels[id] += 1
 				hp[id] += _max_hp(id, levels[id]) - before
-		for id: String in party:  # heal with the rest
-			var missing := floori(_max_hp(id, levels[id]) - hp[id])
-			if hp[id] > 0.0 and missing > 0:
-				var heal := mini(missing, floori(res["food"] / maxf(up.heal_cost_per_hp, 0.001)))
-				while heal > 0 and up.heal_cost(heal) > res["food"]:
-					heal -= 1
-				if heal > 0:
-					res["food"] -= up.heal_cost(heal)
-					hp[id] += heal
+		_heal_with_food(party, levels, hp, res, up.heal_cost_per_hp)  # heal with the rest
 		var max_total := 0.0
 		var dps := 0.0
 		for id: String in party:
@@ -785,16 +808,18 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				_revive_downed(party, levels, hp, res, f)
 		a["turns"] += turns
 		a["towers"] += ballestas
+		var theme := cfg.theme(f)
+		var boss_first: bool = _play["boss_first"]
+		if boss_first and theme and theme.boss and _alive(party, hp):
+			_play_boss(party, levels, hp, theme.boss, f, damage, res, ballestas, layout, revealed, rng, a)
 		var walk_sec := ROOM_WALK_PX * maxi(_room_path(layout, start_id, exit_id).size() - 1, 1) / (MoveAction.DEFAULT_SPEED_PX * cfg.carrier_speed_mult)
 		var waves := 1 + int(walk_sec / cfg.extraction_stage_interval(f, 0))
 		for _w in waves:
 			if _alive(party, hp):
 				_fight(party, levels, hp, _roll_wave(f, mini(scaling.wave(cfg.extraction_wave_size(0), players), cap), rng), f, rng, damage, _near(ballestas, revealed.size(), rng))
 				_revive_downed(party, levels, hp, res, f)
-		var theme := cfg.theme(f)
-		if theme and theme.boss and _alive(party, hp):
-			var near := 1 if ballestas > 0 and rng.randf() < _boss_near else 0
-			_boss_fight(party, levels, hp, theme.boss, f, damage, res, near)
+		if not boss_first and theme and theme.boss and _alive(party, hp):
+			_play_boss(party, levels, hp, theme.boss, f, damage, res, ballestas, layout, revealed, rng, a)
 		a["lost"] += damage[0] / maxf(max_total, 1.0)
 		for key in ["iron", "food", "lore", "embers"]:
 			a[key] += res[key]
@@ -804,6 +829,43 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		for id: String in party:  # still down when the floor ends: lost for the run
 			if hp[id] == 0.0:
 				hp[id] = -INF
+
+
+## juego-24: pre-boss heal (BOSS_PLAY "heal"), the fight, and the boss columns.
+static func _play_boss(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary,
+		ballestas: int, layout: MapLayout, revealed: Dictionary, rng: RandomNumberGenerator, a: Dictionary) -> void:
+	if _play["heal"] == "comida":
+		_heal_with_food(party, levels, hp, res, upgrade_config().heal_cost_per_hp)
+	elif _play["heal"] == "rest":
+		var rule := floor_config().get_room_type_rule(RoomData.RoomType.REST)
+		if rule and rule.heal_per_tick > 0 and layout.rooms.any(func(r: RoomData) -> bool: return revealed.has(r.id) and r.get_room_type() == RoomData.RoomType.REST):
+			_heal_with_food(party, levels, hp, res, float(rule.heal_food_per_tick) / rule.heal_per_tick)
+	var now := 0.0
+	var top := 0.0
+	for id: String in party:
+		if hp[id] != -INF:
+			now += maxf(hp[id], 0.0)
+			top += _max_hp(id, levels[id])
+	a["boss_in"] += now / maxf(top, 1.0)
+	a["bosses"] += 1
+	var near := 1 if ballestas > 0 and rng.randf() < _boss_near else 0
+	_boss_fight(party, levels, hp, boss, f, damage, res, near)
+	if _alive(party, hp):
+		a["boss_won"] += 1
+
+
+## Heals every living hero's missing HP with the Comida there is, at `per_hp` Comida per HP
+## (rounded up per hero, like UpgradeConfig.heal_cost), in party order.
+static func _heal_with_food(party: Array, levels: Dictionary, hp: Dictionary, res: Dictionary, per_hp: float) -> void:
+	for id: String in party:
+		var missing := floori(_max_hp(id, levels[id]) - hp[id])
+		if hp[id] > 0.0 and missing > 0:
+			var heal := mini(missing, floori(res["food"] / maxf(per_hp, 0.001)))
+			while heal > 0 and ceili(heal * per_hp) > res["food"]:
+				heal -= 1
+			if heal > 0:
+				res["food"] -= ceili(heal * per_hp)
+				hp[id] += heal
 
 
 ## Party-wide active uptime: [DPS multiplier (Grito de Guerra), damage-taken multiplier (Interposición)]
@@ -906,7 +968,8 @@ static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: 
 	var stats := enemy_stats(boss, f)
 	var boss_hp := float(stats["hp"])
 	var charge := maxf(1.0, roundf(boss.charge_damage * floor_config().enemy_damage_multiplier(f) * boss.damage_mult * difficulty.damage_mult))
-	while boss_hp > 0.0 and _alive(party, hp):
+	var in_contact := 1.0 - clampf(float(_play["dodge"]) * float(_play["dodge_sec"]) / maxf(boss.charge_cooldown, 0.1), 0.0, 1.0)
+	while boss_hp > 0.001 and _alive(party, hp):  # float leftovers would loop on ever-smaller steps
 		var dps := towers_near * tower_dps()
 		var mults := _team_mults(party, hp)
 		var per_sec := {}
@@ -914,8 +977,8 @@ static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: 
 		for id: String in party:
 			if hp[id] > 0.0:
 				var hero := _cached_hero(id, levels[id])
-				dps += float(hero["active_dps"]) * mults[0]
-				per_sec[id] = (float(stats["contact"]) * (1.0 - float(hero["reduction_pct"])) / Enemy.CONTACT_HIT_INTERVAL + charge / maxf(boss.charge_cooldown, 0.1)) * mults[1]
+				dps += float(hero["active_dps"]) * mults[0] * in_contact
+				per_sec[id] = (float(stats["contact"]) * (1.0 - float(hero["reduction_pct"])) / Enemy.CONTACT_HIT_INTERVAL * in_contact + charge * (1.0 - float(_play["dodge"])) / maxf(boss.charge_cooldown, 0.1)) * mults[1]
 				t = minf(t, hp[id] / maxf(per_sec[id], 0.01))
 		t = minf(t, boss_hp / maxf(dps, 0.01))
 		boss_hp -= dps * t

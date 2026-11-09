@@ -75,6 +75,14 @@ func _check_warrior_tank() -> void:
 	# Passives.
 	_expect(warrior.abilities.incoming_damage(10) == 8, "Piel de Hierro: 10 -> %d (want 8)" % warrior.abilities.incoming_damage(10))
 	_expect(warrior.abilities.incoming_damage(1) == 1, "damage never drops below 1")
+	warrior.stats.armor = 1  # juego-24: flat armor after the percentage, never below 1
+	_expect(warrior.abilities.incoming_damage(10) == 7 and warrior.abilities.incoming_damage(2) == 1 and warrior.abilities.incoming_damage(1) == 1,
+		"armor 1: 10 -> %d (want 7), 2 -> %d (want 1)" % [warrior.abilities.incoming_damage(10), warrior.abilities.incoming_damage(2)])
+	var hp_before := warrior.stats.current_hp
+	warrior.take_hit(10)
+	_expect(warrior.stats.current_hp == hp_before - 7, "take_hit with armor 1: lost %d, want 7" % (hp_before - warrior.stats.current_hp))
+	warrior.stats.current_hp = hp_before
+	warrior.stats.armor = 0
 	var relic := ManagerLocator.get_relic()
 	tank.global_position = relic.get_target_position()
 	_expect(tank.abilities.incoming_damage(10) == 5, "Muro Viviente at the Reliquia: 10 -> %d (want 5)" % tank.abilities.incoming_damage(10))
