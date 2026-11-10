@@ -106,7 +106,9 @@ func _check_boss_play() -> void:
 	var healed: Dictionary = f3.call({"dodge": 0.0, "heal": "comida", "boss_first": true})
 	var dodged: Dictionary = f3.call({"dodge": 1.0, "heal": "comida", "boss_first": true})
 	_expect(float(first["boss_hp_in"]) > float(none["boss_hp_in"]), "boss before the extraction: HP in %.2f vs after %.2f" % [first["boss_hp_in"], none["boss_hp_in"]])
-	_expect(float(healed["boss_hp_in"]) >= 0.9 and float(healed["boss_hp_in"]) > float(first["boss_hp_in"]), "heal with Comida first: HP in %.2f vs %.2f" % [healed["boss_hp_in"], first["boss_hp_in"]])
+	# juego-25: 0.9 -> 0.8. Hard now starts with x0.75 resources in the model (as in the game), so
+	# the Comida no longer heals this pair to 90 % (0.86 measured).
+	_expect(float(healed["boss_hp_in"]) >= 0.8 and float(healed["boss_hp_in"]) > float(first["boss_hp_in"]), "heal with Comida first: HP in %.2f vs %.2f" % [healed["boss_hp_in"], first["boss_hp_in"]])
 	_expect(float(dodged["boss_win"]) > float(healed["boss_win"]), "dodging every Embestida: boss won %.2f vs %.2f" % [dodged["boss_win"], healed["boss_win"]])
 	_expect(BalanceSim._play == BalanceSim.BOSS_PLAY, "run_rows restores the boss play")
 

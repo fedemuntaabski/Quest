@@ -465,3 +465,44 @@ Con 1 punto de armadura, el daño de contacto recibido baja 45 % en el piso 1, 4
 
 Rinden más contra muchos golpes chicos (pisos 1-2) y menos en el piso 5. `run_rows` sigue sin modelar ítems, así que la tabla de corridas no cambia por la armadura. Tests: `test_abilities` (armadura 1: 10 → 7, 2 → 1, `take_hit` resta 7), `test_inventory` (coraza de acero: +5 de vida y armadura 1, también después de subir de nivel), `test_equipo_efectos` (columna «equipo» de la armadura, poder con `armor_ehp_mult`; `armor_steel` > 1,1 × `armor_copper` sigue en verde).
 
+
+## Piso 4 por causa e ítems (session juego-25)
+Corrida: `godot --headless --path . --script res://tools/balance_sim.gd -- juego25 runs` (`docs/balance/juego25_runs.csv`; un tercer argumento `noitems` da la tabla sin equipo, idéntica a `juego24_runs.csv` en Normal). Barrido por causa: `tests/tools/sweep_juego25.gd` (200 corridas; lento, > 15 min).
+
+**Supuestos nuevos de `run_rows`** (`play`, valores por defecto en `BalanceSim.BOSS_PLAY`):
+- `items` = true. Cada sala revelada tira su cofre con la probabilidad real de su tipo (`FloorConfig.loot_chance`: Loot 1,0; Élite 0,7; Taller 0,15; Rest 0,1; común 0,08) y la tabla del piso (`LootTable`). El Altar se usa si el héroe con más vida se queda con ≥ 50 % después de pagar (`ALTAR_KEEP_HP`, supuesto). Cada piso ganado da su botín de fin de piso. El ítem va al héroe vivo al que más le sube DPS + vida efectiva (la armadura plana cuenta con `armor_ehp_mult`). No se modelan los consumibles ni pasar un ítem reemplazado a otro héroe (subestima). Los ítems usan su propio RNG: prenderlos no mueve mapas ni oleadas.
+- La armadura plana entra en `duel` y en el jefe (contacto y Embestida, mínimo 1).
+- **Corrección:** Difícil empieza con los recursos × 0,75 (`Main._begin_new_run`); el modelo no lo aplicaba.
+- Columnas nuevas por piso: `die_door` / `die_boss` / `die_extr` (parte de las corridas que mueren en cada fase), `heroes` (vivos al empezar), `lvl_gap` (niveles que faltan contra piso − 1), `food_short` (Comida que faltó para reanimar, subir y curar al empezar), `hp_start`, `hp_exit` (vida al ver la salida), `door_fights`, `dmg_door_pct` / `dmg_boss_pct` / `dmg_extr_pct`, `items` (equipados).
+- «Qué pasaría si» (apagados): `free_food`, `no_doors` = piso, `no_extr` = piso.
+
+**Pares en Normal, 200 corridas** (victoria por piso 3 / 4; el piso 5 es 0 % en todos):
+
+| Grupo | Sin ítems (juego-24) | Con ítems | Piso 4 con ítems: vivos / niveles que faltan / Comida que falta / vida al empezar | Muere en puertas / extracción (piso 4) |
+|---|---|---|---|---|
+| Guerrero + Mago | 24 / 1 | 48 / 23 | 1,8 / 1,6 / 43 / 60 % | 50 % / 3 % |
+| Guerrero + Pícaro | 35 / 3 | 63 / 34 | 1,7 / 1,7 / 41 / 63 % | 43 % / 2 % |
+| Guerrero + Paladín | 41 / 10 | 52 / 29 | 1,9 / 1,7 / 50 / 65 % | 40 % / 4 % |
+| Mago + Pícaro | 0 / 0 | 39 / 14 | 1,7 / 1,7 / 42 / 58 % | 64 % / 1 % |
+| Mago + Paladín | 29 / 1 | 44 / 18 | 1,7 / 1,7 / 44 / 62 % | 54 % / 6 % |
+| Pícaro + Paladín | 43 / 3 | 56 / 23 | 1,8 / 1,7 / 46 / 64 % | 56 % / 4 % |
+| los 4 | 30 / 1 | 78 / 7 | 3,3 / 2,3 / 106 / 35 % | 85 % / 6 % |
+
+Difícil con ítems: piso 3 en 1-22 % (pares), piso 4 ≤ 1 %; se llega al piso 3 con 1,1-1,3 niveles de menos y ~24 de Comida de menos.
+
+**Qué pasaría si** (media de los 6 pares, Normal, con ítems; victoria piso 3 / 4 / 5):
+
+| Cambio | Piso 3 | Piso 4 | Piso 4 entre los que llegan | Piso 5 |
+|---|---|---|---|---|
+| ninguno | 50 % | 24 % | 47 % | 0 % |
+| Comida infinita | 100 % | 100 % | 100 % | 99 % |
+| sin oleadas de puerta en el piso 4 | 50 % | 50 % | 99 % | 0 % |
+| sin oleadas de extracción en el piso 4 | 50 % | 25 % | 50 % | 0 % |
+
+**Lectura.**
+- **El piso 4 lo decide la Comida.** Se muere en las oleadas de puerta (40-64 %), pero porque se llega mal: después del jefe del piso 3 no alcanza para reanimar, subir de nivel y curar (faltan ~40-50 de Comida; 1,7 héroes vivos de 2, 1,6 niveles de menos, 60 % de vida). Con Comida infinita la corrida entera pasa a 99-100 %. La extracción no decide nada (1-6 % de las muertes, 1-2 % de la vida).
+- **Mago + Pícaro no gana nunca solo en el modelo sin ítems** (95 % de sus corridas mueren contra el jefe). Con ítems gana el piso 3 en 39 % (los otros pares 44-63 %): el daño plano de las espadas y talismanes casi duplica su DPS.
+- Los 4: el piso 3 sube a 78 %, pero el piso 4 cae a 7 % (faltan 106 de Comida para cuatro héroes).
+- El piso 5 sigue en 0 % en todos los casos sin Comida infinita.
+
+**Decisiones del dueño (juego-25):** ajustar la **Comida** (bono al bajar de piso o al matar al jefe, o nivel más barato; valores a barrer en juego-26, con test). Par sin tanque: nada. No se tocó balance en esta sesión.

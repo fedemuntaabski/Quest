@@ -55,12 +55,18 @@ static func hero_data(hero_id: String) -> CharacterData:
 
 
 ## What PlayerStats applies: base + per-level bonuses (+ passives, see passive_*).
-static func hero_stats(hero_id: String, level: int) -> Dictionary:
+## `mods` = summed item modifiers (PartyInventory.get_equipment_bonus; juego-25), applied like
+## PlayerStats._apply_run_attack: after the level curve, HP capped at StatBalance.PLAYER_MAX_HP.
+static func hero_stats(hero_id: String, level: int, mods: Dictionary = {}) -> Dictionary:
 	var data := hero_data(hero_id)
 	var up := data.upgrade_override if data.upgrade_override else upgrade_config()  # PlayerStats._config_for
 	var damage := up.damage_at(data.attack_damage, level)
 	var interval := up.interval_at(data.attack_interval, level)
 	var hp := data.base_hp + up.hp_per_level * level
+	if not mods.is_empty():
+		damage += int(mods.get("attack_damage", 0))
+		interval = maxf(up.min_attack_interval, interval + float(mods.get("attack_interval", 0.0)))
+		hp = mini(hp + int(mods.get("hp", 0)), StatBalance.PLAYER_MAX_HP)
 	var reduction := damage_reduction_pct(data)
 	var dps := damage / interval
 	var ehp := hp / maxf(1.0 - reduction, 0.01)
@@ -78,7 +84,7 @@ static func hero_stats(hero_id: String, level: int) -> Dictionary:
 				active_ehp = ehp / (1.0 - active.value * uptime)
 	return {
 		"hero": hero_id, "level": level, "hp": hp, "damage": damage, "interval": interval,
-		"dps": dps, "range": data.attack_range,
+		"dps": dps, "range": data.attack_range + float(mods.get("attack_range", 0.0)), "armor": int(mods.get("armor", 0)),
 		"ranged": data.attack_style == CharacterData.AttackStyle.RANGED,
 		"speed": MoveAction.DEFAULT_SPEED_PX * data.move_speed_mult,
 		"reduction_pct": reduction,
@@ -134,12 +140,12 @@ static func wave_size(floor_index: int) -> int:
 
 
 ## Hero (level) vs one enemy of `floor_index`: hits/time to kill it, time to be killed by it.
-static func duel(hero_id: String, level: int, type: EnemyType, floor_index: int) -> Dictionary:
-	var hero := hero_stats(hero_id, level)
+static func duel(hero_id: String, level: int, type: EnemyType, floor_index: int, mods: Dictionary = {}) -> Dictionary:
+	var hero := hero_stats(hero_id, level, mods)
 	var enemy := enemy_stats(type, floor_index)
 	var hits := ceili(float(enemy["hp"]) / float(hero["damage"]))
 	var ttk_enemy := hits * float(hero["interval"])
-	var hit := maxi(1, roundi(int(enemy["contact"]) * (1.0 - float(hero["reduction_pct"]))))
+	var hit := maxi(1, roundi(int(enemy["contact"]) * (1.0 - float(hero["reduction_pct"]))) - int(hero["armor"]))  # HeroAbilities.incoming_damage
 	var ttk_hero := ceili(float(hero["hp"]) / float(hit)) * Enemy.CONTACT_HIT_INTERVAL
 	var exposure := (hits - 0.5) * float(hero["interval"])
 	return {
@@ -624,8 +630,16 @@ static var _duel_cache: Dictionary = {}
 static var _towers := true
 static var _boss_near := BOSS_NEAR_TOWERS
 ## juego-24: default boss play (see run_rows). dodge 0.5 = guess (the shot_jefe script dodges all).
-const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_first": true}
+## juego-25: "items" = chests, Altars and the floor-end reward become equipment (see run_rows).
+## What-ifs for the cause breakdown (off by default): "free_food" = Comida never runs out,
+## "no_doors" / "no_extr" = that floor has no door waves / no extraction waves.
+const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_first": true,
+	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0}
 static var _play: Dictionary = BOSS_PLAY
+## juego-25: hero id -> summed item modifiers of the run being simulated ("items").
+static var _gear: Dictionary = {}
+## An Altar is used when the healthiest hero keeps at least this share of its HP (assumption).
+const ALTAR_KEEP_HP := 0.5
 
 
 ## Every hero alone, every pair, every trio and the four.
@@ -660,11 +674,15 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 			_duel_cache.clear()
 			var acc: Array[Dictionary] = []
 			for f in FLOORS:
-				acc.append({"played": 0, "won": 0, "dps": 0.0, "lost": 0.0, "iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0, "turns": 0.0, "towers": 0.0, "boss_in": 0.0, "bosses": 0, "boss_won": 0})
+				acc.append({"played": 0, "won": 0, "dps": 0.0, "lost": 0.0, "iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0, "turns": 0.0, "towers": 0.0, "boss_in": 0.0, "bosses": 0, "boss_won": 0,
+					"die_door": 0, "die_boss": 0, "die_extr": 0, "hp_start": 0.0, "hp_exit": 0.0, "exits": 0, "lvl_gap": 0.0, "food_short": 0.0,
+					"dmg_door": 0.0, "dmg_boss": 0.0, "dmg_extr": 0.0, "fights": 0.0, "heroes": 0.0, "items": 0.0})
 			for r in runs:
 				var rng := RandomNumberGenerator.new()
 				rng.seed = hash(["run", party, level.id, r])
-				_simulate_run(party, rng, acc)
+				var item_rng := RandomNumberGenerator.new()  # its own stream: items on/off never moves the map or the waves
+				item_rng.seed = hash(["items", party, level.id, r])
+				_simulate_run(party, rng, acc, item_rng)
 			for f in FLOORS:
 				var a: Dictionary = acc[f]
 				var n := maxf(float(a["played"]), 1.0)
@@ -677,21 +695,29 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 					"turns": snappedf(a["turns"] / n, 0.1), "towers": snappedf(a["towers"] / n, 0.1),
 					"boss_hp_in": snappedf(a["boss_in"] / maxf(a["bosses"], 1.0), 0.01),
 					"boss_win": snappedf(float(a["boss_won"]) / maxf(a["bosses"], 1.0), 0.01),
+					"die_door": snappedf(a["die_door"] / n, 0.01), "die_boss": snappedf(a["die_boss"] / n, 0.01), "die_extr": snappedf(a["die_extr"] / n, 0.01),
+					"heroes": snappedf(a["heroes"] / n, 0.01), "lvl_gap": snappedf(a["lvl_gap"] / n, 0.01), "food_short": snappedf(a["food_short"] / n, 0.1),
+					"hp_start": snappedf(a["hp_start"] / n, 0.01), "hp_exit": snappedf(a["hp_exit"] / maxf(a["exits"], 1.0), 0.01),
+					"door_fights": snappedf(a["fights"] / n, 0.1), "dmg_door_pct": snappedf(a["dmg_door"] / n * 100.0, 0.1),
+					"dmg_boss_pct": snappedf(a["dmg_boss"] / n * 100.0, 0.1), "dmg_extr_pct": snappedf(a["dmg_extr"] / n * 100.0, 0.1),
+					"items": snappedf(a["items"] / n, 0.1),
 				})
 	players = 1
 	difficulty = null
 	_towers = true
 	_boss_near = BOSS_NEAR_TOWERS
 	_play = BOSS_PLAY
+	_gear = {}
 	_duel_cache.clear()
 	return rows
 
 
 static func _cached_duel(hero_id: String, lvl: int, type: EnemyType, f: int) -> Dictionary:
-	var key := "%s|%d|%s|%d" % [hero_id, lvl, type.id, f]
+	var mods: Dictionary = _gear.get(hero_id, {})
+	var key := "%s|%d|%s|%d|%d" % [hero_id, lvl, type.id, f, mods.hash()]
 	if not _duel_cache.has(key):
-		var d := duel(hero_id, lvl, type, f)
-		var hero := hero_stats(hero_id, lvl)
+		var d := duel(hero_id, lvl, type, f, mods)
+		var hero := hero_stats(hero_id, lvl, mods)
 		d["approach"] = approach_sec(hero, float(enemy_stats(type, f)["speed"]))
 		d["interval"] = float(hero["interval"])
 		d["enemy_hp"] = float(enemy_stats(type, f)["hp"])
@@ -704,27 +730,36 @@ static func _max_hp(id: String, lvl: int) -> float:
 
 
 static func _cached_hero(id: String, lvl: int) -> Dictionary:
-	var key := "hero|%s|%d" % [id, lvl]
+	var mods: Dictionary = _gear.get(id, {})
+	var key := "hero|%s|%d|%d" % [id, lvl, mods.hash()]
 	if not _duel_cache.has(key):
-		_duel_cache[key] = hero_stats(id, lvl)
+		_duel_cache[key] = hero_stats(id, lvl, mods)
 	return _duel_cache[key]
 
 
-static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[Dictionary]) -> void:
+static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[Dictionary], item_rng: RandomNumberGenerator = null) -> void:
 	var cfg := floor_config()
 	var up := upgrade_config()
 	var scaling := PlayerScaling.get_default()
 	var curve := BuildingCostCurve.get_default()
 	var res := START_RESOURCES.duplicate()
+	for key: String in res:  # juego-25: Main._begin_new_run (Hard starts with x0.75)
+		res[key] = roundi(res[key] * difficulty.start_resource_mult)
 	var levels := {}
 	var hp := {}
 	var researched := not _towers
+	var items_on: bool = _play["items"] and item_rng != null
+	var worn := {}
+	_gear = {}
 	for id: String in party:
 		levels[id] = 0
 		hp[id] = _max_hp(id, 0)
 	for f in range(1, FLOORS + 1):
 		var a: Dictionary = acc[f - 1]
 		a["played"] += 1
+		if _play["free_food"]:
+			res["food"] = 9999
+		a["food_short"] += maxf(_food_wanted(party, levels, hp, f) - res["food"], 0.0)
 		for id: String in party:  # revive (a hero lost on an earlier floor stays at -INF)
 			if hp[id] == 0.0 and res["food"] >= up.revive_cost(f):
 				res["food"] -= up.revive_cost(f)
@@ -739,16 +774,21 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		var max_total := 0.0
 		var dps := 0.0
 		for id: String in party:
+			a["lvl_gap"] += float(mini(f - 1, up.max_level) - levels[id]) / party.size()
 			if hp[id] > 0.0:
 				max_total += _max_hp(id, levels[id])
 				dps += float(_cached_hero(id, levels[id])["dps"])
+				a["heroes"] += 1
 		a["dps"] += dps
+		a["hp_start"] += _party_hp(party, levels, hp)
 		var damage := [0.0]
 		var layout := MapGenerator.generate_floor(rng.randi(), cfg, f)
 		var start_id := layout.get_start_room_id()
 		var revealed := {start_id: true}
 		var exit_id := ""
+		var types := {}
 		for room in layout.rooms:
+			types[room.id] = room.get_room_type()
 			if room.is_exit:
 				exit_id = room.id
 		var lit := 0
@@ -773,8 +813,11 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 					frontier.append(c.room_a)
 			if frontier.is_empty():
 				break
-			revealed[frontier[rng.randi_range(0, frontier.size() - 1)]] = true
+			var opened: String = frontier[rng.randi_range(0, frontier.size() - 1)]
+			revealed[opened] = true
 			turns += 1
+			if items_on:
+				_room_loot(types[opened], f, party, levels, hp, worn, item_rng)
 			res["embers"] += cfg.discovery_embers(f)
 			for id: String in party:
 				var passive := hero_data(id).passive
@@ -802,33 +845,146 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			if not researched and workshops["lore"] > 0 and res["lore"] >= ballesta_research_cost():
 				res["lore"] -= ballesta_research_cost()
 				researched = true
-			if rng.randf() < clampf(cfg.door_roll.threat_chance(turns, f) * threat_mult, 0.0, cfg.door_roll.max_chance):
+			if rng.randf() < clampf(cfg.door_roll.threat_chance(turns, f) * threat_mult, 0.0, cfg.door_roll.max_chance) and int(_play["no_doors"]) != f:
 				var count := mini(scaling.wave(cfg.door_roll.enemy_count(turns, f), players), cap)
+				a["fights"] += 1
 				_fight(party, levels, hp, _roll_wave(f, count, rng), f, rng, damage, _near(ballestas, revealed.size(), rng))
 				_revive_downed(party, levels, hp, res, f)
 		a["turns"] += turns
 		a["towers"] += ballestas
+		a["dmg_door"] += damage[0] / maxf(max_total, 1.0)
+		var phase_start: float = damage[0]
+		var died := "" if _alive(party, hp) else "die_door"
+		if died == "":
+			a["hp_exit"] += _party_hp(party, levels, hp)
+			a["exits"] += 1
 		var theme := cfg.theme(f)
 		var boss_first: bool = _play["boss_first"]
 		if boss_first and theme and theme.boss and _alive(party, hp):
 			_play_boss(party, levels, hp, theme.boss, f, damage, res, ballestas, layout, revealed, rng, a)
+			a["dmg_boss"] += (damage[0] - phase_start) / maxf(max_total, 1.0)
+			phase_start = damage[0]
+			if not _alive(party, hp):
+				died = "die_boss"
 		var walk_sec := ROOM_WALK_PX * maxi(_room_path(layout, start_id, exit_id).size() - 1, 1) / (MoveAction.DEFAULT_SPEED_PX * cfg.carrier_speed_mult)
-		var waves := 1 + int(walk_sec / cfg.extraction_stage_interval(f, 0))
+		var waves := 0 if int(_play["no_extr"]) == f else 1 + int(walk_sec / cfg.extraction_stage_interval(f, 0))
 		for _w in waves:
 			if _alive(party, hp):
 				_fight(party, levels, hp, _roll_wave(f, mini(scaling.wave(cfg.extraction_wave_size(0), players), cap), rng), f, rng, damage, _near(ballestas, revealed.size(), rng))
 				_revive_downed(party, levels, hp, res, f)
+		a["dmg_extr"] += (damage[0] - phase_start) / maxf(max_total, 1.0)
+		if died == "" and not _alive(party, hp):
+			died = "die_extr"
 		if not boss_first and theme and theme.boss and _alive(party, hp):
 			_play_boss(party, levels, hp, theme.boss, f, damage, res, ballestas, layout, revealed, rng, a)
+			if not _alive(party, hp):
+				died = "die_boss"
 		a["lost"] += damage[0] / maxf(max_total, 1.0)
 		for key in ["iron", "food", "lore", "embers"]:
 			a[key] += res[key]
+		a["items"] += worn.size()
 		if not _alive(party, hp):
+			a[died] += 1
 			return
 		a["won"] += 1
+		if items_on and item_rng.randf() < cfg.floor_end_loot_chance:  # FloorManager._grant_floor_end_loot
+			_take_item(LootTable.get_default().roll_item(item_rng, f), f, party, levels, hp, worn)
 		for id: String in party:  # still down when the floor ends: lost for the run
 			if hp[id] == 0.0:
 				hp[id] = -INF
+
+
+## Party HP / party max HP; a hero lost for the run counts as 0 of its max.
+static func _party_hp(party: Array, levels: Dictionary, hp: Dictionary) -> float:
+	var now := 0.0
+	var top := 0.0
+	for id: String in party:
+		now += maxf(hp[id], 0.0)
+		top += _max_hp(id, levels[id])
+	return now / maxf(top, 1.0)
+
+
+## Comida the floor start asks for: revive the downed, level everyone to floor - 1, heal to full.
+static func _food_wanted(party: Array, levels: Dictionary, hp: Dictionary, f: int) -> float:
+	var up := upgrade_config()
+	var want := 0.0
+	for id: String in party:
+		if hp[id] == -INF:
+			continue
+		var now: float = hp[id]
+		if now == 0.0:
+			want += up.revive_cost(f)
+			now = _max_hp(id, levels[id]) * up.revive_hp_pct
+		var target := maxi(mini(f - 1, up.max_level), levels[id])
+		for lvl in range(levels[id], target):
+			want += up.get_cost(lvl)
+		now += _max_hp(id, target) - _max_hp(id, levels[id])
+		want += ceili(floori(_max_hp(id, target) - now) * up.heal_cost_per_hp)
+	return want
+
+
+## juego-25 items, the room just revealed: its chest (FloorConfig.loot_chance of the type,
+## LootSpawner) or its Altar (the healthiest hero pays RoomTypeRule.altar_hp_pct of its max HP
+## for an item of altar_min_rarity or better, if it keeps ALTAR_KEEP_HP of its HP).
+static func _room_loot(type: RoomData.RoomType, f: int, party: Array, levels: Dictionary, hp: Dictionary, worn: Dictionary, rng: RandomNumberGenerator) -> void:
+	var cfg := floor_config()
+	var table := LootTable.get_default()
+	if type == RoomData.RoomType.ALTAR:
+		var rule := cfg.get_room_type_rule(type)
+		var payer := ""
+		for id: String in party:
+			if hp[id] > 0.0 and (payer == "" or hp[id] > hp[payer]):
+				payer = id
+		if rule == null or rule.altar_hp_pct <= 0.0 or payer == "":
+			return
+		var top := _max_hp(payer, levels[payer])
+		var cost := maxf(1.0, roundf(top * rule.altar_hp_pct))
+		if hp[payer] - cost >= top * ALTAR_KEEP_HP:
+			hp[payer] -= cost
+			_take_item(table.roll_item(rng, f, rule.altar_min_rarity), f, party, levels, hp, worn)
+	elif type not in LootSpawner.NO_CHEST_TYPES and rng.randf() < cfg.loot_chance(type):
+		_take_item(table.roll_item(rng, f), f, party, levels, hp, worn)
+
+
+## The item goes to the living hero it helps most (relative DPS gain + relative effective-HP
+## gain, armor through armor_ehp_mult), replacing what that hero wore in the slot if it is better.
+## ponytail: consumables are dropped and a replaced item is not handed to another hero;
+## both undercount what a player gets out of the stash.
+static func _take_item(item: ItemData, f: int, party: Array, levels: Dictionary, hp: Dictionary, worn: Dictionary) -> void:
+	if item == null or item.is_consumable():
+		return
+	var best := ""
+	var best_gain := 0.0
+	for id: String in party:
+		if hp[id] <= 0.0 or (not item.allowed_heroes.is_empty() and id not in item.allowed_heroes):
+			continue
+		var gain := _gear_power(id, levels[id], f, _gear_mods(worn, id, item)) - _gear_power(id, levels[id], f, _gear.get(id, {}))
+		if gain > best_gain:
+			best = id
+			best_gain = gain
+	if best == "":
+		return
+	var before := _max_hp(best, levels[best])
+	_gear[best] = _gear_mods(worn, best, item)
+	worn["%s|%d" % [best, item.slot]] = item
+	hp[best] = minf(hp[best] + maxf(_max_hp(best, levels[best]) - before, 0.0), _max_hp(best, levels[best]))
+
+
+## Summed modifiers of what `id` wears, with `item` in its slot.
+static func _gear_mods(worn: Dictionary, id: String, item: ItemData) -> Dictionary:
+	var mods := {}
+	for slot in [ItemData.Slot.WEAPON, ItemData.Slot.ARMOR, ItemData.Slot.TALISMAN]:
+		var it: ItemData = item if slot == item.slot else worn.get("%s|%d" % [id, slot])
+		if it:
+			for key: String in it.modifiers:
+				mods[key] = mods.get(key, 0) + it.modifiers[key]
+	return mods
+
+
+static func _gear_power(id: String, lvl: int, f: int, mods: Dictionary) -> float:
+	var base := hero_stats(id, lvl)
+	var with := hero_stats(id, lvl, mods)
+	return float(with["dps"]) / float(base["dps"]) + float(with["ehp"]) * armor_ehp_mult(int(with["armor"]), f) / float(base["ehp"])
 
 
 ## juego-24: pre-boss heal (BOSS_PLAY "heal"), the fight, and the boss columns.
@@ -978,7 +1134,12 @@ static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: 
 			if hp[id] > 0.0:
 				var hero := _cached_hero(id, levels[id])
 				dps += float(hero["active_dps"]) * mults[0] * in_contact
-				per_sec[id] = (float(stats["contact"]) * (1.0 - float(hero["reduction_pct"])) / Enemy.CONTACT_HIT_INTERVAL * in_contact + charge * (1.0 - float(_play["dodge"])) / maxf(boss.charge_cooldown, 0.1)) * mults[1]
+				var touch := float(stats["contact"]) * (1.0 - float(hero["reduction_pct"]))
+				var dash := charge
+				if int(hero["armor"]) > 0:  # flat armor: off every hit, at least 1 (the Embestida goes through take_hit too)
+					touch = maxf(1.0, roundf(touch) - int(hero["armor"]))
+					dash = maxf(1.0, dash - int(hero["armor"]))
+				per_sec[id] = (touch / Enemy.CONTACT_HIT_INTERVAL * in_contact + dash * (1.0 - float(_play["dodge"])) / maxf(boss.charge_cooldown, 0.1)) * mults[1]
 				t = minf(t, hp[id] / maxf(per_sec[id], 0.01))
 		t = minf(t, boss_hp / maxf(dps, 0.01))
 		boss_hp -= dps * t
