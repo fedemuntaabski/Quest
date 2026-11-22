@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## session/menu-34
+- Pausa: el botón CONTROLES va en mayúsculas como el resto, y con el texto agrandado al 150 % el panel crece y ya no se sale ningún botón del marco.
+
 ## session/menu-33
 - Menú principal nuevo: la cripta con la Reliquia en el altar, antorchas que parpadean, brasas que suben y un leve movimiento con el mouse. Título arriba a la izquierda y los botones en columna, como placas de piedra con borde dorado; al pasar el mouse o con el teclado se enciende una pequeña llama al costado.
 - Ranuras, modo de juego, selección de héroes, Opciones, Créditos, sala de espera, pausa y diálogos con el mismo marco de esquinas doradas. Selección de héroes con fondo de armería y Opciones con el estudio del escriba.

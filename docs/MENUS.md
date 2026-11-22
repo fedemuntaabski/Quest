@@ -29,10 +29,13 @@ Cómo se ven el menú principal y todo su recorrido (ranuras, continuar, modo de
 | Ranuras, modo de red, Créditos | la cripta del menú (Créditos con tinte oscuro) | marco + título + ornamento; borrar ranura = placa roja sin marcador |
 | Selección de héroes | `menu_armeria.png`, dos braseros | cartas de piedra (doradas al elegir), vista previa enmarcada |
 | Opciones | `menu_estudio.png`, velas y farol | pestañas en placa, páginas en pozo; también dentro de la pausa |
-| Sala de espera | `Lobby Multijugador.png` con tinte frío y viñeta | falta una ilustración del mismo estilo (ver `PLAYTEST.md`) |
+| Sala de espera | `Lobby Multijugador.png` con tinte frío y viñeta | falta una ilustración del mismo estilo (ver `PLAYTEST.md`); a texto ×1,5 es más alta que la pantalla y se desplaza |
+| Pausa | ninguno (desenfoque del juego) | `PausePanel` es un `Panel` fijo (560×500 en el `.tscn`); `PauseMenu._fit_panel_to_content` lo agranda al mínimo de `PauseVBox` + márgenes cuando el texto crece (menu-34) |
 
 ## Verificación
 
+- Números del fondo, marcador y transiciones: mirados en movimiento por el dueño en menu-34 y aprobados tal cual (no tocarlos sin otra prueba a ojo).
+- `tests/test_estabilizar.gd`: el panel de pausa contiene sus botones, también con fuentes ×1,5.
 - `tests/test_menu_estetica.gd`: placas y marcadores en el menú y subpantallas, marcos, mapeo *cover* del fondo, tamaño de fuente, marcador fuera de `get_children()`, foco enciende/apaga el marcador, RNG intacto.
 - `tests/tools/shot_barrido.gd` (capturas 720p / 1080p / texto ×1,5; espera en tiempo real porque guardar un PNG de 1080p puede tardar casi un segundo).
 - `tests/tools/recorrido_menu.gd`: ventana real, clics y teclas de verdad por todo el menú hasta Salir (respalda y restaura `user://slot_*`).

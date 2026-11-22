@@ -284,6 +284,15 @@ Movido verbatim de `CLAUDE.md` el 2026-11-07 para que no se cargue en cada sesi�
 - **Captures:** `capturas/menu-33/` (gitignored): antes/, v1-v3/ (720, 1080, 1080x15), recorrido/, `antes_despues_menus.png`.
 - **Not verified:** nobody looked at the animation in motion (flicker, parallax, embers, marker flame, panel reveal) with human eyes; the recorrido proves input and flow, not feel. Gamepad not tried. Waiting room still has the old-style picture.
 
+**Session menu-34** (`session/menu-34`, from `session/menu-33` 2710a3f; owner's goal `docs/archive/GOAL_menu-34.md`: merge menu-33, polish the menu with what the owner saw in motion; menus only). **main fast-forwarded to 2710a3f** (menu-33) and pushed. Baseline: 68 tests, 0 FAIL, 676 s.
+- **Owner feedback (phase 1):** the owner watched the menu in motion and answered "bien así" to everything: flame flicker + gem pulse, embers, 10 px parallax, button marker, panel reveal, keyboard focus. No numbers changed in `MenuBackdrop` / `MenuButtonDecor` / `MenuTransitionFX`.
+- **Waiting room (phase 2):** no `sala_espera.png` in the repo root, so `WaitingRoom` keeps `Lobby Multijugador.png` with its tint; nothing touched.
+- **Pause:** "Controles" → "CONTROLES" like the other pause buttons. Caught in the 1080x15 sweep: `PausePanel` is a plain `Panel` fixed at 560x500 with `PauseVBox` centred by anchors, and at text scale 1.5 the box outgrew it (title on the top edge, SALIR below the frame; it already did this in menu-33's `v3/1080x15_pause.png`). `PauseMenu._fit_panel_to_content` grows the panel to the box's minimum size + the .tscn margins and follows `minimum_size_changed`. `test_estabilizar` now also scales the box's fonts ×1.5 and checks the fit (fails without the fix).
+- **End screens / HUD (phase 3):** `f1_*`, `victory`, `death` captures at 720 and 1080x15 look consistent with the plaque style (end screens keep their own font); waiting room at 1080x15 is taller than the screen but scrolls, as designed.
+- **Verification:** shot_barrido 720/1080/1080x15: 35 shots each, no FAIL; `recorrido_menu.gd`: 18 PASS, 0 FAIL. Final suite: 68 tests, 0 FAIL, 1 OK* (test_accessibility, the known teardown crash), 678 s.
+- **Captures:** `capturas/menu-34/antes/` (720), `capturas/menu-34/despues/` (720, 1080, 1080x15).
+- **Seen only in captures:** the pause panel fit and the end screens/HUD. Gamepad still not tried. Small inconsistency left: Opciones' Guardar/Volver and the waiting room's Listo are not upper-case like the other menu plaques.
+
 ## Arquitectura (versión larga previa al recorte)
 
 Secciones de arquitectura de `CLAUDE.md` antes del recorte; partes quedaron desactualizadas por los bloques de arriba (p. ej. Enemies). Solo referencia.
