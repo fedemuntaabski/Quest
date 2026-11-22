@@ -78,6 +78,7 @@ loot_chance = 1.0
 
 [resource]
 script = ExtResource("1_floor_config")
+boss_food_reward = 15
 room_types = Array[ExtResource("2_room_type_rule")]([SubResource("RoomTypeRule_rest"), SubResource("RoomTypeRule_loot"), SubResource("RoomTypeRule_elite"), SubResource("RoomTypeRule_workshop"), SubResource("RoomTypeRule_prisoner"), SubResource("RoomTypeRule_altar"), SubResource("RoomTypeRule_secret")])
 enemy_hp_growth = 0.15
 enemy_damage_growth = 0.1

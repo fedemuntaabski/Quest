@@ -506,3 +506,64 @@ Difícil con ítems: piso 3 en 1-22 % (pares), piso 4 ≤ 1 %; se llega al piso 
 - El piso 5 sigue en 0 % en todos los casos sin Comida infinita.
 
 **Decisiones del dueño (juego-25):** ajustar la **Comida** (bono al bajar de piso o al matar al jefe, o nivel más barato; valores a barrer en juego-26, con test). Par sin tanque: nada. No se tocó balance en esta sesión.
+
+## Comida tras el jefe (session juego-26)
+Palancas en `FloorConfig`: `food_bonus_on_descend` (al bajar, piso 2+) y `boss_food_reward` (al morir el jefe de los pisos 3 y 5). Barrido: `tests/tools/sweep_juego26.gd -- <corridas> <normal|hard> <bajar> <jefe> <base_cost> <cost_growth>` (un proceso por combinación; 6 pares, con ítems; costo de nivel aplicado también al Paladín). Columnas: victoria en los pisos 3 / 4 / 5 (media de los pares), piso 4 entre los que ganan el 3, Comida que falta al empezar el piso 4, piso 4 de Mago + Pícaro entre los que llegan.
+
+**200 corridas:**
+
+| Dificultad | Bajar | Jefe | Nivel (base × crecimiento) | Pisos 3 / 4 / 5 (%) | Piso 4 entre los que llegan | Comida que falta | Mago + Pícaro |
+|---|---|---|---|---|---|---|---|
+| Difícil | 0 | 0 | 8 × 1,4 | 10 / 1 / 0 | 7 % | 35 | 0 % |
+| Difícil | 0 | 10 | 6 × 1,35 | 14 / 1 / 0 | 9 % | 13 | 100 % |
+| Difícil | 0 | 10 | 8 × 1,4 | 10 / 1 / 0 | 12 % | 25 | 0 % |
+| Difícil | 0 | 15 | 8 × 1,4 | 10 / 2 / 0 | 15 % | 24 | 0 % |
+| Difícil | 0 | 20 | 8 × 1,4 | 11 / 1 / 0 | 11 % | 29 | 0 % |
+| Difícil | 5 | 0 | 6 × 1,35 | 24 / 3 / 0 | 12 % | 17 | 17 % |
+| Difícil | 5 | 10 | 8 × 1,4 | 18 / 3 / 0 | 14 % | 17 | 100 % |
+| Normal | 0 | 0 | 8 × 1,4 | 50 / 24 / 0 | 47 % | 44 | 36 % |
+| Normal | 0 | 10 | 6 × 1,35 | 61 / 37 / 1 | 61 % | 17 | 47 % |
+| Normal | 0 | 10 | 8 × 1,4 | 50 / 29 / 0 | 58 % | 35 | 36 % |
+| Normal | 0 | 15 | 8 × 1,4 | 51 / 31 / 0 | 61 % | 33 | 50 % |
+| Normal | 0 | 20 | 8 × 1,4 | 51 / 35 / 1 | 69 % | 32 | 55 % |
+| Normal | 5 | 0 | 6 × 1,35 | 71 / 50 / 2 | 71 % | 14 | 62 % |
+| Normal | 5 | 10 | 8 × 1,4 | 62 / 43 / 2 | 70 % | 22 | 57 % |
+
+En Difícil, Mago + Pícaro llega al piso 4 en 0-2 corridas de 200: su 0 / 17 / 100 % es ruido.
+
+**Grilla gruesa, Normal, 60 corridas:**
+
+| Bajar | Jefe | Nivel | Pisos 3 / 4 / 5 (%) | Piso 4 entre los que llegan |
+|---|---|---|---|---|
+| 0 | 0 | 8 × 1,4 | 48 / 22 / 0 | 45 % |
+| 0 | 0 | 6 × 1,35 | 59 / 25 / 0 | 43 % |
+| 0 | 0 | 5 × 1,3 | 64 / 33 / 0 | 52 % |
+| 0 | 20 | 8 × 1,4 | 49 / 36 / 1 | 74 % |
+| 0 | 20 | 6 × 1,35 | 59 / 46 / 3 | 77 % |
+| 0 | 20 | 5 × 1,3 | 64 / 53 / 5 | 84 % |
+| 0 | 40 | 8 × 1,4 | 49 / 42 / 4 | 86 % |
+| 0 | 40 | 6 × 1,35 | 60 / 55 / 9 | 93 % |
+| 0 | 40 | 5 × 1,3 | 64 / 61 / 13 | 94 % |
+| 10 | 0 | 8 × 1,4 | 69 / 49 / 2 | 71 % |
+| 10 | 0 | 6 × 1,35 | 74 / 59 / 7 | 79 % |
+| 10 | 0 | 5 × 1,3 | 75 / 63 / 14 | 84 % |
+| 10 | 20 | 8 × 1,4 | 70 / 63 / 9 | 89 % |
+| 10 | 20 | 6 × 1,35 | 75 / 71 / 17 | 94 % |
+| 10 | 20 | 5 × 1,3 | 77 / 74 / 27 | 96 % |
+| 10 | 40 | 8 × 1,4 | 70 / 69 / 17 | 98 % |
+| 10 | 40 | 6 × 1,35 | 75 / 75 / 31 | 100 % |
+| 10 | 40 | 5 × 1,3 | 77 / 77 / 39 | 100 % |
+| 20 | 0 | 8 × 1,4 | 79 / 70 / 15 | 88 % |
+| 20 | 0 | 6 × 1,35 | 84 / 77 / 28 | 92 % |
+| 20 | 0 | 5 × 1,3 | 84 / 79 / 37 | 93 % |
+| 20 | 20 | 8 × 1,4 | 80 / 76 / 23 | 95 % |
+| 20 | 20 | 6 × 1,35 | 85 / 82 / 38 | 97 % |
+| 20 | 20 | 5 × 1,3 | 86 / 84 / 47 | 98 % |
+| 20 | 40 | 8 × 1,4 | 81 / 81 / 32 | 100 % |
+| 20 | 40 | 6 × 1,35 | 85 / 84 / 49 | 99 % |
+| 20 | 40 | 5 × 1,3 | 86 / 85 / 56 | 99 % |
+
+**Lectura.** El bono al bajar y los niveles baratos también suben el piso 3 (con bajar 20 pasa de 48 a 80-86 %). El bono del jefe solo mueve lo que viene después del jefe: el piso 3 no cambia y Difícil casi no se mueve, porque ahí casi nadie mata al jefe.
+
+**Elegido (dueño): jefe +15 Comida**, sin bono al bajar y sin tocar el costo de los niveles. Normal: piso 4 entre los que llegan 47 → 61 %. `test_balance._check_food_floor4` fija el valor y estos umbrales: Normal ≥ 50 % del piso 4 entre los que llegan, piso 3 ≤ 65 %, Difícil piso 4 ≤ 10 %. El piso 5 sigue en 0-1 %.
+

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## session/juego-26
+- Matar a un jefe (pisos 3 y 5) da +15 de Comida: alcanza mejor para reanimar, subir de nivel y curar antes del piso 4.
+- Versión 1.3: no se puede jugar en co-op con la 1.2.
+
 ## session/visual-24
 - Opciones: Guardar y Volver ya no se salen del marco; las pestañas largas se desplazan.
 - Sala de espera: entra en pantalla en 1080p, las descripciones de los héroes se leen enteras y con texto grande se desplaza hasta Abandonar. "Vida" en vez de "HP".

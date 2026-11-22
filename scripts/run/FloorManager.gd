@@ -51,6 +51,10 @@ func setup(p_floor_index: int, run_seed: int = 0) -> void:
 		var resource_manager := ManagerLocator.get_resource_manager()
 		if resource_manager:
 			resource_manager.add_resource("embers", config.embers_bonus_on_descend)
+	if floor_index > 1 and config.food_bonus_on_descend > 0:
+		var resources := ManagerLocator.get_resource_manager()
+		if resources:
+			resources.add_resource("food", config.food_bonus_on_descend)
 	QuestLogger.info(QuestLogger.Category.MAP, "Floor %d/%d started (enemy HP x%.2f, dmg x%.2f)." % [floor_index, config.max_floors, enemy_hp_multiplier(), enemy_damage_multiplier()])
 
 

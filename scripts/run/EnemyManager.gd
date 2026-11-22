@@ -308,9 +308,14 @@ func _on_enemy_died(enemy: Enemy) -> void:
 
 ## The exit is free: a Relic carrier already waiting there wins at once.
 func _on_boss_defeated() -> void:
+	var reward := floor_manager.config.boss_food_reward if floor_manager else 0
+	var resources := ManagerLocator.get_resource_manager()
+	if reward > 0 and resources:
+		resources.add_resource("food", reward)  # host only (add_resource ignores clients)
 	var hud := ManagerLocator.get_hud()
 	if hud:
-		hud.show_hint("¡Jefe derrotado!", "%s cayó. La salida está libre." % boss.type.display_name, QuestPalette.GOLD_LIGHT)
+		var food := " +%d Comida." % reward if reward > 0 else ""
+		hud.show_hint("¡Jefe derrotado!", "%s cayó. La salida está libre.%s" % [boss.type.display_name, food], QuestPalette.GOLD_LIGHT)
 	var extraction := ManagerLocator.get_extraction_manager()
 	for hero in ManagerLocator.get_heroes():
 		if extraction and hero.is_carrying_relic and hero.stats.is_alive() and room_manager.is_exit_room(hero.current_zone_id):

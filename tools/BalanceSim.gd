@@ -757,6 +757,8 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 	for f in range(1, FLOORS + 1):
 		var a: Dictionary = acc[f - 1]
 		a["played"] += 1
+		if f > 1:
+			res["food"] += cfg.food_bonus_on_descend  # FloorManager (juego-26)
 		if _play["free_food"]:
 			res["food"] = 9999
 		a["food_short"] += maxf(_food_wanted(party, levels, hp, f) - res["food"], 0.0)
@@ -1008,6 +1010,7 @@ static func _play_boss(party: Array, levels: Dictionary, hp: Dictionary, boss: E
 	_boss_fight(party, levels, hp, boss, f, damage, res, near)
 	if _alive(party, hp):
 		a["boss_won"] += 1
+		res["food"] += floor_config().boss_food_reward  # EnemyManager._on_boss_defeated (juego-26)
 
 
 ## Heals every living hero's missing HP with the Comida there is, at `per_hp` Comida per HP
