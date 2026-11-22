@@ -64,7 +64,6 @@ const LANGUAGE_CODES := ["es", "en"]
 var has_unsaved_changes: bool = false
 var suppress_change_tracking: bool = false
 var _active_tween: Tween = null
-var _button_tweens: Dictionary = {}
 
 var _resolution_choices: Array[Vector2i] = []
 var _native_res_is_separate: bool = false
@@ -79,6 +78,7 @@ func _ready() -> void:
 	_build_accessibility_tab()
 	_build_controls_tab()
 	_wrap_tabs_in_scroll()
+	UiStyles.style_menu_controls(options_tabs)
 	_connect_menu_signals()
 	_update_ui_text_translations()
 
@@ -116,16 +116,20 @@ func _wrap_tabs_in_scroll() -> void:
 		options_tabs.move_child(scroll, index)
 
 
+## menu-33: framed card, title + ornament, plaque tabs, plaques for Guardar/Volver.
 func _apply_theme() -> void:
+	theme = UiStyles.menu_font_theme()
 	if options_card:
-		options_card.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 20))
-	_style_button(save_button)
-	_style_button(back_button)
-
-
-func _style_button(button: Button, danger: bool = false) -> void:
-	if button:
-		UiStyles.style_menu_button(button, danger)
+		UiStyles.style_menu_frame(options_card)
+	var title := $OptionsCenterContainer/OptionsCard/OptionsVBox/OptionsTitle as Label
+	UiStyles.style_menu_title(title, 48)
+	UiStyles.add_ornament_after(title)
+	UiStyles.style_menu_tabs(options_tabs)
+	options_tabs.add_theme_font_size_override("font_size", Accessibility.font(20))
+	UiStyles.style_plaque_button(save_button, false, 28)
+	UiStyles.style_plaque_button(back_button, false, 26)
+	save_button.custom_minimum_size.y = 62
+	back_button.custom_minimum_size.y = 56
 
 
 func _on_tab_changed(tab_idx: int) -> void:
@@ -285,6 +289,7 @@ func _refresh_controls() -> void:
 			_refresh_controls()
 			_mark_unsaved_changes())
 		_controls_grid.add_child(r)
+	UiStyles.style_menu_controls(_controls_grid)
 
 
 func _start_capture(action: String, gamepad: bool, button: Button) -> void:
@@ -485,18 +490,15 @@ func open() -> void:
 	visible = true
 	_set_transition_buttons_disabled(true)
 
-	var scale_targets: Array[CanvasItem] = []
-	if options_card:
-		scale_targets.append(options_card)
-
-	_active_tween = MenuTransitionFX.play_entrance(
-		self,
-		[{"node": self, "max_alpha": 1.0}],
-		scale_targets,
-		0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2(0.92, 0.92)
-	)
+	modulate.a = 0.0
+	_active_tween = create_tween().set_ignore_time_scale(true)
+	_active_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_active_tween.tween_property(self, "modulate:a", 1.0, 0.22)
+	var panel_tween := MenuTransitionFX.play_panel_in(self, options_card, 0.32)
 	if _active_tween != null:
 		await _active_tween.finished
+	if panel_tween != null and panel_tween.is_valid():
+		await panel_tween.finished
 
 	_set_transition_buttons_disabled(false)
 
@@ -603,26 +605,13 @@ func _connect_slider(slider: HSlider, change_handler: Callable) -> void:
 
 # ---------------- BUTTON HOVER ANIMATION ----------------
 
-func _on_button_hover_entered(btn: Button) -> void:
+## menu-33: hover feedback is the plaque marker (MenuButtonDecor) + the sound; no bounce.
+func _on_button_hover_entered(_btn: BaseButton) -> void:
 	_on_any_button_mouse_entered()
-	_animate_button_scale(btn, 1.04)
 
 
-func _on_button_hover_exited(btn: Button) -> void:
-	_animate_button_scale(btn, 1.0)
-
-
-func _animate_button_scale(btn: Button, target_scale: float) -> void:
-	if btn == null or not is_instance_valid(btn):
-		return
-	btn.pivot_offset = btn.size / 2.0
-	var current_tween = _button_tweens.get(btn) as Tween
-	if current_tween and current_tween.is_valid():
-		current_tween.kill()
-
-	var t := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_button_tweens[btn] = t
-	t.tween_property(btn, "scale", Vector2(target_scale, target_scale), 0.18)
+func _on_button_hover_exited(_btn: BaseButton) -> void:
+	pass
 
 
 # ---------------- AUDIO ----------------

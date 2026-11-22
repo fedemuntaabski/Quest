@@ -18,15 +18,12 @@ var _is_selected: bool = false
 var _is_hovered: bool = false
 var _is_taken: bool = false
 
-const HOVER_COLOR: Color = QuestPalette.UI_PANEL_BORDER_HOVER
-const NORMAL_COLOR: Color = QuestPalette.UI_PANEL_BORDER
-const SELECTED_COLOR: Color = QuestPalette.UI_PANEL_BORDER_SELECTED
-const TAKEN_COLOR: Color = QuestPalette.BLOOD
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	focus_mode = Control.FOCUS_NONE
+	_apply_text_style()
 	if select_button and not select_button.pressed.is_connected(_on_select_pressed):
 		select_button.pressed.connect(_on_select_pressed)
 	if not mouse_entered.is_connected(_on_mouse_entered):
@@ -98,12 +95,25 @@ func _on_mouse_exited() -> void:
 	_apply_visual_state()
 
 
+## menu-33: crypt-stone tile (UiStyles.build_card_style), parchment/gold text.
+func _apply_text_style() -> void:
+	if name_label:
+		UiStyles.style_menu_title(name_label, 26)
+	for label: Label in [role_label, ability_label]:
+		if label:
+			UiStyles.style_menu_text(label, 14, QuestPalette.PARCHMENT)
+	if stats_label:
+		UiStyles.style_menu_text(stats_label, 14, QuestPalette.RELIC_GOLD)
+	if select_button:
+		UiStyles.style_plaque_button(select_button, false, 18, false)
+
+
 func _apply_visual_state() -> void:
 	if _is_taken:
-		add_theme_stylebox_override("panel", UiStyles.build_reward_card_style(TAKEN_COLOR))
+		add_theme_stylebox_override("panel", UiStyles.build_card_style("taken"))
 	elif _is_selected:
-		add_theme_stylebox_override("panel", UiStyles.build_reward_card_style(SELECTED_COLOR))
+		add_theme_stylebox_override("panel", UiStyles.build_card_style("picked"))
 	elif _is_hovered:
-		add_theme_stylebox_override("panel", UiStyles.build_reward_card_style(HOVER_COLOR))
+		add_theme_stylebox_override("panel", UiStyles.build_card_style("hot"))
 	else:
-		add_theme_stylebox_override("panel", UiStyles.build_reward_card_style(NORMAL_COLOR))
+		add_theme_stylebox_override("panel", UiStyles.build_card_style("normal"))

@@ -52,9 +52,9 @@ func _on_cancel_pressed() -> void:
 
 func _apply_theme() -> void:
 	if dialog_panel:
-		dialog_panel.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 20))
+		UiStyles.style_menu_frame(dialog_panel)  # menu-33
 	if message_label:
-		message_label.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
+		UiStyles.style_menu_text(message_label, 22)
 	_style_button(cancel_button, false)
 	_style_button(confirm_button, true)
 

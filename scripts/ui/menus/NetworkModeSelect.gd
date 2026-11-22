@@ -42,10 +42,29 @@ func _ready() -> void:
 	note.name = "CoopSaveNote"
 	note.text = COOP_NO_SAVE
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	note.add_theme_font_size_override("font_size", Accessibility.font(14))
-	note.add_theme_color_override("font_color", QuestPalette.PARCHMENT)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiStyles.style_menu_text(note, 15, Color(QuestPalette.PARCHMENT, 0.75))
 	offline_button.get_parent().add_child(note)
 	offline_button.get_parent().move_child(note, offline_button.get_index())
+	_apply_style()
+
+
+## menu-33: framed card, title + ornament, plaques, the code box as a field.
+func _apply_style() -> void:
+	UiStyles.style_menu_frame(mode_card, 34)
+	var title := $CenterContainer/ModeCard/VBoxContainer/Title as Label
+	UiStyles.style_menu_title(title, 34)
+	UiStyles.add_ornament_after(title)
+	UiStyles.style_menu_text(status_label, 18, QuestPalette.BANNER_RED_LIGHT)
+	for btn: Button in [host_button, join_button, offline_button]:
+		UiStyles.style_plaque_button(btn, false, 24)
+		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	UiStyles.style_plaque_button(back_button, false, 22)
+	back_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	UiStyles.style_menu_field(code_edit)
+	code_edit.add_theme_font_override("font", UiStyles.UI_FONT)
+	code_edit.add_theme_font_size_override("font_size", Accessibility.font(18))
+	code_edit.custom_minimum_size.y = 46
 
 
 func _connect_events() -> void:
@@ -100,13 +119,7 @@ func open() -> void:
 	_is_animating_open = true
 
 	if mode_card:
-		mode_card.pivot_offset = mode_card.size / 2.0
-		mode_card.scale = Vector2(0.93, 0.93)
-		mode_card.modulate.a = 0.0
-
-		_active_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		_active_tween.tween_property(mode_card, "scale", Vector2.ONE, 0.25)
-		_active_tween.tween_property(mode_card, "modulate:a", 1.0, 0.22)
+		_active_tween = MenuTransitionFX.play_panel_in(self, mode_card)
 
 
 func close(animate: bool = true) -> void:
@@ -125,10 +138,7 @@ func close(animate: bool = true) -> void:
 		_active_tween.kill()
 
 	if mode_card:
-		mode_card.pivot_offset = mode_card.size / 2.0
-		_active_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-		_active_tween.tween_property(mode_card, "scale", Vector2(0.93, 0.93), 0.18)
-		_active_tween.tween_property(mode_card, "modulate:a", 0.0, 0.18)
+		_active_tween = MenuTransitionFX.play_panel_out(self, mode_card)
 		_active_tween.chain().tween_callback(func():
 			visible = false
 		)

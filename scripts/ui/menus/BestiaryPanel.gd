@@ -75,7 +75,7 @@ func _build() -> void:
 	add_child(center)
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = PANEL_SIZE
-	panel.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_CHARCOAL, QuestPalette.GOLD_DARK, 3, 16, 18))
+	UiStyles.style_menu_frame(panel, 18)  # menu-33
 	center.add_child(panel)
 
 	var content := VBoxContainer.new()

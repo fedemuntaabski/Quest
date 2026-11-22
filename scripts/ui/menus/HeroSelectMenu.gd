@@ -15,16 +15,11 @@ const PARTY_SIZE := preload("res://scripts/autoload/GameSession.gd").PARTY_SIZE
 const PREVIEW_SCALE := 6.0
 const PREMISE := "El señor demonio saqueó la abadía y hundió sus cinco reliquias en las profundidades.
 Recuperalas: cada una que toques despertará a la mazmorra."
-const BACKGROUND := preload("res://assets/ui/Selección de Héroes.png")
-const TITLE_FONT := preload("res://assets/fonts/mainfont.ttf")
-const UI_FONT := preload("res://assets/fonts/secundaryfont.ttf")
-
-const BTN_COLORS := {
-	"normal": [Color(0.16, 0.11, 0.09, 0.86), Color(0.76, 0.56, 0.25)],
-	"hover": [Color(0.26, 0.17, 0.11, 0.9), Color(0.95, 0.72, 0.35)],
-	"pressed": [Color(0.11, 0.08, 0.06, 0.92), Color(0.72, 0.51, 0.2)],
-	"disabled": [Color(0.1, 0.08, 0.07, 0.6), Color(0.4, 0.32, 0.2, 0.6)],
-}
+## menu-33: the armoury illustration (two braziers) behind the pick.
+const BACKGROUND := preload("res://assets/ui/menu_armeria.png")
+const BACKGROUND_FLAMES := [Vector3(0.227, 0.457, 0.085), Vector3(0.76, 0.468, 0.085)]
+const TITLE_FONT := UiStyles.TITLE_FONT
+const UI_FONT := UiStyles.UI_FONT
 
 var start_button: Button
 var back_button: Button
@@ -79,11 +74,11 @@ func can_start() -> bool:
 # ---------------- UI ----------------
 
 func _build_ui() -> void:
-	var bg := TextureRect.new()
+	var bg := MenuBackdrop.new()
+	bg.name = "Backdrop"
 	bg.texture = BACKGROUND
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.flames = PackedVector3Array(BACKGROUND_FLAMES)
+	bg.tint = Color(0.01, 0.02, 0.03, 0.25)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 
@@ -94,26 +89,25 @@ func _build_ui() -> void:
 	add_child(margin)
 
 	var main := VBoxContainer.new()
-	main.add_theme_constant_override("separation", 14)
+	main.add_theme_constant_override("separation", 12)
 	margin.add_child(main)
 
 	var title := Label.new()
 	title.text = "ELEGÍ TUS %d HÉROES" % PARTY_SIZE
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_override("font", TITLE_FONT)
-	title.add_theme_font_size_override("font_size", Accessibility.font(34))
-	title.add_theme_color_override("font_color", Color(0.95, 0.85, 0.62))
-	title.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
-	title.add_theme_constant_override("outline_size", 4)
+	UiStyles.style_menu_title(title, 34)
 	main.add_child(title)
+	var ornament := UiStyles.make_ornament()
+	ornament.custom_minimum_size = Vector2(420, 10)
+	ornament.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	main.add_child(ornament)
 
 	var premise := Label.new()
 	premise.text = PREMISE
 	premise.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	premise.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	premise.add_theme_font_size_override("font_size", Accessibility.font(18))
-	premise.add_theme_color_override("font_color", Color(0.85, 0.78, 0.62))
-	premise.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
+	UiStyles.style_menu_text(premise, 18, Color(QuestPalette.PARCHMENT, 0.9))
+	premise.add_theme_color_override("font_outline_color", QuestPalette.INK)
 	premise.add_theme_constant_override("outline_size", 3)
 	main.add_child(premise)
 
@@ -146,16 +140,16 @@ func _build_ui() -> void:
 		slot.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		slot.expand_icon = true
 		slot.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		slot.add_theme_font_override("font", UI_FONT)
-		slot.add_theme_font_size_override("font_size", Accessibility.font(20))
-		_style_button(slot)
+		UiStyles.style_plaque_button(slot, false, 20, false)
 		slot.pressed.connect(_on_slot_pressed.bind(i))
 		slots_row.add_child(slot)
 		_slots.append(slot)
 
 	_hint = Label.new()
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hint.add_theme_color_override("font_color", Color(0.85, 0.72, 0.45))
+	UiStyles.style_menu_text(_hint, 17, QuestPalette.RELIC_GOLD)
+	_hint.add_theme_color_override("font_outline_color", QuestPalette.INK)
+	_hint.add_theme_constant_override("outline_size", 3)
 	main.add_child(_hint)
 
 	var buttons := HBoxContainer.new()
@@ -187,15 +181,16 @@ func _build_difficulty_row() -> HBoxContainer:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	var label := Label.new()
 	label.text = "Dificultad:"
-	label.add_theme_font_override("font", UI_FONT)
-	label.add_theme_color_override("font_color", Color(0.85, 0.72, 0.45))
+	UiStyles.style_menu_text(label, 18, QuestPalette.PARCHMENT)
+	label.add_theme_color_override("font_outline_color", QuestPalette.INK)
+	label.add_theme_constant_override("outline_size", 3)
 	row.add_child(label)
 	var session := ManagerLocator.get_game_session()
 	var current: String = session.difficulty if session else "normal"
 	var group := ButtonGroup.new()
 	var config := DifficultyConfig.get_default()
 	for level in (config.levels if config else []):
-		var btn := _make_action_button(level.display_name.to_upper(), 20)
+		var btn := _make_action_button(level.display_name.to_upper(), 20, false)
 		btn.custom_minimum_size = Vector2(140, 48)
 		btn.toggle_mode = true
 		btn.button_group = group
@@ -245,8 +240,7 @@ func _build_card(data: CharacterData) -> Button:
 	var name_label := Label.new()
 	name_label.text = data.display_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_font_override("font", UI_FONT)
-	name_label.add_theme_font_size_override("font_size", Accessibility.font(22))
+	UiStyles.style_menu_text(name_label, 22, QuestPalette.PARCHMENT)
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(name_label)
 
@@ -259,7 +253,7 @@ func _build_preview_panel() -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_stretch_ratio = 2.0
-	panel.add_theme_stylebox_override("panel", UiStyles.build_slot_icon_style())
+	UiStyles.style_menu_frame(panel, 8)
 
 	var pad := MarginContainer.new()  # visual-24: the stats sat flush on the panel's left edge
 	for side in ["left", "right", "top", "bottom"]:
@@ -282,36 +276,23 @@ func _build_preview_panel() -> PanelContainer:
 
 	_preview_name = Label.new()
 	_preview_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_preview_name.add_theme_font_override("font", TITLE_FONT)
-	_preview_name.add_theme_font_size_override("font_size", Accessibility.font(28))
-	_preview_name.add_theme_color_override("font_color", Color(0.95, 0.85, 0.62))
+	UiStyles.style_menu_title(_preview_name, 28)
 	box.add_child(_preview_name)
 
 	_preview_info = Label.new()
 	_preview_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_preview_info.add_theme_font_override("font", UI_FONT)
-	_preview_info.add_theme_font_size_override("font_size", Accessibility.font(17))
+	UiStyles.style_menu_text(_preview_info, 17, QuestPalette.PARCHMENT_LIGHT)
 	box.add_child(_preview_info)
 	return panel
 
 
-func _make_action_button(text: String, font_size: int) -> Button:
+func _make_action_button(text: String, font_size: int, marker: bool = true) -> Button:
 	var btn := Button.new()
 	btn.text = text
 	btn.custom_minimum_size = Vector2(260, 60)
-	btn.add_theme_font_override("font", UI_FONT)
-	btn.add_theme_font_size_override("font_size", Accessibility.font(font_size))
-	btn.add_theme_color_override("font_color", Color(0.95, 0.78, 0.42))
-	btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.44, 0.32))
 	btn.mouse_entered.connect(_play_hover)
-	_style_button(btn)
+	UiStyles.style_plaque_button(btn, false, font_size, marker)
 	return btn
-
-
-func _style_button(btn: Button) -> void:
-	for state: String in BTN_COLORS:
-		btn.add_theme_stylebox_override(state, UiStyles.build_panel_style(BTN_COLORS[state][0], BTN_COLORS[state][1], 3, 16, 12))
-	btn.add_theme_stylebox_override("focus", UiStyles.build_panel_style(Color(0, 0, 0, 0), BTN_COLORS["hover"][1], 4, 16, 12))
 
 
 ## Idle sprite frame (same art as the HUD portrait) > portrait PNG.
@@ -328,11 +309,11 @@ func _refresh() -> void:
 	for id: String in _cards:
 		var picked := selected.has(id)
 		var card: Button = _cards[id]
-		var normal: Color = QuestPalette.UI_PANEL_BORDER_SELECTED if picked else QuestPalette.UI_PANEL_BORDER
-		var hot: Color = QuestPalette.UI_PANEL_BORDER_SELECTED if picked else QuestPalette.UI_PANEL_BORDER_HOVER
-		card.add_theme_stylebox_override("normal", UiStyles.build_reward_card_style(normal))
-		for state in ["hover", "pressed", "focus"]:
-			card.add_theme_stylebox_override(state, UiStyles.build_reward_card_style(hot))
+		card.add_theme_stylebox_override("normal", UiStyles.build_card_style("picked" if picked else "normal"))
+		for state in ["hover", "pressed", "hover_pressed"]:
+			card.add_theme_stylebox_override(state, UiStyles.build_card_style("picked" if picked else "hot"))
+		card.add_theme_stylebox_override("focus", UiStyles.build_plaque_style("focus"))
+		(_card_names[id] as Label).add_theme_color_override("font_color", QuestPalette.RELIC_GOLD_PALE if picked else QuestPalette.PARCHMENT)
 		var data := CharacterDatabase.get_by_id(id)
 		(_card_names[id] as Label).text = "%s  [%d]" % [data.display_name, selected.find(id) + 1] if picked else data.display_name
 	for i in _slots.size():

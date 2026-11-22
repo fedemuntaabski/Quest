@@ -3,18 +3,6 @@
 [ext_resource type="Script" path="res://scripts/ui/menus/ExitConfirmDialog.gd" id="1_exit_script"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="2_ui_font"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog_panel"]
-bg_color = Color(0.08, 0.06, 0.05, 0.95)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.86, 0.67, 0.33, 1)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
-
 [node name="ExitConfirmDialog" type="Control"]
 anchors_preset = 15
 anchor_right = 1.0
@@ -44,7 +32,6 @@ grow_vertical = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(520, 260)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_dialog_panel")
 
 [node name="DialogVBox" type="VBoxContainer" parent="CenterContainer/DialogPanel"]
 layout_mode = 0

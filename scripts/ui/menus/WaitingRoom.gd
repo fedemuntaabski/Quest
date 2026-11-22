@@ -38,6 +38,7 @@ func _ready() -> void:
 	_net.lobby_changed.connect(_refresh)
 	_net.session_ended.connect(_on_session_ended)
 	_build_character_cards()
+	_apply_style()
 	_refresh()
 	_scroll_when_tall()
 
@@ -62,6 +63,26 @@ func _scroll_when_tall() -> void:
 	scroll.add_child(center)
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+
+## menu-33: framed card, title + ornament, inset panels, plaques (Abandonar = red).
+func _apply_style() -> void:
+	theme = UiStyles.menu_font_theme()
+	var card := $CenterContainer/RoomCard as PanelContainer
+	UiStyles.style_menu_frame(card, 30)
+	var title := $CenterContainer/RoomCard/VBoxContainer/Title as Label
+	UiStyles.style_menu_title(title, 36)
+	UiStyles.add_ornament_after(title)
+	UiStyles.style_menu_text(lobby_id_label, 18, Color(QuestPalette.PARCHMENT, 0.85))
+	UiStyles.style_menu_text(hint_label, 18, QuestPalette.RELIC_GOLD)
+	for panel: PanelContainer in [$CenterContainer/RoomCard/VBoxContainer/PlayersPanel, $CenterContainer/RoomCard/VBoxContainer/CharacterPanel]:
+		panel.add_theme_stylebox_override("panel", UiStyles.build_inset_style(14))
+	UiStyles.style_plaque_button(invite_button, false, 22)
+	UiStyles.style_plaque_button(ready_button, false, 24)
+	ready_button.custom_minimum_size = Vector2(520, 62)
+	ready_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	UiStyles.style_plaque_button(start_button, false, 26)
+	UiStyles.style_plaque_button(leave_button, true, 22)
 
 
 func _build_character_cards() -> void:
@@ -113,6 +134,7 @@ func _player_row(peer: int, me: int) -> HBoxContainer:
 		var data := CharacterDatabase.get_by_id(id)
 		heroes.append(data.display_name if data else id)
 	var label := Label.new()
+	UiStyles.style_menu_text(label, 18)
 	label.text = "%s%s%s — %s %s" % [p.name, " (vos)" if peer == me else "", " [anfitrión]" if peer == 1 else "",
 		", ".join(heroes) if not heroes.is_empty() else "sin héroe", "✓ listo" if p.ready else "…"]
 	row.add_child(label)
@@ -146,6 +168,7 @@ func _show_version_refused() -> void:
 	var dialog := AcceptDialog.new()
 	dialog.title = "Versión distinta"
 	dialog.dialog_text = "No podés entrar: el anfitrión tiene la versión %s y vos la %s.\nTienen que jugar la misma versión." % [_net.host_version_refused, _net.game_version]
+	UiStyles.style_menu_dialog(dialog)
 	add_child(dialog)
 	dialog.popup_centered()
 	await dialog.visibility_changed

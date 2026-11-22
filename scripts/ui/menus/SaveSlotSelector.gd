@@ -29,7 +29,6 @@ signal back_pressed
 
 var _click_sound: AudioStreamPlayer
 var _hover_sound: AudioStreamPlayer
-var _button_tweens: Dictionary = {}
 var _active_tween: Tween = null
 var _info_tween: Tween = null
 
@@ -40,6 +39,7 @@ func setup(click_sound: AudioStreamPlayer = null, hover_sound: AudioStreamPlayer
 
 
 func _ready() -> void:
+	_apply_style()
 	_connect_events()
 	var save_mgr := ManagerLocator.get_save_manager()
 	if save_mgr:
@@ -56,6 +56,7 @@ func _on_save_corrupted(slot_id: int, restored: bool) -> void:
 		else "El guardado de la ranura %d estaba dañado y no se pudo recuperar.\nLa ranura empieza de cero; el archivo dañado quedó como slot_%d.cfg.corrupt." % [slot_id, slot_id])
 	dialog.confirmed.connect(dialog.queue_free)
 	dialog.canceled.connect(dialog.queue_free)
+	UiStyles.style_menu_dialog(dialog)
 	add_child(dialog)
 	dialog.popup_centered()
 	refresh()
@@ -86,31 +87,27 @@ func _connect_events() -> void:
 
 
 func _register_button_hover(btn: Button) -> void:
-	if not btn.mouse_entered.is_connected(_on_btn_mouse_entered.bind(btn)):
-		btn.mouse_entered.connect(_on_btn_mouse_entered.bind(btn))
-	if not btn.mouse_exited.is_connected(_on_btn_mouse_exited.bind(btn)):
-		btn.mouse_exited.connect(_on_btn_mouse_exited.bind(btn))
+	if not btn.mouse_entered.is_connected(_play_hover):
+		btn.mouse_entered.connect(_play_hover)
 
 
-func _on_btn_mouse_entered(btn: Button) -> void:
-	_play_hover()
-	_animate_button_scale(btn, 1.04)
-
-
-func _on_btn_mouse_exited(btn: Button) -> void:
-	_animate_button_scale(btn, 1.0)
-
-
-func _animate_button_scale(btn: Button, target_scale: float) -> void:
-	if btn == null or not is_instance_valid(btn):
-		return
-	btn.pivot_offset = btn.size / 2.0
-	var cur_tween = _button_tweens.get(btn) as Tween
-	if cur_tween and cur_tween.is_valid():
-		cur_tween.kill()
-	var t := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_button_tweens[btn] = t
-	t.tween_property(btn, "scale", Vector2(target_scale, target_scale), 0.16)
+## menu-33: framed card, plaques (delete = red, no marker), title + ornament, inset details.
+func _apply_style() -> void:
+	UiStyles.style_menu_frame(slot_card, 34)
+	var title := $CenterContainer/SlotCard/HBoxContainer/LeftPanel/Title as Label
+	UiStyles.style_menu_title(title, 34)
+	UiStyles.add_ornament_after(title)
+	for btn in slot_buttons:
+		UiStyles.style_plaque_button(btn, false, 22)
+		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	for del_btn in delete_buttons:
+		UiStyles.style_plaque_button(del_btn, true, 22, false)
+		del_btn.tooltip_text = "Borrar ranura"
+	UiStyles.style_plaque_button(back_button, false, 22)
+	var info := $CenterContainer/SlotCard/HBoxContainer/RightPanel as PanelContainer
+	info.add_theme_stylebox_override("panel", UiStyles.build_inset_style(24))
+	UiStyles.style_menu_text(hover_label, 20)
+	hover_label.add_theme_constant_override("line_spacing", 4)
 
 
 func refresh() -> void:
@@ -145,13 +142,7 @@ func open() -> void:
 	visible = true
 
 	if slot_card:
-		slot_card.pivot_offset = slot_card.size / 2.0
-		slot_card.scale = Vector2(0.93, 0.93)
-		slot_card.modulate.a = 0.0
-
-		_active_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		_active_tween.tween_property(slot_card, "scale", Vector2.ONE, 0.25)
-		_active_tween.tween_property(slot_card, "modulate:a", 1.0, 0.22)
+		_active_tween = MenuTransitionFX.play_panel_in(self, slot_card)
 
 
 func close(animate: bool = true) -> void:
@@ -166,10 +157,7 @@ func close(animate: bool = true) -> void:
 		_active_tween.kill()
 
 	if slot_card:
-		slot_card.pivot_offset = slot_card.size / 2.0
-		_active_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-		_active_tween.tween_property(slot_card, "scale", Vector2(0.93, 0.93), 0.18)
-		_active_tween.tween_property(slot_card, "modulate:a", 0.0, 0.18)
+		_active_tween = MenuTransitionFX.play_panel_out(self, slot_card)
 		_active_tween.chain().tween_callback(func():
 			visible = false
 		)
