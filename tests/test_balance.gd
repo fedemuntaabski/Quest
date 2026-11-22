@@ -33,6 +33,12 @@ const BOSS_FOOD_REWARD := 15
 const NORMAL_REACH4_MIN := 0.5
 const NORMAL_FLOOR3_MAX := 0.65
 const HARD_FLOOR4_MAX := 0.1
+## juego-27: +30 Comida on reaching floors 4 and 5, Señor Demonio 150 HP (owner's pick).
+const DESCEND_FOOD := 30
+const DESCEND_FOOD_FROM := 4
+const BOSS5_HP := 150
+const NORMAL_REACH5_MIN := 0.3
+const HARD_FLOOR5_MAX := 0.05
 
 var failures: Array[String] = []
 
@@ -88,8 +94,10 @@ func _check_runs() -> void:
 
 func _check_food_floor4(rows: Array[Dictionary], level_id: String) -> void:
 	var cfg := BalanceSim.floor_config()
-	_expect(cfg.boss_food_reward == BOSS_FOOD_REWARD and cfg.food_bonus_on_descend == 0, "Comida: boss %d, descend %d" % [cfg.boss_food_reward, cfg.food_bonus_on_descend])
-	var won := {3: 0.0, 4: 0.0}
+	_expect(cfg.boss_food_reward == BOSS_FOOD_REWARD and cfg.food_bonus_on_descend == DESCEND_FOOD and cfg.food_bonus_from_floor == DESCEND_FOOD_FROM,
+		"Comida: boss %d, descend %d from floor %d" % [cfg.boss_food_reward, cfg.food_bonus_on_descend, cfg.food_bonus_from_floor])
+	_expect(cfg.theme(5).boss.base_hp == BOSS5_HP, "floor-5 boss HP %d" % cfg.theme(5).boss.base_hp)
+	var won := {3: 0.0, 4: 0.0, 5: 0.0}
 	var pairs := 0
 	for row in rows:
 		if row["difficulty"] == level_id and int(row["size"]) == 2 and won.has(int(row["floor"])):
@@ -98,12 +106,16 @@ func _check_food_floor4(rows: Array[Dictionary], level_id: String) -> void:
 	var reach4 := float(won[4]) / maxf(float(won[3]), 0.001)
 	var floor3 := float(won[3]) / maxi(pairs, 1)
 	var floor4 := float(won[4]) / maxi(pairs, 1)
-	print("%s pairs: floor 3 %.2f, floor 4 %.2f, floor 4 of those who reach it %.2f" % [level_id, floor3, floor4, reach4])
+	var reach5 := float(won[5]) / maxf(float(won[4]), 0.001)
+	var floor5 := float(won[5]) / maxi(pairs, 1)
+	print("%s pairs: floor 3 %.2f, floor 4 %.2f (%.2f of those who reach it), floor 5 %.2f (%.2f)" % [level_id, floor3, floor4, reach4, floor5, reach5])
 	if level_id == "normal":
 		_expect(reach4 >= NORMAL_REACH4_MIN, "normal: floor 4 won by %.2f of the pairs that reach it" % reach4)
 		_expect(floor3 <= NORMAL_FLOOR3_MAX, "normal: floor 3 won by %.2f of the pairs" % floor3)
+		_expect(reach5 >= NORMAL_REACH5_MIN, "normal: floor 5 won by %.2f of the pairs that reach it" % reach5)
 	else:
 		_expect(floor4 <= HARD_FLOOR4_MAX, "%s: floor 4 won by %.2f of the pairs" % [level_id, floor4])
+		_expect(floor5 <= HARD_FLOOR5_MAX, "%s: floor 5 won by %.2f of the pairs" % [level_id, floor5])
 
 
 ## juego-23: the runs build Ballestas (every party has one on floor 1) and pulling the floor-3

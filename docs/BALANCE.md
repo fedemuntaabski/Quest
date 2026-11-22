@@ -567,3 +567,59 @@ En Difícil, Mago + Pícaro llega al piso 4 en 0-2 corridas de 200: su 0 / 17 / 
 
 **Elegido (dueño): jefe +15 Comida**, sin bono al bajar y sin tocar el costo de los niveles. Normal: piso 4 entre los que llegan 47 → 61 %. `test_balance._check_food_floor4` fija el valor y estos umbrales: Normal ≥ 50 % del piso 4 entre los que llegan, piso 3 ≤ 65 %, Difícil piso 4 ≤ 10 %. El piso 5 sigue en 0-1 %.
 
+## Piso 5 por causa (session juego-27)
+Barridos: `tests/tools/sweep_juego27.gd -- <corridas>` (tabla por causa de los pisos 4 y 5, Normal y Difícil, 6 pares + los 4, y «qué pasaría si» del piso 5; ~2,5 min a 200 corridas) y `tests/tools/sweep_juego27_levers.gd` / `sweep_juego27_levers2.gd -- <corridas>` (palancas en memoria: `FloorTheme` del piso 5, vida del Señor Demonio, Comida al bajar desde un piso). «Qué pasaría si» nuevo en `BOSS_PLAY`: `no_boss` = piso sin jefe.
+
+**Simulador 20× más rápido, mismos números.** `ItemCatalog`/`LootTable`/`PlayerScaling.get_default()` hacen `load()` de un `.tres` que nadie retenía: cada cofre volvía a leer el catálogo de ítems (~13 ms). `run_rows` ahora retiene esos recursos mientras corre (`BalanceSim._keep`). Tabla de corridas con ítems: 184 → 9 s; `test_balance` ~4 min → 19 s. Comparado fila por fila contra la copia vieja (con y sin ítems, 150 filas cada una) y, con el jefe en 0 de Comida, contra `juego25_runs.csv`: 0 diferencias. `sweep_juego26` usa el mismo `run_rows`.
+
+**Antes (jefe +15 de juego-26), Normal, 200 corridas, piso 5:**
+
+| Grupo | Vivos al empezar | Niveles que faltan | Comida que falta | Vida al empezar | Muere en puertas / jefe / extracción | Vida al llegar al jefe | Gana al jefe |
+|---|---|---|---|---|---|---|---|
+| Guerrero + Mago | 1,8 | 2,1 | 66 | 75 % | 51 / 49 / 0 % | 79 % | 0 % |
+| Guerrero + Pícaro | 1,6 | 2,1 | 59 | 73 % | 65 / 35 / 0 % | 78 % | 0 % |
+| Guerrero + Paladín | 1,8 | 2,1 | 69 | 62 % | 64 / 35 / 0 % | 61 % | 4 % |
+| Mago + Pícaro | 1,7 | 2,1 | 60 | 70 % | 57 / 43 / 0 % | 74 % | 0 % |
+| Mago + Paladín | 1,7 | 2,1 | 63 | 67 % | 75 / 25 / 0 % | 59 % | 0 % |
+| Pícaro + Paladín | 1,8 | 2,1 | 70 | 70 % | 64 / 36 / 0 % | 71 % | 0 % |
+| los 4 | 2,7 | 2,9 | 129 | 38 % | 94 / 6 / 0 % | 26 % | 0 % |
+
+**Qué pasaría si** (media de los 6 pares; pisos 3 / 4 / 5, piso 5 entre los que ganan el 4):
+
+| Cambio | Normal antes | Normal con lo elegido | Difícil antes | Difícil con lo elegido |
+|---|---|---|---|---|
+| ninguno | 51 / 31 / 0 (1 %) | 51 / 42 / 19 (46 %) | 10 / 2 / 0 (0 %) | 10 / 3 / 0 (6 %) |
+| Comida infinita | 100 / 100 / 99 (99 %) | igual | 100 / 93 / 76 (82 %) | igual |
+| sin oleadas de puerta en el 5 | 51 / 31 / 1 (4 %) | 51 / 42 / 30 (71 %) | 10 / 2 / 0 | 10 / 3 / 1 (19 %) |
+| sin extracción en el 5 | 51 / 31 / 0 (1 %) | 51 / 42 / 20 (48 %) | 10 / 2 / 0 | 10 / 3 / 0 (6 %) |
+| sin jefe en el 5 | 51 / 31 / 11 (34 %) | 51 / 42 / 28 (68 %) | 10 / 2 / 0 | 10 / 3 / 0 (13 %) |
+| sin puertas ni jefe en el 5 | 51 / 31 / 31 (100 %) | 51 / 42 / 42 (100 %) | 10 / 2 / 0 (89 %) | 10 / 3 / 3 (100 %) |
+
+**Lectura.** Al piso 5 se llega con 2,1 niveles de menos (de 4) y faltan ~60-70 de Comida: el mismo déficit del piso 4, acumulado. Se muere en las puertas (51-75 %) y el resto contra el jefe (25-49 %), que con 220 de vida no lo gana casi nadie aunque llegue con 60-80 % de vida. Hacen falta los dos: sin jefe gana el 34 % de los que llegan, sin puertas el 4 %. La extracción no decide. Los 4 quedan en 0 %: su muro es el piso 4 (faltan ~90 de Comida para cuatro). En Difícil casi nadie pasa del piso 3, así que nada del piso 5 lo mueve.
+
+**Palancas barridas** (200 corridas; pisos 3 / 4 / 5 de los pares, piso 5 entre los que llegan, los 4 en el piso 5):
+
+| Cambio | Normal | Difícil | Los 4 (Normal) |
+|---|---|---|---|
+| ninguno | 51 / 31 / 0 (1 %) | 10 / 2 / 0 (0 %) | 0 % |
+| piso 5 con vida y daño del 4 (1,45 / 1,3) | 51 / 31 / 1 (4 %) | 10 / 2 / 0 | 1 % |
+| piso 5 amenaza × 0,7 | 51 / 31 / 1 (2 %) | 10 / 2 / 0 | 1 % |
+| piso 5 amenaza × 0,5 | 51 / 31 / 1 (2 %) | 10 / 2 / 0 | 1 % |
+| Señor Demonio 220 → 150 de vida | 51 / 31 / 3 (9 %) | 10 / 2 / 0 | 0 % |
+| Señor Demonio 220 → 110 | 51 / 31 / 6 (19 %) | 10 / 2 / 0 | 0 % |
+| Comida +20 al bajar al 4 y al 5 | 51 / 40 / 4 (11 %) | 10 / 2 / 0 | 1 % |
+| Comida +30 al bajar al 4 y al 5 | 51 / 42 / 9 (21 %) | 10 / 3 / 0 | 0 % |
+| Comida +40 al bajar al 4 y al 5 | 51 / 44 / 13 (30 %) | 10 / 2 / 0 | 0 % |
+| Comida +40 al bajar al 5 | 51 / 31 / 3 (10 %) | 10 / 2 / 0 | 0 % |
+| Comida +20 (4 y 5) + jefe 150 | 51 / 40 / 12 (29 %) | 10 / 2 / 0 | 1 % |
+| Comida +20 (4 y 5) + jefe 110 | 51 / 40 / 17 (43 %) | 10 / 2 / 0 | 1 % |
+| **Comida +30 (4 y 5) + jefe 150 (elegido)** | **51 / 42 / 19 (46 %)** | **10 / 3 / 0 (6 %)** | 0 % |
+| Comida +30 (4 y 5) + jefe 110 | 51 / 42 / 24 (57 %) | 10 / 3 / 0 (6 %) | 1 % |
+| Comida +40 (4 y 5) + jefe 150 | 51 / 44 / 24 (56 %) | 10 / 2 / 0 (7 %) | 1 % |
+| Comida +30 (4 y 5) + jefe 150 + piso 5 como el 4 | 51 / 42 / 26 (62 %) | 10 / 3 / 0 (13 %) | 2 % |
+| amenaza 0,7 + jefe 150 | 51 / 31 / 5 (15 %) | 10 / 2 / 0 | 2 % |
+| Comida +20 (4 y 5) + amenaza 0,7 | 51 / 40 / 7 (17 %) | 10 / 2 / 0 | 1 % |
+
+La amenaza del piso 5 casi no mueve nada (no se investigó por qué; candidato: el tope `max_chance` de `DoorRollConfig`).
+
+**Elegido (dueño): +30 Comida al bajar a los pisos 4 y 5** (`food_bonus_on_descend = 30`, `food_bonus_from_floor = 4` nuevo en `FloorConfig`, lo paga `FloorManager`) **y el Señor Demonio con 150 de vida** (`boss_demon_lord.tres` `base_hp` 220 → 150). El piso 3 no cambia. Con eso, al piso 5 se llega con 0,6 niveles de menos y ~15 de Comida faltante (antes 2,1 y ~65); se muere 23-35 % en puertas y 15-34 % contra el jefe. `test_balance._check_food_floor4` fija los valores y estos umbrales: Normal ≥ 30 % del piso 5 entre los que llegan (0,43 a 50 corridas), Difícil piso 5 ≤ 5 %; siguen los de juego-26.

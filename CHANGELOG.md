@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## session/juego-27
+- Al bajar a los pisos 4 y 5 se reciben +30 de Comida.
+- El Señor Demonio (jefe del piso 5) tiene 150 de vida (antes 220).
+- Versión 1.4: no se puede jugar en co-op con la 1.3.
+
 ## session/juego-26
 - Matar a un jefe (pisos 3 y 5) da +15 de Comida: alcanza mejor para reanimar, subir de nivel y curar antes del piso 4.
 - Versión 1.3: no se puede jugar en co-op con la 1.2.

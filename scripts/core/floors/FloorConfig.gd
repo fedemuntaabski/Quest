@@ -17,8 +17,10 @@ class_name FloorConfig
 @export var max_floors: int = 5
 ## Embers granted when descending to a new floor (floor 2+).
 @export var embers_bonus_on_descend: int = 10
-## juego-26: Comida granted when descending to a new floor (floor 2+).
+## juego-26: Comida granted when descending to a new floor (from food_bonus_from_floor on).
 @export var food_bonus_on_descend: int = 0
+## juego-27: first floor that pays food_bonus_on_descend (2 = every descent).
+@export var food_bonus_from_floor: int = 2
 ## juego-26: Comida granted when a floor boss dies (floors 3 and 5).
 @export var boss_food_reward: int = 0
 

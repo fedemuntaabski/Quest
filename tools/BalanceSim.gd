@@ -634,7 +634,7 @@ static var _boss_near := BOSS_NEAR_TOWERS
 ## What-ifs for the cause breakdown (off by default): "free_food" = Comida never runs out,
 ## "no_doors" / "no_extr" = that floor has no door waves / no extraction waves.
 const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_first": true,
-	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0}
+	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0, "no_boss": 0}
 static var _play: Dictionary = BOSS_PLAY
 ## juego-25: hero id -> summed item modifiers of the run being simulated ("items").
 static var _gear: Dictionary = {}
@@ -764,7 +764,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 	for f in range(1, FLOORS + 1):
 		var a: Dictionary = acc[f - 1]
 		a["played"] += 1
-		if f > 1:
+		if f >= maxi(cfg.food_bonus_from_floor, 2):
 			res["food"] += cfg.food_bonus_on_descend  # FloorManager (juego-26)
 		if _play["free_food"]:
 			res["food"] = 9999
@@ -868,6 +868,8 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			a["hp_exit"] += _party_hp(party, levels, hp)
 			a["exits"] += 1
 		var theme := cfg.theme(f)
+		if int(_play["no_boss"]) == f:
+			theme = null
 		var boss_first: bool = _play["boss_first"]
 		if boss_first and theme and theme.boss and _alive(party, hp):
 			_play_boss(party, levels, hp, theme.boss, f, damage, res, ballestas, layout, revealed, rng, a)

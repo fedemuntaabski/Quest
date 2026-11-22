@@ -51,7 +51,7 @@ func setup(p_floor_index: int, run_seed: int = 0) -> void:
 		var resource_manager := ManagerLocator.get_resource_manager()
 		if resource_manager:
 			resource_manager.add_resource("embers", config.embers_bonus_on_descend)
-	if floor_index > 1 and config.food_bonus_on_descend > 0:
+	if floor_index >= maxi(config.food_bonus_from_floor, 2) and config.food_bonus_on_descend > 0:
 		var resources := ManagerLocator.get_resource_manager()
 		if resources:
 			resources.add_resource("food", config.food_bonus_on_descend)
