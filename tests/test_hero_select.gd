@@ -102,6 +102,16 @@ func _check_menu() -> void:
 	_expect(menu._preview_sprite.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "preview must use Nearest")
 	var tank_hp: int = CharacterDatabase.get_by_id("tank").base_hp
 	_expect(menu._preview_info.text.contains("Vida: %d" % tank_hp), "preview stats: %s" % menu._preview_info.text)
+	# juego-35: both abilities read their own text with the real numbers (duration, cooldown).
+	var tank_data := CharacterDatabase.get_by_id("tank")
+	_expect(menu._preview_info.text.contains(tank_data.active.format_description()) and menu._preview_info.text.contains(tank_data.passive.format_description()),
+		"preview shows both ability descriptions: %s" % menu._preview_info.text)
+	_expect(menu._preview_info.text.contains("%d s" % roundi(tank_data.active.cooldown)) and menu._preview_info.text.contains("%d s" % roundi(tank_data.active.duration)),
+		"preview names the active's duration and cooldown: %s" % menu._preview_info.text)
+	for data: CharacterData in CharacterDatabase.get_all():
+		for ability: AbilityData in [data.passive, data.active]:
+			_expect(ability != null and ability.description != "" and not ability.format_description().contains("{"),
+				"%s: ability without a filled description (%s)" % [data.character_id, ability.id if ability else "null"])
 
 	menu.start_button.pressed.emit()
 	_expect(confirmed.size() == 1 and confirmed[0] == _ids(["warrior", "tank"]), "confirm payload %s" % [confirmed])

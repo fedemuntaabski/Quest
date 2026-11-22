@@ -343,11 +343,18 @@ func _show_preview(hero_id: String) -> void:
 		var anim: StringName = &"idle" if frames.has_animation("idle") else frames.get_animation_names()[0]
 		_preview_sprite.play(anim)
 	_preview_name.text = "%s — %s" % [data.display_name, data.role] if data.role != "" else data.display_name
-	_preview_info.text = "Vida: %d\nAtaque: %d\nIntervalo: %.1f s\n\nPasiva — %s\n%s\nActiva — %s" % [
+	_preview_info.text = "Vida: %d\nAtaque: %d\nIntervalo: %.1f s\n\nPasiva — %s\n%s\n\nActiva — %s\n%s" % [
 		data.base_hp, data.attack_damage, data.attack_interval,
-		data.passive_ability_name, data.passive_ability_desc, data.active_ability_name,
+		data.passive_ability_name, _ability_text(data.passive, data.passive_ability_desc),
+		data.active_ability_name, _ability_text(data.active, ""),
 	]
 	_center_preview()
+
+
+## juego-35: the ability's own text with its numbers (value, duration, cooldown), as
+## the hero sheet shows it; `fallback` when the .tres has none.
+static func _ability_text(ability: AbilityData, fallback: String) -> String:
+	return ability.format_description() if ability and ability.description != "" else fallback
 
 
 func _center_preview() -> void:

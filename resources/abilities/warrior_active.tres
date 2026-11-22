@@ -12,5 +12,6 @@ duration = 8.0
 cooldown = 25.0
 vfx = &"buff_attack"
 display_name = "Grito de Guerra"
+description = "Los héroes de su sala hacen +{value_pct} % de daño durante {duration} s. Enfriamiento {cooldown} s."
 description = "Los héroes vivos de su sala (él incluido) hacen +{value_pct} % de daño durante {duration} s. Enfriamiento {cooldown} s."
 icon = ExtResource("2_icon")
