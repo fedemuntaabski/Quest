@@ -118,7 +118,7 @@ func _add_controls_button() -> void:
 		return
 	controls_button = Button.new()
 	controls_button.name = "ControlsButton"
-	controls_button.text = "Controles"
+	controls_button.text = "CONTROLES"
 	controls_button.custom_minimum_size = bestiary_button.custom_minimum_size
 	controls_button.size_flags_horizontal = bestiary_button.size_flags_horizontal
 	controls_button.add_theme_font_override("font", bestiary_button.get_theme_font("font"))

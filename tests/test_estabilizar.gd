@@ -130,6 +130,16 @@ func _check_esc_freezes_the_world() -> void:
 
 	var box := main2d.pause_menu.pause_panel.get_node("PauseVBox") as Control
 	_expect(box.get_combined_minimum_size().y <= main2d.pause_menu.pause_panel.size.y, "the pause menu buttons overflow the panel")
+	# menu-34: at text scale 1.5 the .tscn fonts grow ×1.5; the panel must grow with them.
+	var sizes: Dictionary = {}
+	for c: Control in box.get_children():
+		sizes[c] = c.get_theme_font_size("font_size")
+		c.add_theme_font_size_override("font_size", int(sizes[c] * 1.5))
+	await _frames(3)
+	_expect(box.get_combined_minimum_size().y <= main2d.pause_menu.pause_panel.size.y, "the pause menu buttons overflow the panel at text scale 1.5")
+	for c: Control in sizes:
+		c.add_theme_font_size_override("font_size", sizes[c])
+	await _frames(2)
 
 	var hp: int = hero.stats.current_hp
 	var enemy_hp := enemy.current_hp
