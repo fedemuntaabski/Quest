@@ -4,7 +4,7 @@ Todo el arte es 16×16 px por tile: CC0 (0x72, Kenney, Tiny Creatures) o propio;
 
 ## Escala y celda lógica
 - `ArtConfig` (`scripts/core/art/ArtConfig.gd`): `TILE_SIZE = 16`, `ART_SCALE = 2`, `CELL_TILES = 2`, `CELL_PX = 64`.
-- **1 celda lógica de `MapLayout`/`MapGenerator` = 2×2 tiles de arte (16 px) dibujados ×2 = 64 px de mundo**. Coincide con `tile_size` de `resources/tilesets/placeholder_tileset.tres` (rejilla lógica oculta) y `RoomManager.DEFAULT_TILE_SIZE` (64). Sala máx 5×5 celdas = 10×10 tiles = 320 px de mundo; `MapGenerator.SLOT_PITCH` = 9 celdas.
+- **1 celda lógica de `MapLayout`/`MapGenerator` = 2×2 tiles de arte (16 px) dibujados ×2 = 64 px de mundo**. Coincide con `tile_size` de `resources/tilesets/placeholder_tileset.tres` (rejilla lógica oculta) y `RoomManager.DEFAULT_TILE_SIZE` (64). Sala máx 7×7 celdas = 14×14 tiles = 448 px de mundo (mazmorra-31; antes 5×5); `MapGenerator.SLOT_PITCH` = 9 celdas.
 - Muro de 1 celda = 2 tiles (tapa + cara de 0x72); puerta `doors_leaf_*` (32×32) = 1 celda (`Sprite2D` hijo de `Door`, no tile); pasillo (1 celda) = 2 tiles de ancho.
 - Sprites: dibujar con `scale = Vector2(ART_SCALE, ART_SCALE)`; colisiones/radios en px de mundo (arte × 2). Héroe 16×28 → 32×56 px.
 - `tests/test_art_config.gd` falla si `CELL_PX`, el `tile_size` del tileset lógico y `DEFAULT_TILE_SIZE` divergen.
@@ -84,3 +84,6 @@ Escenas en `scenes/vfx/*.tscn` (slash_arc, projectile_trail, impact_sparks, heal
 
 ## Muros (juego-21)
 `MapVisualConfig.wall_wear_density` (0,1): caras de ladrillo lisas de salas y pasillos dibujadas como `wall_hole_1/2` de 0x72 (`DungeonTiles.WALL_WEAR`), con su propio stream (`hash([seed, "wall_wear"])`), así los banners de una semilla no se mueven. Los banners ahora son sólidos (antes eran la única cara sin polígono de la capa `wall`). Los bordes laterales finos de 0x72 (`wall_edge_*`) no están en la rejilla de 16 px de la hoja (y = 120/136/152/168): quedan fuera; los laterales siguen siendo relleno sólido.
+
+## Interior de las salas (mazmorra-31)
+`assets/art/own/dungeon_decor.png`: fila de 18 celdas de 16 px, orden `OWN_DECOR` en `tools/build_own_art.gd` (= `DungeonTiles.PIT/RUG/SLABS/RUBBLE`): pozo de 1 celda (4 tiles, suelo 0x72 alrededor), alfombra nine-slice (rojos de los estandartes 0x72, apagados), 2 losas, 3 escombros. Paleta de 0x72 (`222222`, `21141b`, `483b3a`, `775c55`, `aa8d7a`, `d3bfa9`). Hornear: `build_own_art.gd` → `build_tilesets.gd` (fuente 2 de `dungeon_tileset.tres`, uid conservado). Todavía sin `.ase`: la fase 5 del próximo goal los pasa a LibreSprite (extender `tools/libresprite.sh`). Columnas: 0x72 `column` (16×48) de la hoja ya copiada. Ícono de Taller: `items/weapon_hammer.png` (0x72).

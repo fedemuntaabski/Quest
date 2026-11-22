@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## session/mazmorra-31
+- Salas de más tamaños (hasta 7×7) y, una de cada tres, con forma: esquinas cortadas, en L o en cruz.
+- Interior de cada sala: columnas, pozos, alfombras, caminos de losas y escombros. Nunca tapan los huecos de obra, la Reliquia, cofres, celdas, altares ni el paso de los héroes.
+- Cada tipo de sala tiene su luz al encenderla (Descanso cálida, Élite roja, Altar fría, Prisionero violeta…); la marca de Élite pasa a rojo y la de Altar a celeste; Taller con ícono de martillo; Botín sin cofres falsos de adorno.
+- La escalera de la Salida ya no queda debajo del hueco de obra.
+- Versión 1.8: no se puede jugar en co-op con la 1.7.
+
 ## session/juego-30
 - Si no alcanza la Comida para subir de nivel a un héroe, se paga con Saber: el doble (por ejemplo, 22 de Saber en vez de 11 de Comida). El botón muestra qué se va a pagar.
 - Rescatar a un prisionero también se puede pagar con 15 de Saber en el piso 1 (+5 por piso).

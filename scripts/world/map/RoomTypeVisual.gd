@@ -26,3 +26,9 @@ class_name RoomTypeVisual
 ## this room's outer floor ring, drawn only once the room is discovered.
 @export var decor_props: Array[Vector2i] = []
 @export var decor_count: int = 0
+
+@export_group("Identity")
+## mazmorra-31: colour of the room's light once lit (alpha 0 = MapVisualConfig.warm_light_color).
+@export var light_color: Color = Color(0, 0, 0, 0)
+## MapTileRenderer.Interior template forced for this type (-1 = rolled like any room).
+@export var interior: int = -1

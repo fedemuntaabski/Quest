@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://cdsd5iq567bud" path="res://assets/art/items/skull.png" id="icon_prisoner"]
 [ext_resource type="Texture2D" uid="uid://clrxpiehnhwt3" path="res://assets/art/items/flask_big_red.png" id="icon_rest"]
 [ext_resource type="Texture2D" uid="uid://dfmbaxqa8686" path="res://assets/art/items/coin_anim_f0.png" id="icon_secret"]
-[ext_resource type="Texture2D" uid="uid://wtnwoh5hpoyd" path="res://assets/art/ui/button_blue_up.png" id="icon_workshop"]
+[ext_resource type="Texture2D" path="res://assets/art/items/weapon_hammer.png" id="icon_workshop"]
 
 [sub_resource type="Resource" id="Resource_start"]
 script = ExtResource("2_vis")
@@ -16,6 +16,8 @@ type = 1
 display_name = "Inicio"
 color = Color(0.9, 0.9, 0.9, 1)
 show_marker = false
+light_color = Color(1, 0.88, 0.7, 1)
+interior = 3
 
 [sub_resource type="Resource" id="Resource_exit"]
 script = ExtResource("2_vis")
@@ -26,6 +28,8 @@ description = "Lleva la Reliquia hasta aquí para ganar el piso."
 hint = "La salida del piso. Recoge la Reliquia en la sala inicial y llévala hasta aquí. Mientras la cargas las puertas se bloquean y llegan oleadas por las salas oscuras."
 color = Color(0.35, 1, 0.6, 1)
 show_marker = false
+light_color = Color(0.6, 1, 0.75, 1)
+interior = 4
 
 [sub_resource type="Resource" id="Resource_rest"]
 script = ExtResource("2_vis")
@@ -38,6 +42,8 @@ icon = ExtResource("icon_rest")
 color = Color(0.45, 0.95, 0.85, 1)
 decor_props = Array[Vector2i]([Vector2i(6, 9), Vector2i(7, 9), Vector2i(8, 9), Vector2i(1, 6)])
 decor_count = 2
+light_color = Color(1, 0.62, 0.3, 1)
+interior = 3
 
 [sub_resource type="Resource" id="Resource_loot"]
 script = ExtResource("2_vis")
@@ -48,8 +54,9 @@ description = "Un cofre y algo de Hierro."
 hint = "Al descubrirla te da Hierro, y guarda un cofre que se abre cuando un héroe entra. El cofre es de madera en los primeros pisos, de hierro en los del medio y de oro en el último: cuanto mejor el cofre, más rara la pieza."
 icon = ExtResource("icon_loot")
 color = Color(1, 0.6, 0.15, 1)
-decor_props = Array[Vector2i]([Vector2i(5, 7), Vector2i(6, 7), Vector2i(7, 7)])
+decor_props = Array[Vector2i]([Vector2i(0, 6), Vector2i(1, 6), Vector2i(6, 4)])
 decor_count = 2
+light_color = Color(1, 0.85, 0.4, 1)
 
 [sub_resource type="Resource" id="Resource_elite"]
 script = ExtResource("2_vis")
@@ -59,9 +66,11 @@ banner_text = "Sala de élite"
 description = "Enemigos más duros, pero te da Saber."
 hint = "Los enemigos que aparecen aquí tienen más vida y golpean más fuerte. A cambio, descubrirla te da Saber para investigar. Enciéndela para evitar sus oleadas."
 icon = ExtResource("icon_elite")
-color = Color(0.85, 0.4, 1, 1)
+color = Color(1, 0.3, 0.28, 1)
 decor_props = Array[Vector2i]([Vector2i(9, 9), Vector2i(10, 9), Vector2i(11, 9), Vector2i(8, 8)])
 decor_count = 2
+light_color = Color(1, 0.35, 0.3, 1)
+interior = 1
 
 [sub_resource type="Resource" id="Resource_workshop"]
 script = ExtResource("2_vis")
@@ -74,6 +83,8 @@ icon = ExtResource("icon_workshop")
 color = Color(0.4, 0.7, 1, 1)
 decor_props = Array[Vector2i]([Vector2i(7, 4), Vector2i(8, 4)])
 decor_count = 2
+light_color = Color(0.9, 0.95, 1, 1)
+interior = 4
 
 [sub_resource type="Resource" id="Resource_prisoner"]
 script = ExtResource("2_vis")
@@ -84,6 +95,7 @@ description = "Un héroe encerrado: liberalo con Hierro o Comida."
 hint = "En la celda espera un héroe que no elegiste al empezar. Con un héroe vivo dentro de la sala, hacé clic izquierdo en la celda y pagá Hierro o Comida para liberarlo: se une al grupo (máximo 4) y sigue en los próximos pisos."
 icon = ExtResource("icon_prisoner")
 color = Color(0.85, 0.55, 1, 1)
+light_color = Color(0.75, 0.6, 1, 1)
 
 [sub_resource type="Resource" id="Resource_altar"]
 script = ExtResource("2_vis")
@@ -93,7 +105,9 @@ banner_text = "Altar de sangre"
 description = "Vida a cambio de un objeto raro."
 hint = "Con un héroe vivo en la sala, hacé clic izquierdo en el altar: ese héroe pierde el 30 % de su vida máxima y el grupo recibe un objeto raro o mejor. Solo acepta una ofrenda, y no si el héroe quedaría caído."
 icon = ExtResource("icon_altar")
-color = Color(0.95, 0.3, 0.35, 1)
+color = Color(0.7, 0.92, 1, 1)
+light_color = Color(0.55, 0.8, 1, 1)
+interior = 4
 
 [sub_resource type="Resource" id="Resource_secret"]
 script = ExtResource("2_vis")
@@ -104,6 +118,7 @@ description = "Brasas y un cofre poco común o mejor."
 hint = "Una sala sin puerta. Se revela sola cuando descubrís las dos salas que la rodean. Da Brasas y guarda un cofre que nunca es común, y ningún enemigo aparece en ella."
 icon = ExtResource("icon_secret")
 color = Color(1, 0.85, 0.35, 1)
+light_color = Color(1, 0.8, 0.45, 1)
 
 [resource]
 script = ExtResource("1_cfg")

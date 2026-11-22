@@ -98,7 +98,7 @@ static func build_plan(layout: MapLayout, config: MapVisualConfig) -> Dictionary
 	var wall_tiles: Dictionary = _expand(wall_owner)
 	_plan_floor(layout, config, zones, floor_tiles)
 	_plan_walls(config, layout, zones, floor_tiles, wall_tiles)
-	_plan_interior(layout, zones)
+	_plan_interior(layout, config, zones)
 	_plan_props(layout, config, zones, floor_tiles)
 
 	return {"zones": zones}
@@ -159,10 +159,12 @@ static func _plan_floor(layout: MapLayout, config: MapVisualConfig, zones: Dicti
 		if rng.randf() < config.floor_variant_chance:
 			atlas = variants[rng.randi() % variants.size()]
 		zones[id]["floor"][tile] = DungeonTiles.tile(DungeonTiles.SRC_SHEET, atlas)
-	# The exit room's centre cell is stairs (drawn with the room, so only once discovered).
+	# The exit room's stairs: the cell below the centre one (mazmorra-31: the centre holds the
+	# build slot and the exit marker); drawn with the room, so only once discovered. That cell
+	# is on the centre column, which a shape never cuts.
 	for room in layout.rooms:
 		if room.is_exit:
-			var center := (room.pos + room.size / 2) * T
+			var center := (room.pos + room.size / 2 + Vector2i(0, 1)) * T
 			for tx in T:
 				for ty in T:
 					zones[room.id]["floor"][center + Vector2i(tx, ty)] = DungeonTiles.tile(DungeonTiles.SRC_SHEET, DungeonTiles.STAIRS)
@@ -269,14 +271,21 @@ const RUG_MAX := Vector2i(8, 6)
 ## One template per room on its own RNG (seed, "interior", room id), so a room's look never
 ## depends on the others; plus loose rubble. Solid pieces (columns, pits, rubble) never sit
 ## on interior_blocked() tiles; rugs and slabs are floor, so they may run under the centre.
-static func _plan_interior(layout: MapLayout, zones: Dictionary) -> void:
+static func _plan_interior(layout: MapLayout, config: MapVisualConfig, zones: Dictionary) -> void:
 	for room in layout.rooms:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = hash([layout.map_seed, "interior", room.id])
 		var rect := Rect2i(room.pos * T, room.size * T)
 		var blocked := interior_blocked(layout, room)
 		var zone: Dictionary = zones[room.id]
-		match _pick_interior(rng):
+		for tile in zone["floor"]:  # the exit stairs stay clear
+			if Vector2i(zone["floor"][tile].y, zone["floor"][tile].z) == DungeonTiles.STAIRS:
+				blocked[tile] = true
+		var kind := _pick_interior(rng)  # always rolled: forcing a type never shifts the stream
+		var visual := config.room_type_visual(room.get_room_type()) if config else null
+		if visual and visual.interior >= 0:
+			kind = visual.interior as Interior
+		match kind:
 			Interior.COLUMNS: _plan_columns(rect, blocked, zone)
 			Interior.PIT: _plan_pit(rect, blocked, zone, rng)
 			Interior.RUG: _plan_rug(room, rect, zone)

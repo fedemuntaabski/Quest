@@ -91,6 +91,15 @@ Lo que solo se ve con input real:
 - [ ] Con teclado o mando: Tab/flechas en el menú, ranuras, modo de red, Opciones y el diálogo "Partida en curso". ¿Se ve siempre qué botón tiene el foco?
 - [ ] En 1280x720, ¿se leen las cartas de Investigación y la Mochila sin acercarse? (mínimo de texto 14 px de base)
 
+## Mazmorra nueva (mazmorra-31, 5 min, aparte)
+Capturas guionadas en `capturas/mazmorra-31/`; nada visto jugando.
+- [ ] Salas en L y en cruz: clic derecho en un brazo lleva al héroe a la sala; clic en la esquina recortada no selecciona la sala.
+- [ ] Columnas y pozos no estorban: los héroes no caminan por encima al entrar; en combate los enemigos sí pueden pararse sobre ellos (solo visual).
+- [ ] El cartel del tipo y el ícono de luz no quedan sobre una esquina recortada.
+- [ ] ¿Se distingue cada tipo por su luz al encenderla? (el relleno dorado de sala encendida todavía la tapa en parte).
+- [ ] Minimapa: las salas con forma se dibujan con su forma y el tooltip sale solo dentro.
+- [ ] La escalera de la Salida se ve debajo del hueco central.
+
 ## Fuera de esta prueba
 Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.
 

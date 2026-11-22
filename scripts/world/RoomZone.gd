@@ -242,6 +242,8 @@ func get_light() -> RoomLight:
 ## keeps its own hint-gated marker).
 func set_room_type(type: RoomData.RoomType, size_px: Vector2, config: MapVisualConfig) -> void:
 	var visual := config.room_type_visual(type) if config else null
+	if visual and visual.light_color.a > 0.0 and _light:
+		_light.set_light_color(visual.light_color)
 	if visual == null or not visual.show_marker:
 		return
 	var color := visual.color

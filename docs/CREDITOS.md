@@ -14,7 +14,7 @@ Tabla única: `CREDITS.md` solo apunta acá.
 | Tiny Dungeon 1.0 | Kenney (https://kenney.nl/assets/tiny-dungeon) | CC0 1.0 | ✅ `License.txt` en el pack | tiles, props, cofres, espadas y pociones de los ítems, base de los escudos teñidos (`assets/art/tiles/kenney_tiny_dungeon_packed.png`, `resources/tilesets/`, `resources/items/`) |
 | Tiny Creatures 1.0 | Clint Bellanger (clintbellanger.net) | CC0 1.0 | ✅ `License.txt` en el pack | enemigos `tc_*` |
 | DungeonTileset II v1.7 | 0x72 (https://0x72.itch.io/dungeontileset-ii) | CC0 1.0 | ✅ verificado en la página del autor el 2026-11-07; texto citado en `_source/0x72_DungeonTilesetII_v1.7/LICENSE_VERIFICADA.txt` (el zip no trae licencia) | héroes, enemigos, tiles, íconos de obras y habilidades activas, espadas de brasa y dorada (`assets/art/{characters,enemies,items,tiles,ui}`) |
-| Arte propio (`assets/art/own/`) | proyecto (`tools/build_own_art.gd`) | propio | ✅ | armaduras (escudo Kenney 101/102 re-coloreado), grimorios, gema de la Reliquia (`items.png`), 8 hojas de efectos (`own/vfx/`) |
+| Arte propio (`assets/art/own/`) | proyecto (`tools/build_own_art.gd`) | propio | ✅ | armaduras (escudo Kenney 101/102 re-coloreado), grimorios, gema de la Reliquia (`items.png`), 8 hojas de efectos (`own/vfx/`), interior de las salas: pozo, alfombra, losas, escombros (`dungeon_decor.png`, mazmorra-31) |
 | Íconos `placeholder_*` (`assets/art/ui`) | proyecto (`tools/normalize_assets.gd`) | propio | ✅ | investigación, pasivas de habilidades, Granja |
 | Tile placeholder (`assets/texture/enviorment/tileset_placeholder.png`) | proyecto | propio | ✅ (no se ve: grilla lógica oculta) | `Floor` |
 | Retratos de héroe (`assets/portraits/*.png`) | dueño del repo | propio / con licencia | 🟦 | `CharacterData.portrait` |

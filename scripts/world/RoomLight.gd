@@ -60,6 +60,11 @@ func setup(zone: RoomZone, size_px: Vector2, p_config: MapVisualConfig, shape: P
 	_start_danger_pulse()
 
 
+## mazmorra-31: the room type's light colour (RoomTypeVisual.light_color).
+func set_light_color(color: Color) -> void:
+	_light.color = color
+
+
 func is_dark() -> bool:
 	return not _lit
 
