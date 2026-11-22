@@ -149,8 +149,6 @@ func _cmd_move(sender: int, args: Dictionary) -> String:
 		return INVALID
 	if not rm.is_zone_revealed(args.zone):
 		return "Sala sin descubrir"
-	if pac.is_peer_busy(sender):
-		return "Ya hay una orden en curso"
 	var heroes := _heroes(args)
 	if heroes.is_empty():
 		return "Ningún héroe puede moverse"
@@ -167,8 +165,6 @@ func _cmd_open_door(sender: int, args: Dictionary) -> String:
 				door = d
 	if door == null:
 		return INVALID
-	if pac.is_peer_busy(sender):
-		return "Ya hay una orden en curso"
 	var heroes := _heroes(args)
 	var reason := pac.door_block_reason(door, heroes)
 	if reason != "":

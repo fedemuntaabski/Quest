@@ -8,7 +8,7 @@ extends SceneTree
 ##     the glide passes by every zone center, never jumps; lands on the target's center
 ##   - refusals: unknown zone, fog, own zone = no-op (no zone change, nothing busy)
 ##   - speed: game time = sum(leg / (420 x move_speed_mult)) per hero; the carrier x carrier_speed_mult
-##   - a second order mid-walk is refused (one order at a time per player): no double tween
+##   - a second order mid-walk replaces the first (juego-35): no teleport, no double tween
 ##   - whole selection and control groups walk; heroes sharing a zone keep apart sprites,
 ##     inside a vertical corridor too (the offset turns along it)
 ##   - downed: refused; revived: walks again
@@ -273,16 +273,26 @@ func _check_reorder() -> void:
 	_move([a], target)
 	await _frames(4)
 	_expect(pac.is_busy(a), "the first order is not walking")
-	var before := a.global_position
-	var tweens := get_processed_tweens().size()
-	_expect(await _move([a], other) == "Ya hay una orden en curso", "a second order mid-walk was not refused")
-	_expect(await _move([b], other) == "Ya hay una orden en curso", "the same player's second hero took an order mid-walk")
-	_expect(a.global_position.distance_to(before) < MoveAction.DEFAULT_SPEED_PX, "the refused order teleported the hero")
-	_expect(get_processed_tweens().size() <= tweens, "the refused orders added tweens (%d -> %d)" % [tweens, get_processed_tweens().size()])
-	await _wait_idle([a])
+	# juego-35: a second order mid-walk replaces the first (before it was dropped without a
+	# word, the owner's "right click does nothing"): no teleport, still one tween per hero.
+	var tweens := get_processed_tweens().filter(func(t: Tween) -> bool: return t.is_valid()).size()
+	var max_jump := [0.0]
+	var last := [a.global_position]
+	var track := func() -> void:
+		max_jump[0] = maxf(max_jump[0], a.global_position.distance_to(last[0]))
+		last[0] = a.global_position
+	process_frame.connect(track)
+	_move([a], start)  # not awaited: the walk back is sampled
+	var now := get_processed_tweens().filter(func(t: Tween) -> bool: return t.is_valid()).size()
+	_expect(now <= tweens, "the new order left the old tween running (%d -> %d)" % [tweens, now])
+	_expect(await _move([b], other) == "", "the same player's second hero was refused mid-walk")
+	await _wait_idle([a, b])
+	process_frame.disconnect(track)
 	Engine.time_scale = 1.0
-	_expect(a.current_zone_id == target, "the first order ended at '%s', want '%s'" % [a.current_zone_id, target])
-	await _move([a], start)
+	_expect(a.current_zone_id == start and a.global_position == rm.get_center(start), "the new order ended at '%s', want '%s'" % [a.current_zone_id, start])
+	_expect(b.current_zone_id == other, "b ended at '%s', want '%s'" % [b.current_zone_id, other])
+	_expect(max_jump[0] < 2.0 * MoveAction.DEFAULT_SPEED_PX * SCALE / 30.0 + 4.0, "the redirect jumped %.0f px in one frame" % max_jump[0])
+	await _move([b], start)
 
 
 # ---------------- selection / groups / sprites ----------------

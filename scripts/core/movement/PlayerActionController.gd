@@ -8,10 +8,12 @@ class_name PlayerActionController
 ## All input arrives as RoomZone/Door Area2D signals — no raw mouse polling.
 ## Session 12: `player` is the primary selected hero (Main2d → set_player, used
 ## for zone highlights). Session 14: an order acts on every selected hero, all
-## walking at once; one order at a time (a hero still walking blocks new orders).
+## walking at once. juego-35: a new order replaces a walk in progress (DotE/RTS): the
+## hero goes back to the lane of the zone it stands in and on to the new target. Before,
+## every click while a walk ran (or a second one in the tactical pause) was dropped
+## without a word, which read as "right click does nothing, on any room".
 ## coop-12: clicks become NetCommands ("move"/"open_door" with explicit hero ids);
-## the host runs move_heroes()/open_door(). "Busy" is per hero, so two players'
-## orders can run at the same time.
+## the host runs move_heroes()/open_door().
 
 var player: Player
 var tilemap: TileMapLayer
@@ -19,10 +21,12 @@ var room_manager: RoomManager
 var door_turn_system: DoorTurnSystem
 
 var _hovered_zone_id: String = ""
-## Heroes walking right now (Player -> true): they take no new order until they arrive.
+## Heroes walking right now (Player -> walk token). A newer order for the hero takes a
+## new token; the old walk sees it and stops where it is.
 var _busy: Dictionary = {}
-## Players with an order batch in progress (peer -> true): one order at a time per
-## player, as in single player; different players' orders run side by side.
+var _tweens: Dictionary = {}
+var _next_token := 0
+## Order batches walking per player (peer -> count).
 var _busy_peers: Dictionary = {}
 ## Compat (tests): true while any order batch is walking.
 var _action_in_flight: bool:
@@ -54,12 +58,22 @@ func set_player(p_player: Player) -> void:
 
 
 func _can_act() -> bool:
-	if player == null or tilemap == null or room_manager == null or is_peer_busy(Net.local_peer()):
-		return false
+	var reason := _act_block_reason()
+	if reason != "":
+		QuestLogger.info(QuestLogger.Category.MAP, "Click ignored: %s." % reason)
+	return reason == ""
+
+
+## Why a click can't become an order now ("" = it can). Logged, never silent.
+func _act_block_reason() -> String:
+	if player == null or tilemap == null or room_manager == null:
+		return "floor not set up"
 	if _selected_heroes().is_empty():
-		return false
+		return "no living hero selected"
 	var gsm := ManagerLocator.get_game_state_manager()
-	return gsm == null or gsm.is_active()
+	if gsm and not gsm.is_active():
+		return "game state %s" % GameStateManager.State.keys()[gsm.current_state]
+	return ""
 
 
 ## Living selected heroes (SelectionManager order); just `player` without one.
@@ -73,7 +87,7 @@ func _selected_heroes() -> Array[Player]:
 	var heroes := ManagerLocator.get_heroes()
 	for id: String in selection.selected_ids:
 		for hero in heroes:
-			if hero.stats.hero_id == id and hero.can_accept_input() and not _busy.has(hero):
+			if hero.stats.hero_id == id and hero.can_accept_input():
 				out.append(hero)
 	return out
 
@@ -87,10 +101,6 @@ func _selected_ids() -> Array[String]:
 
 func is_busy(hero: Player) -> bool:
 	return _busy.has(hero)
-
-
-func is_peer_busy(peer: int) -> bool:
-	return _busy_peers.has(peer)
 
 
 # ─────────────────────────────────────────────
@@ -135,6 +145,8 @@ func _on_zone_clicked(zone_id: String) -> void:
 	# Unrevealed zones are hidden and non-pickable (fog of war); only doors open them.
 	if room_manager.is_zone_revealed(zone_id):
 		await ManagerLocator.get_net_commands().request("move", {"heroes": _selected_ids(), "zone": zone_id})
+	else:
+		QuestLogger.info(QuestLogger.Category.MAP, "Click ignored: zone '%s' not discovered." % zone_id)
 
 
 func _on_door_clicked(door: Door) -> void:
@@ -144,14 +156,13 @@ func _on_door_clicked(door: Door) -> void:
 
 
 ## Every given hero walks to the zone from where it stands (heroes with no
-## revealed path stay put; heroes already there don't move). Host/offline only.
+## revealed path stay put; heroes standing there don't move, one walking through it
+## stops at its centre). Host/offline only.
 func move_heroes(heroes: Array[Player], zone_id: String, peer: int = 1) -> void:
 	var orders: Array[Dictionary] = []
 	var blocked := false
 	for hero in heroes:
-		if _busy.has(hero):
-			continue
-		if hero.current_zone_id == zone_id:
+		if hero.current_zone_id == zone_id and not _busy.has(hero):
 			continue
 		var order := _order_via_path(hero, zone_id)
 		if order.is_empty():
@@ -165,12 +176,16 @@ func move_heroes(heroes: Array[Player], zone_id: String, peer: int = 1) -> void:
 
 
 ## {hero, waypoints, zones} along the revealed-zone path (one zone per waypoint), or {} without one.
+## A hero caught mid-walk first goes back to its zone's centre (the lane), so the new
+## leg never cuts through a wall.
 func _order_via_path(hero: Player, zone_id: String) -> Dictionary:
 	var path := room_manager.find_zone_path(hero.current_zone_id, zone_id)
 	if path.is_empty():
 		return {}
 	var zones: Array[String] = []
-	zones.assign(path.slice(1))
+	if hero.global_position.distance_to(room_manager.get_center(hero.current_zone_id)) > 1.0:
+		zones.append(hero.current_zone_id)
+	zones.append_array(path.slice(1))
 	var waypoints: Array[Vector2] = []
 	for step_id in zones:
 		waypoints.append(room_manager.get_center(step_id))
@@ -199,10 +214,11 @@ func door_block_reason(door: Door, heroes: Array[Player]) -> String:
 	return ""
 
 
-## The first given hero standing next to the door (it opens it: one tick).
+## The first given hero standing next to the door (it opens it: one tick; a walk it
+## was on gives way to the opening).
 func _opener(door: Door, heroes: Array[Player]) -> Player:
 	for hero in heroes:
-		if not _busy.has(hero) and door.get_target_room_for(hero.current_zone_id) != "":
+		if door.get_target_room_for(hero.current_zone_id) != "":
 			return hero
 	return null
 
@@ -233,10 +249,15 @@ func open_door(door: Door, heroes: Array[Player], peer: int = 1) -> void:
 
 	var orders: Array[Dictionary] = []
 	var opener_waypoints := room_manager.get_group_centers(door.target_room_id)
+	var opener_zones := group_zone_ids.duplicate()
+	var opener_lane := room_manager.get_center(opener.current_zone_id)
+	if opener.global_position.distance_to(opener_lane) > 1.0:  # caught mid-walk: back on the lane first
+		opener_waypoints.push_front(opener_lane)
+		opener_zones.push_front(opener.current_zone_id)
 	if not opener_waypoints.is_empty():
-		orders.append({"hero": opener, "waypoints": opener_waypoints, "zones": group_zone_ids})
+		orders.append({"hero": opener, "waypoints": opener_waypoints, "zones": opener_zones})
 	for hero in selected:
-		if hero != opener and not _busy.has(hero) and hero.current_zone_id != final_zone_id:
+		if hero != opener and hero.current_zone_id != final_zone_id:
 			var order := _order_via_path(hero, final_zone_id)
 			if not order.is_empty():
 				orders.append(order)
@@ -245,27 +266,38 @@ func open_door(door: Door, heroes: Array[Player], peer: int = 1) -> void:
 	room_manager.refresh_door_visibility()
 
 
-## Walks every order at once and returns when the last hero arrived. Each hero
-## is busy until it arrives; heroes outside the batch can take other orders.
+## Walks every order at once and returns when the last hero arrived (or took a newer
+## order). A hero already walking drops that walk where it is: one tween per hero.
 func _run_moves(orders: Array[Dictionary], peer: int = 1) -> void:
 	if orders.is_empty():
 		return
-	_busy_peers[peer] = true
+	_busy_peers[peer] = int(_busy_peers.get(peer, 0)) + 1
 	room_manager.clear_highlights()
 	var batch := {"left": orders.size()}
 	for order in orders:
-		_busy[order["hero"]] = true
+		var hero: Player = order["hero"]
+		var old: Tween = _tweens.get(hero)
+		if old and old.is_valid():
+			old.kill()
+		_next_token += 1
+		_busy[hero] = _next_token
+		order["token"] = _next_token
 	for order in orders:
 		_walk_and_count(order, batch)
 	while batch.left > 0:
 		await get_tree().process_frame
-	_busy_peers.erase(peer)
+	_busy_peers[peer] -= 1
+	if _busy_peers[peer] <= 0:
+		_busy_peers.erase(peer)
 	refresh_zones()
 
 
 func _walk_and_count(order: Dictionary, batch: Dictionary) -> void:
-	await _walk(order["hero"], order["waypoints"], order["zones"])
-	_busy.erase(order["hero"])
+	var hero: Player = order["hero"]
+	await _walk(hero, order["waypoints"], order["zones"], order["token"])
+	if _busy.get(hero) == order["token"]:
+		_busy.erase(hero)
+		_tweens.erase(hero)
 	batch.left -= 1
 
 
@@ -277,22 +309,28 @@ func _carrier_speed_mult() -> float:
 
 ## Glides along `waypoints` (one per entry of `zones`). The hero is in each zone from
 ## the moment it crosses in (traps, chests, enemies, a Relic drop see the real zone);
-## falling stops it where it stands, and its order ends there.
-func _walk(hero: Player, waypoints: Array[Vector2], zones: Array[String]) -> void:
+## falling stops it where it stands, and its order ends there; so does a newer order
+## (`token` no longer the hero's), which already killed this tween.
+func _walk(hero: Player, waypoints: Array[Vector2], zones: Array[String], token: int = 0) -> void:
 	var speed := MoveAction.DEFAULT_SPEED_PX * hero.move_speed_mult() * (_carrier_speed_mult() if hero.is_carrying_relic else 1.0)
 	var action := MoveAction.new(hero, waypoints, speed)
 	if not action.can_execute():
 		return
 	var tween := action.start()
+	_tweens[hero] = tween
 	var next := 0
 	while tween.is_valid():
 		await get_tree().process_frame
+		if _busy.get(hero) != token:
+			return
 		if not hero.stats.is_alive():
 			tween.kill()
 			return
 		while next < zones.size() and room_manager.zone_has_point(zones[next], hero.global_position):
 			hero.enter_zone(zones[next])
 			next += 1
+	if _busy.get(hero) != token:
+		return
 	for zone_id in zones.slice(next):  # a long frame may jump a zone: nothing is skipped
 		hero.enter_zone(zone_id)
 	if not hero.stats.is_alive():  # the last zone's trap

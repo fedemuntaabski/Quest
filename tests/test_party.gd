@@ -192,14 +192,16 @@ func _check_control(main2d: Node) -> void:
 	await controller._on_zone_clicked(opened[0])
 	_expect(b.current_zone_id == opened[0] and a.current_zone_id == start, "click moved the wrong hero (a '%s', b '%s')" % [a.current_zone_id, b.current_zone_id])
 
-	# Tab mid-walk: the walker (b) still arrives, the new selection (a) stays put.
+	# Tab mid-walk: the walker (b) still arrives; the new selection (a) takes its own order
+	# at once (juego-35: before, it was dropped while b walked).
 	controller._on_zone_clicked(start)
 	_expect(controller._action_in_flight, "second move did not start")
 	ps.select_hero(a.stats.hero_id)
-	controller._on_zone_clicked(opened[1])  # one order at a time: ignored
+	controller._on_zone_clicked(opened[1])
 	await _wait_idle(controller)
-	_expect(b.current_zone_id == start and a.current_zone_id == start, "mid-walk switch misplaced heroes (a '%s', b '%s')" % [a.current_zone_id, b.current_zone_id])
+	_expect(b.current_zone_id == start and a.current_zone_id == opened[1], "mid-walk switch misplaced heroes (a '%s', b '%s')" % [a.current_zone_id, b.current_zone_id])
 	_expect(controller.player == a, "control should stay on the newly selected hero")
+	await controller._on_zone_clicked(start)
 	# Leave b in a side room for the camera check.
 	ps.select_hero(b.stats.hero_id)
 	await controller._on_zone_clicked(opened[0])
