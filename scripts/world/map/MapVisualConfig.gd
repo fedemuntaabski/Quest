@@ -40,8 +40,20 @@ enum ExitHintMode {
 @export var affordable_outline_color: Color = Color(1.0, 0.8, 0.3, 0.9)
 @export var warm_light_color: Color = Color(1.0, 0.72, 0.38, 1.0)
 @export var warm_light_energy: float = 0.9
-## Seconds for the dark -> lit tween.
-@export var light_transition_time: float = 0.6
+## Seconds for the dark -> lit tween (mazmorra-32: 1.0, eased in/out, flames light one after another).
+@export var light_transition_time: float = 1.0
+## mazmorra-32: alpha of the gold fill over a lit room (RoomZone.LIT_FILL_COLOR; it was 0.30 and washed the art).
+@export_range(0.0, 1.0) var lit_fill_alpha: float = 0.08
+## Flames of the room's torches / braziers / candles (MapTileRenderer plan "lights"), lit with the room:
+## energy, flicker depth (0..1) and radius in world px per kind.
+@export var flame_energy: float = 0.7
+@export_range(0.0, 1.0) var flame_flicker: float = 0.25
+@export var torch_radius: float = 150.0
+@export var brazier_radius: float = 190.0
+@export var candles_radius: float = 110.0
+## Shadows: wall caps and fill carry an occluder (dungeon_tileset occlusion layer 0); these lights cast them.
+@export var room_light_shadows: bool = true
+@export var flame_shadows: bool = false
 
 @export_group("Tile decor")
 ## MapTileRenderer: banners replace this share of north-wall face tiles of rooms.

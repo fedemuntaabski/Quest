@@ -15,7 +15,9 @@ extends Node2D
 ## mazmorra-32 (_plan_dressing): "wall_decor" = torches, shelves, chains over a room's north brick
 ## face; "flat" = cobwebs, cracks, puddles, blood, moss (no footprint, may sit on the edge ring);
 ## both go on the Features layer. "lights" = torch / brazier / candles tiles, where RoomLight-style
-## flames are lit (see docs/MAP_RENDER.md).
+## flames are lit (see docs/MAP_RENDER.md). "occluders" = wall segments [a, b] in tile units (merged
+## edges between the zone's floor and non-floor; north ones raised over the brick face) that become
+## LightOccluder2D lines when the zone shows: a few per zone, not one per wall tile (that cost ~15 ms).
 ## "features" (mazmorra-31) = interior pieces over the floor (columns, rubble) on their own
 ## layer; pits, rugs and paved slabs replace "floor" tiles. See _plan_interior().
 ## "under" (juego-21) = solid fill painted on the Floor layer behind wall caps: a cap's
@@ -69,6 +71,12 @@ func show_zone(zone_id: String) -> void:
 	_paint(features_layer, zone["wall_decor"])
 	_paint(decor_layer, zone["decor"])
 	_paint(floor_layer, zone["under"])
+	for segment: Array in zone["occluders"]:
+		var occluder := LightOccluder2D.new()
+		occluder.occluder = OccluderPolygon2D.new()
+		occluder.occluder.closed = false
+		occluder.occluder.polygon = PackedVector2Array([segment[0] * ArtConfig.TILE_SIZE, segment[1] * ArtConfig.TILE_SIZE])
+		add_child(occluder)
 
 
 func _paint(layer: TileMapLayer, tiles: Dictionary) -> void:
@@ -90,7 +98,7 @@ static func build_plan(layout: MapLayout, config: MapVisualConfig) -> Dictionary
 	for corridor in layout.corridors:
 		_add_zone(corridor.id, _rect_cells(corridor.get_zone_rect()), order, zone_cells, floor_cells)
 	for id in order:
-		zones[id] = {"floor": {}, "walls": {}, "decor": {}, "under": {}, "features": {}, "flat": {}, "wall_decor": {}, "lights": []}
+		zones[id] = {"floor": {}, "walls": {}, "decor": {}, "under": {}, "features": {}, "flat": {}, "wall_decor": {}, "lights": [], "occluders": []}
 
 	# Wall ring: 8-neighbours of floor that are not floor; the first zone in order owns it.
 	var wall_owner: Dictionary = {}
@@ -108,6 +116,8 @@ static func build_plan(layout: MapLayout, config: MapVisualConfig) -> Dictionary
 	_plan_interior(layout, config, zones)
 	_plan_props(layout, config, zones, floor_tiles)
 	_plan_dressing(layout, config, zones, floor_tiles)
+	for id in order:
+		zones[id]["occluders"] = _plan_occluders(zone_cells[id], floor_cells)
 
 	return {"zones": zones}
 
@@ -615,3 +625,34 @@ static func _put_flat(zone: Dictionary, atlas: Vector2i, pick: int, free: Array[
 		var spot := spots[pick % spots.size()]
 		zone["flat"][spot] = DungeonTiles.tile(DungeonTiles.SRC_OWN, atlas)
 		free.erase(spot)  # no solid piece on top of it later
+
+
+## mazmorra-32: the zone's floor outline as merged straight segments (tile units). An edge is a floor
+## cell side whose neighbour is not floor; edges into another zone's floor (a corridor mouth) are open,
+## so light spills through doorways. North edges sit one tile higher: the brick face stays lit.
+static func _plan_occluders(cells: Array[Vector2i], floor_cells: Dictionary) -> Array:
+	var runs := {}  # [axis, line, side] -> sorted positions (cell units)
+	for cell in cells:
+		for d: Vector2i in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
+			if floor_cells.has(cell + d):
+				continue
+			var key: Array = ["h", cell.y + maxi(d.y, 0), d.y] if d.x == 0 else ["v", cell.x + maxi(d.x, 0), d.x]
+			if not runs.has(key):
+				runs[key] = []
+			runs[key].append(cell.x if d.x == 0 else cell.y)
+	var segments: Array = []
+	for key: Array in runs:
+		var pos: Array = runs[key]
+		pos.sort()
+		var start: int = pos[0]
+		for i in pos.size():
+			if i == pos.size() - 1 or pos[i + 1] != pos[i] + 1:
+				var line := float(key[1] * T)
+				if key[0] == "h":
+					var y := line - (1.0 if key[2] < 0 else 0.0)
+					segments.append([Vector2(start * T, y), Vector2((pos[i] + 1) * T, y)])
+				else:
+					segments.append([Vector2(line, start * T), Vector2(line, (pos[i] + 1) * T)])
+				if i < pos.size() - 1:
+					start = pos[i + 1]
+	return segments

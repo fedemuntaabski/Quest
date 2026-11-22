@@ -21,6 +21,8 @@ const ROOM_LIT_FX_OFFSET := Vector2(0, -48)
 const REVEALED_IDLE_OUTLINE := Color(1, 1, 1, 0.25)
 const LIGHT_COST: int = 10
 const LIT_FILL_COLOR := Color(1.0, 0.9, 0.5, 0.30)
+## mazmorra-32: LIT_FILL_COLOR with MapVisualConfig.lit_fill_alpha (set by attach_light).
+var lit_fill_color := LIT_FILL_COLOR
 const LIT_OUTLINE_COLOR := Color(1.0, 0.9, 0.5, 0.95)
 
 const FILL_COLORS := {
@@ -230,6 +232,9 @@ func attach_light(size_px: Vector2, config: MapVisualConfig) -> void:
 	move_child(_light, 0)
 	_light.setup(self, size_px - Vector2.ONE * SHAPE_INSET * 2.0, config, shape_points)
 	_light.visible = _shown
+	if config:
+		lit_fill_color.a = config.lit_fill_alpha
+		_apply_visual()
 
 
 func get_light() -> RoomLight:
@@ -458,7 +463,7 @@ func _update_light_hint_visibility() -> void:
 
 func _apply_visual() -> void:
 	if _state == Highlight.NONE and is_lit:
-		fill.color = LIT_FILL_COLOR
+		fill.color = lit_fill_color
 		outline.default_color = LIT_OUTLINE_COLOR
 		return
 	fill.color = FILL_COLORS.get(_state, FILL_COLORS[Highlight.NONE])

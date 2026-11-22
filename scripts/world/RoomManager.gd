@@ -158,6 +158,23 @@ func _spawn_zone_node(zone_id: String) -> void:
 		zone.set_room_type(record["room_type"], Vector2(rect.size) * _tile_size(), visual_config)
 
 
+## mazmorra-32: each room's torch / brazier / candles flames (tile renderer plan "lights") join its
+## RoomLight, so they show and light up with the room. A torch's light sits just below its wall face.
+func attach_flames() -> void:
+	if tile_renderer == null:
+		return
+	var plan_zones: Dictionary = tile_renderer.get_plan().get("zones", {})
+	for zone_id: String in plan_zones:
+		var node: RoomZone = zones.get(zone_id, {}).get("node")
+		if node == null or node.get_light() == null:
+			continue
+		for light: Array in plan_zones[zone_id]["lights"]:
+			var at := tile_renderer.to_global((Vector2(light[0]) + Vector2(0.5, 0.5)) * ArtConfig.TILE_SIZE)
+			if light[1] == "torch":
+				at.y += ArtConfig.TILE_SIZE * ArtConfig.ART_SCALE * 0.75
+			node.get_light().add_flame(at, light[1])
+
+
 ## Dark canvas: one CanvasModulate for the world canvas (HUD CanvasLayers are
 ## unaffected). Lit rooms stand out through their RoomLight PointLight2D.
 func _ensure_dark_canvas() -> void:

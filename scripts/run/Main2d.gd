@@ -261,6 +261,7 @@ func _setup_room_manager() -> void:
 	add_child(tile_renderer)
 	tile_renderer.build(map_layout, room_manager.visual_config)
 	room_manager.tile_renderer = tile_renderer
+	room_manager.attach_flames()
 	floor_layer.visible = false
 	_apply_floor_theme()
 
