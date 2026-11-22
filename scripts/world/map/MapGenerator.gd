@@ -7,7 +7,9 @@ class_name MapGenerator
 ## existing one through a straight corridor, giving a tree: connected, no
 ## orphans, and exactly one entry corridor per room (= its reveal group).
 ## Start = first room; exit = the room farthest from it (so the start->exit
-## path always exists and is the longest one); vault = deepest other dead end.
+## path always exists and is the longest one).
+## mazmorra-31: rooms up to 7x7 inside a 9-cell slot (12 proportions); the gap
+## between two 7-wide rooms is still a door cell + 1 corridor cell.
 ##
 ## Session 11: generate() stays the tree, byte-for-byte (same RNG stream).
 ## Loops and room types are separate post-passes with their own salted RNGs,
@@ -16,8 +18,11 @@ class_name MapGenerator
 ## tags rooms. generate_floor() chains the three for a FloorConfig floor.
 
 const SLOT_PITCH := 9
-const MAX_ROOM_SIZE := 5
-const ROOM_SIZES: Array[Vector2i] = [Vector2i(5, 5), Vector2i(5, 3), Vector2i(3, 5), Vector2i(3, 3)]
+const MAX_ROOM_SIZE := 7
+const START_SIZE := Vector2i(5, 5)
+const ROOM_SIZES: Array[Vector2i] = [
+	Vector2i(3, 3), Vector2i(4, 4), Vector2i(5, 5), Vector2i(6, 6), Vector2i(5, 3), Vector2i(3, 5),
+	Vector2i(6, 4), Vector2i(4, 6), Vector2i(7, 5), Vector2i(5, 7), Vector2i(7, 4), Vector2i(4, 7)]
 const DIRS: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 const MAX_ATTEMPTS := 500
 
@@ -34,7 +39,7 @@ static func generate(p_seed: int, room_count: int, branch_chance: float) -> MapL
 	var room_at: Dictionary = {}      # Vector2i slot -> RoomData
 	var order: Array[RoomData] = []
 
-	var start := _make_room("room_0", Vector2i.ZERO, Vector2i(5, 5))
+	var start := _make_room("room_0", Vector2i.ZERO, START_SIZE)
 	start.is_start = true
 	_add_room(layout, start, Vector2i.ZERO, slot_of, room_at, order)
 
@@ -62,7 +67,7 @@ static func generate(p_seed: int, room_count: int, branch_chance: float) -> MapL
 		child.neighbors.append(base.id)
 		last = child
 
-	_mark_exit_and_vault(layout, start)
+	_mark_exit(layout, start)
 	return layout
 
 
@@ -267,7 +272,7 @@ static func _make_corridor(from: RoomData, to: RoomData, dir: Vector2i, from_slo
 	return corridor
 
 
-static func _mark_exit_and_vault(layout: MapLayout, start: RoomData) -> void:
+static func _mark_exit(layout: MapLayout, start: RoomData) -> void:
 	var depth: Dictionary = {start.id: 0}
 	var frontier: Array[String] = [start.id]
 	while not frontier.is_empty():
@@ -282,12 +287,3 @@ static func _mark_exit_and_vault(layout: MapLayout, start: RoomData) -> void:
 		if int(depth[room.id]) > int(depth[exit_room.id]):
 			exit_room = room
 	exit_room.is_exit = true
-
-	var vault: RoomData = null
-	for room in layout.rooms:
-		if room == start or room == exit_room or room.neighbors.size() != 1:
-			continue
-		if vault == null or int(depth[room.id]) > int(depth[vault.id]):
-			vault = room
-	if vault:
-		vault.is_vault = true

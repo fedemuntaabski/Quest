@@ -9,6 +9,7 @@ extends RefCounted
 # dungeon_tileset.tres sources
 const SRC_SHEET := 0  # 0x72 full sheet
 const SRC_FILL := 1   # atlas_walls_low: solid (34,34,34) tile at (9,2)
+const SRC_OWN := 2    # assets/art/own/dungeon_decor.png (tools/build_own_art.gd, OWN_DECOR order)
 # props_tileset.tres source (Kenney tilemap_packed)
 const SRC_PROPS := 0
 
@@ -32,6 +33,16 @@ const WALL_WEAR: Array[Vector2i] = [Vector2i(3, 2), Vector2i(3, 3)]  # wall_hole
 const BANNERS: Array[Vector2i] = [Vector2i(1, 2), Vector2i(2, 2), Vector2i(1, 3), Vector2i(2, 3)]  # red, blue, green, yellow (face tiles)
 
 const STAIRS := Vector2i(5, 12)     # floor_stairs
+const COLUMN: Array[Vector2i] = [Vector2i(5, 5), Vector2i(5, 6), Vector2i(5, 7)]  # 0x72 column 16x48: top, mid, base
+
+# mazmorra-31 interior (SRC_OWN, one row of 16 px cells)
+const PIT: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(3, 0)]  # 1-cell pit: tl, tr, bl, br
+const RUG: Array[Vector2i] = [                                                                  # nine-slice, row by row
+	Vector2i(4, 0), Vector2i(5, 0), Vector2i(6, 0), Vector2i(7, 0), Vector2i(8, 0), Vector2i(9, 0),
+	Vector2i(10, 0), Vector2i(11, 0), Vector2i(12, 0)]
+const SLABS: Array[Vector2i] = [Vector2i(13, 0), Vector2i(14, 0)]
+const RUBBLE: Array[Vector2i] = [Vector2i(15, 0), Vector2i(16, 0), Vector2i(17, 0)]
+const OWN_DECOR_CELLS := 18
 const DOOR_CLOSED := Vector2i(2, 15)  # doors_leaf_closed, 32x32 (Door.gd draws it, not the TileMap)
 const DOOR_OPEN := Vector2i(5, 15)    # doors_leaf_open, 32x32
 

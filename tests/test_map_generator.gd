@@ -11,6 +11,7 @@ const SPECIAL_TYPES := [RoomData.RoomType.REST, RoomData.RoomType.LOOT, RoomData
 
 var failures: Array[String] = []
 var secrets_seen := 0
+var sizes_seen: Dictionary = {}
 
 
 func _init() -> void:
@@ -38,6 +39,10 @@ func _init() -> void:
 				seen_types[room.get_room_type()] = true
 		loops_per_floor.append(float(loops_total) / SEEDS_PER_FLOOR)
 
+	# mazmorra-31: every ROOM_SIZES entry shows up.
+	for size in MapGenerator.ROOM_SIZES:
+		if not sizes_seen.has(size):
+			failures.append("room size %s never generated" % size)
 	if maps_with_loops == 0:
 		failures.append("no generated map got a loop")
 	if secrets_seen == 0:
@@ -95,6 +100,21 @@ func _check_layout(layout: MapLayout, tree: MapLayout, config: FloorConfig, floo
 	if _signature(layout, false) != _signature(tree, false):
 		failures.append("%s: loops/types altered the tree layout" % where)
 
+	# mazmorra-31: sizes within MAX_ROOM_SIZE, inside the slot box, crossed by the lane;
+	# start always START_SIZE; corridors at least one cell long.
+	for room in layout.rooms:
+		sizes_seen[room.size] = true
+		var inset := room.pos - MapGenerator._slot_of(room) * MapGenerator.SLOT_PITCH
+		var lane := MapGenerator.MAX_ROOM_SIZE / 2
+		if room.size.x > MapGenerator.MAX_ROOM_SIZE or room.size.y > MapGenerator.MAX_ROOM_SIZE or inset.x < 0 or inset.y < 0 \
+				or inset.x + room.size.x > MapGenerator.MAX_ROOM_SIZE or inset.y + room.size.y > MapGenerator.MAX_ROOM_SIZE \
+				or lane < inset.x or lane >= inset.x + room.size.x or lane < inset.y or lane >= inset.y + room.size.y:
+			failures.append("%s: room %s size %s at inset %s breaks the slot box" % [where, room.id, room.size, inset])
+		if room.is_start and room.size != MapGenerator.START_SIZE:
+			failures.append("%s: start room is %s" % [where, room.size])
+	for corridor in layout.corridors:
+		if corridor.size.x < 1 or corridor.size.y < 1:
+			failures.append("%s: corridor %s has size %s" % [where, corridor.id, corridor.size])
 	var starts: Array[String] = []
 	var exits: Array[String] = []
 	var counts: Dictionary = {}

@@ -87,12 +87,12 @@ func build_from_map(layout: MapLayout) -> void:
 	_start_zone_id = layout.get_start_room_id()
 
 	for room in layout.rooms:
-		_add_zone(room.id, "room", room.get_rect(), room.id, room.is_exit, room.is_vault, room.get_room_type())
+		_add_zone(room.id, "room", room.get_rect(), room.id, room.is_exit, room.get_room_type())
 		groups[room.id] = [] as Array[String]
 	for corridor in layout.corridors:
 		var group_id := corridor.id if corridor.is_loop else corridor.room_b
 		# Zone owns the door cell too (the Door is disabled once opened).
-		_add_zone(corridor.id, "corridor", corridor.get_zone_rect(), group_id, false, false)
+		_add_zone(corridor.id, "corridor", corridor.get_zone_rect(), group_id, false)
 		_link_zones(corridor.room_a, corridor.id)
 		_link_zones(corridor.id, corridor.room_b)
 		if corridor.is_loop:
@@ -108,7 +108,7 @@ func build_from_map(layout: MapLayout) -> void:
 	QuestLogger.info(QuestLogger.Category.MAP, "RoomManager: built %d zones, %d groups (seed %d)." % [zones.size(), groups.size(), layout.map_seed])
 
 
-func _add_zone(zone_id: String, kind: String, rect: Rect2i, group_id: String, is_exit: bool, is_vault: bool, room_type: RoomData.RoomType = RoomData.RoomType.COMBAT) -> void:
+func _add_zone(zone_id: String, kind: String, rect: Rect2i, group_id: String, is_exit: bool, room_type: RoomData.RoomType = RoomData.RoomType.COMBAT) -> void:
 	zones[zone_id] = {
 		"id": zone_id,
 		"kind": kind,
@@ -118,7 +118,6 @@ func _add_zone(zone_id: String, kind: String, rect: Rect2i, group_id: String, is
 		"neighbors": [],
 		"group_id": group_id,
 		"is_exit_room": is_exit,
-		"is_vault_room": is_vault,
 		"room_type": room_type,
 		"node": null,
 	}
@@ -338,10 +337,6 @@ func set_zone_lit(zone_id: String, v: bool) -> void:
 
 func is_exit_room(zone_id: String) -> bool:
 	return zones.get(zone_id, {}).get("is_exit_room", false)
-
-
-func is_vault_room(zone_id: String) -> bool:
-	return zones.get(zone_id, {}).get("is_vault_room", false)
 
 
 ## RoomData.get_room_type() of a room zone; COMBAT for corridors/unknown ids.

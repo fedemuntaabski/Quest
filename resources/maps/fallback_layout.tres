@@ -73,7 +73,6 @@ pos = Vector2i(19, 0)
 size = Vector2i(5, 3)
 neighbors = PackedStringArray("east_room")
 is_exit = true
-is_vault = true
 
 [resource]
 script = ExtResource("3_68i6x")

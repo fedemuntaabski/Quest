@@ -19,7 +19,6 @@ enum RoomType { COMBAT, START, EXIT, REST, LOOT, ELITE, WORKSHOP, PRISONER, ALTA
 @export var neighbors: PackedStringArray = PackedStringArray()
 @export var is_start: bool = false
 @export var is_exit: bool = false
-@export var is_vault: bool = false
 
 
 func get_rect() -> Rect2i:

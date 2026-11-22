@@ -15,6 +15,10 @@ tile_set = ExtResource("2_dungeon")
 z_index = -8
 tile_set = ExtResource("2_dungeon")
 
+[node name="Features" type="TileMapLayer" parent="."]
+z_index = -8
+tile_set = ExtResource("2_dungeon")
+
 [node name="Decor" type="TileMapLayer" parent="."]
 z_index = -7
 tile_set = ExtResource("3_props")

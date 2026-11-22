@@ -4,7 +4,10 @@ extends SceneTree
 ## fallback layout: (a) same layout -> identical plan; (b) every walkable tile
 ## has floor and no wall, decor stays on room floor; (c) floor tiles connect
 ## every room to the start; (d) live layers: nothing drawn until show_zone, then
-## only that zone, walls carry physics and floors don't. Run:
+## only that zone, walls carry physics and floors don't; (e) mazmorra-31 interior over
+## 150 maps: solid pieces (columns, pits, rubble) stay off the outer ring, off every
+## world object (build slots, Relic/chest, cage, altar) and off the walk line from each
+## corridor to the room centre; every template shows up. Run:
 ##   godot --headless --path . --script res://tests/test_tile_renderer.gd
 
 const SEEDS := 5
@@ -28,6 +31,15 @@ func _initialize() -> void:
 		_check_deterministic(layout, visual, plan, where)
 		_check_walkable(layout, plan, where)
 		_check_connected(layout, plan, where)
+	var seen := {"columns": 0, "pits": 0, "rugs": 0, "slabs": 0, "rubble": 0}
+	for floor_index in range(1, FLOORS + 1):
+		for s in 30:
+			var layout := MapGenerator.generate_floor(s * 104729 + floor_index, floor_config, floor_index)
+			_check_interior(layout, MapTileRenderer.build_plan(layout, visual), "interior seed %d" % layout.map_seed, seen)
+	for key in seen:
+		if seen[key] == 0:
+			failures.append("interior: no %s in 150 maps" % key)
+	print("interior over 150 maps: ", seen)
 	if MapTileRenderer.build_plan(layouts[1], visual) == MapTileRenderer.build_plan(layouts[2], visual):
 		failures.append("different seeds produced identical plans")
 
@@ -71,9 +83,10 @@ func _check_walkable(layout: MapLayout, plan: Dictionary, where: String) -> void
 	for id in plan["zones"]:
 		floors.merge(plan["zones"][id]["floor"])
 		walls.merge(plan["zones"][id]["walls"])
-		for tile in plan["zones"][id]["decor"]:
-			if not room_ids.has(id) or not walkable.has(tile):
-				failures.append("%s: decor at %s outside room floor (zone %s)" % [where, tile, id])
+		for key in ["decor", "features"]:
+			for tile in plan["zones"][id][key]:
+				if not room_ids.has(id) or walkable.get(tile, "") != id:
+					failures.append("%s: %s at %s outside room floor (zone %s)" % [where, key, tile, id])
 	for tile in walkable:
 		if not floors.has(tile):
 			failures.append("%s: walkable tile %s has no floor" % [where, tile])
@@ -116,7 +129,7 @@ func _check_live(layout: MapLayout, visual: MapVisualConfig) -> void:
 	root.add_child(renderer)
 	await process_frame
 	renderer.build(layout, visual)
-	var layers: Array[TileMapLayer] = [renderer.floor_layer, renderer.walls_layer, renderer.decor_layer]
+	var layers: Array[TileMapLayer] = [renderer.floor_layer, renderer.walls_layer, renderer.features_layer, renderer.decor_layer]
 	for layer in layers:
 		if not layer.get_used_cells().is_empty():
 			failures.append("live: %s has tiles before any show_zone" % layer.name)
@@ -161,8 +174,8 @@ func _check_live(layout: MapLayout, visual: MapVisualConfig) -> void:
 	for zone_id in renderer.get_plan()["zones"]:
 		renderer.show_zone(zone_id)
 		var z: Dictionary = renderer.get_plan()["zones"][zone_id]
-		for key in ["floor", "walls", "decor", "under"]:
-			var layer: TileMapLayer = {"floor": renderer.floor_layer, "walls": renderer.walls_layer, "decor": renderer.decor_layer, "under": renderer.floor_layer}[key]
+		for key in ["floor", "walls", "decor", "under", "features"]:
+			var layer: TileMapLayer = {"floor": renderer.floor_layer, "walls": renderer.walls_layer, "decor": renderer.decor_layer, "under": renderer.floor_layer, "features": renderer.features_layer}[key]
 			for tile in z[key]:
 				var v: Vector4i = z[key][tile]
 				var src := layer.tile_set.get_source(v.x) as TileSetAtlasSource if layer.tile_set.has_source(v.x) else null
@@ -178,3 +191,68 @@ func _check_live(layout: MapLayout, visual: MapVisualConfig) -> void:
 		failures.append("live: no worn brick faces on the whole map")
 
 	renderer.queue_free()
+
+
+
+## World-object footprints relative to the room centre (px), checked against solid pieces.
+func _object_rects() -> Array[Rect2]:
+	var rects: Array[Rect2] = []
+	for offset: Vector2 in RoomZone.BUILDING_SLOT_OFFSETS:
+		rects.append(Rect2(offset - Vector2(20, 20), Vector2(40, 40)))
+	for i in 2:  # Workshop: two majors in a row
+		rects.append(Rect2(Vector2((i - 0.5) * RoomZone.MAJOR_SLOT_SPACING, -14) - Vector2(20, 20), Vector2(40, 40)))
+	rects.append(Rect2(LootSpawner.CHEST_OFFSET + Vector2(-20, -40), Vector2(40, 56)))  # chest, Relic (same offset)
+	rects.append(Rect2(PrisonerSpawner.CAGE_OFFSET + Vector2(-PrisonerCage.SIZE.x / 2, -PrisonerCage.SIZE.y), PrisonerCage.SIZE))
+	rects.append(Rect2(Vector2(0, -40) + Vector2(-AltarShrine.SIZE.x / 2, -AltarShrine.SIZE.y), AltarShrine.SIZE))
+	return rects
+
+
+func _check_interior(layout: MapLayout, plan: Dictionary, where: String, seen: Dictionary) -> void:
+	var objects := _object_rects()
+	for room in layout.rooms:
+		var zone: Dictionary = plan["zones"][room.id]
+		var rect := Rect2i(room.pos * T, room.size * T)
+		var centre := (Vector2(room.pos) + Vector2(room.size) / 2.0) * 64.0
+		var solid: Array[Vector2i] = []
+		for tile in zone["features"]:
+			solid.append(tile)
+			var atlas := Vector2i(zone["features"][tile].y, zone["features"][tile].z)
+			if atlas == DungeonTiles.COLUMN[2]:
+				seen["columns"] += 1
+			elif atlas in DungeonTiles.RUBBLE:
+				seen["rubble"] += 1
+		for tile in zone["floor"]:
+			var v: Vector4i = zone["floor"][tile]
+			if v.x != DungeonTiles.SRC_OWN:
+				continue
+			var atlas := Vector2i(v.y, v.z)
+			if atlas in DungeonTiles.PIT:
+				solid.append(tile)
+				seen["pits"] += int(atlas == DungeonTiles.PIT[0])
+			elif atlas in DungeonTiles.RUG:
+				seen["rugs"] += int(atlas == DungeonTiles.RUG[0])
+			elif atlas in DungeonTiles.SLABS:
+				seen["slabs"] += 1
+		# Walk lines: corridor zone centre -> room centre, 20 px either side.
+		var walks: Array = []
+		for corridor in layout.corridors:
+			if corridor.room_a == room.id or corridor.room_b == room.id:
+				var zr := corridor.get_zone_rect()
+				walks.append([(Vector2(zr.position) + Vector2(zr.size) / 2.0) * 64.0, centre])
+		for tile in solid:
+			var px := Rect2(Vector2(tile) * 32.0, Vector2(32, 32))
+			var ring := tile.x == rect.position.x or tile.y == rect.position.y or tile.x == rect.end.x - 1 or tile.y == rect.end.y - 1
+			if ring or not rect.has_point(tile):
+				failures.append("%s: solid interior tile %s on the ring/outside %s" % [where, tile, room.id])
+			for o in objects:
+				if px.intersects(Rect2(o.position + centre, o.size)):
+					failures.append("%s: interior tile %s covers a world object of %s" % [where, tile, room.id])
+					break
+			for walk in walks:
+				var a: Vector2 = walk[0]
+				var b: Vector2 = walk[1]
+				var steps := ceili(a.distance_to(b) / 8.0)
+				for i in steps + 1:
+					if px.grow(20.0).has_point(a.lerp(b, float(i) / steps)) and Rect2(Vector2(rect.position) * 32.0, Vector2(rect.size) * 32.0).has_point(a.lerp(b, float(i) / steps)):
+						failures.append("%s: interior tile %s on the walk line into %s" % [where, tile, room.id])
+						break

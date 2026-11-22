@@ -8,6 +8,7 @@ extends SceneTree
 const SHEET := "res://assets/art/tiles/dungeon_tileset_ii.png"
 const FILL := "res://assets/art/tiles/atlas_walls_low-16x16.png"
 const KENNEY := "res://assets/art/tiles/kenney_tiny_dungeon_packed.png"
+const OWN_DECOR := "res://assets/art/own/dungeon_decor.png"
 const WALL_LAYER_BIT := 16
 
 
@@ -65,9 +66,17 @@ func _build_dungeon() -> void:
 	for coords in DungeonTiles.BANNERS:
 		_solid(_add(sheet, coords))
 	_add(sheet, DungeonTiles.STAIRS)
+	# mazmorra-31: columns are interior features (Features layer), no collision.
+	for coords in DungeonTiles.COLUMN:
+		_add(sheet, coords)
 
 	var fill := _source(ts, DungeonTiles.SRC_FILL, FILL)
 	_solid(_add(fill, DungeonTiles.WALL_FILL))
+
+	# mazmorra-31: own interior sheet (pits, rug, slabs, rubble), every cell, no collision.
+	var own := _source(ts, DungeonTiles.SRC_OWN, OWN_DECOR)
+	for x in DungeonTiles.OWN_DECOR_CELLS:
+		_add(own, Vector2i(x, 0))
 
 	_save(ts, "res://resources/tilesets/dungeon_tileset.tres")
 

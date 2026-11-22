@@ -7,6 +7,7 @@ extends SceneTree
 ## Escribe:
 ##   assets/art/own/items.png   celdas 16x16: OWN_CELLS en ese orden (fila única)
 ##   assets/art/own/vfx/*.png   tiras horizontales + index.json (formato de VfxEffect)
+##   assets/art/own/dungeon_decor.png  interior de las salas (mazmorra-31): OWN_DECOR, fila única
 ## Idempotente; después correr tools/build_items.gd si cambió el orden de celdas.
 ## Un PNG con su .ase en own/src/ (retoque a mano, tools/libresprite.sh) no se regenera.
 
@@ -85,6 +86,7 @@ func _init() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT + "vfx/"))
 	_items()
 	_vfx()
+	_decor()
 	quit()
 
 
@@ -288,3 +290,141 @@ func _disc(img: Image, o: Vector2, size: int, c: Vector2, r: float, col: Color) 
 		for x in range(int(c.x - r), int(c.x + r) + 1):
 			if Vector2(x, y).distance_to(c) <= r:
 				_px(img, o, size, Vector2(x, y), col)
+
+
+# --- Interior de las salas (mazmorra-31): paleta de 0x72 DungeonTileset II ---
+
+## Orden de celdas de dungeon_decor.png = DungeonTiles.PIT/RUG/SLABS/RUBBLE.
+const OWN_DECOR := ["pit_tl", "pit_tr", "pit_bl", "pit_br",
+	"rug_tl", "rug_t", "rug_tr", "rug_l", "rug_c", "rug_r", "rug_bl", "rug_b", "rug_br",
+	"slab_a", "slab_b", "rubble_a", "rubble_b", "rubble_c"]
+const SHEET_0X72 := "res://assets/art/tiles/dungeon_tileset_ii.png"
+const FLOOR_1 := Vector2i(16, 64)  # floor_1 en la hoja 0x72 (px)
+const P_K := Color("222222")  # contorno
+const P_D := Color("21141b")  # sombra profunda
+const P_F := Color("483b3a")  # suelo
+const P_M := Color("775c55")  # junta / piedra media
+const P_L := Color("aa8d7a")  # piedra clara
+const P_W := Color("d3bfa9")  # hueso
+const P_R := Color("9f294e").lerp(Color("483b3a"), 0.35)  # carmesí de los estandartes, apagado
+const P_O := Color("da4e38").lerp(Color("9f294e"), 0.5)  # borde: rojo de los estandartes, apagado
+const P_RD := Color("4a1a2a")
+const RUBBLE := {
+	"rubble_a": [
+		"................", "................", "................", "................",
+		"................", "......kkk.......", ".....kllmk......", "....kllmmmk.....",
+		"....kmmmmdk..kk.", ".....kkddk..klmk", "...........kmmdk", "..kk........kkk.",
+		".klmk...........", ".kmdk...........", "..kk............", "................"],
+	"rubble_b": [
+		"................", "................", "..........kk....", ".........klmk...",
+		".........kmdk...", "..........kk....", "................", "...kkkk.........",
+		"..kllmmk........", ".kllmmmmk.......", ".kmmmmmdk...kk..", "..kmmddk...klk..",
+		"...kkkk....kdk..", "............k...", "................", "................"],
+	"rubble_c": [
+		"................", "..k.............", ".kl.......k.....", "..k......klk....",
+		".........kk.....", "....k...........", "...kmk......k...", "....k......kmk..",
+		"............k...", "......kkk.......", ".....klmmk......", ".....kmmdk......",
+		"......kkk...k...", "...........kl...", "................", "................"],
+}
+
+
+func _decor() -> void:
+	if FileAccess.file_exists(OUT + "src/dungeon_decor.ase"):
+		print("own decor: hay src/dungeon_decor.ase (retoque de LibreSprite), no se pisa")
+		return
+	var sheet := Image.create(CELL * OWN_DECOR.size(), CELL, false, Image.FORMAT_RGBA8)
+	var src := Image.load_from_file(ProjectSettings.globalize_path(SHEET_0X72))
+	src.convert(Image.FORMAT_RGBA8)
+	var pit := _pit(src)
+	var pal := {"k": P_K.to_html(false), "l": P_W.to_html(false), "m": P_L.to_html(false), "d": P_M.to_html(false)}
+	for i in OWN_DECOR.size():
+		var id: String = OWN_DECOR[i]
+		var cell: Image
+		if id.begins_with("pit_"):
+			var q := ["pit_tl", "pit_tr", "pit_bl", "pit_br"].find(id)
+			cell = pit.get_region(Rect2i((q % 2) * CELL, (q / 2) * CELL, CELL, CELL))
+		elif id.begins_with("rug_"):
+			cell = _rug(id)
+		elif id.begins_with("slab_"):
+			cell = _slab(id == "slab_b")
+		else:
+			cell = _ascii(RUBBLE[id], pal)
+		sheet.blit_rect(cell, Rect2i(0, 0, CELL, CELL), Vector2i(i * CELL, 0))
+	sheet.save_png(ProjectSettings.globalize_path(OUT + "dungeon_decor.png"))
+	print("own decor: %d celdas" % OWN_DECOR.size())
+
+
+## Pozo de 1 celda (32x32 = 2x2 tiles): suelo 0x72 en las esquinas, boca redondeada con
+## contorno, pared del fondo en ladrillo (arriba) y negro que se hunde hacia abajo.
+func _pit(src: Image) -> Image:
+	var img := Image.create(CELL * 2, CELL * 2, false, Image.FORMAT_RGBA8)
+	var inside := func(x: int, y: int) -> bool:
+		if x < 2 or y < 2 or x > 29 or y > 29:
+			return false
+		var cx := clampi(x, 6, 25)
+		var cy := clampi(y, 6, 25)
+		return Vector2(x, y).distance_to(Vector2(cx, cy)) <= 4.5
+	for y in CELL * 2:
+		for x in CELL * 2:
+			if not inside.call(x, y):
+				img.set_pixel(x, y, src.get_pixel(FLOOR_1.x + x % CELL, FLOOR_1.y + y % CELL))
+			elif not (inside.call(x - 1, y) and inside.call(x + 1, y) and inside.call(x, y - 1) and inside.call(x, y + 1)):
+				img.set_pixel(x, y, P_K)
+			elif y < 8:
+				var mortar := y == 5 or (y < 5 and (x + 2) % 6 == 0) or (y > 5 and (x + 5) % 6 == 0)
+				img.set_pixel(x, y, P_K if mortar else (P_L if y == 3 else P_M))
+			else:
+				var deep := clampf((y - 8) / 16.0, 0.0, 1.0)
+				img.set_pixel(x, y, P_D.lerp(Color("0b0709"), deep))
+	return img
+
+
+## Alfombra carmesí de borde hueso; rug_t/l/r/b/c y esquinas según qué lados son borde.
+func _rug(id: String) -> Image:
+	var part := id.substr(4)
+	var top := part.begins_with("t")
+	var bottom := part.begins_with("b")
+	var left := part.ends_with("l") and part != "l" or part == "l"
+	var right := part.ends_with("r") and part != "r" or part == "r"
+	var img := Image.create(CELL, CELL, false, Image.FORMAT_RGBA8)
+	for y in CELL:
+		for x in CELL:
+			var d := 99
+			if top: d = mini(d, y)
+			if bottom: d = mini(d, CELL - 1 - y)
+			if left: d = mini(d, x)
+			if right: d = mini(d, CELL - 1 - x)
+			var c: Color
+			match d:
+				0: c = P_K
+				1: c = P_W
+				2, 3: c = P_O
+				4: c = P_RD
+				_:
+					var a := posmod(x + y, 8)
+					var b := posmod(x - y, 8)
+					c = P_RD if a == 0 or b == 0 else (P_O if a == 4 and b == 4 else P_R)
+			img.set_pixel(x, y, c)
+	return img
+
+
+## Losa grande: piedra media con junta oscura arriba/izquierda, brillo y sombra interiores.
+## slab_b = dos losas de 16x8.
+func _slab(split: bool) -> Image:
+	var img := Image.create(CELL, CELL, false, Image.FORMAT_RGBA8)
+	var base := P_F.lerp(P_M, 0.45)
+	for y in CELL:
+		for x in CELL:
+			var ly := y % 8 if split else y
+			var h := 8 if split else CELL
+			var c := base
+			if x == 0 or ly == 0:
+				c = P_K
+			elif x == 1 or ly == 1:
+				c = P_M
+			elif x == CELL - 1 or ly == h - 1:
+				c = P_F
+			elif posmod(x * 7 + y * 13, 23) == 0:
+				c = P_F
+			img.set_pixel(x, y, c)
+	return img
