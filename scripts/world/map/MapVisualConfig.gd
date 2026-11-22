@@ -43,11 +43,11 @@ enum ExitHintMode {
 ## Seconds for the dark -> lit tween (mazmorra-32: 1.0, eased in/out, flames light one after another).
 @export var light_transition_time: float = 1.0
 ## mazmorra-32: alpha of the gold fill over a lit room (RoomZone.LIT_FILL_COLOR; it was 0.30 and washed the art).
-@export_range(0.0, 1.0) var lit_fill_alpha: float = 0.08
+@export_range(0.0, 1.0) var lit_fill_alpha: float = 0.10
 ## Flames of the room's torches / braziers / candles (MapTileRenderer plan "lights"), lit with the room:
 ## energy, flicker depth (0..1) and radius in world px per kind.
-@export var flame_energy: float = 0.7
-@export_range(0.0, 1.0) var flame_flicker: float = 0.25
+@export var flame_energy: float = 0.6
+@export_range(0.0, 1.0) var flame_flicker: float = 0.2
 @export var torch_radius: float = 150.0
 @export var brazier_radius: float = 190.0
 @export var candles_radius: float = 110.0

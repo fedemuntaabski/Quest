@@ -54,8 +54,10 @@ func _initialize() -> void:
 		failures.append("shapes: only %s checked live in 40 maps" % [shapes_seen.keys()])
 
 	var main2d := await _boot(0, 1)
+	await _check_flames(main2d, false)
 	_open_all(main2d)
 	await process_frame
+	await _check_flames(main2d, true)
 	await _check_lighting(main2d)
 	await _check_buildings(main2d)
 	await _free(main2d)
@@ -343,6 +345,34 @@ func _check_lighting(main2d: Node) -> void:
 	rooms[0].toggle_light()
 	_expect(not rooms[0].is_lit and resources.get_resource("embers") == RoomZone.LIGHT_COST - 1, "no embers: lit or spent (%d)" % resources.get_resource("embers"))
 	resources.add_resource("embers", 500)
+
+
+## mazmorra-32: flames (plan "lights") belong to their room's RoomLight, burn only while it is lit,
+## hide with the room; wall occluders exist only for shown zones (unrevealed: no tiles, light or shadow).
+func _check_flames(main2d: Node, opened: bool) -> void:
+	var rm: RoomManager = main2d.room_manager
+	var plan: Dictionary = main2d.tile_renderer.get_plan()["zones"]
+	var occluders := 0
+	var flames := 0
+	for zone_id in rm.get_zone_ids():
+		var node := rm.get_zone_node(zone_id)
+		if rm.is_zone_visible(zone_id):
+			occluders += (plan[zone_id]["occluders"] as Array).size()
+		if node == null or node.kind != "room":
+			continue
+		var light := node.get_light()
+		flames += light.get_flames().size()
+		_expect(light.get_flames().size() == (plan[zone_id]["lights"] as Array).size(), "%s: %d flames for %d planned lights" % [zone_id, light.get_flames().size(), (plan[zone_id]["lights"] as Array).size()])
+		_expect(light.visible == rm.is_zone_visible(zone_id), "%s: RoomLight visible=%s but zone visible=%s" % [zone_id, light.visible, rm.is_zone_visible(zone_id)])
+		for flame in light.get_flames():
+			_expect(flame.enabled == node.is_lit or not opened, "%s: flame enabled=%s in a %s room" % [zone_id, flame.enabled, "lit" if node.is_lit else "dark"])
+	var live: int = main2d.tile_renderer.get_children().filter(func(c: Node) -> bool: return c is LightOccluder2D).size()
+	_expect(live == occluders, "occluders: %d live, %d for the shown zones" % [live, occluders])
+	_expect(flames > 0, "no flames on the whole floor")
+	if opened:
+		var start := rm.get_zone_node(rm.get_start_zone_id()).get_light()
+		await create_timer(1.5).timeout
+		_expect(start.get_flames().is_empty() or start.get_flames()[0].energy > 0.0, "start room flames still at 0 after lighting up")
 
 
 # ---------------- obras ----------------
