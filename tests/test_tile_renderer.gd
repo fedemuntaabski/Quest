@@ -62,7 +62,8 @@ func _walkable_tiles(layout: MapLayout) -> Dictionary:
 	var tiles: Dictionary = {}
 	var rects: Array = []
 	for room in layout.rooms:
-		rects.append([room.id, room.get_rect()])
+		for cell in room.get_cells():  # mazmorra-31: cut corners are not floor
+			rects.append([room.id, Rect2i(cell, Vector2i.ONE)])
 	for corridor in layout.corridors:
 		rects.append([corridor.id, corridor.get_zone_rect()])
 	for entry in rects:
@@ -241,8 +242,10 @@ func _check_interior(layout: MapLayout, plan: Dictionary, where: String, seen: D
 				walks.append([(Vector2(zr.position) + Vector2(zr.size) / 2.0) * 64.0, centre])
 		for tile in solid:
 			var px := Rect2(Vector2(tile) * 32.0, Vector2(32, 32))
-			var ring := tile.x == rect.position.x or tile.y == rect.position.y or tile.x == rect.end.x - 1 or tile.y == rect.end.y - 1
-			if ring or not rect.has_point(tile):
+			var ring := false
+			for d: Vector2i in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
+				ring = ring or not room.has_cell(Vector2i((Vector2(tile + d) / T).floor()))
+			if ring or not room.has_cell(Vector2i((Vector2(tile) / T).floor())):
 				failures.append("%s: solid interior tile %s on the ring/outside %s" % [where, tile, room.id])
 			for o in objects:
 				if px.intersects(Rect2(o.position + centre, o.size)):

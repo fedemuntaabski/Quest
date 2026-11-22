@@ -82,7 +82,7 @@ func _get_tooltip(at_position: Vector2) -> String:
 	var scale_px := _scale()
 	var cell := Vector2i((Vector2(_bounds.position) + (at_position - _offset(scale_px)) / scale_px).floor())
 	for zone_id in _room_manager.get_zone_ids():
-		if _room_manager.get_zone_kind(zone_id) == "room" and _room_manager.get_zone(zone_id)["rect"].has_point(cell):
+		if _room_manager.get_zone_kind(zone_id) == "room" and (_room_manager.get_zone(zone_id)["cells"] as Array).has(cell):
 			return tooltip_for_zone(zone_id)
 	return ""
 
@@ -132,13 +132,20 @@ func _draw() -> void:
 		if _room_manager.get_zone_kind(zone_id) == "room":
 			color = LIT_COLOR if _room_manager.is_zone_lit(zone_id) else ROOM_COLOR
 		var zone_rect := _to_map(_room_manager.get_zone(zone_id)["rect"], scale_px, offset)
-		draw_rect(zone_rect, color)
+		var cuts := Vector4(_room_manager.get_zone_cuts(zone_id)) * scale_px
+		if cuts == Vector4.ZERO:
+			draw_rect(zone_rect, color)
+		else:  # mazmorra-31: cut corners, L, cross
+			var shape := RoomData.outline(zone_rect.size, cuts)
+			for i in shape.size():
+				shape[i] += zone_rect.position
+			draw_colored_polygon(shape, color)
 		# Room type marker (RoomTypeVisual): corner square in the type color with
 		# its icon on top, independent of light.
 		var visual := _room_manager.visual_config.room_type_visual(_room_manager.get_room_type(zone_id))
 		if visual and visual.show_marker:
 			var side := maxf(TYPE_MARKER_MIN, minf(zone_rect.size.x, zone_rect.size.y) * TYPE_MARKER_FRACTION)
-			var marker := Rect2(zone_rect.position, Vector2.ONE * side)
+			var marker := Rect2(zone_rect.position + Vector2(cuts.x, 0), Vector2.ONE * side)
 			draw_rect(marker, visual.color)
 			if visual.icon:
 				var fit := side / maxf(visual.icon.get_width(), visual.icon.get_height())

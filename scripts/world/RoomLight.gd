@@ -18,11 +18,12 @@ var _lit: bool = false
 var _zone: RoomZone
 
 
-func setup(zone: RoomZone, size_px: Vector2, p_config: MapVisualConfig) -> void:
+## `shape` (mazmorra-31): the zone's outline for cut-corner rooms (empty = the size_px rect).
+func setup(zone: RoomZone, size_px: Vector2, p_config: MapVisualConfig, shape: PackedVector2Array = PackedVector2Array()) -> void:
 	_zone = zone
 	config = p_config
 	var half := size_px / 2.0
-	var points := PackedVector2Array([Vector2(-half.x, -half.y), Vector2(half.x, -half.y), Vector2(half.x, half.y), Vector2(-half.x, half.y)])
+	var points := shape if not shape.is_empty() else PackedVector2Array([Vector2(-half.x, -half.y), Vector2(half.x, -half.y), Vector2(half.x, half.y), Vector2(-half.x, half.y)])
 
 	_overlay = Polygon2D.new()
 	_overlay.name = "DarkOverlay"
@@ -32,7 +33,9 @@ func setup(zone: RoomZone, size_px: Vector2, p_config: MapVisualConfig) -> void:
 
 	_afford_outline = Line2D.new()
 	_afford_outline.name = "AffordOutline"
-	_afford_outline.points = PackedVector2Array([points[0], points[1], points[2], points[3], points[0]])
+	var closed := points.duplicate()
+	closed.append(points[0])
+	_afford_outline.points = closed
 	_afford_outline.width = 2.0
 	_afford_outline.default_color = config.affordable_outline_color
 	_afford_outline.visible = false

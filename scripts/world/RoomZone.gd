@@ -77,6 +77,11 @@ var center_position: Vector2 = Vector2.ZERO
 var connected_doors: Array[Door] = []
 
 var _state: int = Highlight.NONE
+## mazmorra-31: inset outline (local px) of the zone, rect or cut-corner shape; the
+## badge / light icon move off the cut corners.
+var shape_points: PackedVector2Array = PackedVector2Array()
+var _cuts_px: Vector4 = Vector4.ZERO
+var _extra_collisions: Array[CollisionShape2D] = []
 var _shown: bool = false
 var _light_hint: LightHint = null
 var _light: RoomLight = null
@@ -101,24 +106,46 @@ func _ready() -> void:
 	mouse_exited.connect(func(): unhovered.emit(self))
 
 
-## `size_px` is the zone's full world-space size (rect.size * tile_size).
-func configure(p_zone_id: String, size_px: Vector2, p_kind: String) -> void:
+## `size_px` is the zone's full world-space size (rect.size * tile_size); `cuts_px`
+## (mazmorra-31) its corner cut-outs (RoomData.corner_cuts * tile_size).
+func configure(p_zone_id: String, size_px: Vector2, p_kind: String, cuts_px: Vector4 = Vector4.ZERO) -> void:
 	zone_id = p_zone_id
 	kind = p_kind
+	_cuts_px = cuts_px
 
 	var half := (size_px - Vector2.ONE * SHAPE_INSET * 2.0) / 2.0
 	var points := PackedVector2Array([
 		Vector2(-half.x, -half.y), Vector2(half.x, -half.y),
 		Vector2(half.x, half.y), Vector2(-half.x, half.y),
 	])
+	if cuts_px != Vector4.ZERO:
+		var full := RoomData.outline(size_px, cuts_px)
+		for i in full.size():
+			full[i] -= size_px / 2.0
+		points = Geometry2D.offset_polygon(full, -SHAPE_INSET, Geometry2D.JOIN_MITER)[0]
+	shape_points = points
 
 	fill.polygon = points
-	outline.points = PackedVector2Array([points[0], points[1], points[2], points[3], points[0]])
+	var closed := points.duplicate()
+	closed.append(points[0])
+	outline.points = closed
 	outline.width = OUTLINE_WIDTH
 
-	var shape := RectangleShape2D.new()
-	shape.size = size_px - Vector2.ONE * SHAPE_INSET * 2.0
-	collision.shape = shape
+	if cuts_px == Vector4.ZERO:
+		var shape := RectangleShape2D.new()
+		shape.size = size_px - Vector2.ONE * SHAPE_INSET * 2.0
+		collision.shape = shape
+	else:
+		# Non-convex (L, cross): one CollisionShape2D per convex part.
+		var parts := Geometry2D.decompose_polygon_in_convex(points)
+		for i in parts.size():
+			var part := ConvexPolygonShape2D.new()
+			part.points = parts[i]
+			var holder := collision if i == 0 else CollisionShape2D.new()
+			holder.shape = part
+			if i > 0:
+				add_child(holder)
+				_extra_collisions.append(holder)
 
 	set_highlight(Highlight.NONE)
 
@@ -143,6 +170,8 @@ func set_shown(v: bool) -> void:
 ## Fog-of-war switch: hidden zones draw nothing and cannot receive clicks.
 func _set_render_visible(p_visible: bool) -> void:
 	collision.set_deferred("disabled", not p_visible)
+	for extra in _extra_collisions:
+		extra.set_deferred("disabled", not p_visible)
 	input_pickable = p_visible
 	fill.visible = p_visible
 	outline.visible = p_visible
@@ -199,7 +228,7 @@ func attach_light(size_px: Vector2, config: MapVisualConfig) -> void:
 	_light.name = "RoomLight"
 	add_child(_light)
 	move_child(_light, 0)
-	_light.setup(self, size_px - Vector2.ONE * SHAPE_INSET * 2.0, config)
+	_light.setup(self, size_px - Vector2.ONE * SHAPE_INSET * 2.0, config, shape_points)
 	_light.visible = _shown
 
 
@@ -218,7 +247,7 @@ func set_room_type(type: RoomData.RoomType, size_px: Vector2, config: MapVisualC
 	var color := visual.color
 	_type_badge = Node2D.new()
 	_type_badge.name = "TypeBadge"
-	_type_badge.position = -size_px / 2.0 + Vector2.ONE * SHAPE_INSET + TYPE_BADGE_INSET
+	_type_badge.position = -size_px / 2.0 + Vector2.ONE * SHAPE_INSET + TYPE_BADGE_INSET + Vector2(_cuts_px.x, 0)
 	add_child(_type_badge)
 
 	var r := TYPE_BADGE_RADIUS
@@ -380,7 +409,7 @@ func _spawn_building_slots() -> void:
 func _build_light_icon(half: Vector2) -> void:
 	_light_icon = Node2D.new()
 	_light_icon.name = "LightIcon"
-	_light_icon.position = Vector2(half.x - LIGHT_ICON_INSET.x, -half.y + LIGHT_ICON_INSET.y)
+	_light_icon.position = Vector2(half.x - LIGHT_ICON_INSET.x - _cuts_px.y, -half.y + LIGHT_ICON_INSET.y)
 	_light_icon.visible = _shown
 	add_child(_light_icon)
 

@@ -39,6 +39,19 @@ func _initialize() -> void:
 	for type in RoomData.RoomType.values():
 		if not types_seen.has(type):
 			failures.append("sweep never revealed a %s room" % RoomData.RoomType.find_key(type))
+	# mazmorra-31: shaped rooms on a live Main2d until corners, L and cross were all checked.
+	var shapes_seen := {}
+	for n in range(100, 140):
+		var shaped := await _boot(n, 5)
+		_open_all(shaped)
+		await physics_frame
+		await physics_frame
+		_check_shapes(shaped, "shapes seed %d" % n, shapes_seen)
+		await _free(shaped)
+		if shapes_seen.size() == 3:
+			break
+	if shapes_seen.size() < 3:
+		failures.append("shapes: only %s checked live in 40 maps" % [shapes_seen.keys()])
 
 	var main2d := await _boot(0, 1)
 	_open_all(main2d)
@@ -59,6 +72,50 @@ func _initialize() -> void:
 		printerr("FAIL: ", failure)
 	print("test_salas_exhaustivo: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
 	quit(0 if failures.is_empty() else 1)
+
+
+## Every revealed shaped room: RoomManager cells = RoomData cells, the RoomZone outline,
+## its physics shapes, zone_has_point and RoomLight's overlay hold the centre and none of
+## the cut corners; the type badge sits on the floor, not over a cut.
+func _check_shapes(main2d: Node, label: String, seen: Dictionary) -> void:
+	var rm: RoomManager = main2d.room_manager
+	var space := (main2d as Node2D).get_world_2d().direct_space_state
+	var tile := 64.0
+	for room: RoomData in main2d.map_layout.rooms:
+		var cuts := room.corner_cuts
+		if cuts == Vector4i.ZERO or not rm.is_zone_revealed(room.id):
+			continue
+		seen["corners" if cuts == Vector4i.ONE else ("cross" if cuts.x > 0 and cuts.z > 0 else "L")] = true
+		var where := "%s %s %s" % [label, room.id, cuts]
+		var cells: Array = rm.get_zone(room.id)["cells"]
+		_expect(cells.size() == room.get_cells().size() and room.get_cells().all(func(c: Vector2i) -> bool: return cells.has(c)), "%s: RoomManager cells != RoomData cells" % where)
+		var zone := rm.get_zone_node(room.id)
+		var centre := rm.get_center(room.id)
+		var corners := [Vector2(0.5, 0.5) * cuts.x, Vector2(room.size.x - 0.5 * cuts.y, 0.5 * cuts.y), Vector2(room.size.x - 0.5 * cuts.z, room.size.y - 0.5 * cuts.z), Vector2(0.5 * cuts.w, room.size.y - 0.5 * cuts.w)]
+		_expect(Geometry2D.is_point_in_polygon(Vector2.ZERO, zone.shape_points) and rm.zone_has_point(room.id, centre), "%s: centre outside its shape" % where)
+		_expect(_area_at(space, centre) == zone, "%s: clicking the centre misses the room" % where)
+		_expect(zone.get_light()._overlay.polygon == zone.shape_points, "%s: RoomLight overlay is not the room shape" % where)
+		for i in 4:
+			if cuts[i] == 0:
+				continue
+			var world: Vector2 = Vector2(room.pos) * tile + corners[i] * tile
+			_expect(not Geometry2D.is_point_in_polygon(world - centre, zone.shape_points), "%s: cut corner %d inside the outline" % [where, i])
+			_expect(not rm.zone_has_point(room.id, world), "%s: zone_has_point true on cut corner %d" % [where, i])
+			_expect(_area_at(space, world) != zone, "%s: a click on cut corner %d picks the room" % [where, i])
+		var badge := zone.get_node_or_null("TypeBadge") as Node2D
+		if badge and cuts.x > 0:
+			_expect(badge.position.x > -room.size.x * tile / 2.0 + cuts.x * tile, "%s: type badge over the cut corner" % where)
+
+
+func _area_at(space: PhysicsDirectSpaceState2D, point: Vector2) -> Object:
+	var query := PhysicsPointQueryParameters2D.new()
+	query.position = point
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	for hit in space.intersect_point(query, 32):
+		if hit["collider"] is RoomZone:
+			return hit["collider"]
+	return null
 
 
 func _expect(ok: bool, what: String) -> void:

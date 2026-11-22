@@ -79,9 +79,9 @@ static func build_plan(layout: MapLayout, config: MapVisualConfig) -> Dictionary
 	var zone_cells: Dictionary = {}
 	var floor_cells: Dictionary = {}  # cell -> zone id
 	for room in layout.rooms:
-		_add_zone(room.id, room.get_rect(), order, zone_cells, floor_cells)
+		_add_zone(room.id, room.get_cells(), order, zone_cells, floor_cells)
 	for corridor in layout.corridors:
-		_add_zone(corridor.id, corridor.get_zone_rect(), order, zone_cells, floor_cells)
+		_add_zone(corridor.id, _rect_cells(corridor.get_zone_rect()), order, zone_cells, floor_cells)
 	for id in order:
 		zones[id] = {"floor": {}, "walls": {}, "decor": {}, "under": {}, "features": {}}
 
@@ -104,14 +104,31 @@ static func build_plan(layout: MapLayout, config: MapVisualConfig) -> Dictionary
 	return {"zones": zones}
 
 
-static func _add_zone(id: String, rect: Rect2i, order: Array[String], zone_cells: Dictionary, floor_cells: Dictionary) -> void:
+static func _add_zone(id: String, cells: Array[Vector2i], order: Array[String], zone_cells: Dictionary, floor_cells: Dictionary) -> void:
 	order.append(id)
+	for cell in cells:
+		floor_cells[cell] = id
+	zone_cells[id] = cells
+
+
+static func _rect_cells(rect: Rect2i) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	for x in range(rect.position.x, rect.end.x):
 		for y in range(rect.position.y, rect.end.y):
 			cells.append(Vector2i(x, y))
-			floor_cells[Vector2i(x, y)] = id
-	zone_cells[id] = cells
+	return cells
+
+
+## Room tile on its own edge: a 4-neighbour is outside the room's shape (wall, cut-out or corridor).
+static func _room_edge(room: RoomData, tile: Vector2i) -> bool:
+	for d: Vector2i in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
+		if not room.has_cell(_cell_of(tile + d)):
+			return true
+	return false
+
+
+static func _cell_of(tile: Vector2i) -> Vector2i:
+	return Vector2i((Vector2(tile) / T).floor())
 
 
 ## cell -> zone id  =>  tile -> zone id (each cell is T x T tiles).
@@ -210,9 +227,9 @@ static func _plan_props(layout: MapLayout, config: MapVisualConfig, zones: Dicti
 		var ring: Array[Vector2i] = []
 		for x in range(rect.position.x, rect.end.x):
 			for y in range(rect.position.y, rect.end.y):
-				var on_ring := x == rect.position.x or y == rect.position.y or x == rect.end.x - 1 or y == rect.end.y - 1
-				if on_ring and not _touches_outside_floor(Vector2i(x, y), rect, floor_tiles):
-					ring.append(Vector2i(x, y))
+				var tile := Vector2i(x, y)
+				if room.has_cell(_cell_of(tile)) and _room_edge(room, tile) and not _touches_outside_floor(tile, room, floor_tiles):
+					ring.append(tile)
 		var decor: Dictionary = zones[room.id]["decor"]
 		for tile in ring:
 			if rng.randf() < config.prop_density:
@@ -225,10 +242,10 @@ static func _plan_props(layout: MapLayout, config: MapVisualConfig, zones: Dicti
 				decor[tile] = DungeonTiles.tile(DungeonTiles.SRC_PROPS, visual.decor_props[type_rng.randi() % visual.decor_props.size()])
 
 
-static func _touches_outside_floor(tile: Vector2i, rect: Rect2i, floor_tiles: Dictionary) -> bool:
+static func _touches_outside_floor(tile: Vector2i, room: RoomData, floor_tiles: Dictionary) -> bool:
 	for d in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
 		var n: Vector2i = tile + d
-		if not rect.has_point(n) and floor_tiles.has(n):
+		if not room.has_cell(_cell_of(n)) and floor_tiles.has(n):
 			return true
 	return false
 
@@ -262,7 +279,7 @@ static func _plan_interior(layout: MapLayout, zones: Dictionary) -> void:
 		match _pick_interior(rng):
 			Interior.COLUMNS: _plan_columns(rect, blocked, zone)
 			Interior.PIT: _plan_pit(rect, blocked, zone, rng)
-			Interior.RUG: _plan_rug(rect, zone)
+			Interior.RUG: _plan_rug(room, rect, zone)
 			Interior.SLABS: _plan_slabs(layout, room, zone, rng)
 		_plan_rubble(rect, blocked, zone, rng)
 
@@ -279,7 +296,7 @@ static func _pick_interior(rng: RandomNumberGenerator) -> Interior:
 	return Interior.NONE
 
 
-## Tiles of the room where nothing solid may go: the outer tile ring (props, corridor
+## Tiles of the room where nothing solid may go: cut-outs and the edge tile ring (props, corridor
 ## mouths), the top band, the centre block and every tile within WALK_MARGIN of the walk
 ## line heroes tween along (corridor zone centre -> room centre, MoveAction).
 static func interior_blocked(layout: MapLayout, room: RoomData) -> Dictionary:
@@ -287,9 +304,9 @@ static func interior_blocked(layout: MapLayout, room: RoomData) -> Dictionary:
 	var blocked: Dictionary = {}
 	for x in range(rect.position.x, rect.end.x):
 		for y in range(rect.position.y, rect.end.y):
-			var on_ring := x == rect.position.x or y == rect.position.y or x == rect.end.x - 1 or y == rect.end.y - 1
-			if on_ring or y < rect.position.y + TOP_BAND:
-				blocked[Vector2i(x, y)] = true
+			var tile := Vector2i(x, y)
+			if y < rect.position.y + TOP_BAND or not room.has_cell(_cell_of(tile)) or _room_edge(room, tile):
+				blocked[tile] = true
 	var centre := rect.position + rect.size / 2
 	for x in range(CENTRE_BLOCK.position.x, CENTRE_BLOCK.end.x):
 		for y in range(CENTRE_BLOCK.position.y, CENTRE_BLOCK.end.y):
@@ -386,11 +403,23 @@ static func _plan_pit(rect: Rect2i, blocked: Dictionary, zone: Dictionary, rng: 
 
 
 ## Rug centred on the room, 2-tile margin, at most RUG_MAX tiles (needs 4x4); never over the stairs.
-static func _plan_rug(rect: Rect2i, zone: Dictionary) -> void:
+## The rug and a 1-tile margin around it stay inside the room's shape (cut corners).
+static func _rug_fits(room: RoomData, rug: Rect2i) -> bool:
+	for x in range(rug.position.x - 1, rug.end.x + 1):
+		for y in range(rug.position.y - 1, rug.end.y + 1):
+			if not room.has_cell(_cell_of(Vector2i(x, y))):
+				return false
+	return true
+
+
+static func _plan_rug(room: RoomData, rect: Rect2i, zone: Dictionary) -> void:
 	var size := (rect.size - Vector2i(4, 4)).min(RUG_MAX)
+	var rug := Rect2i(rect.position + (rect.size - size) / 2, size)
+	while size.x >= 4 and size.y >= 4 and not _rug_fits(room, rug):
+		size -= Vector2i(2, 2)
+		rug = Rect2i(rect.position + (rect.size - size) / 2, size)
 	if size.x < 4 or size.y < 4:
 		return
-	var rug := Rect2i(rect.position + (rect.size - size) / 2, size)
 	for x in range(rug.position.x, rug.end.x):
 		for y in range(rug.position.y, rug.end.y):
 			var row := 0 if y == rug.position.y else (2 if y == rug.end.y - 1 else 1)
@@ -403,7 +432,7 @@ static func _plan_slabs(layout: MapLayout, room: RoomData, zone: Dictionary, rng
 	var cells := lane_cells(layout, room)
 	var centre := room.pos + room.size / 2
 	for d in DIRS8:
-		if room.get_rect().has_point(centre + d):
+		if room.has_cell(centre + d):
 			cells.append(centre + d)
 	for cell in cells:
 		for tx in T:
@@ -414,8 +443,8 @@ static func _plan_slabs(layout: MapLayout, room: RoomData, zone: Dictionary, rng
 
 static func _set_floor(zone: Dictionary, tile: Vector2i, value: Vector4i) -> void:
 	var current: Vector4i = zone["floor"].get(tile, Vector4i(-1, 0, 0, 0))
-	if current.x == DungeonTiles.SRC_SHEET and Vector2i(current.y, current.z) == DungeonTiles.STAIRS:
-		return
+	if current.x == -1 or (current.x == DungeonTiles.SRC_SHEET and Vector2i(current.y, current.z) == DungeonTiles.STAIRS):
+		return  # not this room's floor (cut-out) or the exit stairs
 	zone["floor"][tile] = value
 
 

@@ -64,7 +64,7 @@ func _run(label: String, s: int, floor_index: int, use_fallback: bool) -> void:
 		for x in range(rect.position.x, rect.end.x):
 			for y in range(rect.position.y, rect.end.y):
 				var edge := x == rect.position.x or y == rect.position.y or x == rect.end.x - 1 or y == rect.end.y - 1
-				if edge:
+				if edge and room.has_cell(Vector2i(x, y)):  # mazmorra-31: cut corners are not the room
 					_expect_cell(main2d, room_manager, tile, Vector2i(x, y), zone, "%s room '%s' edge" % [label, room.id])
 
 	main2d.queue_free()

@@ -9,7 +9,8 @@ class_name MapGenerator
 ## Start = first room; exit = the room farthest from it (so the start->exit
 ## path always exists and is the longest one).
 ## mazmorra-31: rooms up to 7x7 inside a 9-cell slot (12 proportions); the gap
-## between two 7-wide rooms is still a door cell + 1 corridor cell.
+## between two 7-wide rooms is still a door cell + 1 corridor cell. assign_shapes() (own
+## salted RNG, last pass) cuts corners off a third of the rooms: cut corners, L or cross.
 ##
 ## Session 11: generate() stays the tree, byte-for-byte (same RNG stream).
 ## Loops and room types are separate post-passes with their own salted RNGs,
@@ -22,7 +23,9 @@ const MAX_ROOM_SIZE := 7
 const START_SIZE := Vector2i(5, 5)
 const ROOM_SIZES: Array[Vector2i] = [
 	Vector2i(3, 3), Vector2i(4, 4), Vector2i(5, 5), Vector2i(6, 6), Vector2i(5, 3), Vector2i(3, 5),
-	Vector2i(6, 4), Vector2i(4, 6), Vector2i(7, 5), Vector2i(5, 7), Vector2i(7, 4), Vector2i(4, 7)]
+	Vector2i(6, 4), Vector2i(4, 6), Vector2i(7, 5), Vector2i(5, 7), Vector2i(7, 4), Vector2i(4, 7), Vector2i(7, 7)]
+## Share of rooms (never the start nor the secret one) that get a shape.
+const SHAPE_CHANCE := 1.0 / 3.0
 const DIRS: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP]
 const MAX_ATTEMPTS := 500
 
@@ -77,6 +80,7 @@ static func generate_floor(p_seed: int, config: FloorConfig, floor_index: int) -
 	add_loops(layout, config.loop_chance(floor_index), config.max_loops(floor_index))
 	assign_room_types(layout, config.room_types, floor_index)
 	add_secret_room(layout, config.secret_room_chance)
+	assign_shapes(layout)
 	return layout
 
 
@@ -132,6 +136,52 @@ static func add_secret_room(layout: MapLayout, chance: float) -> void:
 		layout.rooms.pop_back()
 		layout.corridors.pop_back()
 		layout.corridors.pop_back()
+
+
+## mazmorra-31: with `chance`, a room (>= 4x4, not the start, not secret) gets corner
+## cut-outs: cut corners (1 cell each), an L (one big corner) or a cross (four big
+## corners, arms >= 2 cells), picked evenly among those that fit. shape_ok() keeps the
+## centre row/column (corridor lanes) and the centre block (build slots, Relic, chest,
+## cage, altar, heroes; same px box as MapTileRenderer.CENTRE_BLOCK) whole.
+static func assign_shapes(layout: MapLayout, chance: float = SHAPE_CHANCE) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([layout.map_seed, "shapes"])
+	for room in layout.rooms:
+		room.corner_cuts = Vector4i.ZERO
+		if room.is_start or room.room_type == RoomData.RoomType.SECRET or mini(room.size.x, room.size.y) < 4 or rng.randf() >= chance:
+			continue
+		var options: Array[Vector4i] = []
+		if shape_ok(room.size, Vector4i.ONE):
+			options.append(Vector4i.ONE)
+		var ells: Array[Vector4i] = []
+		for corner in 4:
+			for k in range(mini(room.size.x, room.size.y) / 2, 1, -1):
+				var cuts := Vector4i.ZERO
+				cuts[corner] = k
+				if shape_ok(room.size, cuts):
+					ells.append(cuts)
+					break
+		if not ells.is_empty():
+			options.append(ells[rng.randi() % ells.size()])
+		for k in range(mini(room.size.x, room.size.y) / 2, 1, -1):
+			if room.size.x - 2 * k >= 2 and room.size.y - 2 * k >= 2 and shape_ok(room.size, Vector4i(k, k, k, k)):
+				options.append(Vector4i(k, k, k, k))
+				break
+		if not options.is_empty():
+			room.corner_cuts = options[rng.randi() % options.size()]
+
+
+## Corner cuts that leave the centre row and column and the centre block (-64..64 px x,
+## -128..64 px y around the centre) whole.
+static func shape_ok(size: Vector2i, cuts: Vector4i) -> bool:
+	var centre := Vector2(size) / 2.0
+	for x in size.x:
+		for y in size.y:
+			var on_cross := x == size.x / 2 or y == size.y / 2
+			var in_block := x + 1 > centre.x - 1.0 and x < centre.x + 1.0 and y + 1 > centre.y - 2.0 and y < centre.y + 1.0
+			if (on_cross or in_block) and RoomData.in_cut(Vector2i(x, y), size, cuts):
+				return false
+	return true
 
 
 ## Up to `max_loops` extra corridors, each slot rolling `loop_chance`.

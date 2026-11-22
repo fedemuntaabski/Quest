@@ -95,6 +95,10 @@ func validate() -> Array[String]:
 					problems.append("'%s' overlaps '%s' at %s" % [shape[0], owner[cell], cell])
 				owner[cell] = shape[0]
 
+	for room in rooms:
+		if room.corner_cuts != Vector4i.ZERO and not MapGenerator.shape_ok(room.size, room.corner_cuts):
+			problems.append("room '%s' corner cuts %s block its centre or lanes" % [room.id, room.corner_cuts])
+
 	var reached: Dictionary = {get_start_room_id(): true}
 	var frontier: Array[String] = [get_start_room_id()]
 	while not frontier.is_empty():

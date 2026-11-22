@@ -111,3 +111,6 @@ assets/art/_rejected/vfx/
 
 # Logs del editor/juego
 godot_debug_output.txt
+
+# Capturas de sesión (antes/después), locales: no se versionan (pesan ~100 MB por sesión)
+/capturas/

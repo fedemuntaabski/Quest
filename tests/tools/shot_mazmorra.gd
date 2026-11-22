@@ -62,7 +62,8 @@ func _initialize() -> void:
 	quit()
 
 
-## "types": one close shot per room type present (lit), named <prefix>type_<TYPE>.png.
+## "types": one close shot per room type present (lit), named <prefix>type_<TYPE>.png, and
+## one per room shape (mazmorra-31), <prefix>shape_<corners|L|cross>.png.
 func _type_shots(main2d: Node, camera: Camera2D, prefix: String, size: Vector2i) -> void:
 	var done := {}
 	for room: RoomData in main2d.map_layout.rooms:
@@ -73,6 +74,17 @@ func _type_shots(main2d: Node, camera: Camera2D, prefix: String, size: Vector2i)
 		camera.position = main2d.room_manager.get_center(room.id)
 		camera.zoom = Vector2.ONE * 2.4 * size.y / 720.0
 		await _save(prefix + "type_%s.png" % type_name, main2d)
+	for room: RoomData in main2d.map_layout.rooms:
+		var cuts := room.corner_cuts
+		if cuts == Vector4i.ZERO:
+			continue
+		var shape_name := "corners" if cuts == Vector4i.ONE else ("cross" if cuts.x > 0 and cuts.z > 0 else "L")
+		if done.has(shape_name):
+			continue
+		done[shape_name] = true
+		camera.position = main2d.room_manager.get_center(room.id)
+		camera.zoom = Vector2.ONE * 2.0 * size.y / 720.0
+		await _save(prefix + "shape_%s.png" % shape_name, main2d)
 
 
 func _save(path: String, main2d: Node) -> void:

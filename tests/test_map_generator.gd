@@ -12,6 +12,9 @@ const SPECIAL_TYPES := [RoomData.RoomType.REST, RoomData.RoomType.LOOT, RoomData
 var failures: Array[String] = []
 var secrets_seen := 0
 var sizes_seen: Dictionary = {}
+var shapes_seen := {"corners": 0, "L": 0, "cross": 0}
+var shape_rooms := 0
+var eligible_rooms := 0
 
 
 func _init() -> void:
@@ -43,6 +46,13 @@ func _init() -> void:
 	for size in MapGenerator.ROOM_SIZES:
 		if not sizes_seen.has(size):
 			failures.append("room size %s never generated" % size)
+	for kind in shapes_seen:
+		if shapes_seen[kind] == 0:
+			failures.append("room shape %s never generated" % kind)
+	var share := float(shape_rooms) / maxi(eligible_rooms, 1)
+	if share < 0.25 or share > 0.42:
+		failures.append("shaped rooms %.2f of eligible ones, want ~1/3" % share)
+	print("shapes: %s, %.2f of eligible rooms" % [shapes_seen, share])
 	if maps_with_loops == 0:
 		failures.append("no generated map got a loop")
 	if secrets_seen == 0:
@@ -110,6 +120,32 @@ func _check_layout(layout: MapLayout, tree: MapLayout, config: FloorConfig, floo
 				or inset.x + room.size.x > MapGenerator.MAX_ROOM_SIZE or inset.y + room.size.y > MapGenerator.MAX_ROOM_SIZE \
 				or lane < inset.x or lane >= inset.x + room.size.x or lane < inset.y or lane >= inset.y + room.size.y:
 			failures.append("%s: room %s size %s at inset %s breaks the slot box" % [where, room.id, room.size, inset])
+		# Shapes: never the start or the secret room; the cell next to every corridor stays floor.
+		var cuts := room.corner_cuts
+		if (room.is_start or room.room_type == RoomData.RoomType.SECRET) and cuts != Vector4i.ZERO:
+			failures.append("%s: %s room %s has a shape" % [where, "start" if room.is_start else "secret", room.id])
+		if not room.is_start and room.room_type != RoomData.RoomType.SECRET and mini(room.size.x, room.size.y) >= 4:
+			eligible_rooms += 1
+		if cuts != Vector4i.ZERO:
+			shape_rooms += 1
+			if cuts == Vector4i.ONE:
+				shapes_seen["corners"] += 1
+			elif cuts.x == cuts.y and cuts.y == cuts.z and cuts.z == cuts.w:
+				shapes_seen["cross"] += 1
+			elif [cuts.x, cuts.y, cuts.z, cuts.w].count(0) == 3:
+				shapes_seen["L"] += 1
+			else:
+				failures.append("%s: room %s has odd cuts %s" % [where, room.id, cuts])
+			for corridor in layout.corridors:
+				if corridor.room_a != room.id and corridor.room_b != room.id:
+					continue
+				var zr := corridor.get_zone_rect()
+				for x in range(zr.position.x - 1, zr.end.x + 1):
+					for y in range(zr.position.y - 1, zr.end.y + 1):
+						var cell := Vector2i(x, y)
+						var beside := zr.has_point(cell + Vector2i(1, 0)) or zr.has_point(cell - Vector2i(1, 0)) or zr.has_point(cell + Vector2i(0, 1)) or zr.has_point(cell - Vector2i(0, 1))
+						if beside and not zr.has_point(cell) and room.get_rect().has_point(cell) and not room.has_cell(cell):
+							failures.append("%s: corridor %s opens onto a cut corner of %s" % [where, corridor.id, room.id])
 		if room.is_start and room.size != MapGenerator.START_SIZE:
 			failures.append("%s: start room is %s" % [where, room.size])
 	for corridor in layout.corridors:

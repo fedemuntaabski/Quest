@@ -19,10 +19,47 @@ enum RoomType { COMBAT, START, EXIT, REST, LOOT, ELITE, WORKSHOP, PRISONER, ALTA
 @export var neighbors: PackedStringArray = PackedStringArray()
 @export var is_start: bool = false
 @export var is_exit: bool = false
+## mazmorra-31: square cut-outs at the corners, in cells (x = top-left, y = top-right,
+## z = bottom-right, w = bottom-left; MapGenerator.assign_shapes). get_rect() stays the
+## bounding box; the centre row and column are never cut (corridor lanes, centre objects).
+@export var corner_cuts: Vector4i = Vector4i.ZERO
 
 
 func get_rect() -> Rect2i:
 	return Rect2i(pos, size)
+
+
+func has_cell(cell: Vector2i) -> bool:
+	return get_rect().has_point(cell) and not in_cut(cell - pos, size, corner_cuts)
+
+
+func get_cells() -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for x in range(pos.x, pos.x + size.x):
+		for y in range(pos.y, pos.y + size.y):
+			if not in_cut(Vector2i(x, y) - pos, size, corner_cuts):
+				cells.append(Vector2i(x, y))
+	return cells
+
+
+## A cell (relative to the rect's top-left) inside one of the corner cut-outs.
+static func in_cut(local: Vector2i, rect_size: Vector2i, cuts: Vector4i) -> bool:
+	var far := rect_size - Vector2i.ONE - local
+	return (local.x < cuts.x and local.y < cuts.x) or (far.x < cuts.y and local.y < cuts.y) \
+		or (far.x < cuts.z and far.y < cuts.z) or (local.x < cuts.w and far.y < cuts.w)
+
+
+## Outline of a rect of rect_size with corner cut-outs, clockwise from the top-left,
+## relative to its top-left (same unit as rect_size and cuts).
+static func outline(rect_size: Vector2, cuts: Vector4) -> PackedVector2Array:
+	var w := rect_size.x
+	var h := rect_size.y
+	var points := PackedVector2Array()
+	points.append_array([Vector2(0, cuts.x), Vector2(cuts.x, cuts.x), Vector2(cuts.x, 0)] if cuts.x > 0 else [Vector2.ZERO])
+	points.append_array([Vector2(w - cuts.y, 0), Vector2(w - cuts.y, cuts.y), Vector2(w, cuts.y)] if cuts.y > 0 else [Vector2(w, 0)])
+	points.append_array([Vector2(w, h - cuts.z), Vector2(w - cuts.z, h - cuts.z), Vector2(w - cuts.z, h)] if cuts.z > 0 else [Vector2(w, h)])
+	points.append_array([Vector2(cuts.w, h), Vector2(cuts.w, h - cuts.w), Vector2(0, h - cuts.w)] if cuts.w > 0 else [Vector2(0, h)])
+	return points
 
 
 func get_room_type() -> RoomType:

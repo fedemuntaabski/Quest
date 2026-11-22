@@ -87,7 +87,7 @@ func build_from_map(layout: MapLayout) -> void:
 	_start_zone_id = layout.get_start_room_id()
 
 	for room in layout.rooms:
-		_add_zone(room.id, "room", room.get_rect(), room.id, room.is_exit, room.get_room_type())
+		_add_zone(room.id, "room", room.get_rect(), room.id, room.is_exit, room.get_room_type(), room.get_cells(), room.corner_cuts)
 		groups[room.id] = [] as Array[String]
 	for corridor in layout.corridors:
 		var group_id := corridor.id if corridor.is_loop else corridor.room_b
@@ -108,12 +108,14 @@ func build_from_map(layout: MapLayout) -> void:
 	QuestLogger.info(QuestLogger.Category.MAP, "RoomManager: built %d zones, %d groups (seed %d)." % [zones.size(), groups.size(), layout.map_seed])
 
 
-func _add_zone(zone_id: String, kind: String, rect: Rect2i, group_id: String, is_exit: bool, room_type: RoomData.RoomType = RoomData.RoomType.COMBAT) -> void:
+## mazmorra-31: rooms pass their real cells and corner cuts (rect = bounding box).
+func _add_zone(zone_id: String, kind: String, rect: Rect2i, group_id: String, is_exit: bool, room_type: RoomData.RoomType = RoomData.RoomType.COMBAT, cells: Array[Vector2i] = [], cuts: Vector4i = Vector4i.ZERO) -> void:
 	zones[zone_id] = {
 		"id": zone_id,
 		"kind": kind,
 		"rect": rect,
-		"cells": _rect_cells(rect),
+		"cells": cells if not cells.is_empty() else _rect_cells(rect),
+		"corner_cuts": cuts,
 		"center_position": (Vector2(rect.position) + Vector2(rect.size) / 2.0) * _tile_size(),
 		"neighbors": [],
 		"group_id": group_id,
@@ -137,7 +139,7 @@ func _spawn_zone_node(zone_id: String) -> void:
 	zone.name = zone_id
 	zone.position = record["center_position"]
 	add_child(zone)
-	zone.configure(zone_id, Vector2(rect.size) * _tile_size(), record["kind"])
+	zone.configure(zone_id, Vector2(rect.size) * _tile_size(), record["kind"], Vector4(record["corner_cuts"]) * _tile_size().x)
 	zone.center_position = record["center_position"]
 	zone.clicked.connect(func(z: RoomZone): zone_clicked.emit(z.zone_id))
 	zone.hovered.connect(func(z: RoomZone): zone_hovered.emit(z.zone_id))
@@ -245,10 +247,19 @@ func get_center(zone_id: String) -> Vector2:
 	return zones.get(zone_id, {}).get("center_position", Vector2.ZERO)
 
 
-## World point inside that zone's rect (a walking hero crossing into it).
+## World point inside that zone's shape (a walking hero crossing into it).
 func zone_has_point(zone_id: String, point: Vector2) -> bool:
-	var rect: Rect2i = zones.get(zone_id, {}).get("rect", Rect2i())
-	return Rect2(Vector2(rect.position) * _tile_size(), Vector2(rect.size) * _tile_size()).has_point(point)
+	var record: Dictionary = zones.get(zone_id, {})
+	var rect: Rect2i = record.get("rect", Rect2i())
+	if not Rect2(Vector2(rect.position) * _tile_size(), Vector2(rect.size) * _tile_size()).has_point(point):
+		return false
+	var cell := Vector2i((point / _tile_size()).floor())
+	return not RoomData.in_cut(cell - rect.position, rect.size, record.get("corner_cuts", Vector4i.ZERO))
+
+
+## Corner cut-outs of a room (cells; zero for rect rooms and corridors).
+func get_zone_cuts(zone_id: String) -> Vector4i:
+	return zones.get(zone_id, {}).get("corner_cuts", Vector4i.ZERO)
 
 
 func get_cells(zone_id: String) -> Array[Vector2i]:
