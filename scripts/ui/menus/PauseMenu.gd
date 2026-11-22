@@ -44,6 +44,7 @@ func _on_base_ready() -> void:
 		exit_confirm_dialog.canceled.connect(_on_exit_canceled)
 
 	_apply_theme()
+	_fit_panel_to_content()
 
 	animate_transitions = true
 	fade_duration_in = 0.22
@@ -182,6 +183,30 @@ func _apply_theme() -> void:
 		_style_button(bestiary_button)
 	if exit_button:
 		_style_button(exit_button, true)
+
+
+## menu-34: PausePanel is a plain Panel (fixed 560x500 in the .tscn) with PauseVBox centred by
+## anchors; at text scale 1.5 the box outgrew it (SALIR hung below the frame). The panel now
+## grows to the box's minimum size plus the .tscn margins, and follows later changes.
+var _panel_base_size := Vector2.ZERO
+var _panel_margin := Vector2.ZERO
+
+
+func _fit_panel_to_content() -> void:
+	var box := pause_panel.get_node_or_null("PauseVBox") as Control if pause_panel else null
+	if box == null:
+		return
+	_panel_base_size = pause_panel.custom_minimum_size
+	_panel_margin = _panel_base_size - (box.get_offset(SIDE_RIGHT) - box.get_offset(SIDE_LEFT)) * Vector2.RIGHT \
+		- (box.get_offset(SIDE_BOTTOM) - box.get_offset(SIDE_TOP)) * Vector2.DOWN
+	if not box.minimum_size_changed.is_connected(_on_pause_box_resized):
+		box.minimum_size_changed.connect(_on_pause_box_resized)
+	_on_pause_box_resized()
+
+
+func _on_pause_box_resized() -> void:
+	var box := pause_panel.get_node("PauseVBox") as Control
+	pause_panel.custom_minimum_size = _panel_base_size.max(box.get_combined_minimum_size() + _panel_margin)
 
 
 func _style_button(button: Button, danger: bool = false) -> void:
