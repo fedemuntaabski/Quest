@@ -34,7 +34,7 @@ python -m gdtoolkit.parser <files.gd>                           # gdparse (not o
 
 Godot on the dev machine: `E:\Descargas\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe`.
 
-Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` per area, one process each via `tests/run_all.gd` (logs in `user://test_logs`; 0 tests run = failure). `tests/support/ErrorProbe.gd` collects engine ERROR/WARNING. `tests/tools/` = real-window screenshots (`shot_*.gd`; `shot_barrido.gd` = every menu/HUD piece at 720p, 1080p, text ×1.5; `shot_mazmorra.gd` = maps), benches, net probes, `soak_runs.gd` (seeds × 5 floors with save/continue). `test_door_roll` takes ~4.5 min. Pause-tree/flow tests boot the real `Main`.
+Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` per area, one process each via `tests/run_all.gd` (logs in `user://test_logs`; 0 tests run = failure). `tests/support/ErrorProbe.gd` collects engine ERROR/WARNING. `tests/tools/` = real-window screenshots (`shot_*.gd`; `shot_barrido.gd` = every menu/HUD piece at 720p, 1080p, text ×1.5; `shot_mazmorra.gd` = maps; `recorrido_menu.gd` = menu walk with real clicks), benches, net probes, `soak_runs.gd` (seeds × 5 floors with save/continue). `test_door_roll` takes ~4.5 min. Pause-tree/flow tests boot the real `Main`.
 
 ## Gotchas (read before editing)
 
@@ -51,8 +51,9 @@ Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` pe
 - **Text size.** UI fonts go through `Accessibility.font(px)` (min 14 px base × text scale); only corner glyphs and world labels use `Accessibility.glyph(px)`. A Control under a `CanvasLayer` (HUD, every menu) doesn't inherit `root.theme`: `SettingsManager` also sets the engine default theme's size. Screens that may outgrow the card scroll (Opciones tabs, WaitingRoom).
 - **Logging**: `QuestLogger` (`scripts/core/utils/Logger.gd`), not `print()`; hot-path logs DEBUG (INFO ~1 ms with file logging).
 - **`ManagerLocator.get_main_orchestrator()` can be null** (scene run standalone): null-check and log.
-- **Signal 11 on exit (OK\*)** is a Godot 4.6.2 GDScript-teardown crash, not ours (evidence in `docs/PROGRESO_INTEGRACION.md`). Don't hunt it; re-measure on a new Godot.
+- **Signal 11 on exit (OK\*)**: Godot 4.6.2 GDScript-teardown crash, not ours (`docs/PROGRESO_INTEGRACION.md`); don't hunt it, re-measure on a new Godot.
 - **Licences.** Every `res://` art/font/audio path in `scenes/ resources/ scripts/ project.godot` must match the allowlist table in `docs/CREDITOS.md` (`test_licencias`). New asset → add its row with a verified licence. Unknown-licence packs are local-only and gitignored (`_source/items_sheets`, `_source/super_pixel_effects`, `_rejected/licencia/`); never reference them. Nothing at runtime may point into `assets/art/_source/` (originals only; `test_licencias` bans it so an export can drop it): copy the sheet to `assets/art/{tiles,...}/` first. `.import` files are gitignored.
+- **Global RNG.** Tests `seed()` then build a floor: nothing hidden may draw from the global RNG on creation (`CPUParticles2D` does; `MenuBackdrop` makes its embers on first show; `test_menu_estetica` checks).
 - Expected headless noise: Steam not running; `ObjectDB instances leaked` on `--quit-after`.
 
 ## Architecture
@@ -60,7 +61,7 @@ Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` pe
 ### Scene flow
 
 - `scenes/Main.tscn` / `scripts/run/Main.gd` = `run/main_scene`, the orchestrator (group `main_orchestrator`). Containers: `WorldContainer` (a `Main2d` per floor), `UIContainer` (menus), `HUDContainer` (a `HUD` per floor), `TransitionOverlay` (fades, `IntroScreen`). API: `show_main_menu`, `start_gameplay(floor, tutorial)`, `start_tutorial`, `continue_run`, `go_to_waiting_room`, `reload_gameplay` (Retry), `advance_floor`, `return_to_main_menu`. Never `change_scene_to_file`. `_begin_new_run()` resets resources, research, levels, inventory, `GameSession` run state, seen types. Floor counter and `run_seed` live here (`Main2d` is per floor).
-- Menus: `MainMenu` + `MainMenuFlow` (RefCounted): slot → (continue dialog) → network mode → `HeroSelectMenu` → gameplay; online goes through `WaitingRoom`.
+- Menus: `MainMenu` + `MainMenuFlow` (RefCounted): slot → (continue dialog) → network mode → `HeroSelectMenu` → gameplay; online goes through `WaitingRoom`. Look (menu-33): every menu screen styles itself in code through `UiStyles` (plaques, framed panels, titles, fields, tabs, hero cards) over a `MenuBackdrop`; no StyleBoxes in menu `.tscn`. Doc: `docs/MENUS.md`.
 - `scripts/run/Main2d.gd` builds the floor: `GameStateManager` (ACTIVE/PAUSED/DEAD/VICTORY), `DoorTurnSystem`, `FloorManager`, `RoomManager` from a `MapLayout`, one `Door` per corridor, heroes (`spawn_hero`), controllers (`HeroInputController`, `PauseController`, `LootSpawner`, `PrisonerSpawner`, `HazardSpawner`), `EnemyManager`, `ExtractionManager`, `ExitIndicator`, `Relic`, overlays (`DeathOverlay`/`VictoryOverlay`, base `EndScreenOverlay`). `is_tutorial()` → fallback layout + `Tutorial` node (`scripts/run/Tutorial.gd`, `STEPS` advance on real signals).
 
 ### Autoloads (`project.godot`)

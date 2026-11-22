@@ -110,6 +110,15 @@ Capturas guionadas en `capturas/mazmorra-32/`; nada visto jugando ni en movimien
 - [ ] Prisionero con el grupo lleno (co-op de 4, u offline tras rescatar a los dos): aparece un cofre y se abre al entrar.
 - [ ] FPS con 4 héroes y una oleada en el piso 5 (el bench midió ~1 ms de render extra en una GTX 1660 SUPER).
 
+## Menú nuevo (menu-33, 5 min, aparte)
+Capturas en `capturas/menu-33/` (`antes_despues_menus.png`) y un recorrido con clics reales (`tests/tools/recorrido_menu.gd`); falta mirarlo en movimiento con tus ojos.
+- [ ] Menú principal: ¿la llama de las antorchas y el pulso de la gema se ven naturales, no como una luz que late? ¿Las brasas molestan?
+- [ ] Mover el mouse: el fondo se desplaza apenas (parallax). ¿Marea o está bien?
+- [ ] Pasar por los botones: rombo que se enciende en llama + subrayado. Con teclado/mando (flechas) el foco se ve siempre.
+- [ ] Abrir cada subpantalla: el panel aparece y sus esquinas doradas se dibujan; el título del menú se desvanece.
+- [ ] Opciones → Accesibilidad → "Reducir destellos": las llamas del fondo y del marcador quedan fijas.
+- [ ] Sala de espera: sigue con su fondo viejo (tinte frío); si generás `sala_espera.png` con el mismo estilo, reemplaza a `Lobby Multijugador.png`.
+
 ## Fuera de esta prueba
 Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.
 

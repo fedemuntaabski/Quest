@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## session/menu-33
+- Menú principal nuevo: la cripta con la Reliquia en el altar, antorchas que parpadean, brasas que suben y un leve movimiento con el mouse. Título arriba a la izquierda y los botones en columna, como placas de piedra con borde dorado; al pasar el mouse o con el teclado se enciende una pequeña llama al costado.
+- Ranuras, modo de juego, selección de héroes, Opciones, Créditos, sala de espera, pausa y diálogos con el mismo marco de esquinas doradas. Selección de héroes con fondo de armería y Opciones con el estudio del escriba.
+- Las cartas de héroe se iluminan en dorado al elegirlas.
+
 ## session/mazmorra-32
 - La celda del Prisionero ya no queda vacía: si el grupo está lleno o no queda nadie a quien rescatar, el prisionero dejó un cofre con un objeto.
 - Decoración nueva dibujada para el juego: antorchas y braseros que arden, velas, estanterías, cadenas, grilletes, huesos, telarañas, grietas, charcos, sangre, musgo y catres. Cada tipo de sala tiene la suya (catres y brasero en Descanso, cadenas en Prisionero, velas en el Altar, musgo en la Secreta, sangre y huesos en Élite).
