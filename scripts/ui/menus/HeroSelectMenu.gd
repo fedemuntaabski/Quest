@@ -264,7 +264,7 @@ func _build_preview_panel() -> PanelContainer:
 	pad.add_child(box)
 
 	_preview_holder = Control.new()
-	_preview_holder.custom_minimum_size = Vector2(0, 240)
+	_preview_holder.custom_minimum_size = Vector2(0, 180)  # juego-35: room for both ability texts at text x1.5
 	_preview_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_preview_holder.resized.connect(_center_preview)
 	box.add_child(_preview_holder)
@@ -343,7 +343,7 @@ func _show_preview(hero_id: String) -> void:
 		var anim: StringName = &"idle" if frames.has_animation("idle") else frames.get_animation_names()[0]
 		_preview_sprite.play(anim)
 	_preview_name.text = "%s — %s" % [data.display_name, data.role] if data.role != "" else data.display_name
-	_preview_info.text = "Vida: %d\nAtaque: %d\nIntervalo: %.1f s\n\nPasiva — %s\n%s\n\nActiva — %s\n%s" % [
+	_preview_info.text = "Vida %d · Ataque %d · Intervalo %.1f s\n\nPasiva — %s\n%s\n\nActiva — %s\n%s" % [
 		data.base_hp, data.attack_damage, data.attack_interval,
 		data.passive_ability_name, _ability_text(data.passive, data.passive_ability_desc),
 		data.active_ability_name, _ability_text(data.active, ""),

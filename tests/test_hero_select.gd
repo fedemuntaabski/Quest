@@ -23,6 +23,7 @@ func _initialize() -> void:
 
 	_check_session()
 	await _check_menu()
+	await _check_fit_big_text()
 	await _check_spawn(["rogue", "tank"])
 	await _check_spawn(["mage", "warrior"])
 	await _check_default()
@@ -45,6 +46,34 @@ func _ids(list: Array) -> Array[String]:
 	for id in list:
 		out.append(id)
 	return out
+
+
+## juego-35: with both ability texts the sheet grew; at the max text scale every hero's
+## sheet must leave the picked slots and the bottom buttons on screen.
+func _check_fit_big_text() -> void:
+	var settings := root.get_node("SettingsManager")
+	var old_scale: float = settings.text_scale
+	settings.text_scale = settings.TEXT_SCALE_MAX
+	var menu := (load(MENU_PATH) as PackedScene).instantiate() as HeroSelectMenu
+	root.add_child(menu)
+	menu.open()
+	await process_frame
+	await process_frame
+	var screen := root.get_visible_rect()
+	var panel := menu._preview_info.get_parent()
+	while panel and not (panel is PanelContainer):
+		panel = panel.get_parent()
+	for data: CharacterData in CharacterDatabase.get_all():
+		menu._show_preview(data.character_id)
+		await process_frame
+		await process_frame
+		for btn: Button in [menu.back_button, menu.start_button]:
+			_expect(screen.encloses(btn.get_global_rect()), "x%.1f text, %s sheet: '%s' off screen (%s in %s)" % [settings.TEXT_SCALE_MAX, data.character_id, btn.text, btn.get_global_rect(), screen])
+		_expect((panel as Control).get_global_rect().end.y <= menu._slots[0].get_global_rect().position.y,
+			"x%.1f text, %s sheet runs over the picked slots (sheet %s, slot %s, screen %s)" % [settings.TEXT_SCALE_MAX, data.character_id, (panel as Control).get_global_rect(), menu._slots[0].get_global_rect(), screen])
+	menu.queue_free()
+	settings.text_scale = old_scale
+	await process_frame
 
 
 # ---------------- GameSession ----------------
@@ -101,7 +130,7 @@ func _check_menu() -> void:
 	_expect(menu._preview_sprite.sprite_frames == frames and menu._preview_sprite.animation == &"idle", "preview should play the hero's idle")
 	_expect(menu._preview_sprite.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "preview must use Nearest")
 	var tank_hp: int = CharacterDatabase.get_by_id("tank").base_hp
-	_expect(menu._preview_info.text.contains("Vida: %d" % tank_hp), "preview stats: %s" % menu._preview_info.text)
+	_expect(menu._preview_info.text.contains("Vida %d" % tank_hp), "preview stats: %s" % menu._preview_info.text)
 	# juego-35: both abilities read their own text with the real numbers (duration, cooldown).
 	var tank_data := CharacterDatabase.get_by_id("tank")
 	_expect(menu._preview_info.text.contains(tank_data.active.format_description()) and menu._preview_info.text.contains(tank_data.passive.format_description()),
