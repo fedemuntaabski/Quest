@@ -346,7 +346,9 @@ func _register_groups_and_doors() -> void:
 		door.target_room_id = room_manager.get_group_id(corridor.id)
 		door.from_zone_id = corridor.room_a
 		door.cell = corridor.door_cell
-		door.east_west = corridor.is_east_west(map_layout.get_room(corridor.room_a))
+		var room_a := map_layout.get_room(corridor.room_a)
+		door.east_west = corridor.is_east_west(room_a)
+		door.faces_east = room_a.pos.x < corridor.door_cell.x
 		door.is_secret = corridor.is_secret
 		doors_root.add_child(door)
 		room_manager.register_door(door)

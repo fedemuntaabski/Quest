@@ -108,9 +108,16 @@ func _run(label: String, s: int, floor_index: int, use_fallback: bool) -> void:
 		orientations[heading] = int(orientations.get(heading, 0)) + 1
 		if door.east_west != east_west:
 			failures.append("%s: Door.east_west %s != %s" % [where, door.east_west, east_west])
-		var flipped := door.leaf.transform.x.is_equal_approx(Vector2(0, ArtConfig.ART_SCALE))
-		if flipped != east_west:
-			failures.append("%s: leaf transposed=%s but corridor east_west=%s" % [where, flipped, east_west])
+		# juego-35: turned, never mirrored; the arch (art top = -y) points away from room_a.
+		var t := door.leaf.transform
+		var arch := (t * Vector2(0, -1)).normalized()
+		var want: Vector2 = {"E": Vector2.RIGHT, "W": Vector2.LEFT, "N": Vector2.UP, "S": Vector2.UP}[heading]
+		if t.determinant() <= 0.0:
+			failures.append("%s: leaf mirrored (determinant %.1f)" % [where, t.determinant()])
+		if not arch.is_equal_approx(want):
+			failures.append("%s (%s): leaf arch points %s, want %s" % [where, heading, arch, want])
+		if not t.get_scale().is_equal_approx(Vector2.ONE * ArtConfig.ART_SCALE):
+			failures.append("%s: leaf scale %s" % [where, t.get_scale()])
 
 	main2d.queue_free()
 	await process_frame

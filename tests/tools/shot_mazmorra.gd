@@ -29,6 +29,11 @@ func _initialize() -> void:
 		for group_id in rm.get_group_ids():
 			if not doors.is_room_visited(group_id) and doors.open_room(group_id):
 				opened = true
+	if args.size() > 4 and args[4] == "doors":
+		await _door_shots(main2d, out_dir.path_join("s%d_f%d_" % [run_seed, floor_index]), size)
+		print("saved door shots")
+		quit()
+		return
 	for door in rm.get_all_doors():
 		door.disable_door()
 	rm.refresh_door_visibility()
@@ -85,6 +90,37 @@ func _type_shots(main2d: Node, camera: Camera2D, prefix: String, size: Vector2i)
 		camera.position = main2d.room_manager.get_center(room.id)
 		camera.zoom = Vector2.ONE * 2.0 * size.y / 720.0
 		await _save(prefix + "shape_%s.png" % shape_name, main2d)
+
+
+## juego-35 "doors": every room lit, one door per side of its room (N/S/E/W), shot up
+## close closed and then open: <prefix>door_<side>_{closed,open}.png.
+func _door_shots(main2d: Node, prefix: String, size: Vector2i) -> void:
+	var rm: RoomManager = main2d.room_manager
+	for zone_id in rm.get_zone_ids():
+		var node := rm.get_zone_node(zone_id)
+		if node and node.kind == "room":
+			node.apply_light(true, 0)
+	rm.refresh_door_visibility()
+	var picks := {}
+	for door in rm.get_all_doors():
+		if door.is_secret:
+			continue
+		var d := door.global_position - rm.get_center(door.from_zone_id)
+		var side := ("E" if d.x > 0.0 else "W") if absf(d.x) > absf(d.y) else ("S" if d.y > 0.0 else "N")
+		if not picks.has(side):
+			picks[side] = door
+	var camera := Camera2D.new()
+	main2d.add_child(camera)
+	camera.make_current()
+	camera.zoom = Vector2.ONE * 3.0 * size.y / 720.0
+	await create_timer(1.0).timeout
+	for side in picks:
+		camera.position = picks[side].global_position
+		await _save(prefix + "door_%s_closed.png" % side, main2d)
+	for side in picks:
+		picks[side].disable_door()
+		camera.position = picks[side].global_position
+		await _save(prefix + "door_%s_open.png" % side, main2d)
 
 
 func _save(path: String, main2d: Node) -> void:

@@ -19,8 +19,12 @@ signal door_clicked(door: Door)
 var room_a_id: String = ""
 var room_b_id: String = ""
 
-## Set before add_child(): the leaf art is drawn transposed on E-W corridors.
+## Set before add_child(): on E-W corridors the leaf is turned a quarter, its top (the
+## arch) away from room_a: right when the corridor leaves east, left when west.
+## juego-35: it used to be transposed, i.e. also mirrored (hinges on top, east and west
+## doors arched on the same side), which the owner saw as "doors turned the wrong way".
 var east_west: bool = false
+var faces_east: bool = false
 
 var is_open: bool = false
 ## progresion-10: secret-room door (CorridorData.is_secret): hidden until its group
@@ -41,7 +45,8 @@ func _ready() -> void:
 	leaf.texture = AtlasTexture.new()
 	(leaf.texture as AtlasTexture).atlas = SHEET
 	var s := float(ArtConfig.ART_SCALE)
-	leaf.transform = Transform2D(Vector2(0, s), Vector2(s, 0), Vector2.ZERO) if east_west else Transform2D(Vector2(s, 0), Vector2(0, s), Vector2.ZERO)
+	var turn := (PI * 0.5 if faces_east else -PI * 0.5) if east_west else 0.0
+	leaf.transform = Transform2D(turn, Vector2(s, s), 0.0, Vector2.ZERO)
 	set_leaf(is_open)
 
 
