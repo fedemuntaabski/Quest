@@ -4,5 +4,7 @@
 
 [resource]
 script = ExtResource("1_config")
+alt_resource = "lore"
+alt_cost_mult = 2.0
 attack_speed_per_level = 0.05
 min_attack_interval = 0.3

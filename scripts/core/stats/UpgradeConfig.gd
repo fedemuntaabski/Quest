@@ -14,6 +14,10 @@ const LABELS := {
 }
 
 @export var cost_resource: String = "food"
+## juego-30: a level the cost_resource can't pay is paid in alt_resource instead, cost × alt_cost_mult
+## (rounded up; "" or 0 = off). Shipped: 2 Saber per Comida.
+@export var alt_resource: String = "lore"
+@export var alt_cost_mult: float = 2.0
 ## Level-ups per run (hero level 1 → 1 + max_level).
 @export var max_level: int = 5
 
@@ -53,6 +57,11 @@ func revive_cost(floor_index: int) -> int:
 
 func get_cost(level: int) -> int:
 	return roundi(base_cost * pow(cost_growth, maxi(level, 0)))
+
+
+## What the level costs in alt_resource (0 = no alternative).
+func alt_cost(level: int) -> int:
+	return 0 if alt_resource == "" else ceili(get_cost(level) * alt_cost_mult)
 
 
 func is_maxed(level: int) -> bool:

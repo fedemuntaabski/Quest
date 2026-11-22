@@ -100,7 +100,7 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 
 ### Escalado con mejoras (en partida)
 No hay XP ni persistencia entre partidas: solo **niveles de héroe** comprados con **Comida** en el popup del héroe (`PlayerStats.level_up_hero()`, `scripts/core/stats/PlayerStats.gd:221`; datos en `UpgradeConfig` + `resources/upgrades/run_upgrade_config.tres`). Se reinician cada partida (`Main._begin_new_run`), sobreviven a los pisos.
-- Hasta **5 niveles** (nivel 1 → 6). Costo en Comida: `round(8 × 1.4^nivel)` = **8, 11, 16, 22, 31** (88 en total).
+- Hasta **5 niveles** (nivel 1 → 6). Costo en Comida: `round(8 × 1.4^nivel)` = **8, 11, 16, 22, 31** (88 en total). Si la Comida no alcanza, el doble en Saber (juego-30: `UpgradeConfig.alt_resource`/`alt_cost_mult`, `PlayerStats._level_payment`).
 - Por nivel, los tres juntos: **+4 vida máx.** (y vida actual), **+1 daño**, intervalo de ataque **−5 %** del base por nivel (el `.tres` pisa el default de 10 %; mínimo 0.3 s, `.tres` pisa el default 0.2).
 - Vida máxima tope global: `StatBalance.PLAYER_MAX_HP = 60` (`StatBalance.gd:9`).
 - Investigación (`ResearchConfig`) no toca stats de héroes (solo obras, costo de encender y descubrimiento).

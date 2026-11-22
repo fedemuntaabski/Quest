@@ -6,7 +6,7 @@ Cuatro recursos, cada uno con un rol y al menos un sumidero. Números: `docs/BAL
 |---|---|---|---|
 | **Hierro** | Puertas (bono aleatorio), **Forja** (+3/puerta), cofres de sala Botín | Construir obras (costo creciente), **reparar** obras | Construye |
 | **Saber** | Puertas (bono), **Scriptorium** (+3/puerta), sala Élite, pasiva del Mago | **Investigar** (obras y bonos) | Investiga |
-| **Comida** | Puertas (bono), **Granja** (+3/puerta) | **Subir de nivel** héroes, **curar** héroes (`CharacterPopup`) | Nivel y vida |
+| **Comida** | Puertas (bono), **Granja** (+3/puerta) | **Subir de nivel** héroes (si falta, el doble en Saber), **curar** héroes (`CharacterPopup`) | Nivel y vida |
 | **Brasas** | Puertas (siempre), salas descubiertas, pasiva del Pícaro | **Energizar** salas (costo +2 por sala encendida) | Luz |
 
 "Ciclo" = una puerta abierta. El contador `+N` del HUD (`ResourceManager.get_turn_yield`) suma lo que pagan los talleres por ciclo.

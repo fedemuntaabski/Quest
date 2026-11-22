@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## session/juego-30
+- Si no alcanza la Comida para subir de nivel a un héroe, se paga con Saber: el doble (por ejemplo, 22 de Saber en vez de 11 de Comida). El botón muestra qué se va a pagar.
+- Rescatar a un prisionero también se puede pagar con 15 de Saber en el piso 1 (+5 por piso).
+- Versión 1.7: no se puede jugar en co-op con la 1.6.
+
 ## session/juego-29
 - Difícil: los enemigos pegan ×1,1 (antes ×1,25) y se empieza con los mismos recursos que en Normal. El piso 4 deja de ser una pared (pares: ganan el piso 4 el 28 %, antes el 11 %).
 - Rescatar a un prisionero cuesta 8 de Comida o 10 de Hierro en el piso 1 (antes 15 / 20), +5 por piso como antes.

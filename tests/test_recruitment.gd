@@ -1,8 +1,8 @@
 extends SceneTree
 
 ## heroes-9: Prisoner room recruitment over a live Main2d + HUD (fallback map).
-## A cage holds a hero the party didn't pick; freeing it costs Hierro or
-## Comida (RoomTypeRule.recruit_costs), adds the hero (portrait, F3/F4) and keeps
+## A cage holds a hero the party didn't pick; freeing it costs Hierro, Comida or
+## Saber (RoomTypeRule.recruit_costs), adds the hero (portrait, F3/F4) and keeps
 ## it on the next floors (GameSession.recruited_ids). The party caps at 4.
 ##   godot --headless --path . --script res://tests/test_recruitment.gd
 
@@ -55,7 +55,7 @@ func _check_recruit(main2d: Node, hud: HUDController) -> void:
 	_expect(cage.hero_id in ["rogue", "tank"], "the prisoner is a hero not picked: '%s'" % cage.hero_id)
 	var iron_cost: int = cage.costs.get("iron", 0)
 	var food_cost: int = cage.costs.get("food", 0)
-	_expect(iron_cost > 0 and food_cost > 0, "two prices (Hierro, Comida): %s" % [cage.costs])
+	_expect(iron_cost > 0 and food_cost > 0 and int(cage.costs.get("lore", 0)) > 0, "three prices (Hierro, Comida, Saber; juego-30): %s" % [cage.costs])
 
 	# Short of both: nothing happens.
 	_expect(not cage.free_with("iron") and main2d.heroes.size() == 2, "can't free without Hierro")
@@ -65,7 +65,7 @@ func _check_recruit(main2d: Node, hud: HUDController) -> void:
 		if button.has_meta("resource"):
 			price_buttons += 1
 			_expect(button.disabled, "price button enabled while unaffordable")
-	_expect(price_buttons == 2, "dialog offers both prices (%d)" % price_buttons)
+	_expect(price_buttons == 3, "dialog offers the three prices (%d)" % price_buttons)
 	cage.dialog.hide()
 
 	resources.add_resource("iron", iron_cost + 3)

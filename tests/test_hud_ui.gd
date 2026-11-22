@@ -136,6 +136,12 @@ func _check_live() -> void:
 	_expect(not ps.get_level_up_preview()["affordable"], "second level should be unaffordable at 7 food")
 	_expect(not ps.level_up_hero(), "level up with 7 food must fail")
 	_expect(ps.get_hero_level() == 2, "failed level up must not change the level")
+	# juego-30: short of Comida, the level is paid in Saber (2 per Comida: 11 -> 22).
+	resources.add_resource("lore", 12)
+	var alt: Dictionary = ps.get_level_up_preview()
+	_expect(alt["affordable"] and alt["cost_resource"] == "lore" and int(alt["cost"]) == 22, "Saber level preview: %s" % alt)
+	_expect(ps.level_up_hero() and ps.get_hero_level() == 3, "level up paid in Saber")
+	_expect(resources.get_resource("lore") == 0 and resources.get_resource("food") == 7, "Saber level spent lore %d / food %d" % [resources.get_resource("lore"), resources.get_resource("food")])
 	resources.add_resource("food", 1000)
 	_expect(ps.level_up_hero(), "level up with enough food")
 	while ps.level_up_hero():

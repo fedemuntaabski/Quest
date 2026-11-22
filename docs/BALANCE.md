@@ -776,3 +776,85 @@ La opción en Saber está inflada: el simulador solo gasta Saber en la Ballesta.
 Con lo elegido, rescatar uno da casi lo mismo que dos (Normal 55 / 47 / 21): el segundo rescate cuesta 13-30 según el piso y casi nunca alcanza. Que el recluta entre con el nivel del grupo suma 1-2 puntos.
 
 `test_balance` (50 corridas) fija los datos (Difícil daño 1,1 e inicio ×1, rescate 8 / 10 + 5) y: Difícil pares piso 3 ≥ 35 % (antes 25), piso 4 entre 18 y 40 % (antes ≤ 20), piso 5 ≤ 5 %; Difícil no gana a Normal en ningún piso (pares); los pares de Normal que rescatan hasta 2 tienen más de 2,3 héroes en el piso 3 y ganan los pisos 3-5 al menos tanto como sin rescatar (a 50 corridas: 1,26 contra 1,11). `test_difficulty_curve`: Difícil empieza con ×1.
+
+## La Investigación en el simulador y el piso 5 (session juego-30)
+Barrido: `tests/tools/sweep_juego30.gd -- <corridas> [1|2|3|4 [0|1]]` (1 = órdenes de Investigación; 2 = rescate también por Saber, con y sin Investigación; 3 = piso 5 por causa y «qué pasaría si»; 4 = palancas en memoria, el tercer argumento enciende la Investigación). «Qué pasaría si» nuevos en `BalanceSim.BOSS_PLAY`:
+- `research` = entradas de `research_config.tres` que se compran después de la Ballesta, en ese orden y con el Saber que haya. Hace falta un Scriptorium en ese piso y los requisitos previos. Si la siguiente no alcanza, se ahorra para ella. El efecto se lee como `ResourceManager.get_bonus`: rendimiento de Talleres, daño de Defensas, costo de luz y Brasas por sala. `BalanceSim.RESEARCH_ORDER` es el orden del modelo (Virotes, Cartografía, Yesca, Herramientas, Fuelles). Brasero y Catapulta no se compran: el simulador no construye trampas ni catapultas.
+- `lab_first` (por defecto sí): con Saber para la siguiente entrada y sin Scriptorium en el piso, la próxima sala encendida recibe el Scriptorium en lugar de su Ballesta.
+- `level_lore`: Saber por Comida para un nivel que la Comida no alcanza (−1 = `UpgradeConfig`; 0 = solo Comida, la regla anterior).
+
+`research` está apagado por defecto: las tablas publicadas siguen comprando solo la Ballesta.
+
+**Gastar el Saber como un jugador (antes de lo elegido, 200 corridas; pisos 3 / 4 / 5).**
+
+| Orden | Dificultad | Pares | Tríos (co-op 3) | Los 4 (co-op 4) | Pares que rescatan hasta 2 | Saber al final del 3 / 4 / 5 (pares) | Investigaciones (pares) |
+|---|---|---|---|---|---|---|---|
+| solo Ballesta (publicado) | Normal | 51 / 42 / 19 | 84 / 59 / 14 | 99 / 83 / 25 | 54 / 46 / 20 | 58 / 77 / 102 | 1 / 1 / 1 |
+| solo Ballesta (publicado) | Difícil | 45 / 28 / 3 | 68 / 24 / 2 | 83 / 29 / 1 | 46 / 28 / 5 | 58 / 74 / 96 | 1 / 1 / 1 |
+| Virotes primero (el modelo) | Normal | 44 / 37 / 17 | 81 / 56 / 15 | 97 / 82 / 18 | 51 / 44 / 20 | 22 / 32 / 50 | 3,9 / 4,9 / 5,6 |
+| Virotes primero (el modelo) | Difícil | 41 / 27 / 5 | 63 / 23 / 2 | 87 / 38 / 5 | 45 / 30 / 6 | 23 / 29 / 45 | 3,8 / 4,9 / 5,5 |
+| economía primero | Normal | 44 / 36 / 16 | 81 / 54 / 14 | 98 / 78 / 16 | 50 / 43 / 18 | 22 / 35 / 53 | 4,5 / 5,1 / 5,6 |
+| economía primero | Difícil | 40 / 24 / 4 | 61 / 20 / 2 | 79 / 29 / 1 | 43 / 28 / 5 | 22 / 31 / 46 | 4,4 / 5,1 / 5,5 |
+| economía primero, la Ballesta antes que el Scriptorium | Normal | 51 / 42 / 19 | 85 / 59 / 16 | 100 / 84 / 20 | 54 / 46 / 20 | 37 / 56 / 76 | 3,4 / 3,5 / 3,7 |
+| solo economía | Normal | 43 / 35 / 13 | 82 / 53 / 12 | 98 / 77 / 15 | 50 / 42 / 17 | 30 / 45 / 67 | 4,1 / 4,6 / 4,8 |
+| solo Virotes | Normal | 49 / 42 / 20 | 84 / 61 / 19 | 99 / 86 / 31 | 54 / 48 / 22 | 41 / 59 / 82 | 1,8 / 2 / 2 |
+| solo Virotes | Difícil | 45 / 29 / 5 | 71 / 27 / 3 | 86 / 36 / 2 | 47 / 32 / 6 | 40 / 57 / 77 | 1,8 / 2 / 2 |
+
+**Lectura.** Comprar toda la Investigación no mejora la partida; la baja hasta 7 puntos en el piso 3. La de economía no paga lo que cuesta: +1 Brasa por sala, −3 a la luz y +25 % de 3 por Taller (= +1). Lo que falta es Hierro y Comida, no Brasas. Además, el Scriptorium de cada piso ocupa la sala de una Ballesta o de una Granja. Si la Ballesta va primero, casi no se construye Scriptorium después del piso 1 y el resultado queda como el publicado. Solo los Virotes (+10 de daño a la Ballesta, +67 %) suman: los 4 en co-op pasan de 25 a 31 % en el piso 5. Aun gastándolo todo sobran 20-50 de Saber al final del piso 5, y más con el Mago (75-80, por su pasiva).
+
+**Rescate también por 15 Saber (+5 por piso), pares sin conexión, hasta 2 (antes de lo elegido; pisos 3 / 4 / 5).**
+
+| Caso | Dificultad | Sin Investigación | Con Investigación |
+|---|---|---|---|
+| precio publicado (8 Comida / 10 Hierro) | Normal | 54 / 46 / 20 | 51 / 44 / 20 |
+| precio publicado | Difícil | 46 / 28 / 5 | 45 / 30 / 6 |
+| también 15 Saber | Normal | 71 / 63 / 31 | 65 / 59 / 29 |
+| también 15 Saber | Difícil | 63 / 47 / 9 | 57 / 42 / 9 |
+
+Sigue valiendo la pena con el Saber gastado en Investigación: +14 / +15 / +9 en Normal (antes +17 / +17 / +11). La inflación que temía juego-29 era chica, porque el Saber sobra igual.
+
+**Piso 5 por causa (con Investigación, antes de lo elegido).** Pares en Normal: gana el 47 % de los que llegan; muere en las puertas el 27 % y contra el jefe el 23 % (extracción 3 %). Llegan con 0,5 niveles de menos y les faltan 14-18 de Comida. Pares en Difícil: el 63 % muere en las puertas. Los 4 en co-op: Normal 64 % en las puertas, 3,3 héroes de 4, 0,8 niveles de menos, 43 de Comida faltante y 64 % de vida; Difícil 87 % en las puertas.
+
+| Qué pasaría si (con Investigación) | Normal pares 4 / 5 | 5 entre los que llegan | Difícil pares 4 / 5 | Normal los 4 4 / 5 | Difícil los 4 4 / 5 |
+|---|---|---|---|---|---|
+| ninguno | 37 / 17 | 47 % | 27 / 5 | 82 / 18 | 38 / 5 |
+| Comida infinita | 100 / 98 | 98 % | 99 / 88 | 100 / 100 | 100 / 98 |
+| niveles gratis | 74 / 69 | 94 % | 68 / 48 | 100 / 100 | 99 / 74 |
+| vida completa al empezar el 5 | 37 / 19 | 52 % | 27 / 7 | 82 / 37 | 38 / 5 |
+| sin oleadas de puerta en el 5 | 37 / 27 | 72 % | 27 / 17 | 82 / 75 | 38 / 31 |
+| sin extracción en el 5 | 37 / 19 | 51 % | 27 / 6 | 82 / 22 | 38 / 5 |
+| sin jefe en el 5 | 37 / 26 | 70 % | 27 / 9 | 82 / 28 | 38 / 5 |
+
+**Lectura.** La pared del piso 5 es la misma que la del 4: Comida para niveles contra las oleadas de puerta. Al mismo tiempo sobra Saber, así que la palanca natural es convertir el Saber que sobra en niveles.
+
+**Palancas barridas** (200 corridas, sin Investigación, antes de lo elegido; pisos 3 / 4 / 5):
+
+| Cambio | Normal pares | Difícil pares | Normal tríos | Normal los 4 | Difícil los 4 | Normal / Difícil pares que rescatan |
+|---|---|---|---|---|---|---|
+| ninguno | 51 / 42 / 19 | 45 / 28 / 3 | 84 / 59 / 14 | 99 / 83 / 25 | 83 / 29 / 1 | 54 / 46 / 20 · 46 / 28 / 5 |
+| **A. niveles también con Saber, 2 por Comida (elegido)** | 66 / 57 / 31 | 62 / 43 / 9 | 96 / 82 / 32 | 100 / 86 / 33 | 92 / 33 / 6 | 73 / 67 / 42 · 69 / 52 / 17 |
+| niveles también con Saber, 1 por Comida | 71 / 62 / 36 | 68 / 51 / 13 | 96 / 85 / 38 | 100 / 86 / 36 | 93 / 31 / 6 | 83 / 79 / 59 · 80 / 67 / 34 |
+| **B. rescate también por 15 Saber (elegido)** | igual | igual | igual | igual | igual | 71 / 63 / 31 · 63 / 47 / 9 |
+| **A + B** | 66 / 57 / 31 | 62 / 43 / 9 | 96 / 82 / 32 | 100 / 86 / 33 | 92 / 33 / 6 | 81 / 75 / 48 · 75 / 62 / 17 |
+| Virotes 25 → 15 Saber y +10 → +20 (C) | igual | igual | igual | igual | igual | igual |
+| +10 Comida al bajar al 5 | 51 / 42 / 21 | 45 / 28 / 5 | 84 / 59 / 20 | 99 / 83 / 19 | 83 / 29 / 2 | 54 / 46 / 22 · 46 / 28 / 6 |
+| amenaza del piso 5 ×0,85 | 51 / 42 / 21 | 45 / 28 / 4 | 84 / 59 / 19 | 99 / 83 / 30 | 83 / 29 / 2 | 54 / 46 / 22 · 46 / 28 / 5 |
+
+C solo se nota con Investigación (los 4 en co-op en el piso 5: 18 → 25).
+
+**Elegido (dueño): A + B.** `run_upgrade_config.tres`: `alt_resource = "lore"`, `alt_cost_mult = 2.0`. Un nivel que la Comida no alcanza se paga con el doble en Saber (`PlayerStats._level_payment`: primero Comida, después Saber). El popup muestra el precio que se va a pagar, y si no alcanza ninguno dice «Faltan N Comida o M Saber». `default_floor_config.tres`: `recruit_costs` 8 Comida / 10 Hierro / **15 Saber** (+5 por piso). Versión 1.7.
+
+**Con lo elegido** (`sweep_juego30.gd -- 200 4 0` y `4 1`, fila «ninguno»; pisos 3 / 4 / 5):
+
+| Dificultad | Pares | Tríos (co-op 3) | Los 4 (co-op 4) | Pares que rescatan hasta 2 | Pares con Investigación | Los 4 con Investigación |
+|---|---|---|---|---|---|---|
+| Normal | 66 / 57 / 31 (antes 51 / 42 / 19) | 96 / 82 / 32 (antes 84 / 59 / 14) | 100 / 86 / 33 (antes 99 / 83 / 25) | 81 / 75 / 48 (antes 54 / 46 / 20) | 54 / 46 / 23 | 99 / 84 / 31 |
+| Difícil | 62 / 43 / 9 (antes 45 / 28 / 3) | 81 / 45 / 5 (antes 68 / 24 / 2) | 92 / 33 / 6 (antes 83 / 29 / 1) | 75 / 62 / 17 (antes 46 / 28 / 5) | 49 / 34 / 8 | 89 / 39 / 5 |
+
+Difícil queda por debajo de Normal en todos los grupos y pisos. Con Saber para niveles, la Investigación sigue costando unos 10 puntos en los pisos 3-4: compite por el mismo Saber.
+
+`test_balance` (50 corridas) fija los datos (Saber ×2 para niveles, rescate 8 / 10 / 15 + 5) y además comprueba:
+- Normal pares: piso 3 entre 58 y 80 % (antes 45-65), piso 4 ≥ 50 % y piso 5 ≥ 25 %.
+- Difícil pares: piso 3 ≥ 50 %, piso 4 entre 30 y 55 %, piso 5 ≤ 15 %.
+- Los niveles con Saber no son una pérdida (pisos 3-5: 1,54 contra 1,11 solo con Comida).
+- El «qué pasaría si» `research` compra más de 4 entradas hasta el piso 5 y deja menos Saber que la partida por defecto (4,9 entradas, 36 de Saber contra 66).

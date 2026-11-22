@@ -193,8 +193,7 @@ func get_level_up_preview(hero_id: String = "") -> Dictionary:
 	var id := _resolve(hero_id)
 	var cfg := _config_for(id)
 	var levels := _levels_of(id)
-	var cost := cfg.get_cost(levels)
-	var rm := ManagerLocator.get_resource_manager()
+	var pay := _level_payment(id)
 	var rows: Array[Dictionary] = []
 	for key in UpgradeConfig.STAT_KEYS:
 		var row := get_run_upgrade_preview(key, id)
@@ -203,10 +202,12 @@ func get_level_up_preview(hero_id: String = "") -> Dictionary:
 		"level": 1 + levels,
 		"next_level": 2 + levels,
 		"max_level": 1 + cfg.max_level,
-		"cost": cost,
-		"cost_resource": cfg.cost_resource,
+		"cost": pay["cost"],
+		"cost_resource": pay["resource"],
+		"alt_cost": cfg.alt_cost(levels),
+		"alt_resource": cfg.alt_resource,
 		"maxed": get_hero_stats(id) == null or cfg.is_maxed(levels),
-		"affordable": rm != null and rm.get_resource(cfg.cost_resource) >= cost,
+		"affordable": pay["affordable"],
 		"rows": rows,
 	}
 
@@ -230,21 +231,35 @@ func get_run_upgrade_preview(stat_key: String, hero_id: String = "") -> Dictiona
 			"attack_speed":
 				current = s.attack_interval
 				next = cfg.interval_at(s.base_attack_interval, levels + 1)
-	var cost := cfg.get_cost(levels)
-	var rm := ManagerLocator.get_resource_manager()
+	var pay := _level_payment(id)
 	return {
 		"level": levels,
 		"max_level": cfg.max_level,
 		"current": current,
 		"next": next,
-		"cost": cost,
-		"cost_resource": cfg.cost_resource,
+		"cost": pay["cost"],
+		"cost_resource": pay["resource"],
 		"maxed": s == null or cfg.is_maxed(levels),
-		"affordable": rm != null and rm.get_resource(cfg.cost_resource) >= cost,
+		"affordable": pay["affordable"],
 	}
 
 
-## Spends Comida and raises every stat of that hero one level.
+## juego-30: the next level of `id` is paid in cost_resource (Comida) when it is enough, else in
+## alt_resource (Saber) when that is; {resource, cost, affordable} (Comida when neither is).
+func _level_payment(id: String) -> Dictionary:
+	var cfg := _config_for(id)
+	var levels := _levels_of(id)
+	var rm := ManagerLocator.get_resource_manager()
+	var cost := cfg.get_cost(levels)
+	if rm and rm.get_resource(cfg.cost_resource) >= cost:
+		return {"resource": cfg.cost_resource, "cost": cost, "affordable": true}
+	var alt := cfg.alt_cost(levels)
+	if rm and alt > 0 and rm.get_resource(cfg.alt_resource) >= alt:
+		return {"resource": cfg.alt_resource, "cost": alt, "affordable": true}
+	return {"resource": cfg.cost_resource, "cost": cost, "affordable": false}
+
+
+## Spends Comida (or Saber, see _level_payment) and raises every stat of that hero one level.
 ## false = no such hero, maxed or unaffordable.
 func level_up_hero(hero_id: String = "") -> bool:
 	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
@@ -256,7 +271,8 @@ func level_up_hero(hero_id: String = "") -> bool:
 	if s == null or cfg.is_maxed(levels):
 		return false
 	var rm := ManagerLocator.get_resource_manager()
-	if rm == null or not rm.spend_resource(cfg.cost_resource, cfg.get_cost(levels)):
+	var pay := _level_payment(id)
+	if rm == null or not pay["affordable"] or not rm.spend_resource(pay["resource"], pay["cost"]):
 		return false
 
 	levels += 1

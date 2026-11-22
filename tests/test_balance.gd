@@ -31,20 +31,20 @@ const RUN_HERO_SPREAD_PP := 10.0
 ## it, 61 % at 200 runs with 15), floor 3 does not get trivial and Hard stays hard.
 const BOSS_FOOD_REWARD := 15
 const NORMAL_REACH4_MIN := 0.5
-const NORMAL_FLOOR3_MAX := 0.65
-const HARD_FLOOR4_MAX := 0.4  # juego-28: 0.1 -> 0.2 (11 %); juego-29: 0.4 (28 % at 200 runs)
+const NORMAL_FLOOR3_MAX := 0.8  # juego-30: 0.65 -> 0.8 (66 % at 200 runs with Saber levels)
+const HARD_FLOOR4_MAX := 0.55  # juego-28: 0.1 -> 0.2 (11 %); juego-29: 0.4 (28 %); juego-30: 0.55 (43 % at 200 runs)
 ## juego-27: +30 Comida on reaching floors 4 and 5, Señor Demonio 150 HP (owner's pick).
 const DESCEND_FOOD := 30
 const DESCEND_FOOD_FROM := 4
 const BOSS5_HP := 150
 const NORMAL_REACH5_MIN := 0.3
-const HARD_FLOOR5_MAX := 0.05
+const HARD_FLOOR5_MAX := 0.15  # juego-30: 0.05 -> 0.15 (9 % at 200 runs)
 ## juego-28 (owner's pick): Hard's bosses skip its multipliers (Hard pairs floor 3: 10 -> 33 % at
 ## 200 runs) and co-op of 3 / 4 gets +10 / +20 Comida per descent (the four, Normal: floor 4
 ## 31 -> 83 %). Normal pairs stay at 51 / 42 / 19 % (200 runs): these are 50-run floors with margin.
-const HARD_FLOOR3_MIN := 0.35  # juego-29: 0.25 -> 0.35 (45 % at 200 runs)
+const HARD_FLOOR3_MIN := 0.5  # juego-29: 0.25 -> 0.35 (45 %); juego-30: 0.5 (62 % at 200 runs)
 const DESCENT_FOOD_BY_PLAYERS := [0, 0, 10, 20]
-const NORMAL_PAIR_FLOORS_MIN := {3: 0.45, 4: 0.36, 5: 0.14}
+const NORMAL_PAIR_FLOORS_MIN := {3: 0.58, 4: 0.5, 5: 0.25}  # juego-30: 66 / 57 / 31 % at 200 runs
 const FOUR_NORMAL_FLOOR4_MIN := 0.6
 const FOUR_NORMAL_FLOOR5_MAX := 0.5
 ## juego-29 (owner's pick A1 + B): Hard's damage 1.25 -> 1.1 and its start resources x0.75 -> x1
@@ -53,8 +53,12 @@ const FOUR_NORMAL_FLOOR5_MAX := 0.5
 ## pairs that recruit (BalanceSim "recruit") 48 / 40 / 16 -> 54 / 46 / 20 % on Normal. Hard never
 ## beats Normal on a floor (pairs) and recruiting is not a loss.
 const HARD_DAMAGE_MULT := 1.1
-const HARD_FLOOR4_MIN := 0.18
-const RECRUIT_COSTS := {"food": 8, "iron": 10}
+const HARD_FLOOR4_MIN := 0.3  # juego-30: 0.18 -> 0.3
+## juego-30 (owner's pick A + B): a level the Comida can't pay costs 2 Saber per Comida
+## (UpgradeConfig.alt_*) and the cell also takes 15 Saber (+5 per floor). Normal pairs 51 / 42 / 19 ->
+## 66 / 57 / 31 %, the four 99 / 83 / 25 -> 100 / 86 / 33, Hard pairs 45 / 28 / 3 -> 62 / 43 / 9 (200 runs).
+const RECRUIT_COSTS := {"food": 8, "iron": 10, "lore": 15}
+const LEVEL_ALT := ["lore", 2.0]
 const RECRUIT_COST_PER_FLOOR := 5
 var _pair_won := {}
 
@@ -123,6 +127,8 @@ func _check_food_floor4(rows: Array[Dictionary], level_id: String) -> void:
 	var hard := DifficultyConfig.get_default().get_level("hard")
 	_expect(is_equal_approx(hard.damage_mult, HARD_DAMAGE_MULT) and is_equal_approx(hard.start_resource_mult, 1.0), "juego-29: Hard damage %.2f, start x%.2f" % [hard.damage_mult, hard.start_resource_mult])
 	var rule := cfg.get_room_type_rule(RoomData.RoomType.PRISONER)
+	var up := BalanceSim.upgrade_config()
+	_expect(up.alt_resource == LEVEL_ALT[0] and is_equal_approx(up.alt_cost_mult, LEVEL_ALT[1]), "juego-30: levels also in %s x%.1f" % [up.alt_resource, up.alt_cost_mult])
 	_expect(rule.recruit_costs == RECRUIT_COSTS and rule.recruit_cost_per_floor == RECRUIT_COST_PER_FLOOR, "juego-29: ransom %s +%d per floor" % [rule.recruit_costs, rule.recruit_cost_per_floor])
 	var per_floor := {}
 	for row in rows:
@@ -183,6 +189,18 @@ func _check_recruits() -> void:
 	_expect(heroes3 > 2.3, "recruits: %.2f heroes on floor 3" % heroes3)
 	_expect(won_with >= won_base, "recruiting is a loss: floors 3-5 won %.2f vs %.2f" % [won_with, won_base])
 	_expect(BalanceSim._play == BalanceSim.BOSS_PLAY, "run_rows restores the play")
+	# juego-30: Saber-paid levels are not a loss, and the "research" what-if spends the Saber.
+	var comida_only := BalanceSim.run_rows(50, pairs, normal, true, BalanceSim.BOSS_NEAR_TOWERS, {"level_lore": 0.0})
+	var won_comida: float = sum.call(comida_only, "win_rate", [3, 4, 5])
+	print("normal pairs, levels in Comida only: floors 3-5 won %.2f (with Saber %.2f)" % [won_comida, won_base])
+	_expect(won_base >= won_comida, "Saber levels are a loss: floors 3-5 won %.2f vs %.2f" % [won_base, won_comida])
+	var research := BalanceSim.run_rows(50, pairs, normal, true, BalanceSim.BOSS_NEAR_TOWERS, {"research": BalanceSim.RESEARCH_ORDER})
+	var bought5: float = sum.call(research, "research", [5])
+	var lore5: float = sum.call(research, "lore", [5])
+	print("normal pairs, research what-if: %.1f entries bought by floor 5, %.1f Saber left (default %.1f / %.1f)" % [bought5, lore5, sum.call(base, "research", [5]), sum.call(base, "lore", [5])])
+	_expect(is_equal_approx(sum.call(base, "research", [5]), 1.0), "default run buys more than the Ballesta")
+	_expect(bought5 > 4.0 and lore5 < sum.call(base, "lore", [5]), "research what-if: %.1f entries, %.1f Saber left" % [bought5, lore5])
+	_expect(BalanceSim._bonus.is_empty() and BalanceSim._research == null, "run_rows clears the research bonuses")
 
 
 ## juego-23: the runs build Ballestas (every party has one on floor 1) and pulling the floor-3

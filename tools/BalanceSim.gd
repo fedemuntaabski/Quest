@@ -641,9 +641,22 @@ static var _boss_near := BOSS_NEAR_TOWERS
 ## "recruit_levels" = a recruit joins at floor - 1 levels for free (what-if; the game: level 1);
 ## "recruit_cost_mult" scales the price (0 = free);
 ## "full_hp" = on that floor's start every living hero is healed to full for free.
+## juego-30: "research" = research ids bought after the Ballesta, in this order, with the Saber there is
+## (needs a Scriptorium that floor, prerequisites first; saves for the next one in the list). Their
+## bonuses are read like ResourceManager.get_bonus: Taller yield, Defensa damage, light cost, Brasas
+## per room. [] = only the Ballesta (the published tables). RESEARCH_ORDER = the player-like order.
+## "lab_first" = with Saber for the next entry and no Scriptorium this floor, the next lit room gets the
+## Scriptorium instead of its Ballesta (false: the Ballesta still comes first, the workshop is the Scriptorium).
+## "level_lore" = Saber per Comida for a level the Comida can't pay (PlayerStats._level_payment);
+## -1 = UpgradeConfig (alt_cost_mult, shipped 2 since juego-30), 0 = Comida only (the old rule).
 const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_first": true,
 	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0, "no_boss": 0, "free_levels": false, "players": 0,
-	"extra_food": 0, "extra_food_from": 2, "extra_food_to": 5, "recruit": 0, "recruit_levels": false, "recruit_cost_mult": 1.0, "full_hp": 0}
+	"extra_food": 0, "extra_food_from": 2, "extra_food_to": 5, "recruit": 0, "recruit_levels": false, "recruit_cost_mult": 1.0, "full_hp": 0, "research": [], "lab_first": true, "level_lore": -1.0}
+const RESEARCH_ORDER: Array[String] = ["defense_rifling", "cartography", "dry_tinder", "workshop_tuning", "workshop_bellows"]
+const RESEARCH_PATH := "res://resources/research/research_config.tres"
+## juego-30: ResearchEntry.Effect -> summed value of the run being simulated (the "research" what-if).
+static var _bonus: Dictionary = {}
+static var _research: ResearchConfig
 const MAX_PARTY: int = preload("res://scripts/autoload/GameSession.gd").MAX_PARTY
 static var _play: Dictionary = BOSS_PLAY
 ## juego-25: hero id -> summed item modifiers of the run being simulated ("items").
@@ -672,7 +685,8 @@ static func run_parties() -> Array:
 static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], towers: bool = true, boss_near: float = BOSS_NEAR_TOWERS, play: Dictionary = {}) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	# juego-27: load() re-parses a .tres nobody holds; the item catalog alone cost ~13 ms a chest.
-	_keep = [ItemCatalog.get_default(), LootTable.get_default(), PlayerScaling.get_default(), floor_config(), upgrade_config(), BuildingCostCurve.get_default()]
+	_keep = [ItemCatalog.get_default(), LootTable.get_default(), PlayerScaling.get_default(), floor_config(), upgrade_config(), BuildingCostCurve.get_default(), load(RESEARCH_PATH)]
+	_research = _keep[-1]
 	_towers = towers
 	_boss_near = boss_near
 	_play = BOSS_PLAY.merged(play, true)
@@ -691,7 +705,7 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 			for f in FLOORS:
 				acc.append({"played": 0, "won": 0, "dps": 0.0, "lost": 0.0, "iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0, "turns": 0.0, "towers": 0.0, "boss_in": 0.0, "bosses": 0, "boss_won": 0,
 					"die_door": 0, "die_boss": 0, "die_extr": 0, "hp_start": 0.0, "hp_exit": 0.0, "exits": 0, "lvl_gap": 0.0, "food_short": 0.0,
-					"dmg_door": 0.0, "dmg_boss": 0.0, "dmg_extr": 0.0, "fights": 0.0, "heroes": 0.0, "items": 0.0})
+					"dmg_door": 0.0, "dmg_boss": 0.0, "dmg_extr": 0.0, "fights": 0.0, "heroes": 0.0, "items": 0.0, "research": 0.0})
 			for r in runs:
 				var rng := RandomNumberGenerator.new()
 				rng.seed = hash(["run", party, level.id, r])
@@ -715,7 +729,7 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 					"hp_start": snappedf(a["hp_start"] / n, 0.01), "hp_exit": snappedf(a["hp_exit"] / maxf(a["exits"], 1.0), 0.01),
 					"door_fights": snappedf(a["fights"] / n, 0.1), "dmg_door_pct": snappedf(a["dmg_door"] / n * 100.0, 0.1),
 					"dmg_boss_pct": snappedf(a["dmg_boss"] / n * 100.0, 0.1), "dmg_extr_pct": snappedf(a["dmg_extr"] / n * 100.0, 0.1),
-					"items": snappedf(a["items"] / n, 0.1),
+					"items": snappedf(a["items"] / n, 0.1), "research": snappedf(a["research"] / n, 0.1),
 				})
 	players = 1
 	difficulty = null
@@ -723,6 +737,8 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 	_boss_near = BOSS_NEAR_TOWERS
 	_play = BOSS_PLAY
 	_gear = {}
+	_bonus = {}
+	_research = null
 	_duel_cache.clear()
 	_keep = []
 	return rows
@@ -766,7 +782,12 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		res[key] = roundi(res[key] * difficulty.start_resource_mult)
 	var levels := {}
 	var hp := {}
-	var researched := not _towers
+	var done := {} if _towers else {"ballesta": true}
+	var order: Array[String] = ["ballesta"]
+	for id: String in _play["research"]:
+		if id not in order:
+			order.append(id)
+	_bonus = {}
 	var items_on: bool = _play["items"] and item_rng != null
 	var worn := {}
 	var recruits := 0
@@ -792,8 +813,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				res["food"] -= up.revive_cost(f)
 				hp[id] = _max_hp(id, levels[id]) * up.revive_hp_pct
 		for id: String in party:  # level up to floor - 1
-			while hp[id] > 0.0 and levels[id] < mini(f - 1, up.max_level) and (_play["free_levels"] or res["food"] >= up.get_cost(levels[id])):
-				res["food"] -= 0 if _play["free_levels"] else up.get_cost(levels[id])
+			while hp[id] > 0.0 and levels[id] < mini(f - 1, up.max_level) and _pay_level(res, up.get_cost(levels[id])):
 				var before := _max_hp(id, levels[id])
 				levels[id] += 1
 				hp[id] += _max_hp(id, levels[id]) - before
@@ -827,7 +847,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		var built := 0
 		var ballestas := 0
 		var ballesta_cost := int(Building.CATALOG[Building.BuildingType.BALLESTA]["cost"])
-		if _towers and researched and res["iron"] >= curve.cost(ballesta_cost, 0):  # the start room is lit free
+		if _towers and done.has("ballesta") and res["iron"] >= curve.cost(ballesta_cost, 0):  # the start room is lit free
 			res["iron"] -= curve.cost(ballesta_cost, 0)
 			ballestas = 1
 		var turns := 0
@@ -852,7 +872,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				cage = opened
 			if items_on:
 				_room_loot(types[opened], f, party, levels, hp, worn, item_rng)
-			res["embers"] += cfg.discovery_embers(f)
+			res["embers"] += cfg.discovery_embers(f) + roundi(_b(ResearchEntry.Effect.DISCOVERY_EMBERS))
 			for id: String in party:
 				var passive := hero_data(id).passive
 				if hp[id] > 0.0 and passive and passive.effect == AbilityData.Effect.LORE_ON_DISCOVERY:
@@ -863,25 +883,26 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			if bonus_key != "":
 				res[bonus_key] += cfg.door_roll.bonus_amount(f)
 			for key in workshops:
-				res[key] += workshops[key] * BUILDING_YIELD
+				res[key] += roundi(workshops[key] * BUILDING_YIELD * (1.0 + _b(ResearchEntry.Effect.WORKSHOP_YIELD_PCT)))
 			if cage != "" and _recruit(party, levels, hp, res, f, layout.map_seed, cage):
 				recruits += 1
 				cage = ""
-			var light_cost := RoomZone.LIGHT_COST + cfg.light_cost_step * lit
+			var light_cost := maxi(1, RoomZone.LIGHT_COST + cfg.light_cost_step * lit - roundi(_b(ResearchEntry.Effect.LIGHT_COST)))
 			if res["embers"] >= light_cost:
 				res["embers"] -= light_cost
 				lit += 1
-				if cage == "" and _towers and researched and res["iron"] >= curve.cost(ballesta_cost, ballestas):
+				var next := _next_research(order, done)  # juego-30: Saber waiting for research -> Scriptorium before the Ballesta
+				var want_lab: bool = _play["lab_first"] and workshops["lore"] == 0 and next != null and done.has("ballesta") and res["lore"] >= next.cost
+				if cage == "" and not want_lab and _towers and done.has("ballesta") and res["iron"] >= curve.cost(ballesta_cost, ballestas):
 					res["iron"] -= curve.cost(ballesta_cost, ballestas)
 					ballestas += 1
 				var cost := curve.cost(Building.CATALOG[Building.BuildingType.FORJA]["cost"], built)
 				if cage == "" and res["iron"] >= cost:  # juego-29: a waiting cage keeps the Hierro
 					res["iron"] -= cost
-					workshops["lore" if not researched and workshops["lore"] == 0 else ["iron", "food", "lore"][built % 3]] += 1
+					workshops["lore" if done.size() < order.size() and workshops["lore"] == 0 else ["iron", "food", "lore"][built % 3]] += 1
 					built += 1
-			if not researched and workshops["lore"] > 0 and res["lore"] >= ballesta_research_cost():
-				res["lore"] -= ballesta_research_cost()
-				researched = true
+			if workshops["lore"] > 0:
+				_buy_research(order, done, res)
 			if rng.randf() < clampf(cfg.door_roll.threat_chance(turns, f) * threat_mult, 0.0, cfg.door_roll.max_chance) and int(_play["no_doors"]) != f:
 				var count := mini(scaling.wave(cfg.door_roll.enemy_count(turns, f), players), cap)
 				a["fights"] += 1
@@ -924,6 +945,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		for key in ["iron", "food", "lore", "embers"]:
 			a[key] += res[key]
 		a["items"] += worn.size()
+		a["research"] += done.size()
 		if not _alive(party, hp):
 			a[died] += 1
 			return
@@ -965,11 +987,26 @@ static func _recruit(party: Array, levels: Dictionary, hp: Dictionary, res: Dict
 	var up := upgrade_config()
 	levels[id] = mini(f - 1, up.max_level) if _play["recruit_levels"] else 0
 	hp[id] = _max_hp(id, levels[id])
-	while levels[id] < mini(f - 1, up.max_level) and res["food"] >= up.get_cost(levels[id]):
-		res["food"] -= up.get_cost(levels[id])
+	while levels[id] < mini(f - 1, up.max_level) and _pay_level(res, up.get_cost(levels[id])):
 		levels[id] += 1
 		hp[id] = _max_hp(id, levels[id])
 	return true
+
+
+## A hero level: Comida, else Saber (PlayerStats._level_payment; "level_lore" overrides the rate); false = not paid.
+static func _pay_level(res: Dictionary, cost: int) -> bool:
+	if _play["free_levels"]:
+		return true
+	if res["food"] >= cost:
+		res["food"] -= cost
+		return true
+	var up := upgrade_config()
+	var mult: float = up.alt_cost_mult if float(_play["level_lore"]) < 0.0 else float(_play["level_lore"])
+	var alt := 0 if up.alt_resource == "" else ceili(cost * mult)
+	if alt > 0 and res[up.alt_resource] >= alt:
+		res[up.alt_resource] -= alt
+		return true
+	return false
 
 
 ## Party HP / party max HP; a hero lost for the run counts as 0 of its max.
@@ -1138,6 +1175,32 @@ static func _near(ballestas: int, revealed: int, rng: RandomNumberGenerator) -> 
 	return 1 if ballestas > 0 and rng.randf() < float(ballestas) / maxf(revealed, 1.0) else 0
 
 
+## juego-30: buys the first entries of `order` the Saber allows (a working Scriptorium is checked by the
+## caller); stops at the first one it can't pay (the player saves for it).
+static func _buy_research(order: Array[String], done: Dictionary, res: Dictionary) -> void:
+	var entry := _next_research(order, done)
+	while entry and res["lore"] >= entry.cost:
+		res["lore"] -= entry.cost
+		done[entry.id] = true
+		if entry.effect != ResearchEntry.Effect.UNLOCK_BUILDING:
+			_bonus[entry.effect] = float(_bonus.get(entry.effect, 0.0)) + entry.value
+		entry = _next_research(order, done)
+
+
+## First entry of `order` not done whose prerequisite is (null = nothing left to buy).
+static func _next_research(order: Array[String], done: Dictionary) -> ResearchEntry:
+	for id: String in order:
+		var entry := _research.get_entry(id) if _research else null
+		if entry and not done.has(id) and (entry.prerequisite == "" or done.has(entry.prerequisite)):
+			return entry
+	return null
+
+
+## Like ResourceManager.get_bonus for the run being simulated (0 outside the "research" what-if).
+static func _b(effect: ResearchEntry.Effect) -> float:
+	return float(_bonus.get(effect, 0.0))
+
+
 static func ballesta_research_cost() -> int:
 	for entry in (load("res://resources/research/research_config.tres") as ResearchConfig).entries:
 		if entry.id == "ballesta":
@@ -1147,7 +1210,7 @@ static func ballesta_research_cost() -> int:
 
 static func tower_dps() -> float:
 	var b: Dictionary = Building.CATALOG[Building.BuildingType.BALLESTA]
-	return float(b["damage"]) / maxf(float(b["fire_rate"]), 0.01)
+	return (float(b["damage"]) + roundi(_b(ResearchEntry.Effect.DEFENSE_DAMAGE))) / maxf(float(b["fire_rate"]), 0.01)  # DefenseBuilding.get_damage
 
 
 static func _alive(party: Array, hp: Dictionary) -> bool:

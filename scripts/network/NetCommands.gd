@@ -255,7 +255,7 @@ func _cmd_level_up(_sender: int, args: Dictionary) -> String:
 	var preview := ps.get_level_up_preview(id)
 	if preview.get("maxed", false):
 		return "Nivel máximo"
-	return "" if ps.level_up_hero(id) else "Falta Comida"
+	return "" if ps.level_up_hero(id) else "Falta Comida o Saber"
 
 
 func _cmd_heal(_sender: int, args: Dictionary) -> String:

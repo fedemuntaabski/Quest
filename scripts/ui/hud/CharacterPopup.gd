@@ -279,7 +279,8 @@ func _rebuild_level_up(ps: PlayerStats) -> void:
 
 	_level_button.disabled = maxed or not affordable
 	_level_button.text = "Nivel máximo" if maxed else "Subir de nivel (%d %s)" % [p["cost"], resource_label]
-	_level_button.tooltip_text = "" if maxed or affordable else "%s insuficiente" % resource_label
+	var alt_label := str(Building.RESOURCE_LABELS.get(p["alt_resource"], p["alt_resource"]))
+	_level_button.tooltip_text = "" if maxed or affordable else ("Faltan %d %s o %d %s" % [p["cost"], resource_label, p["alt_cost"], alt_label] if int(p["alt_cost"]) > 0 else "%s insuficiente" % resource_label)
 	if not stats.is_alive():  # downed: the same button revives (an ally in its room + Comida)
 		var reason: String = ps.get_revive_block_reason(stats.hero_id)
 		_heal_button.disabled = reason != ""

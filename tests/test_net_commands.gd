@@ -144,7 +144,7 @@ func _check_light_and_build(main2d: Node) -> void:
 
 func _check_stats(a: Player, ida: String, idb: String) -> void:
 	rm.reset_resources(0, 0, 0, 0)
-	_expect(await _run(1, "level_up", {"hero": ida}) == "Falta Comida", "level up needs Comida")
+	_expect(await _run(1, "level_up", {"hero": ida}) == "Falta Comida o Saber", "level up needs Comida or Saber")
 	_expect(await _run(OTHER, "level_up", {"hero": ida}) == CoopCommands.NOT_YOURS, "can't level another player's hero")
 	rm.reset_resources(0, 500, 0, 0)
 	_expect(await _run(1, "level_up", {"hero": ida}) == "", "level up own hero")

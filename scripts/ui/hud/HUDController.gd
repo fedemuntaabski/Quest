@@ -3,7 +3,7 @@ class_name HUDController
 
 const TOOLTIP_IRON := "Hierro: Se utiliza para construir obras en las salas."
 const TOOLTIP_FOOD := "Comida: Se utiliza para subir de nivel a los héroes (clic derecho en su retrato)."
-const TOOLTIP_LORE := "Saber: Se gasta en investigaciones (botón Investigar): desbloquea obras y mejora talleres, defensas y Brasas."
+const TOOLTIP_LORE := "Saber: Se gasta en investigaciones (botón Investigar), en rescatar prisioneros y, si falta Comida, en subir de nivel (2 de Saber por cada Comida)."
 const TOOLTIP_EMBERS := "Brasas: Se utilizan para iluminar salas oscuras y evitar la aparición de enemigos."
 
 const _STAT_BAR_PATH := "Control/BottomBar/BottomRow/ResourcePanel/MarginContainer/StatPanelUI"
