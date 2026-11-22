@@ -91,7 +91,17 @@ func _menus() -> void:
 	flow._open_hero_select()
 	await _wait(0.8)
 	await _shot("hero_select")
+	flow.hero_select.toggle_hero("warrior")
+	flow.hero_select.toggle_hero("mage")
+	flow.hero_select.start_button.grab_focus()
+	await _wait(0.4)
+	await _shot("hero_select_picked")
 	flow.show_main_menu()
+	await _wait(0.8)
+	var credits: CreditsPanel = menu.open_credits()
+	await _wait(0.8)
+	await _shot("credits")
+	credits.close()
 	await _wait(0.6)
 	flow.show_options_menu()
 	await _wait(0.8)
@@ -293,8 +303,15 @@ func _action(action: StringName) -> InputEventAction:
 	return event
 
 
+## Real time with frames in between (menu-33): a 1080p save_png can take most of a
+## second, and the next frame's delta alone used to fire a timer-based wait, so the shot
+## caught a transition half way.
 func _wait(sec: float) -> void:
-	await create_timer(sec, true, false, true).timeout
+	var end := Time.get_ticks_msec() + int(sec * 1000.0)
+	var frames := 0
+	while Time.get_ticks_msec() < end or frames < 3:
+		await process_frame
+		frames += 1
 
 
 func _shot(shot_name: String) -> void:
