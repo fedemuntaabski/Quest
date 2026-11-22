@@ -623,3 +623,84 @@ Barridos: `tests/tools/sweep_juego27.gd -- <corridas>` (tabla por causa de los p
 La amenaza del piso 5 casi no mueve nada (no se investigó por qué; candidato: el tope `max_chance` de `DoorRollConfig`).
 
 **Elegido (dueño): +30 Comida al bajar a los pisos 4 y 5** (`food_bonus_on_descend = 30`, `food_bonus_from_floor = 4` nuevo en `FloorConfig`, lo paga `FloorManager`) **y el Señor Demonio con 150 de vida** (`boss_demon_lord.tres` `base_hp` 220 → 150). El piso 3 no cambia. Con eso, al piso 5 se llega con 0,6 niveles de menos y ~15 de Comida faltante (antes 2,1 y ~65); se muere 23-35 % en puertas y 15-34 % contra el jefe. `test_balance._check_food_floor4` fija los valores y estos umbrales: Normal ≥ 30 % del piso 5 entre los que llegan (0,43 a 50 corridas), Difícil piso 5 ≤ 5 %; siguen los de juego-26.
+
+## Difícil en el piso 3 y los 4 en co-op, por causa (session juego-28)
+Barridos: `tests/tools/sweep_juego28.gd -- <corridas>` (causas de Difícil pisos 1-3 en los 6 pares, de los 4 en Normal pisos 3-5 y sus «qué pasaría si»; ~2 min a 200 corridas), `sweep_juego28_levers.gd` / `_levers2.gd` (palancas en memoria) y `sweep_juego28_final.gd` (pares, tríos y los 4 con los datos que se publican). «Qué pasaría si» nuevos en `BalanceSim.BOSS_PLAY`: `free_levels` (los niveles no cuestan Comida), `players` (escalado de N jugadores sea cual sea el grupo; 1 con los 4 = sin conexión con reclutas, todos desde el piso 1) y `extra_food` / `extra_food_to` (Comida extra en cada bajada).
+
+**Difícil, piso 3 (antes, 200 corridas):** se llega con 1,1-1,3 niveles de menos y ~22-26 de Comida faltante, y con 75-90 % de vida al jefe. Muere contra el Jefe Ogro el 65-82 % de los que juegan el piso 3 (gana el jefe solo el 1-34 %); en las puertas muere el 1-6 % de los grupos con Guerrero y el 17-29 % de los otros tres. La extracción, 0-13 %.
+
+| Qué pasaría si (Difícil, media de los 6 pares) | Pisos 1 / 2 / 3 / 4 | Piso 3 entre los que llegan |
+|---|---|---|
+| ninguno | 100 / 96 / 10 / 3 | 11 % |
+| Comida infinita | 100 / 100 / 100 / 93 | 100 % |
+| niveles gratis | 100 / 98 / 37 / 27 | 38 % |
+| sin oleadas de puerta en el 3 | 100 / 96 / 15 / 3 | 15 % |
+| sin jefe en el 3 | 100 / 96 / 81 / 26 | 85 % |
+| sin extracción en el 3 | 100 / 96 / 16 / 3 | 16 % |
+| recursos de inicio ×1 | 100 / 99 / 17 / 5 | 17 % |
+| vida de los enemigos ×1 | 100 / 100 / 32 / 14 | 32 % |
+| daño de los enemigos ×1 | 100 / 100 / 24 / 10 | 24 % |
+| amenaza ×1 | 100 / 98 / 12 / 5 | 13 % |
+| sin tope extra | 100 / 96 / 10 / 3 | 11 % |
+
+**Lectura.** La pared de Difícil es el jefe del piso 3 con la vida (×1,35) y el daño (×1,25) de Difícil encima de la curva: sin jefe pasa el 81 %. Puertas, Comida de inicio y amenaza mueven poco.
+
+**Los 4, Normal (antes, 200 corridas):**
+
+| Grupo | Piso | Gana | Héroes | Niveles que faltan | Comida que falta | Vida al empezar | Muere en puertas / jefe / extracción |
+|---|---|---|---|---|---|---|---|
+| co-op 4 | 3 | 78 % | 4,0 | 1,3 | 57 | 86 % | 1 / 17 / 5 % |
+| co-op 4 | 4 | 31 % | 3,3 | 1,5 | 63 | 58 % | 55 / 0 / 5 % |
+| co-op 4 | 5 | 0 % | 2,4 | 2,0 | 63 | 40 % | 89 / 10 / 2 % |
+| sin conexión (escalado de 1) | 3 | 90 % | 4,0 | 1,3 | 53 | 95 % | 0 / 9 / 2 % |
+| sin conexión | 4 | 85 % | 3,6 | 1,4 | 71 | 61 % | 4 / 0 / 1 % |
+| sin conexión | 5 | 43 % | 3,3 | 1,9 | 103 | 58 % | 19 / 25 / 5 % |
+
+| Qué pasaría si (los 4, Normal) | Pisos 3 / 4 / 5 | Piso 4 entre los que llegan |
+|---|---|---|
+| co-op 4 | 78 / 31 / 0 | 40 % |
+| co-op 4, Comida infinita | 100 / 100 / 100 | 100 % |
+| co-op 4, niveles gratis | 100 / 100 / 93 | 100 % |
+| co-op 4, sin oleadas de puerta en el 4 | 78 / 78 / 5 | 100 % |
+| co-op 4, sin jefe en el 5 | 78 / 31 / 3 | 40 % |
+| co-op 4 con el escalado de 2 jugadores | 92 / 86 / 37 | 93 % |
+| sin conexión (escalado de 1) | 90 / 85 / 43 | 94 % |
+
+**Lectura.** Sin conexión, los 4 ya pasan a los pares. El muro es co-op de 4: `PlayerScaling` duplica las oleadas (×2, tope +8), así que cada héroe pelea lo mismo que en un par, pero la Comida de las puertas no crece con el grupo y hay que subir de nivel y curar a cuatro (falta ~60 desde el piso 3). Con niveles gratis pasan todos.
+
+**Palancas barridas** (200 corridas; pisos 3 / 4 / 5; pares = media de los 6, los 4 = co-op 4):
+
+| Cambio | Normal pares | Difícil pares | Normal los 4 | Difícil los 4 |
+|---|---|---|---|---|
+| ninguno | 51 / 42 / 19 | 10 / 3 / 0 | 78 / 31 / 0 | 4 / 1 / 0 |
+| Jefe Ogro −25 % de vida | 70 / 58 / 27 | 24 / 7 / 0 | 93 / 51 / 3 | 11 / 0 / 0 |
+| Jefe Ogro −40 % de vida | 87 / 73 / 34 | 33 / 11 / 0 | 97 / 57 / 2 | 19 / 1 / 0 |
+| jefes sin la vida de Difícil | igual | 24 / 7 / 0 | igual | 11 / 0 / 0 |
+| **jefes sin la vida ni el daño de Difícil (elegido)** | igual | **33 / 11 / 1** | igual | 18 / 1 / 0 |
+| lo anterior + recursos de inicio ×1 | igual | 41 / 17 / 1 | igual | 26 / 2 / 0 |
+| jefes sin la vida de Difícil + daño de Difícil 1,1 | igual | 34 / 18 / 2 | igual | 19 / 1 / 0 |
+| Jefe Ogro −15 % + jefes sin la vida de Difícil | 62 / 51 / 24 | 31 / 10 / 1 | 88 / 43 / 1 | 16 / 1 / 0 |
+| Difícil daño 1,25 → 1,1 | igual | 20 / 9 / 1 | igual | 9 / 0 / 0 |
+| Difícil recursos de inicio ×1 | igual | 17 / 5 / 0 | igual | 7 / 1 / 0 |
+| co-op 4: oleada ×2 → ×1,5 | igual | igual | 79 / 52 / 6 | 12 / 2 / 0 |
+| co-op 4: oleada ×2 → ×1,75 | igual | igual | 78 / 41 / 1 | 4 / 1 / 0 |
+| co-op 4: tope +8 → +4 | igual | igual | 78 / 31 / 0 | 4 / 1 / 0 |
+| co-op 4: Comida al bajar ×2 (60 en los pisos 4-5) | igual | igual | 78 / 43 / 6 | 4 / 1 / 0 |
+| co-op 4: +15 Comida en cada bajada (2-5) | igual | igual | 98 / 68 / 10 | 18 / 1 / 0 |
+| **co-op 4: +20 Comida en cada bajada (2-5) (elegido)** | igual | igual | **99 / 83 / 25** | 28 / 3 / 0 |
+| co-op 4: +30 Comida al bajar a los pisos 2-3 | igual | igual | 100 / 93 / 26 | 56 / 8 / 0 |
+| co-op 4: +20 por bajada + oleada ×1,75 | igual | igual | 99 / 93 / 38 | 28 / 4 / 0 |
+| co-op 4: +15 por bajada + oleada ×1,5 | igual | igual | 100 / 85 / 26 | 44 / 8 / 0 |
+
+**Elegido (dueño): D1 + C1.** `DifficultyLevel.scales_bosses` nuevo (Difícil = false): los jefes toman solo la curva del piso, sin el ×1,35 / ×1,25 de Difícil (`FloorManager.enemy_hp_multiplier(boss)`, lo pide `EnemyManager._spawn_enemy`; los refuerzos que invoca el jefe siguen con Difícil). `PlayerScaling.descent_food` nuevo = 0 / 0 / 10 / 20 de Comida en cada bajada (piso 2 en adelante) con 1 / 2 / 3 / 4 jugadores, además de los +30 de los pisos 4 y 5 (`FloorManager.descent_food()`). Al bajar, la tarjeta del HUD dice «Provisiones — Al bajar al piso N: +X Comida.» (cada par la muestra local). Versión 1.5.
+
+**Con lo elegido** (`sweep_juego28_final.gd`, 200 corridas; pisos 3 / 4 / 5):
+
+| Dificultad | Pares | Tríos (co-op 3) | Los 4 (co-op 4) | Los 4 sin conexión |
+|---|---|---|---|---|
+| Normal | 51 / 42 / 19 (igual) | 84 / 59 / 14 (antes 64 / 32 / 3) | 99 / 83 / 25 (antes 78 / 31 / 0) | 90 / 85 / 43 (igual) |
+| Difícil | 33 / 11 / 1 (antes 10 / 3 / 0) | 47 / 6 / 1 | 67 / 11 / 0 (antes 4 / 1 / 0) | 70 / 38 / 3 |
+
+`test_balance` (50 corridas) fija los datos y estos umbrales: Normal pares ≥ 45 / 36 / 14 % en los pisos 3 / 4 / 5 (piso de 51 / 42 / 19 a 200 corridas, con margen de ruido), los 4 en co-op Normal piso 4 ≥ 60 % y piso 5 ≤ 50 %, Difícil pares piso 3 ≥ 25 %, piso 4 ≤ 20 % (antes 10 %) y piso 5 ≤ 5 %. `test_difficulty_curve` comprueba que un jefe recibe solo la curva en las dos dificultades, la Comida al bajar por jugadores y el aviso en el HUD.
+
+Sin conexión con reclutas no se tocó: el simulador lo aproxima con los 4 desde el piso 1 (sin pagar el rescate y sin la espera hasta la sala de prisioneros), así que es una cota alta. En Difícil, el piso 4 (11 %) pasa a ser la pared siguiente.

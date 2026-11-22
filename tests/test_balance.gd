@@ -32,13 +32,21 @@ const RUN_HERO_SPREAD_PP := 10.0
 const BOSS_FOOD_REWARD := 15
 const NORMAL_REACH4_MIN := 0.5
 const NORMAL_FLOOR3_MAX := 0.65
-const HARD_FLOOR4_MAX := 0.1
+const HARD_FLOOR4_MAX := 0.2  # juego-28: 0.1 -> 0.2 (11 % at 200 runs with the bosses change)
 ## juego-27: +30 Comida on reaching floors 4 and 5, Señor Demonio 150 HP (owner's pick).
 const DESCEND_FOOD := 30
 const DESCEND_FOOD_FROM := 4
 const BOSS5_HP := 150
 const NORMAL_REACH5_MIN := 0.3
 const HARD_FLOOR5_MAX := 0.05
+## juego-28 (owner's pick): Hard's bosses skip its multipliers (Hard pairs floor 3: 10 -> 33 % at
+## 200 runs) and co-op of 3 / 4 gets +10 / +20 Comida per descent (the four, Normal: floor 4
+## 31 -> 83 %). Normal pairs stay at 51 / 42 / 19 % (200 runs): these are 50-run floors with margin.
+const HARD_FLOOR3_MIN := 0.25
+const DESCENT_FOOD_BY_PLAYERS := [0, 0, 10, 20]
+const NORMAL_PAIR_FLOORS_MIN := {3: 0.45, 4: 0.36, 5: 0.14}
+const FOUR_NORMAL_FLOOR4_MIN := 0.6
+const FOUR_NORMAL_FLOOR5_MAX := 0.5
 
 var failures: Array[String] = []
 
@@ -97,6 +105,8 @@ func _check_food_floor4(rows: Array[Dictionary], level_id: String) -> void:
 	_expect(cfg.boss_food_reward == BOSS_FOOD_REWARD and cfg.food_bonus_on_descend == DESCEND_FOOD and cfg.food_bonus_from_floor == DESCEND_FOOD_FROM,
 		"Comida: boss %d, descend %d from floor %d" % [cfg.boss_food_reward, cfg.food_bonus_on_descend, cfg.food_bonus_from_floor])
 	_expect(cfg.theme(5).boss.base_hp == BOSS5_HP, "floor-5 boss HP %d" % cfg.theme(5).boss.base_hp)
+	_expect(not DifficultyConfig.get_default().get_level("hard").scales_bosses, "juego-28: Hard scales its bosses")
+	_expect(Array(PlayerScaling.get_default().descent_food) == DESCENT_FOOD_BY_PLAYERS, "descent Comida by players %s" % PlayerScaling.get_default().descent_food)
 	var won := {3: 0.0, 4: 0.0, 5: 0.0}
 	var pairs := 0
 	for row in rows:
@@ -113,7 +123,17 @@ func _check_food_floor4(rows: Array[Dictionary], level_id: String) -> void:
 		_expect(reach4 >= NORMAL_REACH4_MIN, "normal: floor 4 won by %.2f of the pairs that reach it" % reach4)
 		_expect(floor3 <= NORMAL_FLOOR3_MAX, "normal: floor 3 won by %.2f of the pairs" % floor3)
 		_expect(reach5 >= NORMAL_REACH5_MIN, "normal: floor 5 won by %.2f of the pairs that reach it" % reach5)
+		for f: int in NORMAL_PAIR_FLOORS_MIN:
+			_expect(float(won[f]) / maxi(pairs, 1) >= NORMAL_PAIR_FLOORS_MIN[f], "normal: floor %d won by %.2f of the pairs" % [f, float(won[f]) / maxi(pairs, 1)])
+		var four := rows.filter(func(r: Dictionary) -> bool: return r["difficulty"] == level_id and int(r["size"]) == 4)
+		var four_won := {}
+		for r in four:
+			four_won[int(r["floor"])] = float(r["win_rate"])
+		print("normal, the four (co-op 4): floor 3 %.2f, floor 4 %.2f, floor 5 %.2f" % [four_won[3], four_won[4], four_won[5]])
+		_expect(four_won[4] >= FOUR_NORMAL_FLOOR4_MIN, "normal: the co-op four win floor 4 in %.2f" % four_won[4])
+		_expect(four_won[5] <= FOUR_NORMAL_FLOOR5_MAX, "normal: the co-op four win the run in %.2f" % four_won[5])
 	else:
+		_expect(floor3 >= HARD_FLOOR3_MIN, "%s: floor 3 won by %.2f of the pairs" % [level_id, floor3])
 		_expect(floor4 <= HARD_FLOOR4_MAX, "%s: floor 4 won by %.2f of the pairs" % [level_id, floor4])
 		_expect(floor5 <= HARD_FLOOR5_MAX, "%s: floor 5 won by %.2f of the pairs" % [level_id, floor5])
 

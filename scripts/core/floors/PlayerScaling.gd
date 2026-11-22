@@ -18,6 +18,9 @@ const DEFAULT_PATH := "res://resources/floors/player_scaling.tres"
 @export var threat_mult: PackedFloat32Array = [1.0, 1.0, 1.0, 1.0]
 @export var extra_max_enemies: PackedInt32Array = [0, 0, 0, 0]
 @export var relic_hp_mult: PackedFloat32Array = [1.0, 1.0, 1.0, 1.0]
+## juego-28: Comida on every descent (floor 2 on), on top of FloorConfig.food_bonus_on_descend:
+## 3-4 heroes level and heal from the same doors as 2 (FloorManager.descent_food).
+@export var descent_food: PackedInt32Array = [0, 0, 0, 0]
 
 
 static func get_default() -> PlayerScaling:
@@ -49,6 +52,10 @@ func threat(players: int) -> float:
 
 func relic_hp(players: int) -> float:
 	return _pick(relic_hp_mult, players, 1.0)
+
+
+func food_on_descend(players: int) -> int:
+	return 0 if descent_food.is_empty() else descent_food[clampi(players - 1, 0, descent_food.size() - 1)]
 
 
 func extra_enemies(players: int) -> int:

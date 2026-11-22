@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## session/juego-28
+- Difícil: los jefes (pisos 3 y 5) ya no tienen la vida y el daño extra de Difícil, solo los del piso.
+- Co-op de 3 y de 4 jugadores: +10 y +20 de Comida en cada bajada de piso (desde el piso 2).
+- Al bajar de piso, una tarjeta dice cuánta Comida se recibe («Provisiones»).
+- Versión 1.5: no se puede jugar en co-op con la 1.4.
+
 ## session/juego-27
 - Al bajar a los pisos 4 y 5 se reciben +30 de Comida.
 - El Señor Demonio (jefe del piso 5) tiene 150 de vida (antes 220).

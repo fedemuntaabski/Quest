@@ -118,8 +118,9 @@ static func armor_ehp_mult(armor: int, f: int) -> float:
 static func enemy_stats(type: EnemyType, floor_index: int) -> Dictionary:
 	var cfg := floor_config()
 	var scaling := PlayerScaling.get_default()
-	var hp_mult := cfg.enemy_hp_multiplier(floor_index) * type.hp_mult * (difficulty.hp_mult if difficulty else 1.0) * scaling.hp(players)
-	var dmg_mult := cfg.enemy_damage_multiplier(floor_index) * type.damage_mult * (difficulty.damage_mult if difficulty else 1.0) * scaling.damage(players)
+	var diff := difficulty != null and (difficulty.scales_bosses or not type.is_boss)  # FloorManager.enemy_hp_multiplier(boss)
+	var hp_mult := cfg.enemy_hp_multiplier(floor_index) * type.hp_mult * (difficulty.hp_mult if diff else 1.0) * scaling.hp(players)
+	var dmg_mult := cfg.enemy_damage_multiplier(floor_index) * type.damage_mult * (difficulty.damage_mult if diff else 1.0) * scaling.damage(players)
 	return {
 		"enemy": type.id, "floor": floor_index, "role": "raider" if type.role == EnemyType.Role.RAIDER else "hunter",
 		"hp": maxi(1, roundi(Enemy.resolved_hp(type) * hp_mult)),
@@ -511,7 +512,7 @@ static func difficulty_rows() -> Array[Dictionary]:
 					dps += float(hero_stats(hero_id, f - 1)["dps"])
 				row["boss"] = theme.boss.id
 				row["boss_hp"] = boss["hp"]
-				row["boss_charge"] = maxi(1, roundi(theme.boss.charge_damage * cfg.enemy_damage_multiplier(f) * theme.boss.damage_mult * level.damage_mult))
+				row["boss_charge"] = maxi(1, roundi(theme.boss.charge_damage * cfg.enemy_damage_multiplier(f) * theme.boss.damage_mult * (level.damage_mult if level.scales_bosses else 1.0)))
 				row["boss_ttk_s"] = snappedf(float(boss["hp"]) / maxf(dps, 0.01), 0.1)
 			rows.append(row)
 	difficulty = null
@@ -633,8 +634,12 @@ static var _boss_near := BOSS_NEAR_TOWERS
 ## juego-25: "items" = chests, Altars and the floor-end reward become equipment (see run_rows).
 ## What-ifs for the cause breakdown (off by default): "free_food" = Comida never runs out,
 ## "no_doors" / "no_extr" = that floor has no door waves / no extraction waves.
+## juego-28: "extra_food" = more Comida on each descent from floor 2 to "extra_food_to";
+## "free_levels" = levels cost no Comida; "players" &gt; 0 = PlayerScaling of that many
+## players whatever the party (1 with the four = offline with recruits, all from floor 1).
 const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_first": true,
-	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0, "no_boss": 0}
+	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0, "no_boss": 0, "free_levels": false, "players": 0,
+	"extra_food": 0, "extra_food_to": 5}
 static var _play: Dictionary = BOSS_PLAY
 ## juego-25: hero id -> summed item modifiers of the run being simulated ("items").
 static var _gear: Dictionary = {}
@@ -674,6 +679,8 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 		difficulty = level
 		for party: Array in parties:
 			players = 1 if party.size() <= 2 else party.size()  # alone = 2 heroes; co-op = 1 each
+			if int(_play["players"]) > 0:
+				players = int(_play["players"])
 			_duel_cache.clear()
 			var acc: Array[Dictionary] = []
 			for f in FLOORS:
@@ -766,6 +773,10 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		a["played"] += 1
 		if f >= maxi(cfg.food_bonus_from_floor, 2):
 			res["food"] += cfg.food_bonus_on_descend  # FloorManager (juego-26)
+		if f >= 2:
+			res["food"] += scaling.food_on_descend(players)  # FloorManager.descent_food (juego-28)
+		if f >= 2 and f <= int(_play["extra_food_to"]):
+			res["food"] += int(_play["extra_food"])
 		if _play["free_food"]:
 			res["food"] = 9999
 		a["food_short"] += maxf(_food_wanted(party, levels, hp, f) - res["food"], 0.0)
@@ -774,8 +785,8 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				res["food"] -= up.revive_cost(f)
 				hp[id] = _max_hp(id, levels[id]) * up.revive_hp_pct
 		for id: String in party:  # level up to floor - 1
-			while hp[id] > 0.0 and levels[id] < mini(f - 1, up.max_level) and res["food"] >= up.get_cost(levels[id]):
-				res["food"] -= up.get_cost(levels[id])
+			while hp[id] > 0.0 and levels[id] < mini(f - 1, up.max_level) and (_play["free_levels"] or res["food"] >= up.get_cost(levels[id])):
+				res["food"] -= 0 if _play["free_levels"] else up.get_cost(levels[id])
 				var before := _max_hp(id, levels[id])
 				levels[id] += 1
 				hp[id] += _max_hp(id, levels[id]) - before
@@ -1139,7 +1150,7 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary, towers_near: int = 0) -> void:
 	var stats := enemy_stats(boss, f)
 	var boss_hp := float(stats["hp"])
-	var charge := maxf(1.0, roundf(boss.charge_damage * floor_config().enemy_damage_multiplier(f) * boss.damage_mult * difficulty.damage_mult))
+	var charge := maxf(1.0, roundf(boss.charge_damage * floor_config().enemy_damage_multiplier(f) * boss.damage_mult * (difficulty.damage_mult if difficulty.scales_bosses else 1.0)))
 	var in_contact := 1.0 - clampf(float(_play["dodge"]) * float(_play["dodge_sec"]) / maxf(boss.charge_cooldown, 0.1), 0.0, 1.0)
 	while boss_hp > 0.001 and _alive(party, hp):  # float leftovers would loop on ever-smaller steps
 		var dps := towers_near * tower_dps()

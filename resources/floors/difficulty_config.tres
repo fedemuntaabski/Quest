@@ -20,6 +20,7 @@ threat_mult = 1.25
 extra_max_enemies = 2
 relic_hp_mult = 0.8
 start_resource_mult = 0.75
+scales_bosses = false
 
 [resource]
 script = ExtResource("1_cfg")

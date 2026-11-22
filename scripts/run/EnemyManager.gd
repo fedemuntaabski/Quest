@@ -225,13 +225,14 @@ func _spawn_enemy(zone_id: String, world_position: Vector2, forced_type: EnemyTy
 	enemy.setup(world_position)
 	enemy.slot = _spawn_count
 	_spawn_count += 1
-	var hp_mult: float = floor_manager.enemy_hp_multiplier() if floor_manager else 1.0
-	var dmg_mult: float = floor_manager.enemy_damage_multiplier() if floor_manager else 1.0
+	var type := forced_type if forced_type else _roll_type(zone_id)
+	var is_boss := type != null and type.is_boss
+	var hp_mult: float = floor_manager.enemy_hp_multiplier(is_boss) if floor_manager else 1.0
+	var dmg_mult: float = floor_manager.enemy_damage_multiplier(is_boss) if floor_manager else 1.0
 	var rule := _room_rule(zone_id) if forced_type == null else null  # Elite rooms: tougher enemies
 	if rule:
 		hp_mult *= rule.enemy_hp_mult
 		dmg_mult *= rule.enemy_damage_mult
-	var type := forced_type if forced_type else _roll_type(zone_id)
 	enemy.configure(Enemy.Variant.SWARM, zone_id, hp_mult, dmg_mult, type)
 	enemy.died.connect(_on_enemy_died)
 	_enemies.append(enemy)

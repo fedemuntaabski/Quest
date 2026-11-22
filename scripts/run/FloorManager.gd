@@ -51,11 +51,35 @@ func setup(p_floor_index: int, run_seed: int = 0) -> void:
 		var resource_manager := ManagerLocator.get_resource_manager()
 		if resource_manager:
 			resource_manager.add_resource("embers", config.embers_bonus_on_descend)
-	if floor_index >= maxi(config.food_bonus_from_floor, 2) and config.food_bonus_on_descend > 0:
+	var food := descent_food()
+	if food > 0:
 		var resources := ManagerLocator.get_resource_manager()
 		if resources:
-			resources.add_resource("food", config.food_bonus_on_descend)
+			resources.add_resource("food", food)  # host only (add_resource); every peer shows the hint
+		_announce_descent_food.call_deferred(food)  # the floor's HUD is added right after Main2d
 	QuestLogger.info(QuestLogger.Category.MAP, "Floor %d/%d started (enemy HP x%.2f, dmg x%.2f)." % [floor_index, config.max_floors, enemy_hp_multiplier(), enemy_damage_multiplier()])
+
+
+## Comida paid on reaching this floor: FloorConfig.food_bonus_on_descend (from food_bonus_from_floor)
+## + PlayerScaling.descent_food for this run's players (juego-28). 0 on floor 1.
+func descent_food() -> int:
+	if floor_index < 2:
+		return 0
+	var food := scaling.food_on_descend(players)
+	if floor_index >= config.food_bonus_from_floor:
+		food += config.food_bonus_on_descend
+	return food
+
+
+## juego-28: the descent Comida used to raise the counter with no word.
+func _announce_descent_food(food: int) -> void:
+	var hud := ManagerLocator.get_hud()
+	if hud:
+		hud.show_local_hint("Provisiones", descent_food_text(floor_index, food), QuestPalette.GOLD_LIGHT)
+
+
+static func descent_food_text(floor_number: int, food: int) -> String:
+	return "Al bajar al piso %d: +%d Comida." % [floor_number, food]
 
 
 ## Called once when this floor's exit is reached (ExtractionManager.victory_declared).
@@ -324,12 +348,13 @@ var scaling: PlayerScaling = PlayerScaling.get_default()
 var players: int = 1
 
 
-func enemy_hp_multiplier() -> float:
-	return config.enemy_hp_multiplier(floor_index) * difficulty.hp_mult * scaling.hp(players)
+## `boss`: a boss skips the difficulty's multipliers when DifficultyLevel.scales_bosses is off.
+func enemy_hp_multiplier(boss: bool = false) -> float:
+	return config.enemy_hp_multiplier(floor_index) * (difficulty.hp_mult if difficulty.scales_bosses or not boss else 1.0) * scaling.hp(players)
 
 
-func enemy_damage_multiplier() -> float:
-	return config.enemy_damage_multiplier(floor_index) * difficulty.damage_mult * scaling.damage(players)
+func enemy_damage_multiplier(boss: bool = false) -> float:
+	return config.enemy_damage_multiplier(floor_index) * (difficulty.damage_mult if difficulty.scales_bosses or not boss else 1.0) * scaling.damage(players)
 
 
 ## Threat chance / enemy count of a door opened as the `doors_opened`-th of this floor

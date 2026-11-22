@@ -14,3 +14,6 @@ class_name DifficultyLevel
 @export var relic_hp_mult: float = 1.0
 ## Starting resources of the run (ResourceManager.reset_resources).
 @export var start_resource_mult: float = 1.0
+## juego-28: false = bosses skip hp_mult/damage_mult (only the floor curve), so Hard's
+## floor-3 boss stops being the wall (FloorManager.enemy_hp_multiplier(boss)).
+@export var scales_bosses: bool = true

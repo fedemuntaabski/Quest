@@ -6,7 +6,9 @@ extends SceneTree
 ##     and 5 (jefe, 2 phases: charge + summon)
 ##   - FloorConfig delegates to the curve; without one the linear fallback still works
 ##   - difficulty_config.tres: Normal = 1.0, Difícil harder on every axis
-##   - FloorManager applies curve x difficulty (GameSession.difficulty)
+##   - FloorManager applies curve x difficulty (GameSession.difficulty); Hard's bosses only
+##     the curve (juego-28, DifficultyLevel.scales_bosses)
+##   - juego-28 descent Comida (FloorConfig + PlayerScaling.descent_food) and its HUD hint
 ##   godot --headless --path . --script res://tests/test_difficulty_curve.gd
 
 var failures: Array[String] = []
@@ -16,6 +18,7 @@ func _initialize() -> void:
 	_test_curve()
 	_test_difficulty_config()
 	await _test_floor_manager()
+	await _test_descent_food()
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_difficulty_curve: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
@@ -70,6 +73,7 @@ func _test_difficulty_config() -> void:
 	_expect(normal.hp_mult == 1.0 and normal.damage_mult == 1.0 and normal.threat_mult == 1.0 and normal.extra_max_enemies == 0 and normal.relic_hp_mult == 1.0 and normal.start_resource_mult == 1.0, "Normal is the identity")
 	_expect(hard.hp_mult > 1.0 and hard.damage_mult > 1.0 and hard.threat_mult > 1.0 and hard.extra_max_enemies > 0 and hard.relic_hp_mult < 1.0 and hard.start_resource_mult < 1.0, "Difícil is harder on every axis")
 	_expect(cfg.get_level("nope") == normal, "unknown id falls back to Normal")
+	_expect(normal.scales_bosses and not hard.scales_bosses, "juego-28: Hard's bosses skip its multipliers")
 
 
 func _test_floor_manager() -> void:
@@ -83,6 +87,8 @@ func _test_floor_manager() -> void:
 			root.add_child(fm)
 			fm.setup(f, 7)
 			values[id] = [fm.enemy_hp_multiplier(), fm.enemy_damage_multiplier(), fm.threat_chance(4), fm.max_enemies(), fm.relic_max_hp()]
+			_expect(is_equal_approx(fm.enemy_hp_multiplier(true), config.theme(f).hp_mult) and is_equal_approx(fm.enemy_damage_multiplier(true), config.theme(f).damage_mult),
+				"floor %d %s: a boss gets the curve only (%.2f / %.2f)" % [f, id, fm.enemy_hp_multiplier(true), fm.enemy_damage_multiplier(true)])
 			if id == "normal":
 				_expect(is_equal_approx(fm.enemy_hp_multiplier(), config.theme(f).hp_mult), "floor %d normal: HP mult is the curve's" % f)
 				_expect(fm.theme() == config.theme(f), "floor %d: FloorManager.theme()" % f)
@@ -93,3 +99,38 @@ func _test_floor_manager() -> void:
 		_expect(h[2] >= n[2] and h[2] <= config.door_roll.max_chance, "floor %d: hard threat %.2f vs %.2f" % [f, h[2], n[2]])
 	session.difficulty = "normal"
 	await process_frame
+
+
+## juego-28: +30 Comida on reaching floors 4-5 (FloorConfig), +10 / +20 more per descent with 3 / 4
+## players (PlayerScaling.descent_food), said on the HUD card.
+func _test_descent_food() -> void:
+	var resources := root.get_node("ResourceManager")
+	var config: FloorConfig = load("res://resources/floors/default_floor_config.tres")
+	var hud := (load("res://scenes/hud/HUD.tscn") as PackedScene).instantiate() as HUDController
+	root.add_child(hud)
+	await process_frame
+	var expected := {2: 0, 3: 0, 4: config.food_bonus_on_descend, 5: config.food_bonus_on_descend}
+	for f: int in expected:
+		resources.reset_resources()
+		var before: int = resources.get_resource("food")
+		hud._hint_panel.visible = false
+		hud._hint_title.text = ""
+		var fm := FloorManager.new()
+		root.add_child(fm)
+		fm.setup(f, 7)
+		await process_frame
+		_expect(resources.get_resource("food") - before == expected[f], "floor %d alone: +%d Comida (want %d)" % [f, resources.get_resource("food") - before, expected[f]])
+		if expected[f] > 0:
+			_expect(hud._hint_panel.visible and hud._hint_title.text == "Provisiones" and hud._hint_body.text == FloorManager.descent_food_text(f, expected[f]),
+				"floor %d: hint '%s' / '%s'" % [f, hud._hint_title.text, hud._hint_body.text])
+			_expect(("+%d Comida" % expected[f]) in hud._hint_body.text and str(f) in hud._hint_body.text, "floor %d: hint does not say the amount" % f)
+		else:
+			_expect(hud._hint_title.text != "Provisiones", "floor %d: a hint with no Comida" % f)
+		for p in [3, 4]:
+			fm.players = p
+			_expect(fm.descent_food() == expected[f] + (10 if p == 3 else 20), "floor %d, %d players: %d Comida" % [f, p, fm.descent_food()])
+		fm.floor_index = 1
+		_expect(fm.descent_food() == 0, "floor 1 pays no descent Comida")
+		fm.free()
+	hud.free()
+	resources.reset_resources()
