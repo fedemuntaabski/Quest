@@ -234,7 +234,8 @@ func _buff(target: Object, key: String, apply: Callable, revert: Callable) -> vo
 	apply.call()
 	var token := Time.get_ticks_usec()
 	target.set_meta(key, token)
-	await get_tree().create_timer(active_duration()).timeout
+	# Not process_always: the Esc menu (tree paused) holds the buff like the cooldown.
+	await get_tree().create_timer(active_duration(), false).timeout
 	if is_instance_valid(target) and target.get_meta(key, 0) == token:
 		revert.call()
 

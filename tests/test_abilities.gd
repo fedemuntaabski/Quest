@@ -109,6 +109,16 @@ func _check_warrior_tank() -> void:
 	_expect(is_equal_approx(warrior.abilities.cooldown_left, warrior.abilities.active.cooldown - 5.0), "cooldown does not tick with game time")
 	await create_timer(0.5).timeout
 	_expect(warrior.stats.attack_mult == 1.0 and warrior.hitbox.damage == base_damage, "buff did not wear off")
+	# juego-35: the Esc menu pauses the tree; the buff waits with it, like the cooldown.
+	warrior.abilities.cooldown_left = 0.0
+	_expect(warrior.abilities.try_activate(), "Grito de Guerra did not fire again")
+	paused = true
+	await create_timer(0.5).timeout
+	_expect(warrior.stats.attack_mult == 1.5, "the buff ran out during the menu pause")
+	paused = false
+	await create_timer(0.5).timeout
+	_expect(warrior.stats.attack_mult == 1.0, "the buff did not wear off after the menu pause")
+	warrior.abilities.cooldown_left = 0.0
 
 	# Active: Interposición shields the whole party.
 	_expect(tank.abilities.try_activate(), "Interposición did not fire")
