@@ -359,8 +359,9 @@ func _register_groups_and_doors() -> void:
 
 	room_manager.refresh_visibility()
 	room_manager.validate_graph()
-	# The start room is lit for free (no embers paid → nothing to refund).
+	# The start room is lit for free (no embers paid → nothing to refund) and stays lit.
 	room_manager.set_zone_lit(room_manager.get_start_zone_id(), true)
+	room_manager.get_zone_node(room_manager.get_start_zone_id()).always_lit = true
 
 func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 	room_manager.on_group_revealed(group_id)

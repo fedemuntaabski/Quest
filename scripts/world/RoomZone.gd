@@ -99,6 +99,10 @@ var extra_major_slots: int = 0
 ## Embers the player paid to light this room; refunded when switched off. 0 for
 ## rooms lit for free (the start room), so toggling can't mint embers.
 var _light_paid: int = 0
+## juego-35: the start room (Relic) is lit for free and never goes dark. set_lit() is
+## the one gate light_down(), RoomManager.set_zone_lit and the RunState mirror go through.
+var always_lit: bool = false
+const ALWAYS_LIT_REASON := "La sala de la Reliquia no se apaga"
 @onready var _slots_container: Node2D = $BuildingSlots
 
 
@@ -205,6 +209,9 @@ func set_highlight(state: int) -> void:
 
 func set_lit(v: bool) -> void:
 	if is_lit == v:
+		return
+	if not v and always_lit:
+		QuestLogger.debug(QuestLogger.Category.ROOM, "Zone '%s' stays lit (Relic room)." % zone_id)
 		return
 	is_lit = v
 	var had_workshop := false

@@ -345,6 +345,28 @@ func _check_lighting(main2d: Node) -> void:
 	rooms[0].toggle_light()
 	_expect(not rooms[0].is_lit and resources.get_resource("embers") == RoomZone.LIGHT_COST - 1, "no embers: lit or spent (%d)" % resources.get_resource("embers"))
 	resources.add_resource("embers", 500)
+	# juego-35: the Relic room never goes dark, by any road; the refusal reaches the HUD.
+	var e1 := resources.get_resource("embers")
+	_expect(await _request("toggle_light", {"zone": start.zone_id}) == RoomZone.ALWAYS_LIT_REASON, "start room: switch-off command not refused")
+	start.toggle_light()
+	start.light_down()
+	rm.set_zone_lit(start.zone_id, false)
+	start.apply_light(false, 0)  # a RunState mirror without it
+	_expect(start.is_lit and resources.get_resource("embers") == e1, "start room went dark or moved embers (lit %s, embers %d -> %d)" % [start.is_lit, e1, resources.get_resource("embers")])
+	# Middle-button release after a camera drag: no toggle; without the drag it lights.
+	var dark: RoomZone = _dark_rooms(main2d, 1)[0]
+	var camera: GameCamera = main2d.camera
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_MIDDLE
+	release.pressed = false
+	cmds._rate.clear()
+	camera._drag_moved = true
+	dark._on_input_event(null, release, 0)
+	_expect(not dark.is_lit, "a middle release after a drag lit the room")
+	camera._drag_moved = false
+	dark._on_input_event(null, release, 0)
+	_expect(dark.is_lit, "a plain middle release did not light the room")
+	await _request("toggle_light", {"zone": dark.zone_id})
 
 
 ## mazmorra-32: flames (plan "lights") belong to their room's RoomLight, burn only while it is lit,

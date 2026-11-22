@@ -179,6 +179,8 @@ func _cmd_toggle_light(_sender: int, args: Dictionary) -> String:
 		return INVALID
 	if not ManagerLocator.get_room_manager().is_zone_revealed(zone.zone_id):
 		return "Sala sin descubrir"
+	if zone.is_lit and zone.always_lit:
+		return RoomZone.ALWAYS_LIT_REASON
 	if not zone.is_lit:
 		var rm := ManagerLocator.get_resource_manager()
 		if rm.get_resource("embers") < zone.next_light_cost():
