@@ -45,16 +45,22 @@ func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 		rng.seed = hash([_floor_manager.map_seed if _floor_manager else 0, zone_id, "chest"])
 		if rng.randf() >= _chance_for(type):
 			continue
-		var floor_index := _floor_manager.floor_index if _floor_manager else 1
-		var item := roll_item(rng, floor_index, SECRET_MIN_RARITY if type == RoomData.RoomType.SECRET else 0)
-		if item == null:
-			continue
-		var chest := spawn_chest(zone_id, item, LootTable.get_default().tier_for_floor(floor_index))
-		if not Net.is_authority():
-			continue  # coop-12: the host opens it; RunState mirrors it
+		drop_chest(zone_id, rng, SECRET_MIN_RARITY if type == RoomData.RoomType.SECRET else 0)
+
+
+## A chest with an item rolled on `rng` (null = no item). Also the empty Prisoner cell
+## (mazmorra-32, PrisonerSpawner.spawn_for). Opens at once if a hero is already inside.
+func drop_chest(zone_id: String, rng: RandomNumberGenerator, min_rarity: int = 0) -> Chest:
+	var floor_index := _floor_manager.floor_index if _floor_manager else 1
+	var item := roll_item(rng, floor_index, min_rarity)
+	if item == null:
+		return null
+	var chest := spawn_chest(zone_id, item, LootTable.get_default().tier_for_floor(floor_index))
+	if Net.is_authority():  # coop-12: the host opens it; RunState mirrors it
 		for hero in ManagerLocator.get_heroes():
 			if hero.current_zone_id == zone_id:
 				chest.try_open()
+	return chest
 
 
 func spawn_chest(zone_id: String, item: ItemData, tier: ChestTier = null) -> Chest:

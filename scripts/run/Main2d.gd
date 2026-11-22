@@ -126,7 +126,7 @@ func _setup_controllers() -> void:
 	prisoner_spawner = PrisonerSpawner.new()
 	prisoner_spawner.name = "PrisonerSpawner"
 	add_child(prisoner_spawner)
-	prisoner_spawner.setup(room_manager, door_turn_system, floor_manager, recruit_hero)
+	prisoner_spawner.setup(room_manager, door_turn_system, floor_manager, recruit_hero, loot_spawner)
 
 	hazard_spawner = HazardSpawner.new()
 	hazard_spawner.name = "HazardSpawner"

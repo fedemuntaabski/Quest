@@ -4,8 +4,9 @@ extends Node2D
 ## PrisonerSpawner (heroes-9): when a Prisoner room is discovered it gets a
 ## PrisonerCage holding one hero the party doesn't have (GameSession candidates:
 ## not picked, not recruited, not lost), chosen with a seeded RNG (floor seed +
-## room). With no candidate or a full party (MAX_PARTY) the cell is empty and
-## the HUD says so. Built by Main2d like LootSpawner.
+## room). With no candidate or a full party (MAX_PARTY) the abandoned cell holds a
+## chest instead (mazmorra-32, LootSpawner.drop_chest, seeded like any chest).
+## Built by Main2d after LootSpawner.
 
 const CAGE_OFFSET := Vector2(0, -40)
 const MAX_PARTY: int = preload("res://scripts/autoload/GameSession.gd").MAX_PARTY
@@ -15,11 +16,13 @@ var cages: Dictionary = {}
 var _room_manager: RoomManager
 var _floor_manager: FloorManager
 var _recruit: Callable
+var _loot: LootSpawner
 
 
 ## `recruit` = Main2d.recruit_hero(hero_id, zone_id) -> Player.
-func setup(room_manager: RoomManager, door_turn_system: DoorTurnSystem, floor_manager: FloorManager, recruit: Callable) -> void:
+func setup(room_manager: RoomManager, door_turn_system: DoorTurnSystem, floor_manager: FloorManager, recruit: Callable, loot: LootSpawner = null) -> void:
 	_room_manager = room_manager
+	_loot = loot
 	_floor_manager = floor_manager
 	_recruit = recruit
 	door_turn_system.room_revealed.connect(_on_room_revealed)
@@ -31,13 +34,17 @@ func _on_room_revealed(group_id: String, _cells: Array[Vector2i]) -> void:
 			spawn_for(zone_id)
 
 
-## Cage for `zone_id`, or null (empty cell) when nobody can be recruited.
+## Cage for `zone_id`, or null (abandoned cell + chest) when nobody can be recruited.
 func spawn_for(zone_id: String) -> PrisonerCage:
 	var hero_id := pick_candidate(zone_id)
 	if hero_id == "":
+		if _loot and not _loot.chests.has(zone_id):
+			var rng := RandomNumberGenerator.new()
+			rng.seed = hash([_floor_manager.map_seed if _floor_manager else 0, zone_id, "chest"])
+			_loot.drop_chest(zone_id, rng)
 		var hud := ManagerLocator.get_hud()
 		if hud:
-			hud.show_hint("Prisionero", "La celda está vacía.", QuestPalette.PARCHMENT)
+			hud.show_hint("Prisionero", "La celda está vacía: el prisionero dejó algo.", QuestPalette.PARCHMENT)
 		return null
 	var rule := _floor_manager.config.get_room_type_rule(RoomData.RoomType.PRISONER) if _floor_manager else null
 	var costs: Dictionary = rule.recruit_costs_at(_floor_manager.floor_index) if rule else {"food": 15}

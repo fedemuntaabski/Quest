@@ -102,6 +102,7 @@ func _check_cap(main2d: Node) -> void:
 	var spawner: PrisonerSpawner = main2d.prisoner_spawner
 	_expect(spawner.pick_candidate("anything") == "", "no candidate with a full party")
 	_expect(spawner.spawn_for(main2d.room_manager.get_start_zone_id()) == null, "no cage with a full party")
+	_expect(main2d.loot_spawner.chests.has(main2d.room_manager.get_start_zone_id()), "the empty cell leaves a chest (mazmorra-32)")
 	_expect(main2d.recruit_hero("rogue", main2d.room_manager.get_start_zone_id()) == null, "recruit_hero refuses a 5th hero")
 	_expect(main2d.heroes.size() == 4, "still 4 heroes")
 

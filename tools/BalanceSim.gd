@@ -1039,7 +1039,7 @@ static func _food_wanted(party: Array, levels: Dictionary, hp: Dictionary, f: in
 
 
 ## juego-25 items, the room just revealed: its chest (FloorConfig.loot_chance of the type,
-## LootSpawner) or its Altar (the healthiest hero pays RoomTypeRule.altar_hp_pct of its max HP
+## LootSpawner; a Prisoner room with nobody to free = a chest, PrisonerSpawner.spawn_for) or its Altar (the healthiest hero pays RoomTypeRule.altar_hp_pct of its max HP
 ## for an item of altar_min_rarity or better, if it keeps ALTAR_KEEP_HP of its HP).
 static func _room_loot(type: RoomData.RoomType, f: int, party: Array, levels: Dictionary, hp: Dictionary, worn: Dictionary, rng: RandomNumberGenerator) -> void:
 	var cfg := floor_config()
@@ -1057,6 +1057,9 @@ static func _room_loot(type: RoomData.RoomType, f: int, party: Array, levels: Di
 		if hp[payer] - cost >= top * ALTAR_KEEP_HP:
 			hp[payer] -= cost
 			_take_item(table.roll_item(rng, f, rule.altar_min_rarity), f, party, levels, hp, worn)
+	elif type == RoomData.RoomType.PRISONER:  # mazmorra-32: nobody to free -> the empty cell's chest
+		if party.size() >= MAX_PARTY or HERO_IDS.all(func(id: String) -> bool: return id in party):
+			_take_item(table.roll_item(rng, f), f, party, levels, hp, worn)
 	elif type not in LootSpawner.NO_CHEST_TYPES and rng.randf() < cfg.loot_chance(type):
 		_take_item(table.roll_item(rng, f), f, party, levels, hp, worn)
 
