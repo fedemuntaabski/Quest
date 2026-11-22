@@ -34,9 +34,5 @@ static func make(p_type: Type, p_aggro_range: float = 0.0, p_condition: Conditio
 	return rule
 
 
-func is_hero_rule() -> bool:
-	return type in [Type.HERO_NEAREST, Type.HERO_WEAKEST, Type.HERO_CARRIER]
-
-
 func is_building_rule() -> bool:
 	return type in [Type.BUILDING_WORKSHOP, Type.BUILDING_DEFENSE, Type.BUILDING_TRAP, Type.BUILDING_ANY]

@@ -33,7 +33,3 @@ const UI_TEXT_PRIMARY: Color = Color(0.95, 0.95, 0.92, 1.0)
 const UI_TEXT_SECONDARY: Color = Color(0.80, 0.80, 0.80, 0.80)
 const UI_TEXT_MUTED: Color = Color(0.60, 0.60, 0.60, 1.0)
 const UI_TEXT_BLOCKED: Color = Color(1.00, 0.55, 0.55, 1.0)
-
-
-static func with_alpha(color: Color, alpha: float) -> Color:
-	return Color(color.r, color.g, color.b, alpha)

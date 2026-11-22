@@ -131,13 +131,13 @@ func _check_live() -> void:
 	_expect(stats.max_hp == max_before + ps.run_upgrade_config.hp_per_level, "max hp %d after level up" % stats.max_hp)
 	_expect(stats.attack_damage == dmg_before + 1 and player.hitbox.damage == stats.attack_damage, "damage level reached hitbox")
 	_expect(stats.attack_interval < interval_before and is_equal_approx(player.hitbox.hit_interval, stats.attack_interval), "attack speed level reached hitbox")
-	_expect(ps.get_hero_level() == 2 and ps.get_run_upgrade_level("damage") == 1, "hero level %d" % ps.get_hero_level())
+	_expect(ps.get_hero_level() == 2, "hero level %d" % ps.get_hero_level())
 	_expect(resources.get_resource("lore") == 10, "level up must not spend lore")
 	_expect(not ps.get_level_up_preview()["affordable"], "second level should be unaffordable at 7 food")
 	_expect(not ps.level_up_hero(), "level up with 7 food must fail")
 	_expect(ps.get_hero_level() == 2, "failed level up must not change the level")
 	resources.add_resource("food", 1000)
-	_expect(ps.buy_run_upgrade("hp"), "compat buy_run_upgrade levels the hero up")
+	_expect(ps.level_up_hero(), "level up with enough food")
 	while ps.level_up_hero():
 		pass
 	_expect(ps.get_hero_level() == 1 + ps.run_upgrade_config.max_level, "hero capped at max level")

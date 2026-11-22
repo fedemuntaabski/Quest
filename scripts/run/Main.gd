@@ -212,13 +212,15 @@ func _begin_new_run() -> void:
 	FloorManager.reset_seen_types()
 	var resource_manager := ManagerLocator.get_resource_manager()
 	if resource_manager:
-		var mult := FloorManager.resolve_difficulty().start_resource_mult  # progresion-10
-		resource_manager.reset_resources(roundi(15 * mult), roundi(15 * mult), roundi(10 * mult), roundi(20 * mult))
+		var start: Dictionary = resource_manager.start_amounts(FloorManager.resolve_difficulty().start_resource_mult)  # progresion-10
+		resource_manager.reset_resources(start["iron"], start["food"], start["lore"], start["embers"])
 		resource_manager.reset_research()
 	var player_stats := ManagerLocator.get_player_stats()
 	if player_stats:
 		player_stats.reset_run_upgrades()
-		player_stats.clear_found_items()
+	var inventory := ManagerLocator.get_party_inventory()
+	if inventory:
+		inventory.reset()
 	var selection := ManagerLocator.get_selection_manager()
 	if selection:
 		selection.reset()

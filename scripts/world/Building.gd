@@ -51,11 +51,6 @@ static func _build_catalog() -> Dictionary:
 	return out
 
 
-## Flavor line for the build-menu tooltip (effect numbers come from describe_effect()).
-static func description_of(type: BuildingType) -> String:
-	return str(CATALOG[type]["description"])
-
-
 ## Human-readable effect of a catalog entry, derived from its numbers.
 static func describe_effect(type: BuildingType) -> String:
 	var cfg: Dictionary = CATALOG[type]

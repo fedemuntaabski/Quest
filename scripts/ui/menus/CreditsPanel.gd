@@ -63,10 +63,6 @@ func _ready() -> void:
 	box.add_child(back)
 
 
-func get_text() -> String:
-	return _text.get_parsed_text() if _text else ""
-
-
 func close() -> void:
 	closed.emit()
 	queue_free()

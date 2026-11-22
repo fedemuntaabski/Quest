@@ -335,7 +335,7 @@ func _add_guidance() -> void:
 	help_card = HelpCard.new()
 	help_card.name = "HelpCard"
 	top_left.add_child(help_card)
-	var tutorial := get_tree().get_first_node_in_group("tutorial") as Tutorial
+	var tutorial := ManagerLocator.get_tutorial()
 	if tutorial:  # intro-tutorial-17: the steps own the card
 		tutorial.step_changed.connect(func(_step: int) -> void: _show_tutorial_step(tutorial))
 		_show_tutorial_step(tutorial)
@@ -364,7 +364,7 @@ func show_help(id: String) -> void:
 	var settings := ManagerLocator.get_settings_manager()
 	if help_card == null or settings == null or not settings.should_show_help(id):
 		return
-	if get_tree().get_first_node_in_group("tutorial"):
+	if ManagerLocator.get_tutorial():
 		return
 	settings.mark_help_seen(id)
 	help_card.enqueue(id)

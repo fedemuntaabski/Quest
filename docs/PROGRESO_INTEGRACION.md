@@ -144,13 +144,13 @@ Verificación de cierre (headless, Godot 4.6.2): `tools/run_tests.sh` → 26 tes
 
 ## 2. Decisiones de la sección 6 y cómo quedaron
 
-Tope 120 (6.1) · slots arma 1 / armadura 1 / reliquia 1 / consumible 2 y mochila de 20 (6.2) · el equipo persiste entre pisos y se resetea en cada run (`Main._begin_new_run` → `clear_found_items()` → `PartyInventory.reset()`) (6.3) · sin stats nuevos: solo `hp`, `attack_damage`, `attack_interval`, `attack_range` (6.4) · perks 1 de 2 (6.5) · umbrales del bestiario (6.6/6.7) · bestiario por slot, solo en la pausa (6.8/6.11) · consumibles bloqueados con `Engine.time_scale` 0 (6.9) · clic, sin drag & drop (6.12) · sin enemigos con arte fuera de estética (6.10) · texto en español inline (6.14).
+Tope 120 (6.1) · slots arma 1 / armadura 1 / reliquia 1 / consumible 2 y mochila de 20 (6.2) · el equipo persiste entre pisos y se resetea en cada run (`Main._begin_new_run` → `PartyInventory.reset()`) (6.3) · sin stats nuevos: solo `hp`, `attack_damage`, `attack_interval`, `attack_range` (6.4) · perks 1 de 2 (6.5) · umbrales del bestiario (6.6/6.7) · bestiario por slot, solo en la pausa (6.8/6.11) · consumibles bloqueados con `Engine.time_scale` 0 (6.9) · clic, sin drag & drop (6.12) · sin enemigos con arte fuera de estética (6.10) · texto en español inline (6.14).
 
 Cofres (pedido aparte): `RoomTypeRule.loot_chance` (Botín 1.0, Élite 0.7, Descanso 0.1, Taller 0.15) y `FloorConfig.default_loot_chance` 0.08 para el resto; Inicio y Salida nunca; botín de fin de piso `floor_end_loot_chance` 1.0 (directo a la mochila). El cofre (`Chest.gd`, sprites Kenney cerrado/abierto, caja dibujada en código si falta la hoja) se abre al entrar un héroe, muestra el ítem con marco/color de rareza y lo manda a `PartyInventory`; con la mochila llena queda cerrado y avisa ("Mochila llena" + aviso del HUD).
 
 Desviaciones menores respecto a la propuesta:
 - **Sin toast "Obtenido: X"** al recibir un ítem: el cofre ya muestra "nombre (rareza)" y el botín de fin de piso ya usa `show_hint`; un tercer aviso era redundante. El HUD solo actualiza el contador de mochila.
-- `PlayerStats.found_items`/`add_found_item`/`clear_found_items`/`found_items_changed` **siguen existiendo** como alias de `PartyInventory` (los usan `Main._begin_new_run` y `test_items.gd`); se retiran cuando alguien migre esos dos llamadores.
+- Los alias `PlayerStats.found_items`/`add_found_item`/`clear_found_items`/`found_items_changed` se retiraron en juego-25: `Main._begin_new_run` y `test_items.gd` usan `PartyInventory` directo.
 - `Pickup.Kind.CHEST` queda solo para `test_items.gd`; los cofres de sala son `Chest` (ya no `Pickup`).
 - Las pociones usan multiplicadores por fuente en `CharacterStats` (`set_attack_mult_source`/`set_interval_mult_source`) para no pisar las habilidades de héroe; se añadió `SPEED_BUFF_TIMED`.
 - El atajo de consumible del retrato es un botón por consumible equipado (clic = usar), sin tecla.
@@ -187,7 +187,6 @@ Resto de la integración
 ## 5. Pendiente / abierto (no bloquea)
 
 - Auditoría de Investigación: I-02..I-06 (orientación del primer gasto, números de tarjetas sin bonus, "+N" del HUD sin Mago/Élite, atajo/aviso de comprable, rebuild del panel) e I-08..I-13 (balance de Saber y multijugador). Requieren decisión de diseño.
-- Retirar el alias `found_items` de `PlayerStats` (ver sección 2).
 - Armadura plana como stat nuevo (6.4) y arte de armadura sobre el sprite del héroe: fuera de alcance.
 - Drag & drop del inventario (6.12) y bestiario también en el menú principal (6.11): fuera de alcance.
 - Session bucle-7 (puertas, luz, extracción, pausa 1x/2x): cambios, tablas y lista de lo no verificado en `docs/BUCLE_JUEGO.md`; números en `docs/BALANCE.md` "Bucle".

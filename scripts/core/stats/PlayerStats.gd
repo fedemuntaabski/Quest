@@ -10,9 +10,6 @@ signal player_died
 signal hero_downed(hero_id: String)
 ## heroes-9: a downed hero was revived (Comida, an ally in its room).
 signal hero_revived(hero_id: String)
-## The party stash changed (chest found, equipped/unequipped): CharacterPopup "Hallazgos"
-## (alias of PartyInventory.stash, retired by the equipment UI).
-signal found_items_changed
 ## A hero leveled up (in-run, paid in Comida). Since session 7 every level
 ## raises all UpgradeConfig.STAT_KEYS together: stat_key is always "level" and
 ## `level` is the number of levels that hero bought this run (hero level - 1).
@@ -44,11 +41,7 @@ var active_hero_id: String:
 
 # IN-RUN HERO LEVELS (Comida, reset per run by Main._begin_new_run; survive
 # floors because this autoload outlives Main2d and register() re-applies them).
-## Read-only view of the party stash (PartyInventory owns the items).
-var found_items: Array[ItemData]:
-	get:
-		var inventory := ManagerLocator.get_party_inventory()
-		return inventory.stash_items() if inventory else ([] as Array[ItemData])
+
 var run_upgrade_config: UpgradeConfig = RUN_UPGRADE_CONFIG
 ## hero_id → levels bought this run (hero level = 1 + levels).
 var run_levels: Dictionary = {}
@@ -66,20 +59,12 @@ var stats: CharacterStats:
 var run_level: int:
 	get:
 		return _levels_of(active_hero_id)
-## Read-only compat view (session 6 per-stat levels): every stat == run_level.
-var run_upgrade_levels: Dictionary:
-	get:
-		var levels := {}
-		for key in UpgradeConfig.STAT_KEYS:
-			levels[key] = run_level
-		return levels
 
 func _ready() -> void:
 	# PartyInventory is listed before this autoload in project.godot. Not through
 	# ManagerLocator: the main loop is not set yet while autoloads get their _ready.
 	var inventory := get_node_or_null("/root/PartyInventory") as PartyInventory
 	if inventory:
-		inventory.stash_changed.connect(func() -> void: found_items_changed.emit())
 		inventory.equipment_changed.connect(func(hero_id: String, _slot: ItemData.Slot, _item: ItemData) -> void: _rebonus(hero_id))
 
 
@@ -196,11 +181,6 @@ func _levels_of(hero_id: String) -> int:
 	return int(run_levels.get(hero_id, 0))
 
 # ---------------- IN-RUN HERO LEVEL ----------------
-
-## Compat (session 6): all stats share the hero's run level now.
-func get_run_upgrade_level(stat_key: String, hero_id: String = "") -> int:
-	return _levels_of(_resolve(hero_id)) if UpgradeConfig.STAT_KEYS.has(stat_key) else 0
-
 
 ## 1 + levels bought this run (there is no XP system).
 func get_hero_level(hero_id: String = "") -> int:
@@ -371,15 +351,7 @@ func get_downed_ids() -> Array[String]:
 
 
 func _player_of(hero_id: String) -> Player:
-	for hero in ManagerLocator.get_heroes():
-		if hero.stats.hero_id == hero_id:
-			return hero
-	return null
-
-
-## Compat (session 6): any stat key now levels the whole hero up.
-func buy_run_upgrade(stat_key: String, hero_id: String = "") -> bool:
-	return UpgradeConfig.STAT_KEYS.has(stat_key) and level_up_hero(hero_id)
+	return ManagerLocator.get_hero(hero_id)
 
 
 ## New run: every hero back to level 1.
@@ -575,17 +547,3 @@ func apply_run_state(d: Dictionary) -> void:
 		var hp := s.current_hp
 		_refresh_hero(s)
 		s.current_hp = mini(hp, s.max_hp)  # HP itself comes from the snapshots
-
-
-## Compat: puts the item in the party stash.
-func add_found_item(item: ItemData) -> void:
-	var inventory := ManagerLocator.get_party_inventory()
-	if inventory:
-		inventory.add_item(item)
-
-
-## Compat: empties the stash and the loadouts (new run).
-func clear_found_items() -> void:
-	var inventory := ManagerLocator.get_party_inventory()
-	if inventory:
-		inventory.reset()

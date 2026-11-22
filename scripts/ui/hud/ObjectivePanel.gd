@@ -70,7 +70,7 @@ func get_lines() -> Array[String]:
 
 
 func _tutorial() -> Tutorial:
-	return get_tree().get_first_node_in_group("tutorial") as Tutorial
+	return ManagerLocator.get_tutorial()
 
 
 ## The last step done stays on screen above the current one.

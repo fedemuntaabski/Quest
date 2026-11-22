@@ -11,6 +11,8 @@ signal production_changed
 signal research_changed
 
 const KEYS: Array[String] = ["iron", "food", "lore", "embers"]
+## What a run starts with on Normal (the one copy: Main._begin_new_run and BalanceSim read it).
+const START := {"iron": 15, "food": 15, "lore": 10, "embers": 20}
 
 ## Base production per opened door. 0 since session bucle-7: what a door pays
 ## (embers + one random resource per floor) is DoorRollConfig, paid by
@@ -88,7 +90,15 @@ func process_turn_production() -> void:
 		add_resource(key, get_turn_yield(key))
 
 
-func reset_resources(initial_iron: int = 15, initial_food: int = 15, initial_lore: int = 10, initial_embers: int = 20) -> void:
+## START scaled by the difficulty's start_resource_mult.
+static func start_amounts(mult: float = 1.0) -> Dictionary:
+	var out := {}
+	for key: String in START:
+		out[key] = roundi(START[key] * mult)
+	return out
+
+
+func reset_resources(initial_iron: int = START["iron"], initial_food: int = START["food"], initial_lore: int = START["lore"], initial_embers: int = START["embers"]) -> void:
 	var initial: Dictionary = {
 		"iron": initial_iron,
 		"food": initial_food,

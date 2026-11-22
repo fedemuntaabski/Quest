@@ -105,10 +105,7 @@ func _hero_ids(args: Dictionary) -> Array[String]:
 # ─── lookups ──────────────────────────────────────────────────
 
 func _hero(id: String) -> Player:
-	for hero in ManagerLocator.get_heroes():
-		if hero.stats.hero_id == id:
-			return hero
-	return null
+	return ManagerLocator.get_hero(id)
 
 
 func _heroes(args: Dictionary) -> Array[Player]:

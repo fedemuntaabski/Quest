@@ -123,10 +123,7 @@ func _on_use_pressed(index: int) -> void:
 
 
 func _hero() -> Player:
-	for hero in ManagerLocator.get_heroes():
-		if hero.stats.hero_id == hero_id:
-			return hero
-	return null
+	return ManagerLocator.get_hero(hero_id)
 
 
 # ---------------- stash ----------------

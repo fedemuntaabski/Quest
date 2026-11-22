@@ -65,8 +65,8 @@ func _check_icon(item: ItemData) -> void:
 
 
 func _check_popup(catalog: ItemCatalog) -> void:
-	var ps: Node = root.get_node("PlayerStats")
-	ps.clear_found_items()
+	var inventory: Node = root.get_node("PartyInventory")
+	inventory.reset()
 	var popup := CharacterPopup.new()
 	root.add_child(popup)
 	await process_frame
@@ -75,10 +75,10 @@ func _check_popup(catalog: ItemCatalog) -> void:
 	root.add_child(stats)
 	popup.open_for(stats, null)
 	_expect(popup._equipment._stash_grid.get_child_count() == 0, "popup sin hallazgos al inicio")
-	ps.add_found_item(catalog.items[3])
+	inventory.add_item(catalog.items[3])
 	_expect(popup._equipment._stash_grid.get_child_count() == 1, "la mochila del popup lista el ítem hallado")
-	ps.clear_found_items()
-	_expect(popup._equipment._stash_grid.get_child_count() == 0, "clear_found_items vacía la mochila")
+	inventory.reset()
+	_expect(popup._equipment._stash_grid.get_child_count() == 0, "reset vacía la mochila")
 	popup.queue_free()
 	stats.queue_free()
 

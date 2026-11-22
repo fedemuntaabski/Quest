@@ -404,7 +404,7 @@ static func extraction_rows() -> Array[Dictionary]:
 
 const BUILDING_YIELD := 3
 ## ResourceManager.reset_resources() defaults: what a run starts with.
-const START_RESOURCES := {"iron": 15, "food": 15, "lore": 10, "embers": 20}
+const START_RESOURCES: Dictionary = preload("res://scripts/autoload/ResourceManager.gd").START
 ## Heroes in a run (GameSession.PARTY_SIZE, the picked pair before recruits; they also
 ## share each invasion wave) and HP a hero loses (and heals back with Comida) per floor.
 const PARTY_SIZE := 2

@@ -20,8 +20,6 @@ enum OrphanMode {
 @export var full_state_sec := 1.0
 ## Desync check period (host sends its state hash).
 @export var hash_sec := 5.0
-## Client render delay for interpolation.
-@export var interp_delay_sec := 0.1
 @export var ping_sec := 2.0
 
 @export_group("Commands")

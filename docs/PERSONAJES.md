@@ -260,7 +260,7 @@ Común (refactor-2; ver heroes-9 en §1): sin defensa/armadura, 5 niveles (8/11/
 4. **"Explorador Rápido" sin velocidad**: el Pícaro no se mueve más rápido; no hay stat de velocidad por héroe (`MoveAction.DEFAULT_SPEED_PX` es global).
 5. **Texto vs mecánica**: "Piel de Hierro" ya no es condicional (estabilizar-14). "Interposición" del Paladín es un escudo de grupo, no una interposición posicional.
 6. **Valores del `.tres` que pisan los defaults del script**: `attack_speed_per_level` 0.05 y `min_attack_interval` 0.3 (script: 0.1 y 0.2; el comentario de `UpgradeConfig.gd:28` habla de 10 %). `Player.tscn` trae `Hitbox damage = 3` y radio 160, que `Player._ready()` sobrescribe con los de `CharacterData`.
-7. `CharacterData.profile_bg` (`CharacterData.gd:13`) **no lo lee nadie**. Hay `passive_ability_desc` pero **no `active_ability_desc`**: `HeroSelectMenu` (`HeroSelectMenu.gd:307`) y `CharacterPopup` solo muestran el *nombre* de la activa.
+7. `CharacterData.profile_bg` no lo leía nadie (borrado en juego-25). Hay `passive_ability_desc` pero **no `active_ability_desc`**: `HeroSelectMenu` (`HeroSelectMenu.gd:307`) y `CharacterPopup` solo muestran el *nombre* de la activa.
 8. Los cooldowns de habilidades no tienen ícono (29 `placeholder_*`, 8 son `ability_*`; `docs/MISSING_ICONS.md`), ni hay barra visible en el retrato según ese documento.
 9. **Sin sistema de equipo**: 18 `ItemData` con modificadores (hp, daño, intervalo) que ningún código aplica; `ItemData.Slot.TALISMAN` y `Rarity` sin consumidor más allá de mostrar texto/color.
 10. El héroe `description`/`role` está solo en español en los `.tres` (sin i18n).

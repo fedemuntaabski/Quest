@@ -12,6 +12,13 @@ static func _get_root() -> Node:
 	return null
 
 
+static func _first_in_group(group: String) -> Node:
+	var ml = Engine.get_main_loop()
+	if ml and ml is SceneTree:
+		return ml.get_first_node_in_group(group)
+	return null
+
+
 static func get_autoload(name: String) -> Node:
 	var root = _get_root()
 	if root and root.has_node(name):
@@ -63,10 +70,7 @@ static func get_net_commands() -> CoopCommands:
 
 ## coop-12: the gameplay scene root (group "main2d"; no class_name).
 static func get_main2d() -> Node:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("main2d")
-	return null
+	return _first_in_group("main2d")
 
 
 static func get_resource_manager() -> ResourceManager:
@@ -74,24 +78,15 @@ static func get_resource_manager() -> ResourceManager:
 
 
 static func get_game_state_manager() -> GameStateManager:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("game_state_manager") as GameStateManager
-	return null
+	return _first_in_group("game_state_manager") as GameStateManager
 
 
 static func get_main_orchestrator() -> Main:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("main_orchestrator") as Main
-	return null
+	return _first_in_group("main_orchestrator") as Main
 
 
 static func get_room_manager() -> RoomManager:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("room_manager") as RoomManager
-	return null
+	return _first_in_group("room_manager") as RoomManager
 
 
 ## The active (selected) hero; every hero is in group "player" (session 12).
@@ -115,53 +110,43 @@ static func get_heroes() -> Array[Player]:
 	return out
 
 
-static func get_hud() -> HUDController:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("hud") as HUDController
+static func get_hero(hero_id: String) -> Player:
+	for hero in get_heroes():
+		if hero.stats.hero_id == hero_id:
+			return hero
 	return null
+
+
+static func get_tutorial() -> Tutorial:
+	return _first_in_group("tutorial") as Tutorial
+
+
+static func get_hud() -> HUDController:
+	return _first_in_group("hud") as HUDController
 
 
 static func get_relic() -> Relic:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("relic") as Relic
-	return null
+	return _first_in_group("relic") as Relic
 
 
 static func get_extraction_manager() -> ExtractionManager:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("extraction_manager") as ExtractionManager
-	return null
+	return _first_in_group("extraction_manager") as ExtractionManager
 
 
 static func get_enemy_manager() -> EnemyManager:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("enemy_manager") as EnemyManager
-	return null
+	return _first_in_group("enemy_manager") as EnemyManager
 
 
 static func get_exit_indicator() -> ExitIndicator:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("exit_indicator") as ExitIndicator
-	return null
+	return _first_in_group("exit_indicator") as ExitIndicator
 
 
 static func get_camera() -> GameCamera:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("game_camera") as GameCamera
-	return null
+	return _first_in_group("game_camera") as GameCamera
 
 
 static func get_floor_manager() -> FloorManager:
-	var ml = Engine.get_main_loop()
-	if ml and ml is SceneTree:
-		return ml.get_first_node_in_group("floor_manager") as FloorManager
-	return null
+	return _first_in_group("floor_manager") as FloorManager
 
 
 static func get_floating_text_manager() -> FloatingTextManager:

@@ -10,7 +10,6 @@ class_name CharacterData
 @export var role: String = ""
 @export var description: String = ""
 @export var portrait: Texture2D = null
-@export var profile_bg: Texture2D = null
 
 @export var base_hp: int = 20
 

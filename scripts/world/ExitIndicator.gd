@@ -94,7 +94,7 @@ func _process(_delta: float) -> void:
 	var viewport := get_viewport()
 	var screen_pos := viewport.get_canvas_transform() * _marker.global_position
 	var rect := viewport.get_visible_rect().grow(-config.arrow_margin)
-	var hud := get_tree().get_first_node_in_group("hud")
+	var hud := ManagerLocator.get_hud()
 	if hud and hud.has_method("get_bottom_bar_top"):
 		rect = above(rect, hud.get_bottom_bar_top() - config.arrow_margin)
 	if rect.has_point(screen_pos):
