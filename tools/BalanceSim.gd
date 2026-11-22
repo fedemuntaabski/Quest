@@ -638,6 +638,7 @@ const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_firs
 static var _play: Dictionary = BOSS_PLAY
 ## juego-25: hero id -> summed item modifiers of the run being simulated ("items").
 static var _gear: Dictionary = {}
+static var _keep: Array = []
 ## An Altar is used when the healthiest hero keeps at least this share of its HP (assumption).
 const ALTAR_KEEP_HP := 0.5
 
@@ -660,6 +661,8 @@ static func run_parties() -> Array:
 
 static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], towers: bool = true, boss_near: float = BOSS_NEAR_TOWERS, play: Dictionary = {}) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
+	# juego-27: load() re-parses a .tres nobody holds; the item catalog alone cost ~13 ms a chest.
+	_keep = [ItemCatalog.get_default(), LootTable.get_default(), PlayerScaling.get_default(), floor_config(), upgrade_config(), BuildingCostCurve.get_default()]
 	_towers = towers
 	_boss_near = boss_near
 	_play = BOSS_PLAY.merged(play, true)
@@ -709,6 +712,7 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 	_play = BOSS_PLAY
 	_gear = {}
 	_duel_cache.clear()
+	_keep = []
 	return rows
 
 
@@ -730,7 +734,10 @@ static func _max_hp(id: String, lvl: int) -> float:
 
 
 static func _cached_hero(id: String, lvl: int) -> Dictionary:
-	var mods: Dictionary = _gear.get(id, {})
+	return _cached_stats(id, lvl, _gear.get(id, {}))
+
+
+static func _cached_stats(id: String, lvl: int, mods: Dictionary) -> Dictionary:
 	var key := "hero|%s|%d|%d" % [id, lvl, mods.hash()]
 	if not _duel_cache.has(key):
 		_duel_cache[key] = hero_stats(id, lvl, mods)
@@ -984,9 +991,13 @@ static func _gear_mods(worn: Dictionary, id: String, item: ItemData) -> Dictiona
 
 
 static func _gear_power(id: String, lvl: int, f: int, mods: Dictionary) -> float:
-	var base := hero_stats(id, lvl)
-	var with := hero_stats(id, lvl, mods)
-	return float(with["dps"]) / float(base["dps"]) + float(with["ehp"]) * armor_ehp_mult(int(with["armor"]), f) / float(base["ehp"])
+	var base := _cached_stats(id, lvl, {})
+	var with := _cached_stats(id, lvl, mods)
+	var armor := int(with["armor"])
+	var key := "armor|%d|%d" % [armor, f]  # juego-27: enemy_stats per pool type was ~4 ms a call
+	if not _duel_cache.has(key):
+		_duel_cache[key] = armor_ehp_mult(armor, f)
+	return float(with["dps"]) / float(base["dps"]) + float(with["ehp"]) * float(_duel_cache[key]) / float(base["ehp"])
 
 
 ## juego-24: pre-boss heal (BOSS_PLAY "heal"), the fight, and the boss columns.
