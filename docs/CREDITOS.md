@@ -18,7 +18,8 @@ Tabla única: `CREDITS.md` solo apunta acá.
 | Íconos `placeholder_*` (`assets/art/ui`) | proyecto (`tools/normalize_assets.gd`) | propio | ✅ | investigación, pasivas de habilidades, Granja |
 | Tile placeholder (`assets/texture/enviorment/tileset_placeholder.png`) | proyecto | propio | ✅ (no se ve: grilla lógica oculta) | `Floor` |
 | Retratos de héroe (`assets/portraits/*.png`) | dueño del repo | propio / con licencia | 🟦 | `CharacterData.portrait` |
-| Fondos de menú (`assets/ui/*.png`) | dueño del repo | propio / con licencia | 🟦 | menús |
+| Ilustraciones de menú (`assets/ui/menu_cripta.png`, `menu_estudio.png`, `menu_armeria.png`) | dueño del repo, generadas con ChatGPT (menu-33) | propio | 🟦 | portada del menú principal y Créditos (cripta con la Reliquia), Opciones (estudio del escriba), Selección de héroes (armería) |
+| Fondo de la Sala de espera (`assets/ui/Lobby Multijugador.png`) | dueño del repo | propio / con licencia | 🟦 | `WaitingRoom` (con tinte frío y viñeta desde menu-33) |
 | Ícono y splash (`QuestIcon.png`, `bazingastudio.png`) | dueño del repo | propio | 🟦 | `project.godot` |
 | Almendra SC (`assets/fonts/mainfont.ttf`) | Ana Sanfelippo | SIL OFL 1.1 | ✅ texto en `assets/fonts/OFL.txt`; distribuirlo con el ejecutable | UI |
 | EB Garamond (`assets/fonts/secundaryfont.ttf`) | Georg Duffner / The EB Garamond Project Authors | SIL OFL 1.1 | ✅ ídem | UI |
@@ -48,6 +49,9 @@ Cada ruta `res://` de arte, fuente o audio nombrada en `scenes/`, `resources/`, 
 | `res://assets/fonts/secundaryfont.ttf` | SIL OFL 1.1 (EB Garamond) |
 | `res://assets/portraits/` | propio (declarado) |
 | `res://assets/ui/` | propio (declarado) |
+| `res://assets/ui/menu_cripta.png` | propio, generada con ChatGPT (menu-33) |
+| `res://assets/ui/menu_estudio.png` | propio, generada con ChatGPT (menu-33) |
+| `res://assets/ui/menu_armeria.png` | propio, generada con ChatGPT (menu-33) |
 | `res://assets/audio/click.mp3` | propio (declarado) |
 | `res://assets/audio/hover.mp3` | propio (declarado) |
 | `res://QuestIcon.png` | propio (declarado) |
