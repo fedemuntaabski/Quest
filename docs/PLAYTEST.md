@@ -96,9 +96,19 @@ Capturas guionadas en `capturas/mazmorra-31/`; nada visto jugando.
 - [ ] Salas en L y en cruz: clic derecho en un brazo lleva al héroe a la sala; clic en la esquina recortada no selecciona la sala.
 - [ ] Columnas y pozos no estorban: los héroes no caminan por encima al entrar; en combate los enemigos sí pueden pararse sobre ellos (solo visual).
 - [ ] El cartel del tipo y el ícono de luz no quedan sobre una esquina recortada.
-- [ ] ¿Se distingue cada tipo por su luz al encenderla? (el relleno dorado de sala encendida todavía la tapa en parte).
+- [ ] ¿Se distingue cada tipo por su luz al encenderla? (mazmorra-32 bajó el relleno dorado a 0,10).
 - [ ] Minimapa: las salas con forma se dibujan con su forma y el tooltip sale solo dentro.
 - [ ] La escalera de la Salida se ve debajo del hueco central.
+
+## Decoración y luz (mazmorra-32, 5 min, aparte)
+Capturas guionadas en `capturas/mazmorra-32/`; nada visto jugando ni en movimiento.
+- [ ] Al encender una sala: la luz sube suave y las antorchas/braseros se prenden un instante después; parpadean sin ir al unísono; apagarla las apaga.
+- [ ] Las salas sin descubrir no muestran luz, sombras ni antorchas; la luz de una sala encendida no pasa los muros y sí sale por la puerta al pasillo.
+- [ ] Sala oscura todavía legible (suelo, props y héroes) con la capa oscura que late.
+- [ ] Cada tipo con lo suyo: catres y brasero en Descanso, cadenas y grilletes en Prisionero, velas alrededor del Altar, musgo en la Secreta, sangre y huesos en Élite, estanterías en Taller.
+- [ ] El Altar nuevo: gema y runa rojas; después de la ofrenda queda apagado.
+- [ ] Prisionero con el grupo lleno (co-op de 4, u offline tras rescatar a los dos): aparece un cofre y se abre al entrar.
+- [ ] FPS con 4 héroes y una oleada en el piso 5 (el bench midió ~1 ms de render extra en una GTX 1660 SUPER).
 
 ## Fuera de esta prueba
 Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_PRUEBAS.md`). Pisos 3 y 5 con jefe, la extracción con oleadas altas y el rendimiento con 4 héroes quedan para la partida larga.

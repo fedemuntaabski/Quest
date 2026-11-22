@@ -13,6 +13,7 @@
 | Pista larga, la primera vez que aparece cada tipo en la run | `HUDController.show_hint()` (`hint`); `FloorManager._seen_types`, reset en `Main._begin_new_run` |
 | Tooltip al pasar el mouse por la sala en el minimapa (solo reveladas) | `Minimap._get_tooltip()` (`display_name: description`) |
 | Props propios en el anillo del suelo | `MapTileRenderer._plan_props()` (`decor_props`/`decor_count`, RNG propio `"type_decor"`) |
+| Arte propio por tipo (mazmorra-32): piezas de suelo, de muro, braseros | `RoomTypeVisual.floor_props`/`floor_prop_count`, `wall_props`/`wall_prop_count`, `braziers` (coordenadas de `DungeonTiles`, fuente propia) → `MapTileRenderer._plan_dressing()` |
 
 Reglas que **no** cambian: Brasas por sala descubierta (`FloorManager.on_room_discovered`), luz por sala (`RoomLight`), la salida solo se ve al descubrir su sala (`ExitIndicator`, `ON_DISCOVERY`); su cartel también sale solo al descubrirla. START/EXIT tienen `show_marker = false`: no llevan badge ni marcador de minimapa (conservan su propia pista).
 
@@ -43,15 +44,15 @@ Frecuencia = mapas con al menos uno, 100 semillas por piso (`tests/tools/audit_m
 | Combate | nada | todas; ~40 % de las salas | — | idénticas | interior por plantillas |
 | Inicio | héroes + Reliquia, luz gratis | 100 % | héroes y gema | sin marca propia | alfombra fija, luz blanca cálida |
 | Salida | ganar con la Reliquia | 100 % | rombo «SALIDA» | escalera bajo el hueco central | escalera una celda abajo, losas, luz verde |
-| Descanso | cura con Comida, sin enemigos | 56–66 % | cartel | props = frascos (parecen botín) | alfombra, luz naranja; catres/brasero pendientes (arte) |
+| Descanso | cura con Comida, sin enemigos | 56–66 % | cartel | props = frascos (parecen botín) | alfombra, luz naranja; mazmorra-32: sin frascos, 2 catres y un brasero |
 | Botín | Hierro + cofre | 79–100 % | cartel, cofre | props = cofres falsos | mesa, taburete, caja fuerte; luz dorada |
-| Élite | enemigos ×1,5/×1,25, Saber | 23 → 95 % | cartel | color ≈ Prisionero; armas en el suelo | marca roja, columnas, luz roja |
-| Taller | 2 huecos grandes | 44–53 % | cartel | ícono = botón de UI | ícono martillo, losas, luz blanca |
-| Prisionero | héroe en celda, rescate | 39–51 % | celda | ícono calavera; **sala vacía con el grupo lleno** | luz violeta; mecánica pendiente (preguntar) |
-| Altar | 30 % de vida → objeto raro | 35–55 % | cartel | altar con `draw_rect` (fuera de estilo) | marca celeste, losas, luz fría; arte pendiente |
-| Secreta | sin puerta, Brasas + cofre | 52–62 % | cartel | dorado ≈ Botín | luz dorada tenue; musgo/telarañas pendientes |
+| Élite | enemigos ×1,5/×1,25, Saber | 23 → 95 % | cartel | color ≈ Prisionero; armas en el suelo | marca roja, columnas, luz roja; mazmorra-32: sangre, huesos, cadenas, 2 braseros |
+| Taller | 2 huecos grandes | 44–53 % | cartel | ícono = botón de UI | ícono martillo, losas, luz blanca; mazmorra-32: estanterías, brasero |
+| Prisionero | héroe en celda, rescate; sin candidato (grupo lleno o nadie) un cofre | 39–51 % | celda | ícono calavera; sala vacía con el grupo lleno | luz violeta; mazmorra-32: la celda vacía deja un cofre (`LootSpawner.drop_chest`), cadenas y grilletes |
+| Altar | 30 % de vida → objeto raro | 35–55 % | cartel | altar con `draw_rect` (fuera de estilo) | marca celeste, losas, luz fría; mazmorra-32: altar en pixel art (activo/usado), velas, estantería |
+| Secreta | sin puerta, Brasas + cofre | 52–62 % | cartel | dorado ≈ Botín | luz dorada tenue; mazmorra-32: musgo |
 
-Cómo se aplica: `RoomTypeVisual.light_color` y `interior` (ver `docs/MAP_RENDER.md`), colores e íconos en `room_type_visual_config.tres`. Ninguna mecánica cambió.
+Cómo se aplica: `RoomTypeVisual.light_color` y `interior` (ver `docs/MAP_RENDER.md`), colores e íconos en `room_type_visual_config.tres`. En mazmorra-31 ninguna mecánica cambió; en mazmorra-32 solo la celda vacía del Prisionero (cofre, versión 1.9; BalanceSim: con 4 héroes +0,3 a 0,6 objetos por piso, victoria del piso 5 de 0,37 a 0,44 en Normal). No se sumaron ni quitaron tipos (decisión del dueño).
 
 ## Añadir un tipo nuevo
 1. Agregar (o ya tener) su `RoomType` al final del enum (no reordenar: `.tres` guardan el entero).

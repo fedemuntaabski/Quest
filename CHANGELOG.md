@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## session/mazmorra-32
+- La celda del Prisionero ya no queda vacía: si el grupo está lleno o no queda nadie a quien rescatar, el prisionero dejó un cofre con un objeto.
+- Decoración nueva dibujada para el juego: antorchas y braseros que arden, velas, estanterías, cadenas, grilletes, huesos, telarañas, grietas, charcos, sangre, musgo y catres. Cada tipo de sala tiene la suya (catres y brasero en Descanso, cadenas en Prisionero, velas en el Altar, musgo en la Secreta, sangre y huesos en Élite).
+- El Altar es un altar de piedra con su gema; se apaga cuando ya bebió.
+- Al encender una sala se prenden sus antorchas y braseros, que parpadean con el color del tipo; la luz se corta en los muros y sale por las puertas. El encendido es más suave y el dorado ya no tapa el suelo.
+- Versión 1.9: no se puede jugar en co-op con la 1.8.
+
 ## session/mazmorra-31
 - Salas de más tamaños (hasta 7×7) y, una de cada tres, con forma: esquinas cortadas, en L o en cruz.
 - Interior de cada sala: columnas, pozos, alfombras, caminos de losas y escombros. Nunca tapan los huecos de obra, la Reliquia, cofres, celdas, altares ni el paso de los héroes.
