@@ -637,9 +637,14 @@ static var _boss_near := BOSS_NEAR_TOWERS
 ## juego-28: "extra_food" = more Comida on each descent from floor 2 to "extra_food_to";
 ## "free_levels" = levels cost no Comida; "players" &gt; 0 = PlayerScaling of that many
 ## players whatever the party (1 with the four = offline with recruits, all from floor 1).
+## juego-29: "recruit" = up to that many heroes freed from Prisoner rooms (offline; see _recruit);
+## "recruit_levels" = a recruit joins at floor - 1 levels for free (what-if; the game: level 1);
+## "recruit_cost_mult" scales the price (0 = free);
+## "full_hp" = on that floor's start every living hero is healed to full for free.
 const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_first": true,
 	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0, "no_boss": 0, "free_levels": false, "players": 0,
-	"extra_food": 0, "extra_food_to": 5}
+	"extra_food": 0, "extra_food_from": 2, "extra_food_to": 5, "recruit": 0, "recruit_levels": false, "recruit_cost_mult": 1.0, "full_hp": 0}
+const MAX_PARTY: int = preload("res://scripts/autoload/GameSession.gd").MAX_PARTY
 static var _play: Dictionary = BOSS_PLAY
 ## juego-25: hero id -> summed item modifiers of the run being simulated ("items").
 static var _gear: Dictionary = {}
@@ -764,6 +769,8 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 	var researched := not _towers
 	var items_on: bool = _play["items"] and item_rng != null
 	var worn := {}
+	var recruits := 0
+	party = party.duplicate()  # recruits join it
 	_gear = {}
 	for id: String in party:
 		levels[id] = 0
@@ -775,7 +782,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			res["food"] += cfg.food_bonus_on_descend  # FloorManager (juego-26)
 		if f >= 2:
 			res["food"] += scaling.food_on_descend(players)  # FloorManager.descent_food (juego-28)
-		if f >= 2 and f <= int(_play["extra_food_to"]):
+		if f >= maxi(int(_play["extra_food_from"]), 2) and f <= int(_play["extra_food_to"]):
 			res["food"] += int(_play["extra_food"])
 		if _play["free_food"]:
 			res["food"] = 9999
@@ -791,6 +798,10 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				levels[id] += 1
 				hp[id] += _max_hp(id, levels[id]) - before
 		_heal_with_food(party, levels, hp, res, up.heal_cost_per_hp)  # heal with the rest
+		if int(_play["full_hp"]) == f:
+			for id: String in party:
+				if hp[id] > 0.0:
+					hp[id] = _max_hp(id, levels[id])
 		var max_total := 0.0
 		var dps := 0.0
 		for id: String in party:
@@ -820,6 +831,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			res["iron"] -= curve.cost(ballesta_cost, 0)
 			ballestas = 1
 		var turns := 0
+		var cage := ""  # juego-29: a revealed Prisoner room still waiting to be paid
 		var threat_mult := cfg.threat_multiplier(f) * difficulty.threat_mult * scaling.threat(players)
 		var cap := cfg.max_enemies(f) + difficulty.extra_max_enemies + scaling.extra_enemies(players)
 		while not revealed.has(exit_id) and _alive(party, hp):
@@ -836,6 +848,8 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			var opened: String = frontier[rng.randi_range(0, frontier.size() - 1)]
 			revealed[opened] = true
 			turns += 1
+			if types[opened] == RoomData.RoomType.PRISONER and recruits < int(_play["recruit"]):
+				cage = opened
 			if items_on:
 				_room_loot(types[opened], f, party, levels, hp, worn, item_rng)
 			res["embers"] += cfg.discovery_embers(f)
@@ -850,15 +864,18 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				res[bonus_key] += cfg.door_roll.bonus_amount(f)
 			for key in workshops:
 				res[key] += workshops[key] * BUILDING_YIELD
+			if cage != "" and _recruit(party, levels, hp, res, f, layout.map_seed, cage):
+				recruits += 1
+				cage = ""
 			var light_cost := RoomZone.LIGHT_COST + cfg.light_cost_step * lit
 			if res["embers"] >= light_cost:
 				res["embers"] -= light_cost
 				lit += 1
-				if _towers and researched and res["iron"] >= curve.cost(ballesta_cost, ballestas):
+				if cage == "" and _towers and researched and res["iron"] >= curve.cost(ballesta_cost, ballestas):
 					res["iron"] -= curve.cost(ballesta_cost, ballestas)
 					ballestas += 1
 				var cost := curve.cost(Building.CATALOG[Building.BuildingType.FORJA]["cost"], built)
-				if res["iron"] >= cost:
+				if cage == "" and res["iron"] >= cost:  # juego-29: a waiting cage keeps the Hierro
 					res["iron"] -= cost
 					workshops["lore" if not researched and workshops["lore"] == 0 else ["iron", "food", "lore"][built % 3]] += 1
 					built += 1
@@ -870,6 +887,8 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				a["fights"] += 1
 				_fight(party, levels, hp, _roll_wave(f, count, rng), f, rng, damage, _near(ballestas, revealed.size(), rng))
 				_revive_downed(party, levels, hp, res, f)
+		if cage != "" and _alive(party, hp) and _recruit(party, levels, hp, res, f, layout.map_seed, cage):  # last chance before the exit
+			recruits += 1
 		a["turns"] += turns
 		a["towers"] += ballestas
 		a["dmg_door"] += damage[0] / maxf(max_total, 1.0)
@@ -914,6 +933,43 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		for id: String in party:  # still down when the floor ends: lost for the run
 			if hp[id] == 0.0:
 				hp[id] = -INF
+
+
+## juego-29: a Prisoner room just revealed (PrisonerSpawner.pick_candidate: a hero not in the party,
+## lost ones included, picked from the floor seed + room; party < MAX_PARTY). Paid with the first
+## offered price the party can afford in the order Saber, Hierro, Comida, Brasas (RoomTypeRule.recruit_costs_at); joins
+## at level 1 (0 levels bought, PlayerStats.run_levels) with full HP, and is levelled at once to
+## floor - 1 with the Comida there is, like a floor start. false = empty cell or short.
+## run_rows: the cage stays payable for the rest of the floor; while it waits no Obra is
+## built (the player saves the Hierro), and it is tried after every door and once more when the
+## exit shows up.
+static func _recruit(party: Array, levels: Dictionary, hp: Dictionary, res: Dictionary, f: int, map_seed: int, room_id: String) -> bool:
+	var candidates := HERO_IDS.filter(func(id: String) -> bool: return id not in party)
+	var rule := floor_config().get_room_type_rule(RoomData.RoomType.PRISONER)
+	if party.size() >= MAX_PARTY or candidates.is_empty() or rule == null:
+		return false
+	var costs := rule.recruit_costs_at(f)
+	for k: String in costs:
+		costs[k] = roundi(costs[k] * float(_play["recruit_cost_mult"]))
+	var key := ""
+	for k: String in ["lore", "iron", "food", "embers"]:  # Comida (and Brasas, lighting) last: the scarce ones
+		if key == "" and costs.has(k) and res[k] >= int(costs[k]):
+			key = k
+	if key == "":
+		return false
+	res[key] -= int(costs[key])
+	var pick := RandomNumberGenerator.new()
+	pick.seed = hash([map_seed, room_id, "prisoner"])
+	var id: String = candidates[pick.randi_range(0, candidates.size() - 1)]
+	party.append(id)
+	var up := upgrade_config()
+	levels[id] = mini(f - 1, up.max_level) if _play["recruit_levels"] else 0
+	hp[id] = _max_hp(id, levels[id])
+	while levels[id] < mini(f - 1, up.max_level) and res["food"] >= up.get_cost(levels[id]):
+		res["food"] -= up.get_cost(levels[id])
+		levels[id] += 1
+		hp[id] = _max_hp(id, levels[id])
+	return true
 
 
 ## Party HP / party max HP; a hero lost for the run counts as 0 of its max.

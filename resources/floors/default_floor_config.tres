@@ -53,8 +53,8 @@ loot_chance = 0.15
 script = ExtResource("2_room_type_rule")
 type = 7
 recruit_costs = {
-"food": 15,
-"iron": 20
+"food": 8,
+"iron": 10
 }
 recruit_cost_per_floor = 5
 blocks_spawns = true

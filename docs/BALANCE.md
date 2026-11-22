@@ -704,3 +704,75 @@ Barridos: `tests/tools/sweep_juego28.gd -- <corridas>` (causas de Difícil pisos
 `test_balance` (50 corridas) fija los datos y estos umbrales: Normal pares ≥ 45 / 36 / 14 % en los pisos 3 / 4 / 5 (piso de 51 / 42 / 19 a 200 corridas, con margen de ruido), los 4 en co-op Normal piso 4 ≥ 60 % y piso 5 ≤ 50 %, Difícil pares piso 3 ≥ 25 %, piso 4 ≤ 20 % (antes 10 %) y piso 5 ≤ 5 %. `test_difficulty_curve` comprueba que un jefe recibe solo la curva en las dos dificultades, la Comida al bajar por jugadores y el aviso en el HUD.
 
 Sin conexión con reclutas no se tocó: el simulador lo aproxima con los 4 desde el piso 1 (sin pagar el rescate y sin la espera hasta la sala de prisioneros), así que es una cota alta. En Difícil, el piso 4 (11 %) pasa a ser la pared siguiente.
+
+## Difícil en el piso 4 y el rescate sin conexión (session juego-29)
+Barridos: `tests/tools/sweep_juego29.gd -- <corridas> [1|2]` (1 = Difícil pisos 3-5 por causa en los 6 pares y los 4 en co-op, con «qué pasaría si» en el piso 4; 2 = pares sin conexión que rescatan prisioneros; ~4 min las dos a 200 corridas) y `sweep_juego29_levers.gd -- <corridas> [palancas separadas por ;]` (palancas en memoria; la fila «base» son los datos publicados). «Qué pasaría si» nuevos en `BalanceSim.BOSS_PLAY`: `recruit` (rescata hasta N prisioneros), `recruit_levels` (el recluta entra con piso − 1 niveles gratis), `recruit_cost_mult` (precio ×), `full_hp` (vida completa gratis al empezar ese piso) y `extra_food_from` (primer piso de `extra_food`). Todos apagados por defecto: las tablas anteriores no cambian.
+
+**Difícil, piso 4 (antes, 200 corridas).** Pares: gana el 4-19 % (media 11 %, el 32 % de los que llegan). Entre los que juegan el piso 4, muere en las puertas el 59-77 % (no hay jefe; extracción 0-7 %); las oleadas de puerta se llevan el 77-80 % de la vida del grupo. Se llega con 0,7-0,9 niveles de menos, 7-14 de Comida faltante, 71-80 % de vida y ~4 ítems. Los 4 en co-op: 11 %, el 81 % muere en las puertas, llegan 2,8 héroes de 4 con el 56 % de vida.
+
+| Qué pasaría si (Difícil) | Pares 3 / 4 / 5 | Piso 4 entre los que llegan | Los 4 en co-op 3 / 4 / 5 | Piso 4 entre los que llegan |
+|---|---|---|---|---|
+| ninguno | 33 / 11 / 1 | 32 % | 67 / 11 / 0 | 16 % |
+| Comida infinita | 100 / 93 / 77 | 93 % | 100 / 98 / 89 | 98 % |
+| niveles gratis | 70 / 59 / 32 | 85 % | 100 / 87 / 37 | 87 % |
+| vida completa al empezar el 4 | 33 / 13 / 1 | 40 % | 67 / 16 / 1 | 24 % |
+| sin oleadas de puerta en el 4 | 33 / 33 / 4 | 100 % | 67 / 67 / 2 | 100 % |
+| sin extracción en el 4 | 33 / 12 / 1 | 35 % | 67 / 13 / 1 | 19 % |
+| sin ítems | 7 / 0 / 0 | 5 % | 23 / 1 / 0 | 4 % |
+| recursos de inicio ×1 | 41 / 17 / 1 | 42 % | 79 / 16 / 1 | 20 % |
+| vida de los enemigos ×1 | 42 / 21 / 4 | 49 % | 89 / 25 / 3 | 28 % |
+| daño de los enemigos ×1 | 39 / 21 / 4 | 54 % | 84 / 23 / 3 | 27 % |
+| amenaza ×1 | 37 / 17 / 2 | 47 % | 80 / 20 / 1 | 25 % |
+| sin tope extra | 33 / 11 / 1 | 32 % | 67 / 11 / 0 | 16 % |
+
+**Lectura.** La pared del piso 4 son las oleadas de puerta (en el 4 se esperan 16,6 enemigos contra 7,6 en el 3) contra héroes que llegan un nivel por detrás. La vida al empezar casi no importa. Los ítems son imprescindibles (sin ellos, 0 %). Dar Comida al bajar solo a los pisos 4 y 5 casi no mueve nada (+20: 33 / 14 / 3), porque el déficit de niveles viene de los pisos 2-3. Darla desde el piso 2 (+10: 58 / 33 / 8) deja a Difícil por encima de Normal en el piso 3.
+
+**Rescate modelado** (`BalanceSim._recruit`, `recruit` > 0). Al revelarse una sala de prisioneros (una por piso con 50 %, `RoomTypeRule` por defecto), si el grupo tiene menos de 4 y queda alguien fuera, la celda se puede pagar el resto del piso. Mientras espera no se construyen Obras (se ahorra el Hierro). Se intenta pagar tras cada puerta y otra vez al aparecer la salida, con el primer precio que alcance en el orden Saber, Hierro, Comida (`recruit_costs_at`). El recluta lo elige el mismo sorteo que `PrisonerSpawner.pick_candidate` y entra con nivel 1 y vida completa. Se le compran niveles hasta piso − 1 con la Comida que haya, y después pelea, se reanima y se sube de nivel como los demás. No se modela: el rescate en co-op, la caminata hasta la celda ni el Saber gastado en Investigación (más allá de la Ballesta).
+
+| Sin conexión, pares (antes: 15 Comida / 20 Hierro, +5 por piso) | Normal 3 / 4 / 5 | Difícil 3 / 4 / 5 | Héroes en el piso 3 / 4 / 5 (Normal) |
+|---|---|---|---|
+| sin rescatar | 51 / 42 / 19 | 33 / 11 / 1 | 2,00 / 1,84 / 1,83 |
+| hasta 1 | 49 / 41 / 17 | 29 / 9 / 0 | 2,49 / 2,15 / 2,06 |
+| hasta 2 | 48 / 40 / 16 | 28 / 9 / 1 | 2,49 / 2,17 / 2,06 |
+| hasta 2, entra con el nivel del grupo | 49 / 41 / 17 | 28 / 9 / 1 | 2,49 / 2,16 / 2,06 |
+| hasta 2, gratis | 74 / 67 / 31 | 52 / 30 / 3 | 2,90 / 2,87 / 2,97 |
+| los 4 desde el piso 1 (aproximación de juego-28) | 90 / 85 / 43 | 70 / 38 / 3 | 4,00 / 3,63 / 3,34 |
+
+**Lectura.** Con los precios de antes, rescatar empeoraba la partida. Solo se pagaba el prisionero del piso 1 (15 Comida, la de inicio). Después el precio (25-40) no se alcanzaba: sin Forjas entran 5-10 de Hierro por piso y la Comida se va en niveles. El recluta entra con nivel 1, se lleva su parte de cada oleada y cuesta Comida en niveles y reanimaciones. La aproximación de juego-28 era una cota muy alta.
+
+**Palancas barridas** (200 corridas; pisos 3 / 4 / 5; Normal sin rescates no cambia con ninguna):
+
+| Cambio | Difícil pares | Difícil tríos | Difícil los 4 (co-op) | Normal pares que rescatan | Difícil pares que rescatan |
+|---|---|---|---|---|---|
+| ninguno | 33 / 11 / 1 | 47 / 6 / 1 | 67 / 11 / 0 | 48 / 40 / 16 | 28 / 9 / 1 |
+| **Difícil: daño 1,25 → 1,1 + inicio ×1 (A1, elegido)** | **45 / 28 / 3** | 68 / 24 / 2 | 83 / 29 / 1 | igual | 40 / 23 / 3 |
+| Difícil: daño 1,25 → 1,1 + amenaza 1,25 → 1,1 (A2) | 37 / 23 / 4 | 59 / 18 / 1 | 83 / 32 / 2 | igual | 34 / 20 / 3 |
+| Difícil: vida 1,35 → 1,2 + daño 1,1 (A3) | 38 / 22 / 5 | 61 / 17 / 2 | 83 / 26 / 3 | igual | 34 / 20 / 4 |
+| Difícil: daño 1,25 → 1,1 | 35 / 19 / 3 | 53 / 12 / 1 | 74 / 23 / 2 | igual | 30 / 15 / 3 |
+| Difícil: amenaza 1,25 → 1,1 | 35 / 14 / 2 | 54 / 9 / 0 | 73 / 14 / 1 | igual | 32 / 13 / 2 |
+| Difícil: vida 1,35 → 1,2 | 35 / 14 / 2 | 54 / 9 / 1 | 75 / 16 / 1 | igual | 32 / 13 / 2 |
+| Difícil: inicio ×1 | 41 / 17 / 1 | 64 / 14 / 1 | 79 / 16 / 1 | igual | 38 / 15 / 1 |
+| Difícil: +5 Comida al bajar (2-5) | 44 / 19 / 3 | 65 / 13 / 2 | 81 / 16 / 1 | igual | 42 / 20 / 3 |
+| Difícil: +10 Comida al bajar (2-5) | 58 / 33 / 8 | 76 / 28 / 4 | 91 / 25 / 1 | igual | 55 / 33 / 8 |
+| Difícil: +15 Comida al bajar (2-5) | 68 / 48 / 13 | 86 / 42 / 5 | 99 / 44 / 5 | igual | 68 / 51 / 12 |
+| Difícil: +20 Comida al bajar a 4 y 5 | 33 / 14 / 3 | 47 / 11 / 1 | 67 / 16 / 2 | igual | 28 / 13 / 3 |
+| **rescate a mitad de precio: 8 Comida / 10 Hierro (B, elegido)** | igual | igual | igual | **54 / 46 / 20** | 35 / 13 / 1 |
+| B + entra con el nivel del grupo | igual | igual | igual | 55 / 48 / 22 | 35 / 13 / 1 |
+| rescate sin +5 por piso | igual | igual | igual | 49 / 41 / 16 | 28 / 9 / 1 |
+| rescate también por 15 Saber (+5 por piso) (C) | igual | igual | igual | 67 / 59 / 27 | 48 / 25 / 3 |
+| C + entra con el nivel del grupo | igual | igual | igual | 75 / 69 / 43 | 57 / 35 / 9 |
+
+La opción en Saber está inflada: el simulador solo gasta Saber en la Ballesta.
+
+**Elegido (dueño): A1 + B.** `difficulty_config.tres`: Difícil `damage_mult` 1,25 → 1,1 y sin `start_resource_mult` (×0,75 → ×1); la descripción pierde «menos recursos al empezar». `default_floor_config.tres`: `recruit_costs` 15 Comida / 20 Hierro → 8 / 10 (+5 por piso igual). Versión 1.6.
+
+**Con lo elegido** (`sweep_juego29_levers.gd -- 200 base` y `sweep_juego29.gd -- 200 2`; pisos 3 / 4 / 5):
+
+| Dificultad | Pares | Tríos (co-op 3) | Los 4 (co-op 4) | Pares sin conexión, hasta 2 rescates | Héroes en el piso 3 / 4 / 5 |
+|---|---|---|---|---|---|
+| Normal | 51 / 42 / 19 (igual) | 84 / 59 / 14 (igual) | 99 / 83 / 25 (igual) | 54 / 46 / 20 (antes 48 / 40 / 16) | 2,54 / 2,25 / 2,20 |
+| Difícil | 45 / 28 / 3 (antes 33 / 11 / 1) | 68 / 24 / 2 (antes 47 / 6 / 1) | 83 / 29 / 1 (antes 67 / 11 / 0) | 46 / 28 / 5 (antes 28 / 9 / 1) | 2,52 / 2,08 / 2,00 |
+
+Con lo elegido, rescatar uno da casi lo mismo que dos (Normal 55 / 47 / 21): el segundo rescate cuesta 13-30 según el piso y casi nunca alcanza. Que el recluta entre con el nivel del grupo suma 1-2 puntos.
+
+`test_balance` (50 corridas) fija los datos (Difícil daño 1,1 e inicio ×1, rescate 8 / 10 + 5) y: Difícil pares piso 3 ≥ 35 % (antes 25), piso 4 entre 18 y 40 % (antes ≤ 20), piso 5 ≤ 5 %; Difícil no gana a Normal en ningún piso (pares); los pares de Normal que rescatan hasta 2 tienen más de 2,3 héroes en el piso 3 y ganan los pisos 3-5 al menos tanto como sin rescatar (a 50 corridas: 1,26 contra 1,11). `test_difficulty_curve`: Difícil empieza con ×1.

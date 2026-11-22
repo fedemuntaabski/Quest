@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## session/juego-29
+- Difícil: los enemigos pegan ×1,1 (antes ×1,25) y se empieza con los mismos recursos que en Normal. El piso 4 deja de ser una pared (pares: ganan el piso 4 el 28 %, antes el 11 %).
+- Rescatar a un prisionero cuesta 8 de Comida o 10 de Hierro en el piso 1 (antes 15 / 20), +5 por piso como antes.
+- Versión 1.6: no se puede jugar en co-op con la 1.5.
+
 ## session/juego-28
 - Difícil: los jefes (pisos 3 y 5) ya no tienen la vida y el daño extra de Difícil, solo los del piso.
 - Co-op de 3 y de 4 jugadores: +10 y +20 de Comida en cada bajada de piso (desde el piso 2).

@@ -71,7 +71,7 @@ func _test_difficulty_config() -> void:
 	var normal := cfg.get_level("normal")
 	var hard := cfg.get_level("hard")
 	_expect(normal.hp_mult == 1.0 and normal.damage_mult == 1.0 and normal.threat_mult == 1.0 and normal.extra_max_enemies == 0 and normal.relic_hp_mult == 1.0 and normal.start_resource_mult == 1.0, "Normal is the identity")
-	_expect(hard.hp_mult > 1.0 and hard.damage_mult > 1.0 and hard.threat_mult > 1.0 and hard.extra_max_enemies > 0 and hard.relic_hp_mult < 1.0 and hard.start_resource_mult < 1.0, "Difícil is harder on every axis")
+	_expect(hard.hp_mult > 1.0 and hard.damage_mult > 1.0 and hard.threat_mult > 1.0 and hard.extra_max_enemies > 0 and hard.relic_hp_mult < 1.0 and hard.start_resource_mult == 1.0, "Difícil is harder on every axis but the start (juego-29: x1)")
 	_expect(cfg.get_level("nope") == normal, "unknown id falls back to Normal")
 	_expect(normal.scales_bosses and not hard.scales_bosses, "juego-28: Hard's bosses skip its multipliers")
 

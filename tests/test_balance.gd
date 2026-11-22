@@ -32,7 +32,7 @@ const RUN_HERO_SPREAD_PP := 10.0
 const BOSS_FOOD_REWARD := 15
 const NORMAL_REACH4_MIN := 0.5
 const NORMAL_FLOOR3_MAX := 0.65
-const HARD_FLOOR4_MAX := 0.2  # juego-28: 0.1 -> 0.2 (11 % at 200 runs with the bosses change)
+const HARD_FLOOR4_MAX := 0.4  # juego-28: 0.1 -> 0.2 (11 %); juego-29: 0.4 (28 % at 200 runs)
 ## juego-27: +30 Comida on reaching floors 4 and 5, Señor Demonio 150 HP (owner's pick).
 const DESCEND_FOOD := 30
 const DESCEND_FOOD_FROM := 4
@@ -42,11 +42,21 @@ const HARD_FLOOR5_MAX := 0.05
 ## juego-28 (owner's pick): Hard's bosses skip its multipliers (Hard pairs floor 3: 10 -> 33 % at
 ## 200 runs) and co-op of 3 / 4 gets +10 / +20 Comida per descent (the four, Normal: floor 4
 ## 31 -> 83 %). Normal pairs stay at 51 / 42 / 19 % (200 runs): these are 50-run floors with margin.
-const HARD_FLOOR3_MIN := 0.25
+const HARD_FLOOR3_MIN := 0.35  # juego-29: 0.25 -> 0.35 (45 % at 200 runs)
 const DESCENT_FOOD_BY_PLAYERS := [0, 0, 10, 20]
 const NORMAL_PAIR_FLOORS_MIN := {3: 0.45, 4: 0.36, 5: 0.14}
 const FOUR_NORMAL_FLOOR4_MIN := 0.6
 const FOUR_NORMAL_FLOOR5_MAX := 0.5
+## juego-29 (owner's pick A1 + B): Hard's damage 1.25 -> 1.1 and its start resources x0.75 -> x1
+## (Hard pairs 33 / 11 / 1 -> 45 / 28 / 3 % at 200 runs; the floor-4 wall was the door waves a
+## level behind), and the Prisoner ransom halved to 8 Comida / 10 Hierro (+5 per floor): offline
+## pairs that recruit (BalanceSim "recruit") 48 / 40 / 16 -> 54 / 46 / 20 % on Normal. Hard never
+## beats Normal on a floor (pairs) and recruiting is not a loss.
+const HARD_DAMAGE_MULT := 1.1
+const HARD_FLOOR4_MIN := 0.18
+const RECRUIT_COSTS := {"food": 8, "iron": 10}
+const RECRUIT_COST_PER_FLOOR := 5
+var _pair_won := {}
 
 var failures: Array[String] = []
 
@@ -64,6 +74,7 @@ func _initialize() -> void:
 	_check_runs()
 	_check_run_towers()
 	_check_boss_play()
+	_check_recruits()
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
 	for failure in failures:
 		printerr("FAIL: ", failure)
@@ -98,6 +109,8 @@ func _check_runs() -> void:
 		var mean := total / maxf(means.size(), 1)
 		for hero_id in means:
 			_expect(absf(means[hero_id] - mean) * 100.0 <= RUN_HERO_SPREAD_PP, "%s: %s wins %.1f pp off the mean (parties of 2-4)" % [level.id, hero_id, (means[hero_id] - mean) * 100.0])
+	for f in range(1, BalanceSim.FLOORS + 1):
+		_expect(float(_pair_won["hard"][f]) <= float(_pair_won["normal"][f]) + 0.001, "floor %d: Hard pairs %.2f beat Normal %.2f" % [f, _pair_won["hard"][f], _pair_won["normal"][f]])
 
 
 func _check_food_floor4(rows: Array[Dictionary], level_id: String) -> void:
@@ -107,6 +120,15 @@ func _check_food_floor4(rows: Array[Dictionary], level_id: String) -> void:
 	_expect(cfg.theme(5).boss.base_hp == BOSS5_HP, "floor-5 boss HP %d" % cfg.theme(5).boss.base_hp)
 	_expect(not DifficultyConfig.get_default().get_level("hard").scales_bosses, "juego-28: Hard scales its bosses")
 	_expect(Array(PlayerScaling.get_default().descent_food) == DESCENT_FOOD_BY_PLAYERS, "descent Comida by players %s" % PlayerScaling.get_default().descent_food)
+	var hard := DifficultyConfig.get_default().get_level("hard")
+	_expect(is_equal_approx(hard.damage_mult, HARD_DAMAGE_MULT) and is_equal_approx(hard.start_resource_mult, 1.0), "juego-29: Hard damage %.2f, start x%.2f" % [hard.damage_mult, hard.start_resource_mult])
+	var rule := cfg.get_room_type_rule(RoomData.RoomType.PRISONER)
+	_expect(rule.recruit_costs == RECRUIT_COSTS and rule.recruit_cost_per_floor == RECRUIT_COST_PER_FLOOR, "juego-29: ransom %s +%d per floor" % [rule.recruit_costs, rule.recruit_cost_per_floor])
+	var per_floor := {}
+	for row in rows:
+		if row["difficulty"] == level_id and int(row["size"]) == 2:
+			per_floor[int(row["floor"])] = float(per_floor.get(int(row["floor"]), 0.0)) + float(row["win_rate"]) / 6.0
+	_pair_won[level_id] = per_floor
 	var won := {3: 0.0, 4: 0.0, 5: 0.0}
 	var pairs := 0
 	for row in rows:
@@ -134,8 +156,33 @@ func _check_food_floor4(rows: Array[Dictionary], level_id: String) -> void:
 		_expect(four_won[5] <= FOUR_NORMAL_FLOOR5_MAX, "normal: the co-op four win the run in %.2f" % four_won[5])
 	else:
 		_expect(floor3 >= HARD_FLOOR3_MIN, "%s: floor 3 won by %.2f of the pairs" % [level_id, floor3])
-		_expect(floor4 <= HARD_FLOOR4_MAX, "%s: floor 4 won by %.2f of the pairs" % [level_id, floor4])
+		_expect(floor4 <= HARD_FLOOR4_MAX and floor4 >= HARD_FLOOR4_MIN, "%s: floor 4 won by %.2f of the pairs" % [level_id, floor4])
 		_expect(floor5 <= HARD_FLOOR5_MAX, "%s: floor 5 won by %.2f of the pairs" % [level_id, floor5])
+
+
+## juego-29: offline pairs that free up to 2 prisoners (Normal, BalanceSim "recruit"): they do recruit
+## (more than 2 heroes on floor 3) and win floors 3-5 at least as often as without recruiting.
+func _check_recruits() -> void:
+	var pairs: Array = []
+	for i in BalanceSim.HERO_IDS.size():
+		for j in range(i + 1, BalanceSim.HERO_IDS.size()):
+			pairs.append([BalanceSim.HERO_IDS[i], BalanceSim.HERO_IDS[j]])
+	var normal: Array = [DifficultyConfig.get_default().levels[0]]
+	var sum := func(rows: Array[Dictionary], key: String, floors: Array) -> float:
+		var total := 0.0
+		for r in rows:
+			if int(r["floor"]) in floors:
+				total += float(r[key])
+		return total / pairs.size()
+	var base := BalanceSim.run_rows(50, pairs, normal)
+	var with := BalanceSim.run_rows(50, pairs, normal, true, BalanceSim.BOSS_NEAR_TOWERS, {"recruit": 2})
+	var heroes3: float = sum.call(with, "heroes", [3])
+	var won_base: float = sum.call(base, "win_rate", [3, 4, 5])
+	var won_with: float = sum.call(with, "win_rate", [3, 4, 5])
+	print("normal pairs recruiting up to 2: %.2f heroes on floor 3, floors 3-5 won %.2f (without %.2f)" % [heroes3, won_with, won_base])
+	_expect(heroes3 > 2.3, "recruits: %.2f heroes on floor 3" % heroes3)
+	_expect(won_with >= won_base, "recruiting is a loss: floors 3-5 won %.2f vs %.2f" % [won_with, won_base])
+	_expect(BalanceSim._play == BalanceSim.BOSS_PLAY, "run_rows restores the play")
 
 
 ## juego-23: the runs build Ballestas (every party has one on floor 1) and pulling the floor-3
