@@ -45,7 +45,7 @@ func _check_entries(visual: MapVisualConfig, config: FloorConfig) -> void:
 		if type in IMPLEMENTED:
 			if not has_rule:
 				failures.append("%s: implemented type lost its RoomTypeRule" % name)
-			if not (entry.show_marker and entry.icon and entry.banner_text != "" and not entry.decor_props.is_empty() and entry.decor_count > 0):
+			if not (entry.show_marker and entry.icon and entry.banner_text != "" and ((not entry.decor_props.is_empty() and entry.decor_count > 0) or (not entry.floor_props.is_empty() and entry.floor_prop_count > 0))):  # mazmorra-32: own props count
 				failures.append("%s: needs marker, icon, banner and decor" % name)
 			if visual.room_type_color(type) != entry.color:
 				failures.append("%s: room_type_color() != entry color" % name)

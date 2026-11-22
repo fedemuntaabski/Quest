@@ -31,7 +31,7 @@ func _initialize() -> void:
 		_check_deterministic(layout, visual, plan, where)
 		_check_walkable(layout, plan, where)
 		_check_connected(layout, plan, where)
-	var seen := {"columns": 0, "pits": 0, "rugs": 0, "slabs": 0, "rubble": 0}
+	var seen := {"columns": 0, "pits": 0, "rugs": 0, "slabs": 0, "rubble": 0, "torches": 0, "braziers": 0, "candles": 0, "bedrolls": 0, "wall pieces": 0, "flat": 0}
 	for floor_index in range(1, FLOORS + 1):
 		for s in 30:
 			var layout := MapGenerator.generate_floor(s * 104729 + floor_index, floor_config, floor_index)
@@ -84,10 +84,21 @@ func _check_walkable(layout: MapLayout, plan: Dictionary, where: String) -> void
 	for id in plan["zones"]:
 		floors.merge(plan["zones"][id]["floor"])
 		walls.merge(plan["zones"][id]["walls"])
-		for key in ["decor", "features"]:
+		for key in ["decor", "features", "flat"]:
 			for tile in plan["zones"][id][key]:
 				if not room_ids.has(id) or walkable.get(tile, "") != id:
 					failures.append("%s: %s at %s outside room floor (zone %s)" % [where, key, tile, id])
+		# mazmorra-32: wall pieces only on this zone's own walls; lights only on a torch/brazier/candles.
+		for tile in plan["zones"][id]["wall_decor"]:
+			if not plan["zones"][id]["walls"].has(tile):
+				failures.append("%s: wall piece at %s not on a wall of %s" % [where, tile, id])
+		for light: Array in plan["zones"][id]["lights"]:
+			var v: Vector4i = plan["zones"][id]["features"].get(light[0], plan["zones"][id]["wall_decor"].get(light[0], Vector4i(-1, 0, 0, 0)))
+			if v.x != DungeonTiles.SRC_OWN or Vector2i(v.y, v.z) not in DungeonTiles.ANIMATED:
+				failures.append("%s: light %s at %s has no flame tile (%s)" % [where, light[1], light[0], id])
+		for tile in plan["zones"][id]["flat"]:
+			if plan["zones"][id]["features"].has(tile):
+				failures.append("%s: flat and solid piece share %s" % [where, tile])
 	for tile in walkable:
 		if not floors.has(tile):
 			failures.append("%s: walkable tile %s has no floor" % [where, tile])
@@ -222,6 +233,15 @@ func _check_interior(layout: MapLayout, plan: Dictionary, where: String, seen: D
 				seen["columns"] += 1
 			elif atlas in DungeonTiles.RUBBLE:
 				seen["rubble"] += 1
+			elif atlas == DungeonTiles.BRAZIER:
+				seen["braziers"] += 1
+			elif atlas == DungeonTiles.CANDLES:
+				seen["candles"] += 1
+			elif atlas == DungeonTiles.BEDROLL[0]:
+				seen["bedrolls"] += 1
+		for tile in zone["wall_decor"]:
+			seen["torches" if Vector2i(zone["wall_decor"][tile].y, zone["wall_decor"][tile].z) == DungeonTiles.TORCH else "wall pieces"] += 1
+		seen["flat"] += zone["flat"].size()
 		for tile in zone["floor"]:
 			var v: Vector4i = zone["floor"][tile]
 			if v.x != DungeonTiles.SRC_OWN:

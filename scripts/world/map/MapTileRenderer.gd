@@ -10,7 +10,12 @@ extends Node2D
 ##
 ## build_plan() is pure and deterministic (same layout + config -> same plan),
 ## keyed by zone id so a zone's tiles are only painted when it is revealed:
-##   {"zones": {zone_id: {"floor": {tile: Vector4i}, "walls": {...}, "decor": {...}, "under": {...}, "features": {...}}}}
+##   {"zones": {zone_id: {"floor": {tile: Vector4i}, "walls": {...}, "decor": {...}, "under": {...}, "features": {...},
+##                        "flat": {...}, "wall_decor": {...}, "lights": [[tile, kind], ...]}}}
+## mazmorra-32 (_plan_dressing): "wall_decor" = torches, shelves, chains over a room's north brick
+## face; "flat" = cobwebs, cracks, puddles, blood, moss (no footprint, may sit on the edge ring);
+## both go on the Features layer. "lights" = torch / brazier / candles tiles, where RoomLight-style
+## flames are lit (see docs/MAP_RENDER.md).
 ## "features" (mazmorra-31) = interior pieces over the floor (columns, rubble) on their own
 ## layer; pits, rugs and paved slabs replace "floor" tiles. See _plan_interior().
 ## "under" (juego-21) = solid fill painted on the Floor layer behind wall caps: a cap's
@@ -60,6 +65,8 @@ func show_zone(zone_id: String) -> void:
 	_paint(floor_layer, zone["floor"])
 	_paint(walls_layer, zone["walls"])
 	_paint(features_layer, zone["features"])
+	_paint(features_layer, zone["flat"])
+	_paint(features_layer, zone["wall_decor"])
 	_paint(decor_layer, zone["decor"])
 	_paint(floor_layer, zone["under"])
 
@@ -83,7 +90,7 @@ static func build_plan(layout: MapLayout, config: MapVisualConfig) -> Dictionary
 	for corridor in layout.corridors:
 		_add_zone(corridor.id, _rect_cells(corridor.get_zone_rect()), order, zone_cells, floor_cells)
 	for id in order:
-		zones[id] = {"floor": {}, "walls": {}, "decor": {}, "under": {}, "features": {}}
+		zones[id] = {"floor": {}, "walls": {}, "decor": {}, "under": {}, "features": {}, "flat": {}, "wall_decor": {}, "lights": []}
 
 	# Wall ring: 8-neighbours of floor that are not floor; the first zone in order owns it.
 	var wall_owner: Dictionary = {}
@@ -100,6 +107,7 @@ static func build_plan(layout: MapLayout, config: MapVisualConfig) -> Dictionary
 	_plan_walls(config, layout, zones, floor_tiles, wall_tiles)
 	_plan_interior(layout, config, zones)
 	_plan_props(layout, config, zones, floor_tiles)
+	_plan_dressing(layout, config, zones, floor_tiles)
 
 	return {"zones": zones}
 
@@ -469,3 +477,141 @@ static func _plan_rubble(rect: Rect2i, blocked: Dictionary, zone: Dictionary, rn
 	for i in mini(rng.randi_range(1, 4), spots.size()):
 		var tile := spots[rng.randi() % spots.size()]
 		zone["features"][tile] = DungeonTiles.tile(DungeonTiles.SRC_OWN, DungeonTiles.RUBBLE[rng.randi() % DungeonTiles.RUBBLE.size()])
+
+
+# ─────────────────────────────────────────────
+# DRESSING (mazmorra-32): own torches, braziers, wall pieces, scatter and type props
+# ─────────────────────────────────────────────
+## A room with no type braziers gets one with this chance.
+const BRAZIER_CHANCE := 0.3
+## Each of the room's two top floor corners gets a cobweb with this chance.
+const COBWEB_CHANCE := 0.35
+## Up to this many cracks / puddles per room, plus bones with BONES_CHANCE.
+const SCATTER_MAX := 2
+const BONES_CHANCE := 0.25
+## A north face this many tiles wide or more gets two torches instead of one.
+const TWO_TORCHES_WIDTH := 8
+
+
+## Per room on its own RNG (seed, "dressing", room id), after the interior: torches on the north
+## face, the type's wall pieces, braziers and solid props on free floor (never interior_blocked),
+## flat scatter anywhere on plain floor. Every pick is rolled even when it finds no spot, so a
+## room's stream doesn't depend on its free space.
+static func _plan_dressing(layout: MapLayout, config: MapVisualConfig, zones: Dictionary, floor_tiles: Dictionary) -> void:
+	for room in layout.rooms:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash([layout.map_seed, "dressing", room.id])
+		var zone: Dictionary = zones[room.id]
+		var visual := config.room_type_visual(room.get_room_type()) if config else null
+		var rect := Rect2i(room.pos * T, room.size * T)
+		var centre := rect.position + rect.size / 2
+		# North brick face: plain faces only (banners and run ends keep their art), left to right.
+		var faces: Array[Vector2i] = []
+		for tile: Vector2i in zone["walls"]:
+			var v: Vector4i = zone["walls"][tile]
+			if floor_tiles.get(tile + Vector2i(0, 1), "") == room.id and v.x == DungeonTiles.SRC_SHEET \
+					and Vector2i(v.y, v.z) in [DungeonTiles.WALL_MID] + DungeonTiles.WALL_WEAR:
+				faces.append(tile)
+		faces.sort()
+		var targets: Array = [centre.x] if faces.size() < TWO_TORCHES_WIDTH else [rect.position.x + rect.size.x / 4, rect.end.x - 1 - rect.size.x / 4]
+		for target in targets:
+			var face := _nearest(faces, Vector2i(target, rect.position.y - 1))
+			if face.x != -9999:
+				_put_wall(zone, faces, face, DungeonTiles.TORCH)
+				zone["lights"].append([face, "torch"])
+		if visual:
+			for i in visual.wall_prop_count:
+				var pick := rng.randi()
+				if not faces.is_empty() and not visual.wall_props.is_empty():
+					_put_wall(zone, faces, faces[pick % faces.size()], visual.wall_props[rng.randi() % visual.wall_props.size()])
+		# Free floor for solid pieces.
+		var blocked := interior_blocked(layout, room)
+		var free: Array[Vector2i] = []
+		for x in range(rect.position.x, rect.end.x):
+			for y in range(rect.position.y, rect.end.y):
+				var tile := Vector2i(x, y)
+				var v: Vector4i = zone["floor"].get(tile, Vector4i(-1, 0, 0, 0))
+				if v.x == DungeonTiles.SRC_SHEET and Vector2i(v.y, v.z) != DungeonTiles.STAIRS and not blocked.has(tile) and not zone["features"].has(tile):
+					free.append(tile)
+		var side := rect.size.x / 3
+		var roll := rng.randf()
+		var braziers: int = visual.braziers if visual and visual.braziers > 0 else (1 if roll < BRAZIER_CHANCE else 0)
+		for i in braziers:
+			var spot := _nearest(free, centre + Vector2i(side if i % 2 == 0 else -side, 0))
+			if spot.x != -9999:
+				_put_solid(zone, free, spot, DungeonTiles.BRAZIER)
+				zone["lights"].append([spot, "brazier"])
+		if visual:
+			for i in visual.floor_prop_count:
+				var prop: Vector2i = visual.floor_props[rng.randi() % visual.floor_props.size()] if not visual.floor_props.is_empty() else Vector2i(-1, -1)
+				var pick := rng.randi()
+				if prop == Vector2i(-1, -1):
+					continue
+				if prop in DungeonTiles.FLAT:
+					_put_flat(zone, prop, pick, free)
+				elif prop == DungeonTiles.CANDLES:  # around the altar: nearest free tile to the centre, alternating sides
+					var spot := _nearest(free, centre + Vector2i(3 if i % 2 == 0 else -3, -1))
+					if spot.x != -9999:
+						_put_solid(zone, free, spot, prop)
+						zone["lights"].append([spot, "candles"])
+				elif prop == DungeonTiles.BEDROLL[0]:
+					var pairs := free.filter(func(t: Vector2i) -> bool: return free.has(t + Vector2i(1, 0)))
+					if not pairs.is_empty():
+						var at: Vector2i = pairs[pick % pairs.size()]
+						_put_solid(zone, free, at, DungeonTiles.BEDROLL[0])
+						_put_solid(zone, free, at + Vector2i(1, 0), DungeonTiles.BEDROLL[1])
+				elif not free.is_empty():
+					_put_solid(zone, free, free[pick % free.size()], prop)
+		# Generic scatter: cobwebs in the top corners, cracks / puddles, sometimes bones.
+		for corner in [rect.position, Vector2i(rect.end.x - 1, rect.position.y)]:
+			if rng.randf() < COBWEB_CHANCE and zone["floor"].has(corner) and not zone["decor"].has(corner):
+				zone["flat"][corner] = DungeonTiles.tile(DungeonTiles.SRC_OWN, DungeonTiles.COBWEB_L if corner == rect.position else DungeonTiles.COBWEB_R)
+		for i in rng.randi_range(0, SCATTER_MAX):
+			var kinds: Array = DungeonTiles.CRACKS + [DungeonTiles.PUDDLE]
+			_put_flat(zone, kinds[rng.randi() % kinds.size()], rng.randi(), free)
+		var bone_roll := rng.randf()
+		var bone_pick := rng.randi()
+		if bone_roll < BONES_CHANCE and not free.is_empty():
+			_put_solid(zone, free, free[bone_pick % free.size()], DungeonTiles.BONES[bone_pick % DungeonTiles.BONES.size()])
+
+
+## Tile of `tiles` nearest to `to` (first one on ties); Vector2i(-9999, ...) when empty.
+static func _nearest(tiles: Array[Vector2i], to: Vector2i) -> Vector2i:
+	var best := Vector2i(-9999, -9999)
+	var best_d := INF
+	for t in tiles:
+		var d := Vector2(t - to).length_squared()
+		if d < best_d:
+			best_d = d
+			best = t
+	return best
+
+
+## A wall piece on `face`; it and its two neighbours leave the face list (no touching pieces).
+static func _put_wall(zone: Dictionary, faces: Array[Vector2i], face: Vector2i, atlas: Vector2i) -> void:
+	zone["wall_decor"][face] = DungeonTiles.tile(DungeonTiles.SRC_OWN, atlas)
+	for dx in [-1, 0, 1]:
+		faces.erase(face + Vector2i(dx, 0))
+
+
+## A solid piece on `spot`; it and its 8 neighbours leave the free list (pieces never touch).
+static func _put_solid(zone: Dictionary, free: Array[Vector2i], spot: Vector2i, atlas: Vector2i) -> void:
+	zone["features"][spot] = DungeonTiles.tile(DungeonTiles.SRC_OWN, atlas)
+	for d in DIRS8 + [Vector2i.ZERO]:
+		if spot + d != spot + Vector2i(1, 0) or atlas != DungeonTiles.BEDROLL[0]:  # the bedroll's right half
+			free.erase(spot + d)
+
+
+## A flat piece on a plain floor tile of the room with nothing on it (`pick` chooses which).
+static func _put_flat(zone: Dictionary, atlas: Vector2i, pick: int, free: Array[Vector2i]) -> void:
+	var spots: Array[Vector2i] = []
+	for tile: Vector2i in zone["floor"]:
+		var v: Vector4i = zone["floor"][tile]
+		if v.x == DungeonTiles.SRC_SHEET and Vector2i(v.y, v.z) != DungeonTiles.STAIRS and not zone["features"].has(tile) \
+				and not zone["flat"].has(tile) and not zone["decor"].has(tile):
+			spots.append(tile)
+	if not spots.is_empty():
+		spots.sort()
+		var spot := spots[pick % spots.size()]
+		zone["flat"][spot] = DungeonTiles.tile(DungeonTiles.SRC_OWN, atlas)
+		free.erase(spot)  # no solid piece on top of it later

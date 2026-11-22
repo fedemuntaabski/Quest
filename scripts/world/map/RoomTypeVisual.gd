@@ -32,3 +32,11 @@ class_name RoomTypeVisual
 @export var light_color: Color = Color(0, 0, 0, 0)
 ## MapTileRenderer.Interior template forced for this type (-1 = rolled like any room).
 @export var interior: int = -1
+## mazmorra-32: own pieces (DungeonTiles, SRC_OWN atlas coords) for this type. floor_props go on
+## free interior floor (DungeonTiles.BEDROLL[0] = a two-tile bedroll; FLAT ones may also take the
+## edge ring), wall_props on the room's north brick face; braziers = lit braziers on free floor.
+@export var floor_props: Array[Vector2i] = []
+@export var floor_prop_count: int = 0
+@export var wall_props: Array[Vector2i] = []
+@export var wall_prop_count: int = 0
+@export var braziers: int = 0

@@ -42,7 +42,30 @@ const RUG: Array[Vector2i] = [                                                  
 	Vector2i(10, 0), Vector2i(11, 0), Vector2i(12, 0)]
 const SLABS: Array[Vector2i] = [Vector2i(13, 0), Vector2i(14, 0)]
 const RUBBLE: Array[Vector2i] = [Vector2i(15, 0), Vector2i(16, 0), Vector2i(17, 0)]
-const OWN_DECOR_CELLS := 18
+# mazmorra-32 (same sheet): animated light sources = ANIM_FRAMES cells side by side from the base
+# cell (TileSet animation; plan and tests only use the base), wall overlays, flat scatter, type props.
+const ANIM_FRAMES := 4
+const TORCH := Vector2i(18, 0)       # wall face overlay
+const BRAZIER := Vector2i(22, 0)     # floor, solid
+const CANDLES := Vector2i(26, 0)     # floor, solid (Altar)
+const ANIMATED: Array[Vector2i] = [TORCH, BRAZIER, CANDLES]
+const SHELVES: Array[Vector2i] = [Vector2i(30, 0), Vector2i(31, 0)]  # wall face overlays
+const CHAINS := Vector2i(32, 0)      # wall face overlay
+const SHACKLES := Vector2i(33, 0)
+const BONES: Array[Vector2i] = [Vector2i(34, 0), Vector2i(35, 0)]
+const COBWEB_L := Vector2i(36, 0)    # flat, room's top-left floor corner
+const COBWEB_R := Vector2i(37, 0)
+const CRACKS: Array[Vector2i] = [Vector2i(38, 0), Vector2i(39, 0)]
+const PUDDLE := Vector2i(40, 0)
+const BLOOD: Array[Vector2i] = [Vector2i(41, 0), Vector2i(42, 0)]
+const MOSS: Array[Vector2i] = [Vector2i(43, 0), Vector2i(44, 0)]
+const BEDROLL: Array[Vector2i] = [Vector2i(45, 0), Vector2i(46, 0)]  # left + right half, placed side by side
+## Pieces drawn flat (no footprint): they may sit on the edge ring, never count as solid.
+const FLAT: Array[Vector2i] = [COBWEB_L, COBWEB_R, Vector2i(38, 0), Vector2i(39, 0), PUDDLE, Vector2i(41, 0), Vector2i(42, 0), Vector2i(43, 0), Vector2i(44, 0)]
+const OWN_DECOR_CELLS := 47
+## The Altar (AltarShrine's Sprite2D, not a tile): px regions of dungeon_decor.png.
+const ALTAR_REGION := Rect2i(0, 16, 32, 32)
+const ALTAR_USED_REGION := Rect2i(32, 16, 32, 32)
 const DOOR_CLOSED := Vector2i(2, 15)  # doors_leaf_closed, 32x32 (Door.gd draws it, not the TileMap)
 const DOOR_OPEN := Vector2i(5, 15)    # doors_leaf_open, 32x32
 

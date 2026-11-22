@@ -74,9 +74,22 @@ func _build_dungeon() -> void:
 	_solid(_add(fill, DungeonTiles.WALL_FILL))
 
 	# mazmorra-31: own interior sheet (pits, rug, slabs, rubble), every cell, no collision.
+	# mazmorra-32: torch/brazier/candles = one animated tile over ANIM_FRAMES cells (random start
+	# times, so neighbours don't flicker in step); their other frame cells are not tiles.
 	var own := _source(ts, DungeonTiles.SRC_OWN, OWN_DECOR)
-	for x in DungeonTiles.OWN_DECOR_CELLS:
-		_add(own, Vector2i(x, 0))
+	var x := 0
+	while x < DungeonTiles.OWN_DECOR_CELLS:
+		var coords := Vector2i(x, 0)
+		_add(own, coords)
+		if coords in DungeonTiles.ANIMATED:
+			own.set_tile_animation_columns(coords, DungeonTiles.ANIM_FRAMES)
+			own.set_tile_animation_frames_count(coords, DungeonTiles.ANIM_FRAMES)
+			own.set_tile_animation_mode(coords, TileSetAtlasSource.TILE_ANIMATION_MODE_RANDOM_START_TIMES)
+			for f in DungeonTiles.ANIM_FRAMES:
+				own.set_tile_animation_frame_duration(coords, f, 0.14)
+			x += DungeonTiles.ANIM_FRAMES
+		else:
+			x += 1
 
 	_save(ts, "res://resources/tilesets/dungeon_tileset.tres")
 

@@ -9,9 +9,10 @@ extends Node2D
 
 signal used(hero_id: String, item: ItemData)
 
-const SIZE := Vector2(48, 40)
-const STONE := Color(0.42, 0.4, 0.44)
+const SIZE := Vector2(56, 56)
 const GLOW := Color(0.85, 0.25, 0.3)
+## mazmorra-32: own pixel art (dungeon_decor.png rows 1-2), active / used.
+const SHEET := preload("res://assets/art/own/dungeon_decor.png")
 
 var zone_id: String = ""
 var hp_pct: float = 0.3
@@ -20,6 +21,7 @@ var floor_index: int = 1
 var map_seed: int = 0
 var is_used: bool = false
 var dialog: ConfirmationDialog
+var _sprite: Sprite2D
 
 
 func setup(p_zone_id: String, p_hp_pct: float, p_min_rarity: int, p_floor_index: int, p_map_seed: int) -> void:
@@ -32,6 +34,14 @@ func setup(p_zone_id: String, p_hp_pct: float, p_min_rarity: int, p_floor_index:
 
 func _ready() -> void:
 	z_index = 2
+	_sprite = Sprite2D.new()
+	_sprite.name = "Art"
+	_sprite.texture = AtlasTexture.new()
+	_sprite.texture.atlas = SHEET
+	_sprite.scale = Vector2.ONE * ArtConfig.ART_SCALE
+	_sprite.position = Vector2(0, -DungeonTiles.ALTAR_REGION.size.y * ArtConfig.ART_SCALE * 0.5 + 4)
+	add_child(_sprite)
+	queue_redraw()
 	var area := Area2D.new()
 	area.name = "ClickArea"
 	area.input_pickable = true
@@ -58,13 +68,10 @@ func _ready() -> void:
 	add_child(dialog)
 
 
+## The art follows is_used (every caller already queue_redraw()s after changing it).
 func _draw() -> void:
-	var base := Rect2(Vector2(-SIZE.x * 0.5, -SIZE.y * 0.45), Vector2(SIZE.x, SIZE.y * 0.45))
-	draw_rect(base, STONE)
-	draw_rect(Rect2(base.position + Vector2(6, -10), Vector2(SIZE.x - 12, 10)), STONE.lightened(0.15))
-	draw_rect(base, STONE.darkened(0.4), false, 2.0)
-	if not is_used:
-		draw_circle(Vector2(0, -SIZE.y * 0.62), 6.0, GLOW)
+	if _sprite:
+		(_sprite.texture as AtlasTexture).region = Rect2(DungeonTiles.ALTAR_USED_REGION if is_used else DungeonTiles.ALTAR_REGION)
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:

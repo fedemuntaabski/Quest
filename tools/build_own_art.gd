@@ -126,14 +126,20 @@ func _recolor(src: Image, tile: int, dark: Color, light: Color) -> Image:
 	return img
 
 
-func _ascii(rows: Array, pal: Dictionary) -> Image:
-	var img := Image.create(CELL, CELL, false, Image.FORMAT_RGBA8)
+func _ascii(rows: Array, pal: Dictionary, size := Vector2i(CELL, CELL)) -> Image:
+	var img := Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
+	_stamp(img, rows, pal, Vector2i.ZERO)
+	return img
+
+
+## Draws ASCII rows at `at` (characters not in `pal` stay as they are).
+func _stamp(img: Image, rows: Array, pal: Dictionary, at: Vector2i) -> void:
 	for y in rows.size():
 		var row: String = rows[y]
 		for x in row.length():
-			if pal.has(row[x]):
-				img.set_pixel(x, y, Color(pal[row[x]]))
-	return img
+			var p := at + Vector2i(x, y)
+			if pal.has(row[x]) and p.x >= 0 and p.y >= 0 and p.x < img.get_width() and p.y < img.get_height():
+				img.set_pixel(p.x, p.y, Color(pal[row[x]]))
 
 
 # --- VFX: tiras horizontales, frames de `size` px, dibujadas a mano por fórmula ---
@@ -295,9 +301,17 @@ func _disc(img: Image, o: Vector2, size: int, c: Vector2, r: float, col: Color) 
 # --- Interior de las salas (mazmorra-31): paleta de 0x72 DungeonTileset II ---
 
 ## Orden de celdas de dungeon_decor.png = DungeonTiles.PIT/RUG/SLABS/RUBBLE.
+## mazmorra-32: + animated torch/brazier/candles (4 frames each, side by side = TileSet
+## animation), wall pieces (shelves, chains), flat scatter and type props; rows 1-2 hold the
+## Altar (32x32, active + used) at DungeonTiles.ALTAR_REGION / ALTAR_USED_REGION (a Sprite2D, not a tile).
 const OWN_DECOR := ["pit_tl", "pit_tr", "pit_bl", "pit_br",
 	"rug_tl", "rug_t", "rug_tr", "rug_l", "rug_c", "rug_r", "rug_bl", "rug_b", "rug_br",
-	"slab_a", "slab_b", "rubble_a", "rubble_b", "rubble_c"]
+	"slab_a", "slab_b", "rubble_a", "rubble_b", "rubble_c",
+	"torch_0", "torch_1", "torch_2", "torch_3", "brazier_0", "brazier_1", "brazier_2", "brazier_3",
+	"candles_0", "candles_1", "candles_2", "candles_3", "shelf_a", "shelf_b", "chains", "shackles",
+	"bones_a", "bones_b", "cobweb_l", "cobweb_r", "crack_a", "crack_b", "puddle", "blood_a", "blood_b",
+	"moss_a", "moss_b", "bedroll_l", "bedroll_r"]
+const DECOR_ROWS := 3
 const SHEET_0X72 := "res://assets/art/tiles/dungeon_tileset_ii.png"
 const FLOOR_1 := Vector2i(16, 64)  # floor_1 en la hoja 0x72 (px)
 const P_K := Color("222222")  # contorno
@@ -306,8 +320,8 @@ const P_F := Color("483b3a")  # suelo
 const P_M := Color("775c55")  # junta / piedra media
 const P_L := Color("aa8d7a")  # piedra clara
 const P_W := Color("d3bfa9")  # hueso
-const P_R := Color("9f294e").lerp(Color("483b3a"), 0.35)  # carmesí de los estandartes, apagado
-const P_O := Color("da4e38").lerp(Color("9f294e"), 0.5)  # borde: rojo de los estandartes, apagado
+const P_R := Color("6f3343")  # carmesí de los estandartes 9f294e, 55 % hacia el suelo 483b3a (mazmorra-32)
+const P_O := Color("943b40")  # borde: rojo da4e38/9f294e, 35 % hacia el suelo (mazmorra-32)
 const P_RD := Color("4a1a2a")
 const RUBBLE := {
 	"rubble_a": [
@@ -332,7 +346,7 @@ func _decor() -> void:
 	if FileAccess.file_exists(OUT + "src/dungeon_decor.ase"):
 		print("own decor: hay src/dungeon_decor.ase (retoque de LibreSprite), no se pisa")
 		return
-	var sheet := Image.create(CELL * OWN_DECOR.size(), CELL, false, Image.FORMAT_RGBA8)
+	var sheet := Image.create(CELL * OWN_DECOR.size(), CELL * DECOR_ROWS, false, Image.FORMAT_RGBA8)
 	var src := Image.load_from_file(ProjectSettings.globalize_path(SHEET_0X72))
 	src.convert(Image.FORMAT_RGBA8)
 	var pit := _pit(src)
@@ -347,9 +361,13 @@ func _decor() -> void:
 			cell = _rug(id)
 		elif id.begins_with("slab_"):
 			cell = _slab(id == "slab_b")
-		else:
+		elif RUBBLE.has(id):
 			cell = _ascii(RUBBLE[id], pal)
+		else:
+			cell = _decor_cell(id)
 		sheet.blit_rect(cell, Rect2i(0, 0, CELL, CELL), Vector2i(i * CELL, 0))
+	sheet.blit_rect(_altar(false), Rect2i(0, 0, CELL * 2, CELL * 2), Vector2i(0, CELL))
+	sheet.blit_rect(_altar(true), Rect2i(0, 0, CELL * 2, CELL * 2), Vector2i(CELL * 2, CELL))
 	sheet.save_png(ProjectSettings.globalize_path(OUT + "dungeon_decor.png"))
 	print("own decor: %d celdas" % OWN_DECOR.size())
 
@@ -369,7 +387,7 @@ func _pit(src: Image) -> Image:
 			if not inside.call(x, y):
 				img.set_pixel(x, y, src.get_pixel(FLOOR_1.x + x % CELL, FLOOR_1.y + y % CELL))
 			elif not (inside.call(x - 1, y) and inside.call(x + 1, y) and inside.call(x, y - 1) and inside.call(x, y + 1)):
-				img.set_pixel(x, y, P_K)
+				img.set_pixel(x, y, P_L if y > 20 and not inside.call(x, y + 1) else P_K)  # lit near lip
 			elif y < 8:
 				var mortar := y == 5 or (y < 5 and (x + 2) % 6 == 0) or (y > 5 and (x + 5) % 6 == 0)
 				img.set_pixel(x, y, P_K if mortar else (P_L if y == 3 else P_M))
@@ -397,7 +415,7 @@ func _rug(id: String) -> Image:
 			var c: Color
 			match d:
 				0: c = P_K
-				1: c = P_W
+				1: c = P_L
 				2, 3: c = P_O
 				4: c = P_RD
 				_:
@@ -426,5 +444,192 @@ func _slab(split: bool) -> Image:
 				c = P_F
 			elif posmod(x * 7 + y * 13, 23) == 0:
 				c = P_F
+			elif posmod(x * 11 + y * 5, 29) == 0:
+				c = P_L.lerp(base, 0.5)  # flecks (mazmorra-32)
 			img.set_pixel(x, y, c)
+	return img
+
+
+# --- mazmorra-32: decoración propia (paleta 0x72 + fuego, hierro, madera, sangre, musgo, agua) ---
+
+const DECOR_PAL := {
+	"k": "222222", "d": "21141b", "f": "483b3a", "m": "775c55", "l": "aa8d7a", "w": "d3bfa9",
+	"I": "3d3d45", "i": "6b6b78", "j": "a3a3b0", "b": "5d3a26", "n": "8a5a3b", "t": "b07a4f",
+	"r": "e2582c", "o": "f7a541", "y": "ffe9a3", "e": "8e2a1e", "R": "9f294e", "X": "6a1424",
+	"B": "3f5a8a", "G": "4f7a3a", "g": "2f4a2a", "h": "7aa84a", "p": "35506b", "q": "1d2b3a",
+	"s": "6e93b0", "c": "d3bfa98c", "v": "40506e", "u": "6d7fa3", "z": "c8b89a", "a": "c49a5a", "A": "8a6a3a",
+}
+## Torch flame, 5x7, 4 frames (the TileSet plays them at random start times).
+const FLAME := [
+	["..r..", ".ror.", ".ror.", "rooor", "royor", "ryyor", ".ryr."],
+	["...r.", "..rr.", ".roor", ".royr", "royor", "royyr", ".ryr."],
+	["...o.", "..r..", ".ror.", "rooor", "royyr", "ryyor", ".ryr."],
+	[".r...", ".rr..", "roor.", "royor", "royor", "ryyyr", ".ryr."],
+]
+## Candle flame, 2x3, 4 frames.
+const SMALL_FLAME := [[".o", "oy", "ry"], ["o.", "yo", "yr"], ["..", "oy", "ry"], [".r", "yo", "ry"]]
+const TORCH := [
+	"", "", "", "", "", "", "",
+	"......kjjk......",
+	"......kIIk......",
+	".......nb.......",
+	".....k.nb.k.....",
+	".....kinbik.....",
+	"......kkkk......",
+	".......kk.......",
+	"......kIIk......",
+	"......kkkk......",
+]
+const BRAZIER := [
+	"", "", "", "", "", "", "", "",
+	"..keroeoreoerk..",
+	"..kjjjjjjjjjjk..",
+	"...kiiiiiiiik...",
+	"....kIIIIIIk....",
+	".....kkkkkk.....",
+	"....ki.kk.ik....",
+	"...ki..kk..ik...",
+	"...kk..kk..kk...",
+]
+const CANDLES := [
+	"", "", "", "", "",
+	"......kwwk......",
+	"......kwlk......",
+	"......kwlk......",
+	".kwwk.kwlk......",
+	".kwlk.kwlk......",
+	".kwlk.kwlk.kwwk.",
+	".kwlk.kwlk.kwlk.",
+	".kwlk.kwlk.kwlk.",
+	".kwlk.kwlk.kwlk.",
+	".kkkk.kkkk.kkkk.",
+]
+const SPRITES := {
+	"shelf_a": [
+		"", ".kkkkkkkkkkkkkk.", ".kbnnnnnnnnnnbk.", ".kbRRdBBGGdwlbk.", ".kbRRdBBGGdwlbk.",
+		".kbRRdBBGGdwlbk.", ".kbRRdBBGGdwlbk.", ".kbttttttttttbk.", ".kbnnnnnnnnnnbk.",
+		".kbdlwldBBdRRbk.", ".kbdjwjdBBdRRbk.", ".kbdjwjdBBdRRbk.", ".kbdkkkdBBdRRbk.",
+		".kbttttttttttbk.", ".kbnnnnnnnnnnbk.", ".kkkkkkkkkkkkkk."],
+	"shelf_b": [
+		"", ".kkkkkkkkkkkkkk.", ".kbnnnnnnnnnnbk.", ".kbddddddddddbk.", ".kbdwwddsddRdbk.",
+		".kbwlwdspddRRbk.", ".kbwlwdspddRRbk.", ".kbttttttttttbk.", ".kbnnnnnnnnnnbk.",
+		".kbddddddddddbk.", ".kbwwwwdddGGdbk.", ".kblllwdddGGdbk.", ".kbddddddGGddbk.",
+		".kbttttttttttbk.", ".kbnnnnnnnnnnbk.", ".kkkkkkkkkkkkkk."],
+	"chains": [
+		"", "...kk......kk...", "...ji......ji...", "..k..k....k..k..", "...ij......ij...",
+		"..k..k....k..k..", "...ji......ji...", "..k..k....k..k..", "...ij......ij...",
+		"..k..k....k..k..", "...ji......ji...", "..kiik....kiik..", ".ki..ik..ki..ik.",
+		".kj..jk..kj..jk.", "..kjjk....kjjk.."],
+	"shackles": [
+		"", "", "", "", "", "...kkk", "..kjjjk", "..kj.ik", "..kiiikkk.kkk", "...kkk.jik.jik",
+		".......kkk.kkk", "...........kjjjk", "...........kj.ik", "...........kiiik", "............kkk"],
+	"bones_a": [
+		"", "", "", "", "......kkkk", ".....kwwwwk", "....kwwwwlwk", "....kwkwwkwk", "....kwkwwkwk",
+		".....kwwwwlk", ".....kwkwkwk", "......kkkkk", "..kk......kk", ".kwlkkkkkkkwlk", ".kwwwwwwwwwwlk",
+		"..kk......kk"],
+	"bones_b": [
+		"", "", "", "...kk......kk", "..kwlk....kwlk", "...kwlk..kwlk", "....kwlkkwlk", ".....kwllwk",
+		".....kwllwk", "....kwlkkwlk", "...kwlk..kwlk", "..kwlk....kwlk", "...kk......kk"],
+	"cobweb_l": [
+		"cccccccccccccc", "cc...c.....c", "c.c..c....c", "c..c.c...c", "c...ccc.c", "cccccc.c",
+		"c...c.cc", "c..c..c", "c.c..c", "cc..c", "c..c", "c.c", "cc", "c", "c"],
+	"crack_a": [
+		"", "", "........k", ".......kd", "......kd", "......k", ".....kdk", "....kd..k",
+		"....k....kd", "...kd.....k", "...k.......kd", "..kd.........k", "..k"],
+	"crack_b": [
+		"", "", "", "", "", "", "..k", "...kd", "....kkd...kd", ".......kkdk.k", "..........k..kd",
+		"...............k"],
+	"puddle": [
+		"", "", "", "", "", "......qqqq", "....qqppppqq", "...qppppssppq", "..qppsppppppq",
+		"..qpppppppppqq", "...qqpppppppq", ".....qqqqppq", "........qqq", "..qq"],
+	"blood_a": [
+		"", "", "", "", "......X", ".....XRX...X", "....XRRRX", "...XRRRRRXX", "..XRRRRRRRRX.X",
+		"...XRRRRRRX", "....XXRRXX", "..X...XX....X", "........X"],
+	"blood_b": [
+		"", "", "", "", "", "", ".X..........X", "...XX.....XRX", "..XRRXX..XRRX", "...XRRRXXRRX",
+		"....XXRRRRX", "......XXXX...X", "..X"],
+	"moss_a": [
+		"", "", "", "..........g", ".........gGg", "........gGhGg", ".........ggg", "", "",
+		"....g", "...gGg....g", "..gGhGg..gGg", ".gGhhGGggGhGg", ".gGGGGGGGGGGg", "..ggggggggggg"],
+	"moss_b": [
+		"", ".g", "gGg......g", ".gGg....gGg", "..g......g", "", "", "", ".....gg", "....gGhg",
+		"...gGhhGg...g", "....gGGg...gGg", ".....gg.....g"],
+}
+const BEDROLL := [
+	"", "", "",
+	"..kkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+	".kAaaaaaakvvvvvvvvvvvvvvvvvvvvk",
+	".kazzzzzakvuuuuuuuuuuuuuuuuuuvk",
+	".kazwwwzakvuuvuuuuvuuuuvuuuuuvk",
+	".kazwwwzakvuuuuuuuuuuuuuuuuuuvk",
+	".kazwwwzakvuuuvuuuuvuuuuvuuuuvk",
+	".kazzzzzakvuuuuuuuuuuuuuuuuuuvk",
+	".kaaaaaaakvvvvvvvvvvvvvvvvvvvvk",
+	".kAAAAAAAAAAAAAAAAAAAAAAAAAAAAk",
+	"..kkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+]
+
+
+func _decor_cell(id: String) -> Image:
+	var frame := int(id.get_slice("_", 1)) if id.get_slice("_", 1).is_valid_int() else 0
+	if id.begins_with("torch_"):
+		var img := _ascii(TORCH, DECOR_PAL)
+		_stamp(img, FLAME[frame], DECOR_PAL, Vector2i(5, 0))
+		return img
+	if id.begins_with("brazier_"):
+		var img := _ascii(BRAZIER, DECOR_PAL)
+		_stamp(img, FLAME[(frame + 1) % 4], DECOR_PAL, Vector2i(3, 1))
+		_stamp(img, FLAME[(frame + 2) % 4], DECOR_PAL, Vector2i(8, 1))
+		_stamp(img, FLAME[frame], DECOR_PAL, Vector2i(5, 0))
+		return img
+	if id.begins_with("candles_"):
+		var img := _ascii(CANDLES, DECOR_PAL)
+		_stamp(img, SMALL_FLAME[(frame + 1) % 4], DECOR_PAL, Vector2i(2, 5))
+		_stamp(img, SMALL_FLAME[frame], DECOR_PAL, Vector2i(7, 2))
+		_stamp(img, SMALL_FLAME[(frame + 3) % 4], DECOR_PAL, Vector2i(12, 7))
+		return img
+	if id.begins_with("bedroll_"):
+		var bed := _ascii(BEDROLL, DECOR_PAL, Vector2i(CELL * 2, CELL))
+		return bed.get_region(Rect2i(0 if id == "bedroll_l" else CELL, 0, CELL, CELL))
+	if id == "cobweb_r":
+		var web := _ascii(SPRITES["cobweb_l"], DECOR_PAL)
+		web.flip_x()
+		return web
+	return _ascii(SPRITES[id], DECOR_PAL)
+
+
+func _box(img: Image, r: Rect2i, fill: Color, outline: Color) -> void:
+	img.fill_rect(r, outline)
+	img.fill_rect(r.grow(-1), fill)
+
+
+## Blood altar, 32x32: plinth, carved body, top slab with a bowl and candle stubs, and (active)
+## a floating crimson gem + glowing rune + a drip down the front; used = dry and dark.
+func _altar(used: bool) -> Image:
+	var img := Image.create(CELL * 2, CELL * 2, false, Image.FORMAT_RGBA8)
+	var c := func(key: String) -> Color: return Color(DECOR_PAL[key])
+	_box(img, Rect2i(4, 26, 24, 5), c.call("m"), c.call("k"))  # plinth
+	img.fill_rect(Rect2i(5, 27, 22, 1), c.call("l"))
+	_box(img, Rect2i(8, 16, 16, 11), c.call("m"), c.call("k"))  # body
+	img.fill_rect(Rect2i(9, 17, 1, 9), c.call("l"))
+	img.fill_rect(Rect2i(22, 17, 1, 9), c.call("f"))
+	_box(img, Rect2i(5, 11, 22, 6), c.call("l"), c.call("k"))  # top slab
+	img.fill_rect(Rect2i(6, 12, 20, 1), c.call("w"))
+	img.fill_rect(Rect2i(6, 15, 20, 1), c.call("m"))
+	_box(img, Rect2i(11, 12, 10, 3), c.call("d" if used else "X"), c.call("k"))  # bowl
+	if not used:
+		img.fill_rect(Rect2i(13, 13, 6, 1), c.call("R"))
+	for x: int in [6, 24]:  # candle stubs
+		_box(img, Rect2i(x, 8, 3, 4), c.call("w"), c.call("k"))
+		if not used:
+			img.set_pixel(x + 1, 6, c.call("o"))
+			img.set_pixel(x + 1, 7, c.call("y"))
+	var rune: Color = c.call("d") if used else c.call("R")
+	for p: Vector2i in [Vector2i(15, 18), Vector2i(16, 18), Vector2i(14, 19), Vector2i(17, 19), Vector2i(15, 20),
+			Vector2i(16, 20), Vector2i(15, 21), Vector2i(16, 21), Vector2i(14, 22), Vector2i(17, 22), Vector2i(15, 23), Vector2i(16, 23)]:
+		img.set_pixelv(p, rune)
+	if not used:
+		img.fill_rect(Rect2i(19, 16, 1, 3), c.call("R"))  # drip
+		img.set_pixel(19, 19, c.call("X"))
+		_stamp(img, ["..kk..", ".kRRk.", "kRllRk", "kRRRXk", ".kRXk.", "..kk.."], DECOR_PAL, Vector2i(13, 1))  # gem
 	return img
