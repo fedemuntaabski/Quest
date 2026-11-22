@@ -262,6 +262,7 @@ Movido verbatim de `CLAUDE.md` el 2026-11-07 para que no se cargue en cada sesi�
 - **Phase 4 (cut down, visual only):** `RoomTypeVisual.light_color` (RoomLight.set_light_color) and `interior` (forced template; the roll still happens so streams don't shift); Élite marker red, Altar cold, Taller icon `weapon_hammer`, Botín props table/stool/strongbox (no chest tiles); exit stairs one cell below the centre.
 - **Tests:** test_tile_renderer (150-map independent interior check vs world objects/walk lines/ring), test_map_generator (sizes, slot box, lanes, shapes share ~0.34, all kinds), test_salas_exhaustivo (live shapes: cells, outline, physics pick, zone_has_point, RoomLight, badge), test_corridor_picking (cut corners skipped). **Version 1.8.**
 - **Captures:** `capturas/mazmorra-31/` (gitignored): antes/, fase2/, fase3/, fase4_tipos_1080.png, final/antes_despues_{full,lit,close}_{720,1080}.png. Tools: `tests/tools/shot_mazmorra.gd` (`-- <dir> <seed> <floor> [720|1080] [types]`).
+- **Final suite:** 67 tests, 0 FAIL, 0 OK*, 530 s.
 - **Not done / not verified:** phase 5 (own decor in LibreSprite: torches, braziers, shelves, chains, bones, cobwebs, puddles, altar art), phase 6 (flickering lights, LightOccluder2D shadows, softer light-up, LIT_FILL_COLOR wash, FPS bench), phase 4 mechanics (empty Prisoner room, new types) - all in the next goal. Nothing played in a real window (only scripted screenshots); enemies don't avoid columns/pits (visual only).
 
 ## Arquitectura (versión larga previa al recorte)
