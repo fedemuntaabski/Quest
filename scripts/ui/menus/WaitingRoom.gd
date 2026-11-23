@@ -28,8 +28,7 @@ func _ready() -> void:
 	ready_button.name = "ReadyButton"
 	ready_button.toggle_mode = true
 	ready_button.text = "LISTO"
-	start_button.get_parent().add_child(ready_button)
-	start_button.get_parent().move_child(ready_button, start_button.get_index())
+	_button_rows()
 
 	invite_button.pressed.connect(_on_invite_pressed)
 	start_button.pressed.connect(_on_start_pressed)
@@ -46,6 +45,24 @@ func _ready() -> void:
 		0.28, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT, Vector2.ONE)
 	if tween != null:
 		await tween.finished
+
+
+## juego-36: the four plaques in two rows (Invitar + Listo, Iniciar + Abandonar) instead of
+## four stacked: at text x1.5 the card fits a 1080p screen without scrolling.
+func _button_rows() -> void:
+	var box := start_button.get_parent()
+	var at := invite_button.get_index()
+	for pair: Array in [[invite_button, ready_button], [start_button, leave_button]]:
+		var row := HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", 20)
+		box.add_child(row)
+		box.move_child(row, at)
+		at += 1
+		for button: Button in pair:
+			if button.get_parent():
+				button.get_parent().remove_child(button)
+			row.add_child(button)
 
 
 ## visual-24: with large text the card is taller than the screen (Abandonar fell off
