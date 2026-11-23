@@ -424,9 +424,11 @@ func _check_building_menu(hud: HUDController, main2d: Node, resources: ResourceM
 	hud.open_building_menu(major)
 	_expect(major.is_empty() and menu.is_armed(), "armed click without iron must not build nor disarm")
 	resources.add_resource("iron", saved)
+	room.always_lit = false  # juego-35: the start room never goes dark; switchable for this check
 	room.set_lit(false)  # room_light_changed → re-arm
 	_expect(menu.is_armed() and menu.get_block_reason(major) == "Sala apagada", "unlit-room reason: '%s'" % menu.get_block_reason(major))
 	room.set_lit(true)
+	room.always_lit = true
 
 	# Armed click builds, spends, and leaves armed mode clean.
 	var lore_yield := resources.get_turn_yield("lore")
@@ -518,10 +520,15 @@ func _check_tactical_pause(hud: HUDController, main2d: Node, resources: Resource
 	middle.pressed = false  # heroes-9: the toggle fires on release (press may start a camera drag)
 	_clear_handled()
 	room._on_input_event(root, middle, 0)
+	_expect(room.is_lit, "the Relic room went dark on a middle click (juego-35)")
+	room.always_lit = false  # the toggle itself, in pause
+	_clear_handled()
+	room._on_input_event(root, middle, 0)
 	_expect(not room.is_lit, "middle click should switch the room off in tactical pause")
 	_clear_handled()
 	room._on_input_event(root, middle, 0)
 	_expect(room.is_lit, "middle click should light the room in tactical pause")
+	room.always_lit = true
 	var portrait := hud.portraits.get_child(0) as HeroPortrait
 	portrait.portrait_clicked.emit(portrait)
 	_expect(hud.character_popup.visible, "hero popup must open in tactical pause")

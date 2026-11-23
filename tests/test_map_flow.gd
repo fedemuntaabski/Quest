@@ -393,9 +393,15 @@ func _check_lighting(room_manager: RoomManager, resources: ResourceManager, labe
 	if not zone.is_lit or light.is_dark():
 		failures.append("%s: start room not lit by default" % label)
 	var embers := resources.get_resource("embers")
+	# juego-35: the Relic room never goes dark.
+	zone.toggle_light()
+	if not zone.is_lit or light.is_dark() or resources.get_resource("embers") != embers:
+		failures.append("%s: the start room went dark (embers %d -> %d)" % [label, embers, resources.get_resource("embers")])
+	# The light cycle itself, on this room made switchable for the check.
+	zone.always_lit = false
 	zone.toggle_light()
 	if zone.is_lit or not light.is_dark() or resources.get_resource("embers") != embers:
-		failures.append("%s: switching the free start light off must darken it without refund (embers %d -> %d)" % [label, embers, resources.get_resource("embers")])
+		failures.append("%s: switching the free light off must darken it without refund (embers %d -> %d)" % [label, embers, resources.get_resource("embers")])
 	if not light.is_affordable_highlighted():
 		failures.append("%s: %d embers >= cost but room not highlighted as affordable" % [label, embers])
 	zone.toggle_light()
@@ -405,6 +411,7 @@ func _check_lighting(room_manager: RoomManager, resources: ResourceManager, labe
 	if zone.is_lit or resources.get_resource("embers") != embers:
 		failures.append("%s: switching a paid light off should refund it" % label)
 	zone.set_lit(true)  # restore the default for the rest of the run
+	zone.always_lit = true
 
 
 func _check_edge_point() -> void:
