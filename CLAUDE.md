@@ -15,7 +15,7 @@ QUEST: 2D tactical roguelite, Godot 4.6 (4.6.2), GDScript only, GL Compatibility
 
 Visible text is Spanish with medieval vocabulary (see memory `vocabulario-medieval`; `tests/test_vocabulario.gd` fails on old words). Code identifiers match: `Relic`, `embers`, `iron`, `lore`, `Building`, `WorkshopBuilding`, `DefenseBuilding`, `is_lit`/`toggle_light`. Hero id `tank` = Paladín (id kept for saves).
 
-### Gone — don't look for it or "fix" references
+### Gone; don't look for it or "fix" references
 
 Card combat (`MapManager`, `CombatCardSystem`, `CardData`); AP system and STR/MAG/DEX; cell BFS movement (`MapNavigationHelper`, `Highlight` layer); hardcoded `Main2d.LAYOUT`; `RoomManager.build_from_layout`; Oro currency (`CurrencyManager`, store, `SaveManager.gold`); `RoomType.SHOP`, `RoomData.is_vault`; `Enemy.Variant` SWARM/SAPPER/HUNTER targeting (now `TargetSelector`); `PlayerStats.active_hero_changed` (use `SelectionManager.selection_changed`); `Building.DESCRIPTIONS`/`DEFENSE`/`TRAP`; `lore_workshop`/`defense_plans` research; `MapTileRenderer` `Doors` layer; `Main2dDeathHandler`/`Main2dVictoryHandler`; `RoomLightSystem`/`BuildingBuildSystem`.
 
@@ -66,7 +66,7 @@ Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` pe
 
 ### Autoloads (`project.godot`)
 
-`PartyInventory` (stash 20 + per-hero loadout; before `PlayerStats`), `PlayerStats` (per-hero `CharacterStats`, levels paid in Comida (Saber ×2 if short), perks, heal/revive, `get_stat_breakdown`; stat layers base → level → perks+equipment), `SaveManager` (`user://slot_<id>.cfg` via `SafeConfig`; `SAVE_VERSION` 3 + `migrate()`; bestiary; offline run `[run] state`), `SettingsManager` (audio/video/input/accessibility/help), `FPSOverlay`, `SteamManager`, `NetSession` (`CoopSession`), `NetCommands` (`CoopCommands`), `ResourceManager` (4 resources, start amounts in `START`/`start_amounts(mult)`, `spend_resource` refuses on insufficient funds, Taller yield, research via `ResearchState`), `GameSession` (hero pick, difficulty, recruited/lost, tutorial flag), `SelectionManager` (selection + control groups 1–3), `BestiaryService`, `AudioDirector` (`SFX_PATHS`, music crossfade, `HOST_KEYS`).
+`PartyInventory` (stash 20 + per-hero loadout, before `PlayerStats`), `PlayerStats` (per-hero `CharacterStats`, levels paid in Comida (Saber ×2 if short), perks, heal/revive, `get_stat_breakdown`; stat layers base → level → perks+equipment), `SaveManager` (`user://slot_<id>.cfg` via `SafeConfig`; `SAVE_VERSION` 3 + `migrate()`; bestiary; offline run `[run] state`), `SettingsManager` (audio/video/input/accessibility/help), `FPSOverlay`, `SteamManager`, `NetSession` (`CoopSession`), `NetCommands` (`CoopCommands`), `ResourceManager` (4 resources, start amounts in `START`/`start_amounts(mult)`, `spend_resource` refuses on insufficient funds, Taller yield, research via `ResearchState`), `GameSession` (hero pick, difficulty, recruited/lost, tutorial flag), `SelectionManager` (selection + control groups 1–3), `BestiaryService`, `AudioDirector` (`SFX_PATHS`, music crossfade, `HOST_KEYS`).
 
 `ManagerLocator` (`scripts/autoload/ManagerLocator.gd`, not an autoload) is the one lookup point: autoload getters + group lookups (`room_manager`, `player` = primary selected hero, `get_heroes()`, `get_hero(id)`, `get_tutorial()`, `enemy_manager`, `extraction_manager`, `floor_manager`, `exit_indicator`, `game_camera`, relic, …). Use it instead of raw names or ad-hoc group queries.
 
