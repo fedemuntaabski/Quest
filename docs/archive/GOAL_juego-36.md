@@ -14,4 +14,6 @@ Fase 4 — puertas: opción A de juego-35, sin tocar.
 
 Verificación: tools/run_tests.sh verde; shot_barrido sin FAIL; capturas antes/después; PLAYTEST.md con lo que falta en ventana. Cierre: SESSIONS, CHANGELOG, docs, CLAUDE.md ≤20 KB con la versión 1.10, este archivo, push, /goal siguiente.
 
+Cambio pedido por el dueño durante la sesión: la Fase 2 no usa tools/build_own_art.gd; los íconos se arman en LibreSprite con tools/libresprite_icons.js (tools/libresprite.sh icons), fuente assets/art/own/src/abilities/*.ase.
+
 Resultado: bloque juego-36 de docs/archive/SESSIONS.md.
