@@ -35,11 +35,7 @@ Kenney: `Tiles/tile_NNNN.png`, donde (x, y) = (N % 12, N / 12).
 | Obra Pinchos | `placeholder_spikes` | `art/tiles/floor_spikes_anim_f3.png` | **aplicado** |
 | Obra Brasero | `placeholder_trap` | `art/tiles/wall_fountain_basin_red_anim_f0.png` | **aplicado** (provisorio: es una fuente, no un brasero) |
 | Obra Granja | `placeholder_gen_food` | barril Kenney `tile_0082` | pendiente |
-| Habilidad activa Guerrero | `placeholder_ability_warrior_active` | `art/items/weapon_knight_sword.png` | **aplicado** |
-| Habilidad activa Maga | `placeholder_ability_mage_active` | `art/items/weapon_red_magic_staff.png` | **aplicado** |
-| Habilidad activa Pícaro | `placeholder_ability_rogue_active` | `art/items/weapon_knife.png` | **aplicado** |
-| Habilidad activa Paladín | `placeholder_ability_tank_active` | `art/items/weapon_big_hammer.png` | **aplicado** |
-| Pasivas (4 héroes) | `placeholder_ability_*_passive` | celdas de `armours.png` / `books.png`; escudo Kenney `tile_0102` (tanque) | pendiente (`AtlasTexture`) |
+| Habilidades (8: pasiva y activa de cada héroe) | `placeholder_ability_*` y armas de 0x72 | `art/own/abilities/ability_*.png` (propios, juego-36; ver `MISSING_ICONS.md`) | **aplicado** |
 | Cofres por tier | Kenney (5,7) teñido (`Chest.gd`) | cofres Kenney `tile_0089`–`0092` | pendiente: cambiar `Chest.gd` y verificar en ventana |
 | Jaula del prisionero | líneas en código (`PrisonerCage.gd`) | Kenney `tile_0081` (barrotes de madera) o `tile_0070` (reja) | pendiente: verificar en ventana |
 | Altar | rectángulo + brillo (`AltarShrine.gd`) | Kenney `tile_0020` (gárgola) sobre `tile_0032` (pedestal con orbe), o la fuente roja de 0x72 | pendiente |

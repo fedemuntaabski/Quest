@@ -135,6 +135,8 @@ func _check_menu() -> void:
 	var tank_data := CharacterDatabase.get_by_id("tank")
 	_expect(menu._preview_info.text.contains(tank_data.active.format_description()) and menu._preview_info.text.contains(tank_data.passive.format_description()),
 		"preview shows both ability descriptions: %s" % menu._preview_info.text)
+	_expect(menu._preview_info.text.contains(tank_data.passive.icon.resource_path) and menu._preview_info.text.contains(tank_data.active.icon.resource_path) and tank_data.active.icon.resource_path.begins_with("res://assets/art/own/abilities/"),
+		"juego-36: the sheet shows both own ability icons: %s" % menu._preview_info.text)
 	_expect(menu._preview_info.text.contains("%d s" % roundi(tank_data.active.cooldown)) and menu._preview_info.text.contains("%d s" % roundi(tank_data.active.duration)),
 		"preview names the active's duration and cooldown: %s" % menu._preview_info.text)
 	for data: CharacterData in CharacterDatabase.get_all():

@@ -20,13 +20,10 @@ const PLACEHOLDERS := {
 	"room": ["room_start", "room_exit"],
 	"status": ["status_slow"],
 	"research": ["research_lore_workshop", "research_defense_plans", "research_workshop_tuning", "research_dry_tinder", "research_cartography", "research_workshop_bellows", "research_defense_rifling"],
-	"ability": ["ability_warrior_passive", "ability_warrior_active", "ability_mage_passive", "ability_mage_active", "ability_rogue_passive", "ability_rogue_active", "ability_tank_passive", "ability_tank_active"],
 }
 const PLACEHOLDER_COLORS := {
 	"building": Color(0.55, 1.0, 0.1), "relic": Color(0.1, 0.9, 1.0), "resource": Color(0.2, 0.6, 1.0),
-	"room": Color(1.0, 0.55, 0.1), "status": Color(1.0, 0.15, 0.15), "research": Color(1.0, 0.1, 0.8),
-	"ability": Color(1.0, 0.95, 0.1),
-}
+	"room": Color(1.0, 0.55, 0.1), "status": Color(1.0, 0.15, 0.15), "research": Color(1.0, 0.1, 0.8),}
 
 
 func _init() -> void:

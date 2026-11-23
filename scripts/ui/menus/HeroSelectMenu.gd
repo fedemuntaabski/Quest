@@ -11,6 +11,7 @@ signal heroes_confirmed(hero_ids: Array[String])
 signal back_pressed
 
 const PARTY_SIZE := preload("res://scripts/autoload/GameSession.gd").PARTY_SIZE
+const ABILITY_ICON_PX := 32
 ## Pixel art (16 px tiles) shown big; integer scale keeps it crisp.
 const PREVIEW_SCALE := 6.0
 const PREMISE := "El señor demonio saqueó la abadía y hundió sus cinco reliquias en las profundidades.
@@ -36,7 +37,7 @@ var _slots: Array[Button] = []
 var _preview_holder: Control
 var _preview_sprite: AnimatedSprite2D
 var _preview_name: Label
-var _preview_info: Label
+var _preview_info: RichTextLabel
 var _hint: Label
 var _preview_id: String = ""
 
@@ -279,9 +280,17 @@ func _build_preview_panel() -> PanelContainer:
 	UiStyles.style_menu_title(_preview_name, 28)
 	box.add_child(_preview_name)
 
-	_preview_info = Label.new()
+	# juego-36: RichTextLabel so each ability line carries its icon inline (no extra row).
+	_preview_info = RichTextLabel.new()
+	_preview_info.bbcode_enabled = true
+	_preview_info.fit_content = true
+	_preview_info.scroll_active = false
 	_preview_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	UiStyles.style_menu_text(_preview_info, 17, QuestPalette.PARCHMENT_LIGHT)
+	_preview_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_preview_info.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_preview_info.add_theme_font_override("normal_font", UiStyles.UI_FONT)
+	_preview_info.add_theme_font_size_override("normal_font_size", Accessibility.font(17))
+	_preview_info.add_theme_color_override("default_color", QuestPalette.PARCHMENT_LIGHT)
 	box.add_child(_preview_info)
 	return panel
 
@@ -343,10 +352,10 @@ func _show_preview(hero_id: String) -> void:
 		var anim: StringName = &"idle" if frames.has_animation("idle") else frames.get_animation_names()[0]
 		_preview_sprite.play(anim)
 	_preview_name.text = "%s — %s" % [data.display_name, data.role] if data.role != "" else data.display_name
-	_preview_info.text = "Vida %d · Ataque %d · Intervalo %.1f s\n\nPasiva — %s\n%s\n\nActiva — %s\n%s" % [
+	_preview_info.text = "Vida %d · Ataque %d · Intervalo %.1f s\n\n%sPasiva — %s\n%s\n\n%sActiva — %s\n%s" % [
 		data.base_hp, data.attack_damage, data.attack_interval,
-		data.passive_ability_name, _ability_text(data.passive, data.passive_ability_desc),
-		data.active_ability_name, _ability_text(data.active, ""),
+		_icon_tag(data.passive), data.passive_ability_name, _ability_text(data.passive, data.passive_ability_desc),
+		_icon_tag(data.active), data.active_ability_name, _ability_text(data.active, ""),
 	]
 	_center_preview()
 
@@ -355,6 +364,13 @@ func _show_preview(hero_id: String) -> void:
 ## the hero sheet shows it; `fallback` when the .tres has none.
 static func _ability_text(ability: AbilityData, fallback: String) -> String:
 	return ability.format_description() if ability and ability.description != "" else fallback
+
+
+## juego-36: the ability's icon inline, 16 px art x2 like CharacterPopup ("" without one).
+static func _icon_tag(ability: AbilityData) -> String:
+	if ability == null or ability.icon == null:
+		return ""
+	return "[img=%dx%d]%s[/img] " % [ABILITY_ICON_PX, ABILITY_ICON_PX, ability.icon.resource_path]
 
 
 func _center_preview() -> void:

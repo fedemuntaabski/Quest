@@ -8,7 +8,7 @@ const SHEETS := [
 	"res://assets/art/tiles/kenney_tiny_dungeon_packed.png",
 ]
 const VFX_DIR := "res://assets/art/own/vfx/"
-const IMPORT_DIRS := ["items", "own", "own/vfx"]
+const IMPORT_DIRS := ["items", "own", "own/vfx", "own/abilities"]
 
 var _failures := 0
 
@@ -39,7 +39,7 @@ func _init() -> void:
 			listed += 1 if img != null else 0
 			if img != null:
 				_check(img.get_size() == Vector2i(16, 16), "placeholder_%s es 16x16" % icon_name)
-	_check(listed == 29, "MISSING_ICONS.md lista 29 placeholders existentes (hay %d)" % listed)
+	_check(listed == 21, "MISSING_ICONS.md lista 21 placeholders existentes (hay %d)" % listed)
 	for dir: String in IMPORT_DIRS:
 		_check_imports("res://assets/art/" + dir)
 	QuestLogger.info(QuestLogger.Category.GENERAL, "test_assets_art: %d fallos" % _failures)

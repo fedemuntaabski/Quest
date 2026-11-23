@@ -2,9 +2,9 @@
 
 Todos 16×16 (se dibujan ×2 = 32×32, `ArtConfig`). Cada uno tiene un **placeholder** `assets/art/ui/placeholder_<nombre>.png` (color por categoría + X, generado por `tools/normalize_assets.gd`). Al conseguir el arte real: guardarlo como `assets/art/ui/<nombre>.png` y cablearlo; borrar el placeholder. Estilo pedido: medieval oscuro, contorno oscuro, paleta apagada (como 0x72/Kenney), **no** el estilo saturado de Raven.
 
-Hoy ninguno de estos íconos está cableado en la UI (las habilidades ya existen desde balance-4 y sus íconos irían junto a la barra de enfriamiento del retrato); todo se dibuja con `Polygon2D`/`StatIcon` vectorial o con texto.
+Hoy ninguno de estos íconos está cableado en la UI; todo se dibuja con `Polygon2D`/`StatIcon` vectorial o con texto.
 
-## Faltan (29)
+## Faltan (21)
 | Placeholder | Dónde se usa | Qué dibujar |
 |---|---|---|
 | `gen_iron` | `Building.CATALOG` WORKSHOP_IRON: carta de `BuildingMenu`, fantasma del slot, `Building.Icon` (hoy `Polygon2D` gris) | engranaje / yunque |
@@ -28,14 +28,6 @@ Hoy ninguno de estos íconos está cableado en la UI (las habilidades ya existen
 | `research_cartography` | "Cartografía" | mapa / brújula |
 | `research_workshop_bellows` | "Sobrecarga" | rayo / engranaje al rojo |
 | `research_defense_rifling` | "Virotes estriados" | virote |
-| `ability_warrior_passive` | `CharacterData.passive_ability_name` "Piel de Hierro" (popup, selección de héroe) | pecho blindado |
-| `ability_warrior_active` | "Grito de Guerra" | boca gritando / cuerno |
-| `ability_mage_passive` | "Mente Analítica" | ojo / cerebro |
-| `ability_mage_active` | "Bendición de las Obras" | rayo sobre engranaje |
-| `ability_rogue_passive` | "Paso Ligero" | bota alada |
-| `ability_rogue_active` | "Golpe Furtivo" | daga |
-| `ability_tank_passive` | "Muro Viviente" | muro / escudo torre |
-| `ability_tank_active` | "Interposición" | escudo con flecha |
 
 ## Ya cubiertos (no hacen falta placeholders)
 | Ícono | Dónde | Fuente |
@@ -45,6 +37,7 @@ Hoy ninguno de estos íconos está cableado en la UI (las habilidades ya existen
 | Descanso, Botín, Élite, Taller (parche) | `RoomTypeVisual` | 0x72 `flask_big_red`, `chest_full_open_anim_f0`, `weapon_double_axe`, `button_blue_up` (Taller: parche, conviene ícono propio) |
 | Objetos (armas, armaduras, pociones, grimorios) | cofres, `Pickup`, ficha del héroe | Kenney + `own/items.png` (ver `resources/items/`, `tools/build_items.gd`) |
 | Estados genéricos animados | buffs | `art/own/vfx/` (`own_ring_*`, `own_sparkle_green`) |
+| Habilidades (pasiva y activa de los 4 héroes) | botón de habilidad del retrato (`AbilityButton`), `CharacterPopup`, ficha de `HeroSelectMenu` | propios, `assets/art/own/abilities/ability_<héroe>_<passive|active>.png` (juego-36): armados en LibreSprite por `tools/libresprite_icons.js` (`tools/libresprite.sh icons`) con la paleta y el contorno de 2 px de Kenney; reusan yunque, daga y ladrillo de Kenney; fuente `own/src/abilities/*.ase` |
 
 ## Raven Fantasy Icons
 Descartado: licencia desconocida y estilo saturado. Retirado del repo en `licencias-20` (solo local, ver `docs/CREDITOS.md`).
