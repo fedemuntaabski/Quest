@@ -834,8 +834,8 @@ func _update_ui_text_translations() -> void:
 
 	screen_shake_label.text = tr("KEY_SCREEN_SHAKE")
 
-	save_button.text = tr("KEY_SAVE")
-	back_button.text = tr("KEY_BACK")
+	save_button.text = tr("KEY_SAVE").to_upper()  # juego-36: plaques read in capitals, like the other menus
+	back_button.text = tr("KEY_BACK").to_upper()
 
 	unsaved_changes_dialog.title = tr("KEY_UNSAVED_TITLE")
 	unsaved_changes_dialog.dialog_text = tr("KEY_UNSAVED_MSG")

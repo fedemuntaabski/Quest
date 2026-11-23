@@ -63,7 +63,7 @@ func _ready() -> void:
 	box.add_child(_text)
 	var back := Button.new()
 	back.name = "BackButton"
-	back.text = "Volver"
+	back.text = "VOLVER"
 	back.custom_minimum_size = Vector2(260, 58)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	UiStyles.style_plaque_button(back, false, 26)

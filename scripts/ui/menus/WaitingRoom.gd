@@ -27,7 +27,7 @@ func _ready() -> void:
 	ready_button = Button.new()
 	ready_button.name = "ReadyButton"
 	ready_button.toggle_mode = true
-	ready_button.text = "Listo"
+	ready_button.text = "LISTO"
 	start_button.get_parent().add_child(ready_button)
 	start_button.get_parent().move_child(ready_button, start_button.get_index())
 
