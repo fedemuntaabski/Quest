@@ -7,6 +7,7 @@
 # dungeon_decor.ase (mazmorra-32) = interior de las salas: fila 0 de celdas de 16 px en el orden
 # OWN_DECOR de build_own_art.gd (las animadas = 4 celdas seguidas), filas 1-2 el altar (32x32 activo
 # y usado). Después de exportar: tools/build_tilesets.gd si cambió el ancho.
+# abilities/<héroe>_<passive|active>.ase = un ícono de habilidad de 16x16 (juego-36).
 # items.ase = una imagen de 16 px por celda (orden OWN_CELLS en build_own_art.gd; no
 # cambiar el ancho). vfx/<hoja>.ase = animación, un frame por cuadro (se puede
 # agregar o quitar frames; el tamaño del lienzo es el frame_w/frame_h del índice).
@@ -19,12 +20,16 @@ SRC=$OWN/src
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 [ -x "$LS" ] || { echo "No encuentro LibreSprite en $LS (definí LIBRESPRITE)"; exit 1; }
-mkdir -p "$SRC/vfx"
+mkdir -p "$SRC/vfx" "$SRC/abilities"
 
 case "${1:-}" in
 import)
 	[ -f "$SRC/items.ase" ] || "$LS" -b "$OWN/items.png" --save-as "$SRC/items.ase" >/dev/null
 	[ -f "$SRC/dungeon_decor.ase" ] || { "$LS" -b "$OWN/dungeon_decor.png" --save-as "$SRC/dungeon_decor.ase" >/dev/null && echo "import dungeon_decor"; }
+	for png in "$OWN"/abilities/*.png; do  # juego-36: un .ase de 16x16 por habilidad
+		name=$(basename "$png" .png); name=${name#ability_}
+		[ -f "$SRC/abilities/$name.ase" ] || { "$LS" -b "$png" --save-as "$SRC/abilities/$name.ase" >/dev/null && echo "import ability $name"; }
+	done
 	for png in "$OWN"/vfx/*.png; do
 		name=$(basename "$png" .png)
 		[ -f "$SRC/vfx/$name.ase" ] && continue
@@ -46,6 +51,11 @@ EOF
 export)
 	[ -f "$SRC/items.ase" ] && "$LS" -b "$SRC/items.ase" --save-as "$OWN/items.png" >/dev/null && echo "export items"
 	[ -f "$SRC/dungeon_decor.ase" ] && "$LS" -b "$SRC/dungeon_decor.ase" --save-as "$OWN/dungeon_decor.png" >/dev/null && echo "export dungeon_decor"
+	for ase in "$SRC"/abilities/*.ase; do
+		[ -f "$ase" ] || continue
+		name=$(basename "$ase" .ase)
+		"$LS" -b "$ase" --save-as "$OWN/abilities/ability_$name.png" >/dev/null && echo "export ability $name"
+	done
 	for ase in "$SRC"/vfx/*.ase; do
 		[ -f "$ase" ] || continue
 		name=$(basename "$ase" .ase)
