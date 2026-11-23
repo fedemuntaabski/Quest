@@ -892,7 +892,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				res["embers"] -= light_cost
 				lit += 1
 				var next := _next_research(order, done)  # juego-30: Saber waiting for research -> Scriptorium before the Ballesta
-				var want_lab: bool = _play["lab_first"] and workshops["lore"] == 0 and next != null and done.has("ballesta") and res["lore"] >= next.cost
+				var want_lab: bool = _play["lab_first"] and workshops["lore"] == 0 and next != null and done.has("ballesta") and res["lore"] >= _research_cost(next, party, hp)
 				if cage == "" and not want_lab and _towers and done.has("ballesta") and res["iron"] >= curve.cost(ballesta_cost, ballestas):
 					res["iron"] -= curve.cost(ballesta_cost, ballestas)
 					ballestas += 1
@@ -902,7 +902,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 					workshops["lore" if done.size() < order.size() and workshops["lore"] == 0 else ["iron", "food", "lore"][built % 3]] += 1
 					built += 1
 			if workshops["lore"] > 0:
-				_buy_research(order, done, res)
+				_buy_research(order, done, res, party, hp)
 			if rng.randf() < clampf(cfg.door_roll.threat_chance(turns, f) * threat_mult, 0.0, cfg.door_roll.max_chance) and int(_play["no_doors"]) != f:
 				var count := mini(scaling.wave(cfg.door_roll.enemy_count(turns, f), players), cap)
 				a["fights"] += 1
@@ -1180,14 +1180,25 @@ static func _near(ballestas: int, revealed: int, rng: RandomNumberGenerator) -> 
 
 ## juego-30: buys the first entries of `order` the Saber allows (a working Scriptorium is checked by the
 ## caller); stops at the first one it can't pay (the player saves for it).
-static func _buy_research(order: Array[String], done: Dictionary, res: Dictionary) -> void:
+static func _buy_research(order: Array[String], done: Dictionary, res: Dictionary, party: Array, hp: Dictionary) -> void:
 	var entry := _next_research(order, done)
-	while entry and res["lore"] >= entry.cost:
-		res["lore"] -= entry.cost
+	while entry and res["lore"] >= _research_cost(entry, party, hp):
+		res["lore"] -= _research_cost(entry, party, hp)
 		done[entry.id] = true
 		if entry.effect != ResearchEntry.Effect.UNLOCK_BUILDING:
 			_bonus[entry.effect] = float(_bonus.get(entry.effect, 0.0)) + entry.value
 		entry = _next_research(order, done)
+
+
+## ResourceManager.research_cost for the simulated party: the living heroes' research_discount
+## (juego-36, Mente Analítica).
+static func _research_cost(entry: ResearchEntry, party: Array, hp: Dictionary) -> int:
+	var discount := 0.0
+	for id: String in party:
+		var passive := hero_data(id).passive
+		if hp[id] > 0.0 and passive:
+			discount += passive.research_discount
+	return maxi(1, roundi(entry.cost * (1.0 - minf(discount, 0.9))))
 
 
 ## First entry of `order` not done whose prerequisite is (null = nothing left to buy).

@@ -148,6 +148,11 @@ func passive_discovery_bonus() -> Dictionary:
 	return {}
 
 
+## Mente Analítica (juego-36): fraction off research costs while this hero stands.
+func research_discount() -> float:
+	return passive.research_discount if passive and hero.stats.is_alive() else 0.0
+
+
 # ---------------- active ----------------
 
 func is_ready() -> bool:
@@ -246,6 +251,8 @@ func _bless_room() -> void:
 	if room_manager == null:
 		return
 	for building in room_manager.get_buildings_in_group(room_manager.get_group_id(hero.current_zone_id)):
+		if not building.is_working():  # juego-36: a dark room's Obras (requires_light) get nothing
+			continue
 		if building is DefenseBuilding:
 			_buff(building, "blessing", func() -> void: building.damage_mult = 1.0 + active_value(), func() -> void: building.damage_mult = 1.0)
 		elif building is WorkshopBuilding and resources:

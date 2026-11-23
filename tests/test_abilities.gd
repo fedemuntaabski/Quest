@@ -88,6 +88,9 @@ func _check_warrior_tank() -> void:
 	_expect(tank.abilities.incoming_damage(10) == 5, "Muro Viviente at the Reliquia: 10 -> %d (want 5)" % tank.abilities.incoming_damage(10))
 	tank.global_position = relic.get_target_position() + Vector2(5000.0, 0.0)
 	_expect(tank.abilities.incoming_damage(10) == 10, "Muro Viviente far from the Reliquia should do nothing")
+	# juego-36: the text speaks in map cells (640 px = 10 casillas), not px.
+	var wall_text := tank.abilities.describe(tank.abilities.passive)
+	_expect(wall_text.contains("10 casillas") and not wall_text.contains("px"), "Muro Viviente text: %s" % wall_text)
 
 	# Input gating: only a selected hero, never at time_scale 0.
 	var selection := ManagerLocator.get_selection_manager()
@@ -164,13 +167,26 @@ func _check_mage_rogue() -> void:
 		elif minor == null:
 			minor = slot
 	if major != null and minor != null:
-		major.build(Building.BuildingType.FORJA)
+		var forge := major.build(Building.BuildingType.FORJA) as WorkshopBuilding
 		var defense := minor.build(Building.BuildingType.BALLESTA) as DefenseBuilding
 		var iron := resources.get_resource("iron")
 		var base_damage := defense.get_damage()
 		_expect(mage.abilities.try_activate(), "Bendición de las Obras did not fire")
 		_expect(defense.get_damage() == base_damage * 2, "defense damage %d (want %d)" % [defense.get_damage(), base_damage * 2])
 		_expect(resources.get_resource("iron") - iron == 3, "workshop extra tick: iron %+d (want +3)" % (resources.get_resource("iron") - iron))
+		# juego-36: only Obras that work (Building.is_working, requires_light): dark ones get nothing.
+		_expect(is_equal_approx(mage.abilities.active_cooldown(), 20.0), "Bendición cooldown %.1f (want 20)" % mage.abilities.active_cooldown())
+		mage.abilities.cooldown_left = 0.0
+		defense.damage_mult = 1.0
+		forge.lit = false
+		defense.lit = false
+		iron = resources.get_resource("iron")
+		_expect(not forge.is_working() and not defense.is_working(), "unlit Forja/Ballesta must not work")
+		_expect(mage.abilities.try_activate(), "Bendición did not fire on the dark room")
+		_expect(resources.get_resource("iron") == iron, "dark Forja paid %+d (want 0)" % (resources.get_resource("iron") - iron))
+		_expect(is_equal_approx(defense.damage_mult, 1.0), "dark Ballesta was blessed (x%.1f)" % defense.damage_mult)
+		forge.lit = true
+		defense.lit = true
 	else:
 		failures.append("start room has no MAJOR/MINOR slot")
 
@@ -180,6 +196,24 @@ func _check_mage_rogue() -> void:
 	await physics_frame
 	var before := enemy.current_hp
 	var strike := roundi(rogue.stats.effective_attack_damage() * rogue.abilities.active.value)
+	_expect(is_equal_approx(rogue.abilities.active_cooldown(), 8.0), "Golpe Furtivo cooldown %.1f (want 8)" % rogue.abilities.active_cooldown())
 	_expect(rogue.abilities.try_activate(), "Golpe Furtivo did not fire")
 	_expect(not is_instance_valid(enemy) or enemy.current_hp == before - strike or not enemy.is_alive(), "burst missed the enemy (%d -> %d, strike %d)" % [before, enemy.current_hp if is_instance_valid(enemy) else 0, strike])
+
+	# juego-36, Mente Analítica: research costs 10 % less while the Mago stands; the panel shows it.
+	var entry: ResearchEntry = resources.research_config.entries[0]
+	var cheap := maxi(1, roundi(entry.cost * 0.9))
+	_expect(resources.research_cost(entry.id) == cheap, "research with the Mago: %d (want %d)" % [resources.research_cost(entry.id), cheap])
+	_expect(mage.abilities.describe(mage.abilities.passive).contains("10 %"), "Mente Analítica text lacks the discount")
+	var panel := ResearchPanel.new()
+	root.add_child(panel)
+	panel.open()
+	var cost_label := panel.find_child(entry.id, true, false).find_child("Cost", true, false) as Label
+	_expect(cost_label != null and cost_label.text == str(cheap), "ResearchPanel price %s (want %d)" % [cost_label.text if cost_label else "?", cheap])
+	mage.take_hit(9999)
+	await process_frame
+	_expect(not mage.stats.is_alive() and resources.research_cost(entry.id) == entry.cost, "Mago down: research %d (want %d)" % [resources.research_cost(entry.id), entry.cost])
+	cost_label = panel.find_child(entry.id, true, false).find_child("Cost", true, false) as Label
+	_expect(cost_label != null and cost_label.text == str(entry.cost), "ResearchPanel did not refresh when the Mago went down")
+	panel.queue_free()
 	await _free(main2d)

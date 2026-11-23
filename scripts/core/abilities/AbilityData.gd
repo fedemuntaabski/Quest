@@ -23,6 +23,9 @@ enum Effect {
 @export var duration: float = 0.0
 @export var cooldown: float = 0.0
 @export var radius: float = 0.0
+## Passives only (juego-36, Mente Analítica): fraction off every research cost while the
+## hero stands (0.1 = -10 %). Read through ResourceManager.research_cost().
+@export var research_discount: float = 0.0
 ## VfxManager effect id played on use (actives).
 @export var vfx: StringName = &""
 
@@ -30,7 +33,8 @@ enum Effect {
 ## Shown in the hero sheet, the portrait button tooltip and hero select (heroes-9).
 @export var display_name: String = ""
 ## Template with the real numbers filled by HeroAbilities.describe(): {value},
-## {value_pct} (value x100, %), {duration}, {cooldown}, {radius} (perks included).
+## {value_pct} (value x100, %), {duration}, {cooldown}, {radius} (perks included),
+## {radius_cells} (radius in map cells, ArtConfig.CELL_PX), {discount_pct} (research_discount x100).
 @export_multiline var description: String = ""
 @export var icon: Texture2D
 @export_group("")
@@ -49,6 +53,8 @@ func format_description(p_value: float = value, p_duration: float = duration, p_
 		"duration": _num(p_duration),
 		"cooldown": _num(p_cooldown),
 		"radius": _num(p_radius),
+		"radius_cells": _num(p_radius / ArtConfig.CELL_PX),
+		"discount_pct": _num(research_discount * 100.0),
 	})
 
 

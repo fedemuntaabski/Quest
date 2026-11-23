@@ -130,9 +130,23 @@ func get_research_block_reason(id: String) -> String:
 	if entry.prerequisite != "" and not is_researched(entry.prerequisite):
 		var pre := research_config.get_entry(entry.prerequisite)
 		return "Requiere: %s" % (pre.display_name if pre else entry.prerequisite)
-	if get_resource(RESEARCH_RESOURCE) < entry.cost:
+	if get_resource(RESEARCH_RESOURCE) < research_cost(id):
 		return "Falta Saber"
 	return ""
+
+
+## What researching `id` costs now: the entry's cost minus the standing heroes' research
+## discount (juego-36, Mente Analítica: -10 % while the Mago stands), never below 1. The one
+## place a research price is read (block reason, research(), ResearchPanel).
+func research_cost(id: String) -> int:
+	var entry := research_config.get_entry(id)
+	if entry == null:
+		return 0
+	var discount := 0.0
+	for hero in ManagerLocator.get_heroes():
+		if hero.abilities:
+			discount += hero.abilities.research_discount()
+	return maxi(1, roundi(entry.cost * (1.0 - minf(discount, 0.9))))
 
 
 ## Researching needs a built, active Scriptorium (a Saber workshop).
@@ -151,7 +165,7 @@ func can_research(id: String) -> bool:
 func research(id: String) -> bool:
 	if not Net.is_authority():  # coop-12: a client mirrors the host, never mutates
 		return false
-	if not can_research(id) or not spend_resource(RESEARCH_RESOURCE, research_config.get_entry(id).cost):
+	if not can_research(id) or not spend_resource(RESEARCH_RESOURCE, research_cost(id)):
 		return false
 	research_state.add(id)
 	research_changed.emit()

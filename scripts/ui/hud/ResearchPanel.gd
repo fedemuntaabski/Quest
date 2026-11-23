@@ -43,6 +43,10 @@ func _ready() -> void:
 	if rm:
 		rm.research_changed.connect(_on_research_changed)
 		rm.resource_changed.connect(_on_resource_changed)
+	var player_stats := ManagerLocator.get_player_stats()
+	if player_stats:  # juego-36: the Mago going down / getting up changes the price
+		player_stats.hero_downed.connect(func(_id: String) -> void: _on_research_changed())
+		player_stats.hero_revived.connect(func(_id: String) -> void: _on_research_changed())
 
 
 func open() -> void:
@@ -122,7 +126,9 @@ func _make_card(entry: ResearchEntry) -> Control:
 	cost_row.add_child(cost_icon)
 	cost_icon.custom_minimum_size = Vector2(18, 18)
 	cost_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cost_row.add_child(_label(str(entry.cost), StatIcon.BASE_COLORS[COST_RESOURCE] if available else QuestPalette.UI_TEXT_BLOCKED, 14))
+	var cost_label := _label(str(rm.research_cost(entry.id)), StatIcon.BASE_COLORS[COST_RESOURCE] if available else QuestPalette.UI_TEXT_BLOCKED, 14)
+	cost_label.name = "Cost"
+	cost_row.add_child(cost_label)
 	var button := Button.new()
 	button.name = "Research"
 	button.text = "Hecho" if done else "Investigar"
