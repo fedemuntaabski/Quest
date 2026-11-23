@@ -23,7 +23,7 @@ Medido con `tests/test_rooms.gd` (30 seeds x pisos 1-5 = 150 layouts; todos vál
 | Tipo | Se define | Cuándo se genera | Qué hace al descubrirla | Cómo se ve | Estado | Evidencia |
 |---|---|---|---|---|---|---|
 | COMBAT | `RoomData.room_type` default | resto de salas | nada | nada (a propósito) | funciona | `MapGenerator.assign_room_types` |
-| START | `RoomData.is_start` | `room_0` | spawn de héroes + Reliquia, luz gratis | sin marcador | funciona | `Main2d._register_groups_and_doors`, `_spawn_heroes` |
+| START | `RoomData.is_start` | `room_0` | spawn de héroes + Reliquia, luz gratis que nunca se apaga (juego-35) | sin marcador | funciona | `Main2d._register_groups_and_doors`, `_spawn_heroes` |
 | EXIT | `RoomData.is_exit` | sala más lejana del inicio, nunca con loops | victoria si llevas la Reliquia | cartel al descubrir; `ExitIndicator` | funciona | `MapGenerator._mark_exit_and_vault`, `ExtractionManager.declare_victory` |
 | REST | `RoomTypeRule` (`default_floor_config.tres`) | chance 0.6, cupo 1 | cura a todo el grupo vivo + sin spawns | badge, minimapa, cartel, props | funciona (arreglado: curaba solo al primario) | `FloorManager._apply_room_type_discovery`, `EnemyManager.get_spawn_rooms/_spawns_blocked` |
 | LOOT | idem | chance 0.8, cupo 1 (+0.5/piso) | +Hierro, cofre `Pickup` decorativo | badge, minimapa, cartel, props | funciona | `FloorManager._apply_room_type_discovery`, `Main2d._on_room_revealed` |

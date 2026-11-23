@@ -337,7 +337,7 @@ Poder = ganancia de DPS + ganancia de vida efectiva (+ la mitad de la de alcance
 | `book_tides` −0,15 → −0,3 s | **hecho**: poder 20 → 50 % (`book_embers` 67 %; de un tercio a tres cuartos) |
 | `armor_steel` 20 → 23 de vida, o pasarla a Rara | **hecho**: 23 de vida, poder 73 % (`armor_copper` 64 %, `armor_gold` 79 %) |
 | Ayuda del jefe: "pelealo junto a tus Ballestas" | no (el dueño eligió no tocar el jefe ni su texto) |
-| Re-orden a mitad de camino | no, se queda el rechazo hasta un playtest con gente |
+| Re-orden a mitad de camino | no, se queda el rechazo hasta un playtest con gente. **juego-35: hecho** tras el reporte del dueño ("el clic derecho a veces no mueve a ninguna sala"): por clic el rechazo era mudo (`_can_act` cortaba antes del comando, la tarjeta nunca salía). Volver al rechazo = revertir 45d0b39 y mostrar la tarjeta en el clic |
 | Torres en `BalanceSim.run_rows` | **hecho** (ver «Torres en las corridas») |
 
 ## Torres en las corridas (session juego-23)

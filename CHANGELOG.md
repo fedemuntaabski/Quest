@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## session/juego-35
+- Clic derecho mientras un héroe camina: ahora cambia de rumbo enseguida (antes se ignoraba sin aviso y parecía que el héroe no se movía a ninguna sala). En pausa táctica vale la última orden.
+- La sala de la Reliquia ya no se puede apagar.
+- Las puertas de los pasillos este-oeste ya no se ven espejadas.
+- La selección de héroes muestra qué hace la habilidad activa, con su duración y enfriamiento, y entra con el texto agrandado.
+- Los efectos del Grito de Guerra, Interposición y Bendición ya no se gastan con el menú de pausa abierto.
+
 ## session/menu-34
 - Pausa: el botón CONTROLES va en mayúsculas como el resto, y con el texto agrandado al 150 % el panel crece y ya no se sale ningún botón del marco.
 

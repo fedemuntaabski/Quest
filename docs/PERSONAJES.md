@@ -28,7 +28,7 @@ Archivo de referencia para otras sesiones. **Todo sale del código y los `.tres`
   - Feedback al recibir daño (héroe y enemigo): destello blanco + retroceso breve del sprite (`CharacterVisual.knockback`, 6 px, solo visual). Los enemigos dañados muestran una barra de vida sobre la cabeza (`Enemy._draw`, colores de `HealthBarStyle`).
 - **Daño recibido**: los enemigos pegan por contacto (1 golpe/s); `HeroAbilities.incoming_damage()` aplica pasiva y escudo, mínimo 1 (`HeroAbilities.gd:70`). **No existe stat de defensa/armadura**: solo `damage_taken_mult` (escudo temporal) y las pasivas.
 - **Velocidad de movimiento**: `MoveAction.DEFAULT_SPEED_PX = 420` px/s × `CharacterData.move_speed_mult`. Valores: Pícaro ×1,2 = 504, Paladín ×0,9 = 378, el resto ×1. El portador de la Reliquia además va a ×`FloorConfig.carrier_speed_mult` (`PlayerActionController._walk`).
-- **Movilidad** (juego-22, `tests/test_movilidad.gd`): clic derecho en una zona → `NetCommands` "move" → `PlayerActionController.move_heroes`. El camino sale de `RoomManager.find_zone_path`, que solo usa zonas descubiertas: una zona con niebla o desconocida se rechaza sin mover a nadie ("Sala sin descubrir"), y la zona propia no hace nada. El héroe se desliza de centro en centro con un solo tween (sin saltos), y `enter_zone()` salta una vez por cada zona que cruza, en orden; al llegar queda en el centro exacto de la zona. Tiempo de juego = Σ tramo / (420 × `move_speed_mult` × 0,85 si lleva la Reliquia). No hay ítems ni perks de velocidad. **Una orden a la vez por jugador**: mientras un héroe camina, otra orden del mismo jugador se rechaza ("Ya hay una orden en curso"), sin cambiar el rumbo; la de otro jugador en co-op sí corre. Un héroe caído no recibe órdenes; reanimado vuelve a caminar. Con la pausa táctica (`Engine.time_scale` 0) o la de menú el deslizamiento se congela y sigue al reanudar. Durante la extracción se camina, pero no se abren puertas. Héroes en la misma zona comparten el punto lógico; el sprite se corre `PartyConfig.sprite_offset` (±18 / ±54 px en horizontal) y en un pasillo vertical el corrimiento gira y va a lo largo (antes los héroes 3 y 4 quedaban fuera de los muros). Los enemigos persiguen la zona del héroe más cercano y lo siguen cuando cambia de zona.
+- **Movilidad** (juego-22, `tests/test_movilidad.gd`): clic derecho en una zona → `NetCommands` "move" → `PlayerActionController.move_heroes`. El camino sale de `RoomManager.find_zone_path`, que solo usa zonas descubiertas: una zona con niebla o desconocida se rechaza sin mover a nadie ("Sala sin descubrir"), y la zona propia no hace nada. El héroe se desliza de centro en centro con un solo tween (sin saltos), y `enter_zone()` salta una vez por cada zona que cruza, en orden; al llegar queda en el centro exacto de la zona. Tiempo de juego = Σ tramo / (420 × `move_speed_mult` × 0,85 si lleva la Reliquia). No hay ítems ni perks de velocidad. **Una orden nueva reemplaza la caminata en curso** (juego-35): el héroe vuelve al centro de la zona donde está y sigue al destino nuevo, con un solo tween (sin teletransporte). Antes la segunda orden se descartaba, y por clic sin aviso. Cada clic que no se vuelve orden deja una línea `Click ignored: <motivo>` en el log (`QuestLogger`, categoría MAP). Un héroe caído no recibe órdenes; reanimado vuelve a caminar. Con la pausa táctica (`Engine.time_scale` 0) o la de menú el deslizamiento se congela y sigue al reanudar. Durante la extracción se camina, pero no se abren puertas. Héroes en la misma zona comparten el punto lógico; el sprite se corre `PartyConfig.sprite_offset` (±18 / ±54 px en horizontal) y en un pasillo vertical el corrimiento gira y va a lo largo (antes los héroes 3 y 4 quedaban fuera de los muros). Los enemigos persiguen la zona del héroe más cercano y lo siguen cuando cambia de zona.
 - **Caído** (heroes-9): a 0 de vida el héroe **no muere**.
   - Queda tumbado y gris en su sala, con un aro rojo, sin atacar y sin hurtbox (`Player._set_downed`).
   - Sale de la selección y su retrato muestra "Caído" y un botón "Reanimar (N Comida)".
@@ -245,6 +245,28 @@ Común (refactor-2; ver heroes-9 en §1): sin defensa/armadura, 5 niveles (8/11/
 
 ---
 
+## Revisión de habilidades (juego-35)
+
+Leído en el código (`HeroAbilities`, `FloorManager.on_room_discovered`), no solo en los `.tres`; cada efecto tiene su chequeo numérico en `test_abilities`. Aporte estimado con los números de `BALANCE.md` (≈ 6,5 puertas por piso, nivel 0 salvo aclaración).
+
+| Héroe | Habilidad | Qué hace de verdad | Valor / duración / enfriamiento | Aporte aproximado | Cuándo sirve |
+|---|---|---|---|---|---|
+| Guerrero | Piel de Hierro (pasiva) | todo golpe que recibe baja 20 %, antes de la armadura; mínimo 1 | −20 %, siempre | vida efectiva ×1,25 (26 → 32,5) | siempre; es la razón de que el Guerrero solo sea el más fuerte |
+| Guerrero | Grito de Guerra | héroes vivos en **su sala** al lanzarlo pegan ×1,5; quien entra después no lo recibe | +50 % / 8 s / 25 s | ≈ +16 % de daño promedio por héroe en la sala (nivel 5: 10,0 → 11,6 DPS) | pelea con el grupo junto, oleadas y jefe |
+| Mago | Mente Analítica (pasiva) | +2 Saber por cada sala descubierta por cualquiera, si el Mago está en pie | +2 por sala | ≈ +13 Saber por piso | Investigación; hoy sobra Saber (75-80 al final con el Mago) |
+| Mago | Bendición de las Obras | Defensas de su sala ×2 de daño; cada Taller de su sala paga una tanda al instante. No mira si la obra funciona: también paga Talleres de salas apagadas | ×2 / 8 s / 30 s | +27 % de daño promedio de las Defensas de **esa** sala; una Forja = +3 Hierro cada 30 s | solo si el Mago está parado en una sala con Obras |
+| Pícaro | Paso Ligero (pasiva) | +2 Brasas por cada sala descubierta por cualquiera, si el Pícaro está en pie | +2 por sala | ≈ +13 Brasas por piso ≈ una sala más encendida | luz temprana |
+| Pícaro | Golpe Furtivo | un golpe de 3× su daño a cada enemigo dentro de su alcance (130 px) | ×3 / instantáneo / 12 s | ≈ +0,5 DPS por enemigo (+12 %); nivel 5: 18,7 → 20,4 | grupos de enemigos encima |
+| Paladín | Muro Viviente (pasiva) | hasta −50 % de daño junto a la Reliquia (o a quien la lleva), baja en línea recta hasta 0 a 640 px (10 casillas) | −50 % máx. | si él lleva la Reliquia: −50 % fijo toda la extracción; lejos: nada | extracción y defensa de la sala inicial |
+| Paladín | Interposición | todos los héroes vivos, en cualquier sala, reciben la mitad del daño | −50 % / 6 s / 30 s | ≈ −10 % de daño recibido promedio (nivel 5: vida efectiva 60 → 66,7) | antes de una oleada o del jefe |
+
+Arreglado en juego-35: los buffs (Grito, Interposición, Bendición) seguían corriendo con el menú Esc abierto (`create_timer` con `process_always`); ahora esperan como el enfriamiento.
+
+Propuestas, **sin aplicar** (esperan el OK del dueño):
+- Flojas: **Mente Analítica** (Saber de sobra) → además −10 % al costo de la Investigación, o +1 Hierro por sala en vez de Saber. **Bendición** → enfriamiento 30 → 20 s, y que solo cuente Obras que funcionan. **Golpe Furtivo** → enfriamiento 12 → 8 s (≈ +50 % de su aporte).
+- Bien: Piel de Hierro, Grito, Paso Ligero, Interposición. Muro Viviente está bien en su rol; su texto dice "640 px", mejor "10 casillas".
+- Si se aplican: `test_balance`, `test_abilities`, `BALANCE.md` y subir `application/config/version` (los números de las habilidades los calcula solo el host, pero la descripción se arma en los dos).
+
 ## 5. Inconsistencias o datos faltantes
 
 **Héroes**
@@ -260,7 +282,7 @@ Común (refactor-2; ver heroes-9 en §1): sin defensa/armadura, 5 niveles (8/11/
 4. **"Explorador Rápido" sin velocidad**: el Pícaro no se mueve más rápido; no hay stat de velocidad por héroe (`MoveAction.DEFAULT_SPEED_PX` es global).
 5. **Texto vs mecánica**: "Piel de Hierro" ya no es condicional (estabilizar-14). "Interposición" del Paladín es un escudo de grupo, no una interposición posicional.
 6. **Valores del `.tres` que pisan los defaults del script**: `attack_speed_per_level` 0.05 y `min_attack_interval` 0.3 (script: 0.1 y 0.2; el comentario de `UpgradeConfig.gd:28` habla de 10 %). `Player.tscn` trae `Hitbox damage = 3` y radio 160, que `Player._ready()` sobrescribe con los de `CharacterData`.
-7. `CharacterData.profile_bg` no lo leía nadie (borrado en juego-25). Hay `passive_ability_desc` pero **no `active_ability_desc`**: `HeroSelectMenu` (`HeroSelectMenu.gd:307`) y `CharacterPopup` solo muestran el *nombre* de la activa.
+7. `CharacterData.profile_bg` no lo leía nadie (borrado en juego-25). **Resuelto en juego-35:** `HeroSelectMenu._show_preview` muestra pasiva y activa con `AbilityData.format_description()` (números reales, duración y enfriamiento); `passive_ability_desc` queda de respaldo.
 8. Los cooldowns de habilidades no tienen ícono (29 `placeholder_*`, 8 son `ability_*`; `docs/MISSING_ICONS.md`), ni hay barra visible en el retrato según ese documento.
 9. **Sin sistema de equipo**: 18 `ItemData` con modificadores (hp, daño, intervalo) que ningún código aplica; `ItemData.Slot.TALISMAN` y `Rarity` sin consumidor más allá de mostrar texto/color.
 10. El héroe `description`/`role` está solo en español en los `.tres` (sin i18n).

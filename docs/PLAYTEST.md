@@ -76,7 +76,10 @@ Captura de referencia: `tests/tools/shot_juego21.gd` (`j21_fx`).
 ## Movilidad y jefe (juego-22, 5 min, aparte)
 Capturas de referencia: `tests/tools/shot_movilidad.gd` (`j22_party`, `j22_corridor`, `j22_vertical`).
 - [ ] Con 4 héroes (2 + 2 reclutas) en un pasillo vertical, se ordenan a lo largo del pasillo, dentro de los muros. En una sala vuelven a quedar lado a lado.
-- [ ] Mandá a un héroe lejos y, mientras camina, hacé clic derecho en otra sala: la tarjeta dice "Ya hay una orden en curso" y el héroe sigue su camino. ¿Molesta, o preferirías que cambie de rumbo? (está en Propuestas de `docs/BALANCE.md`)
+- [ ] (juego-35) Mandá a un héroe lejos y, mientras camina, hacé clic derecho en otra sala: cambia de rumbo enseguida (vuelve al centro de la zona donde está y sigue). Probalo también en pausa táctica (Espacio): la última orden es la que vale al reanudar. Si aun así **un clic derecho no mueve a nadie**, anotá la semilla del piso y buscá en el log (`user://logs`) la línea `Click ignored: …` o `Move rejected: …`: dice por qué.
+- [ ] (juego-35) Clic medio en la sala inicial (la de la Reliquia): no se apaga y sale "La sala de la Reliquia no se apaga". Las demás se prenden y apagan como antes, y arrastrar con el botón del medio no las prende.
+- [ ] (juego-35) Puertas este-oeste: ahora giradas sin espejo (arco hacia afuera de la sala). ¿Se ven bien o preferís la opción B (todas derechas, como las de arriba)? Capturas en `capturas/juego-35/puertas_despues_f2f5.png` y `puertas_opcionB_f2f5.png`.
+- [ ] (juego-35) Selección de héroes: pasá el mouse por los cuatro; la ficha muestra pasiva y activa con números, y con texto ×1,5 los botones de abajo siguen a la vista.
 - [ ] El portador de la Reliquia camina más lento (×0,85). ¿Se nota?
 - [ ] **Jefe del piso 3 con vida real**: en la captura de juego-23 (`tests/tools/shot_jefe.gd`, sin órdenes) un par de nivel 2 con vida llena lo gana solo junto a una Ballesta, por 4 de vida; sin ella cae a los 9 s. Jugándolo de verdad (esquivando la Embestida, llegando curado): ¿se puede? ¿Hubo que llevarlo hasta una torre? Si es una pared, decidir: ayuda de texto, bajarle la vida o curar antes de la salida.
 - [ ] Co-op de 3-4 jugadores: cada jugador entra con su héroe (antes los jugadores 3 y 4 entraban sin héroe).

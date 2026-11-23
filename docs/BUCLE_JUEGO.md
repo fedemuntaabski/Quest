@@ -28,7 +28,7 @@ No había recurso extra aleatorio por piso.
 `P = min(0.85, 0.05 + salas_oscuras*0.08 + turno*0.015 + bono_piso)`, cantidad `1 + turno/5 + extras_piso`. Constantes en `EnemyManager.gd` (`BASE_CHANCE`, `CHANCE_PER_DARK_ROOM`, `CHANCE_PER_TURN`, `MAX_CHANCE`, `TURNS_PER_WAVE_STEP`). Dependía del turno global y de cuántas salas oscuras hubiera, no de cuántas puertas se abrieron. Sin salas oscuras no hay tirada. `randf()` sin semilla.
 
 ### Luz
-- `RoomZone.LIGHT_COST = 10` fijo (menos el bono de investigación). Clic central energiza/apaga; apagar reembolsa lo pagado. La sala inicial arranca encendida gratis.
+- `RoomZone.LIGHT_COST = 10` fijo (menos el bono de investigación). Clic central energiza/apaga; apagar reembolsa lo pagado. La sala inicial arranca encendida gratis y nunca se apaga (juego-35: `Main2d` le pone `RoomZone.always_lit` y `set_lit(false)` lo rechaza, así que tampoco la apagan `light_down`, `RoomManager.set_zone_lit` ni el espejo de `RunState`; por `NetCommands` sale la tarjeta "La sala de la Reliquia no se apaga").
 - Los spawns ya eran solo en salas oscuras: `EnemyManager.get_spawn_rooms()` = `RoomManager.get_dark_rooms()` (reveladas y sin luz) menos las de `blocks_spawns` (Descanso).
 - Obras en salas apagadas: `Building.is_working()` = `is_active and lit`, así que talleres, defensas y trampas no funcionan; siguen siendo atacables (`is_targetable()` ignora la luz) y destruibles.
 - Bug: `DefenseBuilding._on_fire_timer_timeout` detenía su `Timer` si no estaba energizada y nada lo reiniciaba, así que una defensa apagada una vez quedaba muerta al volver a encender.
@@ -78,7 +78,7 @@ Espacio fija `Engine.time_scale = 0`. Consumibles (`InventoryComponent.get_block
 Tests: `test_door_roll` (probabilidad creciente, spawns solo en salas oscuras, tope, recompensa, costo, defensa, telegrafía), `test_extraction_phases`, `test_tactical_pause`. `test_party`/`test_hud_ui` se ajustaron a la regla de derrota; `test_map_flow`/`test_abilities` a la recompensa por puerta. `BalanceSim.door_rows()/extraction_rows()` y la sección "Bucle" de `docs/BALANCE.md` (las 5 tablas de combate no cambian).
 
 Límites conocidos:
-- Una orden de caminar en curso no se puede reemplazar mientras dura (ya era así sin pausa): en pausa solo se aceptan órdenes cuando no hay un lote en marcha.
+- juego-35: una orden nueva reemplaza la caminata en curso, también en pausa (la última gana; el héroe vuelve al centro de la zona donde está y sigue al destino nuevo). Antes se descartaba en silencio.
 - Los raiders de los spawns por puerta siguen yendo a la Reliquia en su base: "seguro salvo los spawns por puertas" se cumple porque no hay oleadas con timer antes de recoger la Reliquia.
 - La Reliquia caído no se mueve ni se defiende solo; los raiders lo atacan en la sala donde cayó.
 
