@@ -72,8 +72,8 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 | Sprite | `hero_wizzard_m.tres` · `assets/portraits/mago.png` |
 | Vida | **18** |
 | Ataque | **3** cada **0.9 s** (DPS 3.33), radio **220** px (el mayor), **a distancia** (proyectil, heroes-9) |
-| Pasiva "Mente Analítica" | `LORE_ON_DISCOVERY` 2: **+2 Saber** cada vez que se descubre una sala (`FloorManager.on_room_discovered`) |
-| Activa "Bendición de las Obras" | `BUILDING_BLESSING` 1.0: torres de su sala ×2 de daño durante **8 s**; **cada taller de su sala paga un tick extra al instante**; cooldown **30 s**; VFX `buff_building` |
+| Pasiva "Mente Analítica" | `LORE_ON_DISCOVERY` 2: **+2 Saber** cada vez que se descubre una sala (`FloorManager.on_room_discovered`) y `research_discount` 0.1: **−10 % al costo de la Investigación** mientras está en pie (`ResourceManager.research_cost`, juego-36) |
+| Activa "Bendición de las Obras" | `BUILDING_BLESSING` 1.0: solo **Obras que funcionan** (`Building.is_working()`, juego-36) de su sala: torres ×2 de daño durante **8 s**; **cada taller paga un tick extra al instante**; cooldown **20 s**; VFX `buff_building` |
 | Color VFX | (0.62, 0.52, 1.0) |
 
 #### Pícaro — `rogue`
@@ -84,7 +84,7 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 | Vida | **16** (heroes-9: antes 18; el más frágil) |
 | Ataque | **2** cada **0.5 s** (DPS 4.0, el mayor), radio **130** px (el menor) · velocidad **504 px/s** (×1,2) |
 | Pasiva "Paso Ligero" | `EMBERS_ON_DISCOVERY` 2: **+2 Brasas** al descubrir una sala (se suma a los 4 base de `FloorConfig.embers_per_discovery`) |
-| Activa "Golpe Furtivo" | `BURST_STRIKE` 3.0: daña **una vez** a todo enemigo dentro de su radio con **3×** su daño de ataque; sin duración; cooldown **12 s**; VFX `hit_slash` + temblor de cámara |
+| Activa "Golpe Furtivo" | `BURST_STRIKE` 3.0: daña **una vez** a todo enemigo dentro de su radio con **3×** su daño de ataque; sin duración; cooldown **8 s** (juego-36); VFX `hit_slash` + temblor de cámara |
 | Color VFX | (0.45, 0.92, 0.50) |
 
 #### Paladín — `tank`
@@ -94,7 +94,7 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 | Sprite | `hero_dwarf_m.tres` · `assets/portraits/tanque.png` |
 | Vida | **40** (la mayor) |
 | Ataque | **3** cada **1.3 s** (DPS 2.31, el menor), radio **170** px · velocidad **378 px/s** (×0,9) · curva propia **+8 vida/nivel** (`tank_upgrade_config.tres`) |
-| Pasiva "Muro Viviente" | `RELIC_PROXIMITY_REDUCTION` 0.5, radio 640: reduce hasta **50 %** el daño recibido junto a la Reliquia, decreciendo linealmente a 0 a **640 px** (mide contra la posición de la Reliquia; si lo lleva alguien, contra el portador) |
+| Pasiva "Muro Viviente" | `RELIC_PROXIMITY_REDUCTION` 0.5, radio 640: reduce hasta **50 %** el daño recibido junto a la Reliquia, decreciendo linealmente a 0 a **640 px = 10 casillas** (el texto dice casillas desde juego-36; mide contra la posición de la Reliquia; si lo lleva alguien, contra el portador) |
 | Activa "Interposición" | `TEAM_SHIELD` 0.5: **todos** los héroes vivos reciben **50 %** del daño durante **6 s**; cooldown **30 s**; VFX `buff_shield` |
 | Color VFX | (0.62, 0.78, 1.0) |
 
@@ -223,9 +223,9 @@ Los porcentajes son el peso dentro del pool entero; en la práctica primero se s
 | Héroe | Rol | Vida | Daño | Intervalo | DPS | Radio | Pasiva | Activa (cooldown) | Vida/Daño/Interv. nivel 6 |
 |---|---|---|---|---|---|---|---|---|---|
 | Guerrero | Primera línea | 26 | 4 | 1.2 s | 3.33 | 150 | −20 % daño recibido | Grito de Guerra: aliados de la sala ×1.5 daño, 8 s (25 s) | 46 / 9 / 0.90 |
-| Mago | Saber y Obras | 18 | 3 | 0.9 s | 3.33 | 220 | +2 Saber al descubrir sala | Sobrecarga: torres ×2 8 s + tick extra de talleres (30 s) | 38 / 8 / 0.675 |
-| Pícaro | Explorador Rápido | 16 | 2 | 0.5 s | 4.00 | 130 | +2 Brasas al descubrir sala | Golpe Furtivo: ×3 daño a todo en rango (12 s) | 36 / 7 / 0.375 |
-| Paladín | Defensor de Cristal | 40 | 3 | 1.3 s | 2.31 | 170 | hasta −50 % daño cerca de la Reliquia (640 px) | Interposición: todos −50 % daño 6 s (30 s) | 80 / 8 / 0.975 |
+| Mago | Saber y Obras | 18 | 3 | 0.9 s | 3.33 | 220 | +2 Saber al descubrir sala, Investigación −10 % | Bendición de las Obras: Obras que funcionan, torres ×2 8 s + tick extra de talleres (20 s) | 38 / 8 / 0.675 |
+| Pícaro | Explorador Rápido | 16 | 2 | 0.5 s | 4.00 | 130 | +2 Brasas al descubrir sala | Golpe Furtivo: ×3 daño a todo en rango (8 s) | 36 / 7 / 0.375 |
+| Paladín | Defensor de Cristal | 40 | 3 | 1.3 s | 2.31 | 170 | hasta −50 % daño cerca de la Reliquia (10 casillas) | Interposición: todos −50 % daño 6 s (30 s) | 80 / 8 / 0.975 |
 Común (refactor-2; ver heroes-9 en §1): sin defensa/armadura, 5 niveles (8/11/16/22/31 Comida). Velocidad 420 px/s × `move_speed_mult` (Pícaro 504, Paladín 378). Un solo objetivo; el Mago dispara.
 
 ### Enemigos (agrupados por familia)
@@ -253,19 +253,16 @@ Leído en el código (`HeroAbilities`, `FloorManager.on_room_discovered`), no so
 |---|---|---|---|---|---|
 | Guerrero | Piel de Hierro (pasiva) | todo golpe que recibe baja 20 %, antes de la armadura; mínimo 1 | −20 %, siempre | vida efectiva ×1,25 (26 → 32,5) | siempre; es la razón de que el Guerrero solo sea el más fuerte |
 | Guerrero | Grito de Guerra | héroes vivos en **su sala** al lanzarlo pegan ×1,5; quien entra después no lo recibe | +50 % / 8 s / 25 s | ≈ +16 % de daño promedio por héroe en la sala (nivel 5: 10,0 → 11,6 DPS) | pelea con el grupo junto, oleadas y jefe |
-| Mago | Mente Analítica (pasiva) | +2 Saber por cada sala descubierta por cualquiera, si el Mago está en pie | +2 por sala | ≈ +13 Saber por piso | Investigación; hoy sobra Saber (75-80 al final con el Mago) |
-| Mago | Bendición de las Obras | Defensas de su sala ×2 de daño; cada Taller de su sala paga una tanda al instante. No mira si la obra funciona: también paga Talleres de salas apagadas | ×2 / 8 s / 30 s | +27 % de daño promedio de las Defensas de **esa** sala; una Forja = +3 Hierro cada 30 s | solo si el Mago está parado en una sala con Obras |
+| Mago | Mente Analítica (pasiva) | +2 Saber por cada sala descubierta por cualquiera y −10 % al costo de la Investigación, si el Mago está en pie | +2 por sala, −10 % | ≈ +13 Saber por piso + 10 % de cada Investigación (Ballesta 10 → 9) | Investigación |
+| Mago | Bendición de las Obras | Obras **que funcionan** de su sala (`is_working`): Defensas ×2 de daño; cada Taller paga una tanda al instante. Las de salas apagadas no reciben nada | ×2 / 8 s / **20 s** | +40 % de daño promedio de las Defensas de **esa** sala; una Forja = +3 Hierro cada 20 s | solo si el Mago está parado en una sala encendida con Obras |
 | Pícaro | Paso Ligero (pasiva) | +2 Brasas por cada sala descubierta por cualquiera, si el Pícaro está en pie | +2 por sala | ≈ +13 Brasas por piso ≈ una sala más encendida | luz temprana |
-| Pícaro | Golpe Furtivo | un golpe de 3× su daño a cada enemigo dentro de su alcance (130 px) | ×3 / instantáneo / 12 s | ≈ +0,5 DPS por enemigo (+12 %); nivel 5: 18,7 → 20,4 | grupos de enemigos encima |
-| Paladín | Muro Viviente (pasiva) | hasta −50 % de daño junto a la Reliquia (o a quien la lleva), baja en línea recta hasta 0 a 640 px (10 casillas) | −50 % máx. | si él lleva la Reliquia: −50 % fijo toda la extracción; lejos: nada | extracción y defensa de la sala inicial |
+| Pícaro | Golpe Furtivo | un golpe de 3× su daño a cada enemigo dentro de su alcance (130 px) | ×3 / instantáneo / **8 s** | ≈ +0,75 DPS por enemigo (+19 %); nivel 5: 18,7 → 21,3 | grupos de enemigos encima |
+| Paladín | Muro Viviente (pasiva) | hasta −50 % de daño junto a la Reliquia (o a quien la lleva), baja en línea recta hasta 0 a 10 casillas (640 px); el texto lo dice en casillas | −50 % máx. | si él lleva la Reliquia: −50 % fijo toda la extracción; lejos: nada | extracción y defensa de la sala inicial |
 | Paladín | Interposición | todos los héroes vivos, en cualquier sala, reciben la mitad del daño | −50 % / 6 s / 30 s | ≈ −10 % de daño recibido promedio (nivel 5: vida efectiva 60 → 66,7) | antes de una oleada o del jefe |
 
 Arreglado en juego-35: los buffs (Grito, Interposición, Bendición) seguían corriendo con el menú Esc abierto (`create_timer` con `process_always`); ahora esperan como el enfriamiento.
 
-Propuestas, **sin aplicar** (esperan el OK del dueño):
-- Flojas: **Mente Analítica** (Saber de sobra) → además −10 % al costo de la Investigación, o +1 Hierro por sala en vez de Saber. **Bendición** → enfriamiento 30 → 20 s, y que solo cuente Obras que funcionan. **Golpe Furtivo** → enfriamiento 12 → 8 s (≈ +50 % de su aporte).
-- Bien: Piel de Hierro, Grito, Paso Ligero, Interposición. Muro Viviente está bien en su rol; su texto dice "640 px", mejor "10 casillas".
-- Si se aplican: `test_balance`, `test_abilities`, `BALANCE.md` y subir `application/config/version` (los números de las habilidades los calcula solo el host, pero la descripción se arma en los dos).
+**Aplicado en juego-36** (OK del dueño; la tabla de arriba ya tiene los valores nuevos): Mente Analítica −10 % a la Investigación, Bendición 20 s y solo Obras que funcionan, Golpe Furtivo 8 s, texto del Muro en casillas. Efecto medido en `BALANCE.md` «Ajuste de habilidades (session juego-36)»; versión 1.10. Sin tocar: Piel de Hierro, Grito, Paso Ligero, Interposición.
 
 ## 5. Inconsistencias o datos faltantes
 

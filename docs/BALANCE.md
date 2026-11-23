@@ -57,9 +57,9 @@ Habilidades (números en `resources/abilities/*.tres`; la tecla **Q** lanza la a
 | Héroe | Pasiva | Activa (duración / enfriamiento) |
 |---|---|---|
 | Guerrero | Piel de Hierro: −20 % de daño recibido | Grito de Guerra: aliados en su sala +50 % de daño (8 s / 25 s) |
-| Mago | Mente Analítica: +2 Saber al descubrir una sala | Bendición de las Obras: torres de su sala ×2 de daño (8 s) y talleres pagan 1 turno extra (30 s) |
-| Pícaro | Paso Ligero: +2 Brasas al descubrir una sala | Golpe Furtivo: ×3 de daño a todo enemigo en rango (12 s) |
-| Paladín | Muro Viviente: hasta −50 % de daño cerca de la Reliquia (0 a 640 px) | Interposición: todo el grupo recibe −50 % (6 s / 30 s) |
+| Mago | Mente Analítica: +2 Saber al descubrir una sala; la Investigación cuesta −10 % mientras está en pie (juego-36) | Bendición de las Obras: solo Obras que funcionan de su sala: torres ×2 de daño (8 s) y talleres pagan 1 turno extra (20 s) |
+| Pícaro | Paso Ligero: +2 Brasas al descubrir una sala | Golpe Furtivo: ×3 de daño a todo enemigo en rango (8 s) |
+| Paladín | Muro Viviente: hasta −50 % de daño cerca de la Reliquia (0 a 10 casillas = 640 px) | Interposición: todo el grupo recibe −50 % (6 s / 30 s) |
 
 ## Piso 1: golpes para matar (nivel 0)
 
@@ -858,3 +858,16 @@ Difícil queda por debajo de Normal en todos los grupos y pisos. Con Saber para 
 - Difícil pares: piso 3 ≥ 50 %, piso 4 entre 30 y 55 %, piso 5 ≤ 15 %.
 - Los niveles con Saber no son una pérdida (pisos 3-5: 1,54 contra 1,11 solo con Comida).
 - El «qué pasaría si» `research` compra más de 4 entradas hasta el piso 5 y deja menos Saber que la partida por defecto (4,9 entradas, 36 de Saber contra 66).
+
+## Ajuste de habilidades (session juego-36)
+
+Aplicadas las propuestas de juego-35 (`PERSONAJES.md` «Revisión de habilidades»), con el OK del dueño. Tablas: `docs/balance/juego36_antes_{heroes,runs}.csv` (sin los cambios) y `juego36_{heroes,runs}.csv` (con ellos), 50 corridas por fila.
+
+| Habilidad | Antes | Ahora | Efecto en BalanceSim |
+|---|---|---|---|
+| Golpe Furtivo (Pícaro) | enfriamiento 12 s | **8 s** | DPS con la activa: nivel 0 4,50 → 4,75; nivel 5 20,42 → 21,29. Victoria con Pícaro +0 a +8 puntos (Normal Pícaro solo piso 2: 0,88 → 0,92; Pícaro+Paladín piso 5: 0,30 → 0,38; Difícil Pícaro piso 2: 0,50 → 0,58), 1-6 puntos menos de vida perdida. Grupos sin Pícaro: igual |
+| Mente Analítica (Mago) | +2 Saber por sala | +2 Saber por sala **y −10 % al costo de la Investigación mientras está en pie** (`ResourceManager.research_cost`, un solo punto de lectura; el panel muestra el precio real) | las corridas compran una sola Investigación (la Ballesta, 10 → 9): +1 Saber al final; victoria igual. Con más Investigación el ahorro crece (10 % de cada compra) |
+| Bendición de las Obras (Mago) | enfriamiento 30 s, contaba Obras de salas apagadas | **20 s**, solo Obras que funcionan (`Building.is_working()`) | no modelada en BalanceSim (como antes): una Forja encendida rinde +3 Hierro cada 20 s en vez de 30 |
+| Muro Viviente (Paladín) | texto «640 px» | «10 casillas» (`{radius_cells}` = radio / `ArtConfig.CELL_PX`) | sin cambio de números |
+
+`test_abilities` chequea cada uno (enfriamientos 20 y 8 s; Forja y Ballesta apagadas no reciben la Bendición; precio con el Mago en pie y caído, también en `ResearchPanel`; el texto del Muro). `test_balance` sigue verde sin tocar umbrales. Versión 1.9 → **1.10** (cambian números que calcula el host y el texto que arman los dos).
