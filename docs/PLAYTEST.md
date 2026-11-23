@@ -125,3 +125,11 @@ Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_
 
 ## Editor
 `project.godot` guarda la rotación de logs y la versión. Si el editor estaba abierto mientras se editó y guarda sus ajustes viejos, los pisa: `test_estabilizar` falla en "log rotation" si eso pasa. Solución: cerrar el editor, `git checkout project.godot`, reabrir.
+
+## juego-36 (falta probar en ventana)
+- Íconos de habilidades: legibles a 720p en el botón del retrato, en la ficha (CharacterPopup) y en la selección de héroe; solo vistos ampliados en capturas.
+- Panel de Investigación: el precio baja con el Mago en pie y vuelve al caer/reanimarse.
+- Bendición en una sala apagada: no paga ni potencia nada.
+- Golpe Furtivo a 8 s: que no se sienta excesivo.
+- Placas GUARDAR/VOLVER/LISTO/VOLVER (Créditos) a 720, 1080 y texto ×1,5.
+- Siguen abiertos los ítems de juego-35 de más arriba.

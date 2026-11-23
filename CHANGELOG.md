@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## session/juego-36
+- Bendición de las Obras: enfriamiento 20 s y solo cuenta las Obras que funcionan (las de salas apagadas no reciben nada).
+- Golpe Furtivo: enfriamiento 8 s.
+- Mente Analítica: además, la Investigación cuesta 10 % menos mientras el Mago está en pie (el panel muestra el precio real).
+- Íconos propios para las 8 habilidades, hechos en LibreSprite con la paleta del juego; también en la selección de héroe.
+- Botones GUARDAR, VOLVER y LISTO en mayúsculas como el resto de los menús.
+
 ## session/juego-35
 - Clic derecho mientras un héroe camina: ahora cambia de rumbo enseguida (antes se ignoraba sin aviso y parecía que el héroe no se movía a ninguna sala). En pausa táctica vale la última orden.
 - La sala de la Reliquia ya no se puede apagar.
