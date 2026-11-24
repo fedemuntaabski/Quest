@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## session/ponytail-38
+- Pausa: la confirmación de salir usa el diálogo del menú (OK en rojo).
+
 ## session/juego-36
 - Bendición de las Obras: enfriamiento 20 s y solo cuenta las Obras que funcionan (las de salas apagadas no reciben nada).
 - Golpe Furtivo: enfriamiento 8 s.

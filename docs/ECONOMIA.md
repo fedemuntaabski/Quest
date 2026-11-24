@@ -25,7 +25,7 @@ Cuatro recursos, cada uno con un rol y al menos un sumidero. Números: `docs/BAL
 
 ## Investigación
 - `BuildingResearch` (`ResearchEntry` con `tier` 1-3, `UNLOCK_BUILDING`) en `research_config.tres`, junto a los 5 bonos. Bloqueados al inicio: Ballesta (8), Brasero (6), Catapulta (18, req. Ballesta). Granja/Forja/Scriptorium/Pinchos nacen libres.
-- Estado de la run: `ResearchState` (en `ResourceManager`), se reinicia en `Main._begin_new_run`, sobrevive a los pisos.
+- Estado de la run: `ResourceManager.researched` (Dictionary de ids), se reinicia en `Main._begin_new_run`, sobrevive a los pisos.
 - Investigar es instantáneo y **exige un Scriptorium construido y activo** ("Construí un Scriptorium").
 - Menú de construcción: pestañas **Mayores / Menores / Investigación** (atajos B / V / R, 1-9 elige tarjeta). Un obra bloqueado muestra candado, "Requiere: X" y el costo en Saber.
 

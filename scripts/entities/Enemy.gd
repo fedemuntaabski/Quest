@@ -290,7 +290,6 @@ func _mark_as_raider() -> void:
 	add_child(marker)
 
 
-## The building to hit in `room` (its profile's pick), or null.
 ## Called by EnemyMoveAction each time the enemy reaches a zone center.
 func on_zone_entered(zone_id: String) -> void:
 	if current_state == State.ATTACKING or not is_alive():
@@ -381,7 +380,6 @@ func goal_changed() -> bool:
 	return room_manager != null and selector.goal_zone(room_manager) != _active_goal
 
 
-## Zone this enemy heads for right now ("" = nowhere); see TargetSelector.
 func _relic_in_range() -> bool:
 	var relic := ManagerLocator.get_relic()
 	return relic != null and relic.is_alive() and global_position.distance_to(relic.get_target_position()) <= attack_range
