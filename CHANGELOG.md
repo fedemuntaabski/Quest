@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## session/juego-41
+- Sin cambios en el juego: el simulador de balance ahora tiene en cuenta las Defensas, los Pinchos, las recompensas de sala y la Reliquia durante la extracción (números en `docs/BALANCE.md`).
+
 ## session/juego-39
 - Las pociones ya no se gastan con el menú de pausa abierto; los efectos visuales tampoco se cortan.
 
