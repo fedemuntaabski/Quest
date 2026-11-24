@@ -2,6 +2,10 @@
 
 `RoomData.RoomType` = `COMBAT, START, EXIT, REST, LOOT, ELITE, WORKSHOP, PRISONER, ALTAR, SECRET`. START/EXIT se derivan de `is_start`/`is_exit` (`RoomData.get_room_type()`); el resto lo asigna `MapGenerator.assign_room_types` según las `RoomTypeRule` de `FloorConfig.room_types`. Un tipo sin regla nunca se genera.
 
+## Generador (`MapGenerator.generate_floor`)
+
+Árbol determinista sobre una grilla de slots (`SLOT_PITCH` 9, salas ≤7×7, inicio 5×5) → `add_loops` → `assign_room_types` → `add_secret_room` → `assign_shapes`; cada post-paso con su propio RNG salado. Formas = `RoomData.corner_cuts`: la fila/columna central y el bloque central nunca se cortan (`shape_ok`).
+
 ## Qué define cada cosa
 | Qué | Dónde |
 |---|---|

@@ -32,6 +32,9 @@ Cómo se ven el menú principal y todo su recorrido (ranuras, continuar, modo de
 | Sala de espera | `Lobby Multijugador.png` con tinte frío y viñeta | falta una ilustración del mismo estilo (ver `PLAYTEST.md`); a texto ×1,5 es más alta que la pantalla y se desplaza |
 | Pausa | ninguno (desenfoque del juego) | `PausePanel` es un `Panel` fijo (560×500 en el `.tscn`); `PauseMenu._fit_panel_to_content` lo agranda al mínimo de `PauseVBox` + márgenes cuando el texto crece (menu-34) |
 
+## HUD
+
+Arriba a la izquierda: rótulo del piso + `ObjectivePanel` + `HelpCard`. Arriba a la derecha: `HeroPortrait`s (vida, radial de habilidad, consumibles, revivir) → `CharacterPopup`. Abajo al centro: `BottomBar` (`BuildingMenu` con `ResearchPanel` dentro de su marco, sobre recursos + botones de obra + contador de Mochila). Abajo a la derecha: `Minimap`; FPS abajo a la izquierda. Solo online: `PlayerList`, `ChatPanel`, señales en el mapa.
 ## Verificación
 
 - Números del fondo, marcador y transiciones: mirados en movimiento por el dueño en menu-34 y aprobados tal cual (no tocarlos sin otra prueba a ojo).

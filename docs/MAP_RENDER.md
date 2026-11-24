@@ -17,6 +17,8 @@ Estado **antes** de `session/assets-2` (referencia; la sección final resume qu�
 | Salida | `ExitIndicator` (marcador z 50 + flecha en CanvasLayer 5) | Marcador sobre la sala `is_exit`; visible según `MapVisualConfig.exit_hint_mode`. No es un tile. |
 | Minimapa | `Minimap` (`Control._draw`) | Lee `RoomManager.zones`/reveal/light/`ExitIndicator`; **no** lee tiles. |
 
+Llamas = `PointLight2D` en cada `RoomLight` (`RoomManager.attach_flames`), se encienden con ella. Hoja de puerta = `Sprite2D` en `Door` (E-O: girada, no espejada).
+
 ## Descubrimiento (ocultamiento)
 `DoorTurnSystem.room_revealed` → `Main2d._on_room_revealed` → `RoomManager.on_group_revealed(group)`:
 1. `_apply_group_door_cell` pinta el suelo de la celda de puerta.

@@ -4,7 +4,7 @@ Guidance for Claude Code in this repo. **Current state only.** Per-session histo
 
 ## Keeping this file lean
 
-- Target ≤ 20 KB. Add here only what stays true and that a fresh session needs to avoid a mistake: architecture changes, new invariants, new gotchas, removed systems.
+- Target ≤ 19 KB. Add here only what stays true and that a fresh session needs to avoid a mistake: architecture changes, new invariants, new gotchas, removed systems.
 - A session's "what I changed / not verified" goes to `docs/archive/SESSIONS.md` + the topic doc in `docs/` (e.g. `BALANCE.md`). Link the doc from here instead of copying it.
 - When a session changes something described below, **edit the paragraph in place** (don't append a correction elsewhere).
 - Status artifacts / closing `/goal` prompts follow the same rule: they point to the docs, they don't restate this file.
@@ -71,9 +71,10 @@ Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` pe
 
 ### Map
 
-`scripts/world/map/`: `MapGenerator.generate_floor(seed, FloorConfig, floor)` = deterministic tree (slot grid, `SLOT_PITCH` 9, rooms ≤7×7, start 5×5) → `add_loops` → `assign_room_types` → `add_secret_room` → `assign_shapes` (each post-pass on its own salted RNG). Shapes: `RoomData.corner_cuts`; `get_rect()` is only the bounding box (use `has_cell`/`get_cells`); centre row/column and centre block never cut (`shape_ok`). `MapLayout` (`rooms`, `corridors`, `validate()`), fallback `resources/maps/fallback_layout.tres`. Seed per floor = `hash([run_seed, floor])`. Reveal group = room + its entry corridor; a loop corridor is its own group (no embers, reveals no room). `RoomData.RoomType`: rules in `RoomTypeRule` (`FloorConfig.room_types`), display in `RoomTypeVisualConfig`. Docs: `docs/ROOMS.md`, `docs/MAP_RENDER.md`.
+`scripts/world/map/`: `MapGenerator.generate_floor(seed, FloorConfig, floor)` = deterministic tree + post-passes, each on its own salted RNG (pipeline in `docs/ROOMS.md`). Shapes: `RoomData.corner_cuts`; `get_rect()` is only the bounding box (use `has_cell`/`get_cells`). `MapLayout` (`rooms`, `corridors`, `validate()`), fallback `resources/maps/fallback_layout.tres`. Seed per floor = `hash([run_seed, floor])`. Reveal group = room + its entry corridor; a loop corridor is its own group (no embers, reveals no room). Room-type rules in `RoomTypeRule` (`FloorConfig.room_types`), display in `RoomTypeVisualConfig`.
 
-`RoomManager` (group `room_manager`) owns the zone graph (rooms + corridors as `RoomZone` `Area2D`s), `find_zone_path` (BFS over revealed zones only), lighting counts, buildings per group. *Revealed* (`DoorTurnSystem.rooms[group].visited`) gates gameplay; *visible* is derived and drawn only through `apply_zone_visibility`/`refresh_visibility`. Rendering: `MapTileRenderer` (Floor/Walls/Features/Decor layers; pure per-seed plan; wall `occluders` as merged segments per zone, never per tile; each decoration on its own salted RNG; `tools/build_tilesets.gd` bakes tilesets, keeps uids; reimport PNGs (`--editor --quit`) first). Flames = `PointLight2D`s on each `RoomLight` (`RoomManager.attach_flames`), lit with it. Door leaf = `Sprite2D` on `Door` (E-W: turned, not mirrored). Art scale: `ArtConfig` (16 px tiles ×2, logical cell 64 px).
+`RoomManager` (group `room_manager`) owns the zone graph (rooms + corridors as `RoomZone` `Area2D`s), `find_zone_path` (BFS over revealed zones only), lighting counts, buildings per group. *Revealed* (`DoorTurnSystem.rooms[group].visited`) gates gameplay; *visible* is derived and drawn only through `apply_zone_visibility`/`refresh_visibility`. `MapTileRenderer` is a pure per-seed plan (layers, merged wall occluders per zone never per tile, salted decoration RNGs, `tools/build_tilesets.gd` keeps uids; reimport PNGs first): `docs/MAP_RENDER.md`. Art scale: `ArtConfig` (16 px tiles ×2, logical cell 64 px).
+
 
 ### Turn, economy, building
 
@@ -92,7 +93,7 @@ Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` pe
 
 ### Extraction & floors
 
-`Relic` (HP, cracks, drop/pick-up by any hero in `drop_zone_id`) + `RelicController` (needs exit discovered + hero in start room). `ExtractionManager` (Phase EXPLORATION/EXTRACTION + `stage`): extraction blocks doors and spawns staged waves; carrier into the exit → `declare_victory` → `FloorManager.complete_floor` → `VictoryOverlay` (next floor / final). Run curve: `RunCurve`/`FloorTheme` (`resources/floors/run_curve.tres`), `DifficultyConfig` (Hard: `scales_bosses` off), `FloorConfig` (`resources/floors/default_floor_config.tres`; a boss pays `boss_food_reward` Comida). Descent Comida = `FloorManager.descent_food()` (FloorConfig bonus + `PlayerScaling.descent_food`), with a "Provisiones" hint.
+`Relic` (HP, cracks, drop/pick-up by any hero in `drop_zone_id`) + `RelicController` (needs exit discovered + hero in start room). `ExtractionManager` (Phase EXPLORATION/EXTRACTION + `stage`): extraction blocks doors and spawns staged waves; carrier into the exit → `declare_victory` → `FloorManager.complete_floor` → `VictoryOverlay` (next floor / final). Run curve: `RunCurve`/`FloorTheme` (`resources/floors/run_curve.tres`), `DifficultyConfig` (Hard: `scales_bosses` off), `FloorConfig` (`resources/floors/default_floor_config.tres`). Boss and descent Comida (`FloorManager.descent_food()`): `docs/BALANCE.md`.
 
 ### Save
 
@@ -100,16 +101,16 @@ Offline only, never in Tutorial: `Main._save_run()` at each floor start from flo
 
 ### HUD (`scenes/hud/HUD.tscn`, `HUDController`, group `hud`)
 
-Top-left floor label + `ObjectivePanel` + `HelpCard`; top-right `HeroPortrait`s (HP, ability radial, consumables, revive) → `CharacterPopup`; bottom-center `BottomBar` (`BuildingMenu`, with `ResearchPanel` inside its frame, over resources + build buttons + Mochila counter); bottom-right `Minimap`; FPS counter bottom-left; hints/refusals via `show_hint`/`show_refusal`/`show_help`; online-only `PlayerList`, `ChatPanel`, map pings. Many HUD pieces are code-built.
+Many pieces are code-built; layout in `docs/MENUS.md` (HUD). Hints/refusals only via `show_hint`/`show_refusal`/`show_help`.
 
 ### Network (`scripts/network/`)
 
-`NetworkTransport` → `SteamTransport` (lobby id = join code) / `EnetTransport` (`--net=enet`, local dev/tests). `Net` static helpers, `NetSession`, `NetCommands`, `NetSync` (snapshots/events), `RunState` (full state, resync, desync hash), `NetConfig` (`resources/net/net_config.tres`). Status/manual steps: `docs/COOP_PROGRESO.md`, `docs/COOP_PRUEBAS.md`. Steam with two real accounts: not verified.
+`NetworkTransport` → `SteamTransport` (lobby id = join code) / `EnetTransport` (`--net=enet`, local dev/tests). `NetSync` (snapshots/events), `RunState` (full state, resync, desync hash), `NetConfig` (`resources/net/net_config.tres`). Status/manual steps: `docs/COOP_PROGRESO.md`, `docs/COOP_PRUEBAS.md`. Steam with two real accounts: not verified.
 
 ## Directory layout
 
-- `scripts/autoload/` autoloads + `ManagerLocator`; `scripts/run/` per-run composition (Main, Main2d, managers, controllers, Tutorial); `scripts/core/` data + systems by area (abilities, actions, buildings, camera, combat, enemies, floors, input, items, movement, player, research, stats, …); `scripts/entities/` enemies + targeting; `scripts/world/` zones, doors, buildings, relic, chests, cages, map; `scripts/network/`; `scripts/ui/` (hud, menus, overlays, visual).
-- `resources/` `.tres` data by area. `tools/` headless builders (`build_*`, `normalize_assets` = placeholders only, `balance_sim`) + `libresprite.sh` (own art ↔ `.ase` in `assets/art/own/src/`; `build_own_art` skips outputs that have a `.ase`). `assets/art/` normalized CC0 art + `own/` (project-made item icons, Reliquia gem, VFX strips) (`_source` untouched packs, `docs/ASSETS.md`).
+- `scripts/autoload/` autoloads + `ManagerLocator`; `scripts/run/` per-run composition (Main, Main2d, managers, controllers, Tutorial); `scripts/core/` data + systems by area; `scripts/entities/` enemies + targeting; `scripts/world/` zones, doors, buildings, relic, chests, cages, map; `scripts/network/`; `scripts/ui/` (hud, menus, overlays, visual).
+- `resources/` `.tres` data by area. `tools/` headless builders (`build_*`, `normalize_assets` = placeholders only, `balance_sim`) + `libresprite.sh`. `assets/art/` normalized CC0 art + `own/` (project-made, `.ase` sources) + `_source` untouched packs: `docs/ASSETS.md`.
 - `docs/` topic docs (start at `docs/PLAYTEST.md` for manual checks, `docs/PROGRESO_INTEGRACION.md` for status); `docs/archive/` history (old names on purpose).
 
 ## Not verified in a real window
