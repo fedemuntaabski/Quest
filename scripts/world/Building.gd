@@ -220,6 +220,4 @@ func _play_hit(amount: int) -> void:
 		icon.color = Color.WHITE
 		_flash_tween = create_tween().set_ignore_time_scale()
 		_flash_tween.tween_property(icon, "color", base, FLASH_SEC)
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr:
-		text_mgr.spawn_text(get_target_position() + Vector2(0.0, -16.0), "-%d" % amount, QuestPalette.BLOOD_LIGHT)
+	FloatingTextManager.say(get_target_position() + Vector2(0.0, -16.0), "-%d" % amount, QuestPalette.BLOOD_LIGHT)

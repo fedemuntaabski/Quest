@@ -121,11 +121,9 @@ func _draw_item_frame() -> void:
 
 
 func _announce() -> void:
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr:
-		text_mgr.spawn_text(global_position + Vector2(0, -64), item.rarity_label(), item.color(), item.rarity >= ItemData.Rarity.EPIC)
-		if tier:
-			text_mgr.spawn_text(global_position + Vector2(0, -86), "Cofre de %s" % tier.display_name.to_lower(), tier.tint)
+	FloatingTextManager.say(global_position + Vector2(0, -64), item.rarity_label(), item.color(), item.rarity >= ItemData.Rarity.EPIC)
+	if tier:
+		FloatingTextManager.say(global_position + Vector2(0, -86), "Cofre de %s" % tier.display_name.to_lower(), tier.tint)
 
 
 func _warn_full() -> void:
@@ -133,9 +131,7 @@ func _warn_full() -> void:
 	if now - _last_warn_msec < WARN_COOLDOWN_MSEC:
 		return
 	_last_warn_msec = now
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr:
-		text_mgr.spawn_text(global_position + Vector2(0, -48), FULL_TEXT, QuestPalette.UI_TEXT_BLOCKED)
+	FloatingTextManager.say(global_position + Vector2(0, -48), FULL_TEXT, QuestPalette.UI_TEXT_BLOCKED)
 	var hud := ManagerLocator.get_hud()
 	if hud:
 		hud.show_hint("Cofre cerrado", "La mochila del grupo está llena (%d). Libera un hueco y vuelve a entrar." % ManagerLocator.get_party_inventory().STASH_CAPACITY, QuestPalette.UI_TEXT_BLOCKED)

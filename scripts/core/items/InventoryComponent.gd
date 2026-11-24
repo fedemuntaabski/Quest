@@ -103,6 +103,5 @@ func _buff(item: ItemData, key: String, apply: Callable, revert: Callable) -> vo
 
 
 func _say(text: String, color: Color) -> void:
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr and hero:
-		text_mgr.spawn_text(hero.global_position + Vector2(0.0, -48.0), text, color)
+	if hero:
+		FloatingTextManager.say(hero.global_position + Vector2(0.0, -48.0), text, color)

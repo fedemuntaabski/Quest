@@ -49,7 +49,7 @@ func setup(data: CharacterData) -> void:
 	if stats_label:
 		stats_label.text = "Vida: %d" % data.base_hp
 	if ability_label:
-		ability_label.text = "%s\n%s" % [data.passive_ability_name, data.passive_ability_desc]
+		ability_label.text = "%s\n%s" % [data.passive_name(), data.passive_ability_desc]
 
 
 func get_character_id() -> String:

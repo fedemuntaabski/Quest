@@ -69,10 +69,9 @@ func toggle_speed() -> bool:
 	if not _state.is_active():
 		return false
 	if not Net.is_authority():
-		var text_mgr := ManagerLocator.get_floating_text_manager()
 		var hero := ManagerLocator.get_player()
-		if text_mgr and hero:
-			text_mgr.spawn_text(hero.global_position + Vector2(0, -56), HOST_ONLY_SPEED, QuestPalette.PARCHMENT)
+		if hero:
+			FloatingTextManager.say(hero.global_position + Vector2(0, -56), HOST_ONLY_SPEED, QuestPalette.PARCHMENT)
 		return true
 	_speed_index = (_speed_index + 1) % SPEEDS.size()
 	_apply()

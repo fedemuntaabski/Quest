@@ -7,7 +7,6 @@ extends RefCounted
 enum Category {
 	GENERAL,
 	COMBAT,
-	CARDS,
 	MAP,
 	STATE,
 	ACTIONS,
@@ -29,63 +28,18 @@ enum Level {
 	ERROR = 3
 }
 
-static var enabled_categories: Dictionary = {
-	Category.GENERAL: true,
-	Category.COMBAT: true,
-	Category.CARDS: true,
-	Category.MAP: true,
-	Category.STATE: true,
-	Category.ACTIONS: false, # Heartbeats silenced by default
-	Category.SAVE: true,
-	Category.UI: true,
-	Category.CAMERA: true,
-	Category.NETWORK: true,
-	Category.DOOR: true,
-	Category.ROOM: true,
-	Category.BUILDING: true,
-	Category.RELIC: true,
-	Category.ENEMY: true,
-}
+const MIN_LEVEL := Level.INFO  # DEBUG is for hot paths: never printed
 
-static var min_level: int = Level.INFO
 
 static func is_enabled(cat: Category, level: int) -> bool:
-	if level < min_level:
-		return false
-	return enabled_categories.get(cat, true)
+	return level >= MIN_LEVEL and cat != Category.ACTIONS  # ACTIONS = heartbeats, silenced
 
-static func _category_name(cat: Category) -> String:
-	match cat:
-		Category.GENERAL: return "GENERAL"
-		Category.COMBAT: return "COMBAT"
-		Category.CARDS: return "CARDS"
-		Category.MAP: return "MAP"
-		Category.STATE: return "STATE"
-		Category.ACTIONS: return "ACTIONS"
-		Category.SAVE: return "SAVE"
-		Category.UI: return "UI"
-		Category.CAMERA: return "CAMERA"
-		Category.NETWORK: return "NETWORK"
-		Category.DOOR: return "DOOR"
-		Category.ROOM: return "ROOM"
-		Category.BUILDING: return "BUILDING"
-		Category.RELIC: return "RELIC"
-		Category.ENEMY: return "ENEMY"
-		_: return "UNKNOWN"
-
-static func _level_name(level: int) -> String:
-	match level:
-		Level.DEBUG: return "DEBUG"
-		Level.INFO: return "INFO"
-		Level.WARN: return "WARN"
-		Level.ERROR: return "ERROR"
-		_: return "LOG"
 
 static func log_msg(cat: Category, level: int, msg: String) -> void:
 	if not is_enabled(cat, level):
 		return
 	# calidad-13: timestamp so user://logs/quest*.log (Godot file logging, rotated) is readable in reports
-	var formatted := "%s [QUEST][%s][%s] %s" % [Time.get_time_string_from_system(), _category_name(cat), _level_name(level), msg]
+	var formatted := "%s [QUEST][%s][%s] %s" % [Time.get_time_string_from_system(), Category.keys()[cat], Level.keys()[level], msg]
 	match level:
 		Level.ERROR:
 			push_error(formatted)
@@ -94,14 +48,18 @@ static func log_msg(cat: Category, level: int, msg: String) -> void:
 		_:
 			print(formatted)
 
+
 static func debug(cat: Category, msg: String) -> void:
 	log_msg(cat, Level.DEBUG, msg)
+
 
 static func info(cat: Category, msg: String) -> void:
 	log_msg(cat, Level.INFO, msg)
 
+
 static func warn(cat: Category, msg: String) -> void:
 	log_msg(cat, Level.WARN, msg)
+
 
 static func error(cat: Category, msg: String) -> void:
 	log_msg(cat, Level.ERROR, msg)

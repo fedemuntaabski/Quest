@@ -34,11 +34,7 @@ var loadouts: Dictionary = {}
 func add_item(item: ItemData) -> bool:
 	if item == null or not can_add(item) or not Net.is_authority():
 		return false
-	var stack := _stack_with_room(item)
-	if stack:
-		stack.count += 1
-	else:
-		stash.append(ItemStack.new(item, 1))
+	_add_without_event(item)
 	item_acquired.emit(item)
 	stash_changed.emit()
 	return true
@@ -61,14 +57,6 @@ func count_of(item: ItemData) -> int:
 
 
 ## Every stashed copy as a flat list (the old "found items" view).
-func stash_items() -> Array[ItemData]:
-	var out: Array[ItemData] = []
-	for stack in stash:
-		for i in stack.count:
-			out.append(stack.item)
-	return out
-
-
 func _stack_with_room(item: ItemData) -> ItemStack:
 	if not item.stackable:
 		return null

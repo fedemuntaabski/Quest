@@ -175,6 +175,4 @@ func _refresh_buttons() -> void:
 
 
 func _say(text: String, color: Color) -> void:
-	var text_mgr := ManagerLocator.get_floating_text_manager()
-	if text_mgr:
-		text_mgr.spawn_text(global_position + Vector2(0, -SIZE.y - 12), text, color)
+	FloatingTextManager.say(global_position + Vector2(0, -SIZE.y - 12), text, color)

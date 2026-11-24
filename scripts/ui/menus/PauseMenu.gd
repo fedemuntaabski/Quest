@@ -1,17 +1,24 @@
-extends BaseMenu
+extends CanvasLayer
 class_name PauseMenu
 
 signal exit_requested
 
+const DEFAULT_EXIT_MESSAGE := "¿Estás seguro de salir? Se perderán los datos de esta partida."
+
 @export var player_stats: PlayerStats
 @export var confirm_exit_on_run: bool = true
+
+var is_open: bool = false
+var animate_transitions: bool = true
+var _tween: Tween
 
 @onready var pause_panel: Panel = %PausePanel
 @onready var blur_rect: ColorRect = %BlurRect
 @onready var dim_rect: ColorRect = %DimRect
 @onready var options_menu: OptionsMenu = %OptionsMenu
 @onready var bestiary_panel: BestiaryPanel = %BestiaryPanel
-@onready var exit_confirm_dialog: ExitConfirmDialog = %ExitConfirmDialog
+@onready var hover_sound: AudioStreamPlayer = %HoverSound
+var exit_confirm_dialog: ConfirmationDialog
 
 @onready var options_button: Button = %OptionsButton
 @onready var bestiary_button: Button = %BestiaryButton
@@ -21,8 +28,8 @@ signal exit_requested
 
 # ---------------- INIT ----------------
 
-func _on_base_ready() -> void:
-	pause_game_on_open = true
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -30,49 +37,98 @@ func _on_base_ready() -> void:
 	if player_stats == null:
 		player_stats = ManagerLocator.get_player_stats()
 
-	set_audio_players(%ClickSound, %HoverSound)
+	%ClickSound.stream = load("res://assets/audio/click.mp3")  # OptionsMenu plays it
+	hover_sound.stream = load("res://assets/audio/hover.mp3")
 
 	_connect()
+	_build_exit_dialog()
 
 	if options_menu and not options_menu.closed.is_connected(_on_options_menu_closed):
 		options_menu.closed.connect(_on_options_menu_closed)
 	if bestiary_panel and not bestiary_panel.closed.is_connected(_on_options_menu_closed):
 		bestiary_panel.closed.connect(_on_options_menu_closed)
-	if exit_confirm_dialog and not exit_confirm_dialog.confirmed.is_connected(_on_exit_confirmed):
-		exit_confirm_dialog.confirmed.connect(_on_exit_confirmed)
-	if exit_confirm_dialog and not exit_confirm_dialog.canceled.is_connected(_on_exit_canceled):
-		exit_confirm_dialog.canceled.connect(_on_exit_canceled)
 
 	_apply_theme()
 	_fit_panel_to_content()
-
-	animate_transitions = true
-	fade_duration_in = 0.22
-	fade_duration_out = 0.16
-	add_fade_target(dim_rect, 1.0)
-	add_fade_target(blur_rect, 1.0)
-	add_fade_target(pause_panel, 1.0)
-	add_scale_target(pause_panel)
-
 	_set_panel(0)
+
+
+## Godot's ConfirmationDialog in the menu frame (same as the main menu's dialogs).
+func _build_exit_dialog() -> void:
+	exit_confirm_dialog = ConfirmationDialog.new()
+	exit_confirm_dialog.name = "ExitConfirmDialog"
+	exit_confirm_dialog.title = "Salir"
+	exit_confirm_dialog.ok_button_text = "OK"
+	exit_confirm_dialog.cancel_button_text = "Cancelar"
+	exit_confirm_dialog.dialog_autowrap = true
+	exit_confirm_dialog.min_size = Vector2i(520, 0)
+	exit_confirm_dialog.confirmed.connect(_emit_exit_requested)
+	exit_confirm_dialog.canceled.connect(_set_panel.bind(0))
+	UiStyles.style_menu_dialog(exit_confirm_dialog)
+	UiStyles.style_menu_button(exit_confirm_dialog.get_ok_button(), true)  # leaving = the red rim, like SALIR
+	add_child(exit_confirm_dialog)
 
 # ---------------- OPEN / CLOSE ----------------
 
-func _on_before_open() -> void:
+func open() -> void:
+	if is_open:
+		return
+	is_open = true
 	_set_panel(0)
 	if options_button:
 		options_button.grab_focus.call_deferred()  # gamepad / keyboard navigation
+	visible = true
+	if not Net.is_online():  # coop-12: online the world keeps running
+		var gsm := ManagerLocator.get_game_state_manager()
+		if gsm:
+			gsm.request_pause()
+	if animate_transitions:
+		_kill_tween()
+		_tween = MenuTransitionFX.play_entrance(self, _fade_targets(), [pause_panel], 0.22, Tween.TRANS_BACK, Tween.EASE_OUT, Vector2(0.92, 0.92))
 
 
-func _on_before_close() -> void:
+func close() -> void:
+	if not is_open:
+		return
 	if controls_help:
 		controls_help.hide()
 	if options_menu:
 		options_menu.close()
 	if bestiary_panel:
 		bestiary_panel.close()
-	if exit_confirm_dialog and exit_confirm_dialog.is_open:
-		exit_confirm_dialog.close()
+	if exit_confirm_dialog:
+		exit_confirm_dialog.hide()
+	if animate_transitions:
+		_kill_tween()
+		_tween = MenuTransitionFX.play_exit(self, _fade_targets(), [pause_panel], 0.16, Vector2(0.94, 0.94))
+		if _tween:
+			await _tween.finished
+	visible = false
+	var gsm := ManagerLocator.get_game_state_manager()
+	if gsm:
+		gsm.request_resume()
+	is_open = false
+
+
+func toggle() -> void:
+	if is_open:
+		close()
+	else:
+		open()
+
+
+func _fade_targets() -> Array[Dictionary]:
+	return [{"node": dim_rect, "max_alpha": 1.0}, {"node": blur_rect, "max_alpha": 1.0}, {"node": pause_panel, "max_alpha": 1.0}]
+
+
+func _kill_tween() -> void:
+	if _tween and _tween.is_valid():
+		_tween.kill()
+
+
+func connect_button(btn: Button, on_press: Callable) -> void:
+	btn.pressed.connect(on_press)
+	btn.mouse_entered.connect(hover_sound.play)
 
 # ---------------- UI ----------------
 
@@ -133,24 +189,12 @@ func _add_controls_button() -> void:
 
 
 func _request_exit() -> void:
-	if confirm_exit_on_run and exit_confirm_dialog:
-		_show_exit_confirm_dialog()
+	if not confirm_exit_on_run:
+		exit_requested.emit()
 		return
-
-	_emit_exit_requested()
-
-
-func _on_exit_confirmed() -> void:
-	_emit_exit_requested()
-
-
-func _on_exit_canceled() -> void:
-	_set_panel(0)
-
-
-func _show_exit_confirm_dialog() -> void:
-	exit_confirm_dialog.message_label.text = exit_message()
-	exit_confirm_dialog.open()
+	exit_confirm_dialog.dialog_text = exit_message()
+	exit_confirm_dialog.popup_centered()
+	exit_confirm_dialog.get_ok_button().grab_focus()
 
 
 ## guardado-19: what leaving costs. Offline from floor 2 the run is saved at the
@@ -165,7 +209,7 @@ func exit_message() -> String:
 	var run: Dictionary = save_mgr.get_saved_run() if save_mgr else {}
 	if not run.is_empty():
 		return "¿Salir al menú? Se pierde el progreso de este piso: al continuar, la partida se retoma desde el inicio del piso %d." % int(run["floor"])
-	return exit_confirm_dialog.message_text
+	return DEFAULT_EXIT_MESSAGE
 
 
 func _emit_exit_requested() -> void:

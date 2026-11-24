@@ -112,17 +112,17 @@ func _test_hunter() -> void:
 	var here := rm.get_center(far_room)
 	_place_hero(heroes[0], far_room, here + Vector2(200, 0))
 	_place_hero(heroes[1], far_room, here + Vector2(60, 0))
-	_expect(enemy._aggro_hero(rm) == heroes[1], "hunter: did not pick the nearest hero in aggro_range")
-	_expect(enemy._goal_zone(rm) == far_room, "hunter: goal zone should be the hero's zone")
-	_expect(enemy._goal_point(far_room) == heroes[1].global_position, "hunter: should close in on the hero's position")
+	_expect(enemy.selector.aggro_hero(rm) == heroes[1], "hunter: did not pick the nearest hero in aggro_range")
+	_expect(enemy.selector.goal_zone(rm) == far_room, "hunter: goal zone should be the hero's zone")
+	_expect(enemy.selector.goal_point(far_room) == heroes[1].global_position, "hunter: should close in on the hero's position")
 
 	# No hero in aggro -> the zone of the closest hero by route.
 	_place_hero(heroes[0], rm.get_start_zone_id(), rm.get_center(rm.get_start_zone_id()))
 	var second_zone: String = rooms[rooms.size() - 2]
 	_place_hero(heroes[1], second_zone, rm.get_center(second_zone) + Vector2(0, 5000))  # outside aggro_range by position
-	_expect(enemy._aggro_hero(rm) == null, "hunter: a hero beyond aggro_range was chosen")
-	var expect_zone := enemy._player_zone(rm)
-	_expect(enemy._goal_zone(rm) == expect_zone and expect_zone != "", "hunter: without aggro it should head for the closest hero's zone ('%s' vs '%s')" % [enemy._goal_zone(rm), expect_zone])
+	_expect(enemy.selector.aggro_hero(rm) == null, "hunter: a hero beyond aggro_range was chosen")
+	var expect_zone := enemy.selector.zone_of_closest_hero(rm)
+	_expect(enemy.selector.goal_zone(rm) == expect_zone and expect_zone != "", "hunter: without aggro it should head for the closest hero's zone ('%s' vs '%s')" % [enemy.selector.goal_zone(rm), expect_zone])
 	await _free(main2d)
 
 
@@ -138,7 +138,7 @@ func _test_raider_route_and_damage() -> void:
 	var expected := rm.find_zone_path(spawn, rm.get_start_zone_id())
 	var raider := _make_enemy(main2d, GOBLIN, spawn, 0, true)
 	_expect(raider.role == EnemyType.Role.RAIDER and raider.relic_damage > 0, "raider: goblin should be a RAIDER with damage_vs_relic")
-	_expect(raider._goal_zone(rm) == rm.get_start_zone_id(), "raider: goal must be the Reliquia's zone")
+	_expect(raider.selector.goal_zone(rm) == rm.get_start_zone_id(), "raider: goal must be the Reliquia's zone")
 
 	var visited: Array[String] = [spawn]
 	var waited := 0.0
@@ -169,18 +169,18 @@ func _test_raider_reaction() -> void:
 	for h in main2d.heroes:
 		_place_hero(h, zone, FAR)
 	var raider := _make_enemy(main2d, GOBLIN, zone)
-	_expect(raider._is_raiding(), "raider reaction: should ignore far heroes")
+	_expect(raider.selector.is_raiding(), "raider reaction: should ignore far heroes")
 	_place_hero(hero, zone, raider.global_position + Vector2(100, 0))  # near, not blocking
-	raider._note_blocking_hero()
-	_expect(raider._is_raiding(), "raider reaction: a hero 100px away must not distract it")
+	raider.selector.note_blocking_hero()
+	_expect(raider.selector.is_raiding(), "raider reaction: a hero 100px away must not distract it")
 	_place_hero(hero, zone, raider.global_position + Vector2(20, 0))  # blocking
-	raider._note_blocking_hero()
-	_expect(not raider._is_raiding(), "raider reaction: a blocking hero should provoke it")
-	_expect(raider._goal_zone(rm) == zone, "raider reaction: provoked raider should go for the hero")
+	raider.selector.note_blocking_hero()
+	_expect(not raider.selector.is_raiding(), "raider reaction: a blocking hero should provoke it")
+	_expect(raider.selector.goal_zone(rm) == zone, "raider reaction: provoked raider should go for the hero")
 	var attacked := _make_enemy(main2d, GOBLIN, zone)
 	_place_hero(hero, zone, FAR)
 	attacked._on_hurt(1)
-	_expect(not attacked._is_raiding(), "raider reaction: a hit from a hero should provoke it")
+	_expect(not attacked.selector.is_raiding(), "raider reaction: a hit from a hero should provoke it")
 	await _free(main2d)
 
 

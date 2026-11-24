@@ -720,11 +720,10 @@ func _on_invasion_triggered(_spawn_rooms: Array[RoomZone], _enemy_count: int) ->
 func _on_enemies_appeared(zone_ids: Array[String], count: int, source: String) -> void:
 	var room_manager := ManagerLocator.get_room_manager()
 	var names: Array[String] = []
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
 	for zone_id in zone_ids:
 		names.append(_room_label(room_manager, zone_id))
-		if text_mgr and room_manager:
-			text_mgr.spawn_text(room_manager.get_center(zone_id), "¡Enemigos!", ALERT_COLOR, true)
+		if room_manager:
+			FloatingTextManager.say(room_manager.get_center(zone_id), "¡Enemigos!", ALERT_COLOR, true)
 	if source == "boss":
 		pass  # _on_boss_spawned says it
 	elif source == "summon":

@@ -354,8 +354,8 @@ func _show_preview(hero_id: String) -> void:
 	_preview_name.text = "%s — %s" % [data.display_name, data.role] if data.role != "" else data.display_name
 	_preview_info.text = "Vida %d · Ataque %d · Intervalo %.1f s\n\n%sPasiva — %s\n%s\n\n%sActiva — %s\n%s" % [
 		data.base_hp, data.attack_damage, data.attack_interval,
-		_icon_tag(data.passive), data.passive_ability_name, _ability_text(data.passive, data.passive_ability_desc),
-		_icon_tag(data.active), data.active_ability_name, _ability_text(data.active, ""),
+		_icon_tag(data.passive), data.passive_name(), _ability_text(data.passive, data.passive_ability_desc),
+		_icon_tag(data.active), data.active_name(), _ability_text(data.active, ""),
 	]
 	_center_preview()
 

@@ -48,9 +48,7 @@ func _check_phase() -> void:
 		return
 	phase = 2
 	enemy.visual.play_hit()
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr:
-		text_mgr.spawn_text(enemy.global_position + Vector2(0, -80), "¡Fase 2!", QuestPalette.BLOOD_LIGHT, true, 1.6)
+	FloatingTextManager.say(enemy.global_position + Vector2(0, -80), "¡Fase 2!", QuestPalette.BLOOD_LIGHT, true, 1.6)
 	phase_changed.emit(phase)
 	summon()
 

@@ -44,7 +44,7 @@ func _initialize() -> void:
 			stats.level_up_hero(hero.stats.hero_id)
 		hero.stats.current_hp = hero.stats.max_hp
 	if mode.ends_with("ballesta"):
-		resources.research_state.add("ballesta")  # "Planos de ballesta" (Saber + a Scriptorium)
+		resources.researched["ballesta"] = true  # "Planos de ballesta" (Saber + a Scriptorium)
 		var zone: RoomZone = rm.get_zone_node(start)
 		var i := 0
 		while zone.get_slot(i) != null and int(zone.get_slot(i).slot_type) != int(BuildingSlot.SlotType.MINOR):

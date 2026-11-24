@@ -26,14 +26,9 @@ func _ready() -> void:
 	add_child(label)
 
 	visible = SettingsManager.show_fps_overlay
-	SettingsManager.settings_changed.connect(_on_settings_changed)
 
 
 func _process(_delta: float) -> void:
+	visible = SettingsManager.show_fps_overlay
 	if visible:
 		label.text = "FPS: %d" % Engine.get_frames_per_second()
-
-
-func _on_settings_changed(section: String, key: String, value: Variant) -> void:
-	if section == SettingsManager.SECTION_DISPLAY and key == "show_fps_overlay":
-		visible = bool(value)

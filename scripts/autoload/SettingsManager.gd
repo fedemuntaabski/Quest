@@ -6,10 +6,9 @@ extends Node
 ##   video settings (window mode/resolution/vsync/fps limit), gameplay settings
 ##   (screen shake intensity) and display settings (FPS overlay, locale) to `user://settings.cfg`.
 ## - Apply video settings to DisplayServer/Engine automatically on startup.
-## - Expose reactive signals when settings change so UI and audio players update automatically.
+## - Emit volume_changed so UI audio players follow the click/hover volumes.
 ## - Decouple OptionsMenu from direct disk I/O and player management.
 
-signal settings_changed(section: String, key: String, value: Variant)
 signal volume_changed(type: String, linear_value: float, db_value: float)
 
 const SETTINGS_PATH := "user://settings.cfg"
@@ -41,41 +40,46 @@ const BASE_VIEWPORT_SIZE := Vector2i(1920, 1080)
 
 enum WindowMode { FULLSCREEN, WINDOWED, BORDERLESS }
 
+## What settings.cfg stores: section -> property names (loaded in this order).
+## The input remaps go in their own section (InputBindings).
+const PERSISTED := {
+	SECTION_OPTIONS: ["click_volume", "hover_volume"],
+	SECTION_AUDIO: ["master_volume", "music_volume", "sfx_volume", "ui_volume"],
+	SECTION_VIDEO: ["window_mode", "resolution_index", "vsync_enabled", "fps_limit_index"],
+	SECTION_GAMEPLAY: ["screen_shake_intensity", "first_help_enabled"],
+	SECTION_DISPLAY: ["show_fps_overlay", "locale"],
+	SECTION_ACCESSIBILITY: ["text_scale", "colorblind_mode", "reduce_flashes", "sound_captions"],
+}
+
 var click_volume: float = 1.0:
 	set(val):
 		click_volume = clampf(val, 0.001, 2.0)
 		volume_changed.emit("click", click_volume, get_click_volume_db())
-		settings_changed.emit(SECTION_OPTIONS, "click_volume", click_volume)
 
 var hover_volume: float = 1.0:
 	set(val):
 		hover_volume = clampf(val, 0.001, 2.0)
 		volume_changed.emit("hover", hover_volume, get_hover_volume_db())
-		settings_changed.emit(SECTION_OPTIONS, "hover_volume", hover_volume)
 
 var master_volume: float = 1.0:
 	set(val):
 		master_volume = clampf(val, 0.001, 2.0)
 		_apply_bus_volume("Master", master_volume)
-		settings_changed.emit(SECTION_AUDIO, "master_volume", master_volume)
 
 var music_volume: float = 1.0:
 	set(val):
 		music_volume = clampf(val, 0.001, 2.0)
 		_apply_bus_volume("Music", music_volume)
-		settings_changed.emit(SECTION_AUDIO, "music_volume", music_volume)
 
 var sfx_volume: float = 1.0:
 	set(val):
 		sfx_volume = clampf(val, 0.001, 2.0)
 		_apply_bus_volume("SFX", sfx_volume)
-		settings_changed.emit(SECTION_AUDIO, "sfx_volume", sfx_volume)
 
 var ui_volume: float = 1.0:
 	set(val):
 		ui_volume = clampf(val, 0.001, 2.0)
 		_apply_bus_volume("UI", ui_volume)
-		settings_changed.emit(SECTION_AUDIO, "ui_volume", ui_volume)
 
 var window_mode: int = WindowMode.FULLSCREEN
 var resolution_index: int = 2 ## -1 == use native monitor resolution (recomputed on apply, never cached)
@@ -85,54 +89,49 @@ var fps_limit_index: int = 1
 var screen_shake_intensity: float = 1.0:
 	set(val):
 		screen_shake_intensity = clampf(val, 0.0, 1.0)
-		settings_changed.emit(SECTION_GAMEPLAY, "screen_shake_intensity", screen_shake_intensity)
 
-var show_fps_overlay: bool = false:
-	set(val):
-		show_fps_overlay = val
-		settings_changed.emit(SECTION_DISPLAY, "show_fps_overlay", show_fps_overlay)
+var show_fps_overlay: bool = false
 
 var locale: String = "es":
 	set(val):
 		locale = val
 		TranslationServer.set_locale(locale)
-		settings_changed.emit(SECTION_DISPLAY, "locale", locale)
 
 var text_scale: float = 1.0:
 	set(val):
 		text_scale = clampf(val, TEXT_SCALE_MIN, TEXT_SCALE_MAX)
 		Accessibility.text_scale = text_scale
 		_apply_root_theme()
-		settings_changed.emit(SECTION_ACCESSIBILITY, "text_scale", text_scale)
 
 var colorblind_mode: bool = false:
 	set(val):
 		colorblind_mode = val
 		Accessibility.colorblind = val
-		settings_changed.emit(SECTION_ACCESSIBILITY, "colorblind_mode", val)
 
 var reduce_flashes: bool = false:
 	set(val):
 		reduce_flashes = val
 		Accessibility.reduce_flashes = val
-		settings_changed.emit(SECTION_ACCESSIBILITY, "reduce_flashes", val)
 
 var sound_captions: bool = false:
 	set(val):
 		sound_captions = val
 		Accessibility.sound_captions = val
-		settings_changed.emit(SECTION_ACCESSIBILITY, "sound_captions", val)
 
-var first_help_enabled: bool = true:
-	set(val):
-		first_help_enabled = val
-		settings_changed.emit(SECTION_GAMEPLAY, "first_help_enabled", val)
+var first_help_enabled: bool = true
 
 var help_path: String = HELP_PATH
 ## Tests and screenshot tools (--script) keep "seen" in memory: a suite run must
 ## not spend the help of the player's real first game.
 var help_persist: bool = not OS.get_cmdline_args().has("--script")
 var _seen_help: Dictionary = {}
+var _defaults := {}  # PERSISTED property -> its initializer (a key missing from the file)
+
+
+func _init() -> void:
+	for section: String in PERSISTED:
+		for key: String in PERSISTED[section]:
+			_defaults[key] = get(key)
 
 
 func _ready() -> void:
@@ -295,29 +294,10 @@ func load_settings() -> void:
 	if status == SafeConfig.Status.MISSING or status == SafeConfig.Status.CORRUPT:
 		return  # defaults (property initializers)
 
-	click_volume = float(cfg.get_value(SECTION_OPTIONS, "click_volume", 1.0))
-	hover_volume = float(cfg.get_value(SECTION_OPTIONS, "hover_volume", 1.0))
-
-	master_volume = float(cfg.get_value(SECTION_AUDIO, "master_volume", 1.0))
-	music_volume = float(cfg.get_value(SECTION_AUDIO, "music_volume", 1.0))
-	sfx_volume = float(cfg.get_value(SECTION_AUDIO, "sfx_volume", 1.0))
-	ui_volume = float(cfg.get_value(SECTION_AUDIO, "ui_volume", 1.0))
-
-	window_mode = int(cfg.get_value(SECTION_VIDEO, "window_mode", WindowMode.FULLSCREEN))
-	resolution_index = int(cfg.get_value(SECTION_VIDEO, "resolution_index", 2))
-	vsync_enabled = bool(cfg.get_value(SECTION_VIDEO, "vsync_enabled", true))
-	fps_limit_index = int(cfg.get_value(SECTION_VIDEO, "fps_limit_index", 1))
-
-	screen_shake_intensity = float(cfg.get_value(SECTION_GAMEPLAY, "screen_shake_intensity", 1.0))
-	first_help_enabled = bool(cfg.get_value(SECTION_GAMEPLAY, "first_help_enabled", true))
-
-	show_fps_overlay = bool(cfg.get_value(SECTION_DISPLAY, "show_fps_overlay", false))
-	locale = String(cfg.get_value(SECTION_DISPLAY, "locale", "es"))
-
-	text_scale = float(cfg.get_value(SECTION_ACCESSIBILITY, "text_scale", 1.0))
-	colorblind_mode = bool(cfg.get_value(SECTION_ACCESSIBILITY, "colorblind_mode", false))
-	reduce_flashes = bool(cfg.get_value(SECTION_ACCESSIBILITY, "reduce_flashes", false))
-	sound_captions = bool(cfg.get_value(SECTION_ACCESSIBILITY, "sound_captions", false))
+	for section: String in PERSISTED:
+		for key: String in PERSISTED[section]:
+			var fallback: Variant = _defaults[key]
+			set(key, type_convert(cfg.get_value(section, key, fallback), typeof(fallback)))
 
 	var remaps := {}
 	for action in cfg.get_section_keys(SECTION_INPUT) if cfg.has_section(SECTION_INPUT) else PackedStringArray():
@@ -329,29 +309,9 @@ func save_settings() -> Error:
 	var cfg := ConfigFile.new()
 	cfg.set_value("meta", "version", SETTINGS_VERSION)
 
-	cfg.set_value(SECTION_OPTIONS, "click_volume", click_volume)
-	cfg.set_value(SECTION_OPTIONS, "hover_volume", hover_volume)
-
-	cfg.set_value(SECTION_AUDIO, "master_volume", master_volume)
-	cfg.set_value(SECTION_AUDIO, "music_volume", music_volume)
-	cfg.set_value(SECTION_AUDIO, "sfx_volume", sfx_volume)
-	cfg.set_value(SECTION_AUDIO, "ui_volume", ui_volume)
-
-	cfg.set_value(SECTION_VIDEO, "window_mode", window_mode)
-	cfg.set_value(SECTION_VIDEO, "resolution_index", resolution_index)
-	cfg.set_value(SECTION_VIDEO, "vsync_enabled", vsync_enabled)
-	cfg.set_value(SECTION_VIDEO, "fps_limit_index", fps_limit_index)
-
-	cfg.set_value(SECTION_GAMEPLAY, "screen_shake_intensity", screen_shake_intensity)
-	cfg.set_value(SECTION_GAMEPLAY, "first_help_enabled", first_help_enabled)
-
-	cfg.set_value(SECTION_DISPLAY, "show_fps_overlay", show_fps_overlay)
-	cfg.set_value(SECTION_DISPLAY, "locale", locale)
-
-	cfg.set_value(SECTION_ACCESSIBILITY, "text_scale", text_scale)
-	cfg.set_value(SECTION_ACCESSIBILITY, "colorblind_mode", colorblind_mode)
-	cfg.set_value(SECTION_ACCESSIBILITY, "reduce_flashes", reduce_flashes)
-	cfg.set_value(SECTION_ACCESSIBILITY, "sound_captions", sound_captions)
+	for section: String in PERSISTED:
+		for key: String in PERSISTED[section]:
+			cfg.set_value(section, key, get(key))
 
 	var remaps := InputBindings.overrides()
 	for action in remaps:

@@ -92,6 +92,5 @@ func pick_targets() -> Array[HurtboxComponent]:
 
 
 func _on_hit_landed(target: HurtboxComponent, amount: int) -> void:
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr and is_instance_valid(target):
-		text_mgr.spawn_text(target.global_position + damage_number_offset, str(amount), damage_number_color)
+	if is_instance_valid(target):
+		FloatingTextManager.say(target.global_position + damage_number_offset, str(amount), damage_number_color)

@@ -28,12 +28,6 @@ static func build_panel_style(bg_color: Color, border_color: Color, border_width
 		style.content_margin_bottom = content_margin
 	return style
 
-static func build_reward_card_style(border_color: Color) -> StyleBoxFlat:
-	return build_panel_style(QuestPalette.UI_PANEL_BG, border_color, 2, 10)
-
-static func build_slot_icon_style() -> StyleBoxFlat:
-	return build_panel_style(QuestPalette.UI_PANEL_BG_SOFT, QuestPalette.UI_PANEL_BORDER, 1, 6)
-
 
 # ---------------- BUTTONS ----------------
 

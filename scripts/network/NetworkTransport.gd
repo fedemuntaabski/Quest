@@ -9,8 +9,6 @@ extends RefCounted
 
 ## The host is listening; `code` is what a client types to join.
 signal hosted(code: String)
-## A client created its peer (the connection itself is MultiplayerAPI.connected_to_server).
-signal joining(code: String)
 signal failed(reason: String)
 ## Steam only: a peer passed auth. ENet peers are trusted on connection.
 signal peer_trusted(peer_id: int)

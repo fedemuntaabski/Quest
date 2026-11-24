@@ -339,9 +339,7 @@ func _on_research_changed() -> void:
 
 
 func _float_text(slot: BuildingSlot, text: String) -> void:
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr:
-		text_mgr.spawn_text(slot.global_position, text, QuestPalette.GOLD_DARK)
+	FloatingTextManager.say(slot.global_position, text, QuestPalette.GOLD_DARK)
 
 
 func _reject(slot: BuildingSlot, reason: String) -> void:

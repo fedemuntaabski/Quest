@@ -4,7 +4,6 @@
 [ext_resource type="FontFile" uid="uid://cms41q0mksu5r" path="res://assets/fonts/mainfont.ttf" id="2_title_font"]
 [ext_resource type="FontFile" uid="uid://3m1kjiwgj5x" path="res://assets/fonts/secundaryfont.ttf" id="3_ui_font"]
 [ext_resource type="PackedScene" uid="uid://baeb8xmga0bum" path="res://scenes/menus/OptionsMenu.tscn" id="4_options_menu"]
-[ext_resource type="PackedScene" path="res://scenes/menus/ExitConfirmDialog.tscn" id="6_exit_confirm_dialog"]
 [ext_resource type="PackedScene" path="res://scenes/menus/BestiaryPanel.tscn" id="7_bestiary_panel"]
 
 [sub_resource type="Shader" id="Shader_pause_blur"]
@@ -137,5 +136,3 @@ bus = &"UI"
 unique_name_in_owner = true
 bus = &"UI"
 
-[node name="ExitConfirmDialog" parent="." instance=ExtResource("6_exit_confirm_dialog")]
-unique_name_in_owner = true

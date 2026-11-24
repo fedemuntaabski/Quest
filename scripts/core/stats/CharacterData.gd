@@ -30,17 +30,15 @@ enum AttackStyle { MELEE, RANGED }
 @export_group("")
 
 @export_group("Abilities")
-## Gameplay numbers of the abilities named below (the *_name/_desc strings are UI text).
+## The hero's abilities (numbers, name, description, icon).
 @export var passive: AbilityData
 @export var active: AbilityData
 ## Palette of this hero's VFX (attack arcs, auras, sparks).
 @export var vfx_color: Color = Color.WHITE
 @export_group("")
 
-## Legacy UI strings (hero select). The in-run popup reads AbilityData.display_name/description.
-@export var passive_ability_name: String = ""
+## Short passive blurb of the WaitingRoom card (names come from AbilityData.display_name).
 @export var passive_ability_desc: String = ""
-@export var active_ability_name: String = ""
 
 @export var sprite_frames: SpriteFrames = null
 
@@ -50,3 +48,11 @@ enum AttackStyle { MELEE, RANGED }
 ## Own level curve (e.g. a hero that scales interval instead of HP). null = the global one.
 @export var upgrade_override: UpgradeConfig
 @export_group("")
+
+
+func passive_name() -> String:
+	return passive.display_name if passive else ""
+
+
+func active_name() -> String:
+	return active.display_name if active else ""

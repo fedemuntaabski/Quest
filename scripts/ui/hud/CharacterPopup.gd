@@ -271,11 +271,11 @@ func _rebuild_level_up(ps: PlayerStats) -> void:
 	_level_title.text = "Nivel máximo (%d)" % p["level"] if maxed else "Subir de nivel: %d → %d" % [p["level"], p["next_level"]]
 	for row: Dictionary in p["rows"]:
 		var key := str(row["key"])
-		_add_cell(str(row["label"]), QuestPalette.PARCHMENT)
-		_add_cell(_format_value(key, row["current"]), QuestPalette.UI_TEXT_PRIMARY)
-		_add_cell("" if maxed else "→", QuestPalette.UI_TEXT_MUTED)
+		_cell(_upgrade_rows, str(row["label"]), QuestPalette.PARCHMENT)
+		_cell(_upgrade_rows, _format_value(key, row["current"]), QuestPalette.UI_TEXT_PRIMARY)
+		_cell(_upgrade_rows, "" if maxed else "→", QuestPalette.UI_TEXT_MUTED)
 		var changed: bool = not maxed and _format_value(key, row["next"]) != _format_value(key, row["current"])
-		_add_cell("" if maxed else _format_value(key, row["next"]), NEXT_COLOR if changed else QuestPalette.UI_TEXT_PRIMARY)
+		_cell(_upgrade_rows, "" if maxed else _format_value(key, row["next"]), NEXT_COLOR if changed else QuestPalette.UI_TEXT_PRIMARY)
 
 	_level_button.disabled = maxed or not affordable
 	_level_button.text = "Nivel máximo" if maxed else "Subir de nivel (%d %s)" % [p["cost"], resource_label]
@@ -376,21 +376,21 @@ func _rebuild_stat_table(ps: PlayerStats) -> void:
 		_stat_table.remove_child(child)
 		child.queue_free()
 	for title: String in STAT_COLUMNS:
-		_table_cell(title, QuestPalette.GOLD)
+		_cell(_stat_table, title, QuestPalette.GOLD)
 	for row: Dictionary in ps.get_stat_breakdown(stats.hero_id):
 		var key := str(row["key"])
-		_table_cell(str(row["label"]), QuestPalette.PARCHMENT)
-		_table_cell(_format_stat(key, row["base"], false), QuestPalette.UI_TEXT_PRIMARY)
+		_cell(_stat_table, str(row["label"]), QuestPalette.PARCHMENT)
+		_cell(_stat_table, _format_stat(key, row["base"], false), QuestPalette.UI_TEXT_PRIMARY)
 		for layer in ["level", "perks", "equipment"]:
-			_table_cell(_format_stat(key, row[layer], true), NEXT_COLOR if float(row[layer]) != 0.0 else QuestPalette.UI_TEXT_MUTED)
-		_table_cell(_format_stat(key, row["total"], false), QuestPalette.GOLD_LIGHT)
+			_cell(_stat_table, _format_stat(key, row[layer], true), NEXT_COLOR if float(row[layer]) != 0.0 else QuestPalette.UI_TEXT_MUTED)
+		_cell(_stat_table, _format_stat(key, row["total"], false), QuestPalette.GOLD_LIGHT)
 
 
-func _table_cell(text: String, color: Color) -> void:
+func _cell(parent: Control, text: String, color: Color) -> void:
 	var label := Label.new()
 	label.text = text
 	label.add_theme_color_override("font_color", color)
-	_stat_table.add_child(label)
+	parent.add_child(label)
 
 
 static func _format_stat(key: String, value: Variant, signed: bool) -> String:
@@ -442,13 +442,6 @@ func get_abilities_text() -> String:
 			if child is Label:
 				parts.append(child.text)
 	return "\n".join(parts)
-
-
-func _add_cell(text: String, color: Color) -> void:
-	var label := Label.new()
-	label.text = text
-	label.add_theme_color_override("font_color", color)
-	_upgrade_rows.add_child(label)
 
 
 static func _format_value(key: String, value: Variant) -> String:

@@ -4,7 +4,6 @@ class_name QuestPalette
 ## Central reusable palette for Quest's low-color medieval visual direction.
 ## Consumed by UI chrome, card presentation, world feedback, combat FX, and theme helpers.
 
-const DUNGEON_CHARCOAL: Color = Color(0.08, 0.07, 0.06, 1.0)
 const DUNGEON_STONE: Color = Color(0.13, 0.12, 0.11, 1.0)
 const DUNGEON_MUD: Color = Color(0.21, 0.17, 0.13, 1.0)
 
@@ -25,7 +24,6 @@ const VIOLET: Color = Color(0.61, 0.46, 0.74, 1.0)
 ## menu-33: the menu illustrations (blue-green crypt stone, relic gold, banner red).
 const CRYPT_INK: Color = Color(0.03, 0.05, 0.06, 1.0)
 const CRYPT_STONE: Color = Color(0.07, 0.10, 0.11, 1.0)
-const CRYPT_STONE_LIGHT: Color = Color(0.13, 0.17, 0.18, 1.0)
 const RELIC_GOLD: Color = Color(0.95, 0.76, 0.31, 1.0)
 const RELIC_GOLD_PALE: Color = Color(1.0, 0.90, 0.62, 1.0)
 const AGED_GOLD: Color = Color(0.62, 0.47, 0.24, 1.0)
@@ -33,12 +31,8 @@ const EMBER: Color = Color(0.91, 0.55, 0.18, 1.0)
 const BANNER_RED: Color = Color(0.56, 0.13, 0.12, 1.0)
 const BANNER_RED_LIGHT: Color = Color(0.85, 0.27, 0.22, 1.0)
 
-
 const UI_PANEL_BG: Color = Color(0.08, 0.08, 0.10, 0.98)
-const UI_PANEL_BG_SOFT: Color = Color(0.15, 0.15, 0.18, 0.80)
 const UI_PANEL_BORDER: Color = Color(0.30, 0.32, 0.38, 1.0)
-const UI_PANEL_BORDER_HOVER: Color = Color(0.40, 0.50, 0.70, 1.0)
-const UI_PANEL_BORDER_SELECTED: Color = Color(0.60, 0.80, 1.00, 1.0)
 
 const UI_TEXT_PRIMARY: Color = Color(0.95, 0.95, 0.92, 1.0)
 const UI_TEXT_SECONDARY: Color = Color(0.80, 0.80, 0.80, 0.80)

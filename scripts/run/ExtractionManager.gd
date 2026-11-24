@@ -74,9 +74,8 @@ func can_open_doors() -> bool:
 func can_declare_victory() -> bool:
 	if enemy_manager == null or not enemy_manager.is_boss_alive():
 		return true
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr and room_manager:
-		text_mgr.spawn_text(room_manager.get_center(room_manager.get_exit_zone_id()), "El jefe custodia la salida", QuestPalette.BLOOD_LIGHT, true)
+	if room_manager:
+		FloatingTextManager.say(room_manager.get_center(room_manager.get_exit_zone_id()), "El jefe custodia la salida", QuestPalette.BLOOD_LIGHT, true)
 	return false
 
 

@@ -30,7 +30,7 @@ func setup(p_hero: Player, data: CharacterData) -> void:
 		player_stats.run_upgrades_changed.connect(_on_upgrade)
 		player_stats.perk_chosen.connect(_on_perk_chosen)
 	active = data.active
-	ability_name = data.active_ability_name
+	ability_name = data.active_name()
 
 
 func _process(delta: float) -> void:
@@ -270,6 +270,4 @@ func _burst_strike() -> void:
 
 
 func _say(text: String, color: Color) -> void:
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr:
-		text_mgr.spawn_text(hero.global_position + Vector2(0.0, -48.0), text, color)
+	FloatingTextManager.say(hero.global_position + Vector2(0.0, -48.0), text, color)

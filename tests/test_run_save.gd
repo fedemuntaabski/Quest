@@ -129,8 +129,8 @@ func _test_save_and_continue() -> void:
 	_inv().add_item(armor)
 	_inv().add_item(ItemCatalog.find("potion_health"))
 	_inv().add_item(ItemCatalog.find("potion_health"))
-	res.research_state.add("ballesta")
-	res.research_state.add("cartography")
+	res.researched["ballesta"] = true
+	res.researched["cartography"] = true
 	_session().add_recruit("rogue")
 	_session().mark_lost("tank")
 	_session().add_stat("kills", 7)
@@ -270,7 +270,7 @@ func _test_cleared_by_new_run() -> void:
 	await _main.start_gameplay()
 	await _frames(5)
 	_expect(not _save.has_saved_run(SLOT), "a new run clears the saved one")
-	_expect(_main2d().get_node("PauseMenu").exit_message() == _main2d().get_node("PauseMenu").exit_confirm_dialog.message_text, "floor 1: default exit text")
+	_expect(_main2d().get_node("PauseMenu").exit_message() == PauseMenu.DEFAULT_EXIT_MESSAGE, "floor 1: default exit text")
 
 
 ## The Tutorial neither saves nor erases a saved run.

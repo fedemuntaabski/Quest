@@ -291,18 +291,14 @@ func _mark_as_raider() -> void:
 
 
 ## The building to hit in `room` (its profile's pick), or null.
-func scan_room_for_buildings(room: RoomZone) -> Node2D:
-	return selector.pick_building_in_room(room)
-
-
 ## Called by EnemyMoveAction each time the enemy reaches a zone center.
 func on_zone_entered(zone_id: String) -> void:
 	if current_state == State.ATTACKING or not is_alive():
 		return
 	var room_manager := ManagerLocator.get_room_manager()
-	if room_manager == null or room_manager.get_zone_kind(zone_id) != "room" or _is_raiding():
+	if room_manager == null or room_manager.get_zone_kind(zone_id) != "room" or selector.is_raiding():
 		return
-	var building := scan_room_for_buildings(room_manager.get_zone_node(zone_id))
+	var building := selector.pick_building_in_room(room_manager.get_zone_node(zone_id))
 	if building == null:
 		return
 	target_building = building
@@ -312,7 +308,7 @@ func on_zone_entered(zone_id: String) -> void:
 
 func _perform_attack() -> void:
 	if target_relic != null:
-		if not (_is_raiding() and _relic_in_range()):
+		if not (selector.is_raiding() and _relic_in_range()):
 			_resume_moving()
 			return
 		target_relic.take_damage(relic_damage)
@@ -356,14 +352,14 @@ func _on_ai_tick() -> void:
 	on_zone_entered(current_zone_id)
 	if current_state == State.ATTACKING:
 		return
-	_note_blocking_hero()
+	selector.note_blocking_hero()
 	if _try_attack_relic():
 		return
 
 	selector.reevaluate(&"tick")
 	var goal := selector.current.zone_id if selector.current else ""
 	_active_goal = goal
-	await _pursue_zone(room_manager, goal, _goal_point(goal))
+	await _pursue_zone(room_manager, goal, selector.goal_point(goal))
 	if is_instance_valid(self):
 		_try_attack_relic()
 
@@ -382,42 +378,17 @@ func _on_target_lost(old: Target) -> void:
 ## EnemyMoveAction checks it after each leg so a trip is re-planned mid-path.
 func goal_changed() -> bool:
 	var room_manager := ManagerLocator.get_room_manager()
-	return room_manager != null and _goal_zone(room_manager) != _active_goal
+	return room_manager != null and selector.goal_zone(room_manager) != _active_goal
 
 
 ## Zone this enemy heads for right now ("" = nowhere); see TargetSelector.
-func _goal_zone(room_manager: RoomManager) -> String:
-	return selector.goal_zone(room_manager)
-
-
-## Exact spot to close in on inside the goal zone (Vector2.INF = zone center).
-func _goal_point(goal_zone: String) -> Vector2:
-	return selector.goal_point(goal_zone)
-
-
-func _is_raiding() -> bool:
-	return selector.is_raiding()
-
-
-func _note_blocking_hero() -> void:
-	selector.note_blocking_hero()
-
-
-func _aggro_hero(room_manager: RoomManager) -> Player:
-	return selector.aggro_hero(room_manager)
-
-
-func _player_zone(room_manager: RoomManager) -> String:
-	return selector.zone_of_closest_hero(room_manager)
-
-
 func _relic_in_range() -> bool:
 	var relic := ManagerLocator.get_relic()
 	return relic != null and relic.is_alive() and global_position.distance_to(relic.get_target_position()) <= attack_range
 
 
 func _try_attack_relic() -> bool:
-	if not (_is_raiding() and relic_damage > 0 and _relic_in_range()):
+	if not (selector.is_raiding() and relic_damage > 0 and _relic_in_range()):
 		return false
 	target_relic = ManagerLocator.get_relic()
 	current_state = State.ATTACKING

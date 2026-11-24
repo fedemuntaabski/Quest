@@ -327,9 +327,7 @@ func try_light_up() -> void:
 		return
 	var cost := next_light_cost()
 	if not resource_manager.spend_resource("embers", cost):
-		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-		if text_mgr:
-			text_mgr.spawn_text(center_position, "Brasas insuficientes", QuestPalette.GOLD_DARK)
+		FloatingTextManager.say(center_position, "Brasas insuficientes", QuestPalette.GOLD_DARK)
 		return
 	_light_paid = cost
 	set_lit(true)

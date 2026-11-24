@@ -401,7 +401,7 @@ func _check_flames(main2d: Node, opened: bool) -> void:
 
 func _check_buildings(main2d: Node) -> void:
 	for entry in resources.research_config.entries:
-		resources.research_state.add(entry.id)
+		resources.researched[entry.id] = true
 	var zone: RoomZone = _dark_rooms(main2d, 1)[0] if not _dark_rooms(main2d, 1).is_empty() else null
 	if zone == null:
 		failures.append("buildings: no dark room")

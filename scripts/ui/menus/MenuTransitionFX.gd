@@ -1,7 +1,7 @@
 extends RefCounted
 class_name MenuTransitionFX
 
-## Shared fade + scale entrance/exit tween builder for BaseMenu/BaseSubPanel.
+## Shared fade + scale entrance/exit tween builders for the menus.
 ## `owner` must be a Node (needed for create_tween()); this class only configures tweens.
 
 static func play_entrance(owner: Node, fade_targets: Array[Dictionary], scale_targets: Array[CanvasItem],
@@ -41,15 +41,6 @@ static func play_exit(owner: Node, fade_targets: Array[Dictionary], scale_target
 	for node in scale_targets:
 		tw.tween_property(node, "scale", to_scale, duration).set_trans(trans).set_ease(ease)
 
-	return tw
-
-
-## Symmetric scale-only bounce (hover feedback etc.) — targets an arbitrary
-## scale, unlike play_entrance/play_exit which always animate to/from Vector2.ONE.
-static func play_scale_bounce(owner: Node, node: CanvasItem, target_scale: Vector2,
-		duration: float, trans: Tween.TransitionType, ease: Tween.EaseType) -> Tween:
-	var tw: Tween = owner.create_tween().set_trans(trans).set_ease(ease)
-	tw.tween_property(node, "scale", target_scale, duration)
 	return tw
 
 

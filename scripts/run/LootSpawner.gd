@@ -82,7 +82,7 @@ func _on_hero_zone_changed(zone_id: String) -> void:
 
 func _chance_for(type: RoomData.RoomType) -> float:
 	if _floor_manager:
-		return _floor_manager.loot_chance(type)
+		return _floor_manager.config.loot_chance(type)
 	return 1.0 if type == RoomData.RoomType.LOOT else 0.0
 
 

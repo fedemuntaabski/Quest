@@ -30,8 +30,8 @@ var _resources: Dictionary = {"iron": 0, "food": 0, "lore": 0, "embers": 0}
 ## the resources (survives floors, reset by Main._begin_new_run) and it is only
 ## a Saber sink. Tests may swap the config.
 var research_config: ResearchConfig = load(RESEARCH_CONFIG_PATH)
-## Ids researched this run.
-var research_state := ResearchState.new()
+## Ids researched this run ({id: true}).
+var researched: Dictionary = {}
 
 
 func get_resource(key: String) -> int:
@@ -115,7 +115,7 @@ func reset_resources(initial_iron: int = START["iron"], initial_food: int = STAR
 # ---------------- RESEARCH ----------------
 
 func is_researched(id: String) -> bool:
-	return research_state.has(id)
+	return researched.has(id)
 
 
 ## "" if `id` can be researched now, else why not.
@@ -167,7 +167,7 @@ func research(id: String) -> bool:
 		return false
 	if not can_research(id) or not spend_resource(RESEARCH_RESOURCE, research_cost(id)):
 		return false
-	research_state.add(id)
+	researched[id] = true
 	research_changed.emit()
 	production_changed.emit()
 	return true
@@ -190,7 +190,7 @@ func get_bonus(kind: ResearchEntry.Effect) -> float:
 
 ## coop-12: {resources, research} for RunState (host -> clients).
 func get_state() -> Dictionary:
-	var ids: Array = research_state.researched.keys()
+	var ids: Array = researched.keys()
 	ids.sort()
 	return {"res": _resources.duplicate(), "research": ids}
 
@@ -205,16 +205,16 @@ func apply_state(d: Dictionary) -> void:
 			_resources[key] = amount
 			resource_changed.emit(key, amount, delta)
 	var ids: Array = d.get("research", [])
-	if ids.size() != research_state.researched.size():
-		research_state.reset()
+	if ids.size() != researched.size():
+		researched.clear()
 		for id in ids:
-			research_state.add(id)
+			researched[id] = true
 		research_changed.emit()
 		production_changed.emit()
 
 
 ## New run (Main._begin_new_run, next to PlayerStats.reset_run_upgrades).
 func reset_research() -> void:
-	research_state.reset()
+	researched.clear()
 	research_changed.emit()
 	production_changed.emit()

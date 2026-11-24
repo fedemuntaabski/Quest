@@ -65,7 +65,5 @@ func invite() -> void:
 
 
 func _on_lobby_ready(lobby_id: int, is_host: bool) -> void:
-	if is_host:
+	if is_host:  # a client's connection is MultiplayerAPI.connected_to_server
 		hosted.emit(str(lobby_id))
-	else:
-		joining.emit(str(lobby_id))

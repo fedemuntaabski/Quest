@@ -225,9 +225,8 @@ func _grant_door_bonus(group_id: String, resource_manager: ResourceManager) -> v
 		return
 	resource_manager.add_resource(key, amount)
 	QuestLogger.info(QuestLogger.Category.MAP, "Door '%s': +%d %s." % [group_id, amount, key])
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if text_mgr and room_manager:
-		text_mgr.spawn_text(room_manager.get_center(group_id) + DOOR_REWARD_OFFSET, "+%d %s" % [amount, Building.RESOURCE_LABELS.get(key, key)], Color.WHITE)
+	if room_manager:
+		FloatingTextManager.say(room_manager.get_center(group_id) + DOOR_REWARD_OFFSET, "+%d %s" % [amount, Building.RESOURCE_LABELS.get(key, key)], Color.WHITE)
 
 
 ## Living heroes' discovery passives (Mente Analítica: Saber, Paso Ligero: Brasas).
@@ -250,13 +249,12 @@ static func reset_seen_types() -> void:
 func _show_room_banner(room_id: String) -> void:
 	var type := room_manager.get_room_type(room_id)
 	var visual := room_manager.visual_config.room_type_visual(type)
-	var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-	if visual == null or visual.banner_text == "" or text_mgr == null:
+	if visual == null or visual.banner_text == "":
 		return
 	var center := room_manager.get_center(room_id)
-	text_mgr.spawn_text(center + BANNER_OFFSET, visual.banner_text, visual.color, true, BANNER_INTENSITY)
+	FloatingTextManager.say(center + BANNER_OFFSET, visual.banner_text, visual.color, true, BANNER_INTENSITY)
 	if visual.description != "":
-		text_mgr.spawn_text(center + DESCRIPTION_OFFSET, visual.description, visual.color)
+		FloatingTextManager.say(center + DESCRIPTION_OFFSET, visual.description, visual.color)
 	var hud := ManagerLocator.get_hud()
 	if visual.hint != "" and not _seen_types.has(type) and hud:
 		_seen_types[type] = true
@@ -273,9 +271,7 @@ func _apply_room_type_discovery(room_id: String, resource_manager: ResourceManag
 	var reward := rule.reward_at(floor_index)
 	if reward > 0 and rule.reward_resource != "":
 		resource_manager.add_resource(rule.reward_resource, reward)
-		var text_mgr := ManagerLocator.get_floating_text_manager() as FloatingTextManager
-		if text_mgr:
-			text_mgr.spawn_text(room_manager.get_center(room_id), "%s: +%d %s" % [name_of_type, reward, Building.RESOURCE_LABELS.get(rule.reward_resource, rule.reward_resource)], room_manager.visual_config.room_type_color(type))
+		FloatingTextManager.say(room_manager.get_center(room_id), "%s: +%d %s" % [name_of_type, reward, Building.RESOURCE_LABELS.get(rule.reward_resource, rule.reward_resource)], room_manager.visual_config.room_type_color(type))
 		QuestLogger.info(QuestLogger.Category.MAP, "Room type reward in '%s': +%d %s." % [room_id, reward, rule.reward_resource])
 	var player_stats := ManagerLocator.get_player_stats()
 	if rule.heal_on_discovery > 0 and player_stats:
@@ -304,10 +300,6 @@ func roll_enemy_type(role: int = -1, rng: RandomNumberGenerator = null) -> Enemy
 	return type if type else pool.roll(rng)
 
 
-func loot_chance(type: RoomData.RoomType) -> float:
-	return config.loot_chance(type)
-
-
 func raider_ratio() -> float:
 	return config.raider_ratio(floor_index)
 
@@ -316,14 +308,6 @@ func raider_ratio() -> float:
 func roll_role(rng: RandomNumberGenerator = null) -> EnemyType.Role:
 	var roll := rng.randf() if rng else randf()
 	return EnemyType.Role.RAIDER if roll < raider_ratio() else EnemyType.Role.HUNTER
-
-
-func room_count() -> int:
-	return config.room_count(floor_index)
-
-
-func branch_chance() -> float:
-	return config.branch_chance(floor_index)
 
 
 func is_final_floor() -> bool:

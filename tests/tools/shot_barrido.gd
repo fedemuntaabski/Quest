@@ -201,6 +201,11 @@ func _floor_one() -> void:
 		await _shot("pause_options")
 		pause._set_panel(0)
 		await _wait(0.3)
+		pause.exit_button.pressed.emit()  # ponytail-38: Godot's ConfirmationDialog in the menu frame
+		await _wait(0.5)
+		await _shot("pause_exit")
+		pause.exit_confirm_dialog.hide()
+		await _wait(0.2)
 	root.push_input(_action(&"ui_cancel"))
 	await _wait(0.5)
 	world.extraction_manager.declare_victory()

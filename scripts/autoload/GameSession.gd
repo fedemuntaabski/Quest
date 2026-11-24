@@ -44,16 +44,7 @@ func _connect_run_sources() -> void:
 
 ## Stores the pick if it is exactly PARTY_SIZE distinct, known heroes.
 func set_selection(ids: Array[String]) -> bool:
-	if ids.size() != PARTY_SIZE:
-		return false
-	var known: Array[String] = []
-	for data in CharacterDatabase.get_all():
-		known.append(data.character_id)
-	for i in ids.size():
-		if not known.has(ids[i]) or ids.find(ids[i]) != i:
-			return false
-	selected_hero_ids = ids.duplicate()
-	return true
+	return ids.size() == PARTY_SIZE and set_party(ids)
 
 
 ## coop-12: the co-op party (1..MAX_PARTY distinct known heroes, one block per player).

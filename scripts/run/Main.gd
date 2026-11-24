@@ -62,7 +62,7 @@ func show_main_menu() -> void:
 	await _fade_to_black()
 	await _clear_containers(true, true, true)
 	_play_menu_music()
-	_current_ui_add(MAIN_MENU_SCENE.instantiate())
+	ui_container.add_child(MAIN_MENU_SCENE.instantiate())
 	await _fade_from_black()
 
 	_is_transitioning = false
@@ -102,8 +102,8 @@ func start_gameplay(floor_index: int = 1, tutorial: bool = false) -> void:
 	if floor_index == 1 and not Net.is_online():
 		await _play_intro_if_due()
 	await _show_floor_card()
-	_current_world_add(MAIN2D_SCENE.instantiate())
-	_current_hud_add(HUD_SCENE.instantiate())
+	world_container.add_child(MAIN2D_SCENE.instantiate())
+	hud_container.add_child(HUD_SCENE.instantiate())
 	await _fade_from_black()
 
 	_is_transitioning = false
@@ -163,7 +163,7 @@ func go_to_waiting_room() -> void:
 
 	await _fade_to_black()
 	await _clear_containers(true, true, true)
-	_current_ui_add(WAITING_ROOM_SCENE.instantiate())
+	ui_container.add_child(WAITING_ROOM_SCENE.instantiate())
 	await _fade_from_black()
 
 	_is_transitioning = false
@@ -196,8 +196,8 @@ func _reload_world(new_run: bool) -> void:
 	else:
 		_save_run()  # guardado-19: after the old floor is gone (it runs during the fade: a last kill counts)
 	await _show_floor_card()
-	_current_world_add(MAIN2D_SCENE.instantiate())
-	_current_hud_add(HUD_SCENE.instantiate())
+	world_container.add_child(MAIN2D_SCENE.instantiate())
+	hud_container.add_child(HUD_SCENE.instantiate())
 	await _fade_from_black()
 
 	_is_transitioning = false
@@ -291,18 +291,6 @@ func _restore_run(run: Dictionary) -> void:
 # ─────────────────────────────────────────────
 # INTERNAL HELPERS
 # ─────────────────────────────────────────────
-func _current_world_add(node: Node) -> void:
-	world_container.add_child(node)
-
-
-func _current_ui_add(node: Node) -> void:
-	ui_container.add_child(node)
-
-
-func _current_hud_add(node: Node) -> void:
-	hud_container.add_child(node)
-
-
 ## Floor title over the black transition screen (FloorTheme.display_name); the
 ## label is a child of the fading ColorRect, so it fades out with it.
 func _show_floor_card() -> void:

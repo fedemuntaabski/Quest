@@ -38,7 +38,6 @@ func join(code: String) -> Error:
 	api.multiplayer_peer = peer
 	_code = "%s:%d" % parsed
 	QuestLogger.info(QuestLogger.Category.NETWORK, "ENet joining %s" % _code)
-	joining.emit(_code)
 	return OK
 
 

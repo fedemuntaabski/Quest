@@ -445,8 +445,8 @@ func _sync_from_settings_manager() -> void:
 	sfx_volume_slider.value = clampf(sfx_vol, 0.001, 2.0)
 	ui_volume_slider.value = clampf(ui_vol, 0.001, 2.0)
 
-	_update_click_volume_label(click_volume_slider.value)
-	_update_hover_volume_label(hover_volume_slider.value)
+	_update_percent_label(click_volume_value_label, click_volume_slider.value)
+	_update_percent_label(hover_volume_value_label, hover_volume_slider.value)
 	_update_percent_label(master_volume_value_label, master_volume_slider.value)
 	_update_percent_label(music_volume_value_label, music_volume_slider.value)
 	_update_percent_label(sfx_volume_value_label, sfx_volume_slider.value)
@@ -555,22 +555,20 @@ func _connect_menu_signals() -> void:
 			button.pivot_offset = button.size / 2.0
 			if not button.pressed.is_connected(_on_any_button_pressed):
 				button.pressed.connect(_on_any_button_pressed)
-			if not button.mouse_entered.is_connected(_on_button_hover_entered.bind(button)):
-				button.mouse_entered.connect(_on_button_hover_entered.bind(button))
-			if not button.mouse_exited.is_connected(_on_button_hover_exited.bind(button)):
-				button.mouse_exited.connect(_on_button_hover_exited.bind(button))
+			if not button.mouse_entered.is_connected(_on_any_button_mouse_entered):
+				button.mouse_entered.connect(_on_any_button_mouse_entered)  # menu-33: plaque marker + sound, no bounce
 
 	if not save_button.pressed.is_connected(_on_save_button_pressed):
 		save_button.pressed.connect(_on_save_button_pressed)
 	if not back_button.pressed.is_connected(_on_back_button_pressed):
 		back_button.pressed.connect(_on_back_button_pressed)
 
-	_connect_slider(click_volume_slider, _on_click_volume_slider_value_changed)
-	_connect_slider(hover_volume_slider, _on_hover_volume_slider_value_changed)
-	_connect_slider(master_volume_slider, _on_master_volume_slider_value_changed)
-	_connect_slider(music_volume_slider, _on_music_volume_slider_value_changed)
-	_connect_slider(sfx_volume_slider, _on_sfx_volume_slider_value_changed)
-	_connect_slider(ui_volume_slider, _on_ui_volume_slider_value_changed)
+	_connect_slider(click_volume_slider, _on_player_volume_changed.bind(click_volume_value_label, "click"))
+	_connect_slider(hover_volume_slider, _on_player_volume_changed.bind(hover_volume_value_label, "hover"))
+	_connect_slider(master_volume_slider, _on_bus_volume_changed.bind(master_volume_value_label, "Master"))
+	_connect_slider(music_volume_slider, _on_bus_volume_changed.bind(music_volume_value_label, "Music"))
+	_connect_slider(sfx_volume_slider, _on_bus_volume_changed.bind(sfx_volume_value_label, "SFX"))
+	_connect_slider(ui_volume_slider, _on_bus_volume_changed.bind(ui_volume_value_label, "UI"))
 	_connect_slider(screen_shake_slider, _on_screen_shake_slider_value_changed)
 
 	var window_mode_changed := _on_video_setting_changed.bind("window_mode")
@@ -603,17 +601,6 @@ func _connect_slider(slider: HSlider, change_handler: Callable) -> void:
 		slider.drag_ended.connect(_on_slider_drag_ended)
 
 
-# ---------------- BUTTON HOVER ANIMATION ----------------
-
-## menu-33: hover feedback is the plaque marker (MenuButtonDecor) + the sound; no bounce.
-func _on_button_hover_entered(_btn: BaseButton) -> void:
-	_on_any_button_mouse_entered()
-
-
-func _on_button_hover_exited(_btn: BaseButton) -> void:
-	pass
-
-
 # ---------------- AUDIO ----------------
 
 func _on_any_button_pressed() -> void:
@@ -644,13 +631,13 @@ func _on_settings_volume_changed(type: String, linear_val: float, db_val: float)
 				click_player.volume_db = db_val
 			if not suppress_change_tracking:
 				click_volume_slider.value = linear_val
-				_update_click_volume_label(linear_val)
+				_update_percent_label(click_volume_value_label, linear_val)
 		"hover":
 			if hover_player:
 				hover_player.volume_db = db_val
 			if not suppress_change_tracking:
 				hover_volume_slider.value = linear_val
-				_update_hover_volume_label(linear_val)
+				_update_percent_label(hover_volume_value_label, linear_val)
 
 
 func _apply_audio_players(click_val: float, hover_val: float) -> void:
@@ -715,41 +702,18 @@ func _on_save_button_pressed() -> void:
 	await _flash_save_button()
 
 
-func _on_click_volume_slider_value_changed(value: float) -> void:
-	_update_click_volume_label(value)
-	if click_player:
-		click_player.volume_db = linear_to_db(max(value, 0.001))
+## Click/hover sliders: preview on the menu's own players ("click" / "hover").
+func _on_player_volume_changed(value: float, label: Label, type: String) -> void:
+	_update_percent_label(label, value)
+	var player := click_player if type == "click" else hover_player
+	if player:
+		player.volume_db = linear_to_db(max(value, 0.001))
 	_mark_unsaved_changes()
 
 
-func _on_hover_volume_slider_value_changed(value: float) -> void:
-	_update_hover_volume_label(value)
-	if hover_player:
-		hover_player.volume_db = linear_to_db(max(value, 0.001))
-	_mark_unsaved_changes()
-
-
-func _on_master_volume_slider_value_changed(value: float) -> void:
-	_update_percent_label(master_volume_value_label, value)
-	_apply_bus_volume_preview("Master", value)
-	_mark_unsaved_changes()
-
-
-func _on_music_volume_slider_value_changed(value: float) -> void:
-	_update_percent_label(music_volume_value_label, value)
-	_apply_bus_volume_preview("Music", value)
-	_mark_unsaved_changes()
-
-
-func _on_sfx_volume_slider_value_changed(value: float) -> void:
-	_update_percent_label(sfx_volume_value_label, value)
-	_apply_bus_volume_preview("SFX", value)
-	_mark_unsaved_changes()
-
-
-func _on_ui_volume_slider_value_changed(value: float) -> void:
-	_update_percent_label(ui_volume_value_label, value)
-	_apply_bus_volume_preview("UI", value)
+func _on_bus_volume_changed(value: float, label: Label, bus_name: String) -> void:
+	_update_percent_label(label, value)
+	_apply_bus_volume_preview(bus_name, value)
 	_mark_unsaved_changes()
 
 
@@ -839,16 +803,6 @@ func _update_ui_text_translations() -> void:
 
 	unsaved_changes_dialog.title = tr("KEY_UNSAVED_TITLE")
 	unsaved_changes_dialog.dialog_text = tr("KEY_UNSAVED_MSG")
-
-
-func _update_click_volume_label(value: float) -> void:
-	var percentage := int(round(value * 100.0))
-	click_volume_value_label.text = "%d%%" % percentage
-
-
-func _update_hover_volume_label(value: float) -> void:
-	var percentage := int(round(value * 100.0))
-	hover_volume_value_label.text = "%d%%" % percentage
 
 
 func _update_percent_label(label: Label, value: float) -> void:
