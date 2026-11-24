@@ -8,7 +8,7 @@ extends SceneTree
 ##   godot --headless --path . --script res://tests/test_smoke_scenes.gd
 
 const MAIN_PATH := "res://scenes/Main.tscn"
-const SLOT := 92
+const SLOT := 87  # each test its own slot: run_all runs them in parallel
 
 var failures: Array[String] = []
 var _main: Main

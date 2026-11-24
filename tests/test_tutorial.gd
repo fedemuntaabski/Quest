@@ -10,7 +10,7 @@ extends SceneTree
 ##   godot --headless --path . --script res://tests/test_tutorial.gd
 
 const MAIN_PATH := "res://scenes/Main.tscn"
-const SLOT := 93
+const SLOT := 88  # each test its own slot: run_all runs them in parallel
 const HUGE_HP := 100000
 
 var failures: Array[String] = []

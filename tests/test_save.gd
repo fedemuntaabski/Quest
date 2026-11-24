@@ -10,7 +10,7 @@ extends SceneTree
 ##   - settings.cfg corrupt -> defaults
 ##   godot --headless --path . --script res://tests/test_save.gd
 
-const SLOT := 93
+const SLOT := 89  # each test its own slot: run_all runs them in parallel
 
 var failures: Array[String] = []
 var _save: Node
