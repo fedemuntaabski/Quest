@@ -649,6 +649,12 @@ static var _boss_near := BOSS_NEAR_TOWERS
 ## Scriptorium instead of its Ballesta (false: the Ballesta still comes first, the workshop is the Scriptorium).
 ## "level_lore" = Saber per Comida for a level the Comida can't pay (PlayerStats._level_payment);
 ## -1 = UpgradeConfig (alt_cost_mult, shipped 2 since juego-30), 0 = Comida only (the old rule).
+## juego-41 (always on): Obras per room. The Relic's room and every lit room get a Defensa (_defend) once
+## the Ballesta is researched; after the boss the way out gets one per revealed room (Pinchos where it is
+## dark). A fight happens in one room (door waves: a revealed one at random; extraction: one on the way
+## out) and its working Obras shoot (_room_dps, _room_spikes). Room-type rewards on discovery (Loot Hierro,
+## Elite Saber), the heal also runs before the extraction, and raiders in extraction waves wear the
+## carried Relic down (0 = defeat, die_relic). Columns: towers = Obras built, dmg_by_towers_pct.
 const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_first": true,
 	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0, "no_boss": 0, "free_levels": false, "players": 0,
 	"extra_food": 0, "extra_food_from": 2, "extra_food_to": 5, "recruit": 0, "recruit_levels": false, "recruit_cost_mult": 1.0, "full_hp": 0, "research": [], "lab_first": true, "level_lore": -1.0}
@@ -664,6 +670,8 @@ static var _gear: Dictionary = {}
 static var _keep: Array = []
 ## An Altar is used when the healthiest hero keeps at least this share of its HP (assumption).
 const ALTAR_KEEP_HP := 0.5
+## juego-41: enemies one Catapulta shot hits (splash_radius 70 px over the ring around a hero; assumption).
+const SPLASH_HITS := 3
 
 
 ## Every hero alone, every pair, every trio and the four.
@@ -705,7 +713,8 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 			for f in FLOORS:
 				acc.append({"played": 0, "won": 0, "dps": 0.0, "lost": 0.0, "iron": 0.0, "food": 0.0, "lore": 0.0, "embers": 0.0, "turns": 0.0, "towers": 0.0, "boss_in": 0.0, "bosses": 0, "boss_won": 0,
 					"die_door": 0, "die_boss": 0, "die_extr": 0, "hp_start": 0.0, "hp_exit": 0.0, "exits": 0, "lvl_gap": 0.0, "food_short": 0.0,
-					"dmg_door": 0.0, "dmg_boss": 0.0, "dmg_extr": 0.0, "fights": 0.0, "heroes": 0.0, "items": 0.0, "research": 0.0})
+					"dmg_door": 0.0, "dmg_boss": 0.0, "dmg_extr": 0.0, "fights": 0.0, "heroes": 0.0, "items": 0.0, "research": 0.0,
+					"die_relic": 0, "relic_end": 0.0, "tw": 0.0, "tw_all": 0.0})
 			for r in runs:
 				var rng := RandomNumberGenerator.new()
 				rng.seed = hash(["run", party, level.id, r])
@@ -730,6 +739,8 @@ static func run_rows(runs: int = RUNS, parties: Array = [], levels: Array = [], 
 					"door_fights": snappedf(a["fights"] / n, 0.1), "dmg_door_pct": snappedf(a["dmg_door"] / n * 100.0, 0.1),
 					"dmg_boss_pct": snappedf(a["dmg_boss"] / n * 100.0, 0.1), "dmg_extr_pct": snappedf(a["dmg_extr"] / n * 100.0, 0.1),
 					"items": snappedf(a["items"] / n, 0.1), "research": snappedf(a["research"] / n, 0.1),
+					"dmg_by_towers_pct": snappedf(a["tw"] / maxf(a["tw_all"], 1.0) * 100.0, 0.1),
+					"die_relic": snappedf(a["die_relic"] / n, 0.01), "relic_hp_end": snappedf(a["relic_end"] / n, 0.01),
 				})
 	players = 1
 	difficulty = null
@@ -750,9 +761,11 @@ static func _cached_duel(hero_id: String, lvl: int, type: EnemyType, f: int) -> 
 	if not _duel_cache.has(key):
 		var d := duel(hero_id, lvl, type, f, mods)
 		var hero := hero_stats(hero_id, lvl, mods)
-		d["approach"] = approach_sec(hero, float(enemy_stats(type, f)["speed"]))
+		var e := enemy_stats(type, f)
+		d["approach"] = approach_sec(hero, float(e["speed"]))
 		d["interval"] = float(hero["interval"])
-		d["enemy_hp"] = float(enemy_stats(type, f)["hp"])
+		d["enemy_hp"] = float(e["hp"])
+		d["relic"] = float(e["relic"])
 		_duel_cache[key] = d
 	return _duel_cache[key]
 
@@ -845,11 +858,14 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		var lit := 0
 		var workshops := {"iron": 0, "food": 0, "lore": 0}
 		var built := 0
-		var ballestas := 0
-		var ballesta_cost := int(Building.CATALOG[Building.BuildingType.BALLESTA]["cost"])
-		if _towers and done.has("ballesta") and res["iron"] >= curve.cost(ballesta_cost, 0):  # the start room is lit free
-			res["iron"] -= curve.cost(ballesta_cost, 0)
-			ballestas = 1
+		var obras := {}  # juego-41: room id -> {"lit": bool, BuildingType: count}
+		for room in layout.rooms:
+			obras[room.id] = {"lit": room.id == start_id}
+		var counts := {}  # BuildingType -> built this floor (BuildingCostCurve; Obras don't carry over)
+		var relic_max := float(maxi(1, roundi(cfg.relic_max_hp * difficulty.relic_hp_mult * scaling.relic_hp(players))))  # FloorManager.relic_max_hp
+		var relic := [relic_max]
+		var tw := [0.0, 0.0]  # enemy HP taken by Defensas and Pinchos / by everyone
+		_defend(obras[start_id], done, res, counts)  # the Relic's room, lit free
 		var turns := 0
 		var cage := ""  # juego-29: a revealed Prisoner room still waiting to be paid
 		var threat_mult := cfg.threat_multiplier(f) * difficulty.threat_mult * scaling.threat(players)
@@ -872,6 +888,13 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 				cage = opened
 			if items_on:
 				_room_loot(types[opened], f, party, levels, hp, worn, item_rng)
+			var rule := cfg.get_room_type_rule(types[opened])  # juego-41: FloorManager room-type reward on discovery
+			if rule and rule.reward_resource != "":
+				res[rule.reward_resource] += rule.reward_at(f)
+			if rule and rule.heal_on_discovery > 0:
+				for id: String in party:
+					if hp[id] > 0.0:
+						hp[id] = minf(hp[id] + rule.heal_on_discovery, _max_hp(id, levels[id]))
 			res["embers"] += cfg.discovery_embers(f) + roundi(_b(ResearchEntry.Effect.DISCOVERY_EMBERS))
 			for id: String in party:
 				var passive := hero_data(id).passive
@@ -891,11 +914,11 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			if res["embers"] >= light_cost:
 				res["embers"] -= light_cost
 				lit += 1
+				obras[opened]["lit"] = true
 				var next := _next_research(order, done)  # juego-30: Saber waiting for research -> Scriptorium before the Ballesta
 				var want_lab: bool = _play["lab_first"] and workshops["lore"] == 0 and next != null and done.has("ballesta") and res["lore"] >= _research_cost(next, party, hp)
-				if cage == "" and not want_lab and _towers and done.has("ballesta") and res["iron"] >= curve.cost(ballesta_cost, ballestas):
-					res["iron"] -= curve.cost(ballesta_cost, ballestas)
-					ballestas += 1
+				if cage == "" and not want_lab:
+					_defend(obras[opened], done, res, counts)
 				var cost := curve.cost(Building.CATALOG[Building.BuildingType.FORJA]["cost"], built)
 				if cage == "" and res["iron"] >= cost:  # juego-29: a waiting cage keeps the Hierro
 					res["iron"] -= cost
@@ -906,12 +929,11 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			if rng.randf() < clampf(cfg.door_roll.threat_chance(turns, f) * threat_mult, 0.0, cfg.door_roll.max_chance) and int(_play["no_doors"]) != f:
 				var count := mini(scaling.wave(cfg.door_roll.enemy_count(turns, f), players), cap)
 				a["fights"] += 1
-				_fight(party, levels, hp, _roll_wave(f, count, rng), f, rng, damage, _near(ballestas, revealed.size(), rng))
+				_fight(party, levels, hp, _roll_wave(f, count, rng), f, rng, damage, obras[revealed.keys()[rng.randi_range(0, revealed.size() - 1)]], tw)
 				_revive_downed(party, levels, hp, res, f)
 		if cage != "" and _alive(party, hp) and _recruit(party, levels, hp, res, f, layout.map_seed, cage):  # last chance before the exit
 			recruits += 1
 		a["turns"] += turns
-		a["towers"] += ballestas
 		a["dmg_door"] += damage[0] / maxf(max_total, 1.0)
 		var phase_start: float = damage[0]
 		var died := "" if _alive(party, hp) else "die_door"
@@ -922,31 +944,47 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		if int(_play["no_boss"]) == f:
 			theme = null
 		var boss_first: bool = _play["boss_first"]
+		var path := _room_path(layout, start_id, exit_id)
+		var near_dps := 0.0  # juego-41: the boss is pulled back to the best-defended room on the way out
+		for id: String in path:
+			near_dps = maxf(near_dps, _room_dps(obras[id], 1))
 		if boss_first and theme and theme.boss and _alive(party, hp):
-			_play_boss(party, levels, hp, theme.boss, f, damage, res, ballestas, layout, revealed, rng, a)
+			_play_boss(party, levels, hp, theme.boss, f, damage, res, near_dps, layout, revealed, rng, a, tw)
 			a["dmg_boss"] += (damage[0] - phase_start) / maxf(max_total, 1.0)
 			phase_start = damage[0]
 			if not _alive(party, hp):
 				died = "die_boss"
-		var walk_sec := ROOM_WALK_PX * maxi(_room_path(layout, start_id, exit_id).size() - 1, 1) / (MoveAction.DEFAULT_SPEED_PX * cfg.carrier_speed_mult)
+		if _alive(party, hp):  # juego-41: the way out gets a Defensa (lit room) or Pinchos (dark room, no light needed)
+			for id: String in path:
+				if _towers and revealed.has(id) and _room_dps(obras[id], 1) == 0.0 and _room_spikes(obras[id]) == 0.0 and not _defend(obras[id], done, res, counts):
+					_build(obras[id], Building.BuildingType.PINCHOS, res, counts)
+			_heal_before(party, levels, hp, res, layout, revealed)
+		var walk_sec := ROOM_WALK_PX * maxi(path.size() - 1, 1) / (MoveAction.DEFAULT_SPEED_PX * cfg.carrier_speed_mult)
 		var waves := 0 if int(_play["no_extr"]) == f else 1 + int(walk_sec / cfg.extraction_stage_interval(f, 0))
-		for _w in waves:
-			if _alive(party, hp):
-				_fight(party, levels, hp, _roll_wave(f, mini(scaling.wave(cfg.extraction_wave_size(0), players), cap), rng), f, rng, damage, _near(ballestas, revealed.size(), rng))
+		for _w in waves:  # fought on the carrier's way out; raiders hit the carried Relic
+			if _alive(party, hp) and relic[0] > 0.0:
+				_fight(party, levels, hp, _roll_wave(f, mini(scaling.wave(cfg.extraction_wave_size(0), players), cap), rng), f, rng, damage, obras[path[rng.randi_range(0, path.size() - 1)]], tw, relic)
 				_revive_downed(party, levels, hp, res, f)
 		a["dmg_extr"] += (damage[0] - phase_start) / maxf(max_total, 1.0)
-		if died == "" and not _alive(party, hp):
+		if died == "" and relic[0] <= 0.0:
+			died = "die_relic"
+		elif died == "" and not _alive(party, hp):
 			died = "die_extr"
-		if not boss_first and theme and theme.boss and _alive(party, hp):
-			_play_boss(party, levels, hp, theme.boss, f, damage, res, ballestas, layout, revealed, rng, a)
+		if not boss_first and theme and theme.boss and _alive(party, hp) and relic[0] > 0.0:
+			_play_boss(party, levels, hp, theme.boss, f, damage, res, near_dps, layout, revealed, rng, a, tw)
 			if not _alive(party, hp):
 				died = "die_boss"
 		a["lost"] += damage[0] / maxf(max_total, 1.0)
+		for type: int in counts:
+			a["towers"] += counts[type]
+		a["tw"] += tw[0]
+		a["tw_all"] += tw[1]
+		a["relic_end"] += maxf(relic[0], 0.0) / relic_max
 		for key in ["iron", "food", "lore", "embers"]:
 			a[key] += res[key]
 		a["items"] += worn.size()
 		a["research"] += done.size()
-		if not _alive(party, hp):
+		if not _alive(party, hp) or relic[0] <= 0.0:
 			a[died] += 1
 			return
 		a["won"] += 1
@@ -1109,15 +1147,23 @@ static func _gear_power(id: String, lvl: int, f: int, mods: Dictionary) -> float
 	return float(with["dps"]) / float(base["dps"]) + float(with["ehp"]) * float(_duel_cache[key]) / float(base["ehp"])
 
 
-## juego-24: pre-boss heal (BOSS_PLAY "heal"), the fight, and the boss columns.
-static func _play_boss(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary,
-		ballestas: int, layout: MapLayout, revealed: Dictionary, rng: RandomNumberGenerator, a: Dictionary) -> void:
+## juego-24: heal (BOSS_PLAY "heal") before the boss and (juego-41) before the extraction.
+## "comida" = the portrait (UpgradeConfig.heal_cost_per_hp); "rest" = only in a revealed Rest room, at its
+## RoomTypeRule price (heal_food_per_tick per heal_per_tick HP); "none" = no heal.
+static func _heal_before(party: Array, levels: Dictionary, hp: Dictionary, res: Dictionary, layout: MapLayout, revealed: Dictionary) -> void:
 	if _play["heal"] == "comida":
 		_heal_with_food(party, levels, hp, res, upgrade_config().heal_cost_per_hp)
 	elif _play["heal"] == "rest":
 		var rule := floor_config().get_room_type_rule(RoomData.RoomType.REST)
 		if rule and rule.heal_per_tick > 0 and layout.rooms.any(func(r: RoomData) -> bool: return revealed.has(r.id) and r.get_room_type() == RoomData.RoomType.REST):
 			_heal_with_food(party, levels, hp, res, float(rule.heal_food_per_tick) / rule.heal_per_tick)
+
+
+## juego-24: pre-boss heal, the fight, and the boss columns. near_dps = Defensas of the best-defended
+## room on the way out, where the party pulls the boss with chance _boss_near (juego-41).
+static func _play_boss(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary,
+		near_dps: float, layout: MapLayout, revealed: Dictionary, rng: RandomNumberGenerator, a: Dictionary, tw: Array) -> void:
+	_heal_before(party, levels, hp, res, layout, revealed)
 	var now := 0.0
 	var top := 0.0
 	for id: String in party:
@@ -1126,8 +1172,8 @@ static func _play_boss(party: Array, levels: Dictionary, hp: Dictionary, boss: E
 			top += _max_hp(id, levels[id])
 	a["boss_in"] += now / maxf(top, 1.0)
 	a["bosses"] += 1
-	var near := 1 if ballestas > 0 and rng.randf() < _boss_near else 0
-	_boss_fight(party, levels, hp, boss, f, damage, res, near)
+	var dps := near_dps if near_dps > 0.0 and rng.randf() < _boss_near else 0.0
+	_boss_fight(party, levels, hp, boss, f, damage, res, dps, tw)
 	if _alive(party, hp):
 		a["boss_won"] += 1
 		res["food"] += floor_config().boss_food_reward  # EnemyManager._on_boss_defeated (juego-26)
@@ -1173,9 +1219,42 @@ static func _revive_downed(party: Array, levels: Dictionary, hp: Dictionary, res
 			hp[id] = _max_hp(id, levels[id]) * up.revive_hp_pct
 
 
-## Ballestas shooting at a wave: one when the fight lands in a room that has one.
-static func _near(ballestas: int, revealed: int, rng: RandomNumberGenerator) -> int:
-	return 1 if ballestas > 0 and rng.randf() < float(ballestas) / maxf(revealed, 1.0) else 0
+## juego-41: the reference player's Defensa for a lit room once the Ballesta is researched: a Catapulta
+## when researched and affordable, else a Ballesta. false = locked, dark or short of Hierro.
+static func _defend(room: Dictionary, done: Dictionary, res: Dictionary, counts: Dictionary) -> bool:
+	if not _towers or not done.has("ballesta") or not room["lit"]:
+		return false
+	return (done.has("catapulta") and _build(room, Building.BuildingType.CATAPULTA, res, counts)) or _build(room, Building.BuildingType.BALLESTA, res, counts)
+
+
+## Pays Building.get_cost (BuildingCostCurve over the ones of that type built this floor) in Hierro.
+static func _build(room: Dictionary, type: Building.BuildingType, res: Dictionary, counts: Dictionary) -> bool:
+	var cost := BuildingCostCurve.get_default().cost(int(Building.CATALOG[type]["cost"]), int(counts.get(type, 0)))
+	if res["iron"] < cost:
+		return false
+	res["iron"] -= cost
+	room[type] = int(room.get(type, 0)) + 1
+	counts[type] = int(counts.get(type, 0)) + 1
+	return true
+
+
+## juego-41: damage per second of a room's working Defensas (Building.is_working: requires_light) against
+## a fight of `enemies` (DefenseBuilding.get_damage every fire_rate, research bonus included).
+## ponytail: the Catapulta's splash hits min(enemies, SPLASH_HITS); real hits depend on the 8-slot ring.
+static func _room_dps(room: Dictionary, enemies: int) -> float:
+	var dps := 0.0
+	for type in [Building.BuildingType.BALLESTA, Building.BuildingType.CATAPULTA]:
+		var cfg: Dictionary = Building.CATALOG[type]
+		if int(room.get(type, 0)) > 0 and (room.get("lit", false) or not cfg["requires_light"]):
+			var hits := mini(maxi(enemies, 1), SPLASH_HITS) if float(cfg["splash_radius"]) > 0.0 else 1
+			dps += room[type] * (float(cfg["damage"]) + roundi(_b(ResearchEntry.Effect.DEFENSE_DAMAGE))) / maxf(float(cfg["fire_rate"]), 0.01) * hits
+	return dps
+
+
+## Pinchos: spike_damage once to each enemy arriving in the room (Enemy: several traps don't stack).
+static func _room_spikes(room: Dictionary) -> float:
+	var cfg: Dictionary = Building.CATALOG[Building.BuildingType.PINCHOS]
+	return float(cfg["spike_damage"]) if int(room.get(Building.BuildingType.PINCHOS, 0)) > 0 and (room.get("lit", false) or not cfg["requires_light"]) else 0.0
 
 
 ## juego-30: buys the first entries of `order` the Saber allows (a working Scriptorium is checked by the
@@ -1241,8 +1320,12 @@ static func _roll_wave(f: int, count: int, rng: RandomNumberGenerator) -> Array[
 	return out
 
 
-## Round-robin over the living heroes; one that falls hands its unkilled enemies on.
-static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array[EnemyType], f: int, rng: RandomNumberGenerator, damage: Array, towers_near: int = 0) -> void:
+## Round-robin over the living heroes; one that falls hands its unkilled enemies on. `room` = where it
+## is fought (its Defensas and Pinchos, juego-41); tw += [HP the Obras took, HP taken]; a non-empty
+## `relic` (the carried Relic's HP) loses damage_vs_relic per RELIC_TICK_SEC a raider stays in contact.
+static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array[EnemyType], f: int, rng: RandomNumberGenerator, damage: Array,
+		room: Dictionary = {}, tw: Array = [0.0, 0.0], relic: Array = []) -> void:
+	var spikes := _room_spikes(room)
 	var queue: Array[EnemyType] = wave.duplicate()
 	while not queue.is_empty():
 		var alive := party.filter(func(id: String) -> bool: return hp[id] > 0.0)
@@ -1254,9 +1337,9 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 			if not shares.has(id):
 				shares[id] = []
 			shares[id].append(queue[i])
+		var tower_share := _room_dps(room, queue.size()) / alive.size()
 		queue.clear()
 		var mults := _team_mults(party, hp)
-		var tower_share := towers_near * tower_dps() / alive.size()
 		for id: String in shares:
 			var left: Array = shares[id]
 			var hero := _cached_hero(id, levels[id])
@@ -1264,12 +1347,17 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 			var t := rng.randf() * float(_cached_duel(id, levels[id], left[0], f)["interval"])
 			for i in left.size():
 				var d := _cached_duel(id, levels[id], left[i], f)
-				var kill := int(d["hits_to_kill"]) * float(d["interval"]) / speedup
-				if tower_share > 0.0:  # the hero's kill rate + the towers' share of this enemy's HP
-					var enemy_hp := float(d["enemy_hp"])
-					kill = enemy_hp / (enemy_hp / kill + tower_share)
+				var enemy_hp := float(d["enemy_hp"])
+				var left_hp := maxf(enemy_hp - spikes, 0.0)  # Pinchos on arrival
+				var kill := int(d["hits_to_kill"]) * float(d["interval"]) / speedup * left_hp / enemy_hp
+				if tower_share > 0.0 and kill > 0.0:  # the hero's kill rate + the towers' share of this enemy's HP
+					kill = left_hp / (left_hp / kill + tower_share)
+				tw[0] += enemy_hp - left_hp + tower_share * kill
+				tw[1] += enemy_hp
 				t += kill
-				var exposure := maxf(t - float(d["interval"]) - float(d["approach"]), 0.0)
+				var exposure := maxf(t - float(d["interval"]) - float(d["approach"]), 0.0) if left_hp > 0.0 else 0.0
+				if not relic.is_empty():
+					relic[0] -= float(d["relic"]) * exposure / RELIC_TICK_SEC
 				var hit := float(d["hit_taken"]) * mults[1] * exposure / Enemy.CONTACT_HIT_INTERVAL
 				damage[0] += minf(hit, hp[id])
 				hp[id] -= hit
@@ -1280,13 +1368,13 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 					break
 
 
-static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary, towers_near: int = 0) -> void:
+static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary, towers_dps: float = 0.0, tw: Array = [0.0, 0.0]) -> void:
 	var stats := enemy_stats(boss, f)
 	var boss_hp := float(stats["hp"])
 	var charge := maxf(1.0, roundf(boss.charge_damage * floor_config().enemy_damage_multiplier(f) * boss.damage_mult * (difficulty.damage_mult if difficulty.scales_bosses else 1.0)))
 	var in_contact := 1.0 - clampf(float(_play["dodge"]) * float(_play["dodge_sec"]) / maxf(boss.charge_cooldown, 0.1), 0.0, 1.0)
 	while boss_hp > 0.001 and _alive(party, hp):  # float leftovers would loop on ever-smaller steps
-		var dps := towers_near * tower_dps()
+		var dps := towers_dps
 		var mults := _team_mults(party, hp)
 		var per_sec := {}
 		var t := INF
@@ -1303,6 +1391,8 @@ static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: 
 				t = minf(t, hp[id] / maxf(per_sec[id], 0.01))
 		t = minf(t, boss_hp / maxf(dps, 0.01))
 		boss_hp -= dps * t
+		tw[0] += towers_dps * t
+		tw[1] += dps * t
 		for id: String in per_sec:
 			var taken := minf(per_sec[id] * t, hp[id])
 			hp[id] -= taken
