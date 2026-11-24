@@ -871,3 +871,49 @@ Aplicadas las propuestas de juego-35 (`PERSONAJES.md` «Revisión de habilidades
 | Muro Viviente (Paladín) | texto «640 px» | «10 casillas» (`{radius_cells}` = radio / `ArtConfig.CELL_PX`) | sin cambio de números |
 
 `test_abilities` chequea cada uno (enfriamientos 20 y 8 s; Forja y Ballesta apagadas no reciben la Bendición; precio con el Mago en pie y caído, también en `ResearchPanel`; el texto del Muro). `test_balance` sigue verde sin tocar umbrales. Versión 1.9 → **1.10** (cambian números que calcula el host y el texto que arman los dos).
+
+## Obras en las corridas (session juego-41)
+Barrido: `godot --headless --path . --script res://tests/tools/sweep_juego41.gd -- <corridas> <tag> [play json]` (pares = media de los 6, tríos co-op 3, los 4 co-op 4; Normal y Difícil; ~50 s a 200 corridas). Tablas: `docs/balance/juego41_antes_runs.csv` (modelo de juego-36) y `juego41_despues_runs.csv`. El json acepta las claves de `BOSS_PLAY` más `"towers": false` y `"boss_near": x`.
+
+**Qué se agregó a `run_rows` (siempre encendido; no cambia ningún dato del juego, no hay subida de versión):**
+- **Obras por sala.** Cada sala lleva cuántas Ballestas, Catapultas y Pinchos tiene y si está encendida. El costo es `Building.get_cost` (`BuildingCostCurve` sobre las del mismo tipo en el piso). Una Defensa solo tira con la sala encendida (`requires_light`); los Pinchos no lo piden.
+- **El jugador de referencia** pone una Defensa en la sala de la Reliquia al empezar el piso y en cada sala que enciende (como juego-23). Después del jefe, cada sala revelada del camino a la salida sin Obra recibe una Defensa si está encendida, o Pinchos (3 de Hierro) si está a oscuras. La Catapulta reemplaza a la Ballesta solo si se investigó (`{"research": ["catapulta"]}`).
+- **Dónde se pelea.** Una oleada de puerta, en una sala revelada al azar. Una de extracción, en una sala del camino a la salida. El jefe, con `BOSS_NEAR_TOWERS` = 0,5, en la sala mejor defendida del camino (la de la Reliquia incluida); si no, sin Obras.
+- **Cómo pegan.** La Ballesta pone `damage / fire_rate` (15/s, +10 con Virotes) como antes. La Catapulta, 25 cada 3 s a `min(enemigos, SPLASH_HITS = 3)` blancos (supuesto: el radio de 70 px cubre el anillo alrededor de un héroe). Los Pinchos, 10 una vez a cada enemigo que llega (no se apilan, como `Enemy`).
+- **`dmg_by_towers_pct`** = vida de enemigos que sacaron las Obras / vida de enemigos sacada (puertas, extracción y jefe). **`towers`** ahora cuenta todas las Obras defensivas del piso (antes, solo Ballestas).
+- **Salas.** Recompensa al descubrir según su `RoomTypeRule` (Botín +6 Hierro, Élite +8 Saber, +1 por piso; `heal_on_discovery` si lo hubiera). El cofre ya estaba (juego-25). La cura (`heal`) corre también **antes de la extracción**, no solo antes del jefe. Con `"rest"`, la cura de la sala de Descanso se cobra a su precio (`heal_food_per_tick` / `heal_per_tick` = 0,5 Comida por punto).
+- **Saqueadores.** En las oleadas de extracción, cada RAIDER quita `damage_vs_relic` por segundo de contacto (`RELIC_TICK_SEC`) a la Reliquia que lleva el portador (vida de `FloorManager.relic_max_hp`). Si llega a 0 se pierde el piso (`die_relic`). `relic_hp_end` = vida que le queda al terminar el piso.
+
+**Antes / después** (200 corridas; victoria por piso 1 / 2 / 3 / 4 / 5 en %; Obras, daño de Obras y vida de la Reliquia, después):
+
+| Dificultad | Grupo | Victoria juego-41 | Antes (juego-36) | Obras piso 1 / 3 / 5 | Daño de Obras piso 1 / 3 / 5 (%) | Reliquia al final del 3 / 5 (%) |
+|---|---|---|---|---|---|---|
+| Normal | pares | 100 / 100 / 72 / 66 / 49 | 100 / 100 / 67 / 59 / 32 | 3,0 / 3,4 / 5,0 | 22 / 18 / 13 | 99 / 100 |
+| Normal | tríos (co-op 3) | 100 / 100 / 100 / 93 / 66 | 100 / 100 / 96 / 84 / 35 | 3,0 / 3,8 / 4,8 | 20 / 14 / 11 | 98 / 99 |
+| Normal | los 4 (co-op 4) | 100 / 100 / 100 / 100 / 83 | 100 / 100 / 100 / 89 / 45 | 3,1 / 3,9 / 5,3 | 17 / 11 / 9 | 98 / 100 |
+| Difícil | pares | 100 / 100 / 71 / 57 / 25 | 100 / 100 / 64 / 44 / 10 | 3,1 / 3,4 / 4,2 | 21 / 17 / 12 | 98 / 100 |
+| Difícil | tríos (co-op 3) | 100 / 100 / 97 / 78 / 24 | 100 / 100 / 83 / 47 / 5 | 3,0 / 3,9 / 3,6 | 19 / 13 / 10 | 96 / 100 |
+| Difícil | los 4 (co-op 4) | 100 / 100 / 100 / 95 / 34 | 100 / 100 / 97 / 45 / 5 | 3,1 / 3,8 / 3,8 | 17 / 11 / 9 | 96 / 99 |
+
+**Qué pasaría si** (200 corridas; pares, pisos 3 / 4 / 5):
+
+| Caso | Normal | Difícil |
+|---|---|---|
+| juego-41 (publicado) | 72 / 66 / 49 | 71 / 57 / 25 |
+| sin Obras defensivas (`towers` = false; el Hierro va a Talleres) | 71 / 62 / 48 | 67 / 56 / 30 |
+| el jefe siempre lejos de las Obras (`boss_near` 0) | 52 / 42 / 27 | 50 / 35 / 14 |
+| el jefe siempre junto a las Obras (`boss_near` 1) | 90 / 87 / 72 | 91 / 80 / 41 |
+| Catapulta investigada (18 Saber + Scriptorium) | 62 / 52 / 36 | 59 / 43 / 16 |
+
+**Lectura.**
+- **El piso 3 en Difícil no es una pared en el modelo actual: 71 % para los pares** (64 % antes de esta sesión, 62 % publicado en juego-30). El «0-2 %» era la tabla de juego-23/24, antes de juego-28 (jefes sin los multiplicadores de Difícil), juego-29 y juego-30. No hace falta palanca: no se corrió el barrido de palancas.
+- La suba (+5 a +15 puntos en los pisos 3-5) viene casi toda de **curarse antes de la extracción y de las recompensas de sala**: sin Obras defensivas da casi lo mismo (71 / 62 / 48). Las Obras sacan el 17-22 % de la vida de los enemigos en el piso 1 y el 9-18 % en los pisos 3-5, pero el Hierro que cuestan ya no va a Talleres, y en promedio queda casi igual.
+- **Lo que decide es dónde se pelea al jefe**: lejos de las Obras, Difícil cae al 50 %; junto a ellas sube al 91 %. `BOSS_NEAR_TOWERS` = 0,5 sigue siendo un supuesto sin datos de gente.
+- **La Catapulta no conviene en el modelo** (−10 puntos): cuesta 18 Saber, pide un Scriptorium en el piso (ocupa la sala de una Ballesta) y vale 8 de Hierro contra 4. Con 2-3 enemigos por oleada, su golpe en área apenas pasa a la Ballesta.
+- **Los saqueadores casi no tocan la Reliquia en la extracción** (le queda 96-100 %). Los matan rápido porque van al portador, que pelea con el grupo. No se modela la Reliquia tirada en la sala inicial mientras el grupo explora (ahí los saqueadores llegan sin oposición).
+- **La sala de Descanso no aporta nada**: cura a 0,5 Comida por punto y el retrato a 0,15 (`UpgradeConfig.heal_cost_per_hp`), así que el jugador de referencia nunca la usa. Si se quiere que importe, abaratarla (p. ej. `heal_food_per_tick` 0) es para preguntar al dueño. No se aplicó.
+- Sigue sin modelar: los enemigos más fuertes de las salas Élite (`enemy_hp_mult` / `enemy_damage_mult`), el Brasero (frena) y los rompe-torres que tiran Obras.
+
+**Calibración con la ventana real** (`tests/tools/shot_jefe.gd`, piso 3, Guerrero + Mago de nivel 2 con vida llena, una Ballesta en la sala; capturas en `capturas/juego-41/`): `ballesta`, el jefe muere a los 9 s y el Guerrero queda con 4 (modelo: 5); `esquiva_ballesta`, Guerrero 18 y Mago 6 (modelo: 17 y 5). Es la misma pelea que en juego-24: la fórmula de `_boss_fight` no cambió, solo de dónde sale el DPS de las Obras.
+
+`test_balance` (50 corridas): umbrales nuevos. Normal pares ≥ 62 / 55 / 38 % en los pisos 3 / 4 / 5 y piso 3 ≤ 85 %; los 4 en co-op Normal piso 5 ≤ 90 %; Difícil pares piso 3 ≥ 55 %, piso 4 entre 40 y 70 % y piso 5 ≤ 35 %. `_check_run_towers` agrega: en Difícil, el jefe junto a las Obras gana > 20 puntos más que lejos de ellas; con torres las Obras sacan > 5 % del daño (0 sin torres); la vida de la Reliquia al final está en (0, 1]. `_check_obras_model` nuevo comprueba que una Ballesta a oscuras no tira, que el área de la Catapulta crece con la oleada, que los Pinchos funcionan a oscuras, el segundo precio de `BuildingCostCurve`, y que en una pelea de saqueadores del piso 3 dos Ballestas con Pinchos se llevan el daño y salvan la Reliquia y al héroe.
