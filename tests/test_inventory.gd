@@ -249,6 +249,26 @@ func _test_consumables() -> void:
 	_expect(_near(warrior.stats.effective_attack_interval(), interval * 0.7) and _near(warrior.stats.attack_interval, interval), "speed buff acts on the effective interval")
 	warrior.stats.set_interval_mult_source(&"potion", 1.0)
 	_expect(_near(warrior.stats.effective_attack_interval(), interval), "speed buff cleared")
+
+	# juego-39: a timed potion only counts game time; the pause menu (tree paused) and
+	# the tactical pause (time_scale 0) both freeze it.
+	var short := fury.duplicate() as ItemData
+	short.id = "potion_fury_short"
+	short.effect_duration = 0.3
+	short.use_cooldown = 0.0
+	inv.add_item(short)
+	inv.equip("warrior", short)
+	_expect(warrior.inventory.use(inv.get_equipped("warrior", ItemData.Slot.CONSUMABLE).find(short)), "short fury used")
+	paused = true
+	await create_timer(0.6, true).timeout
+	_expect(_near(warrior.stats.attack_mult, 1.5), "pause menu open longer than the potion: buff still on (x%f)" % warrior.stats.attack_mult)
+	paused = false
+	Engine.time_scale = 0.0
+	await create_timer(0.6, true, false, true).timeout
+	_expect(_near(warrior.stats.attack_mult, 1.5), "tactical pause longer than the potion: buff still on (x%f)" % warrior.stats.attack_mult)
+	Engine.time_scale = 1.0
+	await create_timer(0.6).timeout
+	_expect(_near(warrior.stats.attack_mult, 1.0), "the potion expires once the game runs (x%f)" % warrior.stats.attack_mult)
 	await _free(main2d)
 
 

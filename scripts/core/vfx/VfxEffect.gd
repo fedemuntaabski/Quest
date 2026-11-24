@@ -72,7 +72,7 @@ func play(def: Dictionary, color: Color, angle: float = 0.0, to: Vector2 = Vecto
 		particles.emitting = true
 	if to != Vector2.INF:
 		create_tween().tween_property(self, "global_position", to, duration)
-	await get_tree().create_timer(duration).timeout
+	await get_tree().create_timer(duration, false).timeout
 	if token == _token:  # not re-used meanwhile
 		_finish()
 

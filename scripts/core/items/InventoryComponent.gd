@@ -97,7 +97,7 @@ func _buff(item: ItemData, key: String, apply: Callable, revert: Callable) -> vo
 	apply.call()
 	var token := Time.get_ticks_usec()
 	hero.stats.set_meta(key, token)
-	await get_tree().create_timer(item.effect_duration).timeout
+	await get_tree().create_timer(item.effect_duration, false).timeout
 	if is_instance_valid(hero) and hero.stats.get_meta(key, 0) == token:
 		revert.call()
 

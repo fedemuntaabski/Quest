@@ -388,3 +388,9 @@ Secciones de arquitectura de `CLAUDE.md` antes del recorte; partes quedaron desa
 - **Possible bug, not touched:** `InventoryComponent._buff` waits on `create_timer(effect_duration)` (runs during tree pause) while `HeroAbilities` uses `create_timer(d, false)`: a potion buff keeps running out with the pause menu open (juego-35 fixed this for abilities only). Fix = pass `false`; needs a test.
 - **Review (ponytail-review over 6b69855..0d8beae):** only two orphaned `##` doc lines in `Enemy.gd` (left by the wrapper cuts), removed. `PauseMenu.close()` re-entry while the fade-out runs is the same as the old `BaseMenu`.
 - **Verification:** `tools/run_tests.sh --reindex`: **69 test(s), 0 fallo(s) en 123 s (de a 6)**; `test_enemy_roles` re-run after the comment fix: OK. `shot_barrido` 720 + 1080x15: 36 shots each, no FAIL (`capturas/ponytail-38/`); `pause_exit` looked at: menu dialog frame, red-rimmed OK, nothing cut at x1.5. Not looked at in a window.
+
+## juego-39 (session/juego-39)
+
+- **Pause bug fixed (from ponytail-38):** `InventoryComponent._buff` and `VfxEffect` waited on `create_timer(d)` (process_always): a potion buff ran out and VFX were cut with the pause menu open. Both now `create_timer(d, false)`, like `HeroAbilities`. Other `create_timer(` callers left as they are on purpose: menus (`MainMenuFlow`, `OptionsMenu`) and network timeouts (`NetSession`, `SteamManager`) must run while paused.
+- **Test:** `test_inventory._test_consumables` drinks a 0.3 s fury: tree paused 0.6 s → buff on; time_scale 0 for 0.6 s real time → buff on (SceneTreeTimer honours `Engine.time_scale`, confirmed); time_scale 1 → expires. Failed before the fix (x1.0 after the pause), passes after.
+- No version bump: a local timer, no command/RunState/shared number changed.

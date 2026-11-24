@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## session/juego-39
+- Las pociones ya no se gastan con el menú de pausa abierto; los efectos visuales tampoco se cortan.
+
 ## session/ponytail-38
 - Pausa: la confirmación de salir usa el diálogo del menú (OK en rojo).
 
