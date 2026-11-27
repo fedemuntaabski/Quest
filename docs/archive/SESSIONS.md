@@ -119,3 +119,14 @@ Desde `session/herramientas-43` e15672d (PR #5 abierta).
 - **Catapulta**: propuestas A (5 Hierro), B (10 Saber), C (35 de daño) y A+B+C, cada una con `sweep.gd -- 200 '{"research": ["catapulta"]}'`. El dueño eligió A+B+C: Normal pares 65/58/42 → 69/64/50 (la Ballesta da 73/68/55). Versión 1.10 → 1.11; `test_net_*` 9 OK, `test_research` y `test_build_costs` OK.
 - **Verificación:** `tools/run_tests.sh`: 69 test(s), 0 fallo(s) en 121 s. En una corrida anterior `test_audio_net` falló una vez con 6 en paralelo («host spawns a wave»); solo dio OK, y en la suite final también. Capturas en `capturas/juego-44/barrido_antes` y `barrido_despues` (720, 1080, 1080x15), miradas con Read.
 - **No visto en ventana real:** el cartel jugando (solo capturas), la Catapulta nueva y el tiempo de volver a la Reliquia.
+
+## juego-45 (session/juego-45)
+
+Sin cambios en el juego (sin `.tres`, versión sigue en 1.11). Desde `session/juego-44` 16cefe1 (PR #6, base herramientas-43 mientras #5 siga abierta).
+- **BalanceSim `relic_back_sec`** (`BOSS_PLAY`, INF por defecto): `_raid_relic(…, back)` pega a la Reliquia solo hasta `min(muerte, back)` y devuelve los saqueadores que siguen de pie; si hay alguno, la oleada entera se pelea en la sala inicial con sus Obras y la Reliquia en juego (`_fight(…, relic)`). Si `back` es INF, el resultado es el de juego-44.
+- **Test** `test_balance._check_obras_model`: FAIL antes (`BOSS_PLAY relic_back_sec missing or not INF by default`) → OK (`party back after 999 s: 0.0 (1 raiders left); after 0 s: 100.0 (1 left)`).
+- **Estimación** 5 s = 2 s de caminata media a la sala inicial (`_room_path` × `ROOM_WALK_PX` / `DEFAULT_SPEED_PX`, 50 mapas por piso, 1,8-2,1 s, máximo 6,2 s) + 3 s de reacción supuestos.
+- **Barridos** (`docs/BALANCE.md` «Volver a la Reliquia»): el play por defecto repite la tabla publicada con 0 puntos de diferencia (`juego45_defecto_runs.csv`). Con `relic_left` 1, Normal pares 1/2/3/5: back 0 → 100/100/74/51, 2 → 100/100/74/42, 5 → 100/95/63/14, 10 → 80/50/21/1, 20 → 56/21/5/0. Con la estimación el piso 1 queda en 100 % (≥ 90): no se propusieron cambios de datos (paso 5 no aplica). El costo aparece en los pisos 3-5: la Reliquia no se cura y llega gastada a la extracción.
+- **Cartel de pistas:** `shot_barrido.gd -- capturas/juego-45/barrido` (720, 1080, 1080x15, 36 capturas cada uno). Read de `1080x15_f1_hint`, `f1_refusal`, `f5_boss` y `720_f1_hint`: fondo opaco que cubre todo el texto. A ×1,5 en el piso 5 la barra del jefe queda pegada al cartel.
+- **Verificación:** `tools/run_tests.sh`: 69 test(s), 0 fallo(s) en 122 s.
+- **No visto en ventana real:** una partida jugada a mano (la sesión no tenía mouse; las capturas salen de un script en ventana real) y cuánto tarda de verdad un jugador en volver a la Reliquia.
