@@ -23,7 +23,7 @@ SRC=$OWN/src
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 [ -x "$LS" ] || { echo "No encuentro LibreSprite en $LS (definí LIBRESPRITE)"; exit 1; }
-mkdir -p "$SRC/vfx" "$SRC/abilities" "$SRC/characters"
+mkdir -p "$SRC/vfx" "$SRC/abilities" "$SRC/characters" "$SRC/resources" "$SRC/buildings" "$SRC/perks"
 # personajes-46: own/characters/<prefijo>_{attack,fall}.png = tiras de 4 cuadros (48x44, cuerpo 0x72 en el
 # lugar del idle) que arma tools/build_personajes_art.gd; mismo formato que vfx (index.json propio).
 # "frames" escribe resources/sprite_frames/hero_<prefijo>.tres (idle/run/hit 0x72 + attack/fall de las tiras).
@@ -89,7 +89,7 @@ EOF
 icons)
 	# juego-36: arma los 8 íconos de habilidades en LibreSprite (tools/libresprite_icons.js) y los exporta.
 	python -I -c "import sys; from PIL import Image; Image.new('RGBA', (16, 16)).save(sys.argv[1])" "$TMP/blank.png"
-	"$LS" -b "$TMP/blank.png" --script tools/libresprite_icons.js 2>&1 | grep '^icono' || true
+	"$LS" -b "$TMP/blank.png" --script tools/libresprite_icons.js 2>&1 | grep -E '^icono|Error' || true
 	"$0" export
 	;;
 export)
@@ -99,6 +99,14 @@ export)
 		[ -f "$ase" ] || continue
 		name=$(basename "$ase" .ase)
 		"$LS" -b "$ase" --save-as "$OWN/abilities/ability_$name.png" >/dev/null && echo "export ability $name"
+	done
+	# personajes-46: íconos de recursos, Obras y mejoras de clase (tools/libresprite_icons.js).
+	for dir in resources buildings perks; do
+		mkdir -p "$OWN/$dir"
+		for ase in "$SRC"/$dir/*.ase; do
+			[ -f "$ase" ] || continue
+			"$LS" -b "$ase" --save-as "$OWN/$dir/$(basename "$ase" .ase).png" >/dev/null && echo "export $dir/$(basename "$ase" .ase)"
+		done
 	done
 	for dir in $STRIP_DIRS; do
 	for ase in "$SRC"/$dir/*.ase; do

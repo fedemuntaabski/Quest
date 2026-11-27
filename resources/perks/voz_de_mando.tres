@@ -1,11 +1,13 @@
 [gd_resource type="Resource" script_class="HeroPerk" format=3]
 
 [ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+[ext_resource type="Texture2D" path="res://assets/art/own/perks/active_duration.png" id="perk_icon"]
 
 [resource]
 script = ExtResource("1_perk")
 id = &"voz_de_mando"
 display_name = "Voz de Mando"
+icon = ExtResource("perk_icon")
 description = "El Grito de Guerra dura 2 s más."
 unlock_level = 3
 exclusive_group = &"warrior_l3"

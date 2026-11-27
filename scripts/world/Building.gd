@@ -110,6 +110,7 @@ func configure(p_zone_id: String, p_building_type: BuildingType) -> void:
 
 	if icon:
 		icon.color = TYPE_COLORS.get(building_type, Color.WHITE)
+	_apply_art(str(cfg.get("icon", "")))
 	_update_bar()
 
 	QuestLogger.info(QuestLogger.Category.BUILDING, "Building '%s' built in zone '%s'." % [BuildingType.keys()[building_type], zone_id])
@@ -211,6 +212,39 @@ func _update_bar() -> void:
 		else QuestPalette.BLOOD_LIGHT.lerp(Color(0.45, 0.8, 0.4), ratio))
 
 
+## personajes-46: the Obra on the map shows the same icon as the build menu (BuildingDef.icon_path,
+## own art by tools/libresprite_icons.js), ArtConfig.ART_SCALE, over a plate in its type colour (the
+## old triangle, now flattened under its feet; it still blinks on a hit).
+var art: Sprite2D
+
+
+func _apply_art(path: String) -> void:
+	if path == "" or not ResourceLoader.exists(path):
+		return
+	if art == null:
+		art = Sprite2D.new()
+		art.name = "Art"
+		art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		add_child(art)
+	art.texture = load(path) as Texture2D
+	art.scale = Vector2.ONE * ArtConfig.ART_SCALE
+	art.position = Vector2(0.0, -10.0)
+	if icon:
+		var plate := PackedVector2Array()
+		for i in 12:
+			plate.append(Vector2.from_angle(i * TAU / 12.0) * Vector2(16.0, 5.0) + Vector2(0.0, 6.0))
+		icon.polygon = plate
+
+
+## A trap that just hurt or slowed an enemy pops (scale bump of its art), visual only.
+func pulse() -> void:
+	if art == null:
+		return
+	var tween := create_tween()
+	art.scale = Vector2.ONE * ArtConfig.ART_SCALE * 1.3
+	tween.tween_property(art, "scale", Vector2.ONE * ArtConfig.ART_SCALE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
 ## White blink + floating damage number (the Relic's hit feedback, for buildings).
 func _play_hit(amount: int) -> void:
 	if icon and not Accessibility.reduce_flashes:
@@ -220,4 +254,7 @@ func _play_hit(amount: int) -> void:
 		icon.color = Color.WHITE
 		_flash_tween = create_tween().set_ignore_time_scale()
 		_flash_tween.tween_property(icon, "color", base, FLASH_SEC)
+		if art:
+			art.self_modulate = Color(2.5, 2.5, 2.5)
+			_flash_tween.parallel().tween_property(art, "self_modulate", Color.WHITE, FLASH_SEC)
 	FloatingTextManager.say(get_target_position() + Vector2(0.0, -16.0), "-%d" % amount, QuestPalette.BLOOD_LIGHT)

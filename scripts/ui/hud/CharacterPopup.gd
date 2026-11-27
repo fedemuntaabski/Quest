@@ -335,12 +335,16 @@ func _rebuild_perks(ps: PlayerStats) -> void:
 		return
 	_perk_title.text = "Mejoras de clase (%d / %d)" % [picked.size(), character_data.perks.size() / 2]
 	for perk in picked:
+		var line := HBoxContainer.new()
+		line.add_theme_constant_override("separation", 8)
+		line.add_child(_perk_icon(perk))
 		var label := Label.new()
 		label.text = "✔ %s — %s" % [perk.display_name, perk.describe_mods()]
 		label.tooltip_text = perk.description
 		label.mouse_filter = Control.MOUSE_FILTER_PASS
 		label.add_theme_color_override("font_color", QuestPalette.PARCHMENT_LIGHT)
-		_perk_rows.add_child(label)
+		line.add_child(label)
+		_perk_rows.add_child(line)
 	if not pending.is_empty():
 		var offer := Label.new()
 		offer.text = "¡Elige una mejora!"
@@ -369,6 +373,7 @@ func _make_perk_card(perk: HeroPerk) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	card.add_child(row)
+	row.add_child(_perk_icon(perk))
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(text)
@@ -387,6 +392,18 @@ func _make_perk_card(perk: HeroPerk) -> Control:
 	button.pressed.connect(_on_perk_pressed.bind(perk.id))
 	row.add_child(button)
 	return card
+
+
+## The perk's own icon (one per kind of mod, tools/libresprite_icons.js), 2x like the abilities'.
+func _perk_icon(perk: HeroPerk) -> TextureRect:
+	var icon := TextureRect.new()
+	icon.texture = perk.icon
+	icon.custom_minimum_size = ABILITY_ICON
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return icon
 
 
 func _on_perk_pressed(perk_id: StringName) -> void:

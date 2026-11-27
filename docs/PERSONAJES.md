@@ -13,6 +13,8 @@ Archivo de referencia para otras sesiones. **Todo sale del código y los `.tres`
 >
 > Detalle de números en `docs/archive/BALANCE_HISTORIA.md`, sección "Héroes vs enemigos".
 
+> **personajes-46**: 6 héroes (`CharacterDatabase.CHARACTER_PATHS`), cuadros propios de ataque y caída (`docs/ASSETS.md` «Animaciones»), ficha «Libro abierto» y dos enemigos nuevos (ver «Ballestero», «Clériga» y `docs/ENEMY_TARGETING.md`).
+
 Índice: [1 Héroes](#1-héroes-jugables) · [2 Enemigos](#2-enemigos) · [3 La Reliquia](#3-el-relic) · [4 Tablas comparativas](#4-tablas-resumen) · [5 Inconsistencias y faltantes](#5-inconsistencias-o-datos-faltantes)
 
 ---
@@ -97,6 +99,26 @@ Sprites 0x72 `16×28` (idle 4 f, run 4 f, hit 1 f), dibujados ×2 (`ArtConfig.AR
 | Pasiva "Muro Viviente" | `RELIC_PROXIMITY_REDUCTION` 0.5, radio 640: reduce hasta **50 %** el daño recibido junto a la Reliquia, decreciendo linealmente a 0 a **640 px = 10 casillas** (el texto dice casillas desde juego-36; mide contra la posición de la Reliquia; si lo lleva alguien, contra el portador) |
 | Activa "Interposición" | `TEAM_SHIELD` 0.5: **todos** los héroes vivos reciben **50 %** del daño durante **6 s**; cooldown **30 s**; VFX `buff_shield` |
 | Color VFX | (0.62, 0.78, 1.0) |
+
+#### Ballestero — `ranger` (personajes-46)
+| Campo | Valor |
+|---|---|
+| Rol | "Tirador de Caza" · sprite 0x72 `lizard_m` |
+| Vida / ataque | **20** · **3** cada **1.0 s**, radio **200** px, **a distancia** (proyectil) |
+| Pasiva "Botín de Caza" | `IRON_ON_KILL` 1: **+1 Hierro** por cada enemigo que remata (`Player._on_attack_landed` → `HeroAbilities.on_kill`) |
+| Activa "Red de Caza" | `SNARE`: los enemigos dentro de su alcance quedan frenados (`Enemy.apply_slow`, factor del Brasero) **5 s**; cooldown **15 s** |
+| Mejoras | Ojo Avizor (+30 px) / Cuero de Caza (+6 vida) a nivel 3; Red Reforzada (+2 s) / Trampero (+1 Hierro) a nivel 5 |
+
+#### Clériga — `cleric` (personajes-46)
+| Campo | Valor |
+|---|---|
+| Rol | "Sanadora" · sprite 0x72 `elf_f` |
+| Vida / ataque | **24** · **3** cada **1.1 s**, radio **160** px, cuerpo a cuerpo |
+| Pasiva "Plegaria" | `ALLY_REGEN`: cada **3 s** los héroes vivos de su sala (ella incluida) recuperan **1** de vida (`HeroAbilities._tick_regen`, host) |
+| Activa "Luz Sanadora" | `TEAM_HEAL` 8: los héroes vivos de su sala recuperan **8** de vida al instante; cooldown **20 s**; VFX `heal_glow` |
+| Mejoras | Salmo (+1 Plegaria) / Hábito Grueso (+6 vida) a nivel 3; Luz Mayor (+4) / Vigilia (−5 s) a nivel 5 |
+
+Los efectos nuevos se agregan al final de `AbilityData.Effect` (los `.tres` guardan el número); `is_active()` mira `ACTIVE_EFFECTS`. Test: `test_heroes_nuevos`.
 
 ### Escalado con mejoras (en partida)
 No hay XP ni persistencia entre partidas: solo **niveles de héroe** comprados con **Comida** en el popup del héroe (`PlayerStats.level_up_hero()`, `scripts/core/stats/PlayerStats.gd:221`; datos en `UpgradeConfig` + `resources/upgrades/run_upgrade_config.tres`). Se reinician cada partida (`Main._begin_new_run`), sobreviven a los pisos.

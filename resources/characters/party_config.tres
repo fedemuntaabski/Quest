@@ -4,4 +4,4 @@
 
 [resource]
 script = ExtResource("1_party_config")
-sprite_spacing = 36.0
+sprite_spacing = 50.0

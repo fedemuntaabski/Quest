@@ -61,6 +61,7 @@ func _on_fire_timer_timeout() -> void:
 	var from := global_position
 	var to := target.global_position
 	var hit := get_damage()
+	_animate_shot(to)
 	target.take_damage(hit)
 	var audio := ManagerLocator.get_audio()
 	if audio:
@@ -73,6 +74,36 @@ func _on_fire_timer_timeout() -> void:
 	if vfx:
 		vfx.play(&"projectile_trail", from, TRAIL_COLOR, 0.0, to)
 		vfx.play(&"hit_sparks", to, TRAIL_COLOR)
+
+
+## personajes-46 (owner's request): the Defensa moves when it shoots, visual only (the art sprite of
+## Building._apply_art): the Ballesta turns to the target (its art points up) and kicks back; the
+## Catapulta winds its arm back and throws, facing the target. Host only, like the shot itself.
+const AIM_SEC := 0.08
+const KICK_PX := 4.0
+var _shot_tween: Tween
+
+
+func _animate_shot(to: Vector2) -> void:
+	if art == null:
+		return
+	if _shot_tween and _shot_tween.is_valid():
+		_shot_tween.kill()
+	var dir := global_position.direction_to(to)
+	var rest := Vector2(0.0, -10.0)
+	art.position = rest
+	_shot_tween = create_tween()
+	if building_type == BuildingType.CATAPULTA:
+		art.flip_h = dir.x < 0.0
+		var side := -1.0 if art.flip_h else 1.0
+		_shot_tween.tween_property(art, "rotation", -0.4 * side, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		_shot_tween.tween_property(art, "rotation", 0.5 * side, 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		_shot_tween.tween_property(art, "rotation", 0.0, 0.25).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+		return
+	var aim := wrapf(dir.angle() + PI * 0.5, art.rotation - PI, art.rotation + PI)  # shortest turn
+	_shot_tween.tween_property(art, "rotation", aim, AIM_SEC).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_shot_tween.tween_property(art, "position", rest - dir * KICK_PX, 0.04)
+	_shot_tween.tween_property(art, "position", rest, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 ## Base damage + research bonus, read per shot (so it reaches built defenses).

@@ -1,11 +1,13 @@
 [gd_resource type="Resource" script_class="HeroPerk" format=3]
 
 [ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+[ext_resource type="Texture2D" path="res://assets/art/own/perks/active_value.png" id="perk_icon"]
 
 [resource]
 script = ExtResource("1_perk")
 id = &"sobrecarga_mayor"
 display_name = "Bendición Mayor"
+icon = ExtResource("perk_icon")
 description = "La Bendición de las Obras potencia las defensas ×2,5 en vez de ×2."
 unlock_level = 5
 exclusive_group = &"mage_l5"

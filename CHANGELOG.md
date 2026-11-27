@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## session/personajes-46
+- Dos héroes nuevos: el Ballestero (dispara de lejos, gana Hierro por cada enemigo que remata, su red frena a los enemigos) y la Clériga (cura al grupo de a poco y de golpe con la Luz Sanadora).
+- Dos enemigos nuevos desde el piso 2: el Calabacero dispara desde lejos y el Curandero del Pantano cura a los suyos.
+- Los héroes tienen animación de ataque y de caída propias; golpes y muertes con efectos nuevos.
+- Íconos nuevos para recursos, Obras y mejoras; las Obras construidas se ven en la sala y las Defensas giran y retroceden al disparar.
+- En las peleas los héroes y los enemigos se reparten en la sala en vez de quedar encimados.
+- Ficha del héroe rehecha (dos columnas). Versión 1.12: el co-op exige que los dos tengan la misma.
+
 ## session/juego-45
 - Sin cambios en el juego: el simulador de balance ahora tiene en cuenta el tiempo que tarda el grupo en volver a defender la Reliquia (`docs/BALANCE.md`).
 

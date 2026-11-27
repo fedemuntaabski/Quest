@@ -950,3 +950,16 @@ Barrido `tests/tools/sweep_juego41.gd` (200 corridas; CSV en `docs/balance/juego
 - `test_balance` no necesitó umbrales nuevos (Normal pares 75 / 70 / 56, Difícil pares 69 / 61 / 30, todo dentro). `_check_obras_model` agrega que una cura gratis llena la vida con 0 de Comida (`_heal_with_food` con `per_hp` 0 no curaba nada si no quedaba Comida).
 
 **Pendiente de playtest:** que un jugador de verdad vuelva a la sala de Descanso antes del jefe o de la extracción, y si 2 de vida/s es lento o rápido con los enemigos que entran a la sala.
+
+## Victoria por piso juego-42 a juego-45 (4 héroes; reemplazada en personajes-46)
+
+200 corridas, `sweep.gd` con el play por defecto (CSV `docs/balance/juego42_despues_runs.csv`; juego-44 lo repite con 0 puntos de diferencia, `juego44_despues_runs.csv`; juego-45 también, `juego45_defecto_runs.csv`). % de corridas que ganan el piso 1 / 2 / 3 / 4 / 5:
+
+| Dificultad | Grupo | Victoria 1/2/3/4/5 (%) |
+|---|---|---|
+| Normal | pares | 100 / 100 / 73 / 68 / 55 |
+| Normal | tríos (co-op 3) | 100 / 100 / 100 / 95 / 72 |
+| Normal | los 4 (co-op 4) | 100 / 100 / 100 / 100 / 85 |
+| Difícil | pares | 100 / 100 / 73 / 63 / 32 |
+| Difícil | tríos (co-op 3) | 100 / 100 / 98 / 83 / 30 |
+| Difícil | los 4 (co-op 4) | 100 / 100 / 100 / 96 / 34 |

@@ -10,18 +10,24 @@ godot --headless --path . --script res://tools/balance_sim.gd -- after          
 
 `sweep.gd`: pares (media de 6), tríos (co-op 3, media de 4) y los 4 (co-op 4), Normal y Difícil; 200 corridas por defecto (~1 min). `tag` escribe `docs/balance/<tag>_runs.csv` (`-` = no). El json acepta las claves de `BOSS_PLAY` más `"towers": false` y `"boss_near": x`. Columnas: `clave@pisos` separadas por coma (por defecto `win_rate@1/2/3/4/5`; p. ej. `win_rate@3/4/5,towers@1/3/5,dmg_by_towers_pct@1/3/5,relic_hp_end@3/5`).
 
-## Victoria por piso (publicado, juego-42; igual en juego-44 y juego-45)
+## Victoria por piso (publicado, personajes-46)
 
-200 corridas, `sweep.gd` con el play por defecto (CSV `docs/balance/juego42_despues_runs.csv`; juego-44 lo repite con 0 puntos de diferencia, `juego44_despues_runs.csv`; juego-45 también, `juego45_defecto_runs.csv`). % de corridas que ganan el piso 1 / 2 / 3 / 4 / 5:
+200 corridas, `sweep.gd` con el play por defecto (CSV `docs/balance/personajes46_defecto_runs.csv`). Con 6 héroes los grupos son todos los pares (15), tríos (20) y grupos de 4 (15); «pares 4» = los 6 pares de los 4 héroes de antes, para comparar con la tabla de juego-45 (en `BALANCE_HISTORIA.md`: 0-2 puntos de diferencia). Los pisos 2-4 suman al Calabacero y al Curandero. % de corridas que ganan el piso 1 / 2 / 3 / 4 / 5:
 
 | Dificultad | Grupo | Victoria 1/2/3/4/5 (%) |
 |---|---|---|
-| Normal | pares | 100 / 100 / 73 / 68 / 55 |
-| Normal | tríos (co-op 3) | 100 / 100 / 100 / 95 / 72 |
-| Normal | los 4 (co-op 4) | 100 / 100 / 100 / 100 / 85 |
-| Difícil | pares | 100 / 100 / 73 / 63 / 32 |
-| Difícil | tríos (co-op 3) | 100 / 100 / 98 / 83 / 30 |
-| Difícil | los 4 (co-op 4) | 100 / 100 / 100 / 96 / 34 |
+| Normal | pares 4 | 100 / 100 / 73 / 69 / 56 |
+| Normal | pares (15) | 100 / 100 / 63 / 59 / 42 |
+| Normal | tríos (co-op 3) | 100 / 100 / 95 / 88 / 62 |
+| Normal | de a 4 (co-op 4) | 100 / 100 / 100 / 100 / 84 |
+| Difícil | pares 4 | 100 / 100 / 73 / 65 / 34 |
+| Difícil | pares (15) | 100 / 100 / 63 / 56 / 25 |
+| Difícil | tríos (co-op 3) | 100 / 100 / 92 / 77 / 26 |
+| Difícil | de a 4 (co-op 4) | 100 / 100 / 100 / 95 / 38 |
+
+Por héroe (`test_balance`, 50 corridas, grupos de 2 a 4): distancia a la media de victorias en puntos. Normal: Guerrero +3,4, Mago −0,3, Pícaro +1,5, Paladín −0,5, Ballestero −4,3, Clériga +0,2. Difícil: +3,1 / −1,0 / +1,2 / +0,2 / −5,0 / +1,5 (tope 10). Los pares con Ballestero o Clériga ganan menos en los pisos 3-5 (por eso «pares (15)» queda debajo de «pares 4»): ver el próximo /goal.
+
+Modelo de lo nuevo (personajes-46): Plegaria y Luz Sanadora como vida por segundo que se resta del daño recibido mientras pelean juntos; Red de Caza como enemigos más lentos al acercarse (solo le sirve a un héroe a distancia); Botín de Caza, 1 Hierro por enemigo que remata ese héroe; el Calabacero pega su disparo cada `shot_interval` sin aproximación; el Curandero cura al resto de la oleada mientras vive (se pelea último). `armor_ehp_mult` cuenta el disparo del Calabacero.
 
 Obras (juego-41): 3-5 por piso; sacan el 17-22 % de la vida enemiga en el piso 1 y el 9-18 % en los pisos 3-5. La Reliquia termina la extracción con 96-100 % de vida.
 

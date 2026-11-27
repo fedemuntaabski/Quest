@@ -23,7 +23,11 @@ const CONTACT_HIT_INTERVAL := 1.0
 ## Contact Hitbox reaches this much past the body (px), like the old 14 -> 24.
 const CONTACT_REACH := 10.0
 ## Slot ring (px) around the point an enemy closes in on.
-const RING_RADIUS := 14.0
+## personajes-46: enemies closing on a hero stand on RING_ANGLES at RING_RADIUS around it, above and below
+## the heroes' row (PartyConfig.sprite_offset spreads them sideways), so everyone stays visible. 42 px
+## keeps the contact hitbox reaching the hero (body radii ~13 + reach 10 + hero ~22 = 45 px).
+const RING_RADIUS := 42.0
+const RING_ANGLES := [90.0, -90.0, 55.0, 125.0, -60.0, -120.0, 30.0, 150.0]
 const RAIDER_TINT := Color(1.0, 0.72, 0.66)
 
 signal died(enemy: Enemy)
@@ -486,7 +490,8 @@ func _heal_allies() -> void:
 
 ## Fixed per-enemy offset (8 consecutive slots) so enemies converging on one point don't stack.
 func _ring_offset() -> Vector2:
-	return Vector2.from_angle((slot % 8) * TAU / 8.0) * RING_RADIUS
+	var lap := floori(slot / float(RING_ANGLES.size())) % 2  # a second lap sits between the first one's places
+	return Vector2.from_angle(deg_to_rad(float(RING_ANGLES[slot % RING_ANGLES.size()]) + lap * 17.0)) * RING_RADIUS
 
 
 func _check_trap_in_current_room(room_manager: RoomManager) -> void:
@@ -505,6 +510,7 @@ func _check_trap_in_current_room(room_manager: RoomManager) -> void:
 			take_damage(int(cfg["spike_damage"]))
 		else:
 			continue
+		building.pulse()
 		var vfx := ManagerLocator.get_vfx_manager()
 		if vfx and is_alive():
 			vfx.play(&"hit_sparks", global_position, vfx.config.dust_color)

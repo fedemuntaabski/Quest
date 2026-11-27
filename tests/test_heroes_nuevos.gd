@@ -28,6 +28,7 @@ func _initialize() -> void:
 		await _check_cleric()
 		await _check_ranger()
 		await _check_sheet()
+		_check_icons()
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_heroes_nuevos: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
@@ -159,6 +160,25 @@ func _check_sheet() -> void:
 	settings.text_scale = old_scale
 	hud.queue_free()
 	await _free(main2d)
+
+
+## personajes-46 (owner's request): every perk, Obra and resource has its own LibreSprite icon
+## (assets/art/own, from tools/libresprite_icons.js), and a built Obra shows its menu icon on the map.
+func _check_icons() -> void:
+	for data: CharacterData in CharacterDatabase.get_all():
+		for perk: HeroPerk in data.perks:
+			_expect(perk.icon != null and perk.icon.resource_path.begins_with("res://assets/art/own/perks/"), "%s: perk %s without its own icon" % [data.character_id, perk.id])
+	for type: int in Building.CATALOG:
+		var path := str(Building.CATALOG[type]["icon"])
+		_expect(path.begins_with("res://assets/art/own/buildings/") and ResourceLoader.exists(path), "%s: Obra icon %s" % [Building.BuildingType.keys()[type], path])
+		var building := (load("res://scenes/world/Building.tscn") as PackedScene).instantiate() as Building
+		root.add_child(building)
+		building.configure("room_0", type)
+		_expect(building.art != null and building.art.texture and building.art.texture.resource_path == path and building.art.visible,
+			"%s: the built Obra does not show its menu icon" % Building.BuildingType.keys()[type])
+		building.free()
+	for key in ["hp", "iron", "food", "lore", "embers", "lock"]:
+		_expect(StatIcon.art_for(key) != null, "resource icon %s missing" % key)
 
 
 func _check_ranger() -> void:
