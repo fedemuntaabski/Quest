@@ -187,6 +187,9 @@ func _floor_one() -> void:
 	hud.show_hint(rest.display_name, rest.hint, rest.color)  # juego-42: the real Rest hint (the longest room hint)
 	await _wait(0.4)
 	await _shot("f1_hint")
+	var hint_panel := hud.get_node("Control/HintPanel") as Control  # juego-44: the card must cover its text
+	print("hint card %s, labels %s" % [hint_panel.get_global_rect(), hint_panel.find_children("*", "Label", true, false).map(
+		func(l: Label) -> String: return "%s lines %d/%d h %d" % [l.get_global_rect(), l.get_visible_line_count(), l.get_line_count(), l.get_line_count() * l.get_line_height()])])
 	hud.show_refusal("No alcanza el Hierro: faltan 12 para construir esta Obra en la sala.")
 	await _wait(0.4)
 	await _shot("f1_refusal")
