@@ -29,7 +29,7 @@ Medido con `tests/test_rooms.gd` (30 seeds x pisos 1-5 = 150 layouts; todos vál
 | COMBAT | `RoomData.room_type` default | resto de salas | nada | nada (a propósito) | funciona | `MapGenerator.assign_room_types` |
 | START | `RoomData.is_start` | `room_0` | spawn de héroes + Reliquia, luz gratis que nunca se apaga (juego-35) | sin marcador | funciona | `Main2d._register_groups_and_doors`, `_spawn_heroes` |
 | EXIT | `RoomData.is_exit` | sala más lejana del inicio, nunca con loops | victoria si llevas la Reliquia | cartel al descubrir; `ExitIndicator` | funciona | `MapGenerator._mark_exit_and_vault`, `ExtractionManager.declare_victory` |
-| REST | `RoomTypeRule` (`default_floor_config.tres`) | chance 0.6, cupo 1 | cura a todo el grupo vivo + sin spawns | badge, minimapa, cartel, props | funciona (arreglado: curaba solo al primario) | `FloorManager._apply_room_type_discovery`, `EnemyManager.get_spawn_rooms/_spawns_blocked` |
+| REST | `RoomTypeRule` (`default_floor_config.tres`) | chance 0.6, cupo 1 | cura gratis por tiempo a los héroes dentro (no con enemigos en la sala ni en la extracción, juego-42) + sin spawns | badge, minimapa, cartel, props | funciona (arreglado: curaba solo al primario) | `FloorManager._apply_room_type_discovery`, `EnemyManager.get_spawn_rooms/_spawns_blocked` |
 | LOOT | idem | chance 0.8, cupo 1 (+0.5/piso) | +Hierro, cofre `Pickup` decorativo | badge, minimapa, cartel, props | funciona | `FloorManager._apply_room_type_discovery`, `Main2d._on_room_revealed` |
 | ELITE | idem | chance 0.3 (+0.1/piso), cupo 1 (+0.25/piso) | enemigos x1.5 HP / x1.25 daño + Saber | badge, minimapa, cartel, props | funciona | `EnemyManager._spawn_enemy` |
 | WORKSHOP | `RoomTypeRule.extra_major_slots` | chance 0.5, cupo 1 | encendida ofrece 2 slots MAJOR + 2 MINOR | badge azul, minimapa, cartel, props | funciona (era solo diseño) | `RoomZone._spawn_building_slots`, `Main2d._register_groups_and_doors` |
@@ -48,7 +48,7 @@ Frecuencia = mapas con al menos uno, 100 semillas por piso (`tests/tools/audit_m
 | Combate | nada | todas; ~40 % de las salas | — | idénticas | interior por plantillas |
 | Inicio | héroes + Reliquia, luz gratis | 100 % | héroes y gema | sin marca propia | alfombra fija, luz blanca cálida |
 | Salida | ganar con la Reliquia | 100 % | rombo «SALIDA» | escalera bajo el hueco central | escalera una celda abajo, losas, luz verde |
-| Descanso | cura con Comida, sin enemigos | 56–66 % | cartel | props = frascos (parecen botín) | alfombra, luz naranja; mazmorra-32: sin frascos, 2 catres y un brasero |
+| Descanso | cura gratis con el tiempo, sin enemigos | 56–66 % | cartel | props = frascos (parecen botín) | alfombra, luz naranja; mazmorra-32: sin frascos, 2 catres y un brasero |
 | Botín | Hierro + cofre | 79–100 % | cartel, cofre | props = cofres falsos | mesa, taburete, caja fuerte; luz dorada |
 | Élite | enemigos ×1,5/×1,25, Saber | 23 → 95 % | cartel | color ≈ Prisionero; armas en el suelo | marca roja, columnas, luz roja; mazmorra-32: sangre, huesos, cadenas, 2 braseros |
 | Taller | 2 huecos grandes | 44–53 % | cartel | ícono = botón de UI | ícono martillo, losas, luz blanca; mazmorra-32: estanterías, brasero |
