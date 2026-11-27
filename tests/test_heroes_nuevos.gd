@@ -27,6 +27,7 @@ func _initialize() -> void:
 		_check_recruit()
 		await _check_cleric()
 		await _check_ranger()
+		await _check_sheet()
 	for failure in failures:
 		printerr("FAIL: ", failure)
 	print("test_heroes_nuevos: %s (%d failures)" % ["OK" if failures.is_empty() else "FAILED", failures.size()])
@@ -131,6 +132,32 @@ func _check_cleric() -> void:
 	hp = ally.stats.current_hp
 	_expect(cleric.abilities.try_activate(), "cleric: Q refused (%s)" % cleric.abilities.get_block_reason())
 	_expect(ally.stats.current_hp >= mini(hp + roundi(cleric.abilities.active_value()), ally.stats.max_hp), "cleric Q: ally %d -> %d HP" % [hp, ally.stats.current_hp])
+	await _free(main2d)
+
+
+## The hero sheet (owner's "Libro abierto" mockup) fits the screen at the biggest text and Esc closes it.
+func _check_sheet() -> void:
+	var settings := root.get_node("SettingsManager")
+	var old_scale: float = settings.text_scale
+	settings.text_scale = settings.TEXT_SCALE_MAX
+	var main2d: Node = await _boot(["cleric", "ranger"] as Array[String])
+	var hud := (load("res://scenes/hud/HUD.tscn") as PackedScene).instantiate() as HUDController
+	root.add_child(hud)
+	await process_frame
+	hud.open_hero_sheet(hud.portraits.get_child(0))
+	for i in 4:
+		await process_frame
+	var popup := hud.character_popup
+	var frame := popup.find_child("Frame", true, false) as Control
+	_expect(frame != null and root.get_visible_rect().encloses(frame.get_global_rect()), "sheet at x%.1f text off screen: %s in %s" % [settings.TEXT_SCALE_MAX, frame.get_global_rect() if frame else null, root.get_visible_rect()])
+	_expect(popup._title.text == "Clériga" and popup._level_button.text.contains("Comida"), "sheet: title '%s', level button '%s'" % [popup._title.text, popup._level_button.text])
+	var esc := InputEventAction.new()
+	esc.action = "ui_cancel"
+	esc.pressed = true
+	popup._input(esc)
+	_expect(not popup.visible, "Esc does not close the sheet")
+	settings.text_scale = old_scale
+	hud.queue_free()
 	await _free(main2d)
 
 

@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/menus/CharacterCardOption.gd" id="1_character_card_option_script"]
 
 [node name="CharacterCardOption" type="PanelContainer"]
-custom_minimum_size = Vector2(300, 330)
+custom_minimum_size = Vector2(240, 330)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_character_card_option_script")
@@ -29,7 +29,7 @@ autowrap_mode = 3
 max_lines_visible = 2
 
 [node name="PortraitRect" type="TextureRect" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(268, 96)
+custom_minimum_size = Vector2(208, 96)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -38,7 +38,7 @@ stretch_mode = 5
 visible = false
 
 [node name="RoleLabel" type="Label" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(268, 34)
+custom_minimum_size = Vector2(208, 34)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.72, 0.45, 1)
 theme_override_font_sizes/font_size = 14
@@ -47,7 +47,7 @@ autowrap_mode = 3
 text = "Role"
 
 [node name="StatsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(268, 24)
+custom_minimum_size = Vector2(208, 24)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
 theme_override_font_sizes/font_size = 14
@@ -55,7 +55,7 @@ horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="AbilityLabel" type="Label" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(268, 54)
+custom_minimum_size = Vector2(208, 54)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.72, 0.45, 1)
 theme_override_font_sizes/font_size = 14
@@ -63,6 +63,6 @@ horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="SelectButton" type="Button" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(268, 38)
+custom_minimum_size = Vector2(208, 38)
 layout_mode = 2
 text = "ELEGIR"

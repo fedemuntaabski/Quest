@@ -108,7 +108,8 @@ static func armor_ehp_mult(armor: int, f: int) -> float:
 	var raw := 0.0
 	var kept := 0.0
 	for i in pool.types.size():
-		var hit := int(enemy_stats(pool.types[i], f)["contact"])
+		var e := enemy_stats(pool.types[i], f)
+		var hit := int(e["shot"]) if pool.types[i].special == EnemyType.Special.RANGED else int(e["contact"])  # personajes-46
 		raw += pool.weight_of(i) * hit
 		kept += pool.weight_of(i) * maxi(1, hit - armor)
 	return raw / maxf(kept, 0.001)

@@ -43,7 +43,7 @@ func play(id: StringName, pos: Vector2, color: Color = Color.WHITE, angle: float
 ## Auto-attack hit: slash toward the target + sparks in `color`; shakes only if strong.
 func hit(from: Vector2, target: Vector2, color: Color, amount: int, target_max_hp: int) -> void:
 	play(&"hit_slash", target, color, from.angle_to_point(target))
-	play(&"hit_sparks", target, color)
+	play(&"hit_burst", target, color)  # personajes-46: own burst (own_hit_burst) instead of the sparks
 	shake_if_strong(amount, target_max_hp)
 
 

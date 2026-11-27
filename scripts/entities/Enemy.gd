@@ -224,6 +224,7 @@ func _die_from_damage() -> void:
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"death_dust", global_position, vfx.config.dust_color)
+		vfx.play(&"enemy_death", global_position + Vector2(0.0, -visual.body_size().y * 0.5))  # personajes-46: the wisp
 	visual.spawn_corpse(get_parent())
 	died.emit(self)
 	queue_free()

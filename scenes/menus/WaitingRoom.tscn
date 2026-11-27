@@ -74,10 +74,12 @@ layout_mode = 2
 text = "Elegí tu personaje"
 horizontal_alignment = 1
 
-[node name="CharacterCardsContainer" type="HBoxContainer" parent="CenterContainer/RoomCard/VBoxContainer/CharacterPanel/CharacterVBox"]
+[node name="CharacterCardsContainer" type="GridContainer" parent="CenterContainer/RoomCard/VBoxContainer/CharacterPanel/CharacterVBox"]
 layout_mode = 2
-alignment = 1
-theme_override_constants/separation = 10
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 6
 
 [node name="InviteButton" type="Button" parent="CenterContainer/RoomCard/VBoxContainer"]
 custom_minimum_size = Vector2(520, 60)
