@@ -75,4 +75,4 @@ Cambios de comportamiento respecto a antes de impl-6 (la fase 3A no cambió nada
 `Building` emite `hp_changed(current, max)` y `damaged(amount)`, parpadea en blanco (tween del color del icono, no el shader de la Reliquia: un `Polygon2D` sin textura no se aclara con `white_flash`), muestra un número flotante y una mini-barra bajo la obra (solo visible si está dañado). `is_targetable()` = construido y vivo, **aunque la sala esté apagada**; `get_target_position()`.
 
 ### Balance (rompe-torres y asesinos)
-Ver `docs/BALANCE.md`, "Perfiles de objetivo". Los asesinos no cambian vida, daño ni velocidad: concentran la oleada en el héroe más débil, que el simulador ya modela (un héroe recibe toda la oleada). Los rompe-torres se ajustaron con `building_damage` (`tc_fire_skull` 5, `big_demon` 3).
+Ver `docs/archive/BALANCE_HISTORIA.md`, "Perfiles de objetivo". Los asesinos no cambian vida, daño ni velocidad: concentran la oleada en el héroe más débil, que el simulador ya modela (un héroe recibe toda la oleada). Los rompe-torres se ajustaron con `building_damage` (`tc_fire_skull` 5, `big_demon` 3).

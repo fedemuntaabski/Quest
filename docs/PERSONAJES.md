@@ -11,7 +11,7 @@ Archivo de referencia para otras sesiones. **Todo sale del código y los `.tres`
 > - Descanso que cura por tiempo.
 > - Ajustes: Pícaro con vida 16 y Paladín con +8 de vida por nivel.
 >
-> Detalle de números en `docs/BALANCE.md`, sección "Héroes vs enemigos".
+> Detalle de números en `docs/archive/BALANCE_HISTORIA.md`, sección "Héroes vs enemigos".
 
 Índice: [1 Héroes](#1-héroes-jugables) · [2 Enemigos](#2-enemigos) · [3 La Reliquia](#3-el-relic) · [4 Tablas comparativas](#4-tablas-resumen) · [5 Inconsistencias y faltantes](#5-inconsistencias-o-datos-faltantes)
 
@@ -262,7 +262,7 @@ Leído en el código (`HeroAbilities`, `FloorManager.on_room_discovered`), no so
 
 Arreglado en juego-35: los buffs (Grito, Interposición, Bendición) seguían corriendo con el menú Esc abierto (`create_timer` con `process_always`); ahora esperan como el enfriamiento.
 
-**Aplicado en juego-36** (OK del dueño; la tabla de arriba ya tiene los valores nuevos): Mente Analítica −10 % a la Investigación, Bendición 20 s y solo Obras que funcionan, Golpe Furtivo 8 s, texto del Muro en casillas. Efecto medido en `BALANCE.md` «Ajuste de habilidades (session juego-36)»; versión 1.10. Sin tocar: Piel de Hierro, Grito, Paso Ligero, Interposición.
+**Aplicado en juego-36** (OK del dueño; la tabla de arriba ya tiene los valores nuevos): Mente Analítica −10 % a la Investigación, Bendición 20 s y solo Obras que funcionan, Golpe Furtivo 8 s, texto del Muro en casillas. Efecto medido en `docs/archive/BALANCE_HISTORIA.md` «Ajuste de habilidades (session juego-36)»; versión 1.10. Sin tocar: Piel de Hierro, Grito, Paso Ligero, Interposición.
 
 ## 5. Inconsistencias o datos faltantes
 

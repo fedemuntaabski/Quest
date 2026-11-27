@@ -124,7 +124,7 @@ Lo que quedó pendiente al cortar se cerró en `session/estabilizar-14`: runner 
 
 # Progreso de la integración (rama `session/impl-6`)
 
-Implementación de `docs/PROPUESTA_INTEGRACION.md` en el orden de la tabla 5.2: 0 → 3A → 3B → 4 → 1 → 2A → 2B, más la auditoría de Investigación. Estado al cierre: **todas las fases hechas**; lo único pendiente es lo que exige abrir el juego (sección 3).
+Implementación de `docs/archive/PROPUESTA_INTEGRACION.md` en el orden de la tabla 5.2: 0 → 3A → 3B → 4 → 1 → 2A → 2B, más la auditoría de Investigación. Estado al cierre: **todas las fases hechas**; lo único pendiente es lo que exige abrir el juego (sección 3).
 
 Verificación de cierre (headless, Godot 4.6.2): `tools/run_tests.sh` → 26 tests, 0 fallos (`test_enemy_roles.gd` y `test_raider_timing.gd` sin editar); `Main2d.tscn --quit-after 90` sin `SCRIPT ERROR`; `gdparse` sobre los `.gd` tocados sin errores.
 
@@ -189,4 +189,4 @@ Resto de la integración
 - Auditoría de Investigación: I-02..I-06 (orientación del primer gasto, números de tarjetas sin bonus, "+N" del HUD sin Mago/Élite, atajo/aviso de comprable, rebuild del panel) e I-08..I-13 (balance de Saber y multijugador). Requieren decisión de diseño.
 - Armadura plana como stat nuevo (6.4) y arte de armadura sobre el sprite del héroe: fuera de alcance.
 - Drag & drop del inventario (6.12) y bestiario también en el menú principal (6.11): fuera de alcance.
-- Session bucle-7 (puertas, luz, extracción, pausa 1x/2x): cambios, tablas y lista de lo no verificado en `docs/BUCLE_JUEGO.md`; números en `docs/BALANCE.md` "Bucle".
+- Session bucle-7 (puertas, luz, extracción, pausa 1x/2x): cambios, tablas y lista de lo no verificado en `docs/BUCLE_JUEGO.md`; números en `docs/archive/BALANCE_HISTORIA.md` "Bucle".

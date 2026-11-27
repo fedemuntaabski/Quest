@@ -31,9 +31,9 @@ godot --headless --path . --script res://tests/test_<area>.gd   # one test
 python -m gdtoolkit.parser <files.gd>                           # gdparse (not on PATH)
 ```
 
-Godot on the dev machine: `E:\Descargas\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe`.
+Godot on the dev machine: `QUEST_GODOT` (`.claude/settings.json`; `run_tests.sh` reads it). Session ritual and /goal template: skill `quest-sesion`.
 
-Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` per area, one process each via `tests/run_all.gd` (logs in `user://test_logs`; 0 tests run = failure; parallel, so each test that saves uses its own `SLOT`). `tests/support/ErrorProbe.gd` collects engine ERROR/WARNING. `tests/tools/` = real-window screenshots (`shot_*.gd`; `shot_barrido.gd` = every menu/HUD piece at 720p, 1080p, text ×1.5; `shot_mazmorra.gd` = maps; `recorrido_menu.gd` = menu walk with real clicks), benches, net probes, `soak_runs.gd` (seeds × 5 floors with save/continue). `test_door_roll` takes ~4.5 min. Pause-tree/flow tests boot the real `Main`.
+Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` per area, one process each via `tests/run_all.gd` (logs in `user://test_logs`; 0 tests run = failure; parallel, so each test that saves uses its own `SLOT`). `tests/support/ErrorProbe.gd` collects engine ERROR/WARNING. `tests/tools/` = real-window screenshots (`shot_*.gd`; `shot_barrido.gd` = every menu/HUD piece at 720p, 1080p, text ×1.5; `shot_mazmorra.gd` = maps; `recorrido_menu.gd` = menu walk with real clicks), benches, net probes, `sweep.gd` (BalanceSim sweep), `soak_runs.gd` (seeds × 5 floors with save/continue). `test_door_roll` takes ~4.5 min. Pause-tree/flow tests boot the real `Main`.
 
 ## Gotchas (read before editing)
 
@@ -82,7 +82,7 @@ Tests are plain `extends SceneTree` scripts (exit 0/1), one `tests/test_*.gd` pe
 - Lighting: middle-click **release** on a room (not if `GameCamera.was_dragged()`) → `RoomZone.toggle_light()`; cost `LIGHT_COST` + `light_cost_step` per room lit with embers − research; switching off refunds what was paid. Start room lit free, never dark (`RoomZone.set_lit` gate).
 - Building: only via bottom-bar armed mode (`BuildingMenu` tabs Mayores/Menores/Investigación, keys B/V/R, 1–9) → click a highlighted `BuildingSlot`. Buildings are data: `BuildingDef` `.tres` in `resources/buildings/` → `Building.CATALOG`; costs `BuildingCostCurve`; click a built one → `BuildingPopup` (demolish/repair). `Building.is_working()` honours `requires_light`.
 - Research: `ResearchConfig`/`ResearchEntry`/`BuildingResearch` (`resources/research/research_config.tres`), spends Saber, needs a working Scriptorium; consumers read `ResourceManager.get_bonus(effect)`.
-- Docs: `docs/ECONOMIA.md`, `docs/BUCLE_JUEGO.md`, `docs/BALANCE.md` (numbers from `BalanceSim`, checked by `test_balance`).
+- Docs: `docs/ECONOMIA.md`, `docs/BUCLE_JUEGO.md`, `docs/BALANCE.md` (current numbers from `BalanceSim`, checked by `test_balance`; history `docs/archive/BALANCE_HISTORIA.md`).
 
 ### Heroes, combat, enemies
 

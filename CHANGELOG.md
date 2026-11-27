@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## session/herramientas-43
+- Sin cambios en el juego: herramientas y documentación para abrir y cerrar sesiones más rápido.
+
 ## session/juego-42
 - La sala de Descanso cura gratis con el tiempo (antes costaba Comida). No cura si hay un enemigo dentro ni durante la extracción.
 
