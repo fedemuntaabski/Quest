@@ -33,7 +33,7 @@ const BOUNCE_RUN_TIME := 0.3
 ## Collision circle = this fraction of the drawn body's longer side.
 const BODY_RADIUS_FACTOR := 0.4
 
-enum State { IDLE, RUN, HIT }
+enum State { IDLE, RUN, HIT, ATTACK, DOWNED }
 
 var state: State = State.IDLE
 
@@ -51,6 +51,10 @@ var _topple: Tween
 ## the visual's position, only the owner's).
 var _rest_position := Vector2.INF
 var _material: ShaderMaterial
+## personajes-46: own "attack"/"fall" frames (assets/art/own/characters) when the SpriteFrames have
+## them; the tween tricks below stay as the fallback (enemies, Tiny Creatures).
+var _attack_left: float = 0.0
+var _downed: bool = false
 
 
 func _ready() -> void:
@@ -159,6 +163,12 @@ func lunge(dir: Vector2) -> void:
 		return
 	if absf(dir.x) > 0.01:
 		flip_h = dir.x < 0.0
+	if has_frames(&"attack") and not _downed:
+		_attack_left = sprite_frames.get_frame_count(&"attack") / maxf(sprite_frames.get_animation_speed(&"attack"), 1.0)
+		_refresh(false)
+		if animation == &"attack":
+			frame = 0
+			play(&"attack")
 	_end_slide()
 	if _rest_position == Vector2.INF:
 		_rest_position = position
@@ -171,9 +181,14 @@ func lunge(dir: Vector2) -> void:
 
 ## Downed hero: tips over onto its side and greys out; `false` stands it back up.
 func set_downed(downed: bool) -> void:
+	_downed = downed
 	if _topple and _topple.is_valid():
 		_topple.kill()
 	_topple = create_tween().set_parallel()
+	if has_frames(&"fall"):  # own frames: the "fall" animation lies down by itself, no rotation
+		_refresh(true)
+		_topple.tween_property(self, "self_modulate", DOWNED_TINT if downed else Color.WHITE, TOPPLE_TIME)
+		return
 	_topple.tween_property(self, "rotation", PI * 0.5 if downed else 0.0, TOPPLE_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN if downed else Tween.EASE_OUT)
 	_topple.tween_property(self, "self_modulate", DOWNED_TINT if downed else Color.WHITE, TOPPLE_TIME)
 
@@ -202,6 +217,17 @@ func spawn_corpse(parent: Node) -> Sprite2D:
 	return corpse
 
 
+func has_frames(anim: StringName) -> bool:
+	return sprite_frames != null and sprite_frames.has_animation(anim)
+
+
+## Lying on the floor: the last "fall" frame, or the 90° topple of the fallback.
+func is_lying() -> bool:
+	if has_frames(&"fall"):
+		return _downed and animation == &"fall"
+	return is_equal_approx(rotation, PI * 0.5)
+
+
 func is_knocked_back() -> bool:
 	return _knock != null and _knock.is_valid() and _knock.is_running()
 
@@ -220,6 +246,7 @@ func _process(delta: float) -> void:
 	else:
 		_run_left = maxf(_run_left - delta, 0.0)
 	_hit_left = maxf(_hit_left - delta, 0.0)
+	_attack_left = maxf(_attack_left - delta, 0.0)
 	_refresh(false)
 
 
@@ -227,7 +254,11 @@ func _refresh(force: bool) -> void:
 	if sprite_frames == null:
 		return
 	var wanted := State.IDLE
-	if _hit_left > 0.0:
+	if _downed and has_frames(&"fall"):
+		wanted = State.DOWNED
+	elif _attack_left > 0.0:
+		wanted = State.ATTACK
+	elif _hit_left > 0.0:
 		wanted = State.HIT
 	elif _run_left > 0.0:
 		wanted = State.RUN
@@ -235,7 +266,11 @@ func _refresh(force: bool) -> void:
 		return
 	state = wanted
 	var anim := &"idle"
-	if state == State.HIT and sprite_frames.has_animation("hit"):
+	if state == State.DOWNED:
+		anim = &"fall"
+	elif state == State.ATTACK:
+		anim = &"attack"
+	elif state == State.HIT and sprite_frames.has_animation("hit"):
 		anim = &"hit"
 	elif state == State.RUN and sprite_frames.has_animation("run"):
 		anim = &"run"

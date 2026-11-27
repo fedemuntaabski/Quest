@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
+[ext_resource type="SpriteFrames" path="res://resources/sprite_frames/hero_elf_f.tres" id="3_frames"]
+[ext_resource type="Resource" path="res://resources/abilities/cleric_passive.tres" id="4_passive"]
+[ext_resource type="Resource" path="res://resources/abilities/cleric_active.tres" id="5_active"]
+[ext_resource type="Resource" path="res://resources/perks/salmo.tres" id="perk_0"]
+[ext_resource type="Resource" path="res://resources/perks/habito_grueso.tres" id="perk_1"]
+[ext_resource type="Resource" path="res://resources/perks/luz_mayor.tres" id="perk_2"]
+[ext_resource type="Resource" path="res://resources/perks/vigilia.tres" id="perk_3"]
+
+[resource]
+script = ExtResource("1_character_data")
+character_id = "cleric"
+display_name = "Clériga"
+role = "Sanadora"
+description = "Sostiene al grupo en la pelea: su plegaria cierra heridas y su luz levanta a los que flaquean."
+base_hp = 24
+attack_damage = 3
+attack_interval = 1.1
+attack_range = 160.0
+passive_ability_desc = "Cura poco a poco a los héroes de su sala."
+sprite_frames = ExtResource("3_frames")
+passive = ExtResource("4_passive")
+active = ExtResource("5_active")
+vfx_color = Color(1, 0.86, 0.52, 1)
+perks = Array[Resource]([ExtResource("perk_0"), ExtResource("perk_1"), ExtResource("perk_2"), ExtResource("perk_3")])

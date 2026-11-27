@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"red_reforzada"
+display_name = "Red Reforzada"
+description = "La Red de Caza frena 2 s más."
+unlock_level = 5
+exclusive_group = &"ranger_l5"
+mods = {
+"active_duration": 2
+}

@@ -10,8 +10,10 @@
 [ext_resource type="Resource" uid="uid://iltxr647854n" path="res://resources/enemies/tc_ogre.tres" id="8_kgn05"]
 [ext_resource type="Resource" uid="uid://bycyt4hwplrrk" path="res://resources/enemies/tc_red_imp.tres" id="9_0etrb"]
 [ext_resource type="Resource" uid="uid://dwbclw6gvbjn" path="res://resources/enemies/tc_wolf.tres" id="10_bi346"]
+[ext_resource type="Resource" path="res://resources/enemies/pumpkin.tres" id="p46_pumpkin"]
+[ext_resource type="Resource" path="res://resources/enemies/swampy.tres" id="p46_swampy"]
 
 [resource]
 script = ExtResource("1_81o8m")
-types = Array[ExtResource("2_cyy4q")]([ExtResource("3_6he7a"), ExtResource("4_3hqp2"), ExtResource("5_awd11"), ExtResource("6_oop3q"), ExtResource("7_4ued4"), ExtResource("8_kgn05"), ExtResource("9_0etrb"), ExtResource("10_bi346")])
-weights = PackedFloat32Array(3, 3, 3, 1, 1, 1, 3, 3)
+types = Array[ExtResource("2_cyy4q")]([ExtResource("3_6he7a"), ExtResource("4_3hqp2"), ExtResource("5_awd11"), ExtResource("6_oop3q"), ExtResource("7_4ued4"), ExtResource("8_kgn05"), ExtResource("9_0etrb"), ExtResource("10_bi346"), ExtResource("p46_pumpkin"), ExtResource("p46_swampy")])
+weights = PackedFloat32Array(3, 3, 3, 1, 1, 1, 3, 3, 2, 2)

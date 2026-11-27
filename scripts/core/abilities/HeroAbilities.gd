@@ -33,7 +33,11 @@ func setup(p_hero: Player, data: CharacterData) -> void:
 	ability_name = data.active_name()
 
 
+var _regen_left: float = 0.0
+
+
 func _process(delta: float) -> void:
+	_tick_regen(delta)
 	if cooldown_left <= 0.0:
 		return
 	cooldown_left = maxf(cooldown_left - delta, 0.0)
@@ -148,6 +152,28 @@ func passive_discovery_bonus() -> Dictionary:
 	return {}
 
 
+## Plegaria (personajes-46, ALLY_REGEN): every passive.cooldown s of game time the living heroes in
+## her room heal passive_value() HP. Host only (HP reaches clients through RunState).
+func _tick_regen(delta: float) -> void:
+	if passive == null or passive.effect != AbilityData.Effect.ALLY_REGEN or hero == null or not hero.stats.is_alive() or not Net.is_authority():
+		return
+	_regen_left -= delta
+	if _regen_left > 0.0:
+		return
+	_regen_left = maxf(passive.cooldown, 0.5)
+	for ally in _allies_in_room():
+		if ally.stats.current_hp < ally.stats.max_hp:
+			ally.stats.heal(roundi(passive_value()))
+
+
+## Botín de Caza (personajes-46, IRON_ON_KILL): called by Player when its hit finished an enemy.
+func on_kill() -> void:
+	if passive and passive.effect == AbilityData.Effect.IRON_ON_KILL and hero.stats.is_alive():
+		var resources := ManagerLocator.get_resource_manager()
+		if resources:
+			resources.add_resource("iron", roundi(passive_value()))
+
+
 ## Mente Analítica (juego-36): fraction off research costs while this hero stands.
 func research_discount() -> float:
 	return passive.research_discount if passive and hero.stats.is_alive() else 0.0
@@ -178,6 +204,12 @@ func try_activate() -> bool:
 			_bless_room()
 		AbilityData.Effect.BURST_STRIKE:
 			_burst_strike()
+		AbilityData.Effect.TEAM_HEAL:
+			for ally in _allies_in_room():
+				ally.stats.heal(roundi(active_value()))
+		AbilityData.Effect.SNARE:
+			for enemy in _enemies_in_reach():
+				enemy.apply_slow(active_duration())
 		_:
 			return false
 	cooldown_left = active_cooldown()
@@ -195,7 +227,7 @@ func _play_cast_vfx() -> void:
 		return
 	var targets: Array[Player] = []
 	match active.effect:
-		AbilityData.Effect.TEAM_ATTACK_BUFF:
+		AbilityData.Effect.TEAM_ATTACK_BUFF, AbilityData.Effect.TEAM_HEAL:
 			targets = _allies_in_room()
 		AbilityData.Effect.TEAM_SHIELD:
 			for ally in ManagerLocator.get_heroes():
@@ -257,6 +289,15 @@ func _bless_room() -> void:
 			_buff(building, "blessing", func() -> void: building.damage_mult = 1.0 + active_value(), func() -> void: building.damage_mult = 1.0)
 		elif building is WorkshopBuilding and resources:
 			resources.add_resource(building.resource_type, building.yield_amount)
+
+
+func _enemies_in_reach() -> Array[Enemy]:
+	var out: Array[Enemy] = []
+	for area in hero.hitbox.get_overlapping_areas():
+		var enemy := area.get_parent() as Enemy
+		if enemy and enemy.is_alive() and not out.has(enemy):
+			out.append(enemy)
+	return out
 
 
 func _burst_strike() -> void:

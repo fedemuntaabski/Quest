@@ -48,6 +48,21 @@ enum Role { HUNTER, RAIDER }
 ## Damage per AttackTimer tick to the Relic (RAIDER only).
 @export var damage_vs_relic: int = 0
 
+@export_group("Special")
+## personajes-46: what it does besides walking and hitting on contact.
+## RANGED shoots a Projectile at the nearest living hero within shot_range every shot_interval
+## (and stops at shot_range * RANGED_STANDOFF from its target); HEALER heals heal_amount HP to every
+## wounded enemy within heal_radius every heal_interval.
+enum Special { NONE, RANGED, HEALER }
+@export var special: Special = Special.NONE
+@export var shot_range: float = 0.0
+## Per shot, before the floor x type damage multipliers.
+@export var shot_damage: int = 0
+@export var shot_interval: float = 1.5
+@export var heal_amount: int = 0
+@export var heal_interval: float = 2.0
+@export var heal_radius: float = 0.0
+
 @export_group("Targeting")
 ## What it goes for. null = derived from `role`/`behavior` (TargetProfile.derive).
 @export var target_profile: TargetProfile

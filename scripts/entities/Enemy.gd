@@ -408,7 +408,13 @@ func _pursue_zone(room_manager: RoomManager, target_zone_id: String, point: Vect
 		for step_id in path.slice(1):
 			waypoints.append(room_manager.get_center(step_id))
 			zone_ids.append(step_id)
-	if point != Vector2.INF and (not waypoints.is_empty() or global_position.distance_to(point) > attack_range):
+	var standoff := type.shot_range * RANGED_STANDOFF if type and type.special == EnemyType.Special.RANGED else 0.0
+	if point != Vector2.INF and standoff > 0.0:
+		var from: Vector2 = waypoints[-1] if not waypoints.is_empty() else global_position
+		if from.distance_to(point) > standoff:
+			waypoints.append(point + point.direction_to(from) * standoff + _ring_offset())
+			zone_ids.append(target_zone_id)
+	elif point != Vector2.INF and (not waypoints.is_empty() or global_position.distance_to(point) > attack_range):
 		waypoints.append(point + _ring_offset())
 		zone_ids.append(target_zone_id)
 	if waypoints.is_empty():
@@ -422,6 +428,59 @@ func _pursue_zone(room_manager: RoomManager, target_zone_id: String, point: Vect
 	_moving = false
 
 	_check_trap_in_current_room(room_manager)
+
+
+## personajes-46: a RANGED enemy stops this share of its shot_range short of the point it chases.
+const RANGED_STANDOFF := 0.6
+const SHOT_SPEED := 420.0
+const SHOT_COLOR := Color(1.0, 0.62, 0.2)
+const HEAL_COLOR := Color(0.55, 0.9, 0.45)
+var _special_left: float = 0.0
+
+
+## RANGED / HEALER (EnemyType.special) on game time; host only (clients get the HP from snapshots).
+func _process(delta: float) -> void:
+	if type == null or type.special == EnemyType.Special.NONE or charging or not is_alive() or not Net.is_authority():
+		return
+	_special_left -= delta
+	if _special_left > 0.0:
+		return
+	if type.special == EnemyType.Special.RANGED:
+		_special_left = type.shot_interval if _shoot() else 0.25
+	else:
+		_special_left = type.heal_interval
+		_heal_allies()
+
+
+## Shoots the nearest living hero within shot_range. False = nobody in range.
+func _shoot() -> bool:
+	var target: Player = null
+	var best := type.shot_range
+	for hero in ManagerLocator.get_heroes():
+		var d := global_position.distance_to(hero.global_position)
+		if hero.stats.is_alive() and d <= best:
+			best = d
+			target = hero
+	if target == null:
+		return false
+	var damage := maxi(1, roundi(type.shot_damage * dmg_multiplier))
+	visual.lunge(global_position.direction_to(target.global_position))
+	Projectile.fire(get_parent(), to_global(visual.body_center()), target.hurtbox, hitbox, damage, SHOT_SPEED, SHOT_COLOR)
+	return true
+
+
+## Heals every other wounded enemy within heal_radius (never above its max HP).
+func _heal_allies() -> void:
+	var vfx := ManagerLocator.get_vfx_manager()
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var ally := node as Enemy
+		if ally == null or ally == self or not ally.is_alive() or ally.current_hp >= ally.max_hp \
+				or global_position.distance_to(ally.global_position) > type.heal_radius:
+			continue
+		ally.current_hp = mini(ally.current_hp + type.heal_amount, ally.max_hp)
+		ally.queue_redraw()
+		if vfx:
+			vfx.play(&"heal_glow", ally.global_position, HEAL_COLOR)
 
 
 ## Fixed per-enemy offset (8 consecutive slots) so enemies converging on one point don't stack.

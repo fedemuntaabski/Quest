@@ -18,7 +18,7 @@ class_name BalanceSim
 ##    hero faces wave / PARTY_SIZE enemies on average, a fraction weighting the last);
 ##  - hero level on floor f = f - 1 (one level-up bought per floor).
 
-const HERO_IDS: Array[String] = ["warrior", "mage", "rogue", "tank"]
+const HERO_IDS: Array[String] = ["warrior", "mage", "rogue", "tank", "ranger", "cleric"]
 const FLOORS := 5
 const WAVE_TURN := 5
 const LAYOUT_SEEDS := 30
@@ -127,6 +127,7 @@ static func enemy_stats(type: EnemyType, floor_index: int) -> Dictionary:
 		"contact": maxi(1, roundi(Enemy.resolved_contact_damage(type) * dmg_mult)),
 		"relic": maxi(1, roundi(type.damage_vs_relic * dmg_mult)) if type.damage_vs_relic > 0 else 0,
 		"building": maxi(1, roundi(Enemy.resolved_building_damage(type) * dmg_mult)),
+		"shot": maxi(1, roundi(type.shot_damage * dmg_mult)) if type.special == EnemyType.Special.RANGED else 0,
 		"speed": Enemy.resolved_speed(type) * type.speed_mult,
 	}
 
@@ -148,6 +149,10 @@ static func duel(hero_id: String, level: int, type: EnemyType, floor_index: int,
 	var ttk_enemy := hits * float(hero["interval"])
 	var hit := maxi(1, roundi(int(enemy["contact"]) * (1.0 - float(hero["reduction_pct"]))) - int(hero["armor"]))  # HeroAbilities.incoming_damage
 	var ttk_hero := ceili(float(hero["hp"]) / float(hit)) * Enemy.CONTACT_HIT_INTERVAL
+	var hit_taken := float(hit)
+	if type.special == EnemyType.Special.RANGED:  # personajes-46: its shots instead of contact, from out of reach
+		var shot := maxi(1, roundi(int(enemy["shot"]) * (1.0 - float(hero["reduction_pct"]))) - int(hero["armor"]))
+		hit_taken = shot * Enemy.CONTACT_HIT_INTERVAL / maxf(type.shot_interval, 0.1)
 	var exposure := (hits - 0.5) * float(hero["interval"])
 	return {
 		"hero": hero_id, "level": level, "enemy": type.id, "floor": floor_index,
@@ -155,8 +160,8 @@ static func duel(hero_id: String, level: int, type: EnemyType, floor_index: int,
 		"ttk_enemy_s": ttk_enemy, "ttk_hero_s": ttk_hero,
 		"enemy_dps": float(hit) / Enemy.CONTACT_HIT_INTERVAL, "hero_dps": hero["dps"],
 		"exposure_s": exposure,
-		"hp_lost": hit * exposure / Enemy.CONTACT_HIT_INTERVAL,
-		"hit_taken": hit,
+		"hp_lost": hit_taken * exposure / Enemy.CONTACT_HIT_INTERVAL,
+		"hit_taken": hit_taken,
 	}
 
 
@@ -167,14 +172,14 @@ static func encounter_loss(hero_id: String, level: int, type: EnemyType, floor_i
 	var d := duel(hero_id, level, type, floor_index)
 	var hero := hero_stats(hero_id, level)
 	var enemy := enemy_stats(type, floor_index)
-	var approach := approach_sec(hero, float(enemy["speed"]))
+	var approach := _approach(hero_id, hero, type, float(enemy["speed"]))
 	var per_kill := int(d["hits_to_kill"]) * float(hero["interval"])
 	var share := float(PlayerScaling.get_default().wave(wave_size(floor_index), players)) / party_size()
 	var exposure := 0.0
 	for i in ceili(share):
 		var weight := minf(share - i, 1.0)
 		exposure += weight * maxf(float(d["exposure_s"]) + i * per_kill - approach, 0.0)
-	return int(d["hit_taken"]) * exposure / Enemy.CONTACT_HIT_INTERVAL / float(hero["hp"])
+	return float(d["hit_taken"]) * exposure / Enemy.CONTACT_HIT_INTERVAL / float(hero["hp"])
 
 
 ## Seconds a ranged hero shoots before the enemy reaches contact (0 for melee).
@@ -182,6 +187,18 @@ static func approach_sec(hero: Dictionary, enemy_speed: float) -> float:
 	if not hero.get("ranged", false):
 		return 0.0
 	return maxf(float(hero["range"]) - CONTACT_PX, 0.0) / maxf(enemy_speed, 1.0)
+
+
+## personajes-46: approach_sec, but a ranged enemy shoots from beyond the hero's reach (no free
+## approach) and a SNARE active (Red de Caza) slows the walk-in for its uptime (Enemy.slow_factor()).
+static func _approach(hero_id: String, hero: Dictionary, type: EnemyType, enemy_speed: float) -> float:
+	if type.special == EnemyType.Special.RANGED:
+		return 0.0
+	var active := hero_data(hero_id).active
+	if active and active.effect == AbilityData.Effect.SNARE:
+		var uptime := minf(active.duration / maxf(active.cooldown, 0.001), 1.0)
+		enemy_speed *= 1.0 - (1.0 - Enemy.slow_factor()) * uptime
+	return approach_sec(hero, enemy_speed)
 
 
 ## Weighted mean of encounter_loss over the floor's pool.
@@ -687,11 +704,18 @@ static func run_parties() -> Array:
 	for i in HERO_IDS.size():
 		for j in range(i + 1, HERO_IDS.size()):
 			out.append([HERO_IDS[i], HERO_IDS[j]])
-	for i in HERO_IDS.size():
-		var trio: Array = HERO_IDS.duplicate()
-		trio.remove_at(i)
-		out.append(trio)
-	out.append(HERO_IDS.duplicate())
+	for size in [3, 4]:  # personajes-46: 6 heroes, every trio and every four (co-op of 3 and 4)
+		out.append_array(_combos(HERO_IDS, size))
+	return out
+
+
+static func _combos(ids: Array, size: int, start: int = 0) -> Array:
+	if size == 0:
+		return [[]]
+	var out: Array = []
+	for i in range(start, ids.size() - size + 1):
+		for rest: Array in _combos(ids, size - 1, i + 1):
+			out.append([ids[i]] + rest)
 	return out
 
 
@@ -767,7 +791,7 @@ static func _cached_duel(hero_id: String, lvl: int, type: EnemyType, f: int) -> 
 		var d := duel(hero_id, lvl, type, f, mods)
 		var hero := hero_stats(hero_id, lvl, mods)
 		var e := enemy_stats(type, f)
-		d["approach"] = approach_sec(hero, float(e["speed"]))
+		d["approach"] = _approach(hero_id, hero, type, float(e["speed"]))
 		d["interval"] = float(hero["interval"])
 		d["enemy_hp"] = float(e["hp"])
 		d["relic"] = float(e["relic"])
@@ -945,7 +969,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 						wave.append_array(left)
 						fight_room = obras[start_id]
 						fight_relic = relic
-				_fight(party, levels, hp, wave, f, rng, damage, fight_room, tw, fight_relic)
+				_fight(party, levels, hp, wave, f, rng, damage, fight_room, tw, fight_relic, res)
 				_revive_downed(party, levels, hp, res, f)
 		if cage != "" and _alive(party, hp) and _recruit(party, levels, hp, res, f, layout.map_seed, cage):  # last chance before the exit
 			recruits += 1
@@ -979,7 +1003,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		var waves := 0 if int(_play["no_extr"]) == f else 1 + int(walk_sec / cfg.extraction_stage_interval(f, 0))
 		for _w in waves:  # fought on the carrier's way out; raiders hit the carried Relic
 			if _alive(party, hp) and relic[0] > 0.0:
-				_fight(party, levels, hp, _roll_wave(f, mini(scaling.wave(cfg.extraction_wave_size(0), players), cap), rng), f, rng, damage, obras[path[rng.randi_range(0, path.size() - 1)]], tw, relic)
+				_fight(party, levels, hp, _roll_wave(f, mini(scaling.wave(cfg.extraction_wave_size(0), players), cap), rng), f, rng, damage, obras[path[rng.randi_range(0, path.size() - 1)]], tw, relic, res)
 				_revive_downed(party, levels, hp, res, f)
 		a["dmg_extr"] += (damage[0] - phase_start) / maxf(max_total, 1.0)
 		if died == "" and relic[0] <= 0.0:
@@ -1230,6 +1254,27 @@ static func _team_mults(party: Array, hp: Dictionary) -> Array[float]:
 	return [dps, taken]
 
 
+## personajes-46: HP/s each living hero gets back during a fight from the living heroes' Plegaria
+## (ALLY_REGEN, value per cooldown) and Luz Sanadora (TEAM_HEAL, value per cooldown); the party
+## fights together, so it reaches everyone. Taken off the damage while they are exposed.
+static func _heal_rate(party: Array, hp: Dictionary) -> float:
+	var rate := 0.0
+	for id: String in party:
+		if hp[id] <= 0.0:
+			continue
+		var data := hero_data(id)
+		for ability: AbilityData in [data.passive, data.active]:
+			if ability and ability.effect in [AbilityData.Effect.ALLY_REGEN, AbilityData.Effect.TEAM_HEAL]:
+				rate += ability.value / maxf(ability.cooldown, 0.5)
+	return rate
+
+
+## Hierro the hero gets for finishing an enemy (Botín de Caza, IRON_ON_KILL).
+static func _kill_iron(id: String) -> int:
+	var passive := hero_data(id).passive
+	return roundi(passive.value) if passive and passive.effect == AbilityData.Effect.IRON_ON_KILL else 0
+
+
 ## A downed hero gets up (Comida) while somebody stands (PlayerStats.revive_hero needs an ally).
 static func _revive_downed(party: Array, levels: Dictionary, hp: Dictionary, res: Dictionary, f: int) -> void:
 	var up := upgrade_config()
@@ -1339,9 +1384,17 @@ static func _roll_wave(f: int, count: int, rng: RandomNumberGenerator) -> Array[
 ## is fought (its Defensas and Pinchos, juego-41); tw += [HP the Obras took, HP taken]; a non-empty
 ## `relic` (the carried Relic's HP) loses damage_vs_relic per RELIC_TICK_SEC a raider stays in contact.
 static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array[EnemyType], f: int, rng: RandomNumberGenerator, damage: Array,
-		room: Dictionary = {}, tw: Array = [0.0, 0.0], relic: Array = []) -> void:
+		room: Dictionary = {}, tw: Array = [0.0, 0.0], relic: Array = [], res: Dictionary = {}) -> void:
 	var spikes := _room_spikes(room)
-	var queue: Array[EnemyType] = wave.duplicate()
+	var queue: Array[EnemyType] = []
+	for healers in [false, true]:  # the Curanderos stay behind: fought last
+		for t: EnemyType in wave:
+			if (t.special == EnemyType.Special.HEALER) == healers:
+				queue.append(t)
+	var healing := 0.0  # personajes-46: HP/s the Curanderos give the rest of the wave while they stand
+	for t: EnemyType in wave:
+		if t.special == EnemyType.Special.HEALER:
+			healing += t.heal_amount / maxf(t.heal_interval, 0.1)
 	while not queue.is_empty():
 		var alive := party.filter(func(id: String) -> bool: return hp[id] > 0.0)
 		if alive.is_empty():
@@ -1355,6 +1408,7 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 		var tower_share := _room_dps(room, queue.size()) / alive.size()
 		queue.clear()
 		var mults := _team_mults(party, hp)
+		var regen := _heal_rate(party, hp)
 		for id: String in shares:
 			var left: Array = shares[id]
 			var hero := _cached_hero(id, levels[id])
@@ -1367,13 +1421,15 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 				var kill := int(d["hits_to_kill"]) * float(d["interval"]) / speedup * left_hp / enemy_hp
 				if tower_share > 0.0 and kill > 0.0:  # the hero's kill rate + the towers' share of this enemy's HP
 					kill = left_hp / (left_hp / kill + tower_share)
+				if healing > 0.0 and kill > 0.0 and left[i].special != EnemyType.Special.HEALER:
+					kill = left_hp / maxf(left_hp / kill - healing, 0.3 * left_hp / kill)
 				tw[0] += enemy_hp - left_hp + tower_share * kill
 				tw[1] += enemy_hp
 				t += kill
 				var exposure := maxf(t - float(d["interval"]) - float(d["approach"]), 0.0) if left_hp > 0.0 else 0.0
 				if not relic.is_empty():
 					relic[0] -= float(d["relic"]) * exposure / RELIC_TICK_SEC
-				var hit := float(d["hit_taken"]) * mults[1] * exposure / Enemy.CONTACT_HIT_INTERVAL
+				var hit := maxf(float(d["hit_taken"]) * mults[1] * exposure / Enemy.CONTACT_HIT_INTERVAL - regen * exposure, 0.0)
 				damage[0] += minf(hit, hp[id])
 				hp[id] -= hit
 				if hp[id] <= 0.0:
@@ -1381,6 +1437,10 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 					for j in range(i + 1, left.size()):
 						queue.append(left[j])
 					break
+				if left[i].special == EnemyType.Special.HEALER:
+					healing = maxf(healing - left[i].heal_amount / maxf(left[i].heal_interval, 0.1), 0.0)
+				if not res.is_empty():
+					res["iron"] += _kill_iron(id)
 
 
 static func _goes_for_relic(type: EnemyType) -> bool:
@@ -1434,7 +1494,7 @@ static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: 
 				if int(hero["armor"]) > 0:  # flat armor: off every hit, at least 1 (the Embestida goes through take_hit too)
 					touch = maxf(1.0, roundf(touch) - int(hero["armor"]))
 					dash = maxf(1.0, dash - int(hero["armor"]))
-				per_sec[id] = (touch / Enemy.CONTACT_HIT_INTERVAL * in_contact + dash * (1.0 - float(_play["dodge"])) / maxf(boss.charge_cooldown, 0.1)) * mults[1]
+				per_sec[id] = maxf((touch / Enemy.CONTACT_HIT_INTERVAL * in_contact + dash * (1.0 - float(_play["dodge"])) / maxf(boss.charge_cooldown, 0.1)) * mults[1] - _heal_rate(party, hp), 0.05)
 				t = minf(t, hp[id] / maxf(per_sec[id], 0.01))
 		t = minf(t, boss_hp / maxf(dps, 0.01))
 		boss_hp -= dps * t
