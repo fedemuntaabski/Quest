@@ -9,7 +9,7 @@ extends SceneTree
 ## Prints a power table (dps gain + effective-HP gain vs the hero's level-0 numbers, averaged
 ## over the heroes that may carry it) and marks items > DOMINANT_PCT over the mean of their
 ## rarity and slot (a weapon and an armor are worn together: they don't compete).
-## juego-23 (owner's picks, docs/BALANCE.md): no uncommon weapon dominates another (sword_steel
+## juego-23 (owner's picks, docs/archive/BALANCE_HISTORIA.md): no uncommon weapon dominates another (sword_steel
 ## went Rare), the Rare talisman reaches 70 % of the Uncommon one (was 30 %) (book_tides -0.3 s) and the
 ## Epic armor_steel beats the Rare armor_copper (23 HP).
 ##   godot --headless --path . --script res://tests/test_equipo_efectos.gd

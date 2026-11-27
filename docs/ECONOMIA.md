@@ -1,6 +1,6 @@
 # Economía (session economia-8)
 
-Cuatro recursos, cada uno con un rol y al menos un sumidero. Números: `docs/BALANCE.md` "Economía".
+Cuatro recursos, cada uno con un rol y al menos un sumidero. Números: `docs/archive/BALANCE_HISTORIA.md` "Economía".
 
 | Recurso | Produce | Gasta | Para qué |
 |---|---|---|---|

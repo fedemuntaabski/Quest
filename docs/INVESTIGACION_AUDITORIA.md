@@ -116,4 +116,4 @@ Severidades: ROTO = bug claro con fix pequeño; CONFUSO = UX; BALANCE = números
 
 ## Actualización session economia-8
 - `lore_workshop` y `defense_plans` pasan a `BuildingResearch` (`ballesta`; nuevos `brasero`, `catapulta`, con `tier`). Investigar exige un Scriptorium construido y activo (cierra parte de I-02: ahora la Saber tiene un primer paso claro, "Construí un Scriptorium").
-- I-08 / I-09: sin `lore_workshop` (6 de Saber) y con 3 obras en lugar de 2 el total sube a 115; la Saber sigue sobrando al final (ver `docs/BALANCE.md` "Economía"). Sin cambios en I-03..I-07 y I-10..I-13.
+- I-08 / I-09: sin `lore_workshop` (6 de Saber) y con 3 obras en lugar de 2 el total sube a 115; la Saber sigue sobrando al final (ver `docs/archive/BALANCE_HISTORIA.md` "Economía"). Sin cambios en I-03..I-07 y I-10..I-13.
