@@ -135,6 +135,12 @@ Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_
 - Siguen abiertos los ítems de juego-35 de más arriba.
 
 ## juego-44 (falta probar en ventana)
-- Cartel de pistas: fondo opaco con borde dorado, 440 px de ancho a texto ×1 y hasta 640 px a ×1,5. Solo visto en capturas (`capturas/juego-44/barrido_despues/`: Descanso, rechazo, «¡Sala secreta!»). Falta verlo jugando: que no tape demasiado mapa a ×1,5 y que una Oleada larga entre bien.
+- Cartel de pistas: fondo opaco con borde dorado, 440 px de ancho a texto ×1 y hasta 640 px a ×1,5. Visto en capturas de juego-44 y de juego-45 (`capturas/juego-44/barrido_despues/`: Descanso, rechazo, «¡Sala secreta!»). Falta verlo jugando: que no tape demasiado mapa a ×1,5 y que una Oleada larga entre bien.
 - Reliquia sola: ¿cuánto tarda el grupo en volver a la sala inicial cuando una oleada de puerta trae un saqueador? El modelo supone que nadie vuelve (`relic_left`, `docs/BALANCE.md`).
 - Catapulta nueva (5 Hierro, 10 Saber, 35 de daño): si se siente fuerte contra grupos o si sigue sin valer la pena frente a la Ballesta.
+
+## juego-45 (falta probar en ventana)
+- Cartel de pistas, en ventana real con `shot_barrido.gd` (`capturas/juego-45/barrido/`, 720, 1080 y 1080x15): Descanso, rechazo («No alcanza el Hierro: faltan 12…») y «¡Sala secreta!» en el piso 5 con fondo opaco que cubre todo el texto. A ×1,5 en el piso 5 la barra del jefe queda pegada al borde de arriba del cartel y la flecha verde de la salida lo toca.
+- **No jugado a mano:** el piso 1 con texto ×1,5 hasta ver una Invasión, un rechazo real y la pista de una sala especial. Esta sesión no tuvo control del mouse; lo de arriba es un script en ventana, no una partida.
+- [ ] Con texto ×1,5: ¿el cartel de una Invasión tapa demasiado mapa? ¿Se lee el rechazo mientras se arma una Obra?
+- [ ] Reliquia sola: ¿cuánto se aleja el grupo de la sala inicial y cuántos segundos tarda en volver cuando entra un saqueador? BalanceSim supone 5 s (`relic_back_sec`, `docs/BALANCE.md`).

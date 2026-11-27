@@ -1,6 +1,6 @@
 # BALANCE.md — estado actual
 
-Números vigentes del balance (al cierre de juego-44). Salen de `tools/BalanceSim.gd` sobre los `.tres` y las fórmulas reales; `tests/test_balance.gd` los convierte en asserts. Historial por sesión (tablas, barridos, «qué pasaría si», decisiones del dueño): `docs/archive/BALANCE_HISTORIA.md`. CSV en `docs/balance/` (`.gdignore`).
+Números vigentes del balance (al cierre de juego-45). Salen de `tools/BalanceSim.gd` sobre los `.tres` y las fórmulas reales; `tests/test_balance.gd` los convierte en asserts. Historial por sesión (tablas, barridos, «qué pasaría si», decisiones del dueño): `docs/archive/BALANCE_HISTORIA.md`. CSV en `docs/balance/` (`.gdignore`).
 
 ```
 godot --headless --path . --script res://tests/test_balance.gd                     # objetivos como asserts (~20 s)
@@ -10,9 +10,9 @@ godot --headless --path . --script res://tools/balance_sim.gd -- after          
 
 `sweep.gd`: pares (media de 6), tríos (co-op 3, media de 4) y los 4 (co-op 4), Normal y Difícil; 200 corridas por defecto (~1 min). `tag` escribe `docs/balance/<tag>_runs.csv` (`-` = no). El json acepta las claves de `BOSS_PLAY` más `"towers": false` y `"boss_near": x`. Columnas: `clave@pisos` separadas por coma (por defecto `win_rate@1/2/3/4/5`; p. ej. `win_rate@3/4/5,towers@1/3/5,dmg_by_towers_pct@1/3/5,relic_hp_end@3/5`).
 
-## Victoria por piso (publicado, juego-42; igual en juego-44)
+## Victoria por piso (publicado, juego-42; igual en juego-44 y juego-45)
 
-200 corridas, `sweep.gd` con el play por defecto (CSV `docs/balance/juego42_despues_runs.csv`; juego-44 lo repite con 0 puntos de diferencia, `juego44_despues_runs.csv`). % de corridas que ganan el piso 1 / 2 / 3 / 4 / 5:
+200 corridas, `sweep.gd` con el play por defecto (CSV `docs/balance/juego42_despues_runs.csv`; juego-44 lo repite con 0 puntos de diferencia, `juego44_despues_runs.csv`; juego-45 también, `juego45_defecto_runs.csv`). % de corridas que ganan el piso 1 / 2 / 3 / 4 / 5:
 
 | Dificultad | Grupo | Victoria 1/2/3/4/5 (%) |
 |---|---|---|
@@ -68,7 +68,8 @@ Todos sin datos de gente; son lo primero a revisar con un playtest.
 | `BOSS_NEAR_TOWERS` | 0,5 | la mitad de las veces lleva al jefe a la sala mejor defendida (lejos 52 %, cerca 90 % en Normal pares piso 3) |
 | `SPLASH_HITS` | 3 | la Catapulta pega a hasta 3 enemigos |
 | `ALTAR_KEEP_HP` | 0,5 | usa un Altar si el héroe más sano conserva la mitad de la vida |
-| `relic_left` | 0 | chance por piso de que la Reliquia quede sola en la sala inicial mientras se explora: los saqueadores de cada oleada de puerta van a ella (`_raid_relic`), solo los frenan las Obras de esa sala y nadie vuelve a ayudar |
+| `relic_left` | 0 | chance por piso de que la Reliquia quede sola en la sala inicial mientras se explora: los saqueadores de cada oleada de puerta van a ella (`_raid_relic`), solo los frenan las Obras de esa sala |
+| `relic_back_sec` | INF | segundos que tarda el grupo en volver a la sala inicial tras una oleada de puerta; hasta entonces el saqueador le pega a la Reliquia, después la oleada entera se pelea ahí (`_fight`, la Reliquia sigue en juego). INF = nadie vuelve (la cota de juego-44) |
 
 Obras: Defensa en la sala de la Reliquia y en cada sala que enciende; tras el jefe, Defensa (encendida) o Pinchos (a oscuras) en cada sala del camino a la salida. «Qué pasaría si» apagados por defecto: `free_food`, `no_doors`, `no_extr`, `no_boss`, `free_levels`, `players`, `extra_food*`, `recruit*`, `full_hp`.
 
@@ -87,6 +88,26 @@ Obras: Defensa en la sala de la Reliquia y en cada sala que enciende; tras el je
 
 Lectura: con la Reliquia sola, una oleada de puerta con un saqueador la rompe casi siempre en los pisos 1-2, porque todavía no hay Ballesta investigada y la sala inicial no tiene Defensa. Con dos Ballestas encendidas en la sala no la toca (`test_balance`). Es la cota pesimista: nadie vuelve a defenderla. El juego real depende de que el grupo vuelva a tiempo (1 saqueador tarda 15-45 s). Las tablas publicadas (`relic_left` 0) suponen que el grupo siempre la defiende. Falta medir en un playtest cuánto tarda en volver; el modelo no tiene ese tiempo.
 
+## Volver a la Reliquia (juego-45)
+
+`sweep.gd -- 200 '{"relic_left": 1, "relic_back_sec": x}'` (la Reliquia queda sola en todos los pisos). Victoria por piso (%), `die_relic` (% de los que juegan el piso) y vida de la Reliquia al final:
+
+| relic_back_sec | Grupo | Victoria 1/2/3/5 | die_relic 1/3/5 | Reliquia 1/3/5 |
+|---|---|---|---|---|
+| — (`relic_left` 0, publicado) | Normal pares | 100 / 100 / 73 / 55 | 0 / 0 / 0 | 1,0 / 1,0 / 1,0 |
+| 0 | Normal pares | 100 / 100 / 74 / 51 | 0 / 0 / 0 | 0,9 / 0,9 / 0,8 |
+| 2 (solo caminar) | Normal pares | 100 / 100 / 74 / 42 | 0 / 0 / 1 | 0,9 / 0,8 / 0,7 |
+| **5 (estimado)** | Normal pares | 100 / 95 / 63 / 14 | 1 / 10 / 22 | 0,7 / 0,5 / 0,5 |
+| 5 | Normal los 4 | 97 / 77 / 51 / 4 | 4 / 33 / 53 | 0,6 / 0,3 / 0,2 |
+| 5 | Difícil pares | 91 / 59 / 22 / 1 | 10 / 50 / 39 | 0,5 / 0,2 / 0,3 |
+| 10 | Normal pares | 80 / 50 / 21 / 1 | 21 / 40 / 60 | 0,5 / 0,3 / 0,2 |
+| 20 | Normal pares | 56 / 21 / 5 / 0 | 44 / 64 / 25 | 0,3 / 0,1 / 0,1 |
+| INF (juego-44) | Normal pares | 24 / 4 / 0 / 0 | — / 92 / 17 | — / 0,1 / 0,0 |
+
+**Estimación (supuesto, sin playtest):** 5 s = 2 s de caminata + 3 s de reacción. La caminata media de una sala a la inicial es 1,8-2,1 s según el piso (máximo 4,8-6,2 s): `_room_path` × `ROOM_WALK_PX` (288 px) / `MoveAction.DEFAULT_SPEED_PX` (420), sobre 50 mapas por piso. Los 3 s de ver el aviso y dar la orden son una suposición. En el modelo el saqueador llega en `ROOM_WALK_PX` / su velocidad (~2-3 s); en el juego tarda 4,4-6,7 s (`relic_rows`, `raider_min_arrival_sec`), así que el modelo es pesimista.
+
+Lectura: con 5 s el piso 1 de Normal pares queda en 100 % (≥ 90), así que no hace falta cambiar datos para él. El daño se acumula: la Reliquia no se cura entre oleadas y la misma lleva la extracción, por eso los pisos 3 y 5 caen (63 y 14 contra 73 y 55). Entre 5 y 10 s el piso 1 baja a 80 %: el número depende mucho de cuánto tarda el jugador en volver, y eso solo lo dice un playtest.
+
 ## Catapulta (juego-44)
 
 `sweep.gd -- 200 '{"research": ["catapulta"]}'` (la Catapulta reemplaza a la Ballesta en cada sala). Victoria 3/4/5 (%):
@@ -104,6 +125,7 @@ El dueño eligió A+B+C (versión 1.11). En pares sigue 4-5 puntos debajo de la 
 
 ## Abierto
 
-- **No modelado:** el tiempo que tarda el grupo en volver a la Reliquia (`relic_left` es la cota sin nadie que vuelva); enemigos más fuertes de las salas Élite; el Brasero; rompe-torres que tiran Obras; el tiempo de volver a la sala de Descanso.
+- **Reliquia sola:** `relic_back_sec` 5 s es una estimación; con ella los pisos 3 y 5 de Normal pares caen 10 y 41 puntos porque la Reliquia no se cura y llega gastada a la extracción. Falta medir en un playtest cuánto se aleja el grupo de la Reliquia y cuánto tarda en volver.
+- **No modelado:** enemigos más fuertes de las salas Élite; el Brasero; rompe-torres que tiran Obras; el tiempo de volver a la sala de Descanso.
 - **Catapulta:** −4/−5 en pares tras juego-44; el costo que queda es la investigación (Saber + Scriptorium).
 - **Playtest:** si un jugador lleva al jefe a sus Defensas la mitad de las veces, esquiva la mitad de las Embestidas y vuelve a descansar antes del jefe.

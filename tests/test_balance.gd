@@ -280,6 +280,18 @@ func _check_obras_model() -> void:
 		print("a floor-3 %s on the Relic left alone: bare room %.1f, 2 lit Ballestas %.1f (of 100)" % [raider.id, alone[0], guarded[0]])
 		_expect(alone[0] < 100.0, "a raider alone with the Relic leaves it at %.1f" % alone[0])
 		_expect(guarded[0] == 100.0, "2 lit Ballestas let a raider hit the Relic: %.1f" % guarded[0])
+	# juego-45 "relic_back_sec": the party walks back to the start room; the raider hits the Relic only until
+	# then, and the ones still standing are left for the party (returned).
+	_expect(float(BalanceSim.BOSS_PLAY.get("relic_back_sec", -1.0)) == INF, "BOSS_PLAY relic_back_sec missing or not INF by default")
+	if BalanceSim.BOSS_PLAY.has("relic_back_sec"):
+		var sim: Script = BalanceSim
+		var late := [100.0]
+		var early := [100.0]
+		var late_left: Array = sim.call("_raid_relic", [raider] as Array[EnemyType], 3, {"lit": true}, late, [0.0, 0.0], 999.0)
+		var early_left: Array = sim.call("_raid_relic", [raider] as Array[EnemyType], 3, {"lit": true}, early, [0.0, 0.0], 0.0)
+		print("Relic left alone, party back after 999 s: %.1f (%d raiders left); after 0 s: %.1f (%d left)" % [late[0], late_left.size(), early[0], early_left.size()])
+		_expect(late[0] < 100.0, "party back after 999 s and the Relic is whole: %.1f" % late[0])
+		_expect(early[0] == 100.0 and early_left.size() == 1, "party back at once: Relic %.1f, %d raiders left for it" % [early[0], early_left.size()])
 	BalanceSim.difficulty = null
 	BalanceSim._duel_cache.clear()
 	print("raiders on floor 3 vs a Mage: bare room %s, 2 Ballestas + Pinchos %s ([Obras share, Relic, HP])" % [outs[0], outs[1]])
