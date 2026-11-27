@@ -6,7 +6,6 @@ extends SceneTree
 ## A play json (BalanceSim.BOSS_PLAY keys, plus "towers": false and "boss_near": x for run_rows) runs a what-if.
 
 const PAIRS := [["warrior", "mage"], ["warrior", "rogue"], ["warrior", "tank"], ["mage", "rogue"], ["mage", "tank"], ["rogue", "tank"]]
-const COLS := ["win_rate", "towers", "dmg_by_towers_pct", "die_door", "die_boss", "die_extr", "die_relic", "relic_hp_end"]
 
 
 func _initialize() -> void:
@@ -34,13 +33,10 @@ func _initialize() -> void:
 	quit(0)
 
 
-## Mean of `key` over the rows of each floor (missing column = "-").
+## Mean of `key` over the rows of each floor.
 func _m(rows: Array[Dictionary], key: String, floors: Array, scale: float, fmt := "%.0f") -> String:
 	var out: Array[String] = []
 	for fl: int in floors:
 		var of := rows.filter(func(r: Dictionary) -> bool: return int(r["floor"]) == fl)
-		if not of[0].has(key):
-			out.append("-")
-			continue
 		out.append(fmt % (of.reduce(func(acc: float, r: Dictionary) -> float: return acc + float(r[key]), 0.0) / of.size() * scale))
 	return " / ".join(out)

@@ -1301,11 +1301,6 @@ static func ballesta_research_cost() -> int:
 	return 0
 
 
-static func tower_dps() -> float:
-	var b: Dictionary = Building.CATALOG[Building.BuildingType.BALLESTA]
-	return (float(b["damage"]) + roundi(_b(ResearchEntry.Effect.DEFENSE_DAMAGE))) / maxf(float(b["fire_rate"]), 0.01)  # DefenseBuilding.get_damage
-
-
 static func _alive(party: Array, hp: Dictionary) -> bool:
 	return party.any(func(id: String) -> bool: return hp[id] > 0.0)
 
