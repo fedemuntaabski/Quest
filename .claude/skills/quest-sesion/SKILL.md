@@ -49,7 +49,7 @@ Un /goal trae solo el tema, los pasos y los criterios de cierre; el resto está 
 5. `CLAUDE.md` solo si cambió algo duradero, editado en su párrafo; `wc -c CLAUDE.md` ≤ 19 KB.
 6. Push. Terminar la respuesta con el próximo /goal (plantilla abajo) y actualizar el informe si el dueño lo pidió.
 
-## Plantilla del próximo /goal (≤ 2500 caracteres)
+## Plantilla del próximo /goal (3300-4000 caracteres)
 
 ```
 <tema>-<n>: <título en una línea>.
@@ -70,5 +70,7 @@ Criterios de cierre (mostrar la salida de cada uno):
 
 Ritual: skill quest-sesion.
 ```
+
+Largo: entre 3300 y 4000 caracteres (medirlo antes de entregarlo). Los pasos van completos: archivos, datos, pantallas, qué test se escribe primero y qué capturas se sacan. El ritual no se repite.
 
 Cada criterio tiene que poder comprobarse leyendo el transcript: el evaluador del Stop hook pide la salida, no la afirmación.
