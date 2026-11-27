@@ -52,7 +52,7 @@ func _check_recruit(main2d: Node, hud: HUDController) -> void:
 	_expect(cage != null, "a cage with a candidate")
 	if cage == null:
 		return
-	_expect(cage.hero_id in ["rogue", "tank"], "the prisoner is a hero not picked: '%s'" % cage.hero_id)
+	_expect(cage.hero_id in ["rogue", "tank", "ranger", "cleric"], "the prisoner is a hero not picked: '%s'" % cage.hero_id)
 	var iron_cost: int = cage.costs.get("iron", 0)
 	var food_cost: int = cage.costs.get("food", 0)
 	_expect(iron_cost > 0 and food_cost > 0 and int(cage.costs.get("lore", 0)) > 0, "three prices (Hierro, Comida, Saber; juego-30): %s" % [cage.costs])
@@ -110,7 +110,8 @@ func _check_cap(main2d: Node) -> void:
 func _check_floor_carry() -> void:
 	var party: Array[String] = session.resolve_party(session.get_party_ids())
 	_expect(party.size() == 4, "next floor spawns the 4 (picked + recruits): %s" % [party])
-	_expect(session.get_recruit_candidates(party).is_empty(), "no candidates left")
+	# personajes-46: 6 heroes, so the 2 not in the party of 4 are still candidates.
+	_expect(session.get_recruit_candidates(party).size() == CharacterDatabase.get_all().size() - 4, "candidates left: %s" % [session.get_recruit_candidates(party)])
 
 
 func _boot() -> Array:

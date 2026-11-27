@@ -194,10 +194,12 @@ func _on_attack_landed(target: HurtboxComponent, amount: int) -> void:
 	var audio := ManagerLocator.get_audio()
 	if audio:
 		audio.play_sfx(&"hit")
+	var enemy := target.get_parent() as Enemy if is_instance_valid(target) else null
+	if enemy and not enemy.is_alive() and abilities:
+		abilities.on_kill()
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx == null or not is_instance_valid(target):
 		return
-	var enemy := target.get_parent() as Enemy
 	if is_ranged():  # the projectile already flew there: sparks on impact, no slash arc
 		vfx.play(&"hit_sparks", target.global_position, vfx_color())
 		vfx.shake_if_strong(amount, enemy.max_hp if enemy else 1)
@@ -273,9 +275,16 @@ func _orient_sprite() -> void:
 	if target != _sprite_target:  # snapshots re-set the same zone: leave a running lunge alone
 		_sprite_target = target
 		animated_sprite.set_rest(target)
+		hurtbox.position = target - _sprite_base  # personajes-46: the hittable body follows the drawn one
 		queue_redraw()  # the selection ring sits under the sprite's rest spot
 		if _carry_icon:
 			_carry_icon.position = target + Vector2(0, -animated_sprite.fit_radius() * CARRY_ICON_HEIGHT)
+
+
+## personajes-46: where this hero's body is drawn and hit (its party spot in the room), the point enemies
+## close in on and measure to; global_position stays the shared logical point of the zone.
+func body_position() -> Vector2:
+	return global_position + (hurtbox.position if hurtbox else Vector2.ZERO)
 
 
 func set_zone(zone_id: String, center: Vector2, tilemap: TileMapLayer) -> void:

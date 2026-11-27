@@ -55,9 +55,10 @@ El destino ya no está escrito dentro de `Enemy`: lo decide un **`TargetProfile`
 | Perfil | Reglas (prioridad) | Fallback | Enemigos |
 |---|---|---|---|
 | `siege` Asedio | `RELIC` (si lo golpean o un héroe está a ≤ 48 px: reglas de cazador durante `retaliate_sec`) | `RELIC` | goblin, masked_orc, orc_warrior |
-| `hunter` Cazador | héroe más cercano en `aggro_range` → héroe más cercano por ruta | zona del héroe más cercano | skelet, orc_shaman, wogol, necromancer, tc_eyeball, tc_dragon |
+| `hunter` Cazador | héroe más cercano en `aggro_range` → héroe más cercano por ruta | zona del héroe más cercano | skelet, orc_shaman, wogol, necromancer, tc_eyeball, tc_dragon, swampy (Curandero) |
 | `saboteur` Saboteador | `BUILDING_WORKSHOP` → `BUILDING_ANY` → reglas de cazador | `HOLD` | tiny_zombie, big_zombie, ogre, tc_ogre |
 | `tower_breaker` Rompe-torres | `BUILDING_DEFENSE` → `BUILDING_TRAP` → reglas de cazador | zona del héroe más cercano | tc_fire_skull, big_demon |
+| `skirmisher` Hostigador (personajes-46) | `HERO_WEAKEST` (480 px) → reglas de cazador; **ignora obras** | zona del héroe más cercano | pumpkin (Calabacero) |
 | `assassin` Asesino | `HERO_CARRIER` (en todo el grafo) → `HERO_WEAKEST` (480 px) → reglas de cazador; **ignora obras** | zona del héroe más cercano | imp, tc_red_imp, tc_wolf, chort, tc_demon |
 
 Cambios de comportamiento respecto a antes de impl-6 (la fase 3A no cambió nada: `test_enemy_roles`/`test_raider_timing` sin editar y BalanceSim idéntico):
@@ -76,3 +77,7 @@ Cambios de comportamiento respecto a antes de impl-6 (la fase 3A no cambió nada
 
 ### Balance (rompe-torres y asesinos)
 Ver `docs/archive/BALANCE_HISTORIA.md`, "Perfiles de objetivo". Los asesinos no cambian vida, daño ni velocidad: concentran la oleada en el héroe más débil, que el simulador ya modela (un héroe recibe toda la oleada). Los rompe-torres se ajustaron con `building_damage` (`tc_fire_skull` 5, `big_demon` 3).
+
+## Roles especiales y reparto en la sala (personajes-46)
+- `EnemyType.special`: **RANGED** (Calabacero, `shot_range` 300, `shot_damage` 2 cada `shot_interval` 1,6 s): dispara un `Projectile` al héroe vivo más cercano a su alcance y se queda a `shot_range × 0,6` del punto que persigue (`Enemy._pursue_zone`). **HEALER** (Curandero del Pantano, `heal_amount` 3 cada 2 s a `heal_radius` 160 px): cura a los demás enemigos heridos, nunca por encima de su vida máxima. Ambos en el host (`Enemy._process`); el cliente ve la vida por snapshot, no el proyectil. Pools: pisos 2, 3 y 4. Test: `test_enemigos_nuevos`.
+- **Reparto**: el cuerpo golpeable del héroe (`Hurtbox`) sigue a su lugar dibujado en el grupo (`PartyConfig.sprite_spacing` 50 px, antes 36) y los enemigos miden y se acercan a `Player.body_position()`, no al punto compartido de la zona. Cada enemigo ocupa un lugar de `Enemy.RING_ANGLES` a `RING_RADIUS` 42 px (antes 14) arriba y abajo de la fila de héroes, dentro del alcance de contacto (~45 px). Captura: `tests/tools/shot_combate.gd`. Limitación: los que persiguen al «más cercano» siguen juntándose cerca de los héroes del centro.

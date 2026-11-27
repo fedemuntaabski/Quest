@@ -8,8 +8,10 @@
 [ext_resource type="Resource" path="res://resources/enemies/imp.tres" id="6_a3eig"]
 [ext_resource type="Resource" path="res://resources/enemies/masked_orc.tres" id="7_ebjkr"]
 [ext_resource type="Resource" path="res://resources/enemies/tc_eyeball.tres" id="8_ufmks"]
+[ext_resource type="Resource" path="res://resources/enemies/pumpkin.tres" id="p46_pumpkin"]
+[ext_resource type="Resource" path="res://resources/enemies/swampy.tres" id="p46_swampy"]
 
 [resource]
 script = ExtResource("1_s0h1n")
-types = Array[ExtResource("2_2lfu2")]([ExtResource("3_4ayw7"), ExtResource("4_lbvk1"), ExtResource("5_v4nwo"), ExtResource("6_a3eig"), ExtResource("7_ebjkr"), ExtResource("8_ufmks")])
-weights = PackedFloat32Array(3, 2, 2, 3, 3, 1)
+types = Array[ExtResource("2_2lfu2")]([ExtResource("3_4ayw7"), ExtResource("4_lbvk1"), ExtResource("5_v4nwo"), ExtResource("6_a3eig"), ExtResource("7_ebjkr"), ExtResource("8_ufmks"), ExtResource("p46_pumpkin"), ExtResource("p46_swampy")])
+weights = PackedFloat32Array(3, 2, 2, 3, 3, 1, 1, 1)

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+[ext_resource type="Texture2D" path="res://assets/art/own/perks/passive_value.png" id="perk_icon"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"trampero"
+display_name = "Trampero"
+icon = ExtResource("perk_icon")
+description = "Cada enemigo rematado deja 1 de Hierro más."
+unlock_level = 5
+exclusive_group = &"ranger_l5"
+mods = {
+"passive_value": 1
+}

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+[ext_resource type="Texture2D" path="res://assets/art/own/perks/active_value.png" id="perk_icon"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"luz_mayor"
+display_name = "Luz Mayor"
+icon = ExtResource("perk_icon")
+description = "La Luz Sanadora cura 4 de vida más."
+unlock_level = 5
+exclusive_group = &"cleric_l5"
+mods = {
+"active_value": 4
+}

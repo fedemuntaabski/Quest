@@ -15,7 +15,14 @@ enum Effect {
 	BUILDING_BLESSING,      ## defenses in the caster's room: damage x(1 + value); workshops pay one extra tick
 	BURST_STRIKE,           ## every enemy in the caster's attack range takes attack damage x value
 	TEAM_SHIELD,            ## all living heroes take (1 - value) of the damage
+	## personajes-46 (appended: the .tres store the int)
+	ALLY_REGEN,             ## passive: every `cooldown` s the living heroes in her room heal `value` HP
+	IRON_ON_KILL,           ## passive: `value` Hierro per enemy this hero finishes off
+	TEAM_HEAL,              ## active: the living heroes in the caster's room heal `value` HP at once
+	SNARE,                  ## active: enemies in the caster's attack range are slowed for `duration` s
 }
+
+const ACTIVE_EFFECTS: Array[Effect] = [Effect.TEAM_ATTACK_BUFF, Effect.BUILDING_BLESSING, Effect.BURST_STRIKE, Effect.TEAM_SHIELD, Effect.TEAM_HEAL, Effect.SNARE]
 
 @export var id: String = ""
 @export var effect: Effect = Effect.DAMAGE_REDUCTION_PCT
@@ -41,7 +48,7 @@ enum Effect {
 
 
 func is_active() -> bool:
-	return effect >= Effect.TEAM_ATTACK_BUFF
+	return effect in ACTIVE_EFFECTS
 
 
 ## `description` with the placeholders replaced (raw numbers, no perks).

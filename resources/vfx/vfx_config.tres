@@ -61,6 +61,20 @@ effects = {
 "sheet": "own_sparkle_green",
 "tint": false
 },
+&"enemy_death": {
+"duration": 0.55,
+"scale": 1.0,
+"scene": "buff_aura",
+"sheet": "own_death_soul",
+"tint": false
+},
+&"hit_burst": {
+"duration": 0.33,
+"scale": 0.8,
+"scene": "impact_sparks",
+"sheet": "own_hit_burst",
+"tint": true
+},
 &"hit_slash": {
 "duration": 0.28,
 "scale": 1.0,

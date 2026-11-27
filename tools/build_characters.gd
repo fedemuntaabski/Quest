@@ -54,8 +54,7 @@ const POOLS := [
 
 
 func _init() -> void:
-	for character_id in HEROES:
-		_bake_hero(character_id, HEROES[character_id])
+	# personajes-46: hero SpriteFrames (with own attack/fall frames) come from tools/libresprite.sh frames.
 	var types: Dictionary = {}
 	for row in TYPES:
 		types[row[0]] = _bake_type(row)

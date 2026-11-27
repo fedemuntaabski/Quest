@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/CharacterData.gd" id="1_character_data"]
+[ext_resource type="SpriteFrames" path="res://resources/sprite_frames/hero_lizard_m.tres" id="3_frames"]
+[ext_resource type="Resource" path="res://resources/abilities/ranger_passive.tres" id="4_passive"]
+[ext_resource type="Resource" path="res://resources/abilities/ranger_active.tres" id="5_active"]
+[ext_resource type="Resource" path="res://resources/perks/ojo_avizor.tres" id="perk_0"]
+[ext_resource type="Resource" path="res://resources/perks/cuero_de_caza.tres" id="perk_1"]
+[ext_resource type="Resource" path="res://resources/perks/red_reforzada.tres" id="perk_2"]
+[ext_resource type="Resource" path="res://resources/perks/trampero.tres" id="perk_3"]
+
+[resource]
+script = ExtResource("1_character_data")
+character_id = "ranger"
+display_name = "Ballestero"
+role = "Tirador de Caza"
+description = "Caza desde lejos y vive de lo que caza: cada presa rematada deja Hierro."
+base_hp = 20
+attack_damage = 3
+attack_interval = 1.0
+attack_range = 200.0
+attack_style = 1
+projectile_speed = 900.0
+passive_ability_desc = "Gana Hierro por cada enemigo que remata."
+sprite_frames = ExtResource("3_frames")
+passive = ExtResource("4_passive")
+active = ExtResource("5_active")
+vfx_color = Color(0.86, 0.66, 0.3, 1)
+perks = Array[Resource]([ExtResource("perk_0"), ExtResource("perk_1"), ExtResource("perk_2"), ExtResource("perk_3")])

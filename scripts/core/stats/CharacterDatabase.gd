@@ -9,6 +9,8 @@ const CHARACTER_PATHS: Array[String] = [
 	"res://resources/characters/mage.tres",
 	"res://resources/characters/rogue.tres",
 	"res://resources/characters/tank.tres",
+	"res://resources/characters/ranger.tres",
+	"res://resources/characters/cleric.tres",
 ]
 
 static var _cache: Array[CharacterData] = []

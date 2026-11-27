@@ -48,7 +48,7 @@ func note_blocking_hero() -> void:
 	if not profile.retaliate:
 		return
 	for hero in ManagerLocator.get_heroes():
-		if hero.stats.is_alive() and enemy.global_position.distance_to(hero.global_position) <= BLOCK_RANGE:
+		if hero.stats.is_alive() and enemy.global_position.distance_to(hero.body_position()) <= BLOCK_RANGE:
 			note_hit_by_hero()
 			return
 
@@ -100,10 +100,10 @@ func goal_point(goal_zone_id: String) -> Vector2:
 		return Vector2.INF
 	var target := current if current != null and current.zone_id == goal_zone_id and current.is_valid() else select(room_manager)
 	if target and target.node is Player and (target.node as Player).current_zone_id == goal_zone_id:
-		return target.node.global_position
+		return (target.node as Player).body_position()
 	var hero := aggro_hero(room_manager)
 	if hero and hero.current_zone_id == goal_zone_id:
-		return hero.global_position
+		return hero.body_position()
 	return Vector2.INF
 
 
@@ -166,7 +166,7 @@ func aggro_hero(room_manager: RoomManager, reach: float = -1.0) -> Player:
 	for hero in ManagerLocator.get_heroes():
 		if not hero.stats.is_alive():
 			continue
-		var dist := enemy.global_position.distance_to(hero.global_position)
+		var dist := enemy.global_position.distance_to(hero.body_position())
 		if dist > best_dist:
 			continue
 		if not _reachable(room_manager, hero):
@@ -197,11 +197,11 @@ func _weakest_hero(room_manager: RoomManager, reach: float) -> Player:
 	for hero in ManagerLocator.get_heroes():
 		if not hero.stats.is_alive() or not _reachable(room_manager, hero):
 			continue
-		var dist := enemy.global_position.distance_to(hero.global_position)
+		var dist := enemy.global_position.distance_to(hero.body_position())
 		if reach > 0.0 and dist > reach:
 			continue
 		if best == null or hero.stats.current_hp < best.stats.current_hp \
-				or (hero.stats.current_hp == best.stats.current_hp and dist < enemy.global_position.distance_to(best.global_position)):
+				or (hero.stats.current_hp == best.stats.current_hp and dist < enemy.global_position.distance_to(best.body_position())):
 			best = hero
 	return best
 
@@ -216,7 +216,7 @@ func _keep_current(index: int, reach: float, room_manager: RoomManager) -> Playe
 	if current == null or current.rule_index != index or not (current.node is Player) or not current.is_valid():
 		return null
 	var hero := current.node as Player
-	if enemy.global_position.distance_to(hero.global_position) <= reach * profile.drop_range_mult and _reachable(room_manager, hero):
+	if enemy.global_position.distance_to(hero.body_position()) <= reach * profile.drop_range_mult and _reachable(room_manager, hero):
 		return hero
 	return null
 

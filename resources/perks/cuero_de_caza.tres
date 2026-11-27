@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+[ext_resource type="Texture2D" path="res://assets/art/own/perks/hp.png" id="perk_icon"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"cuero_de_caza"
+display_name = "Cuero de Caza"
+icon = ExtResource("perk_icon")
+description = "Un jubón curtido: +6 de vida."
+unlock_level = 3
+exclusive_group = &"ranger_l3"
+mods = {
+"hp": 6
+}

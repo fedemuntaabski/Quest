@@ -106,8 +106,8 @@ func _check_menu() -> void:
 	var backs := [0]
 	menu.back_pressed.connect(func() -> void: backs[0] += 1)
 
-	_expect(CharacterDatabase.get_all().size() == 4, "expected 4 heroes")
-	_expect(menu._cards.size() == 4, "expected 4 cards, got %d" % menu._cards.size())
+	_expect(CharacterDatabase.get_all().size() == 6, "expected 6 heroes (personajes-46)")
+	_expect(menu._cards.size() == 6, "expected 6 cards, got %d" % menu._cards.size())
 	_expect(menu.start_button.disabled and not menu.can_start(), "Start should begin disabled")
 
 	_expect(menu.toggle_hero("rogue") and menu.selected == _ids(["rogue"]), "first pick")

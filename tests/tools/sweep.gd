@@ -1,7 +1,9 @@
 extends SceneTree
 
-## BalanceSim sweep (not a test): pairs (mean of 6), trios (co-op 3, mean of 4) and the four
-## (co-op 4), Normal and Difícil, with the shipped data. Prints one markdown row per group.
+## BalanceSim sweep (not a test): every pair, trio (co-op 3) and four (co-op 4) of BalanceSim.HERO_IDS
+## (personajes-46: 6 heroes = 15 / 20 / 15 groups) plus "pares 4" = the 6 pairs of the first four heroes
+## (the pre-personajes-46 "pares", to compare old tables), Normal and Difícil, with the shipped data.
+## Prints one markdown row per group (mean of its parties).
 ##   godot --headless --path . --script res://tests/tools/sweep.gd -- [runs] [tag] [play json] [cols]
 ## runs: default 200. tag: writes docs/balance/<tag>_runs.csv ("" or "-" = no CSV).
 ## play json: BalanceSim.BOSS_PLAY keys, plus "towers": false and "boss_near": x for run_rows.
@@ -22,11 +24,7 @@ func _initialize() -> void:
 	for spec: String in (a[3] if a.size() > 3 else "win_rate@1/2/3/4/5").split(","):
 		var p := spec.split("@")
 		cols.append([p[0], Array(p[1].split("/")).map(func(s: String) -> int: return int(s))])
-	var trios: Array = []
-	for i in 4:
-		var t: Array = BalanceSim.HERO_IDS.duplicate()
-		t.remove_at(i)
-		trios.append(t)
+	var ids: Array = BalanceSim.HERO_IDS.duplicate()
 	var head := "| Dificultad | Grupo |"
 	for c in cols:
 		head += " %s %s |" % [c[0], "/".join(c[1])]
@@ -34,7 +32,7 @@ func _initialize() -> void:
 	print("|---|---|" + "---|".repeat(cols.size()))
 	var all: Array[Dictionary] = []
 	for level: DifficultyLevel in DifficultyConfig.get_default().levels:
-		for job in [["pares", PAIRS], ["tríos", trios], ["los 4", [BalanceSim.HERO_IDS.duplicate()]]]:
+		for job in [["pares 4", PAIRS], ["pares", BalanceSim._combos(ids, 2)], ["tríos", BalanceSim._combos(ids, 3)], ["de a 4", BalanceSim._combos(ids, 4)]]:
 			var rows := BalanceSim.run_rows(runs, job[1], [level], play.get("towers", true), play.get("boss_near", BalanceSim.BOSS_NEAR_TOWERS), play)
 			all.append_array(rows)
 			var line := "| %s | %s |" % [level.id, job[0]]

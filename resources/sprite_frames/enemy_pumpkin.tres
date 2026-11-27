@@ -1,0 +1,47 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/enemies/pumpkin_dude_idle_anim_f0.png" id="1_t"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/pumpkin_dude_idle_anim_f1.png" id="2_t"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/pumpkin_dude_idle_anim_f2.png" id="3_t"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/pumpkin_dude_idle_anim_f3.png" id="4_t"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/pumpkin_dude_run_anim_f0.png" id="5_t"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/pumpkin_dude_run_anim_f1.png" id="6_t"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/pumpkin_dude_run_anim_f2.png" id="7_t"]
+[ext_resource type="Texture2D" path="res://assets/art/enemies/pumpkin_dude_run_anim_f3.png" id="8_t"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_t")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_t")
+}],
+"loop": true,
+"name": &"run",
+"speed": 10.0
+}]

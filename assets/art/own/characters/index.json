@@ -1,0 +1,86 @@
+{
+	"dwarf_m_attack": {
+		"columns": 4,
+		"fps": 20,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"dwarf_m_fall": {
+		"columns": 4,
+		"fps": 12,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"elf_f_attack": {
+		"columns": 4,
+		"fps": 20,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"elf_f_fall": {
+		"columns": 4,
+		"fps": 12,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"elf_m_attack": {
+		"columns": 4,
+		"fps": 20,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"elf_m_fall": {
+		"columns": 4,
+		"fps": 12,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"knight_m_attack": {
+		"columns": 4,
+		"fps": 20,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"knight_m_fall": {
+		"columns": 4,
+		"fps": 12,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"lizard_m_attack": {
+		"columns": 4,
+		"fps": 20,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"lizard_m_fall": {
+		"columns": 4,
+		"fps": 12,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"wizzard_m_attack": {
+		"columns": 4,
+		"fps": 20,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	},
+	"wizzard_m_fall": {
+		"columns": 4,
+		"fps": 12,
+		"frame_h": 44,
+		"frame_w": 48,
+		"frames": 4
+	}
+}

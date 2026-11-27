@@ -1,77 +1,91 @@
 {
-	"own_flame_gold": {
+	"own_death_soul": {
 		"columns": 8,
 		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 8
+	},
+	"own_flame_gold": {
+		"columns": 8,
+		"fps": 15.0,
 		"frame_h": 40,
 		"frame_w": 40,
 		"frames": 8
 	},
+	"own_hit_burst": {
+		"columns": 5,
+		"fps": 15,
+		"frame_h": 32,
+		"frame_w": 32,
+		"frames": 5
+	},
 	"own_portal_red": {
 		"columns": 8,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 40,
 		"frame_w": 40,
 		"frames": 8
 	},
 	"own_ring_blue": {
 		"columns": 8,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 40,
 		"frame_w": 40,
 		"frames": 8
 	},
 	"own_ring_gold": {
 		"columns": 8,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 40,
 		"frame_w": 40,
 		"frames": 8
 	},
 	"own_ring_green": {
 		"columns": 8,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 40,
 		"frame_w": 40,
 		"frames": 8
 	},
 	"own_ring_red": {
 		"columns": 8,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 40,
 		"frame_w": 40,
 		"frames": 8
 	},
 	"own_ring_violet": {
 		"columns": 8,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 40,
 		"frame_w": 40,
 		"frames": 8
 	},
 	"own_slash": {
 		"columns": 6,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 32,
 		"frame_w": 32,
 		"frames": 6
 	},
 	"own_smoke_brown": {
 		"columns": 8,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 32,
 		"frame_w": 32,
 		"frames": 8
 	},
 	"own_sparkle_green": {
 		"columns": 8,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 32,
 		"frame_w": 32,
 		"frames": 8
 	},
 	"own_sparks_yellow": {
 		"columns": 6,
-		"fps": 15,
+		"fps": 15.0,
 		"frame_h": 32,
 		"frame_w": 32,
 		"frames": 6

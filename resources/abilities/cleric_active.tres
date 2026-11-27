@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AbilityData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/abilities/AbilityData.gd" id="1_ability"]
+[ext_resource type="Texture2D" path="res://assets/art/own/abilities/ability_cleric_active.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_ability")
+id = "cleric_active"
+effect = 10
+value = 8.0
+cooldown = 20.0
+vfx = &"heal_glow"
+display_name = "Luz Sanadora"
+description = "Los héroes vivos de su sala recuperan {value} de vida al instante. Enfriamiento {cooldown} s."
+icon = ExtResource("2_icon")

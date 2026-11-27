@@ -50,8 +50,26 @@ const FLAME: Array[Vector2] = [Vector2(0.54, 0.04), Vector2(0.66, 0.26), Vector2
 	Vector2(0.72, 0.88), Vector2(0.5, 0.96), Vector2(0.28, 0.88), Vector2(0.12, 0.68), Vector2(0.2, 0.46), Vector2(0.3, 0.54), Vector2(0.36, 0.3)]
 
 
+## personajes-46: own 16 px icons drawn in LibreSprite (tools/libresprite_icons.js); the polygons
+## below stay as the fallback for a type without one.
+const ART_PATH := "res://assets/art/own/resources/%s.png"
+static var _art: Dictionary = {}
+
+
+static func art_for(type: String) -> Texture2D:
+	if not _art.has(type):
+		_art[type] = load(ART_PATH % type) if ResourceLoader.exists(ART_PATH % type) else null
+	return _art[type]
+
+
 func _draw() -> void:
 	var draw_size: Vector2 = size.max(Vector2.ONE)
+	var tex := art_for(icon_type)
+	if tex:
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		var side := minf(draw_size.x, draw_size.y)
+		draw_texture_rect(tex, Rect2((draw_size - Vector2(side, side)) * 0.5, Vector2(side, side)), false)
+		return
 	var color: Color = BASE_COLORS.get(icon_type, QuestPalette.PARCHMENT_LIGHT)
 
 	if enable_shadow:

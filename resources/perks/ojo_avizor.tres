@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="HeroPerk" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/stats/HeroPerk.gd" id="1_perk"]
+[ext_resource type="Texture2D" path="res://assets/art/own/perks/attack_range.png" id="perk_icon"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"ojo_avizor"
+display_name = "Ojo Avizor"
+icon = ExtResource("perk_icon")
+description = "Apunta desde más lejos: +30 px de alcance."
+unlock_level = 3
+exclusive_group = &"ranger_l3"
+mods = {
+"attack_range": 30
+}

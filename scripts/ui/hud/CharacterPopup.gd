@@ -17,7 +17,6 @@ class_name CharacterPopup
 ## Built in code by HUDController; refreshes on signals only.
 
 const PREVIEW_SIZE := Vector2(128, 128)
-const PANEL_WIDTH := 520.0
 const STAT_COLUMNS := ["Atributo", "Base", "Nivel", "Mejoras", "Equipo", "Total"]
 const ABILITY_ICON := Vector2(32, 32)
 const NEXT_COLOR := Color(0.5, 0.95, 0.55)
@@ -88,7 +87,14 @@ func _on_hp_changed(_current: int, _max: int) -> void:
 
 # ---------------- BUILD ----------------
 
+## personajes-46 (owner's pick of 2 mockups, "Libro abierto"): a menu frame with two columns, the
+## hero, Atributos and Habilidades on the left; level-up, Curar, class perks and Equipo on the right.
+const PANEL_WIDTH := 1000.0
+const COLUMN_WIDTH := 470.0
+
+
 func _build() -> void:
+	theme = UiStyles.menu_font_theme()
 	var veil := ColorRect.new()
 	veil.color = Color(0, 0, 0, 0.55)
 	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -102,40 +108,39 @@ func _build() -> void:
 	add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(PANEL_WIDTH, 0)
+	panel.name = "Frame"
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	panel.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.UI_PANEL_BG, QuestPalette.GOLD_DARK, 2, 8, 14))
+	UiStyles.style_menu_frame(panel, 22)
 	center.add_child(panel)
 
-	# Scrolls when the sheet outgrows the screen (perk cards + full equipment).
+	# Scrolls when the sheet outgrows the screen (big text, perk cards + full equipment).
 	_scroll = ScrollContainer.new()
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	panel.add_child(_scroll)
-	var content := VBoxContainer.new()
-	content.add_theme_constant_override("separation", 10)
-	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_scroll.add_child(content)
-	_content = content
+	_content = VBoxContainer.new()
+	_content.add_theme_constant_override("separation", 10)
+	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(_content)
 
 	var header := HBoxContainer.new()
-	content.add_child(header)
+	_content.add_child(header)
 	_title = Label.new()
 	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_title.add_theme_color_override("font_color", QuestPalette.GOLD)
-	_title.add_theme_font_size_override("font_size", Accessibility.font(24))
+	UiStyles.style_menu_title(_title, 30)
 	header.add_child(_title)
 	var close_button := Button.new()
 	close_button.text = "X"
 	close_button.tooltip_text = "Cerrar (Esc)"
 	close_button.pressed.connect(close)
+	UiStyles.style_menu_button(close_button)
 	header.add_child(close_button)
+	UiStyles.add_ornament_after(header)
 
-	var body := HBoxContainer.new()
-	body.add_theme_constant_override("separation", 14)
-	content.add_child(body)
+	var hero_row := HBoxContainer.new()
+	hero_row.add_theme_constant_override("separation", 14)
 	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", UiStyles.build_panel_style(QuestPalette.DUNGEON_STONE, QuestPalette.UI_PANEL_BORDER, 2, 6, 4))
-	body.add_child(frame)
+	frame.add_theme_stylebox_override("panel", UiStyles.build_inset_style(6))
+	hero_row.add_child(frame)
 	_preview = TextureRect.new()
 	_preview.custom_minimum_size = PREVIEW_SIZE
 	_preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -145,54 +150,75 @@ func _build() -> void:
 	_info = Label.new()
 	_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_info.add_theme_color_override("font_color", QuestPalette.PARCHMENT_LIGHT)
-	body.add_child(_info)
+	UiStyles.style_menu_text(_info, 18, QuestPalette.PARCHMENT_LIGHT)
+	hero_row.add_child(_info)
 
 	_stat_table = GridContainer.new()
 	_stat_table.name = "StatTable"
 	_stat_table.columns = STAT_COLUMNS.size()
 	_stat_table.add_theme_constant_override("h_separation", 14)
-	content.add_child(_stat_table)
 	_ability_rows = VBoxContainer.new()
 	_ability_rows.name = "Abilities"
-	_ability_rows.add_theme_constant_override("separation", 6)
-	content.add_child(_ability_rows)
+	_ability_rows.add_theme_constant_override("separation", 8)
 
-	content.add_child(HSeparator.new())
-	_level_title = Label.new()
-	_level_title.add_theme_color_override("font_color", QuestPalette.GOLD)
-	content.add_child(_level_title)
+	var level_box := VBoxContainer.new()
+	level_box.add_theme_constant_override("separation", 8)
+	_level_title = _section_label("")
+	level_box.add_child(_level_title)
 	_upgrade_rows = GridContainer.new()
 	_upgrade_rows.columns = 4
 	_upgrade_rows.add_theme_constant_override("h_separation", 16)
-	content.add_child(_upgrade_rows)
+	level_box.add_child(_upgrade_rows)
 	var hint := Label.new()
 	hint.text = "Los niveles se pierden al terminar la partida."
-	hint.add_theme_color_override("font_color", QuestPalette.UI_TEXT_MUTED)
-	hint.add_theme_font_size_override("font_size", Accessibility.font(13))
-	content.add_child(hint)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiStyles.style_menu_text(hint, 14, QuestPalette.UI_TEXT_MUTED)
+	level_box.add_child(hint)
 	_level_button = Button.new()
 	_level_button.pressed.connect(_on_level_up_pressed)
-	content.add_child(_level_button)
+	UiStyles.style_plaque_button(_level_button, false, 20, false)
+	level_box.add_child(_level_button)
 	_heal_button = Button.new()
 	_heal_button.pressed.connect(_on_heal_pressed)
-	content.add_child(_heal_button)
+	UiStyles.style_plaque_button(_heal_button, false, 18, false)
+	level_box.add_child(_heal_button)
 
-	content.add_child(HSeparator.new())
-	_perk_title = Label.new()
-	_perk_title.add_theme_color_override("font_color", QuestPalette.GOLD)
-	content.add_child(_perk_title)
+	var perk_box := VBoxContainer.new()
+	perk_box.add_theme_constant_override("separation", 8)
+	_perk_title = _section_label("")
+	perk_box.add_child(_perk_title)
 	_perk_rows = VBoxContainer.new()
 	_perk_rows.add_theme_constant_override("separation", 6)
-	content.add_child(_perk_rows)
-
-	content.add_child(HSeparator.new())
-	_equipment_title = Label.new()
-	_equipment_title.text = "Equipo"
-	_equipment_title.add_theme_color_override("font_color", QuestPalette.GOLD)
-	content.add_child(_equipment_title)
+	perk_box.add_child(_perk_rows)
+	_equipment_title = _section_label("Equipo")
+	perk_box.add_child(_equipment_title)
 	_equipment = EquipmentSection.new()
-	content.add_child(_equipment)
+	perk_box.add_child(_equipment)
+
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 22)
+	_content.add_child(columns)
+	var left := _column([hero_row, _section_label("Atributos"), _stat_table, _section_label("Habilidades"), _ability_rows])
+	columns.add_child(left)
+	columns.add_child(VSeparator.new())
+	columns.add_child(_column([level_box, HSeparator.new(), perk_box]))
+
+
+func _column(children: Array) -> VBoxContainer:
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 10)
+	column.custom_minimum_size = Vector2(COLUMN_WIDTH, 0)
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for child: Control in children:
+		column.add_child(child)
+	return column
+
+
+func _section_label(text: String) -> Label:
+	var label := Label.new()
+	label.text = text
+	UiStyles.style_menu_text(label, 20, QuestPalette.RELIC_GOLD_PALE)
+	return label
 
 
 func _on_level_up_pressed() -> void:
@@ -309,12 +335,16 @@ func _rebuild_perks(ps: PlayerStats) -> void:
 		return
 	_perk_title.text = "Mejoras de clase (%d / %d)" % [picked.size(), character_data.perks.size() / 2]
 	for perk in picked:
+		var line := HBoxContainer.new()
+		line.add_theme_constant_override("separation", 8)
+		line.add_child(_perk_icon(perk))
 		var label := Label.new()
 		label.text = "✔ %s — %s" % [perk.display_name, perk.describe_mods()]
 		label.tooltip_text = perk.description
 		label.mouse_filter = Control.MOUSE_FILTER_PASS
 		label.add_theme_color_override("font_color", QuestPalette.PARCHMENT_LIGHT)
-		_perk_rows.add_child(label)
+		line.add_child(label)
+		_perk_rows.add_child(line)
 	if not pending.is_empty():
 		var offer := Label.new()
 		offer.text = "¡Elige una mejora!"
@@ -343,6 +373,7 @@ func _make_perk_card(perk: HeroPerk) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	card.add_child(row)
+	row.add_child(_perk_icon(perk))
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(text)
@@ -361,6 +392,18 @@ func _make_perk_card(perk: HeroPerk) -> Control:
 	button.pressed.connect(_on_perk_pressed.bind(perk.id))
 	row.add_child(button)
 	return card
+
+
+## The perk's own icon (one per kind of mod, tools/libresprite_icons.js), 2x like the abilities'.
+func _perk_icon(perk: HeroPerk) -> TextureRect:
+	var icon := TextureRect.new()
+	icon.texture = perk.icon
+	icon.custom_minimum_size = ABILITY_ICON
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return icon
 
 
 func _on_perk_pressed(perk_id: StringName) -> void:
@@ -426,7 +469,7 @@ func _rebuild_abilities() -> void:
 		var text := Label.new()
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		text.custom_minimum_size = Vector2(PANEL_WIDTH - 80.0, 0)
+		text.custom_minimum_size = Vector2(COLUMN_WIDTH - 60.0, 0)
 		var description: String = abilities.describe(ability) if abilities else ability.format_description()
 		text.text = "%s — %s\n%s" % [entry[1], ability.display_name, description]
 		text.add_theme_color_override("font_color", QuestPalette.PARCHMENT_LIGHT)

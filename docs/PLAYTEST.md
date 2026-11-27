@@ -144,3 +144,8 @@ Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_
 - **No jugado a mano:** el piso 1 con texto ×1,5 hasta ver una Invasión, un rechazo real y la pista de una sala especial. Esta sesión no tuvo control del mouse; lo de arriba es un script en ventana, no una partida.
 - [ ] Con texto ×1,5: ¿el cartel de una Invasión tapa demasiado mapa? ¿Se lee el rechazo mientras se arma una Obra?
 - [ ] Reliquia sola: ¿cuánto se aleja el grupo de la sala inicial y cuántos segundos tarda en volver cuando entra un saqueador? BalanceSim supone 5 s (`relic_back_sec`, `docs/BALANCE.md`).
+
+## personajes-46 (por probar a mano)
+- Jugar con Ballestero y Clériga: ¿la Red de Caza y la Luz Sanadora se sienten útiles? ¿Se leen los cuadros de ataque y caída a velocidad real?
+- Pelea grande en una sala: ¿se ve a todos? (los que persiguen al más cercano todavía se juntan en el centro). Defensas girando al disparar.
+- Ficha «Libro abierto» a 720 con el mouse: botones de nivel, curar y mejoras.

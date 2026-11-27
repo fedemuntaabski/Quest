@@ -33,10 +33,10 @@ Recursos: `resources/sprite_frames/*.tres` (SpriteFrames), `resources/enemies/*.
 
 | Uso | Asset |
 |---|---|
-| Guerrero / Mago / Pícaro / Paladín | 0x72 `knight_m` / `wizzard_m` / `elf_m` / `dwarf_m` (idle 4, run 4, hit 1; 16×28) |
+| Guerrero / Mago / Pícaro / Paladín / Ballestero / Clériga | 0x72 `knight_m` / `wizzard_m` / `elf_m` / `dwarf_m` / `lizard_m` / `elf_f` (idle 4, run 4, hit 1; 16×28) + ataque y caída propios |
 | Retrato HUD y popup | frame idle del héroe (Nearest, ×2); `portrait` PNG solo en selección de héroe |
 | Piso 1 | 0x72 goblin, skelet, tiny_zombie |
-| Piso 2 | goblin, skelet, tiny_zombie, imp, masked_orc + Tiny Creatures ojo flotante |
+| Piso 2 | goblin, skelet, tiny_zombie, imp, masked_orc + Tiny Creatures ojo flotante; pisos 2-4 + `pumpkin_dude` (Calabacero) y `swampy` (Curandero del Pantano), personajes-46 |
 | Piso 3 | skelet, imp, masked_orc, orc_warrior, orc_shaman + TC lobo, calavera ígnea |
 | Piso 4 | masked_orc, orc_warrior, chort, wogol, big_zombie (32×36) + TC ogro verde, demonio rojo, lobo |
 | Piso 5 | chort, orc_warrior, ogre, big_demon (32×36), necromancer + TC dragón, demonio mayor, ogro |
@@ -75,12 +75,15 @@ Escenas en `scenes/vfx/*.tscn` (slash_arc, projectile_trail, impact_sparks, heal
 
 **juego-21** sumó (todos desde el host; `VfxManager.play` los reenvía a los clientes por el evento `fx`): `room_lit` (`own_flame_gold`, al encender una sala, `RoomZone.try_light_up`), `relic_pickup` (`own_ring_gold`, `RelicController.confirm_pickup`), `enemy_spawn` (`own_portal_red`, `EnemyManager._spawn_enemy`: invasiones y oleadas de extracción), `door_dust` (`own_smoke_brown` ×1.3, al abrir una puerta). Captura: `tests/tools/shot_juego21.gd`.
 
-## Animaciones (juego-21)
-0x72 trae solo `idle`/`run` (+ `hit` de 1 frame en héroes) y Tiny Creatures 1 frame: no hay frames de ataque, caída ni muerte en ningún pack CC0 usado. Se resuelven por código en `CharacterVisual` (solo visual, no toca posición ni zona del dueño):
-- **Ataque**: `lunge(dir)` = paso de 5 px hacia el objetivo y vuelta (0,14 s); héroe cuerpo a cuerpo al pegar, Mago al disparar, enemigo al golpear por contacto. En co-op solo se ve en el host (el cliente no recibe el golpe como evento).
-- **Caído/reanimado**: `set_downed()` = vuelco de 90° con tween (0,25 s) y gris; al reanimar se levanta.
-- **Muerte de enemigo**: `spawn_corpse()` = copia del frame actual que se vuelca y se desvanece (0,45 s) bajo `VfxManager`, junto al polvo. También en el cliente al liberar el puppet.
-- Velocidades sin cambio: `idle` 6 FPS, `run` 10 FPS (se ven bien con 420 px/s).
+## Animaciones (juego-21; cuadros propios desde personajes-46)
+0x72 trae solo `idle`/`run` (+ `hit` de 1 cuadro en héroes) y Tiny Creatures 1 cuadro. **personajes-46:** los 6 héroes tienen cuadros propios de ataque y caída en `assets/art/own/characters/<prefijo>_{attack,fall}.png` (4 cuadros de 48×44 cada tira, el cuerpo 16×28 en el lugar del idle para que los pies no se muevan; `index.json` con tamaño y FPS: ataque 20, caída 12). Los arma `tools/build_personajes_art.gd` con el cuerpo y el arma de 0x72 (espada, bastón, daga, martillo, arco, maza; estilos tajo, conjuro, estocada, disparo con su traza o destello en la paleta del arma) y se retocan en LibreSprite: `tools/libresprite.sh import` crea `own/src/characters/*.ase`, `export` escribe los PNG y corre `frames`, que reescribe `resources/sprite_frames/hero_<prefijo>.tres` (idle/run/hit + attack/fall como AtlasTexture). Con el `.ase` presente la herramienta ya no pisa esa tira. `build_characters.gd` ya no hornea héroes.
+- **Ataque**: `CharacterVisual.lunge(dir)` toca la animación `attack` si existe (estado ATTACK, un ciclo) y además el paso de 5 px. Enemigos: solo el paso.
+- **Caído/reanimado**: con `fall`, `set_downed()` la toca y se queda en el último cuadro (tumbado) + gris; sin `fall`, el vuelco de 90° de antes. `is_lying()` vale para los dos.
+- **Muerte de enemigo**: `spawn_corpse()` (copia que se vuelca y desvanece) + `death_dust` + `enemy_death` (`own_death_soul`, un alma que sube). Golpe del héroe: `hit_burst` (`own_hit_burst`, teñido con el color del héroe) en vez de las chispas.
+- Velocidades sin cambio: `idle` 6 FPS, `run` 10 FPS.
+
+## Íconos propios (personajes-46)
+`tools/libresprite_icons.js` (`tools/libresprite.sh icons`) dibuja en LibreSprite, con la paleta y el contorno de 2 px de Kenney: habilidades (12), recursos (`own/resources/{hp,iron,food,lore,embers,lock}.png`, los usa `StatIcon`; los polígonos quedan de respaldo), las 7 Obras (`own/buildings/<id>.png`, `BuildingDef.icon_path`: menú y **la Obra construida en el mapa**, `Building.art` ×2 sobre una base de su color) y un ícono por tipo de mejora de clase (`own/perks/<mod>.png`, `HeroPerk.icon` = su primer mod). Retoque: abrir el `.ase` y `export` (no volver a correr `icons`, que regenera todo desde el script).
 
 ## Muros (juego-21)
 `MapVisualConfig.wall_wear_density` (0,1): caras de ladrillo lisas de salas y pasillos dibujadas como `wall_hole_1/2` de 0x72 (`DungeonTiles.WALL_WEAR`), con su propio stream (`hash([seed, "wall_wear"])`), así los banners de una semilla no se mueven. Los banners ahora son sólidos (antes eran la única cara sin polígono de la capa `wall`). Los bordes laterales finos de 0x72 (`wall_edge_*`) no están en la rejilla de 16 px de la hoja (y = 120/136/152/168): quedan fuera; los laterales siguen siendo relleno sólido.

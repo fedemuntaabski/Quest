@@ -23,7 +23,11 @@ const CONTACT_HIT_INTERVAL := 1.0
 ## Contact Hitbox reaches this much past the body (px), like the old 14 -> 24.
 const CONTACT_REACH := 10.0
 ## Slot ring (px) around the point an enemy closes in on.
-const RING_RADIUS := 14.0
+## personajes-46: enemies closing on a hero stand on RING_ANGLES at RING_RADIUS around it, above and below
+## the heroes' row (PartyConfig.sprite_offset spreads them sideways), so everyone stays visible. 42 px
+## keeps the contact hitbox reaching the hero (body radii ~13 + reach 10 + hero ~22 = 45 px).
+const RING_RADIUS := 42.0
+const RING_ANGLES := [90.0, -90.0, 55.0, 125.0, -60.0, -120.0, 30.0, 150.0]
 const RAIDER_TINT := Color(1.0, 0.72, 0.66)
 
 signal died(enemy: Enemy)
@@ -224,6 +228,7 @@ func _die_from_damage() -> void:
 	var vfx := ManagerLocator.get_vfx_manager()
 	if vfx:
 		vfx.play(&"death_dust", global_position, vfx.config.dust_color)
+		vfx.play(&"enemy_death", global_position + Vector2(0.0, -visual.body_size().y * 0.5))  # personajes-46: the wisp
 	visual.spawn_corpse(get_parent())
 	died.emit(self)
 	queue_free()
@@ -408,7 +413,13 @@ func _pursue_zone(room_manager: RoomManager, target_zone_id: String, point: Vect
 		for step_id in path.slice(1):
 			waypoints.append(room_manager.get_center(step_id))
 			zone_ids.append(step_id)
-	if point != Vector2.INF and (not waypoints.is_empty() or global_position.distance_to(point) > attack_range):
+	var standoff := type.shot_range * RANGED_STANDOFF if type and type.special == EnemyType.Special.RANGED else 0.0
+	if point != Vector2.INF and standoff > 0.0:
+		var from: Vector2 = waypoints[-1] if not waypoints.is_empty() else global_position
+		if from.distance_to(point) > standoff:
+			waypoints.append(point + point.direction_to(from) * standoff + _ring_offset())
+			zone_ids.append(target_zone_id)
+	elif point != Vector2.INF and (not waypoints.is_empty() or global_position.distance_to(point) > attack_range):
 		waypoints.append(point + _ring_offset())
 		zone_ids.append(target_zone_id)
 	if waypoints.is_empty():
@@ -424,9 +435,63 @@ func _pursue_zone(room_manager: RoomManager, target_zone_id: String, point: Vect
 	_check_trap_in_current_room(room_manager)
 
 
+## personajes-46: a RANGED enemy stops this share of its shot_range short of the point it chases.
+const RANGED_STANDOFF := 0.6
+const SHOT_SPEED := 420.0
+const SHOT_COLOR := Color(1.0, 0.62, 0.2)
+const HEAL_COLOR := Color(0.55, 0.9, 0.45)
+var _special_left: float = 0.0
+
+
+## RANGED / HEALER (EnemyType.special) on game time; host only (clients get the HP from snapshots).
+func _process(delta: float) -> void:
+	if type == null or type.special == EnemyType.Special.NONE or charging or not is_alive() or not Net.is_authority():
+		return
+	_special_left -= delta
+	if _special_left > 0.0:
+		return
+	if type.special == EnemyType.Special.RANGED:
+		_special_left = type.shot_interval if _shoot() else 0.25
+	else:
+		_special_left = type.heal_interval
+		_heal_allies()
+
+
+## Shoots the nearest living hero within shot_range. False = nobody in range.
+func _shoot() -> bool:
+	var target: Player = null
+	var best := type.shot_range
+	for hero in ManagerLocator.get_heroes():
+		var d := global_position.distance_to(hero.global_position)
+		if hero.stats.is_alive() and d <= best:
+			best = d
+			target = hero
+	if target == null:
+		return false
+	var damage := maxi(1, roundi(type.shot_damage * dmg_multiplier))
+	visual.lunge(global_position.direction_to(target.global_position))
+	Projectile.fire(get_parent(), to_global(visual.body_center()), target.hurtbox, hitbox, damage, SHOT_SPEED, SHOT_COLOR)
+	return true
+
+
+## Heals every other wounded enemy within heal_radius (never above its max HP).
+func _heal_allies() -> void:
+	var vfx := ManagerLocator.get_vfx_manager()
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var ally := node as Enemy
+		if ally == null or ally == self or not ally.is_alive() or ally.current_hp >= ally.max_hp \
+				or global_position.distance_to(ally.global_position) > type.heal_radius:
+			continue
+		ally.current_hp = mini(ally.current_hp + type.heal_amount, ally.max_hp)
+		ally.queue_redraw()
+		if vfx:
+			vfx.play(&"heal_glow", ally.global_position, HEAL_COLOR)
+
+
 ## Fixed per-enemy offset (8 consecutive slots) so enemies converging on one point don't stack.
 func _ring_offset() -> Vector2:
-	return Vector2.from_angle((slot % 8) * TAU / 8.0) * RING_RADIUS
+	var lap := floori(slot / float(RING_ANGLES.size())) % 2  # a second lap sits between the first one's places
+	return Vector2.from_angle(deg_to_rad(float(RING_ANGLES[slot % RING_ANGLES.size()]) + lap * 17.0)) * RING_RADIUS
 
 
 func _check_trap_in_current_room(room_manager: RoomManager) -> void:
@@ -445,6 +510,7 @@ func _check_trap_in_current_room(room_manager: RoomManager) -> void:
 			take_damage(int(cfg["spike_damage"]))
 		else:
 			continue
+		building.pulse()
 		var vfx := ManagerLocator.get_vfx_manager()
 		if vfx and is_alive():
 			vfx.play(&"hit_sparks", global_position, vfx.config.dust_color)

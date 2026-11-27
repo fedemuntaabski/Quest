@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EnemyType" format=3]
+
+[ext_resource type="Script" uid="uid://bkjgs37o5j767" path="res://scripts/core/enemies/EnemyType.gd" id="1_btpux"]
+[ext_resource type="SpriteFrames" path="res://resources/sprite_frames/enemy_pumpkin.tres" id="2_frames"]
+[ext_resource type="Resource" path="res://resources/enemies/profiles/skirmisher.tres" id="tp_profile"]
+
+[resource]
+script = ExtResource("1_btpux")
+id = "pumpkin"
+display_name = "Calabacero"
+behavior = 2
+sprite_frames = ExtResource("2_frames")
+hp_mult = 0.8
+speed_mult = 0.9
+contact_damage = 1
+special = 1
+shot_range = 300.0
+shot_damage = 2
+shot_interval = 1.6
+description = "Arroja semillas ardientes desde lejos. Se queda a distancia de tiro: hay que ir a buscarlo."
+lore = "Nadie sabe quién plantó la primera. Crecen donde cae una Brasa sin dueño."
+bestiary_order = 20
+target_profile = ExtResource("tp_profile")
