@@ -268,6 +268,18 @@ func _check_obras_model() -> void:
 		rng.seed = 41
 		BalanceSim._fight(["mage"], {"mage": 2}, hp, wave, 3, rng, [0.0], obras, tw, relic)
 		outs.append([tw[0] / maxf(tw[1], 1.0), relic[0], hp["mage"]])
+	# juego-44: the Relic left in the start room while the party explores (BOSS_PLAY "relic_left"): a
+	# door wave's raiders go for it and only the Obras there stand in their way.
+	_expect(float(BalanceSim.BOSS_PLAY.get("relic_left", -1.0)) == 0.0, "BOSS_PLAY relic_left missing or not 0 by default")
+	if BalanceSim.BOSS_PLAY.has("relic_left"):
+		var sim: Script = BalanceSim  # called by name: this check was written before the model
+		var alone := [100.0]
+		var guarded := [100.0]
+		sim.call("_raid_relic", [raider] as Array[EnemyType], 3, {"lit": true}, alone, [0.0, 0.0])
+		sim.call("_raid_relic", [raider] as Array[EnemyType], 3, {"lit": true, B.BALLESTA: 2}, guarded, [0.0, 0.0])
+		print("a floor-3 %s on the Relic left alone: bare room %.1f, 2 lit Ballestas %.1f (of 100)" % [raider.id, alone[0], guarded[0]])
+		_expect(alone[0] < 100.0, "a raider alone with the Relic leaves it at %.1f" % alone[0])
+		_expect(guarded[0] == 100.0, "2 lit Ballestas let a raider hit the Relic: %.1f" % guarded[0])
 	BalanceSim.difficulty = null
 	BalanceSim._duel_cache.clear()
 	print("raiders on floor 3 vs a Mage: bare room %s, 2 Ballestas + Pinchos %s ([Obras share, Relic, HP])" % [outs[0], outs[1]])

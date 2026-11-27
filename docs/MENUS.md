@@ -34,7 +34,7 @@ Cómo se ven el menú principal y todo su recorrido (ranuras, continuar, modo de
 
 ## HUD
 
-Arriba a la izquierda: rótulo del piso + `ObjectivePanel` + `HelpCard`. Arriba a la derecha: `HeroPortrait`s (vida, radial de habilidad, consumibles, revivir) → `CharacterPopup`. Abajo al centro: `BottomBar` (`BuildingMenu` con `ResearchPanel` dentro de su marco, sobre recursos + botones de obra + contador de Mochila). Abajo a la derecha: `Minimap`; FPS abajo a la izquierda. Solo online: `PlayerList`, `ChatPanel`, señales en el mapa.
+Arriba a la izquierda: rótulo del piso + `ObjectivePanel` + `HelpCard`. Arriba a la derecha: `HeroPortrait`s (vida, radial de habilidad, consumibles, revivir) → `CharacterPopup`. Abajo al centro: `BottomBar` (`BuildingMenu` con `ResearchPanel` dentro de su marco, sobre recursos + botones de obra + contador de Mochila). Abajo a la derecha: `Minimap`; FPS abajo a la izquierda. Solo online: `PlayerList`, `ChatPanel`, señales en el mapa. Arriba al centro: `HintPanel` (pistas, rechazos, Invasión/Oleada, bestiario; fondo opaco propio, 440 px × escala de texto hasta 640, se reajusta en diferido tras el reacomodo de líneas; `test_barrido_ui._check_hint_card`).
 ## Verificación
 
 - Números del fondo, marcador y transiciones: mirados en movimiento por el dueño en menu-34 y aprobados tal cual (no tocarlos sin otra prueba a ojo).

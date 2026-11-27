@@ -17,14 +17,14 @@ Cuatro recursos, cada uno con un rol y al menos un sumidero. Números: `docs/arc
 | Forja / Granja / Scriptorium | Mayor (1 por sala) | 1 | 6 | +3 Hierro / Comida / Saber por puerta |
 | Ballesta | Menor | 1 (investigar) | 4 | 15 de daño / 1 s |
 | Brasero (antes Trampa) | Menor | 1 (investigar) | 3 | Ralentiza 50 % 3 s |
-| Catapulta | Menor | 2 (investigar, req. Ballesta) | 8 | 25 de daño en área, 1 golpe / 3 s |
+| Catapulta | Menor | 2 (investigar, req. Ballesta) | 5 | 35 de daño en área, 1 golpe / 3 s (juego-44) |
 | Trampa de pinchos | Menor | 1 | 3 | 10 de daño al enemigo que entra; funciona sin luz |
 
 - **Costo creciente**: `BuildingCostCurve` (`resources/buildings/building_cost_curve.tres`): `base + round(base * step * ya_construidos_de_ese_tipo)`, `step` 0.25. Cuenta por piso (`RoomManager.count_buildings`).
 - **Desmontar** devuelve el 50 % de lo que costó (`Building.paid_cost`). **Reparar**: `base * repair_pct * HP_faltante/HP_max` Hierro (mín. 1). Ambos desde el popup que abre el click sobre una obra construido (`BuildingPopup`).
 
 ## Investigación
-- `BuildingResearch` (`ResearchEntry` con `tier` 1-3, `UNLOCK_BUILDING`) en `research_config.tres`, junto a los 5 bonos. Bloqueados al inicio: Ballesta (8), Brasero (6), Catapulta (18, req. Ballesta). Granja/Forja/Scriptorium/Pinchos nacen libres.
+- `BuildingResearch` (`ResearchEntry` con `tier` 1-3, `UNLOCK_BUILDING`) en `research_config.tres`, junto a los 5 bonos. Bloqueados al inicio: Ballesta (8), Brasero (6), Catapulta (10, req. Ballesta; 18 hasta juego-44). Granja/Forja/Scriptorium/Pinchos nacen libres.
 - Estado de la run: `ResourceManager.researched` (Dictionary de ids), se reinicia en `Main._begin_new_run`, sobrevive a los pisos.
 - Investigar es instantáneo y **exige un Scriptorium construido y activo** ("Construí un Scriptorium").
 - Menú de construcción: pestañas **Mayores / Menores / Investigación** (atajos B / V / R, 1-9 elige tarjeta). Un obra bloqueado muestra candado, "Requiere: X" y el costo en Saber.

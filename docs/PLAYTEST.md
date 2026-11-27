@@ -133,3 +133,8 @@ Co-op real, Steam con dos cuentas y mando físico siguen sin probar (`docs/COOP_
 - Golpe Furtivo a 8 s: que no se sienta excesivo.
 - Placas GUARDAR/VOLVER/LISTO/VOLVER (Créditos) a 720, 1080 y texto ×1,5.
 - Siguen abiertos los ítems de juego-35 de más arriba.
+
+## juego-44 (falta probar en ventana)
+- Cartel de pistas: fondo opaco con borde dorado, 440 px de ancho a texto ×1 y hasta 640 px a ×1,5. Solo visto en capturas (`capturas/juego-44/barrido_despues/`: Descanso, rechazo, «¡Sala secreta!»). Falta verlo jugando: que no tape demasiado mapa a ×1,5 y que una Oleada larga entre bien.
+- Reliquia sola: ¿cuánto tarda el grupo en volver a la sala inicial cuando una oleada de puerta trae un saqueador? El modelo supone que nadie vuelve (`relic_left`, `docs/BALANCE.md`).
+- Catapulta nueva (5 Hierro, 10 Saber, 35 de daño): si se siente fuerte contra grupos o si sigue sin valer la pena frente a la Ballesta.

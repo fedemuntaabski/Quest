@@ -19,6 +19,7 @@ func _initialize() -> void:
 		_check_canvas_layer_font(text_scale)
 		await _check_options(text_scale)
 		await _check_waiting_room(text_scale)
+		await _check_hint_card(text_scale)
 	settings.text_scale = 1.0
 	await _check_texts()
 	for failure in failures:
@@ -102,6 +103,34 @@ func _check_texts() -> void:
 	var lines := RunSummary.lines({}, [], {"victories": 1, "runs": 1, "best_floor": 2})
 	_expect(lines.any(func(l: String) -> bool: return l.contains("1 victoria en 1 partida,")), "run summary plural: %s" % lines[-1])
 	_expect(not tr("KEY_HOVER_VOL").contains("Pasado"), "hover volume label reads '%s'" % tr("KEY_HOVER_VOL"))
+
+
+## juego-44: the hint card's background grows with its text (a long hint at x1.5 used to
+## spill below and beside it) and stays on screen. Same card for refusals and notices.
+func _check_hint_card(text_scale: float) -> void:
+	var hud := (load("res://scenes/hud/HUD.tscn") as PackedScene).instantiate() as HUDController
+	root.add_child(hud)
+	await process_frame
+	var long_hint := "Los héroes heridos que se quedan aquí recuperan vida poco a poco, sin gastar Comida, mientras no haya enemigos en la sala. Los enemigos no aparecen en ella, esté encendida o no, pero pueden entrar; durante la extracción no cura."
+	for shown: Array in [["Descanso", long_hint], ["Nuevo registro", "Corta."], ["Una pista con un título bastante largo para la tarjeta", "Corta."]]:
+		hud.show_local_hint(shown[0], shown[1], Color.WHITE)
+		for i in 3:
+			await process_frame
+		var panel := hud.get_node("Control/HintPanel") as Control
+		var card := panel.get_global_rect()
+		var style := panel.get_theme_stylebox("panel") as StyleBoxFlat  # the engine default is see-through: text over a lit room didn't read
+		_expect(style != null and style.bg_color.a >= 0.9, "x%.1f hint: card background %s is not opaque" % [text_scale, style.bg_color if style else null])
+		_expect(card.size.x >= minf(HUDController.HINT_WIDTH * text_scale, HUDController.HINT_MAX_WIDTH) - 1.0, "x%.1f hint: card %d px wide does not grow with the text" % [text_scale, card.size.x])
+		_expect(_inside(card, _screen()), "x%.1f hint '%s': card %s off screen %s" % [text_scale, shown[0].left(12), card, _screen()])
+		var text_h := 0.0
+		for label: Label in panel.find_children("*", "Label", true, false):
+			text_h += label.get_line_count() * label.get_line_height()
+		_expect(card.size.y <= text_h + 60.0, "x%.1f hint '%s': card %d px tall for %d px of text (left over from a wider text)" % [text_scale, shown[0].left(12), card.size.y, text_h])
+		for label: Label in panel.find_children("*", "Label", true, false):
+			var text_rect := Rect2(label.global_position, Vector2(label.size.x, label.get_line_count() * label.get_line_height() + 0.0))
+			_expect(_inside(text_rect, card), "x%.1f hint '%s': text %s spills out of the card %s" % [text_scale, label.text.left(12), text_rect, card])
+			_expect(label.get_visible_line_count() >= label.get_line_count(), "x%.1f hint: '%s' shows %d of %d lines" % [text_scale, label.text.left(12), label.get_visible_line_count(), label.get_line_count()])
+	hud.free()
 
 
 ## The lobby fits the screen (Abandonar reachable) and no hero card cuts its text.

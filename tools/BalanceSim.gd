@@ -656,9 +656,11 @@ static var _boss_near := BOSS_NEAR_TOWERS
 ## out) and its working Obras shoot (_room_dps, _room_spikes). Room-type rewards on discovery (Loot Hierro,
 ## Elite Saber), the heal also runs before the extraction, and raiders in extraction waves wear the
 ## carried Relic down (0 = defeat, die_relic). Columns: towers = Obras built, dmg_by_towers_pct.
+## juego-44 "relic_left": chance per floor that the Relic stays alone in the start room while the party
+## explores; then each door wave's raiders go for it instead (_raid_relic). 0 = never (the published tables).
 const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "rest_first": true, "boss_first": true,
 	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0, "no_boss": 0, "free_levels": false, "players": 0,
-	"extra_food": 0, "extra_food_from": 2, "extra_food_to": 5, "recruit": 0, "recruit_levels": false, "recruit_cost_mult": 1.0, "full_hp": 0, "research": [], "lab_first": true, "level_lore": -1.0}
+	"extra_food": 0, "extra_food_from": 2, "extra_food_to": 5, "recruit": 0, "recruit_levels": false, "recruit_cost_mult": 1.0, "full_hp": 0, "research": [], "lab_first": true, "level_lore": -1.0, "relic_left": 0.0}
 const RESEARCH_ORDER: Array[String] = ["defense_rifling", "cartography", "dry_tinder", "workshop_tuning", "workshop_bellows"]
 const RESEARCH_PATH := "res://resources/research/research_config.tres"
 ## juego-30: ResearchEntry.Effect -> summed value of the run being simulated (the "research" what-if).
@@ -865,13 +867,14 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		var counts := {}  # BuildingType -> built this floor (BuildingCostCurve; Obras don't carry over)
 		var relic_max := float(maxi(1, roundi(cfg.relic_max_hp * difficulty.relic_hp_mult * scaling.relic_hp(players))))  # FloorManager.relic_max_hp
 		var relic := [relic_max]
+		var relic_left := float(_play["relic_left"]) > 0.0 and rng.randf() < float(_play["relic_left"])  # no draw at 0: tables unchanged
 		var tw := [0.0, 0.0]  # enemy HP taken by Defensas and Pinchos / by everyone
 		_defend(obras[start_id], done, res, counts)  # the Relic's room, lit free
 		var turns := 0
 		var cage := ""  # juego-29: a revealed Prisoner room still waiting to be paid
 		var threat_mult := cfg.threat_multiplier(f) * difficulty.threat_mult * scaling.threat(players)
 		var cap := cfg.max_enemies(f) + difficulty.extra_max_enemies + scaling.extra_enemies(players)
-		while not revealed.has(exit_id) and _alive(party, hp):
+		while not revealed.has(exit_id) and _alive(party, hp) and relic[0] > 0.0:
 			var frontier: Array[String] = []
 			for c in layout.corridors:
 				if c.is_secret:
@@ -930,14 +933,18 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 			if rng.randf() < clampf(cfg.door_roll.threat_chance(turns, f) * threat_mult, 0.0, cfg.door_roll.max_chance) and int(_play["no_doors"]) != f:
 				var count := mini(scaling.wave(cfg.door_roll.enemy_count(turns, f), players), cap)
 				a["fights"] += 1
-				_fight(party, levels, hp, _roll_wave(f, count, rng), f, rng, damage, obras[revealed.keys()[rng.randi_range(0, revealed.size() - 1)]], tw)
+				var wave := _roll_wave(f, count, rng)
+				if relic_left:
+					_raid_relic(wave, f, obras[start_id], relic, tw)
+					wave = wave.filter(func(t: EnemyType) -> bool: return not _goes_for_relic(t))
+				_fight(party, levels, hp, wave, f, rng, damage, obras[revealed.keys()[rng.randi_range(0, revealed.size() - 1)]], tw)
 				_revive_downed(party, levels, hp, res, f)
 		if cage != "" and _alive(party, hp) and _recruit(party, levels, hp, res, f, layout.map_seed, cage):  # last chance before the exit
 			recruits += 1
 		a["turns"] += turns
 		a["dmg_door"] += damage[0] / maxf(max_total, 1.0)
 		var phase_start: float = damage[0]
-		var died := "" if _alive(party, hp) else "die_door"
+		var died := "die_relic" if relic[0] <= 0.0 else ("" if _alive(party, hp) else "die_door")
 		if died == "":
 			a["hp_exit"] += _party_hp(party, levels, hp)
 			a["exits"] += 1
@@ -949,7 +956,7 @@ static func _simulate_run(party: Array, rng: RandomNumberGenerator, acc: Array[D
 		var near_dps := 0.0  # juego-41: the boss is pulled back to the best-defended room on the way out
 		for id: String in path:
 			near_dps = maxf(near_dps, _room_dps(obras[id], 1))
-		if boss_first and theme and theme.boss and _alive(party, hp):
+		if boss_first and theme and theme.boss and _alive(party, hp) and relic[0] > 0.0:
 			_play_boss(party, levels, hp, theme.boss, f, damage, res, near_dps, layout, revealed, rng, a, tw)
 			a["dmg_boss"] += (damage[0] - phase_start) / maxf(max_total, 1.0)
 			phase_start = damage[0]
@@ -1366,6 +1373,34 @@ static func _fight(party: Array, levels: Dictionary, hp: Dictionary, wave: Array
 					for j in range(i + 1, left.size()):
 						queue.append(left[j])
 					break
+
+
+static func _goes_for_relic(type: EnemyType) -> bool:
+	return type.role == EnemyType.Role.RAIDER and type.damage_vs_relic > 0
+
+
+## juego-44 ("relic_left"): a door wave's raiders go to the Relic left in the start room; only that room's
+## Obras stop them (Pinchos on arrival, working Defensas from the door on). A raider crosses the room
+## (ROOM_WALK_PX at its speed) and then hits the Relic at damage_vs_relic per RELIC_TICK_SEC until it dies
+## or the Relic breaks. ponytail: the Defensas kill one raider at a time with all their dps (splash
+## included); a party coming back to help isn't modelled.
+static func _raid_relic(wave: Array[EnemyType], f: int, room: Dictionary, relic: Array, tw: Array) -> void:
+	var raiders := wave.filter(_goes_for_relic)
+	var spikes := _room_spikes(room)
+	var dps := _room_dps(room, raiders.size())
+	var t := 0.0
+	for type: EnemyType in raiders:
+		var e := enemy_stats(type, f)
+		var enemy_hp := float(e["hp"])
+		var left_hp := maxf(enemy_hp - spikes, 0.0)
+		t += left_hp / dps if dps > 0.0 else (INF if left_hp > 0.0 else 0.0)
+		tw[0] += enemy_hp - (0.0 if dps > 0.0 else left_hp)
+		tw[1] += enemy_hp
+		var exposure := maxf(t - ROOM_WALK_PX / maxf(float(e["speed"]), 1.0), 0.0)
+		if exposure > 0.0:
+			relic[0] = maxf(relic[0] - float(e["relic"]) * exposure / RELIC_TICK_SEC, 0.0)
+		if relic[0] <= 0.0:
+			return
 
 
 static func _boss_fight(party: Array, levels: Dictionary, hp: Dictionary, boss: EnemyType, f: int, damage: Array, res: Dictionary, towers_dps: float = 0.0, tw: Array = [0.0, 0.0]) -> void:

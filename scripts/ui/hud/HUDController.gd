@@ -36,7 +36,8 @@ const ALERT_BEEP_SEC := 0.18
 const ALERT_BEEP_RATE := 22050
 const INVASION_FLASH_HALF_TIME := 0.25
 
-const HINT_WIDTH := 440.0
+const HINT_WIDTH := 440.0  # at text scale 1; grows with it up to HINT_MAX_WIDTH, then wraps more lines
+const HINT_MAX_WIDTH := 640.0
 const HINT_TOP := 72
 const HINT_HOLD := 8.0
 const HINT_FADE := 0.6
@@ -403,7 +404,8 @@ func _add_hint_panel() -> void:
 	_hint_panel = PanelContainer.new()
 	_hint_panel.name = "HintPanel"
 	_hint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hint_panel.custom_minimum_size = Vector2(HINT_WIDTH, 0)
+	# juego-44: own opaque card (the engine default panel is 60 % see-through: over a lit room the text didn't read)
+	_hint_panel.add_theme_stylebox_override("panel", UiStyles.build_panel_style(Color(0.06, 0.05, 0.05, 0.94), QuestPalette.GOLD_DARK, 2, 6))
 	_hint_panel.visible = false
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -412,10 +414,9 @@ func _add_hint_panel() -> void:
 	var box := VBoxContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hint_title = Label.new()
-	_hint_title.add_theme_font_size_override("font_size", Accessibility.font(20))
+	_hint_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint_body = Label.new()
 	_hint_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_hint_body.custom_minimum_size = Vector2(HINT_WIDTH - 24.0, 0)
 	box.add_child(_hint_title)
 	box.add_child(_hint_body)
 	margin.add_child(box)
@@ -445,8 +446,13 @@ func show_local_hint(title: String, text: String, color: Color) -> void:
 	_hint_title.text = title
 	_hint_title.add_theme_color_override("font_color", color)
 	_hint_body.text = text
-	_hint_panel.reset_size()
-	_hint_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, HINT_TOP)
+	# sized on each show: the text scale can change mid-run (Opciones)
+	var width := minf(HINT_WIDTH * Accessibility.text_scale, HINT_MAX_WIDTH) - 24.0
+	_hint_title.add_theme_font_size_override("font_size", Accessibility.font(20))
+	_hint_title.custom_minimum_size.x = width
+	_hint_body.custom_minimum_size.x = width
+	_fit_hint_panel()
+	_fit_hint_panel.call_deferred()  # again once the labels re-wrapped at the new width (else it keeps a tall first guess)
 	if _hint_tween:
 		_hint_tween.kill()
 	_hint_panel.modulate.a = 1.0
@@ -455,6 +461,11 @@ func show_local_hint(title: String, text: String, color: Color) -> void:
 	_hint_tween.tween_interval(HINT_HOLD)
 	_hint_tween.tween_property(_hint_panel, "modulate:a", 0.0, HINT_FADE)
 	_hint_tween.tween_callback(_hint_panel.hide)
+
+
+func _fit_hint_panel() -> void:
+	_hint_panel.reset_size()
+	_hint_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE, HINT_TOP)
 
 
 const BESTIARY_TIER_TEXT := {
