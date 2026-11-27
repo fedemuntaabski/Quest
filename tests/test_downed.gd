@@ -102,16 +102,30 @@ func _check_rest(main2d: Node) -> void:
 	var fm: FloorManager = main2d.floor_manager
 	var rm: RoomManager = main2d.room_manager
 	rm.zones[a.current_zone_id]["room_type"] = RoomData.RoomType.REST  # pretend the start room is a Rest room
-	resources.reset_resources(0, 2, 0, 0)
+	resources.reset_resources(0, 0, 0, 0)
 	a.stats.take_damage(10)
 	var hp := a.stats.current_hp
 	var healed := fm.rest_tick()
-	_expect(healed > 0 and a.stats.current_hp == hp + 2, "rest tick heals 2 (%d -> %d)" % [hp, a.stats.current_hp])
-	_expect(resources.get_resource("food") < 2, "rest tick costs Comida (%d)" % resources.get_resource("food"))
-	resources.reset_resources(0, 0, 0, 0)
+	_expect(healed > 0 and a.stats.current_hp == hp + 2, "juego-42: rest heals 2 with no Comida (%d -> %d)" % [hp, a.stats.current_hp])
+	_expect(resources.get_resource("food") == 0, "rest is free (%d Comida)" % resources.get_resource("food"))
+
+	# An enemy in the room stops it.
+	var foe: Enemy = main2d.enemy_manager._spawn_enemy(a.current_zone_id, a.global_position, null, true)
 	hp = a.stats.current_hp
 	fm.rest_tick()
-	_expect(a.stats.current_hp == hp, "no Comida, no healing")
+	_expect(foe != null and a.stats.current_hp == hp, "enemy in the Rest room: no healing")
+	foe.free()
+	fm.rest_tick()
+	_expect(a.stats.current_hp == hp + 2, "enemy gone: healing again")
+
+	# So does the extraction.
+	var ex: ExtractionManager = main2d.extraction_manager
+	ex.current_phase = ExtractionManager.Phase.EXTRACTION
+	hp = a.stats.current_hp
+	fm.rest_tick()
+	_expect(a.stats.current_hp == hp, "extraction: no healing")
+	ex.current_phase = ExtractionManager.Phase.EXPLORATION
+	hp = a.stats.current_hp
 
 	# Game time: frozen in the tactical pause.
 	resources.add_resource("food", 10)

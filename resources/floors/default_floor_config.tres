@@ -16,7 +16,6 @@ script = ExtResource("2_room_type_rule")
 type = 3
 chance = 0.6
 heal_per_tick = 2
-heal_food_per_tick = 1
 blocks_spawns = true
 loot_chance = 0.1
 

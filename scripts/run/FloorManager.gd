@@ -112,7 +112,7 @@ func _lose_downed_heroes() -> void:
 			hud.show_hint("Héroe perdido", "%s quedó atrás: no estará en los próximos pisos." % hero_stats.character_name, QuestPalette.BLOOD_LIGHT)
 
 
-## Rest rooms heal over time (RoomTypeRule.heal_per_tick), paying Comida per tick.
+## Rest rooms heal over time (RoomTypeRule.heal_per_tick), paying heal_food_per_tick Comida (0 = free, juego-42).
 ## Game time: frozen in the tactical pause and with the tree (Esc, end screens).
 func _process(delta: float) -> void:
 	var state := ManagerLocator.get_game_state_manager()
@@ -129,13 +129,23 @@ func _process(delta: float) -> void:
 	rest_tick()
 
 
-## One heal tick for every living wounded hero standing in a resting room.
+## One heal tick for every living wounded hero standing in a resting room
+## (juego-42: not during the extraction, nor with a living enemy in that room).
 ## Returns the HP healed in total (tests).
 func rest_tick() -> int:
+	var extraction := ManagerLocator.get_extraction_manager()
+	if extraction and extraction.current_phase == ExtractionManager.Phase.EXTRACTION:
+		return 0
 	var resources := ManagerLocator.get_resource_manager()
+	var enemy_manager := ManagerLocator.get_enemy_manager()
+	var foe_zones := {}
+	if enemy_manager:
+		for enemy in enemy_manager.get_enemies():
+			if enemy.is_alive():
+				foe_zones[enemy.current_zone_id] = true
 	var healed := 0
 	for hero in ManagerLocator.get_heroes():
-		if not hero.stats.is_alive() or hero.stats.current_hp >= hero.stats.max_hp:
+		if not hero.stats.is_alive() or hero.stats.current_hp >= hero.stats.max_hp or foe_zones.has(hero.current_zone_id):
 			continue
 		var rule := config.get_room_type_rule(room_manager.get_room_type(hero.current_zone_id))
 		if rule == null or rule.heal_per_tick <= 0:
