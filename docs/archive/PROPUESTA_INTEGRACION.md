@@ -2,7 +2,7 @@
 
 Rama `session/propuesta-4` (desde `session/assets-5`). **Solo propuesta: no se tocó código, escenas ni `.tres`.** Todo lo marcado *(nuevo)* no existe todavía; lo demás se verificó leyendo el código de esta rama.
 
-Fuentes: `docs/PERSONAJES.md`, `docs/ASSETS_AUDITORIA.md`, `docs/DIAGNOSTICO_ARQUITECTURA.md` y el código de `Enemy`, `EnemyType`, `EnemyManager`, `Relic`, `Building`, `DefenseBuilding`, `Player`, `CharacterStats`, `PlayerStats`, `HeroAbilities`, `AbilityData`, `ItemData`, `ItemCatalog`, `LootSpawner`, `CharacterPopup`, `PauseMenu` (+ `.tscn`), `SaveManager`, `Main`.
+Fuentes: `docs/PERSONAJES.md`, `docs/ASSETS_AUDITORIA.md`, `docs/archive/DIAGNOSTICO_ARQUITECTURA.md` y el código de `Enemy`, `EnemyType`, `EnemyManager`, `Relic`, `Building`, `DefenseBuilding`, `Player`, `CharacterStats`, `PlayerStats`, `HeroAbilities`, `AbilityData`, `ItemData`, `ItemCatalog`, `LootSpawner`, `CharacterPopup`, `PauseMenu` (+ `.tscn`), `SaveManager`, `Main`.
 
 Índice: [0 Restricciones](#0-restricciones-de-la-arquitectura-actual) · [1 Mejoras de héroe](#1-mejoras-de-personajes) · [2 Inventario](#2-inventario-estilo-dungeon-of-the-endless) · [3 IA por objetivo](#3-ia-de-enemigos-con-objetivos-distintos) · [4 Bestiario](#4-enciclopedia-de-enemigos-bestiario-en-la-pausa) · [5 Plan](#5-plan-de-implementación) · [6 Decisiones abiertas](#6-decisiones-abiertas)
 

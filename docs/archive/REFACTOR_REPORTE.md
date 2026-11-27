@@ -1,6 +1,6 @@
 # Reporte de refactor — `session/refactor-2`
 
-Base: `session/arch-1` (`bdaf0e0`). Plan: `docs/DIAGNOSTICO_ARQUITECTURA.md` §12. Alcance acordado ("Medio"): R1–R9, R11 (mínimo), R12, R15–R18 (R18 parcial), R19, R21, R23. Regla: sin cambios de comportamiento ni de balance. Un commit por paso (`git log --oneline bdaf0e0..HEAD`).
+Base: `session/arch-1` (`bdaf0e0`). Plan: `docs/archive/DIAGNOSTICO_ARQUITECTURA.md` §12. Alcance acordado ("Medio"): R1–R9, R11 (mínimo), R12, R15–R18 (R18 parcial), R19, R21, R23. Regla: sin cambios de comportamiento ni de balance. Un commit por paso (`git log --oneline bdaf0e0..HEAD`).
 
 ## Verificación hecha
 - `python -m gdtoolkit.parser` sobre cada `.gd` tocado: sin fallos (gdtoolkit 4.5.0 vs Godot 4.6.2).

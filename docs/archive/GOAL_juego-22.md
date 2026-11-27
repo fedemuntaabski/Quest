@@ -6,7 +6,7 @@ Sesión autónoma de ~3 h sin supervisión en Quest (Godot 4.6.2, GDScript). Obj
 
 - Leé CLAUDE.md, docs/PLAYTEST.md, docs/BALANCE.md, docs/ROOMS.md, docs/PERSONAJES.md, docs/ECONOMIA.md, docs/ENEMY_TARGETING.md y el último bloque de docs/archive/SESSIONS.md.
 - Leé el informe https://claude.ai/artifact/SMkXyLGjaawxRk15PfnenM y comparalo con el estado real.
-- Git: en session/juego-21 hay un diff en resources/tilesets/dungeon_tileset.tres y props_tileset.tres. Miralo; si es churn de uid/build, commit "chore: tilesets rebake" + push en juego-21 (incluí este archivo, docs/GOAL_juego-22.md). Después creá session/juego-22 desde ahí.
+- Git: en session/juego-21 hay un diff en resources/tilesets/dungeon_tileset.tres y props_tileset.tres. Miralo; si es churn de uid/build, commit "chore: tilesets rebake" + push en juego-21 (incluí este archivo, docs/archive/GOAL_juego-22.md). Después creá session/juego-22 desde ahí.
 - Línea base: tools/run_tests.sh completo (test_door_roll tarda ~4.5 min, corrélo en background). Anotá fallos y tiempos antes de tocar nada.
 
 ## 1. Salas, exhaustivo (~45 min)
