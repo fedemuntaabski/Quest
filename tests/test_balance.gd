@@ -31,29 +31,29 @@ const RUN_HERO_SPREAD_PP := 10.0
 ## it, 61 % at 200 runs with 15), floor 3 does not get trivial and Hard stays hard.
 const BOSS_FOOD_REWARD := 15
 const NORMAL_REACH4_MIN := 0.5
-const NORMAL_FLOOR3_MAX := 0.8  # juego-30: 0.65 -> 0.8 (66 % at 200 runs with Saber levels)
-const HARD_FLOOR4_MAX := 0.55  # juego-28: 0.1 -> 0.2 (11 %); juego-29: 0.4 (28 %); juego-30: 0.55 (43 % at 200 runs)
+const NORMAL_FLOOR3_MAX := 0.85  # juego-30: 0.65 -> 0.8 (66 % at 200 runs with Saber levels); juego-41: 0.85 (72 %)
+const HARD_FLOOR4_MAX := 0.7  # juego-28: 0.1 -> 0.2 (11 %); juego-29: 0.4 (28 %); juego-30: 0.55 (43 %); juego-41: 0.7 (57 % at 200 runs)
 ## juego-27: +30 Comida on reaching floors 4 and 5, Señor Demonio 150 HP (owner's pick).
 const DESCEND_FOOD := 30
 const DESCEND_FOOD_FROM := 4
 const BOSS5_HP := 150
 const NORMAL_REACH5_MIN := 0.3
-const HARD_FLOOR5_MAX := 0.15  # juego-30: 0.05 -> 0.15 (9 % at 200 runs)
+const HARD_FLOOR5_MAX := 0.35  # juego-30: 0.05 -> 0.15 (9 % at 200 runs); juego-41: 0.35 (25 %)
 ## juego-28 (owner's pick): Hard's bosses skip its multipliers (Hard pairs floor 3: 10 -> 33 % at
 ## 200 runs) and co-op of 3 / 4 gets +10 / +20 Comida per descent (the four, Normal: floor 4
 ## 31 -> 83 %). Normal pairs stay at 51 / 42 / 19 % (200 runs): these are 50-run floors with margin.
-const HARD_FLOOR3_MIN := 0.5  # juego-29: 0.25 -> 0.35 (45 %); juego-30: 0.5 (62 % at 200 runs)
+const HARD_FLOOR3_MIN := 0.55  # juego-29: 0.25 -> 0.35 (45 %); juego-30: 0.5 (62 %); juego-41: 0.55 (71 % at 200 runs)
 const DESCENT_FOOD_BY_PLAYERS := [0, 0, 10, 20]
-const NORMAL_PAIR_FLOORS_MIN := {3: 0.58, 4: 0.5, 5: 0.25}  # juego-30: 66 / 57 / 31 % at 200 runs
+const NORMAL_PAIR_FLOORS_MIN := {3: 0.62, 4: 0.55, 5: 0.38}  # juego-30: 66 / 57 / 31 %; juego-41 (Obras, room rewards, heal before the extraction): 72 / 66 / 49 % at 200 runs
 const FOUR_NORMAL_FLOOR4_MIN := 0.6
-const FOUR_NORMAL_FLOOR5_MAX := 0.5
+const FOUR_NORMAL_FLOOR5_MAX := 0.9  # juego-41: 0.5 -> 0.9 (83 % at 200 runs)
 ## juego-29 (owner's pick A1 + B): Hard's damage 1.25 -> 1.1 and its start resources x0.75 -> x1
 ## (Hard pairs 33 / 11 / 1 -> 45 / 28 / 3 % at 200 runs; the floor-4 wall was the door waves a
 ## level behind), and the Prisoner ransom halved to 8 Comida / 10 Hierro (+5 per floor): offline
 ## pairs that recruit (BalanceSim "recruit") 48 / 40 / 16 -> 54 / 46 / 20 % on Normal. Hard never
 ## beats Normal on a floor (pairs) and recruiting is not a loss.
 const HARD_DAMAGE_MULT := 1.1
-const HARD_FLOOR4_MIN := 0.3  # juego-30: 0.18 -> 0.3
+const HARD_FLOOR4_MIN := 0.4  # juego-30: 0.18 -> 0.3; juego-41: 0.4
 ## juego-30 (owner's pick A + B): a level the Comida can't pay costs 2 Saber per Comida
 ## (UpgradeConfig.alt_*) and the cell also takes 15 Saber (+5 per floor). Normal pairs 51 / 42 / 19 ->
 ## 66 / 57 / 31 %, the four 99 / 83 / 25 -> 100 / 86 / 33, Hard pairs 45 / 28 / 3 -> 62 / 43 / 9 (200 runs).
@@ -77,6 +77,7 @@ func _initialize() -> void:
 	_check_scaling()
 	_check_runs()
 	_check_run_towers()
+	_check_obras_model()
 	_check_boss_play()
 	_check_recruits()
 	_expect(BalanceSim.encounter_rows() == BalanceSim.encounter_rows(), "BalanceSim is not deterministic")
@@ -216,6 +217,58 @@ func _check_run_towers() -> void:
 	_expect(float(dark[0]["towers"]) >= 1.0, "runs: %.1f Ballestas on floor 1" % float(dark[0]["towers"]))
 	_expect(float(off[0]["towers"]) == 0.0, "runs without towers built %.1f" % float(off[0]["towers"]))
 	_expect(win3.call(near) > win3.call(dark) + 0.2, "boss next to a Ballesta %.2f vs in the dark %.2f" % [win3.call(near), win3.call(dark)])
+	# juego-41: same on Hard (200 runs, pairs: 91 vs 50 %); the Obras' share of the enemy HP is counted.
+	var hard: Array = [DifficultyConfig.get_default().levels[1]]
+	var hard_dark: Array[Dictionary] = BalanceSim.run_rows(50, pair, hard, true, 0.0)
+	var hard_near: Array[Dictionary] = BalanceSim.run_rows(50, pair, hard, true, 1.0)
+	_expect(win3.call(hard_near) > win3.call(hard_dark) + 0.2, "hard: boss next to the Defensas %.2f vs in the dark %.2f" % [win3.call(hard_near), win3.call(hard_dark)])
+	_expect(float(dark[0]["dmg_by_towers_pct"]) > 5.0 and float(off[0]["dmg_by_towers_pct"]) == 0.0,
+		"Obras' share of the damage: %.1f %% with towers, %.1f %% without" % [float(dark[0]["dmg_by_towers_pct"]), float(off[0]["dmg_by_towers_pct"])])
+	var f3 := func(rows: Array[Dictionary]) -> Dictionary:
+		return rows.filter(func(r: Dictionary) -> bool: return int(r["floor"]) == 3)[0]
+	_expect(float(f3.call(hard_near)["dmg_by_towers_pct"]) > float(f3.call(hard_dark)["dmg_by_towers_pct"]), "the boss next to the Defensas gives them more of the damage")
+	_expect(float(f3.call(dark)["relic_hp_end"]) > 0.0 and float(f3.call(dark)["relic_hp_end"]) <= 1.0, "Relic HP at floor end %.2f" % float(f3.call(dark)["relic_hp_end"]))
+
+
+## juego-41: one room's Obras as BalanceSim fights next to them (BuildingDef data): a Defensa only works
+## lit (requires_light), the Catapulta's splash grows with the wave up to SPLASH_HITS, Pinchos work
+## dark, and a fight there gives the Obras their share and makes the raiders wear the Relic down.
+func _check_obras_model() -> void:
+	var B := Building.BuildingType
+	var cat: Dictionary = Building.CATALOG[B.CATAPULTA]
+	var bal_dps := float(Building.CATALOG[B.BALLESTA]["damage"]) / float(Building.CATALOG[B.BALLESTA]["fire_rate"])
+	var cat_dps := float(cat["damage"]) / float(cat["fire_rate"])
+	_expect(BalanceSim._room_dps({"lit": false, B.BALLESTA: 1}, 1) == 0.0, "a dark Ballesta shoots")
+	_expect(is_equal_approx(BalanceSim._room_dps({"lit": true, B.BALLESTA: 2}, 4), 2.0 * bal_dps), "two lit Ballestas: %.1f" % BalanceSim._room_dps({"lit": true, B.BALLESTA: 2}, 4))
+	_expect(is_equal_approx(BalanceSim._room_dps({"lit": true, B.CATAPULTA: 1}, 1), cat_dps)
+		and is_equal_approx(BalanceSim._room_dps({"lit": true, B.CATAPULTA: 1}, 9), cat_dps * BalanceSim.SPLASH_HITS), "Catapulta splash")
+	_expect(BalanceSim._room_spikes({"lit": false, B.PINCHOS: 1}) == float(Building.CATALOG[B.PINCHOS]["spike_damage"]), "dark Pinchos don't hurt")
+	var cost: int = Building.CATALOG[B.BALLESTA]["cost"]
+	var res := {"iron": cost}
+	var counts := {}
+	var room := {"lit": true}
+	_expect(BalanceSim._build(room, B.BALLESTA, res, counts) and res["iron"] == 0 and not BalanceSim._build(room, B.BALLESTA, {"iron": cost}, counts),
+		"the second Ballesta costs more (BuildingCostCurve)")
+	var raider: EnemyType
+	for type in BalanceSim.pool_types(3):
+		if type.role == EnemyType.Role.RAIDER and type.damage_vs_relic > 0:
+			raider = type
+	BalanceSim.difficulty = DifficultyConfig.get_default().levels[0]
+	var wave: Array[EnemyType] = [raider, raider, raider]
+	var outs := []
+	for obras: Dictionary in [{}, {"lit": true, B.BALLESTA: 2, B.PINCHOS: 1}]:
+		var hp := {"mage": 999.0}
+		var tw := [0.0, 0.0]
+		var relic := [100.0]
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 41
+		BalanceSim._fight(["mage"], {"mage": 2}, hp, wave, 3, rng, [0.0], obras, tw, relic)
+		outs.append([tw[0] / maxf(tw[1], 1.0), relic[0], hp["mage"]])
+	BalanceSim.difficulty = null
+	BalanceSim._duel_cache.clear()
+	print("raiders on floor 3 vs a Mage: bare room %s, 2 Ballestas + Pinchos %s ([Obras share, Relic, HP])" % [outs[0], outs[1]])
+	_expect(outs[0][0] == 0.0 and outs[1][0] > 0.3, "Obras' share in the fight %.2f / %.2f" % [outs[0][0], outs[1][0]])
+	_expect(outs[0][1] < 100.0 and outs[1][1] > outs[0][1] and outs[1][2] > outs[0][2], "Defensas save the Relic and the hero: %s" % [outs])
 
 
 ## juego-24: the boss-play assumptions move the floor-3 boss the right way (Guerrero + Paladín,
