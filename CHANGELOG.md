@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## session/juego-44
+- El cartel de pistas tiene fondo propio opaco y se ensancha con el texto grande (×1,5): la pista de la sala de Descanso ya se lee entera.
+- Catapulta más barata y fuerte: 5 de Hierro (antes 8), investigación de 10 de Saber (antes 18) y 35 de daño (antes 25). Versión 1.11: el co-op exige que los dos tengan la misma.
+
 ## session/herramientas-43
 - Sin cambios en el juego: herramientas y documentación para abrir y cerrar sesiones más rápido.
 
