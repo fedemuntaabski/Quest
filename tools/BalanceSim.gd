@@ -616,6 +616,7 @@ static func scaling_rows() -> Array[Dictionary]:
 ##  - "heal": before the boss, "comida" = heal every living hero with the Comida left (portrait,
 ##    UpgradeConfig.heal_cost_per_hp, allowed any time); "rest" = only if a Rest room was revealed
 ##    this floor, at its rate (heal_food_per_tick per heal_per_tick); "none" = floor start only.
+##    juego-42 "rest_first" (default true): "comida" rests in a revealed Rest room (free) before the portrait.
 ##  - "boss_first": the boss wakes when the exit room is revealed and hunts the party, so it is
 ##    fought right then and the extraction waves come after (the real order); false = after them.
 ## Rows per (difficulty, party, floor): win_rate (share of runs that cleared this floor), party
@@ -655,7 +656,7 @@ static var _boss_near := BOSS_NEAR_TOWERS
 ## out) and its working Obras shoot (_room_dps, _room_spikes). Room-type rewards on discovery (Loot Hierro,
 ## Elite Saber), the heal also runs before the extraction, and raiders in extraction waves wear the
 ## carried Relic down (0 = defeat, die_relic). Columns: towers = Obras built, dmg_by_towers_pct.
-const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "boss_first": true,
+const BOSS_PLAY := {"dodge": 0.5, "dodge_sec": 2.0, "heal": "comida", "rest_first": true, "boss_first": true,
 	"items": true, "free_food": false, "no_doors": 0, "no_extr": 0, "no_boss": 0, "free_levels": false, "players": 0,
 	"extra_food": 0, "extra_food_from": 2, "extra_food_to": 5, "recruit": 0, "recruit_levels": false, "recruit_cost_mult": 1.0, "full_hp": 0, "research": [], "lab_first": true, "level_lore": -1.0}
 const RESEARCH_ORDER: Array[String] = ["defense_rifling", "cartography", "dry_tinder", "workshop_tuning", "workshop_bellows"]
@@ -1150,13 +1151,17 @@ static func _gear_power(id: String, lvl: int, f: int, mods: Dictionary) -> float
 ## juego-24: heal (BOSS_PLAY "heal") before the boss and (juego-41) before the extraction.
 ## "comida" = the portrait (UpgradeConfig.heal_cost_per_hp); "rest" = only in a revealed Rest room, at its
 ## RoomTypeRule price (heal_food_per_tick per heal_per_tick HP); "none" = no heal.
+## juego-42: with "rest_first" (default) "comida" first rests in a revealed Rest room (free since juego-42;
+## the walk there and the time it takes are not modelled), then pays the portrait for what is left.
 static func _heal_before(party: Array, levels: Dictionary, hp: Dictionary, res: Dictionary, layout: MapLayout, revealed: Dictionary) -> void:
+	if _play["heal"] == "none":
+		return
+	var rule := floor_config().get_room_type_rule(RoomData.RoomType.REST)
+	var rest_seen: bool = rule != null and rule.heal_per_tick > 0 and layout.rooms.any(func(r: RoomData) -> bool: return revealed.has(r.id) and r.get_room_type() == RoomData.RoomType.REST)
+	if rest_seen and (_play["heal"] == "rest" or _play["rest_first"]):
+		_heal_with_food(party, levels, hp, res, float(rule.heal_food_per_tick) / rule.heal_per_tick)
 	if _play["heal"] == "comida":
 		_heal_with_food(party, levels, hp, res, upgrade_config().heal_cost_per_hp)
-	elif _play["heal"] == "rest":
-		var rule := floor_config().get_room_type_rule(RoomData.RoomType.REST)
-		if rule and rule.heal_per_tick > 0 and layout.rooms.any(func(r: RoomData) -> bool: return revealed.has(r.id) and r.get_room_type() == RoomData.RoomType.REST):
-			_heal_with_food(party, levels, hp, res, float(rule.heal_food_per_tick) / rule.heal_per_tick)
 
 
 ## juego-24: pre-boss heal, the fight, and the boss columns. near_dps = Defensas of the best-defended
@@ -1185,7 +1190,7 @@ static func _heal_with_food(party: Array, levels: Dictionary, hp: Dictionary, re
 	for id: String in party:
 		var missing := floori(_max_hp(id, levels[id]) - hp[id])
 		if hp[id] > 0.0 and missing > 0:
-			var heal := mini(missing, floori(res["food"] / maxf(per_hp, 0.001)))
+			var heal := missing if per_hp <= 0.0 else mini(missing, floori(res["food"] / per_hp))
 			while heal > 0 and ceili(heal * per_hp) > res["food"]:
 				heal -= 1
 			if heal > 0:

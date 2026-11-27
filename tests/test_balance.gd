@@ -249,6 +249,10 @@ func _check_obras_model() -> void:
 	var room := {"lit": true}
 	_expect(BalanceSim._build(room, B.BALLESTA, res, counts) and res["iron"] == 0 and not BalanceSim._build(room, B.BALLESTA, {"iron": cost}, counts),
 		"the second Ballesta costs more (BuildingCostCurve)")
+	var rest_hp := {"mage": 1.0}  # juego-42: the Rest room is free, so it heals with no Comida
+	var no_food := {"food": 0}
+	BalanceSim._heal_with_food(["mage"], {"mage": 1}, rest_hp, no_food, 0.0)
+	_expect(rest_hp["mage"] >= floorf(BalanceSim._max_hp("mage", 1)) and no_food["food"] == 0, "a free heal fills HP with 0 Comida: %s" % [rest_hp])
 	var raider: EnemyType
 	for type in BalanceSim.pool_types(3):
 		if type.role == EnemyType.Role.RAIDER and type.damage_vs_relic > 0:
