@@ -1,5 +1,35 @@
 {
   "enabledPlugins": {
     "ponytail@ponytail": true
+  },
+  "env": {
+    "QUEST_GODOT": "E:\\Descargas\\Godot_v4.6.2-stable_win64.exe\\Godot_v4.6.2-stable_win64_console.exe"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(tools/run_tests.sh:*)",
+      "Bash(bash tools/run_tests.sh:*)",
+      "Bash(E:/Descargas/Godot_v4.6.2-stable_win64.exe/Godot_v4.6.2-stable_win64_console.exe:*)",
+      "Bash(\"E:\\Descargas\\Godot_v4.6.2-stable_win64.exe\\Godot_v4.6.2-stable_win64_console.exe\":*)",
+      "Bash(\"$QUEST_GODOT\":*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git switch:*)",
+      "Bash(git mv:*)",
+      "Bash(git rm:*)",
+      "Bash(git branch:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr create:*)",
+      "Bash(wc:*)",
+      "Bash(rg:*)",
+      "Bash(python -m gdtoolkit.parser:*)"
+    ]
   }
 }
