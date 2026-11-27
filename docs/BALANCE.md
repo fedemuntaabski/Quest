@@ -235,7 +235,7 @@ Lo que no se tocó: el daño, el intervalo y el alcance de los cuatro; los enemi
 - El reparto 50/50 de la oleada es optimista: en el juego, los HUNTER persiguen al héroe más cercano y pueden cargarle todo a uno.
 - La Catapulta y el Golpe Furtivo siguen siendo de área: con objetivo único, sus picos se notan más.
 - El grupo de 3-4 (reclutas) reparte todavía más y puede hacer los pisos 1-3 demasiado fáciles.
-- La cura en Descanso (2 de vida/s por 1 de Comida) y el costo de reanimar (15 + 5 por piso).
+- La cura en Descanso (2 de vida/s, gratis desde juego-42) y el costo de reanimar (15 + 5 por piso).
 
 ## Escalado por jugadores (session calidad-13, cerrado en estabilizar-14)
 
@@ -393,7 +393,7 @@ Corrida: `godot --headless --path . --script res://tools/balance_sim.gd -- juego
 
 **Supuestos nuevos de `run_rows`** (`play`, valores por defecto en `BalanceSim.BOSS_PLAY`):
 - `boss_first` = true: el jefe se despierta al revelar la sala de salida (`EnemyManager._on_room_revealed`) y caza al grupo (perfil cazador), así que se pelea **antes** de las oleadas de extracción. juego-23 lo peleaba después.
-- `heal` = "comida": antes del jefe, cada héroe vivo se cura con la Comida que queda, por el retrato (0,15 Comida por punto de vida; se puede en cualquier momento). Con "rest" solo se cura si se reveló una sala Rest, a su precio: 1 Comida cada 2 de vida (0,5 por punto). **Rest es más cara que el retrato**, así que no suma nada. Con "none" solo se cura al empezar el piso.
+- `heal` = "comida": antes del jefe, cada héroe vivo se cura con la Comida que queda, por el retrato (0,15 Comida por punto de vida; se puede en cualquier momento). Con "rest" solo se cura si se reveló una sala Rest, a su precio: 1 Comida cada 2 de vida (0,5 por punto). **Rest es más cara que el retrato**, así que no suma nada (gratis desde juego-42: ver «La sala de Descanso gratis»). Con "none" solo se cura al empezar el piso.
 - `dodge` = **0,5**: la parte de las Embestidas que se esquiva. Es un supuesto, sin datos de gente; el script de la ventana esquiva todas. Una esquivada no daña a nadie.
 - `dodge_sec` = **2,0**: por cada esquive, el grupo pasa 2 s fuera del contacto (ni pega ni recibe) y la Ballesta sigue tirando. Con 2 s se reproduce la ventana.
 - Se arregló un cuelgue: `_boss_fight` podía repetir pasos cada vez más chicos por restos de coma flotante en la vida del jefe. Ahora corta en 0,001, como ya hacía con los héroes.
@@ -911,9 +911,34 @@ Barrido: `godot --headless --path . --script res://tests/tools/sweep_juego41.gd 
 - **Lo que decide es dónde se pelea al jefe**: lejos de las Obras, Difícil cae al 50 %; junto a ellas sube al 91 %. `BOSS_NEAR_TOWERS` = 0,5 sigue siendo un supuesto sin datos de gente.
 - **La Catapulta no conviene en el modelo** (−10 puntos): cuesta 18 Saber, pide un Scriptorium en el piso (ocupa la sala de una Ballesta) y vale 8 de Hierro contra 4. Con 2-3 enemigos por oleada, su golpe en área apenas pasa a la Ballesta.
 - **Los saqueadores casi no tocan la Reliquia en la extracción** (le queda 96-100 %). Los matan rápido porque van al portador, que pelea con el grupo. No se modela la Reliquia tirada en la sala inicial mientras el grupo explora (ahí los saqueadores llegan sin oposición).
-- **La sala de Descanso no aporta nada**: cura a 0,5 Comida por punto y el retrato a 0,15 (`UpgradeConfig.heal_cost_per_hp`), así que el jugador de referencia nunca la usa. Si se quiere que importe, abaratarla (p. ej. `heal_food_per_tick` 0) es para preguntar al dueño. No se aplicó.
+- **La sala de Descanso no aporta nada**: cura a 0,5 Comida por punto y el retrato a 0,15 (`UpgradeConfig.heal_cost_per_hp`), así que el jugador de referencia nunca la usa. Resuelto en juego-42: la sala cura gratis (ver «La sala de Descanso gratis»).
 - Sigue sin modelar: los enemigos más fuertes de las salas Élite (`enemy_hp_mult` / `enemy_damage_mult`), el Brasero (frena) y los rompe-torres que tiran Obras.
 
 **Calibración con la ventana real** (`tests/tools/shot_jefe.gd`, piso 3, Guerrero + Mago de nivel 2 con vida llena, una Ballesta en la sala; capturas en `capturas/juego-41/`): `ballesta`, el jefe muere a los 9 s y el Guerrero queda con 4 (modelo: 5); `esquiva_ballesta`, Guerrero 18 y Mago 6 (modelo: 17 y 5). Es la misma pelea que en juego-24: la fórmula de `_boss_fight` no cambió, solo de dónde sale el DPS de las Obras.
 
 `test_balance` (50 corridas): umbrales nuevos. Normal pares ≥ 62 / 55 / 38 % en los pisos 3 / 4 / 5 y piso 3 ≤ 85 %; los 4 en co-op Normal piso 5 ≤ 90 %; Difícil pares piso 3 ≥ 55 %, piso 4 entre 40 y 70 % y piso 5 ≤ 35 %. `_check_run_towers` agrega: en Difícil, el jefe junto a las Obras gana > 20 puntos más que lejos de ellas; con torres las Obras sacan > 5 % del daño (0 sin torres); la vida de la Reliquia al final está en (0, 1]. `_check_obras_model` nuevo comprueba que una Ballesta a oscuras no tira, que el área de la Catapulta crece con la oleada, que los Pinchos funcionan a oscuras, el segundo precio de `BuildingCostCurve`, y que en una pelea de saqueadores del piso 3 dos Ballestas con Pinchos se llevan el daño y salvan la Reliquia y al héroe.
+
+## La sala de Descanso gratis (session juego-42)
+
+**Cambio de juego.** La sala de Descanso cura 2 de vida por segundo de juego a cada héroe herido que está dentro, **sin gastar Comida** (`heal_food_per_tick` 1 → 0 en `default_floor_config.tres`). Ahora no cura si hay un enemigo vivo en la sala ni durante la extracción (`FloorManager.rest_tick`). Antes cobraba 0,5 Comida por punto de vida y el retrato 0,15, así que no tenía uso. Ahora el retrato es la cura inmediata que cuesta Comida y la sala de Descanso la cura gratis que pide tiempo y una sala sin enemigos.
+
+**Modelo.** `BOSS_PLAY.rest_first` (por defecto true): con `heal` = "comida", antes del jefe y antes de la extracción el grupo descansa gratis si se reveló una sala de Descanso, y después paga el retrato por lo que falte. No se modela el tiempo de ir hasta la sala ni lo que pasa mientras tanto (amenaza, saqueadores contra la Reliquia tirada). "Antes" = `{"rest_first": false}`, igual al modelo de juego-41.
+
+Barrido `tests/tools/sweep_juego41.gd` (200 corridas; CSV en `docs/balance/juego42_antes_runs.csv` y `juego42_despues_runs.csv`):
+
+| Dificultad | Grupo | Victoria 1/2/3/4/5 (%), antes | después |
+|---|---|---|---|
+| Normal | pares | 100 / 100 / 72 / 66 / 49 | 100 / 100 / 73 / 68 / 55 |
+| Normal | tríos (co-op 3) | 100 / 100 / 100 / 93 / 66 | 100 / 100 / 100 / 95 / 72 |
+| Normal | los 4 (co-op 4) | 100 / 100 / 100 / 100 / 83 | 100 / 100 / 100 / 100 / 85 |
+| Difícil | pares | 100 / 100 / 71 / 57 / 25 | 100 / 100 / 73 / 63 / 32 |
+| Difícil | tríos (co-op 3) | 100 / 100 / 97 / 78 / 24 | 100 / 100 / 98 / 83 / 30 |
+| Difícil | los 4 (co-op 4) | 100 / 100 / 100 / 95 / 34 | 100 / 100 / 100 / 96 / 34 |
+
+**Lectura.**
+- La suba aparece en los pisos 4 y 5 (+2 a +7 puntos). Ahí es donde se acaba la Comida: con la sala de Descanso, la Comida que antes iba al retrato queda para niveles y reanimar. En los pisos 1-3 casi no cambia, porque ya sobraba Comida para curarse.
+- Difícil pares piso 5: 25 → 32 %. Los 4 en Difícil no cambian (34 %): con cuatro héroes la Comida no es lo que falta.
+- Una sala de Descanso aparece con chance 0,6 por piso (cupo 1). Sin ella, el modelo es el de antes.
+- `test_balance` no necesitó umbrales nuevos (Normal pares 75 / 70 / 56, Difícil pares 69 / 61 / 30, todo dentro). `_check_obras_model` agrega que una cura gratis llena la vida con 0 de Comida (`_heal_with_food` con `per_hp` 0 no curaba nada si no quedaba Comida).
+
+**Pendiente de playtest:** que un jugador de verdad vuelva a la sala de Descanso antes del jefe o de la extracción, y si 2 de vida/s es lento o rápido con los enemigos que entran a la sala.

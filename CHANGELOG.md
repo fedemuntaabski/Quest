@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## session/juego-42
+- La sala de Descanso cura gratis con el tiempo (antes costaba Comida). No cura si hay un enemigo dentro ni durante la extracción.
+
 ## session/juego-41
 - Sin cambios en el juego: el simulador de balance ahora tiene en cuenta las Defensas, los Pinchos, las recompensas de sala y la Reliquia durante la extracción (números en `docs/BALANCE.md`).
 
