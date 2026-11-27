@@ -114,7 +114,7 @@ func _test_hunter() -> void:
 	_place_hero(heroes[1], far_room, here + Vector2(60, 0))
 	_expect(enemy.selector.aggro_hero(rm) == heroes[1], "hunter: did not pick the nearest hero in aggro_range")
 	_expect(enemy.selector.goal_zone(rm) == far_room, "hunter: goal zone should be the hero's zone")
-	_expect(enemy.selector.goal_point(far_room) == heroes[1].global_position, "hunter: should close in on the hero's position")
+	_expect(enemy.selector.goal_point(far_room) == heroes[1].body_position(), "hunter: should close in on the hero's body")
 
 	# No hero in aggro -> the zone of the closest hero by route.
 	_place_hero(heroes[0], rm.get_start_zone_id(), rm.get_center(rm.get_start_zone_id()))

@@ -54,9 +54,9 @@ func _initialize() -> void:
 	for i in WAVE.size():
 		var enemy := EnemyManager.ENEMY_SCENE.instantiate() as Enemy
 		main2d.enemy_manager._enemies_root.add_child(enemy)
-		enemy.setup(center + Vector2.from_angle(i * TAU / WAVE.size()) * 170.0)
+		enemy.setup(center + Vector2.from_angle(i * TAU / WAVE.size()) * 110.0)  # heroes-47: inside the room (it is ~258 px wide)
 		enemy.slot = i
-		enemy.configure(Enemy.Variant.SWARM, start, 4.0, 1.0, load("res://resources/enemies/%s.tres" % WAVE[i]))
+		enemy.configure(Enemy.Variant.SWARM, start, 40.0, 1.0, load("res://resources/enemies/%s.tres" % WAVE[i]))
 	main2d.camera.zoom = Vector2(1.8, 1.8)
 	main2d.camera.global_position = center
 	var shots := 0
@@ -65,4 +65,23 @@ func _initialize() -> void:
 		shots += 1
 		root.get_texture().get_image().save_png(out_dir.path_join("combate_%d.png" % shots))
 		print("shot combate_%d, %d enemies" % [shots, main2d.enemy_manager._enemies_root.get_child_count()])
+		_report(main2d)
 	quit()
+
+
+## heroes-47: every sprite's spot, what each enemy is after and its nearest neighbour (px).
+func _report(main2d: Node) -> void:
+	var points: Array = []
+	for hero: Player in main2d.heroes:
+		points.append([hero.stats.hero_id, hero.body_position()])
+	for node in main2d.enemy_manager._enemies_root.get_children():
+		var enemy := node as Enemy
+		if enemy and enemy.is_alive():
+			var target = enemy.selector.current.node if enemy.selector.current else null
+			points.append(["%s->%s%s" % [enemy.type.resource_path.get_file().get_basename(), target.name if target else "-", " (hits %s)" % enemy.target_building.name if enemy.current_state == Enemy.State.ATTACKING and enemy.target_building else ""], enemy.global_position])
+	for a in points:
+		var nearest := INF
+		for b in points:
+			if a != b:
+				nearest = minf(nearest, (a[1] as Vector2).distance_to(b[1]))
+		print("  %-24s %s nearest %.0f" % [a[0], a[1], nearest])

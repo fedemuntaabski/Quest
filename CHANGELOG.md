@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## session/heroes-47
+- En las peleas los enemigos se reparten entre todos los héroes y cada uno toma un lugar libre a su alrededor, en vez de amontonarse sobre uno solo.
+
 ## session/personajes-46
 - Dos héroes nuevos: el Ballestero (dispara de lejos, gana Hierro por cada enemigo que remata, su red frena a los enemigos) y la Clériga (cura al grupo de a poco y de golpe con la Luz Sanadora).
 - Dos enemigos nuevos desde el piso 2: el Calabacero dispara desde lejos y el Curandero del Pantano cura a los suyos.

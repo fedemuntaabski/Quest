@@ -417,10 +417,10 @@ func _pursue_zone(room_manager: RoomManager, target_zone_id: String, point: Vect
 	if point != Vector2.INF and standoff > 0.0:
 		var from: Vector2 = waypoints[-1] if not waypoints.is_empty() else global_position
 		if from.distance_to(point) > standoff:
-			waypoints.append(point + point.direction_to(from) * standoff + _ring_offset())
+			waypoints.append(_ring_spot(point + point.direction_to(from) * standoff))
 			zone_ids.append(target_zone_id)
 	elif point != Vector2.INF and (not waypoints.is_empty() or global_position.distance_to(point) > attack_range):
-		waypoints.append(point + _ring_offset())
+		waypoints.append(_ring_spot(point))
 		zone_ids.append(target_zone_id)
 	if waypoints.is_empty():
 		return
@@ -488,10 +488,41 @@ func _heal_allies() -> void:
 			vfx.play(&"heal_glow", ally.global_position, HEAL_COLOR)
 
 
-## Fixed per-enemy offset (8 consecutive slots) so enemies converging on one point don't stack.
-func _ring_offset() -> Vector2:
-	var lap := floori(slot / float(RING_ANGLES.size())) % 2  # a second lap sits between the first one's places
-	return Vector2.from_angle(deg_to_rad(float(RING_ANGLES[slot % RING_ANGLES.size()]) + lap * 17.0)) * RING_RADIUS
+## heroes-47: place this enemy heads for around `point` (its hero's body): the one it already holds if
+## still free, else the first RING_ANGLES place (second lap turned 17°) at least RING_GAP px from every
+## other enemy's place (or body) and every hero's body; none free = the roomiest one.
+const RING_GAP := 30.0
+var ring_spot := Vector2.INF
+
+
+func _ring_spot(point: Vector2) -> Vector2:
+	var taken: Array[Vector2] = []
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var other := node as Enemy
+		if other and other != self and other.is_alive():
+			taken.append(other.ring_spot if other.ring_spot != Vector2.INF else other.global_position)
+	for hero in ManagerLocator.get_heroes():
+		taken.append(hero.body_position())
+	var candidates: Array[Vector2] = []
+	if ring_spot != Vector2.INF and absf(ring_spot.distance_to(point) - RING_RADIUS) < 2.0:
+		candidates.append(ring_spot)
+	for lap in 2:
+		for angle in RING_ANGLES:
+			candidates.append(point + Vector2.from_angle(deg_to_rad(float(angle) + lap * 17.0)) * RING_RADIUS)
+	var best := candidates[0]
+	var best_gap := -1.0
+	for spot in candidates:
+		var gap := INF
+		for other_spot in taken:
+			gap = minf(gap, other_spot.distance_to(spot))
+		if gap >= RING_GAP:
+			best = spot
+			break
+		if gap > best_gap:
+			best = spot
+			best_gap = gap
+	ring_spot = best
+	return best
 
 
 func _check_trap_in_current_room(room_manager: RoomManager) -> void:

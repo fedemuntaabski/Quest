@@ -62,6 +62,7 @@ func _ready() -> void:
 	_sprite_base = animated_sprite.position
 	animated_sprite.position += sprite_offset
 	_sprite_target = animated_sprite.position
+	hurtbox.position = sprite_offset  # heroes-47: the hittable body starts on its party spot too (not only after a zone change)
 	if character_data:
 		stats.hero_id = character_data.character_id
 		stats.character_name = character_data.display_name

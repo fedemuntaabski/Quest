@@ -16,6 +16,10 @@ signal target_lost(old: Target)
 
 ## A hero within this distance (px) of a retaliating enemy provokes it.
 const BLOCK_RANGE := 48.0
+## heroes-47: a hero already chased by its fair share of the hunters (ceil(hunters / living heroes), at most
+## CROWD) is skipped by newcomers looking for the nearest one (unless every hero in reach is), so a wave
+## spreads over the party.
+const CROWD := 3
 
 var enemy: Enemy
 var profile: TargetProfile
@@ -101,7 +105,7 @@ func goal_point(goal_zone_id: String) -> Vector2:
 	var target := current if current != null and current.zone_id == goal_zone_id and current.is_valid() else select(room_manager)
 	if target and target.node is Player and (target.node as Player).current_zone_id == goal_zone_id:
 		return (target.node as Player).body_position()
-	var hero := aggro_hero(room_manager)
+	var hero := aggro_hero(room_manager, INF)  # heroes-47: a hunter sent to a hero's zone closes in even beyond aggro_range
 	if hero and hero.current_zone_id == goal_zone_id:
 		return hero.body_position()
 	return Vector2.INF
@@ -160,20 +164,46 @@ func _fallback(room_manager: RoomManager) -> Target:
 
 ## Closest living hero within `reach` px (default: the enemy's aggro_range) that
 ## is reachable over the revealed graph.
+## Heroes chased by CROWD or more other enemies only count when no other hero is in reach.
 func aggro_hero(room_manager: RoomManager, reach: float = -1.0) -> Player:
 	var best: Player = null
-	var best_dist := enemy.aggro_range if reach < 0.0 else reach
+	var best_crowded: Player = null
+	var limit := enemy.aggro_range if reach < 0.0 else reach
+	var best_dist := limit
+	var crowded_dist := limit
+	var chasers := chasers_by_hero()
+	var alive := 0
+	var hunters := 1
+	for hero in ManagerLocator.get_heroes():
+		if hero.stats.is_alive():
+			alive += 1
+			hunters += int(chasers.get(hero, 0))
+	var share := mini(CROWD, ceili(hunters / float(maxi(alive, 1))))
 	for hero in ManagerLocator.get_heroes():
 		if not hero.stats.is_alive():
 			continue
 		var dist := enemy.global_position.distance_to(hero.body_position())
-		if dist > best_dist:
+		if dist > maxf(best_dist, crowded_dist) or not _reachable(room_manager, hero):
 			continue
-		if not _reachable(room_manager, hero):
-			continue
-		best = hero
-		best_dist = dist
-	return best
+		if int(chasers.get(hero, 0)) >= share:
+			if dist <= crowded_dist:
+				best_crowded = hero
+				crowded_dist = dist
+		elif dist <= best_dist:
+			best = hero
+			best_dist = dist
+	return best if best else best_crowded
+
+
+## {hero: other living enemies whose current target is that hero}.
+func chasers_by_hero() -> Dictionary:
+	var counts := {}
+	for node in enemy.get_tree().get_nodes_in_group("enemies"):
+		var other := node as Enemy
+		if other and other != enemy and other.is_alive() and other.selector.current and other.selector.current.node is Player:
+			var hero := other.selector.current.node
+			counts[hero] = int(counts.get(hero, 0)) + 1
+	return counts
 
 
 ## Zone of the closest hero (fewest zones over the revealed graph), so the
